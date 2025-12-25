@@ -1,0 +1,15 @@
+{
+    "agents": [
+        "claude_code",
+        "cursor",
+        "gemini",
+        "opencode"
+    ],
+    "editors": [
+        "claude_code",
+        "cursor",
+        "opencode",
+        "vscode"
+    ],
+    "guidelines": []
+}
