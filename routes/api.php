@@ -317,6 +317,21 @@ Route::prefix('v1')->group(function () {
         // Cash Flow Reports
         Route::get('cash-flow', [ReportController::class, 'cashFlow']);
         Route::get('daily-cash-movement', [ReportController::class, 'dailyCashMovement']);
+
+        // Project Reports
+        Route::get('project-profitability', [ReportController::class, 'projectProfitability']);
+        Route::get('projects/{project}/profitability', [ReportController::class, 'projectProfitabilityDetail']);
+        Route::get('project-cost-analysis', [ReportController::class, 'projectCostAnalysis']);
+
+        // Work Order Reports
+        Route::get('work-order-costs', [ReportController::class, 'workOrderCosts']);
+        Route::get('work-orders/{workOrder}/costs', [ReportController::class, 'workOrderCostDetail']);
+        Route::get('cost-variance', [ReportController::class, 'costVariance']);
+
+        // Subcontractor Reports
+        Route::get('subcontractor-summary', [ReportController::class, 'subcontractorSummary']);
+        Route::get('subcontractors/{contact}/summary', [ReportController::class, 'subcontractorDetail']);
+        Route::get('subcontractor-retention', [ReportController::class, 'subcontractorRetention']);
     });
 
     // Export Reports (Ekspor Laporan)

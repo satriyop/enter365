@@ -4,11 +4,16 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Accounting\Contact;
+use App\Models\Accounting\Project;
+use App\Models\Accounting\WorkOrder;
 use App\Services\Accounting\AccountBalanceService;
 use App\Services\Accounting\AgingReportService;
 use App\Services\Accounting\CashFlowReportService;
 use App\Services\Accounting\FinancialReportService;
+use App\Services\Accounting\ProjectReportService;
+use App\Services\Accounting\SubcontractorReportService;
 use App\Services\Accounting\TaxReportService;
+use App\Services\Accounting\WorkOrderReportService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,7 +25,10 @@ class ReportController extends Controller
         private FinancialReportService $reportService,
         private AgingReportService $agingService,
         private TaxReportService $taxService,
-        private CashFlowReportService $cashFlowService
+        private CashFlowReportService $cashFlowService,
+        private ProjectReportService $projectReportService,
+        private WorkOrderReportService $workOrderReportService,
+        private SubcontractorReportService $subcontractorReportService
     ) {}
 
     /**
@@ -50,6 +58,15 @@ class ReportController extends Controller
     public function balanceSheet(Request $request): JsonResponse
     {
         $asOfDate = $request->input('as_of_date');
+        $compareTo = $request->input('compare_to');
+
+        // If compare_to is provided, return comparative report
+        if ($compareTo) {
+            $comparative = $this->reportService->getComparativeBalanceSheet($asOfDate, $compareTo);
+
+            return response()->json($comparative);
+        }
+
         $balanceSheet = $this->reportService->getBalanceSheet($asOfDate);
 
         return response()->json([
@@ -65,6 +82,20 @@ class ReportController extends Controller
     {
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
+        $comparePreviousPeriod = $request->boolean('compare_previous_period', false);
+
+        // If compare_previous_period is true, return comparative report
+        if ($comparePreviousPeriod) {
+            $comparative = $this->reportService->getComparativeIncomeStatement(
+                $startDate,
+                $endDate,
+                $request->input('previous_start_date'),
+                $request->input('previous_end_date')
+            );
+
+            return response()->json($comparative);
+        }
+
         $incomeStatement = $this->reportService->getIncomeStatement($startDate, $endDate);
 
         return response()->json([
@@ -136,7 +167,7 @@ class ReportController extends Controller
         $report = $this->agingService->getContactAging($contact, $asOfDate);
 
         return response()->json([
-            'report_name' => 'Laporan Umur - ' . $contact->name,
+            'report_name' => 'Laporan Umur - '.$contact->name,
             'contact' => [
                 'id' => $contact->id,
                 'code' => $contact->code,
@@ -283,5 +314,117 @@ class ReportController extends Controller
             'total_payments' => $movements->sum('payments'),
             'net_movement' => $movements->sum('net'),
         ]);
+    }
+
+    /**
+     * Laporan Profitabilitas Proyek (Project Profitability Report).
+     */
+    public function projectProfitability(Request $request): JsonResponse
+    {
+        $report = $this->projectReportService->getProjectProfitabilitySummary(
+            $request->input('start_date'),
+            $request->input('end_date'),
+            $request->input('status')
+        );
+
+        return response()->json($report);
+    }
+
+    /**
+     * Laporan Detail Profitabilitas Proyek.
+     */
+    public function projectProfitabilityDetail(Project $project): JsonResponse
+    {
+        $report = $this->projectReportService->getProjectProfitabilityDetail($project);
+
+        return response()->json($report);
+    }
+
+    /**
+     * Laporan Analisis Biaya Proyek.
+     */
+    public function projectCostAnalysis(Request $request): JsonResponse
+    {
+        $report = $this->projectReportService->getProjectCostAnalysis(
+            $request->input('start_date'),
+            $request->input('end_date')
+        );
+
+        return response()->json($report);
+    }
+
+    /**
+     * Laporan Biaya Work Order.
+     */
+    public function workOrderCosts(Request $request): JsonResponse
+    {
+        $report = $this->workOrderReportService->getWorkOrderCostSummary(
+            $request->input('start_date'),
+            $request->input('end_date'),
+            $request->input('status'),
+            $request->input('project_id')
+        );
+
+        return response()->json($report);
+    }
+
+    /**
+     * Laporan Detail Biaya Work Order.
+     */
+    public function workOrderCostDetail(WorkOrder $workOrder): JsonResponse
+    {
+        $report = $this->workOrderReportService->getWorkOrderCostDetail($workOrder);
+
+        return response()->json($report);
+    }
+
+    /**
+     * Laporan Variansi Biaya.
+     */
+    public function costVariance(Request $request): JsonResponse
+    {
+        $report = $this->workOrderReportService->getCostVarianceReport(
+            $request->input('start_date'),
+            $request->input('end_date')
+        );
+
+        return response()->json($report);
+    }
+
+    /**
+     * Laporan Subkontraktor.
+     */
+    public function subcontractorSummary(Request $request): JsonResponse
+    {
+        $report = $this->subcontractorReportService->getSubcontractorSummary(
+            $request->input('start_date'),
+            $request->input('end_date')
+        );
+
+        return response()->json($report);
+    }
+
+    /**
+     * Laporan Detail Subkontraktor.
+     */
+    public function subcontractorDetail(Request $request, Contact $contact): JsonResponse
+    {
+        $report = $this->subcontractorReportService->getSubcontractorDetail(
+            $contact,
+            $request->input('start_date'),
+            $request->input('end_date')
+        );
+
+        return response()->json($report);
+    }
+
+    /**
+     * Laporan Retensi Subkontraktor.
+     */
+    public function subcontractorRetention(): JsonResponse
+    {
+        $report = $this->subcontractorReportService->getRetentionSummary();
+
+        return response()->json($report);
     }
 }

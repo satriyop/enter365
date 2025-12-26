@@ -46,6 +46,7 @@ class FinancialReportService
 
         $balanceItems = $accounts->map(function ($account) use ($asOfDate) {
             $balance = $account->getBalance($asOfDate);
+
             return (object) [
                 'account_id' => $account->id,
                 'code' => $account->code,
@@ -135,6 +136,7 @@ class FinancialReportService
 
         $items = $accounts->map(function ($account) use ($startDate, $endDate) {
             $balance = $this->getAccountBalanceForPeriod($account, $startDate, $endDate);
+
             return (object) [
                 'account_id' => $account->id,
                 'code' => $account->code,
@@ -152,7 +154,7 @@ class FinancialReportService
 
         // Expenses
         $costOfGoods = $items->filter(fn ($i) => $i->type === Account::TYPE_EXPENSE && str_starts_with($i->code, '5-1'));
-        $operatingExpense = $items->filter(fn ($i) => $i->type === Account::TYPE_EXPENSE && $i->subtype === Account::SUBTYPE_OPERATING_EXPENSE && !str_starts_with($i->code, '5-1'));
+        $operatingExpense = $items->filter(fn ($i) => $i->type === Account::TYPE_EXPENSE && $i->subtype === Account::SUBTYPE_OPERATING_EXPENSE && ! str_starts_with($i->code, '5-1'));
         $otherExpense = $items->filter(fn ($i) => $i->type === Account::TYPE_EXPENSE && $i->subtype === Account::SUBTYPE_OTHER_EXPENSE);
         $totalExpenses = $costOfGoods->sum('balance') + $operatingExpense->sum('balance') + $otherExpense->sum('balance');
 
@@ -215,6 +217,7 @@ class FinancialReportService
         $endDate = $asOfDate ?? now()->toDateString();
 
         $incomeStatement = $this->getIncomeStatement($startOfYear, $endDate);
+
         return $incomeStatement['net_income'];
     }
 
@@ -238,5 +241,105 @@ class FinancialReportService
         return $account->isDebitNormal()
             ? $totalDebit - $totalCredit
             : $totalCredit - $totalDebit;
+    }
+
+    /**
+     * Generate Comparative Balance Sheet.
+     *
+     * @return array{
+     *     report_name: string,
+     *     current_period: array,
+     *     previous_period: array,
+     *     variance: array{
+     *         assets_change: int,
+     *         assets_change_percent: float,
+     *         liabilities_change: int,
+     *         liabilities_change_percent: float,
+     *         equity_change: int,
+     *         equity_change_percent: float
+     *     }
+     * }
+     */
+    public function getComparativeBalanceSheet(?string $currentDate = null, ?string $previousDate = null): array
+    {
+        $currentDate = $currentDate ?? now()->toDateString();
+        $previousDate = $previousDate ?? now()->subYear()->toDateString();
+
+        $current = $this->getBalanceSheet($currentDate);
+        $previous = $this->getBalanceSheet($previousDate);
+
+        return [
+            'report_name' => 'Laporan Posisi Keuangan Komparatif',
+            'current_period' => $current,
+            'previous_period' => $previous,
+            'variance' => [
+                'assets_change' => $current['assets']['total'] - $previous['assets']['total'],
+                'assets_change_percent' => $previous['assets']['total'] != 0
+                    ? round((($current['assets']['total'] - $previous['assets']['total']) / $previous['assets']['total']) * 100, 2)
+                    : 0,
+                'liabilities_change' => $current['liabilities']['total'] - $previous['liabilities']['total'],
+                'liabilities_change_percent' => $previous['liabilities']['total'] != 0
+                    ? round((($current['liabilities']['total'] - $previous['liabilities']['total']) / $previous['liabilities']['total']) * 100, 2)
+                    : 0,
+                'equity_change' => $current['equity']['total'] - $previous['equity']['total'],
+                'equity_change_percent' => $previous['equity']['total'] != 0
+                    ? round((($current['equity']['total'] - $previous['equity']['total']) / $previous['equity']['total']) * 100, 2)
+                    : 0,
+            ],
+        ];
+    }
+
+    /**
+     * Generate Comparative Income Statement.
+     *
+     * @return array{
+     *     report_name: string,
+     *     current_period: array,
+     *     previous_period: array,
+     *     variance: array{
+     *         revenue_change: int,
+     *         revenue_change_percent: float,
+     *         expenses_change: int,
+     *         expenses_change_percent: float,
+     *         net_income_change: int,
+     *         net_income_change_percent: float
+     *     }
+     * }
+     */
+    public function getComparativeIncomeStatement(
+        ?string $currentStart = null,
+        ?string $currentEnd = null,
+        ?string $previousStart = null,
+        ?string $previousEnd = null
+    ): array {
+        $currentEnd = $currentEnd ?? now()->toDateString();
+        $currentStart = $currentStart ?? now()->startOfYear()->toDateString();
+
+        // Default previous period is one year before current period
+        $previousEnd = $previousEnd ?? now()->subYear()->toDateString();
+        $previousStart = $previousStart ?? now()->subYear()->startOfYear()->toDateString();
+
+        $current = $this->getIncomeStatement($currentStart, $currentEnd);
+        $previous = $this->getIncomeStatement($previousStart, $previousEnd);
+
+        return [
+            'report_name' => 'Laporan Laba Rugi Komparatif',
+            'current_period' => $current,
+            'previous_period' => $previous,
+            'variance' => [
+                'revenue_change' => $current['revenue']['total'] - $previous['revenue']['total'],
+                'revenue_change_percent' => $previous['revenue']['total'] != 0
+                    ? round((($current['revenue']['total'] - $previous['revenue']['total']) / $previous['revenue']['total']) * 100, 2)
+                    : 0,
+                'expenses_change' => $current['expenses']['total'] - $previous['expenses']['total'],
+                'expenses_change_percent' => $previous['expenses']['total'] != 0
+                    ? round((($current['expenses']['total'] - $previous['expenses']['total']) / $previous['expenses']['total']) * 100, 2)
+                    : 0,
+                'net_income_change' => $current['net_income'] - $previous['net_income'],
+                'net_income_change_percent' => $previous['net_income'] != 0
+                    ? round((($current['net_income'] - $previous['net_income']) / abs($previous['net_income'])) * 100, 2)
+                    : 0,
+            ],
+        ];
     }
 }

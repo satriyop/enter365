@@ -22,8 +22,8 @@ class PaymentFactory extends Factory
     public function definition(): array
     {
         self::$receiveSequence++;
-        $prefix = 'RCV-' . now()->format('Ym') . '-';
-        $paymentNumber = $prefix . str_pad((string) self::$receiveSequence, 4, '0', STR_PAD_LEFT);
+        $prefix = 'RCV-'.now()->format('Ym').'-';
+        $paymentNumber = $prefix.str_pad((string) self::$receiveSequence, 4, '0', STR_PAD_LEFT);
         $type = Payment::TYPE_RECEIVE;
 
         return [
@@ -48,8 +48,8 @@ class PaymentFactory extends Factory
     {
         return $this->state(function (array $attributes) {
             self::$receiveSequence++;
-            $prefix = 'RCV-' . now()->format('Ym') . '-';
-            $paymentNumber = $prefix . str_pad((string) self::$receiveSequence, 4, '0', STR_PAD_LEFT);
+            $prefix = 'RCV-'.now()->format('Ym').'-';
+            $paymentNumber = $prefix.str_pad((string) self::$receiveSequence, 4, '0', STR_PAD_LEFT);
 
             return [
                 'type' => Payment::TYPE_RECEIVE,
@@ -63,8 +63,8 @@ class PaymentFactory extends Factory
     {
         return $this->state(function (array $attributes) {
             self::$sendSequence++;
-            $prefix = 'PAY-' . now()->format('Ym') . '-';
-            $paymentNumber = $prefix . str_pad((string) self::$sendSequence, 4, '0', STR_PAD_LEFT);
+            $prefix = 'PAY-'.now()->format('Ym').'-';
+            $paymentNumber = $prefix.str_pad((string) self::$sendSequence, 4, '0', STR_PAD_LEFT);
 
             return [
                 'type' => Payment::TYPE_SEND,
@@ -92,7 +92,7 @@ class PaymentFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'payment_method' => Payment::METHOD_CHECK,
-            'reference' => 'CHK-' . $this->faker->numerify('######'),
+            'reference' => 'CHK-'.$this->faker->numerify('######'),
         ]);
     }
 
@@ -100,7 +100,7 @@ class PaymentFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'payment_method' => Payment::METHOD_GIRO,
-            'reference' => 'GIRO-' . $this->faker->numerify('######'),
+            'reference' => 'GIRO-'.$this->faker->numerify('######'),
         ]);
     }
 
@@ -136,6 +136,33 @@ class PaymentFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'amount' => $amount,
+        ]);
+    }
+
+    public function forAccount(Account $account): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'cash_account_id' => $account->id,
+        ]);
+    }
+
+    public function forInvoice(\App\Models\Accounting\Invoice $invoice): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'type' => Payment::TYPE_RECEIVE,
+            'contact_id' => $invoice->contact_id,
+            'payable_type' => \App\Models\Accounting\Invoice::class,
+            'payable_id' => $invoice->id,
+        ]);
+    }
+
+    public function forBill(\App\Models\Accounting\Bill $bill): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'type' => Payment::TYPE_SEND,
+            'contact_id' => $bill->contact_id,
+            'payable_type' => \App\Models\Accounting\Bill::class,
+            'payable_id' => $bill->id,
         ]);
     }
 }
