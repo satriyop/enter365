@@ -1,0 +1,21 @@
+meta {
+  name: Reject Suggestion
+  type: http
+  seq: 12
+}
+
+post {
+  url: {{baseUrl}}/mrp-suggestions/:id/reject
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "reason": "Not needed at this time"
+  }
+}

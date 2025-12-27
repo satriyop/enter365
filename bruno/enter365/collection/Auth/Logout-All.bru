@@ -1,0 +1,11 @@
+meta {
+  name: Logout All Devices
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/auth/logout-all
+  body: none
+  auth: inherit
+}

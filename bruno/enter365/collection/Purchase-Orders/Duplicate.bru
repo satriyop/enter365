@@ -1,0 +1,15 @@
+meta {
+  name: Duplicate
+  type: http
+  seq: 12
+}
+
+post {
+  url: {{baseUrl}}/purchase-orders/:id/duplicate
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}

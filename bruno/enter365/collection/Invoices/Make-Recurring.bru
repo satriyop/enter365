@@ -1,0 +1,23 @@
+meta {
+  name: Make Recurring
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/invoices/:id/make-recurring
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "frequency": "monthly",
+    "start_date": "2025-01-01",
+    "end_date": "2025-12-31"
+  }
+}

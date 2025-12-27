@@ -1,0 +1,21 @@
+meta {
+  name: Update Sales Return
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/sales-returns/:id
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "reason": "Updated reason"
+  }
+}

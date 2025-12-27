@@ -1,0 +1,16 @@
+meta {
+  name: COGS by Product Report
+  type: http
+  seq: 14
+}
+
+get {
+  url: {{baseUrl}}/reports/cogs-by-product
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~start_date: 2024-01-01
+  ~end_date: 2024-12-31
+}

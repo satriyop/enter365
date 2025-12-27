@@ -1,0 +1,21 @@
+meta {
+  name: Cancel GRN
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/goods-receipt-notes/:id/cancel
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "reason": "Goods rejected due to quality issues"
+  }
+}

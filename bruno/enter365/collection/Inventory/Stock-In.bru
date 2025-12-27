@@ -1,0 +1,21 @@
+meta {
+  name: Stock In
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/inventory/stock-in
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "warehouse_id": 1,
+    "product_id": 1,
+    "quantity": 100,
+    "reference": "GRN-001",
+    "notes": "Goods received from supplier"
+  }
+}

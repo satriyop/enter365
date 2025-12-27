@@ -1,0 +1,16 @@
+meta {
+  name: Lookup Products
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/products-lookup
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~search: cable
+  ~limit: 10
+}

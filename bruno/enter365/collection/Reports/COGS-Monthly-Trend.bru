@@ -1,0 +1,15 @@
+meta {
+  name: COGS Monthly Trend Report
+  type: http
+  seq: 16
+}
+
+get {
+  url: {{baseUrl}}/reports/cogs-monthly-trend
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~year: 2024
+}

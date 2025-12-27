@@ -1,0 +1,15 @@
+meta {
+  name: Low Stock Products
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/products-low-stock
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~warehouse_id: 1
+}

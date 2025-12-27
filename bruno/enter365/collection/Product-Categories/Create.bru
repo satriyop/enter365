@@ -1,0 +1,19 @@
+meta {
+  name: Create Category
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/product-categories
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "Electrical Components",
+    "parent_id": null,
+    "description": "All electrical components"
+  }
+}

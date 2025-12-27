@@ -1,0 +1,21 @@
+meta {
+  name: Cancel
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{baseUrl}}/purchase-orders/:id/cancel
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "reason": "Order no longer needed"
+  }
+}

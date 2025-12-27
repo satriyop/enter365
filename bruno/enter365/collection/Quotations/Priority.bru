@@ -1,0 +1,21 @@
+meta {
+  name: Set Priority
+  type: http
+  seq: 16
+}
+
+post {
+  url: {{baseUrl}}/quotations/:id/priority
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "priority": "high"
+  }
+}

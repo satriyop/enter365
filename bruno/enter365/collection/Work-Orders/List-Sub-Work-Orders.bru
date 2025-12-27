@@ -1,0 +1,15 @@
+meta {
+  name: List Sub Work Orders
+  type: http
+  seq: 16
+}
+
+get {
+  url: {{baseUrl}}/work-orders/:id/sub-work-orders
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}

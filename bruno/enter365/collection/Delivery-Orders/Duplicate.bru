@@ -1,0 +1,15 @@
+meta {
+  name: Duplicate Delivery Order
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{baseUrl}}/delivery-orders/:id/duplicate
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}

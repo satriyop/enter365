@@ -1,0 +1,21 @@
+meta {
+  name: Update Down Payment
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/down-payments/:id
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "notes": "Updated notes"
+  }
+}

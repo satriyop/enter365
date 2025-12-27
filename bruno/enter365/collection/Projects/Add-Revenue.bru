@@ -1,0 +1,23 @@
+meta {
+  name: Add Project Revenue
+  type: http
+  seq: 17
+}
+
+post {
+  url: {{baseUrl}}/projects/:id/revenues
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "description": "Milestone payment",
+    "amount": 25000000,
+    "date": "2024-02-01"
+  }
+}

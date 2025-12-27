@@ -1,0 +1,22 @@
+meta {
+  name: Create Bank Transaction
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/bank-transactions
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "account_id": 1,
+    "date": "2024-01-15",
+    "description": "Bank transfer",
+    "amount": 1000000,
+    "type": "credit",
+    "reference": "TRX-001"
+  }
+}

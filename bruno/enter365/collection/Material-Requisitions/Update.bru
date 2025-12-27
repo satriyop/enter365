@@ -1,0 +1,21 @@
+meta {
+  name: Update Material Requisition
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{baseUrl}}/material-requisitions/:id
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "notes": "Updated notes"
+  }
+}

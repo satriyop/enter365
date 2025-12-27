@@ -1,0 +1,15 @@
+meta {
+  name: Get Closing Checklist
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/fiscal-periods/:id/closing-checklist
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}

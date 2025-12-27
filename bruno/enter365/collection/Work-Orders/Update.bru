@@ -1,0 +1,24 @@
+meta {
+  name: Update Work Order
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/work-orders/:id
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "quantity": 150,
+    "due_date": "2024-02-28",
+    "priority": "high",
+    "notes": "Quantity increased per customer request"
+  }
+}

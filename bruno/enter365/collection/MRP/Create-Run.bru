@@ -1,0 +1,20 @@
+meta {
+  name: Create MRP Run
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/mrp-runs
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "Weekly MRP Run",
+    "planning_horizon_days": 30,
+    "include_safety_stock": true,
+    "notes": "Regular weekly planning run"
+  }
+}

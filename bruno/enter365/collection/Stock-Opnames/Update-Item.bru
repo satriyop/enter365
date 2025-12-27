@@ -1,0 +1,23 @@
+meta {
+  name: Update Stock Opname Item
+  type: http
+  seq: 9
+}
+
+put {
+  url: {{baseUrl}}/stock-opnames/:stockOpnameId/items/:itemId
+  body: json
+  auth: inherit
+}
+
+params:path {
+  stockOpnameId: 1
+  itemId: 1
+}
+
+body:json {
+  {
+    "counted_quantity": 98,
+    "notes": "Recount: 2 units found"
+  }
+}

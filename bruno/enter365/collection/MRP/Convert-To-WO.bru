@@ -1,0 +1,22 @@
+meta {
+  name: Convert Suggestion to Work Order
+  type: http
+  seq: 16
+}
+
+post {
+  url: {{baseUrl}}/mrp-suggestions/:id/convert-to-wo
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "due_date": "2024-02-15",
+    "notes": "Created from MRP suggestion"
+  }
+}

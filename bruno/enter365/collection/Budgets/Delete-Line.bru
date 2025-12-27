@@ -1,0 +1,16 @@
+meta {
+  name: Delete Budget Line
+  type: http
+  seq: 16
+}
+
+delete {
+  url: {{baseUrl}}/budgets/:budgetId/lines/:lineId
+  body: none
+  auth: inherit
+}
+
+params:path {
+  budgetId: 1
+  lineId: 1
+}

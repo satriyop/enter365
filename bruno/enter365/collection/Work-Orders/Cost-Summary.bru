@@ -1,0 +1,15 @@
+meta {
+  name: Cost Summary
+  type: http
+  seq: 12
+}
+
+get {
+  url: {{baseUrl}}/work-orders/:id/cost-summary
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}

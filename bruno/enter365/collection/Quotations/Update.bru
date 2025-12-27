@@ -1,0 +1,22 @@
+meta {
+  name: Update Quotation
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/quotations/:id
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "subject": "Updated quote subject",
+    "notes": "Updated notes"
+  }
+}

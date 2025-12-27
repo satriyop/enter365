@@ -1,0 +1,15 @@
+meta {
+  name: Get Role Users
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/roles/:id/users
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}

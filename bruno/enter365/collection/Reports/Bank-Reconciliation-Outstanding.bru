@@ -1,0 +1,15 @@
+meta {
+  name: Bank Reconciliation Outstanding
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{baseUrl}}/reports/accounts/:accountId/bank-reconciliation/outstanding
+  body: none
+  auth: inherit
+}
+
+params:path {
+  accountId: 1
+}

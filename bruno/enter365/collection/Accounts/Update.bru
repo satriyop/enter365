@@ -1,0 +1,22 @@
+meta {
+  name: Update Account
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/accounts/:id
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "name": "Petty Cash Updated",
+    "description": "Updated description"
+  }
+}

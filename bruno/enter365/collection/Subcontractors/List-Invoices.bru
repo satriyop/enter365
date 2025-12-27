@@ -1,0 +1,15 @@
+meta {
+  name: List Work Order Invoices
+  type: http
+  seq: 13
+}
+
+get {
+  url: {{baseUrl}}/subcontractor-work-orders/:id/invoices
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}

@@ -1,0 +1,15 @@
+meta {
+  name: Project Summary
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/projects/:id/summary
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}

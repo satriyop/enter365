@@ -1,0 +1,16 @@
+meta {
+  name: Get Attachments For Entity
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/attachments/for/:type/:id
+  body: none
+  auth: inherit
+}
+
+params:path {
+  type: invoice
+  id: 1
+}

@@ -1,0 +1,22 @@
+meta {
+  name: Update Stock Opname
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/stock-opnames/:id
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "name": "Updated Stock Count",
+    "notes": "Updated notes"
+  }
+}

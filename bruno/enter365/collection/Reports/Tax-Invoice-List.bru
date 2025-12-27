@@ -1,0 +1,16 @@
+meta {
+  name: Tax Invoice List Report
+  type: http
+  seq: 21
+}
+
+get {
+  url: {{baseUrl}}/reports/tax-invoice-list
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~start_date: 2024-01-01
+  ~end_date: 2024-12-31
+}

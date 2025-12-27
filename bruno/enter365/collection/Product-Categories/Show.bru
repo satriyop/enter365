@@ -1,0 +1,15 @@
+meta {
+  name: Show Category
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/product-categories/:id
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}

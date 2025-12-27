@@ -1,0 +1,18 @@
+meta {
+  name: List Fiscal Periods
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/fiscal-periods
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~year: 2024
+  ~status: open
+  ~per_page: 15
+  ~page: 1
+}

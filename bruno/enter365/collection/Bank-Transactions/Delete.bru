@@ -1,0 +1,15 @@
+meta {
+  name: Delete Bank Transaction
+  type: http
+  seq: 4
+}
+
+delete {
+  url: {{baseUrl}}/bank-transactions/:id
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}

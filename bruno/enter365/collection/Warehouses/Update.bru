@@ -1,0 +1,21 @@
+meta {
+  name: Update Warehouse
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/warehouses/:id
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "name": "Main Warehouse Updated"
+  }
+}

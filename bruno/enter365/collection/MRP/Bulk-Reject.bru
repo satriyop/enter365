@@ -1,0 +1,18 @@
+meta {
+  name: Bulk Reject Suggestions
+  type: http
+  seq: 14
+}
+
+post {
+  url: {{baseUrl}}/mrp-suggestions/bulk-reject
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "suggestion_ids": [1, 2, 3],
+    "reason": "Bulk rejection"
+  }
+}

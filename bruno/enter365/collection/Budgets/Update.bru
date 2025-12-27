@@ -1,0 +1,22 @@
+meta {
+  name: Update Budget
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/budgets/:id
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "name": "Operating Budget 2024 Revised",
+    "description": "Revised annual operating budget"
+  }
+}

@@ -1,0 +1,15 @@
+meta {
+  name: Approve Stock Opname
+  type: http
+  seq: 12
+}
+
+post {
+  url: {{baseUrl}}/stock-opnames/:id/approve
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}

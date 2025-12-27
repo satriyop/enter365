@@ -1,0 +1,21 @@
+meta {
+  name: Reject Subcontractor Invoice
+  type: http
+  seq: 18
+}
+
+post {
+  url: {{baseUrl}}/subcontractor-invoices/:id/reject
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "reason": "Incorrect amount"
+  }
+}

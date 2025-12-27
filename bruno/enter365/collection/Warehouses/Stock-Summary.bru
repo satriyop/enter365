@@ -1,0 +1,15 @@
+meta {
+  name: Stock Summary
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/warehouses/:id/stock-summary
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}

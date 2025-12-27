@@ -1,0 +1,19 @@
+meta {
+  name: List Down Payments
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/down-payments
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~contact_id: 1
+  ~type: customer
+  ~status: available
+  ~per_page: 15
+  ~page: 1
+}

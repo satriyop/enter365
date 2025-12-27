@@ -1,0 +1,15 @@
+meta {
+  name: Get BOMs for Product
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/boms-for-product/:productId
+  body: none
+  auth: inherit
+}
+
+params:path {
+  productId: 1
+}

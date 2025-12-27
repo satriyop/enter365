@@ -1,0 +1,17 @@
+meta {
+  name: List Permissions
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/permissions
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~search: create
+  ~per_page: 50
+  ~page: 1
+}

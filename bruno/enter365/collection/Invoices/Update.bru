@@ -1,0 +1,31 @@
+meta {
+  name: Update Invoice
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/invoices/:id
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "notes": "Updated notes",
+    "items": [
+      {
+        "product_id": 1,
+        "description": "Product A Updated",
+        "quantity": 15,
+        "unit_price": 100000,
+        "discount_percent": 5,
+        "tax_percent": 11
+      }
+    ]
+  }
+}

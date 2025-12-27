@@ -1,0 +1,21 @@
+meta {
+  name: Void Payment
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/payments/:id/void
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "reason": "Payment made in error"
+  }
+}

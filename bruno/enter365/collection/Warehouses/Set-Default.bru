@@ -1,0 +1,15 @@
+meta {
+  name: Set Default
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/warehouses/:id/set-default
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}

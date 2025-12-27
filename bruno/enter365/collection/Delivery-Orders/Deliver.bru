@@ -1,0 +1,22 @@
+meta {
+  name: Mark as Delivered
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/delivery-orders/:id/deliver
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "delivered_at": "2024-01-25 14:00:00",
+    "received_by": "John Doe"
+  }
+}

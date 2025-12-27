@@ -1,0 +1,26 @@
+meta {
+  name: Receive Goods
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/purchase-orders/:id/receive
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "items": [
+      {
+        "purchase_order_item_id": 1,
+        "quantity_received": 100
+      }
+    ]
+  }
+}

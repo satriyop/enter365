@@ -1,0 +1,15 @@
+meta {
+  name: Show GRN
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/goods-receipt-notes/:id
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}

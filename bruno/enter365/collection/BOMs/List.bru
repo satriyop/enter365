@@ -1,0 +1,19 @@
+meta {
+  name: List BOMs
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/boms
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~product_id: 1
+  ~is_active: true
+  ~search: widget
+  ~per_page: 15
+  ~page: 1
+}

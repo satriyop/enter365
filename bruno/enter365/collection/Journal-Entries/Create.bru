@@ -1,0 +1,33 @@
+meta {
+  name: Create Journal Entry
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/journal-entries
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "date": "2024-01-15",
+    "reference": "JE-001",
+    "description": "Adjusting entry",
+    "lines": [
+      {
+        "account_id": 1,
+        "debit": 1000000,
+        "credit": 0,
+        "description": "Debit line"
+      },
+      {
+        "account_id": 2,
+        "debit": 0,
+        "credit": 1000000,
+        "description": "Credit line"
+      }
+    ]
+  }
+}

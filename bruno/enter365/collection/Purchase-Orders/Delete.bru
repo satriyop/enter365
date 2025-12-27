@@ -1,0 +1,15 @@
+meta {
+  name: Delete Purchase Order
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/purchase-orders/:id
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}

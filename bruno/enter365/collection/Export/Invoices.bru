@@ -1,0 +1,18 @@
+meta {
+  name: Export Invoices
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/export/invoices
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~start_date: 2024-01-01
+  ~end_date: 2024-12-31
+  ~status: posted
+  ~format: xlsx
+}

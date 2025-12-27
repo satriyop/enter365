@@ -1,0 +1,22 @@
+meta {
+  name: Convert to Bill
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{baseUrl}}/purchase-orders/:id/convert-to-bill
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "bill_date": "2024-12-27",
+    "due_date": "2025-01-27"
+  }
+}

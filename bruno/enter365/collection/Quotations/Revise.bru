@@ -1,0 +1,21 @@
+meta {
+  name: Revise Quotation
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{baseUrl}}/quotations/:id/revise
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "notes": "Revised pricing"
+  }
+}

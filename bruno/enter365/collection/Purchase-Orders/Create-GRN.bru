@@ -1,0 +1,28 @@
+meta {
+  name: Create GRN
+  type: http
+  seq: 15
+}
+
+post {
+  url: {{baseUrl}}/purchase-orders/:id/create-grn
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "warehouse_id": 1,
+    "receipt_date": "2024-12-27",
+    "items": [
+      {
+        "purchase_order_item_id": 1,
+        "quantity": 100
+      }
+    ]
+  }
+}

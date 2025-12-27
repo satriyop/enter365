@@ -1,0 +1,17 @@
+meta {
+  name: List MRP Runs
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/mrp-runs
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~status: completed
+  ~per_page: 15
+  ~page: 1
+}

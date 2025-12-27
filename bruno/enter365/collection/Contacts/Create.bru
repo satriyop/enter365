@@ -1,0 +1,25 @@
+meta {
+  name: Create Contact
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/contacts
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "PT Acme Corp",
+    "type": "customer",
+    "email": "contact@acme.com",
+    "phone": "021-1234567",
+    "address": "Jl. Sudirman No. 1",
+    "city": "Jakarta",
+    "tax_id": "01.234.567.8-901.000",
+    "credit_limit": 100000000,
+    "payment_terms": 30
+  }
+}

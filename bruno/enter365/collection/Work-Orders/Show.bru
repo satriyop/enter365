@@ -1,0 +1,15 @@
+meta {
+  name: Show Work Order
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/work-orders/:id
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}

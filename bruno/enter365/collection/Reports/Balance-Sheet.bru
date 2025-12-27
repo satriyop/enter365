@@ -1,0 +1,17 @@
+meta {
+  name: Balance Sheet Report
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/reports/balance-sheet
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~date: 2024-12-31
+  ~comparative: true
+  ~compare_date: 2023-12-31
+}

@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "Enter365 API",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

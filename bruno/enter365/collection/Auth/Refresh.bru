@@ -1,0 +1,17 @@
+meta {
+  name: Refresh Token
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/auth/refresh
+  body: none
+  auth: inherit
+}
+
+script:post-response {
+  if (res.body.token) {
+    bru.setEnvVar("token", res.body.token);
+  }
+}

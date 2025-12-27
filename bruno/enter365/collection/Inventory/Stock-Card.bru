@@ -1,0 +1,21 @@
+meta {
+  name: Stock Card
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/inventory/stock-card/:productId
+  body: none
+  auth: inherit
+}
+
+params:path {
+  productId: 1
+}
+
+params:query {
+  ~warehouse_id: 1
+  ~start_date: 2024-01-01
+  ~end_date: 2024-12-31
+}

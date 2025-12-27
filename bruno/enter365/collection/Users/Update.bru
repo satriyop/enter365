@@ -1,0 +1,22 @@
+meta {
+  name: Update User
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/users/:id
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "name": "John Doe Updated",
+    "email": "john.updated@example.com"
+  }
+}

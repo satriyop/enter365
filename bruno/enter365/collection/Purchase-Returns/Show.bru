@@ -1,0 +1,15 @@
+meta {
+  name: Show Purchase Return
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/purchase-returns/:id
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
