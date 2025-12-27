@@ -8,6 +8,9 @@ use App\Http\Controllers\Api\V1\BillController;
 use App\Http\Controllers\Api\V1\BomController;
 use App\Http\Controllers\Api\V1\BomVariantGroupController;
 use App\Http\Controllers\Api\V1\BudgetController;
+use App\Http\Controllers\Api\V1\ComponentBrandMappingController;
+use App\Http\Controllers\Api\V1\ComponentCrossReferenceController;
+use App\Http\Controllers\Api\V1\ComponentStandardController;
 use App\Http\Controllers\Api\V1\ContactController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\DeliveryOrderController;
@@ -34,6 +37,8 @@ use App\Http\Controllers\Api\V1\RecurringTemplateController;
 use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\RoleController;
 use App\Http\Controllers\Api\V1\SalesReturnController;
+use App\Http\Controllers\Api\V1\SolarDataController;
+use App\Http\Controllers\Api\V1\SolarProposalController;
 use App\Http\Controllers\Api\V1\StockOpnameController;
 use App\Http\Controllers\Api\V1\SubcontractorInvoiceController;
 use App\Http\Controllers\Api\V1\SubcontractorWorkOrderController;
@@ -269,6 +274,62 @@ Route::prefix('v1')->group(function () {
             Route::post('bom-variant-groups/{bom_variant_group}/boms/{bom}/set-primary', [BomVariantGroupController::class, 'setPrimary']);
             Route::post('bom-variant-groups/{bom_variant_group}/reorder', [BomVariantGroupController::class, 'reorder']);
             Route::post('bom-variant-groups/{bom_variant_group}/create-variant', [BomVariantGroupController::class, 'createVariant']);
+
+            // Component Cross-Reference (Brand Equivalents)
+            Route::prefix('component-standards')->group(function () {
+                Route::get('/', [ComponentStandardController::class, 'index']);
+                Route::post('/', [ComponentStandardController::class, 'store']);
+                Route::get('/categories', [ComponentStandardController::class, 'categories']);
+                Route::get('/{componentStandard}', [ComponentStandardController::class, 'show']);
+                Route::put('/{componentStandard}', [ComponentStandardController::class, 'update']);
+                Route::delete('/{componentStandard}', [ComponentStandardController::class, 'destroy']);
+                Route::get('/{componentStandard}/brands', [ComponentStandardController::class, 'brands']);
+
+                // Brand Mappings
+                Route::post('/{componentStandard}/mappings', [ComponentBrandMappingController::class, 'store']);
+                Route::put('/{componentStandard}/mappings/{mapping}', [ComponentBrandMappingController::class, 'update']);
+                Route::delete('/{componentStandard}/mappings/{mapping}', [ComponentBrandMappingController::class, 'destroy']);
+                Route::post('/{componentStandard}/mappings/{mapping}/verify', [ComponentBrandMappingController::class, 'verify']);
+                Route::post('/{componentStandard}/mappings/{mapping}/set-preferred', [ComponentBrandMappingController::class, 'setPreferred']);
+            });
+
+            // Cross-Reference Queries
+            Route::get('products/{product}/equivalents', [ComponentCrossReferenceController::class, 'productEquivalents']);
+            Route::get('component-search', [ComponentCrossReferenceController::class, 'search']);
+            Route::get('available-brands', [ComponentCrossReferenceController::class, 'availableBrands']);
+
+            // BOM Brand Swap
+            Route::post('boms/{bom}/swap-brand', [ComponentCrossReferenceController::class, 'swapBrand']);
+            Route::post('boms/{bom}/generate-brand-variants', [ComponentCrossReferenceController::class, 'generateBrandVariants']);
+        });
+
+        // Solar Proposals (Proposal Panel Surya)
+        Route::middleware('feature:solar_proposals')->group(function () {
+            Route::apiResource('solar-proposals', SolarProposalController::class)
+                ->parameters(['solar-proposals' => 'solarProposal']);
+            Route::post('solar-proposals/{solarProposal}/calculate', [SolarProposalController::class, 'calculate']);
+            Route::post('solar-proposals/{solarProposal}/attach-variants', [SolarProposalController::class, 'attachVariants']);
+            Route::post('solar-proposals/{solarProposal}/select-bom', [SolarProposalController::class, 'selectBom']);
+            Route::post('solar-proposals/{solarProposal}/send', [SolarProposalController::class, 'send']);
+            Route::post('solar-proposals/{solarProposal}/accept', [SolarProposalController::class, 'accept']);
+            Route::post('solar-proposals/{solarProposal}/reject', [SolarProposalController::class, 'reject']);
+            Route::post('solar-proposals/{solarProposal}/convert-to-quotation', [SolarProposalController::class, 'convertToQuotation']);
+            Route::get('solar-proposals-statistics', [SolarProposalController::class, 'statistics']);
+
+            // Solar Data Lookup
+            Route::prefix('solar-data')->group(function () {
+                Route::get('lookup', [SolarDataController::class, 'lookup']);
+                Route::get('provinces', [SolarDataController::class, 'provinces']);
+                Route::get('cities', [SolarDataController::class, 'cities']);
+                Route::get('locations', [SolarDataController::class, 'locations']);
+            });
+
+            // PLN Tariff Lookup
+            Route::prefix('pln-tariffs')->group(function () {
+                Route::get('/', [SolarDataController::class, 'tariffs']);
+                Route::get('grouped', [SolarDataController::class, 'tariffsGrouped']);
+                Route::get('{code}', [SolarDataController::class, 'tariffByCode']);
+            });
         });
 
         // Projects (Proyek)

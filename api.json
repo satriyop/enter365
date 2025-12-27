@@ -6392,6 +6392,1241 @@
                 }
             }
         },
+        "/component-standards/{componentStandard}/mappings": {
+            "post": {
+                "operationId": "componentBrandMapping.store",
+                "summary": "Add a brand mapping to a component standard",
+                "tags": [
+                    "ComponentBrandMapping"
+                ],
+                "parameters": [
+                    {
+                        "name": "componentStandard",
+                        "in": "path",
+                        "required": true,
+                        "description": "The component standard ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreComponentBrandMappingRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`ComponentBrandMappingResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/ComponentBrandMappingResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/component-standards/{componentStandard}/mappings/{mapping}": {
+            "put": {
+                "operationId": "componentBrandMapping.update",
+                "summary": "Update a brand mapping",
+                "tags": [
+                    "ComponentBrandMapping"
+                ],
+                "parameters": [
+                    {
+                        "name": "componentStandard",
+                        "in": "path",
+                        "required": true,
+                        "description": "The component standard ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "mapping",
+                        "in": "path",
+                        "required": true,
+                        "description": "The mapping ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateComponentBrandMappingRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`ComponentBrandMappingResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/ComponentBrandMappingResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "componentBrandMapping.destroy",
+                "summary": "Remove a brand mapping",
+                "tags": [
+                    "ComponentBrandMapping"
+                ],
+                "parameters": [
+                    {
+                        "name": "componentStandard",
+                        "in": "path",
+                        "required": true,
+                        "description": "The component standard ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "mapping",
+                        "in": "path",
+                        "required": true,
+                        "description": "The mapping ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Brand mapping berhasil dihapus."
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/component-standards/{componentStandard}/mappings/{mapping}/verify": {
+            "post": {
+                "operationId": "componentBrandMapping.verify",
+                "summary": "Verify a brand mapping",
+                "tags": [
+                    "ComponentBrandMapping"
+                ],
+                "parameters": [
+                    {
+                        "name": "componentStandard",
+                        "in": "path",
+                        "required": true,
+                        "description": "The component standard ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "mapping",
+                        "in": "path",
+                        "required": true,
+                        "description": "The mapping ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Brand mapping berhasil diverifikasi."
+                                            ]
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/ComponentBrandMappingResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/component-standards/{componentStandard}/mappings/{mapping}/set-preferred": {
+            "post": {
+                "operationId": "componentBrandMapping.setPreferred",
+                "summary": "Set mapping as preferred",
+                "tags": [
+                    "ComponentBrandMapping"
+                ],
+                "parameters": [
+                    {
+                        "name": "componentStandard",
+                        "in": "path",
+                        "required": true,
+                        "description": "The component standard ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "mapping",
+                        "in": "path",
+                        "required": true,
+                        "description": "The mapping ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Brand mapping berhasil di-set sebagai preferred."
+                                            ]
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/ComponentBrandMappingResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/products/{product}/equivalents": {
+            "get": {
+                "operationId": "componentCrossReference.productEquivalents",
+                "summary": "Find equivalent products for a given product",
+                "tags": [
+                    "ComponentCrossReference"
+                ],
+                "parameters": [
+                    {
+                        "name": "product",
+                        "in": "path",
+                        "required": true,
+                        "description": "The product ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "brand",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/ComponentBrandMappingResource"
+                                            }
+                                        },
+                                        "source_product": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "sku": {
+                                                    "type": "string"
+                                                },
+                                                "brand": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "name",
+                                                "sku",
+                                                "brand"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "source_product"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/component-search": {
+            "get": {
+                "operationId": "componentCrossReference.search",
+                "summary": "Search components by specifications",
+                "tags": [
+                    "ComponentCrossReference"
+                ],
+                "parameters": [
+                    {
+                        "name": "category",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "specs[]",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "array",
+                                "null"
+                            ],
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    {
+                        "name": "brand",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/ComponentStandardResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/available-brands": {
+            "get": {
+                "operationId": "componentCrossReference.availableBrands",
+                "summary": "Get available brands from mappings",
+                "tags": [
+                    "ComponentCrossReference"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "code": {},
+                                                    "name": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "code",
+                                                    "name"
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/boms/{bom}/swap-brand": {
+            "post": {
+                "operationId": "componentCrossReference.swapBrand",
+                "summary": "Swap BOM to a different brand",
+                "tags": [
+                    "ComponentCrossReference"
+                ],
+                "parameters": [
+                    {
+                        "name": "bom",
+                        "in": "path",
+                        "required": true,
+                        "description": "The bom ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "target_brand": {
+                                        "type": "string"
+                                    },
+                                    "create_variant": {
+                                        "type": [
+                                            "boolean",
+                                            "null"
+                                        ]
+                                    },
+                                    "variant_group_id": {
+                                        "type": [
+                                            "integer",
+                                            "null"
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "target_brand"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Brand swap berhasil."
+                                            ]
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "bom": {
+                                                    "$ref": "#/components/schemas/BomResource"
+                                                },
+                                                "swap_report": {
+                                                    "type": "object",
+                                                    "additionalProperties": {}
+                                                }
+                                            },
+                                            "required": [
+                                                "bom",
+                                                "swap_report"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/boms/{bom}/generate-brand-variants": {
+            "post": {
+                "operationId": "componentCrossReference.generateBrandVariants",
+                "summary": "Generate all brand variants for a BOM",
+                "tags": [
+                    "ComponentCrossReference"
+                ],
+                "parameters": [
+                    {
+                        "name": "bom",
+                        "in": "path",
+                        "required": true,
+                        "description": "The bom ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "group_name": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 255
+                                    },
+                                    "brands": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "minItems": 1
+                                    }
+                                },
+                                "required": [
+                                    "brands"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Brand variants berhasil dibuat."
+                                            ]
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "variant_group": {
+                                                    "$ref": "#/components/schemas/BomVariantGroupResource"
+                                                },
+                                                "boms": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/BomResource"
+                                                    }
+                                                },
+                                                "report": {
+                                                    "type": "object",
+                                                    "additionalProperties": {}
+                                                }
+                                            },
+                                            "required": [
+                                                "variant_group",
+                                                "boms",
+                                                "report"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/component-standards": {
+            "get": {
+                "operationId": "componentStandard.index",
+                "summary": "Display a listing of component standards",
+                "tags": [
+                    "ComponentStandard"
+                ],
+                "parameters": [
+                    {
+                        "name": "category",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "subcategory",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "is_active",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean",
+                            "default": false
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "specs",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "brand",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "default": 25
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated set of `ComponentStandardResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/ComponentStandardResource"
+                                            }
+                                        },
+                                        "links": {
+                                            "type": "object",
+                                            "properties": {
+                                                "first": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "last": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "prev": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "next": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "first",
+                                                "last",
+                                                "prev",
+                                                "next"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "minimum": 1
+                                                },
+                                                "from": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "minimum": 1
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "minimum": 1
+                                                },
+                                                "links": {
+                                                    "type": "array",
+                                                    "description": "Generated paginator links.",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "url": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "label": {
+                                                                "type": "string"
+                                                            },
+                                                            "active": {
+                                                                "type": "boolean"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "url",
+                                                            "label",
+                                                            "active"
+                                                        ]
+                                                    }
+                                                },
+                                                "path": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "description": "Base path for paginator generated URLs."
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "description": "Number of items shown per page.",
+                                                    "minimum": 0
+                                                },
+                                                "to": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "description": "Number of the last item in the slice.",
+                                                    "minimum": 1
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "description": "Total number of items being paginated.",
+                                                    "minimum": 0
+                                                }
+                                            },
+                                            "required": [
+                                                "current_page",
+                                                "from",
+                                                "last_page",
+                                                "links",
+                                                "path",
+                                                "per_page",
+                                                "to",
+                                                "total"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "links",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "componentStandard.store",
+                "summary": "Store a newly created component standard",
+                "tags": [
+                    "ComponentStandard"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreComponentStandardRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`ComponentStandardResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/ComponentStandardResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/component-standards/categories": {
+            "get": {
+                "operationId": "componentStandard.categories",
+                "summary": "Get categories with counts",
+                "tags": [
+                    "ComponentStandard"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "category": {
+                                                        "type": "string"
+                                                    },
+                                                    "label": {
+                                                        "type": "string"
+                                                    },
+                                                    "count": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "category",
+                                                    "label",
+                                                    "count"
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/component-standards/{componentStandard}": {
+            "get": {
+                "operationId": "componentStandard.show",
+                "summary": "Display the specified component standard",
+                "tags": [
+                    "ComponentStandard"
+                ],
+                "parameters": [
+                    {
+                        "name": "componentStandard",
+                        "in": "path",
+                        "required": true,
+                        "description": "The component standard ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`ComponentStandardResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/ComponentStandardResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "componentStandard.update",
+                "summary": "Update the specified component standard",
+                "tags": [
+                    "ComponentStandard"
+                ],
+                "parameters": [
+                    {
+                        "name": "componentStandard",
+                        "in": "path",
+                        "required": true,
+                        "description": "The component standard ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateComponentStandardRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`ComponentStandardResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/ComponentStandardResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "componentStandard.destroy",
+                "summary": "Remove the specified component standard",
+                "tags": [
+                    "ComponentStandard"
+                ],
+                "parameters": [
+                    {
+                        "name": "componentStandard",
+                        "in": "path",
+                        "required": true,
+                        "description": "The component standard ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Component standard berhasil dihapus."
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/component-standards/{componentStandard}/brands": {
+            "get": {
+                "operationId": "componentStandard.brands",
+                "summary": "Get available brands for a standard",
+                "tags": [
+                    "ComponentStandard"
+                ],
+                "parameters": [
+                    {
+                        "name": "componentStandard",
+                        "in": "path",
+                        "required": true,
+                        "description": "The component standard ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "code": {},
+                                                    "name": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "code",
+                                                    "name"
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/contacts": {
             "get": {
                 "operationId": "contacts.index",
@@ -32435,6 +33670,1366 @@
                 }
             }
         },
+        "/solar-data/lookup": {
+            "get": {
+                "operationId": "lookupSolarData",
+                "description": "Supports lookup by:\n- province + city (exact match)\n- latitude + longitude (nearest location)",
+                "summary": "Lookup solar data by location",
+                "tags": [
+                    "SolarData"
+                ],
+                "parameters": [
+                    {
+                        "name": "latitude",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "number",
+                            "minimum": -90,
+                            "maximum": 90
+                        }
+                    },
+                    {
+                        "name": "longitude",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "number",
+                            "minimum": -180,
+                            "maximum": 180
+                        }
+                    },
+                    {
+                        "name": "max_distance_km",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "default": 100
+                        }
+                    },
+                    {
+                        "name": "province",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "city",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "400": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Harap berikan province+city atau latitude+longitude."
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/IndonesiaSolarDataResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Try to find nearest in the same province",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "message": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "Tidak ada data untuk kota ini. Gunakan koordinat untuk mencari lokasi terdekat."
+                                                    ]
+                                                },
+                                                "data": {
+                                                    "type": "null"
+                                                }
+                                            },
+                                            "required": [
+                                                "message",
+                                                "data"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "message": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "Tidak ada data solar untuk lokasi ini."
+                                                    ]
+                                                },
+                                                "data": {
+                                                    "type": "null"
+                                                }
+                                            },
+                                            "required": [
+                                                "message",
+                                                "data"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/solar-data/provinces": {
+            "get": {
+                "operationId": "getSolarProvinces",
+                "summary": "Get list of provinces with solar data",
+                "tags": [
+                    "SolarData"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {}
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/solar-data/cities": {
+            "get": {
+                "operationId": "getSolarCities",
+                "summary": "Get list of cities in a province",
+                "tags": [
+                    "SolarData"
+                ],
+                "parameters": [
+                    {
+                        "name": "province",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 100
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {}
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/solar-data/locations": {
+            "get": {
+                "operationId": "listSolarLocations",
+                "summary": "Get all solar data locations",
+                "tags": [
+                    "SolarData"
+                ],
+                "parameters": [
+                    {
+                        "name": "province",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `IndonesiaSolarDataResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/IndonesiaSolarDataResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/pln-tariffs": {
+            "get": {
+                "operationId": "listPlnTariffs",
+                "summary": "Get all active PLN tariffs",
+                "tags": [
+                    "SolarData"
+                ],
+                "parameters": [
+                    {
+                        "name": "customer_type",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `PlnTariffResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/PlnTariffResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/pln-tariffs/grouped": {
+            "get": {
+                "operationId": "getPlnTariffsGrouped",
+                "summary": "Get PLN tariffs grouped by customer type",
+                "tags": [
+                    "SolarData"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/pln-tariffs/{code}": {
+            "get": {
+                "operationId": "getPlnTariffByCode",
+                "summary": "Get a specific PLN tariff by code",
+                "tags": [
+                    "SolarData"
+                ],
+                "parameters": [
+                    {
+                        "name": "code",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/PlnTariffResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Tarif tidak ditemukan."
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/solar-proposals": {
+            "get": {
+                "operationId": "listSolarProposals",
+                "summary": "Display a listing of solar proposals",
+                "tags": [
+                    "SolarProposal"
+                ],
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "contact_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "province",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "city",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "default": 25
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated set of `SolarProposalListResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/SolarProposalListResource"
+                                            }
+                                        },
+                                        "links": {
+                                            "type": "object",
+                                            "properties": {
+                                                "first": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "last": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "prev": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "next": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "first",
+                                                "last",
+                                                "prev",
+                                                "next"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "minimum": 1
+                                                },
+                                                "from": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "minimum": 1
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "minimum": 1
+                                                },
+                                                "links": {
+                                                    "type": "array",
+                                                    "description": "Generated paginator links.",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "url": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "label": {
+                                                                "type": "string"
+                                                            },
+                                                            "active": {
+                                                                "type": "boolean"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "url",
+                                                            "label",
+                                                            "active"
+                                                        ]
+                                                    }
+                                                },
+                                                "path": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "description": "Base path for paginator generated URLs."
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "description": "Number of items shown per page.",
+                                                    "minimum": 0
+                                                },
+                                                "to": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "description": "Number of the last item in the slice.",
+                                                    "minimum": 1
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "description": "Total number of items being paginated.",
+                                                    "minimum": 0
+                                                }
+                                            },
+                                            "required": [
+                                                "current_page",
+                                                "from",
+                                                "last_page",
+                                                "links",
+                                                "path",
+                                                "per_page",
+                                                "to",
+                                                "total"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "links",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "createSolarProposal",
+                "summary": "Store a newly created solar proposal",
+                "tags": [
+                    "SolarProposal"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreSolarProposalRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`SolarProposalResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/SolarProposalResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/solar-proposals/{solarProposal}": {
+            "get": {
+                "operationId": "getSolarProposal",
+                "summary": "Display the specified solar proposal",
+                "tags": [
+                    "SolarProposal"
+                ],
+                "parameters": [
+                    {
+                        "name": "solarProposal",
+                        "in": "path",
+                        "required": true,
+                        "description": "The solar proposal ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`SolarProposalResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/SolarProposalResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "updateSolarProposal",
+                "summary": "Update the specified solar proposal",
+                "tags": [
+                    "SolarProposal"
+                ],
+                "parameters": [
+                    {
+                        "name": "solarProposal",
+                        "in": "path",
+                        "required": true,
+                        "description": "The solar proposal ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateSolarProposalRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "200": {
+                        "description": "`SolarProposalResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/SolarProposalResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "deleteSolarProposal",
+                "summary": "Remove the specified solar proposal",
+                "tags": [
+                    "SolarProposal"
+                ],
+                "parameters": [
+                    {
+                        "name": "solarProposal",
+                        "in": "path",
+                        "required": true,
+                        "description": "The solar proposal ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "422": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Proposal berhasil dihapus."
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/solar-proposals/{solarProposal}/calculate": {
+            "post": {
+                "operationId": "calculateSolarProposal",
+                "summary": "Calculate/recalculate all proposal values",
+                "tags": [
+                    "SolarProposal"
+                ],
+                "parameters": [
+                    {
+                        "name": "solarProposal",
+                        "in": "path",
+                        "required": true,
+                        "description": "The solar proposal ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "422": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "200": {
+                        "description": "`SolarProposalResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/SolarProposalResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/solar-proposals/{solarProposal}/attach-variants": {
+            "post": {
+                "operationId": "attachSolarVariants",
+                "summary": "Attach a BOM variant group to the proposal",
+                "tags": [
+                    "SolarProposal"
+                ],
+                "parameters": [
+                    {
+                        "name": "solarProposal",
+                        "in": "path",
+                        "required": true,
+                        "description": "The solar proposal ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AttachSolarVariantsRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "200": {
+                        "description": "`SolarProposalResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/SolarProposalResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/solar-proposals/{solarProposal}/select-bom": {
+            "post": {
+                "operationId": "selectSolarBom",
+                "summary": "Select a specific BOM from the variant group",
+                "tags": [
+                    "SolarProposal"
+                ],
+                "parameters": [
+                    {
+                        "name": "solarProposal",
+                        "in": "path",
+                        "required": true,
+                        "description": "The solar proposal ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "bom_id": {
+                                        "type": "integer"
+                                    }
+                                },
+                                "required": [
+                                    "bom_id"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "200": {
+                        "description": "`SolarProposalResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/SolarProposalResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/solar-proposals/{solarProposal}/send": {
+            "post": {
+                "operationId": "sendSolarProposal",
+                "summary": "Mark proposal as sent to customer",
+                "tags": [
+                    "SolarProposal"
+                ],
+                "parameters": [
+                    {
+                        "name": "solarProposal",
+                        "in": "path",
+                        "required": true,
+                        "description": "The solar proposal ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "422": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "200": {
+                        "description": "`SolarProposalResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/SolarProposalResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/solar-proposals/{solarProposal}/accept": {
+            "post": {
+                "operationId": "acceptSolarProposal",
+                "summary": "Mark proposal as accepted by customer",
+                "tags": [
+                    "SolarProposal"
+                ],
+                "parameters": [
+                    {
+                        "name": "solarProposal",
+                        "in": "path",
+                        "required": true,
+                        "description": "The solar proposal ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AcceptSolarProposalRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "200": {
+                        "description": "`SolarProposalResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/SolarProposalResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/solar-proposals/{solarProposal}/reject": {
+            "post": {
+                "operationId": "rejectSolarProposal",
+                "summary": "Mark proposal as rejected by customer",
+                "tags": [
+                    "SolarProposal"
+                ],
+                "parameters": [
+                    {
+                        "name": "solarProposal",
+                        "in": "path",
+                        "required": true,
+                        "description": "The solar proposal ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "reason": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 1000
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "200": {
+                        "description": "`SolarProposalResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/SolarProposalResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/solar-proposals/{solarProposal}/convert-to-quotation": {
+            "post": {
+                "operationId": "convertSolarProposalToQuotation",
+                "summary": "Convert accepted proposal to a quotation",
+                "tags": [
+                    "SolarProposal"
+                ],
+                "parameters": [
+                    {
+                        "name": "solarProposal",
+                        "in": "path",
+                        "required": true,
+                        "description": "The solar proposal ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "422": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Proposal berhasil dikonversi ke quotation."
+                                            ]
+                                        },
+                                        "quotation": {
+                                            "$ref": "#/components/schemas/QuotationResource"
+                                        },
+                                        "proposal": {
+                                            "$ref": "#/components/schemas/SolarProposalResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "quotation",
+                                        "proposal"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/solar-proposals-statistics": {
+            "get": {
+                "operationId": "getSolarProposalStatistics",
+                "summary": "Get solar proposal statistics",
+                "tags": [
+                    "SolarProposal"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "total": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "draft": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "sent": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "accepted": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "rejected": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "expired": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "active": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "total_system_value": {
+                                                    "type": "string",
+                                                    "description": "Financial metrics"
+                                                },
+                                                "created_this_month": {
+                                                    "type": "integer",
+                                                    "description": "This month",
+                                                    "minimum": 0
+                                                },
+                                                "accepted_this_month": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                }
+                                            },
+                                            "required": [
+                                                "total",
+                                                "draft",
+                                                "sent",
+                                                "accepted",
+                                                "rejected",
+                                                "expired",
+                                                "active",
+                                                "total_system_value",
+                                                "created_this_month",
+                                                "accepted_this_month"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/stock-opnames": {
             "get": {
                 "operationId": "stock-opnames.index",
@@ -37594,6 +40189,18 @@
             }
         },
         "schemas": {
+            "AcceptSolarProposalRequest": {
+                "type": "object",
+                "properties": {
+                    "selected_bom_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    }
+                },
+                "title": "AcceptSolarProposalRequest"
+            },
             "AccountResource": {
                 "type": "object",
                 "properties": {
@@ -37694,6 +40301,18 @@
                     "amount"
                 ],
                 "title": "ApplyDownPaymentRequest"
+            },
+            "AttachSolarVariantsRequest": {
+                "type": "object",
+                "properties": {
+                    "variant_group_id": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "variant_group_id"
+                ],
+                "title": "AttachSolarVariantsRequest"
             },
             "AttachmentResource": {
                 "type": "object",
@@ -38885,6 +41504,214 @@
                 ],
                 "title": "BudgetResource"
             },
+            "ComponentBrandMappingResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "component_standard_id": {
+                        "type": "integer"
+                    },
+                    "brand": {
+                        "type": "string"
+                    },
+                    "brand_label": {
+                        "type": "string"
+                    },
+                    "product_id": {
+                        "type": "integer"
+                    },
+                    "product": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "sku": {
+                                "type": "string"
+                            },
+                            "purchase_price": {
+                                "type": "integer"
+                            },
+                            "selling_price": {
+                                "type": "integer"
+                            },
+                            "current_stock": {
+                                "type": "integer"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "name",
+                            "sku",
+                            "purchase_price",
+                            "selling_price",
+                            "current_stock"
+                        ]
+                    },
+                    "brand_sku": {
+                        "type": "string"
+                    },
+                    "is_preferred": {
+                        "type": "boolean"
+                    },
+                    "is_verified": {
+                        "type": "boolean"
+                    },
+                    "price_factor": {
+                        "type": "number"
+                    },
+                    "variant_specs": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {}
+                    },
+                    "notes": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "verified_by": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "verified_at": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": "string"
+                    },
+                    "updated_at": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "component_standard_id",
+                    "brand",
+                    "brand_label",
+                    "product_id",
+                    "brand_sku",
+                    "is_preferred",
+                    "is_verified",
+                    "price_factor",
+                    "variant_specs",
+                    "notes",
+                    "verified_by",
+                    "verified_at",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "ComponentBrandMappingResource"
+            },
+            "ComponentStandardResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "code": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "category": {
+                        "type": "string"
+                    },
+                    "category_label": {
+                        "type": "string"
+                    },
+                    "subcategory": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "specifications": {
+                        "type": "array",
+                        "items": {}
+                    },
+                    "standard": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "description": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "unit": {
+                        "type": "string"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "brand_mappings": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ComponentBrandMappingResource"
+                        }
+                    },
+                    "available_brands": {
+                        "type": "array",
+                        "items": {}
+                    },
+                    "brand_count": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "creator": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "name": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "name"
+                        ]
+                    },
+                    "created_at": {
+                        "type": "string"
+                    },
+                    "updated_at": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "code",
+                    "name",
+                    "category",
+                    "category_label",
+                    "subcategory",
+                    "specifications",
+                    "standard",
+                    "description",
+                    "unit",
+                    "is_active",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "ComponentStandardResource"
+            },
             "ContactResource": {
                 "type": "object",
                 "properties": {
@@ -39929,6 +42756,83 @@
                     "updated_at"
                 ],
                 "title": "GoodsReceiptNoteResource"
+            },
+            "IndonesiaSolarDataResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "province": {
+                        "type": "string"
+                    },
+                    "city": {
+                        "type": "string"
+                    },
+                    "latitude": {
+                        "type": "number"
+                    },
+                    "longitude": {
+                        "type": "number"
+                    },
+                    "peak_sun_hours": {
+                        "type": "number"
+                    },
+                    "solar_irradiance_kwh_m2_day": {
+                        "type": "number"
+                    },
+                    "optimal_tilt_angle": {
+                        "type": "number"
+                    },
+                    "irradiance_rating": {
+                        "type": "string"
+                    },
+                    "irradiance_rating_label": {
+                        "type": "string"
+                    },
+                    "ghi_annual": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "description": "Extended data"
+                    },
+                    "dni_annual": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "dhi_annual": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "temperature_avg": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "province",
+                    "city",
+                    "latitude",
+                    "longitude",
+                    "peak_sun_hours",
+                    "solar_irradiance_kwh_m2_day",
+                    "optimal_tilt_angle",
+                    "irradiance_rating",
+                    "irradiance_rating_label",
+                    "ghi_annual",
+                    "dni_annual",
+                    "dhi_annual",
+                    "temperature_avg"
+                ],
+                "title": "IndonesiaSolarDataResource"
             },
             "InventoryMovementResource": {
                 "type": "object",
@@ -41417,6 +44321,116 @@
                     "updated_at"
                 ],
                 "title": "PermissionResource"
+            },
+            "PlnTariffResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "category_code": {
+                        "type": "string"
+                    },
+                    "category_name": {
+                        "type": "string"
+                    },
+                    "customer_type": {
+                        "type": "string"
+                    },
+                    "customer_type_label": {
+                        "type": "string"
+                    },
+                    "power_va_min": {
+                        "type": "integer"
+                    },
+                    "power_va_max": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "power_range_label": {
+                        "type": "string"
+                    },
+                    "rate_per_kwh": {
+                        "type": "integer"
+                    },
+                    "formatted_rate": {
+                        "type": "string"
+                    },
+                    "capacity_charge": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "minimum_charge": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "is_tou_tariff": {
+                        "type": "boolean",
+                        "description": "Time-of-Use rates"
+                    },
+                    "peak_rate_per_kwh": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "off_peak_rate_per_kwh": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "peak_hours": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "effective_from": {
+                        "type": "string"
+                    },
+                    "effective_until": {
+                        "type": "string"
+                    },
+                    "notes": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "category_code",
+                    "category_name",
+                    "customer_type",
+                    "customer_type_label",
+                    "power_va_min",
+                    "power_va_max",
+                    "power_range_label",
+                    "rate_per_kwh",
+                    "formatted_rate",
+                    "capacity_charge",
+                    "minimum_charge",
+                    "is_tou_tariff",
+                    "peak_rate_per_kwh",
+                    "off_peak_rate_per_kwh",
+                    "peak_hours",
+                    "is_active",
+                    "effective_from",
+                    "effective_until",
+                    "notes"
+                ],
+                "title": "PlnTariffResource"
             },
             "Product": {
                 "type": "object",
@@ -44423,6 +47437,514 @@
                 ],
                 "title": "SalesReturnResource"
             },
+            "SolarProposalListResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "proposal_number": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "status_label": {
+                        "type": "string"
+                    },
+                    "contact_id": {
+                        "type": "integer"
+                    },
+                    "contact": {
+                        "$ref": "#/components/schemas/ContactResource"
+                    },
+                    "site_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "province": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "city": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "system_capacity_kwp": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "system_cost": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "payback_years": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "roi_percent": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "valid_until": {
+                        "type": "string"
+                    },
+                    "is_expired": {
+                        "type": "boolean"
+                    },
+                    "created_by": {
+                        "type": "integer"
+                    },
+                    "creator": {
+                        "$ref": "#/components/schemas/UserResource"
+                    },
+                    "created_at": {
+                        "type": "string"
+                    },
+                    "updated_at": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "proposal_number",
+                    "status",
+                    "status_label",
+                    "contact_id",
+                    "site_name",
+                    "province",
+                    "city",
+                    "system_capacity_kwp",
+                    "system_cost",
+                    "payback_years",
+                    "roi_percent",
+                    "valid_until",
+                    "is_expired",
+                    "created_by",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "SolarProposalListResource"
+            },
+            "SolarProposalResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "proposal_number": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "status_label": {
+                        "type": "string"
+                    },
+                    "contact_id": {
+                        "type": "integer",
+                        "description": "Contact"
+                    },
+                    "contact": {
+                        "$ref": "#/components/schemas/ContactResource"
+                    },
+                    "site_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Site Information"
+                    },
+                    "site_address": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "province": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "city": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "latitude": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "longitude": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "roof_area_m2": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "roof_type": {
+                        "type": "string"
+                    },
+                    "roof_type_label": {
+                        "type": "string"
+                    },
+                    "roof_orientation": {
+                        "type": "string"
+                    },
+                    "roof_orientation_label": {
+                        "type": "string"
+                    },
+                    "roof_tilt_degrees": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "shading_percentage": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "monthly_consumption_kwh": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "description": "Electricity Profile"
+                    },
+                    "pln_tariff_category": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "electricity_rate": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "tariff_escalation_percent": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "peak_sun_hours": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "description": "Solar Data"
+                    },
+                    "solar_irradiance": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "performance_ratio": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "variant_group_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "description": "System Selection"
+                    },
+                    "variant_group": {
+                        "$ref": "#/components/schemas/BomVariantGroupResource"
+                    },
+                    "selected_bom_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "selected_bom": {
+                        "$ref": "#/components/schemas/BomResource"
+                    },
+                    "system_capacity_kwp": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "annual_production_kwh": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "monthly_production_kwh": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "solar_offset_percent": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "system_cost": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "financial_analysis": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "description": "Financial Analysis",
+                        "items": {}
+                    },
+                    "payback_years": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "roi_percent": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "npv": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "irr_percent": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "first_year_savings": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "total_lifetime_savings": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "environmental_impact": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "description": "Environmental Impact",
+                        "items": {}
+                    },
+                    "co2_offset_tons": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "trees_equivalent": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "cars_equivalent": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "sections_config": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "description": "Proposal Settings",
+                        "items": {}
+                    },
+                    "custom_content": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {}
+                    },
+                    "valid_until": {
+                        "type": "string"
+                    },
+                    "days_until_expiry": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "is_expired": {
+                        "type": "boolean"
+                    },
+                    "notes": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "created_by": {
+                        "type": "integer",
+                        "description": "Metadata"
+                    },
+                    "creator": {
+                        "$ref": "#/components/schemas/UserResource"
+                    },
+                    "sent_at": {
+                        "type": "string"
+                    },
+                    "accepted_at": {
+                        "type": "string"
+                    },
+                    "rejected_at": {
+                        "type": "string"
+                    },
+                    "rejection_reason": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "converted_quotation_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "converted_quotation": {
+                        "$ref": "#/components/schemas/QuotationResource"
+                    },
+                    "can_edit": {
+                        "type": "boolean",
+                        "description": "Permissions"
+                    },
+                    "can_send": {
+                        "type": "boolean"
+                    },
+                    "can_accept": {
+                        "type": "boolean"
+                    },
+                    "can_reject": {
+                        "type": "boolean"
+                    },
+                    "can_convert": {
+                        "type": "boolean"
+                    },
+                    "created_at": {
+                        "type": "string"
+                    },
+                    "updated_at": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "proposal_number",
+                    "status",
+                    "status_label",
+                    "contact_id",
+                    "site_name",
+                    "site_address",
+                    "province",
+                    "city",
+                    "latitude",
+                    "longitude",
+                    "roof_area_m2",
+                    "roof_type",
+                    "roof_type_label",
+                    "roof_orientation",
+                    "roof_orientation_label",
+                    "roof_tilt_degrees",
+                    "shading_percentage",
+                    "monthly_consumption_kwh",
+                    "pln_tariff_category",
+                    "electricity_rate",
+                    "tariff_escalation_percent",
+                    "peak_sun_hours",
+                    "solar_irradiance",
+                    "performance_ratio",
+                    "variant_group_id",
+                    "selected_bom_id",
+                    "system_capacity_kwp",
+                    "annual_production_kwh",
+                    "monthly_production_kwh",
+                    "solar_offset_percent",
+                    "system_cost",
+                    "financial_analysis",
+                    "payback_years",
+                    "roi_percent",
+                    "npv",
+                    "irr_percent",
+                    "first_year_savings",
+                    "total_lifetime_savings",
+                    "environmental_impact",
+                    "co2_offset_tons",
+                    "trees_equivalent",
+                    "cars_equivalent",
+                    "sections_config",
+                    "custom_content",
+                    "valid_until",
+                    "days_until_expiry",
+                    "is_expired",
+                    "notes",
+                    "created_by",
+                    "sent_at",
+                    "accepted_at",
+                    "rejected_at",
+                    "rejection_reason",
+                    "converted_quotation_id",
+                    "can_edit",
+                    "can_send",
+                    "can_accept",
+                    "can_reject",
+                    "can_convert",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "SolarProposalResource"
+            },
             "StockAdjustmentRequest": {
                 "type": "object",
                 "properties": {
@@ -45543,6 +49065,139 @@
                     "type"
                 ],
                 "title": "StoreBudgetRequest"
+            },
+            "StoreComponentBrandMappingRequest": {
+                "type": "object",
+                "properties": {
+                    "brand": {
+                        "type": "string",
+                        "maxLength": 50
+                    },
+                    "product_id": {
+                        "type": "integer"
+                    },
+                    "brand_sku": {
+                        "type": "string",
+                        "maxLength": 100
+                    },
+                    "is_preferred": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ]
+                    },
+                    "is_verified": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ]
+                    },
+                    "price_factor": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 0.01,
+                        "maximum": 10
+                    },
+                    "variant_specs": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "notes": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 500
+                    }
+                },
+                "required": [
+                    "brand",
+                    "product_id",
+                    "brand_sku"
+                ],
+                "title": "StoreComponentBrandMappingRequest"
+            },
+            "StoreComponentStandardRequest": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "maxLength": 100
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "category": {
+                        "type": "string",
+                        "enum": [
+                            "circuit_breaker",
+                            "contactor",
+                            "relay",
+                            "cable",
+                            "busbar",
+                            "enclosure",
+                            "terminal",
+                            "meter",
+                            "transformer",
+                            "capacitor"
+                        ]
+                    },
+                    "subcategory": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 50
+                    },
+                    "specifications": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "standard": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 50
+                    },
+                    "description": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 1000
+                    },
+                    "unit": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 20
+                    },
+                    "is_active": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "code",
+                    "name",
+                    "category",
+                    "specifications"
+                ],
+                "title": "StoreComponentStandardRequest"
             },
             "StoreContactRequest": {
                 "type": "object",
@@ -47489,6 +51144,204 @@
                 ],
                 "title": "StoreSalesReturnRequest"
             },
+            "StoreSolarProposalRequest": {
+                "type": "object",
+                "properties": {
+                    "contact_id": {
+                        "type": "integer",
+                        "description": "Required"
+                    },
+                    "site_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Site Information",
+                        "maxLength": 255
+                    },
+                    "site_address": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 1000
+                    },
+                    "province": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 100
+                    },
+                    "city": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 100
+                    },
+                    "latitude": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": -90,
+                        "maximum": 90
+                    },
+                    "longitude": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": -180,
+                        "maximum": 180
+                    },
+                    "roof_area_m2": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 0
+                    },
+                    "roof_type": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "flat",
+                            "sloped",
+                            "carport",
+                            "ground"
+                        ]
+                    },
+                    "roof_orientation": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "north",
+                            "south",
+                            "east",
+                            "west",
+                            "northeast",
+                            "northwest",
+                            "southeast",
+                            "southwest"
+                        ]
+                    },
+                    "roof_tilt_degrees": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 0,
+                        "maximum": 90
+                    },
+                    "shading_percentage": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 0,
+                        "maximum": 100
+                    },
+                    "monthly_consumption_kwh": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "description": "Electricity Profile",
+                        "minimum": 0
+                    },
+                    "pln_tariff_category": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 20
+                    },
+                    "electricity_rate": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 0
+                    },
+                    "tariff_escalation_percent": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 0,
+                        "maximum": 50
+                    },
+                    "peak_sun_hours": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "description": "Solar Data (usually auto-filled from location)",
+                        "minimum": 0,
+                        "maximum": 10
+                    },
+                    "solar_irradiance": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 0
+                    },
+                    "performance_ratio": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 0.5,
+                        "maximum": 1
+                    },
+                    "variant_group_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "description": "System Selection"
+                    },
+                    "selected_bom_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "system_capacity_kwp": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 0
+                    },
+                    "valid_until": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time",
+                        "description": "Settings"
+                    },
+                    "notes": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 2000
+                    }
+                },
+                "required": [
+                    "contact_id"
+                ],
+                "title": "StoreSolarProposalRequest"
+            },
             "StoreStockOpnameRequest": {
                 "type": "object",
                 "properties": {
@@ -48734,6 +52587,128 @@
                     }
                 },
                 "title": "UpdateBudgetRequest"
+            },
+            "UpdateComponentBrandMappingRequest": {
+                "type": "object",
+                "properties": {
+                    "brand": {
+                        "type": "string",
+                        "maxLength": 50
+                    },
+                    "product_id": {
+                        "type": "integer"
+                    },
+                    "brand_sku": {
+                        "type": "string",
+                        "maxLength": 100
+                    },
+                    "is_preferred": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ]
+                    },
+                    "is_verified": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ]
+                    },
+                    "price_factor": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 0.01,
+                        "maximum": 10
+                    },
+                    "variant_specs": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "notes": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 500
+                    }
+                },
+                "title": "UpdateComponentBrandMappingRequest"
+            },
+            "UpdateComponentStandardRequest": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "maxLength": 100
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "category": {
+                        "type": "string",
+                        "enum": [
+                            "circuit_breaker",
+                            "contactor",
+                            "relay",
+                            "cable",
+                            "busbar",
+                            "enclosure",
+                            "terminal",
+                            "meter",
+                            "transformer",
+                            "capacitor"
+                        ]
+                    },
+                    "subcategory": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 50
+                    },
+                    "specifications": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "standard": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 50
+                    },
+                    "description": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 1000
+                    },
+                    "unit": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 20
+                    },
+                    "is_active": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ]
+                    }
+                },
+                "title": "UpdateComponentStandardRequest"
             },
             "UpdateContactRequest": {
                 "type": "object",
@@ -50179,6 +54154,208 @@
                     }
                 },
                 "title": "UpdateSalesReturnRequest"
+            },
+            "UpdateSolarProposalRequest": {
+                "type": "object",
+                "properties": {
+                    "contact_id": {
+                        "type": "integer",
+                        "description": "Contact"
+                    },
+                    "site_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Site Information",
+                        "maxLength": 255
+                    },
+                    "site_address": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 1000
+                    },
+                    "province": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 100
+                    },
+                    "city": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 100
+                    },
+                    "latitude": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": -90,
+                        "maximum": 90
+                    },
+                    "longitude": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": -180,
+                        "maximum": 180
+                    },
+                    "roof_area_m2": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 0
+                    },
+                    "roof_type": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "flat",
+                            "sloped",
+                            "carport",
+                            "ground"
+                        ]
+                    },
+                    "roof_orientation": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "north",
+                            "south",
+                            "east",
+                            "west",
+                            "northeast",
+                            "northwest",
+                            "southeast",
+                            "southwest"
+                        ]
+                    },
+                    "roof_tilt_degrees": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 0,
+                        "maximum": 90
+                    },
+                    "shading_percentage": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 0,
+                        "maximum": 100
+                    },
+                    "monthly_consumption_kwh": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "description": "Electricity Profile",
+                        "minimum": 0
+                    },
+                    "pln_tariff_category": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 20
+                    },
+                    "electricity_rate": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 0
+                    },
+                    "tariff_escalation_percent": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 0,
+                        "maximum": 50
+                    },
+                    "peak_sun_hours": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "description": "Solar Data",
+                        "minimum": 0,
+                        "maximum": 10
+                    },
+                    "solar_irradiance": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 0
+                    },
+                    "performance_ratio": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 0.5,
+                        "maximum": 1
+                    },
+                    "system_capacity_kwp": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "description": "System Selection",
+                        "minimum": 0
+                    },
+                    "valid_until": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time",
+                        "description": "Settings"
+                    },
+                    "notes": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 2000
+                    },
+                    "sections_config": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "description": "Proposal customization",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "custom_content": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "title": "UpdateSolarProposalRequest"
             },
             "UpdateStockOpnameRequest": {
                 "type": "object",

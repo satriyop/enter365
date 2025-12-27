@@ -20,6 +20,7 @@ class BomItem extends Model
         'bom_id',
         'type',
         'product_id',
+        'component_standard_id',
         'description',
         'quantity',
         'unit',
@@ -54,6 +55,14 @@ class BomItem extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    /**
+     * @return BelongsTo<ComponentStandard, $this>
+     */
+    public function componentStandard(): BelongsTo
+    {
+        return $this->belongsTo(ComponentStandard::class);
     }
 
     /**

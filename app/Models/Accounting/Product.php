@@ -211,6 +211,16 @@ class Product extends Model
     }
 
     /**
+     * Get component brand mappings for this product.
+     *
+     * @return HasMany<ComponentBrandMapping, $this>
+     */
+    public function componentBrandMappings(): HasMany
+    {
+        return $this->hasMany(ComponentBrandMapping::class);
+    }
+
+    /**
      * Get work orders for this product.
      *
      * @return HasMany<WorkOrder, $this>

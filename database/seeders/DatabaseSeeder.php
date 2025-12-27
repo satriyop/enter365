@@ -18,9 +18,15 @@ class DatabaseSeeder extends Seeder
      *
      * Usage:
      *   php artisan db:seed                    # Foundation only
-     *   php artisan db:seed --class=DemoSeeder # Foundation + Demo data
+     *   php artisan db:seed --class=DemoSeeder # Foundation + Demo data (full)
      *
-     * For fresh database with demo:
+     * Component Library Only (for Panel Manufacturing Cross-Reference):
+     *   php artisan db:seed --class=Database\\Seeders\\Demo\\ComponentLibrarySeeder
+     *
+     * Full Demo Data (includes Component Library):
+     *   php artisan db:seed --class=Database\\Seeders\\Demo\\DemoSeeder
+     *
+     * Fresh database with demo:
      *   php artisan migrate:fresh --seed
      *   php artisan db:seed --class=Database\\Seeders\\Demo\\DemoSeeder
      */
@@ -42,6 +48,8 @@ class DatabaseSeeder extends Seeder
             FiscalPeriodSeeder::class,
             ChartOfAccountsSeeder::class,
             RolesAndPermissionsSeeder::class,
+            IndonesiaSolarDataSeeder::class,
+            PlnTariffSeeder::class,
         ]);
 
         // Assign admin role to admin user
@@ -51,8 +59,13 @@ class DatabaseSeeder extends Seeder
         $this->command->info('');
         $this->command->info('Foundation data seeded successfully.');
         $this->command->info('');
-        $this->command->info('To add demo data, run:');
-        $this->command->info('  php artisan db:seed --class=Database\\\\Seeders\\\\Demo\\\\DemoSeeder');
+        $this->command->info('Available seeders:');
+        $this->command->info('');
+        $this->command->info('  Component Library Only (226 standards, 943 brand mappings):');
+        $this->command->info('    php artisan db:seed --class=Database\\\\Seeders\\\\Demo\\\\ComponentLibrarySeeder');
+        $this->command->info('');
+        $this->command->info('  Full Demo Data (includes Component Library + Vahana + NEX):');
+        $this->command->info('    php artisan db:seed --class=Database\\\\Seeders\\\\Demo\\\\DemoSeeder');
         $this->command->info('');
     }
 }

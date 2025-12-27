@@ -52,6 +52,11 @@ class DemoSeeder extends Seeder
         $this->call(MasterDataSeeder::class);
         $this->command->info('');
 
+        // Seed comprehensive component library for panel manufacturing
+        $this->command->info('🔌 Seeding Component Library (Cross-Reference System)...');
+        $this->call(ComponentLibrarySeeder::class);
+        $this->command->info('');
+
         // Seed Vahana-specific data (Electrical Panel Maker)
         $this->command->info('╔═══════════════════════════════════════════════════════════════════╗');
         $this->command->info('║  ⚡ PT VAHANA GASTI TEKNIKA - Electrical Panel Maker               ║');
@@ -101,6 +106,9 @@ class DemoSeeder extends Seeder
         $this->command->info('║  Customers Represented:                                            ║');
         $this->command->info('║    ⚡ PT Vahana: Switchboards, MCC, ATS, Capacitor Bank panels      ║');
         $this->command->info('║    ☀️  PT NEX: PLTS Rooftop, Ground Mount, Lease-to-Own solar       ║');
+        $this->command->info('╠═══════════════════════════════════════════════════════════════════╣');
+        $this->command->info('║  Component Library (Brand Partners):                               ║');
+        $this->command->info('║    Schneider Electric | ABB | Siemens | CHINT | LS | Legrand       ║');
         $this->command->info('╚═══════════════════════════════════════════════════════════════════╝');
         $this->command->info('');
     }

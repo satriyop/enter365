@@ -42,6 +42,9 @@ return [
         // Project Management
         'projects' => env('FEATURE_PROJECTS', true),
 
+        // Solar Energy
+        'solar_proposals' => env('FEATURE_SOLAR_PROPOSALS', true),
+
         // Financial
         'budgeting' => env('FEATURE_BUDGETING', true),
         'recurring' => env('FEATURE_RECURRING', true),
