@@ -73,3 +73,27 @@ function authenticatedUser(): User
 
     return $user;
 }
+
+/**
+ * Configure feature flags for testing.
+ *
+ * @param  array<string, bool>  $features  Feature name => enabled status
+ */
+function withFeatures(array $features): void
+{
+    foreach ($features as $feature => $enabled) {
+        config(["features.modules.{$feature}" => $enabled]);
+    }
+}
+
+/**
+ * Disable specific features for testing.
+ *
+ * @param  array<int, string>  $features  Feature names to disable
+ */
+function withoutFeatures(array $features): void
+{
+    foreach ($features as $feature) {
+        config(["features.modules.{$feature}" => false]);
+    }
+}

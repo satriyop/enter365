@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\DeliveryOrderController;
 use App\Http\Controllers\Api\V1\DownPaymentController;
 use App\Http\Controllers\Api\V1\ExportController;
+use App\Http\Controllers\Api\V1\FeatureController;
 use App\Http\Controllers\Api\V1\FiscalPeriodController;
 use App\Http\Controllers\Api\V1\GoodsReceiptNoteController;
 use App\Http\Controllers\Api\V1\InventoryController;
@@ -76,6 +77,9 @@ Route::prefix('v1')->group(function () {
             Route::post('refresh', [AuthController::class, 'refresh'])->name('auth.refresh');
         });
 
+        // Feature Flags Status
+        Route::get('features', [FeatureController::class, 'index'])->name('features.index');
+
         // User Management (Admin only for create/delete, users can update themselves)
         Route::apiResource('users', UserController::class);
         Route::post('users/{user}/password', [UserController::class, 'updatePassword']);
@@ -105,12 +109,14 @@ Route::prefix('v1')->group(function () {
         Route::get('products-lookup', [ProductController::class, 'lookup']);
 
         // Warehouses (Gudang)
-        Route::apiResource('warehouses', WarehouseController::class);
-        Route::post('warehouses/{warehouse}/set-default', [WarehouseController::class, 'setDefault']);
-        Route::get('warehouses/{warehouse}/stock-summary', [WarehouseController::class, 'stockSummary']);
+        Route::middleware('feature:warehouses')->group(function () {
+            Route::apiResource('warehouses', WarehouseController::class);
+            Route::post('warehouses/{warehouse}/set-default', [WarehouseController::class, 'setDefault']);
+            Route::get('warehouses/{warehouse}/stock-summary', [WarehouseController::class, 'stockSummary']);
+        });
 
         // Inventory (Inventori)
-        Route::prefix('inventory')->group(function () {
+        Route::middleware('feature:inventory')->prefix('inventory')->group(function () {
             Route::get('movements', [InventoryController::class, 'movements']);
             Route::post('stock-in', [InventoryController::class, 'stockIn']);
             Route::post('stock-out', [InventoryController::class, 'stockOut']);
@@ -131,29 +137,31 @@ Route::prefix('v1')->group(function () {
         Route::post('journal-entries/{journal_entry}/reverse', [JournalEntryController::class, 'reverse']);
 
         // Quotations (Penawaran)
-        Route::apiResource('quotations', QuotationController::class);
-        Route::post('quotations/{quotation}/submit', [QuotationController::class, 'submit']);
-        Route::post('quotations/{quotation}/approve', [QuotationController::class, 'approve']);
-        Route::post('quotations/{quotation}/reject', [QuotationController::class, 'reject']);
-        Route::post('quotations/{quotation}/revise', [QuotationController::class, 'revise']);
-        Route::post('quotations/{quotation}/convert-to-invoice', [QuotationController::class, 'convertToInvoice']);
-        Route::post('quotations/{quotation}/duplicate', [QuotationController::class, 'duplicate']);
-        Route::get('quotations/{quotation}/pdf', [QuotationController::class, 'pdf']);
-        Route::get('quotations-statistics', [QuotationController::class, 'statistics']);
+        Route::middleware('feature:quotations')->group(function () {
+            Route::apiResource('quotations', QuotationController::class);
+            Route::post('quotations/{quotation}/submit', [QuotationController::class, 'submit']);
+            Route::post('quotations/{quotation}/approve', [QuotationController::class, 'approve']);
+            Route::post('quotations/{quotation}/reject', [QuotationController::class, 'reject']);
+            Route::post('quotations/{quotation}/revise', [QuotationController::class, 'revise']);
+            Route::post('quotations/{quotation}/convert-to-invoice', [QuotationController::class, 'convertToInvoice']);
+            Route::post('quotations/{quotation}/duplicate', [QuotationController::class, 'duplicate']);
+            Route::get('quotations/{quotation}/pdf', [QuotationController::class, 'pdf']);
+            Route::get('quotations-statistics', [QuotationController::class, 'statistics']);
 
-        // Quotation Follow-Up & Sales Pipeline
-        Route::prefix('quotation-follow-up')->group(function () {
-            Route::get('/', [QuotationFollowUpController::class, 'index']);
-            Route::get('/statistics', [QuotationFollowUpController::class, 'statistics']);
-            Route::get('/summary', [QuotationFollowUpController::class, 'followUpSummary']);
+            // Quotation Follow-Up & Sales Pipeline
+            Route::prefix('quotation-follow-up')->group(function () {
+                Route::get('/', [QuotationFollowUpController::class, 'index']);
+                Route::get('/statistics', [QuotationFollowUpController::class, 'statistics']);
+                Route::get('/summary', [QuotationFollowUpController::class, 'followUpSummary']);
+            });
+            Route::get('quotations/{quotation}/activities', [QuotationFollowUpController::class, 'activities']);
+            Route::post('quotations/{quotation}/activities', [QuotationFollowUpController::class, 'storeActivity']);
+            Route::post('quotations/{quotation}/schedule-follow-up', [QuotationFollowUpController::class, 'scheduleFollowUp']);
+            Route::post('quotations/{quotation}/assign', [QuotationFollowUpController::class, 'assign']);
+            Route::post('quotations/{quotation}/priority', [QuotationFollowUpController::class, 'updatePriority']);
+            Route::post('quotations/{quotation}/mark-won', [QuotationFollowUpController::class, 'markAsWon']);
+            Route::post('quotations/{quotation}/mark-lost', [QuotationFollowUpController::class, 'markAsLost']);
         });
-        Route::get('quotations/{quotation}/activities', [QuotationFollowUpController::class, 'activities']);
-        Route::post('quotations/{quotation}/activities', [QuotationFollowUpController::class, 'storeActivity']);
-        Route::post('quotations/{quotation}/schedule-follow-up', [QuotationFollowUpController::class, 'scheduleFollowUp']);
-        Route::post('quotations/{quotation}/assign', [QuotationFollowUpController::class, 'assign']);
-        Route::post('quotations/{quotation}/priority', [QuotationFollowUpController::class, 'updatePriority']);
-        Route::post('quotations/{quotation}/mark-won', [QuotationFollowUpController::class, 'markAsWon']);
-        Route::post('quotations/{quotation}/mark-lost', [QuotationFollowUpController::class, 'markAsLost']);
 
         // Invoices - Sales (Faktur Penjualan)
         Route::apiResource('invoices', InvoiceController::class);
@@ -161,16 +169,18 @@ Route::prefix('v1')->group(function () {
         Route::post('invoices/{invoice}/make-recurring', [InvoiceController::class, 'makeRecurring']);
 
         // Purchase Orders (Pesanan Pembelian)
-        Route::apiResource('purchase-orders', PurchaseOrderController::class);
-        Route::post('purchase-orders/{purchase_order}/submit', [PurchaseOrderController::class, 'submit']);
-        Route::post('purchase-orders/{purchase_order}/approve', [PurchaseOrderController::class, 'approve']);
-        Route::post('purchase-orders/{purchase_order}/reject', [PurchaseOrderController::class, 'reject']);
-        Route::post('purchase-orders/{purchase_order}/cancel', [PurchaseOrderController::class, 'cancel']);
-        Route::post('purchase-orders/{purchase_order}/receive', [PurchaseOrderController::class, 'receive']);
-        Route::post('purchase-orders/{purchase_order}/convert-to-bill', [PurchaseOrderController::class, 'convertToBill']);
-        Route::post('purchase-orders/{purchase_order}/duplicate', [PurchaseOrderController::class, 'duplicate']);
-        Route::get('purchase-orders-outstanding', [PurchaseOrderController::class, 'outstanding']);
-        Route::get('purchase-orders-statistics', [PurchaseOrderController::class, 'statistics']);
+        Route::middleware('feature:purchase_orders')->group(function () {
+            Route::apiResource('purchase-orders', PurchaseOrderController::class);
+            Route::post('purchase-orders/{purchase_order}/submit', [PurchaseOrderController::class, 'submit']);
+            Route::post('purchase-orders/{purchase_order}/approve', [PurchaseOrderController::class, 'approve']);
+            Route::post('purchase-orders/{purchase_order}/reject', [PurchaseOrderController::class, 'reject']);
+            Route::post('purchase-orders/{purchase_order}/cancel', [PurchaseOrderController::class, 'cancel']);
+            Route::post('purchase-orders/{purchase_order}/receive', [PurchaseOrderController::class, 'receive']);
+            Route::post('purchase-orders/{purchase_order}/convert-to-bill', [PurchaseOrderController::class, 'convertToBill']);
+            Route::post('purchase-orders/{purchase_order}/duplicate', [PurchaseOrderController::class, 'duplicate']);
+            Route::get('purchase-orders-outstanding', [PurchaseOrderController::class, 'outstanding']);
+            Route::get('purchase-orders-statistics', [PurchaseOrderController::class, 'statistics']);
+        });
 
         // Bills - Purchases (Faktur Pembelian)
         Route::apiResource('bills', BillController::class);
@@ -178,102 +188,118 @@ Route::prefix('v1')->group(function () {
         Route::post('bills/{bill}/make-recurring', [BillController::class, 'makeRecurring']);
 
         // Down Payments (Uang Muka)
-        Route::apiResource('down-payments', DownPaymentController::class);
-        Route::post('down-payments/{down_payment}/apply-to-invoice/{invoice}', [DownPaymentController::class, 'applyToInvoice']);
-        Route::post('down-payments/{down_payment}/apply-to-bill/{bill}', [DownPaymentController::class, 'applyToBill']);
-        Route::delete('down-payments/{down_payment}/applications/{application}', [DownPaymentController::class, 'unapply']);
-        Route::post('down-payments/{down_payment}/refund', [DownPaymentController::class, 'refund']);
-        Route::post('down-payments/{down_payment}/cancel', [DownPaymentController::class, 'cancel']);
-        Route::get('down-payments/{down_payment}/applications', [DownPaymentController::class, 'applications']);
-        Route::get('down-payments-available', [DownPaymentController::class, 'available']);
-        Route::get('down-payments-statistics', [DownPaymentController::class, 'statistics']);
+        Route::middleware('feature:down_payments')->group(function () {
+            Route::apiResource('down-payments', DownPaymentController::class);
+            Route::post('down-payments/{down_payment}/apply-to-invoice/{invoice}', [DownPaymentController::class, 'applyToInvoice']);
+            Route::post('down-payments/{down_payment}/apply-to-bill/{bill}', [DownPaymentController::class, 'applyToBill']);
+            Route::delete('down-payments/{down_payment}/applications/{application}', [DownPaymentController::class, 'unapply']);
+            Route::post('down-payments/{down_payment}/refund', [DownPaymentController::class, 'refund']);
+            Route::post('down-payments/{down_payment}/cancel', [DownPaymentController::class, 'cancel']);
+            Route::get('down-payments/{down_payment}/applications', [DownPaymentController::class, 'applications']);
+            Route::get('down-payments-available', [DownPaymentController::class, 'available']);
+            Route::get('down-payments-statistics', [DownPaymentController::class, 'statistics']);
+        });
 
         // Delivery Orders (Surat Jalan)
-        Route::apiResource('delivery-orders', DeliveryOrderController::class);
-        Route::post('delivery-orders/{delivery_order}/confirm', [DeliveryOrderController::class, 'confirm']);
-        Route::post('delivery-orders/{delivery_order}/ship', [DeliveryOrderController::class, 'ship']);
-        Route::post('delivery-orders/{delivery_order}/deliver', [DeliveryOrderController::class, 'deliver']);
-        Route::post('delivery-orders/{delivery_order}/cancel', [DeliveryOrderController::class, 'cancel']);
-        Route::post('delivery-orders/{delivery_order}/update-progress', [DeliveryOrderController::class, 'updateProgress']);
-        Route::post('delivery-orders/{delivery_order}/duplicate', [DeliveryOrderController::class, 'duplicate']);
-        Route::post('invoices/{invoice}/create-delivery-order', [DeliveryOrderController::class, 'createFromInvoice']);
-        Route::get('invoices/{invoice}/delivery-orders', [DeliveryOrderController::class, 'forInvoice']);
-        Route::get('delivery-orders-statistics', [DeliveryOrderController::class, 'statistics']);
+        Route::middleware('feature:delivery_orders')->group(function () {
+            Route::apiResource('delivery-orders', DeliveryOrderController::class);
+            Route::post('delivery-orders/{delivery_order}/confirm', [DeliveryOrderController::class, 'confirm']);
+            Route::post('delivery-orders/{delivery_order}/ship', [DeliveryOrderController::class, 'ship']);
+            Route::post('delivery-orders/{delivery_order}/deliver', [DeliveryOrderController::class, 'deliver']);
+            Route::post('delivery-orders/{delivery_order}/cancel', [DeliveryOrderController::class, 'cancel']);
+            Route::post('delivery-orders/{delivery_order}/update-progress', [DeliveryOrderController::class, 'updateProgress']);
+            Route::post('delivery-orders/{delivery_order}/duplicate', [DeliveryOrderController::class, 'duplicate']);
+            Route::post('invoices/{invoice}/create-delivery-order', [DeliveryOrderController::class, 'createFromInvoice']);
+            Route::get('invoices/{invoice}/delivery-orders', [DeliveryOrderController::class, 'forInvoice']);
+            Route::get('delivery-orders-statistics', [DeliveryOrderController::class, 'statistics']);
+        });
 
         // Sales Returns (Retur Penjualan)
-        Route::apiResource('sales-returns', SalesReturnController::class);
-        Route::post('sales-returns/{sales_return}/submit', [SalesReturnController::class, 'submit']);
-        Route::post('sales-returns/{sales_return}/approve', [SalesReturnController::class, 'approve']);
-        Route::post('sales-returns/{sales_return}/reject', [SalesReturnController::class, 'reject']);
-        Route::post('sales-returns/{sales_return}/complete', [SalesReturnController::class, 'complete']);
-        Route::post('sales-returns/{sales_return}/cancel', [SalesReturnController::class, 'cancel']);
-        Route::post('invoices/{invoice}/create-sales-return', [SalesReturnController::class, 'createFromInvoice']);
-        Route::get('invoices/{invoice}/sales-returns', [SalesReturnController::class, 'forInvoice']);
-        Route::get('sales-returns-statistics', [SalesReturnController::class, 'statistics']);
+        Route::middleware('feature:sales_returns')->group(function () {
+            Route::apiResource('sales-returns', SalesReturnController::class);
+            Route::post('sales-returns/{sales_return}/submit', [SalesReturnController::class, 'submit']);
+            Route::post('sales-returns/{sales_return}/approve', [SalesReturnController::class, 'approve']);
+            Route::post('sales-returns/{sales_return}/reject', [SalesReturnController::class, 'reject']);
+            Route::post('sales-returns/{sales_return}/complete', [SalesReturnController::class, 'complete']);
+            Route::post('sales-returns/{sales_return}/cancel', [SalesReturnController::class, 'cancel']);
+            Route::post('invoices/{invoice}/create-sales-return', [SalesReturnController::class, 'createFromInvoice']);
+            Route::get('invoices/{invoice}/sales-returns', [SalesReturnController::class, 'forInvoice']);
+            Route::get('sales-returns-statistics', [SalesReturnController::class, 'statistics']);
+        });
 
         // Purchase Returns (Retur Pembelian)
-        Route::apiResource('purchase-returns', PurchaseReturnController::class);
-        Route::post('purchase-returns/{purchase_return}/submit', [PurchaseReturnController::class, 'submit']);
-        Route::post('purchase-returns/{purchase_return}/approve', [PurchaseReturnController::class, 'approve']);
-        Route::post('purchase-returns/{purchase_return}/reject', [PurchaseReturnController::class, 'reject']);
-        Route::post('purchase-returns/{purchase_return}/complete', [PurchaseReturnController::class, 'complete']);
-        Route::post('purchase-returns/{purchase_return}/cancel', [PurchaseReturnController::class, 'cancel']);
-        Route::post('bills/{bill}/create-purchase-return', [PurchaseReturnController::class, 'createFromBill']);
-        Route::get('bills/{bill}/purchase-returns', [PurchaseReturnController::class, 'forBill']);
-        Route::get('purchase-returns-statistics', [PurchaseReturnController::class, 'statistics']);
+        Route::middleware('feature:purchase_returns')->group(function () {
+            Route::apiResource('purchase-returns', PurchaseReturnController::class);
+            Route::post('purchase-returns/{purchase_return}/submit', [PurchaseReturnController::class, 'submit']);
+            Route::post('purchase-returns/{purchase_return}/approve', [PurchaseReturnController::class, 'approve']);
+            Route::post('purchase-returns/{purchase_return}/reject', [PurchaseReturnController::class, 'reject']);
+            Route::post('purchase-returns/{purchase_return}/complete', [PurchaseReturnController::class, 'complete']);
+            Route::post('purchase-returns/{purchase_return}/cancel', [PurchaseReturnController::class, 'cancel']);
+            Route::post('bills/{bill}/create-purchase-return', [PurchaseReturnController::class, 'createFromBill']);
+            Route::get('bills/{bill}/purchase-returns', [PurchaseReturnController::class, 'forBill']);
+            Route::get('purchase-returns-statistics', [PurchaseReturnController::class, 'statistics']);
+        });
 
         // Bill of Materials (BOM)
-        Route::apiResource('boms', BomController::class);
-        Route::post('boms/{bom}/activate', [BomController::class, 'activate']);
-        Route::post('boms/{bom}/deactivate', [BomController::class, 'deactivate']);
-        Route::post('boms/{bom}/duplicate', [BomController::class, 'duplicate']);
-        Route::get('boms-for-product/{product}', [BomController::class, 'forProduct']);
-        Route::post('boms-calculate-cost', [BomController::class, 'calculateCost']);
-        Route::get('boms-statistics', [BomController::class, 'statistics']);
+        Route::middleware('feature:bom')->group(function () {
+            Route::apiResource('boms', BomController::class);
+            Route::post('boms/{bom}/activate', [BomController::class, 'activate']);
+            Route::post('boms/{bom}/deactivate', [BomController::class, 'deactivate']);
+            Route::post('boms/{bom}/duplicate', [BomController::class, 'duplicate']);
+            Route::get('boms-for-product/{product}', [BomController::class, 'forProduct']);
+            Route::post('boms-calculate-cost', [BomController::class, 'calculateCost']);
+            Route::get('boms-statistics', [BomController::class, 'statistics']);
+        });
 
         // Projects (Proyek)
-        Route::apiResource('projects', ProjectController::class);
-        Route::post('quotations/{quotation}/create-project', [ProjectController::class, 'createFromQuotation']);
-        Route::post('projects/{project}/start', [ProjectController::class, 'start']);
-        Route::post('projects/{project}/hold', [ProjectController::class, 'hold']);
-        Route::post('projects/{project}/resume', [ProjectController::class, 'resume']);
-        Route::post('projects/{project}/complete', [ProjectController::class, 'complete']);
-        Route::post('projects/{project}/cancel', [ProjectController::class, 'cancel']);
-        Route::post('projects/{project}/update-progress', [ProjectController::class, 'updateProgress']);
-        Route::post('projects/{project}/costs', [ProjectController::class, 'addCost']);
-        Route::put('projects/{project}/costs/{cost}', [ProjectController::class, 'updateCost']);
-        Route::delete('projects/{project}/costs/{cost}', [ProjectController::class, 'deleteCost']);
-        Route::post('projects/{project}/revenues', [ProjectController::class, 'addRevenue']);
-        Route::put('projects/{project}/revenues/{revenue}', [ProjectController::class, 'updateRevenue']);
-        Route::delete('projects/{project}/revenues/{revenue}', [ProjectController::class, 'deleteRevenue']);
-        Route::get('projects/{project}/summary', [ProjectController::class, 'summary']);
-        Route::get('projects-statistics', [ProjectController::class, 'statistics']);
+        Route::middleware('feature:projects')->group(function () {
+            Route::apiResource('projects', ProjectController::class);
+            Route::post('quotations/{quotation}/create-project', [ProjectController::class, 'createFromQuotation']);
+            Route::post('projects/{project}/start', [ProjectController::class, 'start']);
+            Route::post('projects/{project}/hold', [ProjectController::class, 'hold']);
+            Route::post('projects/{project}/resume', [ProjectController::class, 'resume']);
+            Route::post('projects/{project}/complete', [ProjectController::class, 'complete']);
+            Route::post('projects/{project}/cancel', [ProjectController::class, 'cancel']);
+            Route::post('projects/{project}/update-progress', [ProjectController::class, 'updateProgress']);
+            Route::post('projects/{project}/costs', [ProjectController::class, 'addCost']);
+            Route::put('projects/{project}/costs/{cost}', [ProjectController::class, 'updateCost']);
+            Route::delete('projects/{project}/costs/{cost}', [ProjectController::class, 'deleteCost']);
+            Route::post('projects/{project}/revenues', [ProjectController::class, 'addRevenue']);
+            Route::put('projects/{project}/revenues/{revenue}', [ProjectController::class, 'updateRevenue']);
+            Route::delete('projects/{project}/revenues/{revenue}', [ProjectController::class, 'deleteRevenue']);
+            Route::get('projects/{project}/summary', [ProjectController::class, 'summary']);
+            Route::get('projects-statistics', [ProjectController::class, 'statistics']);
+        });
 
         // Work Orders (Perintah Kerja)
-        Route::apiResource('work-orders', WorkOrderController::class);
-        Route::post('projects/{project}/work-orders', [WorkOrderController::class, 'createForProject']);
-        Route::post('boms/{bom}/create-work-order', [WorkOrderController::class, 'createFromBom']);
-        Route::get('work-orders/{work_order}/sub-work-orders', [WorkOrderController::class, 'subWorkOrders']);
-        Route::post('work-orders/{work_order}/sub-work-orders', [WorkOrderController::class, 'createSubWorkOrder']);
-        Route::post('work-orders/{work_order}/confirm', [WorkOrderController::class, 'confirm']);
-        Route::post('work-orders/{work_order}/start', [WorkOrderController::class, 'start']);
-        Route::post('work-orders/{work_order}/complete', [WorkOrderController::class, 'complete']);
-        Route::post('work-orders/{work_order}/cancel', [WorkOrderController::class, 'cancel']);
-        Route::post('work-orders/{work_order}/record-output', [WorkOrderController::class, 'recordOutput']);
-        Route::post('work-orders/{work_order}/record-consumption', [WorkOrderController::class, 'recordConsumption']);
-        Route::get('work-orders/{work_order}/cost-summary', [WorkOrderController::class, 'costSummary']);
-        Route::get('work-orders/{work_order}/material-status', [WorkOrderController::class, 'materialStatus']);
-        Route::get('work-orders-statistics', [WorkOrderController::class, 'statistics']);
+        Route::middleware('feature:work_orders')->group(function () {
+            Route::apiResource('work-orders', WorkOrderController::class);
+            Route::post('projects/{project}/work-orders', [WorkOrderController::class, 'createForProject']);
+            Route::post('boms/{bom}/create-work-order', [WorkOrderController::class, 'createFromBom']);
+            Route::get('work-orders/{work_order}/sub-work-orders', [WorkOrderController::class, 'subWorkOrders']);
+            Route::post('work-orders/{work_order}/sub-work-orders', [WorkOrderController::class, 'createSubWorkOrder']);
+            Route::post('work-orders/{work_order}/confirm', [WorkOrderController::class, 'confirm']);
+            Route::post('work-orders/{work_order}/start', [WorkOrderController::class, 'start']);
+            Route::post('work-orders/{work_order}/complete', [WorkOrderController::class, 'complete']);
+            Route::post('work-orders/{work_order}/cancel', [WorkOrderController::class, 'cancel']);
+            Route::post('work-orders/{work_order}/record-output', [WorkOrderController::class, 'recordOutput']);
+            Route::post('work-orders/{work_order}/record-consumption', [WorkOrderController::class, 'recordConsumption']);
+            Route::get('work-orders/{work_order}/cost-summary', [WorkOrderController::class, 'costSummary']);
+            Route::get('work-orders/{work_order}/material-status', [WorkOrderController::class, 'materialStatus']);
+            Route::get('work-orders-statistics', [WorkOrderController::class, 'statistics']);
+        });
 
         // Material Requisitions (Permintaan Material)
-        Route::get('material-requisitions', [MaterialRequisitionController::class, 'index']);
-        Route::post('work-orders/{work_order}/material-requisitions', [MaterialRequisitionController::class, 'createForWorkOrder']);
-        Route::get('material-requisitions/{material_requisition}', [MaterialRequisitionController::class, 'show']);
-        Route::put('material-requisitions/{material_requisition}', [MaterialRequisitionController::class, 'update']);
-        Route::delete('material-requisitions/{material_requisition}', [MaterialRequisitionController::class, 'destroy']);
-        Route::post('material-requisitions/{material_requisition}/approve', [MaterialRequisitionController::class, 'approve']);
-        Route::post('material-requisitions/{material_requisition}/issue', [MaterialRequisitionController::class, 'issue']);
-        Route::post('material-requisitions/{material_requisition}/cancel', [MaterialRequisitionController::class, 'cancel']);
+        Route::middleware('feature:material_requisitions')->group(function () {
+            Route::get('material-requisitions', [MaterialRequisitionController::class, 'index']);
+            Route::post('work-orders/{work_order}/material-requisitions', [MaterialRequisitionController::class, 'createForWorkOrder']);
+            Route::get('material-requisitions/{material_requisition}', [MaterialRequisitionController::class, 'show']);
+            Route::put('material-requisitions/{material_requisition}', [MaterialRequisitionController::class, 'update']);
+            Route::delete('material-requisitions/{material_requisition}', [MaterialRequisitionController::class, 'destroy']);
+            Route::post('material-requisitions/{material_requisition}/approve', [MaterialRequisitionController::class, 'approve']);
+            Route::post('material-requisitions/{material_requisition}/issue', [MaterialRequisitionController::class, 'issue']);
+            Route::post('material-requisitions/{material_requisition}/cancel', [MaterialRequisitionController::class, 'cancel']);
+        });
 
         // Payments (Pembayaran)
         Route::get('payments', [PaymentController::class, 'index']);
@@ -282,10 +308,12 @@ Route::prefix('v1')->group(function () {
         Route::post('payments/{payment}/void', [PaymentController::class, 'void']);
 
         // Recurring Templates (Template Berulang)
-        Route::apiResource('recurring-templates', RecurringTemplateController::class);
-        Route::post('recurring-templates/{recurring_template}/generate', [RecurringTemplateController::class, 'generate']);
-        Route::post('recurring-templates/{recurring_template}/pause', [RecurringTemplateController::class, 'pause']);
-        Route::post('recurring-templates/{recurring_template}/resume', [RecurringTemplateController::class, 'resume']);
+        Route::middleware('feature:recurring')->group(function () {
+            Route::apiResource('recurring-templates', RecurringTemplateController::class);
+            Route::post('recurring-templates/{recurring_template}/generate', [RecurringTemplateController::class, 'generate']);
+            Route::post('recurring-templates/{recurring_template}/pause', [RecurringTemplateController::class, 'pause']);
+            Route::post('recurring-templates/{recurring_template}/resume', [RecurringTemplateController::class, 'resume']);
+        });
 
         // Fiscal Periods (Periode Fiskal)
         Route::apiResource('fiscal-periods', FiscalPeriodController::class)->only(['index', 'show', 'store']);
@@ -296,21 +324,23 @@ Route::prefix('v1')->group(function () {
         Route::get('fiscal-periods/{fiscal_period}/closing-checklist', [FiscalPeriodController::class, 'closingChecklist']);
 
         // Budgets (Anggaran)
-        Route::apiResource('budgets', BudgetController::class);
-        Route::post('budgets/{budget}/lines', [BudgetController::class, 'addLine']);
-        Route::put('budgets/{budget}/lines/{line}', [BudgetController::class, 'updateLine']);
-        Route::delete('budgets/{budget}/lines/{line}', [BudgetController::class, 'deleteLine']);
-        Route::post('budgets/{budget}/approve', [BudgetController::class, 'approve']);
-        Route::post('budgets/{budget}/reopen', [BudgetController::class, 'reopen']);
-        Route::post('budgets/{budget}/close', [BudgetController::class, 'close']);
-        Route::post('budgets/{budget}/copy', [BudgetController::class, 'copy']);
-        Route::get('budgets/{budget}/comparison', [BudgetController::class, 'comparison']);
-        Route::get('budgets/{budget}/monthly-breakdown', [BudgetController::class, 'monthlyBreakdown']);
-        Route::get('budgets/{budget}/summary', [BudgetController::class, 'summary']);
-        Route::get('budgets/{budget}/over-budget', [BudgetController::class, 'overBudget']);
+        Route::middleware('feature:budgeting')->group(function () {
+            Route::apiResource('budgets', BudgetController::class);
+            Route::post('budgets/{budget}/lines', [BudgetController::class, 'addLine']);
+            Route::put('budgets/{budget}/lines/{line}', [BudgetController::class, 'updateLine']);
+            Route::delete('budgets/{budget}/lines/{line}', [BudgetController::class, 'deleteLine']);
+            Route::post('budgets/{budget}/approve', [BudgetController::class, 'approve']);
+            Route::post('budgets/{budget}/reopen', [BudgetController::class, 'reopen']);
+            Route::post('budgets/{budget}/close', [BudgetController::class, 'close']);
+            Route::post('budgets/{budget}/copy', [BudgetController::class, 'copy']);
+            Route::get('budgets/{budget}/comparison', [BudgetController::class, 'comparison']);
+            Route::get('budgets/{budget}/monthly-breakdown', [BudgetController::class, 'monthlyBreakdown']);
+            Route::get('budgets/{budget}/summary', [BudgetController::class, 'summary']);
+            Route::get('budgets/{budget}/over-budget', [BudgetController::class, 'overBudget']);
+        });
 
         // Bank Reconciliation (Rekonsiliasi Bank)
-        Route::prefix('bank-transactions')->group(function () {
+        Route::middleware('feature:bank_reconciliation')->prefix('bank-transactions')->group(function () {
             Route::get('/', [BankReconciliationController::class, 'index']);
             Route::post('/', [BankReconciliationController::class, 'store']);
             Route::get('/summary', [BankReconciliationController::class, 'summary']);
@@ -421,65 +451,73 @@ Route::prefix('v1')->group(function () {
         Route::get('permissions/{permission}', [PermissionController::class, 'show']);
 
         // MRP (Material Requirements Planning)
-        Route::apiResource('mrp-runs', MrpController::class)->parameters(['mrp-runs' => 'mrpRun']);
-        Route::post('mrp-runs/{mrpRun}/execute', [MrpController::class, 'execute']);
-        Route::get('mrp-runs/{mrpRun}/demands', [MrpController::class, 'demands']);
-        Route::get('mrp-runs/{mrpRun}/suggestions', [MrpController::class, 'suggestions']);
-        Route::post('mrp-suggestions/{suggestion}/accept', [MrpController::class, 'acceptSuggestion']);
-        Route::post('mrp-suggestions/{suggestion}/reject', [MrpController::class, 'rejectSuggestion']);
-        Route::put('mrp-suggestions/{suggestion}', [MrpController::class, 'updateSuggestion']);
-        Route::post('mrp-suggestions/{suggestion}/convert-to-po', [MrpController::class, 'convertToPurchaseOrder']);
-        Route::post('mrp-suggestions/{suggestion}/convert-to-wo', [MrpController::class, 'convertToWorkOrder']);
-        Route::post('mrp-suggestions/{suggestion}/convert-to-sc-wo', [MrpController::class, 'convertToSubcontractorWorkOrder']);
-        Route::post('mrp-suggestions/bulk-accept', [MrpController::class, 'bulkAccept']);
-        Route::post('mrp-suggestions/bulk-reject', [MrpController::class, 'bulkReject']);
-        Route::get('mrp/shortage-report', [MrpController::class, 'shortageReport']);
-        Route::get('mrp/statistics', [MrpController::class, 'statistics']);
+        Route::middleware('feature:mrp')->group(function () {
+            Route::apiResource('mrp-runs', MrpController::class)->parameters(['mrp-runs' => 'mrpRun']);
+            Route::post('mrp-runs/{mrpRun}/execute', [MrpController::class, 'execute']);
+            Route::get('mrp-runs/{mrpRun}/demands', [MrpController::class, 'demands']);
+            Route::get('mrp-runs/{mrpRun}/suggestions', [MrpController::class, 'suggestions']);
+            Route::post('mrp-suggestions/{suggestion}/accept', [MrpController::class, 'acceptSuggestion']);
+            Route::post('mrp-suggestions/{suggestion}/reject', [MrpController::class, 'rejectSuggestion']);
+            Route::put('mrp-suggestions/{suggestion}', [MrpController::class, 'updateSuggestion']);
+            Route::post('mrp-suggestions/{suggestion}/convert-to-po', [MrpController::class, 'convertToPurchaseOrder']);
+            Route::post('mrp-suggestions/{suggestion}/convert-to-wo', [MrpController::class, 'convertToWorkOrder']);
+            Route::post('mrp-suggestions/{suggestion}/convert-to-sc-wo', [MrpController::class, 'convertToSubcontractorWorkOrder']);
+            Route::post('mrp-suggestions/bulk-accept', [MrpController::class, 'bulkAccept']);
+            Route::post('mrp-suggestions/bulk-reject', [MrpController::class, 'bulkReject']);
+            Route::get('mrp/shortage-report', [MrpController::class, 'shortageReport']);
+            Route::get('mrp/statistics', [MrpController::class, 'statistics']);
+        });
 
         // Subcontractor Work Orders (Perintah Kerja Subkontraktor)
-        Route::apiResource('subcontractor-work-orders', SubcontractorWorkOrderController::class)
-            ->parameters(['subcontractor-work-orders' => 'subcontractorWorkOrder']);
-        Route::post('subcontractor-work-orders/{subcontractorWorkOrder}/assign', [SubcontractorWorkOrderController::class, 'assign']);
-        Route::post('subcontractor-work-orders/{subcontractorWorkOrder}/start', [SubcontractorWorkOrderController::class, 'start']);
-        Route::post('subcontractor-work-orders/{subcontractorWorkOrder}/update-progress', [SubcontractorWorkOrderController::class, 'updateProgress']);
-        Route::post('subcontractor-work-orders/{subcontractorWorkOrder}/complete', [SubcontractorWorkOrderController::class, 'complete']);
-        Route::post('subcontractor-work-orders/{subcontractorWorkOrder}/cancel', [SubcontractorWorkOrderController::class, 'cancel']);
-        Route::post('subcontractor-work-orders/{subcontractorWorkOrder}/invoices', [SubcontractorWorkOrderController::class, 'createInvoice']);
-        Route::get('subcontractor-work-orders/{subcontractorWorkOrder}/invoices', [SubcontractorWorkOrderController::class, 'invoices']);
-        Route::get('subcontractors', [SubcontractorWorkOrderController::class, 'subcontractors']);
-        Route::get('subcontractor-work-orders-statistics', [SubcontractorWorkOrderController::class, 'statistics']);
+        Route::middleware('feature:subcontracting')->group(function () {
+            Route::apiResource('subcontractor-work-orders', SubcontractorWorkOrderController::class)
+                ->parameters(['subcontractor-work-orders' => 'subcontractorWorkOrder']);
+            Route::post('subcontractor-work-orders/{subcontractorWorkOrder}/assign', [SubcontractorWorkOrderController::class, 'assign']);
+            Route::post('subcontractor-work-orders/{subcontractorWorkOrder}/start', [SubcontractorWorkOrderController::class, 'start']);
+            Route::post('subcontractor-work-orders/{subcontractorWorkOrder}/update-progress', [SubcontractorWorkOrderController::class, 'updateProgress']);
+            Route::post('subcontractor-work-orders/{subcontractorWorkOrder}/complete', [SubcontractorWorkOrderController::class, 'complete']);
+            Route::post('subcontractor-work-orders/{subcontractorWorkOrder}/cancel', [SubcontractorWorkOrderController::class, 'cancel']);
+            Route::post('subcontractor-work-orders/{subcontractorWorkOrder}/invoices', [SubcontractorWorkOrderController::class, 'createInvoice']);
+            Route::get('subcontractor-work-orders/{subcontractorWorkOrder}/invoices', [SubcontractorWorkOrderController::class, 'invoices']);
+            Route::get('subcontractors', [SubcontractorWorkOrderController::class, 'subcontractors']);
+            Route::get('subcontractor-work-orders-statistics', [SubcontractorWorkOrderController::class, 'statistics']);
 
-        // Subcontractor Invoices (Invoice Subkontraktor)
-        Route::get('subcontractor-invoices', [SubcontractorInvoiceController::class, 'index']);
-        Route::get('subcontractor-invoices/{subcontractorInvoice}', [SubcontractorInvoiceController::class, 'show']);
-        Route::put('subcontractor-invoices/{subcontractorInvoice}', [SubcontractorInvoiceController::class, 'update']);
-        Route::post('subcontractor-invoices/{subcontractorInvoice}/approve', [SubcontractorInvoiceController::class, 'approve']);
-        Route::post('subcontractor-invoices/{subcontractorInvoice}/reject', [SubcontractorInvoiceController::class, 'reject']);
-        Route::post('subcontractor-invoices/{subcontractorInvoice}/convert-to-bill', [SubcontractorInvoiceController::class, 'convertToBill']);
+            // Subcontractor Invoices (Invoice Subkontraktor)
+            Route::get('subcontractor-invoices', [SubcontractorInvoiceController::class, 'index']);
+            Route::get('subcontractor-invoices/{subcontractorInvoice}', [SubcontractorInvoiceController::class, 'show']);
+            Route::put('subcontractor-invoices/{subcontractorInvoice}', [SubcontractorInvoiceController::class, 'update']);
+            Route::post('subcontractor-invoices/{subcontractorInvoice}/approve', [SubcontractorInvoiceController::class, 'approve']);
+            Route::post('subcontractor-invoices/{subcontractorInvoice}/reject', [SubcontractorInvoiceController::class, 'reject']);
+            Route::post('subcontractor-invoices/{subcontractorInvoice}/convert-to-bill', [SubcontractorInvoiceController::class, 'convertToBill']);
+        });
 
         // Stock Opname (Stock Opname / Physical Inventory)
-        Route::apiResource('stock-opnames', StockOpnameController::class)
-            ->parameters(['stock-opnames' => 'stockOpname']);
-        Route::post('stock-opnames/{stockOpname}/generate-items', [StockOpnameController::class, 'generateItems']);
-        Route::post('stock-opnames/{stockOpname}/items', [StockOpnameController::class, 'addItem']);
-        Route::put('stock-opnames/{stockOpname}/items/{item}', [StockOpnameController::class, 'updateItem']);
-        Route::delete('stock-opnames/{stockOpname}/items/{item}', [StockOpnameController::class, 'removeItem']);
-        Route::post('stock-opnames/{stockOpname}/start-counting', [StockOpnameController::class, 'startCounting']);
-        Route::post('stock-opnames/{stockOpname}/submit-review', [StockOpnameController::class, 'submitForReview']);
-        Route::post('stock-opnames/{stockOpname}/approve', [StockOpnameController::class, 'approve']);
-        Route::post('stock-opnames/{stockOpname}/reject', [StockOpnameController::class, 'reject']);
-        Route::post('stock-opnames/{stockOpname}/cancel', [StockOpnameController::class, 'cancel']);
-        Route::get('stock-opnames/{stockOpname}/variance-report', [StockOpnameController::class, 'varianceReport']);
+        Route::middleware('feature:stock_opname')->group(function () {
+            Route::apiResource('stock-opnames', StockOpnameController::class)
+                ->parameters(['stock-opnames' => 'stockOpname']);
+            Route::post('stock-opnames/{stockOpname}/generate-items', [StockOpnameController::class, 'generateItems']);
+            Route::post('stock-opnames/{stockOpname}/items', [StockOpnameController::class, 'addItem']);
+            Route::put('stock-opnames/{stockOpname}/items/{item}', [StockOpnameController::class, 'updateItem']);
+            Route::delete('stock-opnames/{stockOpname}/items/{item}', [StockOpnameController::class, 'removeItem']);
+            Route::post('stock-opnames/{stockOpname}/start-counting', [StockOpnameController::class, 'startCounting']);
+            Route::post('stock-opnames/{stockOpname}/submit-review', [StockOpnameController::class, 'submitForReview']);
+            Route::post('stock-opnames/{stockOpname}/approve', [StockOpnameController::class, 'approve']);
+            Route::post('stock-opnames/{stockOpname}/reject', [StockOpnameController::class, 'reject']);
+            Route::post('stock-opnames/{stockOpname}/cancel', [StockOpnameController::class, 'cancel']);
+            Route::get('stock-opnames/{stockOpname}/variance-report', [StockOpnameController::class, 'varianceReport']);
+        });
 
         // Goods Receipt Notes (Surat Penerimaan Barang)
-        Route::apiResource('goods-receipt-notes', GoodsReceiptNoteController::class)
-            ->parameters(['goods-receipt-notes' => 'goodsReceiptNote']);
-        Route::post('purchase-orders/{purchaseOrder}/create-grn', [GoodsReceiptNoteController::class, 'createFromPurchaseOrder']);
-        Route::put('goods-receipt-notes/{goodsReceiptNote}/items/{item}', [GoodsReceiptNoteController::class, 'updateItem']);
-        Route::post('goods-receipt-notes/{goodsReceiptNote}/start-receiving', [GoodsReceiptNoteController::class, 'startReceiving']);
-        Route::post('goods-receipt-notes/{goodsReceiptNote}/complete', [GoodsReceiptNoteController::class, 'complete']);
-        Route::post('goods-receipt-notes/{goodsReceiptNote}/cancel', [GoodsReceiptNoteController::class, 'cancel']);
-        Route::get('purchase-orders/{purchaseOrder}/goods-receipt-notes', [GoodsReceiptNoteController::class, 'forPurchaseOrder']);
+        Route::middleware('feature:goods_receipt_notes')->group(function () {
+            Route::apiResource('goods-receipt-notes', GoodsReceiptNoteController::class)
+                ->parameters(['goods-receipt-notes' => 'goodsReceiptNote']);
+            Route::post('purchase-orders/{purchaseOrder}/create-grn', [GoodsReceiptNoteController::class, 'createFromPurchaseOrder']);
+            Route::put('goods-receipt-notes/{goodsReceiptNote}/items/{item}', [GoodsReceiptNoteController::class, 'updateItem']);
+            Route::post('goods-receipt-notes/{goodsReceiptNote}/start-receiving', [GoodsReceiptNoteController::class, 'startReceiving']);
+            Route::post('goods-receipt-notes/{goodsReceiptNote}/complete', [GoodsReceiptNoteController::class, 'complete']);
+            Route::post('goods-receipt-notes/{goodsReceiptNote}/cancel', [GoodsReceiptNoteController::class, 'cancel']);
+            Route::get('purchase-orders/{purchaseOrder}/goods-receipt-notes', [GoodsReceiptNoteController::class, 'forPurchaseOrder']);
+        });
 
     }); // End of auth:sanctum middleware group
 

@@ -1,55 +1,107 @@
-Current State Summary
-Your application already has a comprehensive API covering:
-- ✅ Core Accounting (CoA, Journal Entries, Fiscal Periods)
-- ✅ AR/AP (Invoices, Bills, Payments, Down Payments, Aging Reports)
-- ✅ Inventory (Products, Warehouses, Stock Movements, MRP)
-- ✅ Sales Cycle (Quotations → Invoices → Delivery Orders → Returns)
-- ✅ Purchasing Cycle (PO → Bills → Returns)
-- ✅ Manufacturing (BOMs, Work Orders, Material Requisitions)
-- ✅ Project Costing (Projects, Costs, Revenues, Profitability Reports)
-- ✅ Subcontractor Management (Work Orders, Invoices, Retention)
-- ✅ Financial Reports (P&L, Balance Sheet, Cash Flow, Tax Reports)
+# Application Current State
+
+**Stack:** Laravel 12 + PHP 8.4 + PostgreSQL | **API:** RESTful v1 (401 routes) | **Auth:** Sanctum
+
 ---
-Missing Features Analysis
-Category 1: Essential for Day-to-Day Operations (HIGH Priority)
-| # | Feature | Why Missing is a Pain Point |
-|---|---------|---------------------------|
-| 1 | Authentication & API Security | No Sanctum/JWT setup - users can't actually log in |
-| 2 | Goods Receipt (GRN) | PO receiving exists but no formal Goods Receipt Note document |
-| 3 | Stock Opname / Physical Inventory | No way to do cycle counts and reconcile actual vs system stock |
-| 4 | PDF/Document Generation | Quotations, Invoices, DO, PO need printable documents |
-| 5 | Email Notifications | Payment reminders exist in DB but no actual sending mechanism |
-| 6 | Bank Statement Import | Bank reconciliation exists but no CSV/OFX import |
-Category 2: Killer Features (Per ABOUT_APPLICATION.md) - NOT YET IMPLEMENTED
-| # | Feature | Target Customer |
-|---|---------|-----------------|
-| 1 | Multi-Alternative BOM Comparison | Electrical Panel Makers - compare ABB vs Siemens vs Schneider pricing |
-| 2 | Quotation Proposal Generator (Solar) | Solar EPC - include energy savings, ESG metrics, trees saved |
-Category 3: Operational Gaps (MEDIUM Priority)
-| # | Feature | Description |
-|---|---------|-------------|
-| 1 | Dashboard APIs for Mobile | Quick stats, today's tasks, overdue items |
-| 2 | Activity/Task Queue | What needs attention today? Overdue invoices, pending approvals |
-| 3 | Approval Workflows | Some exist but inconsistent - need central approval system |
-| 4 | Number Series Configuration | Invoice/PO/DO numbers are hardcoded patterns |
-| 5 | Company/Multi-tenant Setup | No company profile, logo, settings |
-| 6 | User Profile & Preferences | No user settings API |
+
+## Implemented Features
+
+### Core Accounting
+- Chart of Accounts with hierarchical structure
+- Journal Entries (create, post, reverse)
+- Fiscal Periods (open, close, lock, reopen)
+- Multi-currency support with exchange rates
+- Budgeting with variance analysis
+
+### AR/AP
+- Invoices & Bills with line items
+- Payments (receive/pay, void)
+- Down Payments with application tracking
+- Aging Reports (receivable/payable)
+- Recurring Templates (auto-generate invoices/bills)
+
+### Sales Cycle
+- Quotations → Approval → Convert to Invoice
+- Quotation Follow-up (activities, assign, priority, won/lost)
+- Invoices → Delivery Orders → Sales Returns
+- PDF generation for quotations
+
+### Purchasing Cycle
+- Purchase Orders → Approval → GRN → Bills
+- Goods Receipt Notes (GRN) with receiving workflow
+- Purchase Returns with approval flow
+
+### Inventory
+- Products with categories (hierarchical)
+- Multi-warehouse stock tracking
+- Stock movements (in, out, transfer, adjust)
+- Stock Opname (physical inventory count)
+- Stock valuation (FIFO/AVG/Standard)
+
+### Manufacturing (MRP)
+- Bills of Material (BOM) with alternatives
+- Work Orders with material consumption
+- Material Requisitions (request, approve, issue)
+- MRP Runs with demand forecasting
+- Subcontractor Work Orders with retention
+
+### Project Costing
+- Projects with lifecycle (draft → active → complete)
+- Cost tracking (labor, material, overhead)
+- Revenue recognition
+- Profitability analysis per project
+
+### Financial Reports
+- Balance Sheet, Income Statement, Trial Balance
+- Cash Flow Statement
+- COGS Reports (summary, by product, by category, trends)
+- Changes in Equity
+- Tax Reports (PPN, Input Tax, Tax Invoice List)
+- Bank Reconciliation with auto-matching
+
+### System
+- Authentication (Sanctum token-based)
+- RBAC (Roles, Permissions, grouped)
+- Users management with role assignment
+- Attachments (multi-type document storage)
+- Audit logging
+- Dashboard APIs (KPIs, cash flow, receivables/payables)
+- Data Export (Excel format for reports)
+
 ---
-Questions Before Planning
-1. Authentication Priority? Do you need auth (Sanctum) implemented first, or is this API being consumed by a frontend that handles auth separately?
-2. Killer Features vs Core Stability? Should we:
-   - (A) Build the killer features (Multi-BOM comparison, Solar Proposal Generator) next?
-   - (B) Complete operational gaps first (PDF, Email, Stock Opname)?
-3. PDF Generation Preference? Options:
-   - Laravel DomPDF (simple, no external deps)
-   - Browsershot/Puppeteer (better styling, needs Chrome)
-   - External service (Vercel OG, PDFShift)
-4. Solar Proposal Metrics - For the Solar EPC proposal generator, which metrics are most important to include?
-   - kWh savings/year
-   - CO2 reduction (tons/year)
-   - Trees equivalent
-   - ROI/Payback period
-   - ESG score improvement
-5. Stock Opname Workflow - Should this be:
-   - Simple (upload counts, auto-adjust)
-   - Full workflow (create count sheet → count → review → approve → adjust)?
+
+## Database Summary
+**77 tables** including: accounts, invoices, bills, payments, products, warehouses, work_orders, projects, mrp_runs, stock_opnames, goods_receipt_notes, budgets, roles, permissions
+
+---
+
+## Pending Features
+
+### High Priority
+| Feature | Description |
+|---------|-------------|
+| Email Notifications | Payment reminders exist in DB but no sending mechanism |
+| Bank Statement Import | CSV/OFX import for reconciliation |
+| Multi-Alternative BOM Comparison | Compare pricing across suppliers (ABB vs Siemens) |
+| Solar Proposal Generator | Energy savings, ESG metrics, ROI calculation |
+
+### Medium Priority
+| Feature | Description |
+|---------|-------------|
+| Number Series Configuration | Dynamic invoice/PO/DO numbering patterns |
+| Company/Multi-tenant Setup | Company profile, logo, settings |
+| Approval Workflows | Centralized approval system |
+| Activity Queue | Today's tasks, overdue items dashboard |
+
+---
+
+## API Endpoint Categories (401 total)
+- Accounts (7) | Attachments (6) | Auth (5) | Bank Transactions (9)
+- Bills (8) | BOMs (10) | Budgets (15) | Contacts (6)
+- Dashboard (6) | Delivery Orders (10) | Down Payments (11) | Export (9)
+- Features (1) | Fiscal Periods (7) | GRNs (9) | Inventory (10)
+- Invoices (10) | Journal Entries (5) | Material Requisitions (7) | MRP (16)
+- Payments (4) | Permissions (4) | Products (10) | Projects (16)
+- Purchase Orders (13) | Purchase Returns (10) | Quotations (17) | Recurring (6)
+- Reports (24) | Roles (7) | Sales Returns (10) | Stock Opnames (13)
+- Subcontractors (14) | Users (7) | Warehouses (6) | Work Orders (15)

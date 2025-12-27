@@ -75,6 +75,8 @@ class ProjectFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'status' => Project::STATUS_IN_PROGRESS,
+            'start_date' => now()->subWeek(),
+            'end_date' => now()->addMonths(2),
             'actual_start_date' => now()->subWeek(),
             'progress_percentage' => $this->faker->numberBetween(10, 80),
         ]);

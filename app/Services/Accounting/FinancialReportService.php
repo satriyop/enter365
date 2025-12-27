@@ -458,7 +458,8 @@ class FinancialReportService
             $credit = (int) ($movements->total_credit ?? 0);
 
             // For equity accounts: credits increase (additions), debits decrease (withdrawals/dividends)
-            if ($account->subtype === Account::SUBTYPE_CAPITAL) {
+            // Capital accounts typically have 'modal' or 'capital' in the name
+            if (str_contains(strtolower($account->name), 'modal') || str_contains(strtolower($account->name), 'capital')) {
                 $additions += $credit;
                 $withdrawals += $debit;
             } elseif (str_contains(strtolower($account->name), 'dividen')) {
