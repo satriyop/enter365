@@ -129,9 +129,9 @@ class JournalEntry extends Model
      */
     public static function generateEntryNumber(): string
     {
-        $prefix = 'JE-' . now()->format('Ym') . '-';
+        $prefix = 'JE-'.now()->format('Ym').'-';
         $lastEntry = static::query()
-            ->where('entry_number', 'like', $prefix . '%')
+            ->where('entry_number', 'like', $prefix.'%')
             ->orderBy('entry_number', 'desc')
             ->first();
 
@@ -142,6 +142,6 @@ class JournalEntry extends Model
             $nextNumber = 1;
         }
 
-        return $prefix . str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
+        return $prefix.str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
     }
 }

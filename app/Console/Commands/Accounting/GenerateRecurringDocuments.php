@@ -15,7 +15,7 @@ class GenerateRecurringDocuments extends Command
 
     public function handle(RecurringService $recurringService): int
     {
-        if (!config('accounting.recurring.enabled', true)) {
+        if (! config('accounting.recurring.enabled', true)) {
             $this->warn('Recurring documents feature is disabled.');
 
             return Command::SUCCESS;

@@ -13,7 +13,7 @@ class SendPaymentReminders extends Command
 
     public function handle(ReminderService $reminderService): int
     {
-        if (!config('accounting.notifications.payment_reminder.enabled', true)) {
+        if (! config('accounting.notifications.payment_reminder.enabled', true)) {
             $this->warn('Payment reminders are disabled.');
 
             return Command::SUCCESS;

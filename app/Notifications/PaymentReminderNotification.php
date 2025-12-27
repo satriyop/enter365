@@ -2,7 +2,6 @@
 
 namespace App\Notifications;
 
-use App\Models\Accounting\Bill;
 use App\Models\Accounting\Invoice;
 use App\Models\Accounting\PaymentReminder;
 use Illuminate\Bus\Queueable;
@@ -35,12 +34,12 @@ class PaymentReminderNotification extends Notification implements ShouldQueue
         if ($document instanceof Invoice) {
             $documentNumber = $document->invoice_number;
             $dueDate = $document->due_date->format('d F Y');
-            $amount = 'Rp ' . number_format($document->getOutstandingAmount(), 0, ',', '.');
+            $amount = 'Rp '.number_format($document->getOutstandingAmount(), 0, ',', '.');
             $documentType = 'Faktur';
         } else {
             $documentNumber = $document->bill_number;
             $dueDate = $document->due_date->format('d F Y');
-            $amount = 'Rp ' . number_format($document->getOutstandingAmount(), 0, ',', '.');
+            $amount = 'Rp '.number_format($document->getOutstandingAmount(), 0, ',', '.');
             $documentType = 'Tagihan';
         }
 
@@ -50,7 +49,7 @@ class PaymentReminderNotification extends Notification implements ShouldQueue
             ->line("Ini adalah pengingat bahwa {$documentType} **{$documentNumber}** akan jatuh tempo pada **{$dueDate}**.")
             ->line("Jumlah yang harus dibayar: **{$amount}**")
             ->line('Mohon untuk melakukan pembayaran tepat waktu untuk menghindari keterlambatan.')
-            ->line("Jika Anda sudah melakukan pembayaran, mohon abaikan email ini.")
+            ->line('Jika Anda sudah melakukan pembayaran, mohon abaikan email ini.')
             ->salutation("Hormat kami,\n{$companyName}");
     }
 

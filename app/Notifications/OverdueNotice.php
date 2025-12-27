@@ -2,7 +2,6 @@
 
 namespace App\Notifications;
 
-use App\Models\Accounting\Bill;
 use App\Models\Accounting\Invoice;
 use App\Models\Accounting\PaymentReminder;
 use Illuminate\Bus\Queueable;
@@ -36,13 +35,13 @@ class OverdueNotice extends Notification implements ShouldQueue
             $documentNumber = $document->invoice_number;
             $dueDate = $document->due_date->format('d F Y');
             $daysOverdue = $document->getDaysOverdue();
-            $amount = 'Rp ' . number_format($document->getOutstandingAmount(), 0, ',', '.');
+            $amount = 'Rp '.number_format($document->getOutstandingAmount(), 0, ',', '.');
             $documentType = 'Faktur';
         } else {
             $documentNumber = $document->bill_number;
             $dueDate = $document->due_date->format('d F Y');
             $daysOverdue = $document->getDaysOverdue();
-            $amount = 'Rp ' . number_format($document->getOutstandingAmount(), 0, ',', '.');
+            $amount = 'Rp '.number_format($document->getOutstandingAmount(), 0, ',', '.');
             $documentType = 'Tagihan';
         }
 
@@ -56,7 +55,7 @@ class OverdueNotice extends Notification implements ShouldQueue
             ->greeting("Yth. {$contact->name},");
 
         if ($isFinalNotice) {
-            $message->line("**PEMBERITAHUAN AKHIR**")
+            $message->line('**PEMBERITAHUAN AKHIR**')
                 ->line("Kami memberitahukan bahwa {$documentType} **{$documentNumber}** telah melewati jatuh tempo selama **{$daysOverdue} hari**.")
                 ->line("Jatuh tempo: **{$dueDate}**")
                 ->line("Jumlah tertunggak: **{$amount}**")
@@ -69,7 +68,7 @@ class OverdueNotice extends Notification implements ShouldQueue
         }
 
         return $message
-            ->line("Jika Anda sudah melakukan pembayaran, mohon abaikan email ini.")
+            ->line('Jika Anda sudah melakukan pembayaran, mohon abaikan email ini.')
             ->salutation("Hormat kami,\n{$companyName}");
     }
 

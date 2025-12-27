@@ -17,6 +17,10 @@ class Role extends Model
 
     public const CASHIER = 'cashier';
 
+    public const SALES = 'sales';
+
+    public const PURCHASING = 'purchasing';
+
     public const INVENTORY = 'inventory';
 
     public const VIEWER = 'viewer';

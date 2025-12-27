@@ -34,6 +34,11 @@ class Bom extends Model
         'status',
         'version',
         'parent_bom_id',
+        'variant_group_id',
+        'variant_name',
+        'variant_label',
+        'is_primary_variant',
+        'variant_sort_order',
         'notes',
         'created_by',
         'approved_by',
@@ -49,6 +54,8 @@ class Bom extends Model
             'total_overhead_cost' => 'integer',
             'total_cost' => 'integer',
             'unit_cost' => 'integer',
+            'is_primary_variant' => 'boolean',
+            'variant_sort_order' => 'integer',
             'approved_at' => 'datetime',
         ];
     }
@@ -107,6 +114,34 @@ class Bom extends Model
     public function childBoms(): HasMany
     {
         return $this->hasMany(self::class, 'parent_bom_id');
+    }
+
+    /**
+     * @return BelongsTo<BomVariantGroup, $this>
+     */
+    public function variantGroup(): BelongsTo
+    {
+        return $this->belongsTo(BomVariantGroup::class, 'variant_group_id');
+    }
+
+    /**
+     * Get sibling variants (other BOMs in the same variant group).
+     *
+     * @return HasMany<self, $this>
+     */
+    public function siblingVariants(): HasMany
+    {
+        return $this->hasMany(self::class, 'variant_group_id', 'variant_group_id')
+            ->where('id', '!=', $this->id)
+            ->orderBy('variant_sort_order');
+    }
+
+    /**
+     * Check if this BOM is part of a variant comparison group.
+     */
+    public function hasVariants(): bool
+    {
+        return $this->variant_group_id !== null;
     }
 
     /**

@@ -127,7 +127,7 @@ class InvoiceController extends Controller
 
         return DB::transaction(function () use ($request, $invoice) {
             $data = $request->validated();
-            
+
             if (isset($data['items'])) {
                 $items = $data['items'];
                 unset($data['items']);
@@ -139,7 +139,7 @@ class InvoiceController extends Controller
                 foreach ($items as $item) {
                     $amount = (int) round($item['quantity'] * $item['unit_price']);
                     $subtotal += $amount;
-                    
+
                     InvoiceItem::create([
                         'invoice_id' => $invoice->id,
                         'description' => $item['description'],

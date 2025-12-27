@@ -7,7 +7,6 @@ use App\Models\Accounting\Account;
 use App\Models\Accounting\Bill;
 use App\Models\Accounting\Contact;
 use App\Models\Accounting\Invoice;
-use App\Models\Accounting\JournalEntry;
 use App\Models\Accounting\Payment;
 use App\Services\Accounting\AccountBalanceService;
 use App\Services\Accounting\AgingReportService;
@@ -175,11 +174,19 @@ class DashboardController extends Controller
             ->whereYear('invoice_date', $lastMonth->year)
             ->sum('total_amount');
 
-        // Average collection period (days) - SQLite compatible
+        // Average collection period (days) - database-agnostic
+        $driver = DB::getDriverName();
+        $avgDaysExpression = match ($driver) {
+            'sqlite' => 'AVG(julianday(updated_at) - julianday(invoice_date))',
+            'pgsql' => 'AVG(EXTRACT(EPOCH FROM (updated_at - invoice_date)) / 86400)',
+            'mysql', 'mariadb' => 'AVG(DATEDIFF(updated_at, invoice_date))',
+            default => 'AVG(DATEDIFF(updated_at, invoice_date))',
+        };
+
         $avgCollectionDays = DB::table('invoices')
             ->whereNotNull('paid_amount')
             ->where('paid_amount', '>', 0)
-            ->selectRaw('AVG(julianday(updated_at) - julianday(invoice_date)) as avg_days')
+            ->selectRaw("{$avgDaysExpression} as avg_days")
             ->value('avg_days') ?? 0;
 
         return response()->json([

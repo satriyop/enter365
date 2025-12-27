@@ -41,8 +41,8 @@ class AttachmentController extends Controller
         $disk = config('filesystems.default', 'local');
 
         // Generate a unique path
-        $folder = 'attachments/' . now()->format('Y/m');
-        $filename = uniqid() . '_' . $file->getClientOriginalName();
+        $folder = 'attachments/'.now()->format('Y/m');
+        $filename = uniqid().'_'.$file->getClientOriginalName();
         $path = $file->storeAs($folder, $filename, $disk);
 
         $attachment = Attachment::create([
@@ -77,7 +77,7 @@ class AttachmentController extends Controller
 
     public function download(Attachment $attachment): StreamedResponse|JsonResponse
     {
-        if (!$attachment->exists()) {
+        if (! $attachment->exists()) {
             return response()->json([
                 'message' => 'File tidak ditemukan.',
             ], 404);
@@ -93,7 +93,7 @@ class AttachmentController extends Controller
     {
         $modelClass = $this->resolveModelClass($type);
 
-        if (!$modelClass) {
+        if (! $modelClass) {
             abort(404, 'Tipe model tidak valid.');
         }
 

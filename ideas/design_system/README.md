@@ -29,47 +29,6 @@ Show summary first, details on demand. Reduce cognitive load by revealing comple
 - Dates: DD MMM YYYY format
 - Mixed Indonesian/English terminology where appropriate
 
-## File Structure
-
-```
-design_system/
-├── README.md                    # This file
-├── 01-foundations.md            # Colors, typography, spacing, icons
-├── 02-components-core.md        # Buttons, inputs, cards, badges
-├── 03-components-data.md        # Tables, stats, charts, progress
-├── 04-components-navigation.md  # Sidebar, breadcrumbs, tabs, search
-├── 05-components-epc.md         # Project cards, work orders, BOM
-├── 06-patterns.md               # Layouts, forms, modals, workflows
-└── 07-tokens.md                 # CSS/Tailwind design tokens
-```
-
-## Tech Stack Recommendations
-
-### Frontend Framework
-- **Vue 3** with Composition API
-- **TypeScript** for type safety
-- **Inertia.js** (optional, for Laravel integration)
-
-### Styling
-- **Tailwind CSS** for utility-first styling
-- **Headless UI** for accessible components
-- **Heroicons** for iconography
-
-### State Management
-- **Pinia** for global state
-- **TanStack Query** for server state/caching
-
-### Charts & Visualization
-- **Chart.js** or **Apache ECharts** for financial charts
-- **D3.js** for complex visualizations (optional)
-
-## Design Tokens
-
-Design tokens are defined in `07-tokens.md` and can be exported to:
-- Tailwind CSS config
-- CSS custom properties
-- JSON for design tools
-
 ## User Roles & Views
 
 | Role | Primary View | Key Features |
@@ -104,4 +63,4 @@ This design system follows WCAG 2.1 AA guidelines:
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 1.0.0 | Dec 2024 | Initial design system |
+| 1.0.0 | Dec 2025 | Initial design system |

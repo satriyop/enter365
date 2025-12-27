@@ -101,7 +101,7 @@ class AccountController extends Controller
     {
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
-        
+
         $ledger = $this->balanceService->getLedger($account, $startDate, $endDate);
 
         return response()->json([

@@ -104,7 +104,7 @@ class RecurringTemplateController extends Controller
 
     public function generate(RecurringTemplate $recurringTemplate): JsonResponse
     {
-        if (!$recurringTemplate->is_active) {
+        if (! $recurringTemplate->is_active) {
             return response()->json([
                 'message' => 'Template tidak aktif.',
             ], 422);
@@ -112,7 +112,7 @@ class RecurringTemplateController extends Controller
 
         $document = $this->recurringService->generateFromTemplate($recurringTemplate);
 
-        if (!$document) {
+        if (! $document) {
             return response()->json([
                 'message' => 'Belum waktunya untuk menghasilkan dokumen dari template ini.',
             ], 422);
@@ -124,13 +124,13 @@ class RecurringTemplateController extends Controller
             'message' => "{$type} berhasil dihasilkan dari template.",
             'document_type' => $recurringTemplate->type,
             'document_id' => $document->id,
-            'document_number' => $document->{$recurringTemplate->type . '_number'},
+            'document_number' => $document->{$recurringTemplate->type.'_number'},
         ]);
     }
 
     public function pause(RecurringTemplate $recurringTemplate): JsonResponse
     {
-        if (!$recurringTemplate->is_active) {
+        if (! $recurringTemplate->is_active) {
             return response()->json([
                 'message' => 'Template sudah tidak aktif.',
             ], 422);

@@ -263,4 +263,18 @@ class QuotationFactory extends Factory
             'outcome_at' => now(),
         ]);
     }
+
+    public function multiOption(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'quotation_type' => Quotation::TYPE_MULTI_OPTION,
+        ]);
+    }
+
+    public function singleOption(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'quotation_type' => Quotation::TYPE_SINGLE,
+        ]);
+    }
 }

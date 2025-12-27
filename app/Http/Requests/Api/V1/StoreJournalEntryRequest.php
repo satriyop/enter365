@@ -51,7 +51,7 @@ class StoreJournalEntryRequest extends FormRequest
             }
 
             if ($totalDebit !== $totalCredit) {
-                $validator->errors()->add('lines', 'Total debit harus sama dengan total kredit. Debit: ' . $totalDebit . ', Kredit: ' . $totalCredit);
+                $validator->errors()->add('lines', 'Total debit harus sama dengan total kredit. Debit: '.$totalDebit.', Kredit: '.$totalCredit);
             }
         });
     }

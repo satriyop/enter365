@@ -26,9 +26,9 @@ class CreditLimitWarning extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        $creditLimit = 'Rp ' . number_format($this->contact->credit_limit, 0, ',', '.');
-        $outstanding = 'Rp ' . number_format($this->contact->getReceivableBalance(), 0, ',', '.');
-        $utilization = number_format($this->contact->getCreditUtilization(), 1) . '%';
+        $creditLimit = 'Rp '.number_format($this->contact->credit_limit, 0, ',', '.');
+        $outstanding = 'Rp '.number_format($this->contact->getReceivableBalance(), 0, ',', '.');
+        $utilization = number_format($this->contact->getCreditUtilization(), 1).'%';
 
         $subject = $this->warningType === 'exceeded'
             ? "Peringatan: Batas Kredit Terlampaui - {$this->contact->name}"

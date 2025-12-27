@@ -19,7 +19,7 @@ class AccountBalanceService
     /**
      * Get balances for multiple accounts.
      *
-     * @param Collection<int, Account>|array<Account> $accounts
+     * @param  Collection<int, Account>|array<Account>  $accounts
      * @return array<int, int> Account ID => Balance
      */
     public function getBalances(Collection|array $accounts, ?string $asOfDate = null): array
@@ -28,6 +28,7 @@ class AccountBalanceService
         foreach ($accounts as $account) {
             $balances[$account->id] = $account->getBalance($asOfDate);
         }
+
         return $balances;
     }
 
@@ -73,7 +74,7 @@ class AccountBalanceService
 
         // Calculate running balance
         $runningBalance = $account->opening_balance;
-        
+
         // If start date is provided, calculate opening balance as of that date
         if ($startDate) {
             $priorMovements = DB::table('journal_entry_lines as jel')
@@ -88,7 +89,7 @@ class AccountBalanceService
             $priorBalance = $account->isDebitNormal()
                 ? ($priorMovements->total_debit ?? 0) - ($priorMovements->total_credit ?? 0)
                 : ($priorMovements->total_credit ?? 0) - ($priorMovements->total_debit ?? 0);
-            
+
             $runningBalance = $account->opening_balance + $priorBalance;
         }
 
@@ -96,7 +97,7 @@ class AccountBalanceService
             $movement = $account->isDebitNormal()
                 ? $entry->debit - $entry->credit
                 : $entry->credit - $entry->debit;
-            
+
             $runningBalance += $movement;
 
             return (object) [
@@ -131,7 +132,7 @@ class AccountBalanceService
 
         return $accounts->map(function ($account) use ($asOfDate) {
             $balance = $account->getBalance($asOfDate);
-            
+
             return (object) [
                 'account_id' => $account->id,
                 'code' => $account->code,

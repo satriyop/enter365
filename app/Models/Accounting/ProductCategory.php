@@ -108,7 +108,7 @@ class ProductCategory extends Model
     {
         if ($parentId) {
             $parent = static::find($parentId);
-            $prefix = $parent ? $parent->code . '-' : 'CAT-';
+            $prefix = $parent ? $parent->code.'-' : 'CAT-';
             $lastChild = static::where('parent_id', $parentId)
                 ->orderByDesc('code')
                 ->first();
@@ -116,10 +116,10 @@ class ProductCategory extends Model
             if ($lastChild) {
                 $lastNum = (int) substr($lastChild->code, strrpos($lastChild->code, '-') + 1);
 
-                return $prefix . str_pad($lastNum + 1, 2, '0', STR_PAD_LEFT);
+                return $prefix.str_pad($lastNum + 1, 2, '0', STR_PAD_LEFT);
             }
 
-            return $prefix . '01';
+            return $prefix.'01';
         }
 
         $last = static::whereNull('parent_id')
@@ -130,7 +130,7 @@ class ProductCategory extends Model
         if ($last) {
             $lastNum = (int) substr($last->code, 4);
 
-            return 'CAT-' . str_pad($lastNum + 1, 3, '0', STR_PAD_LEFT);
+            return 'CAT-'.str_pad($lastNum + 1, 3, '0', STR_PAD_LEFT);
         }
 
         return 'CAT-001';

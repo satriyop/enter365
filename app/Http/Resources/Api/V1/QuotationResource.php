@@ -33,6 +33,13 @@ class QuotationResource extends JsonResource
 
             'reference' => $this->reference,
             'subject' => $this->subject,
+            'quotation_type' => $this->quotation_type,
+            'is_multi_option' => $this->isMultiOption(),
+            'variant_group_id' => $this->variant_group_id,
+            'variant_group' => new BomVariantGroupResource($this->whenLoaded('variantGroup')),
+            'selected_variant_id' => $this->selected_variant_id,
+            'selected_variant' => new BomResource($this->whenLoaded('selectedVariant')),
+            'has_selected_variant' => $this->hasSelectedVariant(),
             'status' => $this->status,
             'status_label' => $this->getStatusLabel(),
 
@@ -98,6 +105,8 @@ class QuotationResource extends JsonResource
             'revisions' => QuotationResource::collection($this->whenLoaded('revisions')),
             'converted_invoice' => new InvoiceResource($this->whenLoaded('convertedInvoice')),
             'activities' => QuotationActivityResource::collection($this->whenLoaded('activities')),
+            'variant_options' => QuotationVariantOptionResource::collection($this->whenLoaded('variantOptions')),
+            'variant_comparison' => $this->when($this->isMultiOption(), fn () => $this->getVariantComparison()),
 
             'created_by' => $this->created_by,
             'created_at' => $this->created_at->toIso8601String(),

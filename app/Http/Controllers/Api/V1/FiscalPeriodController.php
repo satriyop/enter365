@@ -105,7 +105,7 @@ class FiscalPeriodController extends Controller
             ], 422);
         }
 
-        if (!$fiscalPeriod->is_locked) {
+        if (! $fiscalPeriod->is_locked) {
             return response()->json([
                 'message' => 'Periode tidak dalam keadaan terkunci.',
             ], 422);
@@ -126,7 +126,7 @@ class FiscalPeriodController extends Controller
             $request->input('notes')
         );
 
-        if (!$result['success']) {
+        if (! $result['success']) {
             return response()->json([
                 'message' => $result['message'],
             ], 422);
@@ -141,7 +141,7 @@ class FiscalPeriodController extends Controller
 
     public function reopen(FiscalPeriod $fiscalPeriod): JsonResponse
     {
-        if (!$fiscalPeriod->is_closed) {
+        if (! $fiscalPeriod->is_closed) {
             return response()->json([
                 'message' => 'Periode belum ditutup.',
             ], 422);
@@ -149,7 +149,7 @@ class FiscalPeriodController extends Controller
 
         $success = $this->fiscalPeriodService->reopenPeriod($fiscalPeriod);
 
-        if (!$success) {
+        if (! $success) {
             return response()->json([
                 'message' => 'Gagal membuka kembali periode fiskal.',
             ], 500);

@@ -46,6 +46,24 @@ class RolesAndPermissionsSeeder extends Seeder
             ]
         );
 
+        $salesRole = Role::firstOrCreate(
+            ['name' => Role::SALES],
+            [
+                'display_name' => 'Sales',
+                'description' => 'Akses ke penjualan, quotation, dan faktur',
+                'is_system' => true,
+            ]
+        );
+
+        $purchasingRole = Role::firstOrCreate(
+            ['name' => Role::PURCHASING],
+            [
+                'display_name' => 'Purchasing',
+                'description' => 'Akses ke pembelian, PO, dan tagihan vendor',
+                'is_system' => true,
+            ]
+        );
+
         $inventoryRole = Role::firstOrCreate(
             ['name' => Role::INVENTORY],
             [
@@ -88,6 +106,28 @@ class RolesAndPermissionsSeeder extends Seeder
             'payments.view', 'payments.create',
         ])->pluck('id');
         $cashierRole->permissions()->sync($cashierPermissions);
+
+        // Assign permissions to Sales role
+        $salesPermissions = Permission::whereIn('name', [
+            'contacts.view', 'contacts.create', 'contacts.edit',
+            'products.view',
+            'invoices.view', 'invoices.create', 'invoices.edit',
+            'payments.view',
+            'inventory.view',
+            'reports.aging',
+        ])->pluck('id');
+        $salesRole->permissions()->sync($salesPermissions);
+
+        // Assign permissions to Purchasing role
+        $purchasingPermissions = Permission::whereIn('name', [
+            'contacts.view', 'contacts.create', 'contacts.edit',
+            'products.view',
+            'bills.view', 'bills.create', 'bills.edit',
+            'payments.view',
+            'inventory.view',
+            'reports.aging',
+        ])->pluck('id');
+        $purchasingRole->permissions()->sync($purchasingPermissions);
 
         // Assign permissions to Inventory role
         $inventoryPermissions = Permission::whereIn('name', [

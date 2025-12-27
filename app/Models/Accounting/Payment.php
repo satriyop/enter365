@@ -14,11 +14,15 @@ class Payment extends Model
     use HasFactory, SoftDeletes;
 
     public const TYPE_RECEIVE = 'receive'; // Payment received from customer
+
     public const TYPE_SEND = 'send'; // Payment sent to supplier
 
     public const METHOD_CASH = 'cash';
+
     public const METHOD_TRANSFER = 'transfer';
+
     public const METHOD_CHECK = 'check';
+
     public const METHOD_GIRO = 'giro';
 
     protected $fillable = [
@@ -120,9 +124,9 @@ class Payment extends Model
      */
     public static function generatePaymentNumber(string $type): string
     {
-        $prefix = ($type === self::TYPE_RECEIVE ? 'RCV' : 'PAY') . '-' . now()->format('Ym') . '-';
+        $prefix = ($type === self::TYPE_RECEIVE ? 'RCV' : 'PAY').'-'.now()->format('Ym').'-';
         $lastPayment = static::query()
-            ->where('payment_number', 'like', $prefix . '%')
+            ->where('payment_number', 'like', $prefix.'%')
             ->orderBy('payment_number', 'desc')
             ->first();
 
@@ -133,6 +137,6 @@ class Payment extends Model
             $nextNumber = 1;
         }
 
-        return $prefix . str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
+        return $prefix.str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
     }
 }

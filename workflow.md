@@ -44,10 +44,16 @@
 │                                                                             │
 │  Phase 9: Authentication & User Management                     [COMPLETE]  │
 │                                                                             │
+│  Phase 10: Multi-Alternative BOM Comparison (Killer Feature)  [COMPLETE]  │
+│  ├── BOM Variant Groups (group BOMs for same product)                      │
+│  ├── Side-by-side cost comparison (min/max/difference)                     │
+│  ├── Item-level detailed comparison                                         │
+│  ├── Clone BOM as new variant                                               │
+│  └── Multi-Option Quotations (customer selects Budget/Standard/Premium)   │
+│                                                                             │
 │  FUTURE PHASES:                                                             │
 │  ├── PDF/Document Generation                                               │
 │  ├── Email Notifications                                                    │
-│  ├── Multi-Alternative BOM Comparison (Killer Feature)                     │
 │  └── Solar Proposal Generator with ESG Metrics (Killer Feature)           │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -835,6 +841,257 @@
 
 ---
 
+## 10. Multi-Alternative BOM Comparison Workflow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    BOM VARIANT COMPARISON WORKFLOW                           │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+    ┌──────────────┐
+    │   PRODUCT    │
+    │   DEFINED    │
+    │  (e.g. PLTS  │
+    │   50 kWp)    │
+    └──────┬───────┘
+           │
+           ▼
+    ┌──────────────┐      ┌──────────────────────────────────┐
+    │   VARIANT    │◀─────│ Create Variant Group              │
+    │    GROUP     │      │ - Name: "Material Options"        │
+    │   CREATED    │      │ - Product: PLTS 50 kWp            │
+    │   (draft)    │      │ - Comparison notes                 │
+    └──────┬───────┘      └──────────────────────────────────┘
+           │
+           ▼
+    ┌─────────────────────────────────────────────────────────────────┐
+    │                    CREATE BOM VARIANTS                           │
+    │                                                                  │
+    │  Option 1: Create new BOMs directly in group                    │
+    │  Option 2: Add existing BOMs to group                           │
+    │  Option 3: Clone existing BOM as new variant                    │
+    │                                                                  │
+    │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐              │
+    │  │   BUDGET    │  │  STANDARD   │  │   PREMIUM   │              │
+    │  │   VARIANT   │  │   VARIANT   │  │   VARIANT   │              │
+    │  │             │  │             │  │             │              │
+    │  │ Growatt +   │  │ Huawei +    │  │ SMA +       │              │
+    │  │ NUSA mount  │  │ NUSA mount  │  │ LONGi mount │              │
+    │  │             │  │             │  │             │              │
+    │  │ Rp 575M     │  │ Rp 720M     │  │ Rp 920M     │              │
+    │  └─────────────┘  └─────────────┘  └─────────────┘              │
+    │                                                                  │
+    └─────────────────────────────────────────────────────────────────┘
+           │
+           ▼
+    ┌──────────────┐
+    │   VARIANT    │
+    │    GROUP     │
+    │   (active)   │
+    └──────┬───────┘
+           │
+           ▼
+    ┌─────────────────────────────────────────────────────────────────┐
+    │                    COMPARISON VIEWS                              │
+    │                                                                  │
+    │  ┌─────────────────────────────────────────────────────────────┐│
+    │  │              SIDE-BY-SIDE COMPARISON                         ││
+    │  ├─────────────────────────────────────────────────────────────┤│
+    │  │                                                              ││
+    │  │  Summary:                                                    ││
+    │  │  ├── Total Variants: 3                                      ││
+    │  │  ├── Cheapest: Budget (Rp 575,000,000)                      ││
+    │  │  ├── Most Expensive: Premium (Rp 920,000,000)               ││
+    │  │  └── Price Difference: Rp 345,000,000 (60%)                 ││
+    │  │                                                              ││
+    │  │  ┌──────────────┬──────────────┬──────────────┐             ││
+    │  │  │    Budget    │   Standard   │   Premium    │             ││
+    │  │  ├──────────────┼──────────────┼──────────────┤             ││
+    │  │  │ Material:    │ Material:    │ Material:    │             ││
+    │  │  │  500,000,000 │  620,000,000 │  800,000,000 │             ││
+    │  │  │              │              │              │             ││
+    │  │  │ Labor:       │ Labor:       │ Labor:       │             ││
+    │  │  │   50,000,000 │   65,000,000 │   80,000,000 │             ││
+    │  │  │              │              │              │             ││
+    │  │  │ Overhead:    │ Overhead:    │ Overhead:    │             ││
+    │  │  │   25,000,000 │   35,000,000 │   40,000,000 │             ││
+    │  │  ├──────────────┼──────────────┼──────────────┤             ││
+    │  │  │ TOTAL:       │ TOTAL:       │ TOTAL:       │             ││
+    │  │  │  575,000,000 │  720,000,000 │  920,000,000 │             ││
+    │  │  └──────────────┴──────────────┴──────────────┘             ││
+    │  │                                                              ││
+    │  └─────────────────────────────────────────────────────────────┘│
+    │                                                                  │
+    │  ┌─────────────────────────────────────────────────────────────┐│
+    │  │              ITEM-LEVEL COMPARISON                           ││
+    │  ├─────────────────────────────────────────────────────────────┤│
+    │  │                                                              ││
+    │  │  Inverter Comparison:                                        ││
+    │  │  ├── Budget: Growatt 50kW (Rp 50,000,000)                   ││
+    │  │  ├── Standard: Huawei SUN2000 (Rp 85,000,000)               ││
+    │  │  └── Premium: SMA Sunny Tripower (Rp 120,000,000)           ││
+    │  │                                                              ││
+    │  │  Panel Comparison:                                           ││
+    │  │  ├── Budget: Canadian Solar 545W (Rp 1,500,000/pc)          ││
+    │  │  ├── Standard: JA Solar 550W (Rp 1,800,000/pc)              ││
+    │  │  └── Premium: LONGi Hi-MO 5 (Rp 2,200,000/pc)               ││
+    │  │                                                              ││
+    │  └─────────────────────────────────────────────────────────────┘│
+    │                                                                  │
+    └─────────────────────────────────────────────────────────────────┘
+           │
+           ▼
+    ┌──────────────┐
+    │   SELECT     │
+    │   VARIANT    │
+    │ FOR PROJECT  │
+    └──────┬───────┘
+           │
+           ▼
+    ┌──────────────┐      ┌──────────────────────────────────┐
+    │  WORK ORDER  │◀─────│ Create Work Order from           │
+    │   CREATED    │      │ selected BOM variant             │
+    └──────────────┘      └──────────────────────────────────┘
+```
+
+---
+
+## 11. Multi-Option Quotation Workflow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    MULTI-OPTION QUOTATION WORKFLOW                           │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+    ┌──────────────┐
+    │   CUSTOMER   │
+    │   REQUEST    │
+    │ (wants price │
+    │  options)    │
+    └──────┬───────┘
+           │
+           ▼
+    ┌──────────────┐      ┌──────────────────────────────────┐
+    │  QUOTATION   │◀─────│ Create Multi-Option Quotation    │
+    │   (draft)    │      │ - quotation_type: multi_option   │
+    │              │      │ - Link to BOM Variant Group      │
+    └──────┬───────┘      └──────────────────────────────────┘
+           │
+           ▼
+    ┌─────────────────────────────────────────────────────────────────┐
+    │                 CONFIGURE VARIANT OPTIONS                        │
+    │                                                                  │
+    │  For each BOM variant, set customer-facing details:             │
+    │  ┌─────────────────────────────────────────────────────────────┐│
+    │  │                                                              ││
+    │  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         ││
+    │  │  │   BUDGET    │  │  STANDARD   │  │   PREMIUM   │         ││
+    │  │  │             │  │ ★RECOMMENDED│  │             │         ││
+    │  │  │ display_name│  │ display_name│  │ display_name│         ││
+    │  │  │ tagline     │  │ tagline     │  │ tagline     │         ││
+    │  │  │ selling_prc │  │ selling_prc │  │ selling_prc │         ││
+    │  │  │ features[]  │  │ features[]  │  │ features[]  │         ││
+    │  │  │ specs{}     │  │ specs{}     │  │ specs{}     │         ││
+    │  │  │ warranty    │  │ warranty    │  │ warranty    │         ││
+    │  │  │             │  │             │  │             │         ││
+    │  │  │ Rp 350M     │  │ Rp 500M     │  │ Rp 750M     │         ││
+    │  │  │ (15% mrgn)  │  │ (20% mrgn)  │  │ (25% mrgn)  │         ││
+    │  │  └─────────────┘  └─────────────┘  └─────────────┘         ││
+    │  │                                                              ││
+    │  └─────────────────────────────────────────────────────────────┘│
+    │                                                                  │
+    │  Note: Selling price can differ from BOM cost (custom margins)  │
+    │                                                                  │
+    └─────────────────────────────────────────────────────────────────┘
+           │
+           ▼
+    ┌──────────────┐
+    │  QUOTATION   │
+    │ (submitted)  │
+    └──────┬───────┘
+           │ customer reviews options
+           ▼
+    ┌─────────────────────────────────────────────────────────────────┐
+    │                 CUSTOMER-FACING COMPARISON                       │
+    │                                                                  │
+    │  GET /quotations/{id}/variant-comparison                        │
+    │                                                                  │
+    │  ┌─────────────────────────────────────────────────────────────┐│
+    │  │                                                              ││
+    │  │  PLTS Rooftop 50 kWp - Pilihan Konfigurasi                  ││
+    │  │  ═══════════════════════════════════════════                ││
+    │  │                                                              ││
+    │  │  ┌──────────────┬──────────────┬──────────────┐             ││
+    │  │  │ Paket Hemat  │Paket Standar │Paket Premium │             ││
+    │  │  │              │   ★ Best     │              │             ││
+    │  │  ├──────────────┼──────────────┼──────────────┤             ││
+    │  │  │ Rp 350,000,000│Rp 500,000,000│Rp 750,000,000│            ││
+    │  │  ├──────────────┼──────────────┼──────────────┤             ││
+    │  │  │ ✓ Garansi 5th│ ✓ Garansi 10th│ ✓ Garansi 15th│          ││
+    │  │  │ ✓ Instalasi  │ ✓ Instalasi  │ ✓ Instalasi  │             ││
+    │  │  │              │ ✓ Monitoring │ ✓ Monitoring │             ││
+    │  │  │              │ ✓ Training   │ ✓ Training   │             ││
+    │  │  │              │              │ ✓ 24/7 Support│            ││
+    │  │  │              │              │ ✓ Maintenance │            ││
+    │  │  ├──────────────┼──────────────┼──────────────┤             ││
+    │  │  │  [Select]    │  [Select]    │  [Select]    │             ││
+    │  │  └──────────────┴──────────────┴──────────────┘             ││
+    │  │                                                              ││
+    │  │  Price Range: Rp 350M - Rp 750M                             ││
+    │  │                                                              ││
+    │  └─────────────────────────────────────────────────────────────┘│
+    │                                                                  │
+    └─────────────────────────────────────────────────────────────────┘
+           │
+           │ customer selects option
+           ▼
+    ┌──────────────┐      ┌──────────────────────────────────┐
+    │   SELECT     │◀─────│ POST /quotations/{id}/select-variant │
+    │   VARIANT    │      │ - variant_option_id              │
+    │              │      │ - Updates selected_variant_id    │
+    └──────┬───────┘      │ - Updates quotation total        │
+           │              └──────────────────────────────────┘
+           ▼
+    ┌──────────────┐
+    │  QUOTATION   │
+    │  (approved)  │
+    └──────┬───────┘
+           │
+           ▼
+    ┌──────────────┐      ┌──────────────────────────────────┐
+    │   INVOICE    │◀─────│ Convert with selected variant    │
+    │              │      │ price as total                   │
+    └──────┬───────┘      └──────────────────────────────────┘
+           │
+           ▼
+    ┌──────────────┐      ┌──────────────────────────────────┐
+    │  WORK ORDER  │◀─────│ Create from selected BOM variant │
+    │   CREATED    │      │ (Budget, Standard, or Premium)   │
+    └──────────────┘      └──────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    ALTERNATIVE: CREATE QUOTATION FROM BOM                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  When sales wants to pick ONE variant (not give customer options):          │
+│                                                                              │
+│  POST /api/v1/quotations/from-bom                                           │
+│  {                                                                           │
+│      "bom_id": 5,              // Pick specific BOM (e.g., Standard)        │
+│      "contact_id": 123,                                                      │
+│      "margin_percent": 25,     // Apply margin on BOM cost                  │
+│      "expand_items": false     // false = single line, true = detailed      │
+│  }                                                                           │
+│                                                                              │
+│  Result: Single quotation with selected BOM pricing                         │
+│          - source_bom_id tracks which BOM was used                          │
+│          - quotation_type remains "single"                                  │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## API Endpoint Summary
 
 ### Phase 1-4: Core Accounting
@@ -895,6 +1152,28 @@
 | GET/POST | `/api/v1/roles` | Role Management |
 | GET/POST | `/api/v1/permissions` | Permission Management |
 
+### Phase 10: Multi-Alternative BOM Comparison
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET/POST | `/api/v1/bom-variant-groups` | BOM Variant Groups |
+| GET/PUT/DELETE | `/api/v1/bom-variant-groups/{id}` | Variant Group CRUD |
+| GET | `/api/v1/bom-variant-groups/{id}/compare` | Side-by-side Comparison |
+| GET | `/api/v1/bom-variant-groups/{id}/compare-detailed` | Item-level Comparison |
+| POST | `/api/v1/bom-variant-groups/{id}/boms` | Add BOM to Group |
+| DELETE | `/api/v1/bom-variant-groups/{id}/boms/{bom}` | Remove BOM from Group |
+| POST | `/api/v1/bom-variant-groups/{id}/boms/{bom}/set-primary` | Set Primary Variant |
+| POST | `/api/v1/bom-variant-groups/{id}/reorder` | Reorder Variants |
+| POST | `/api/v1/bom-variant-groups/{id}/create-variant` | Clone BOM as Variant |
+
+### Phase 10B: Multi-Option Quotations
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/quotations/from-bom` | Create quotation from BOM (single variant) |
+| GET | `/api/v1/quotations/{id}/variant-options` | Get variant options |
+| PUT | `/api/v1/quotations/{id}/variant-options` | Sync variant options |
+| POST | `/api/v1/quotations/{id}/select-variant` | Customer selects variant |
+| GET | `/api/v1/quotations/{id}/variant-comparison` | Customer-facing comparison |
+
 ---
 
 ## Test Coverage Summary
@@ -902,7 +1181,7 @@
 | Phase | Description | Tests |
 |-------|-------------|-------|
 | 1-4 | Core Accounting | 342 |
-| 5A | Quotations | 45 |
+| 5A | Quotations (incl. Variants, FromBom) | 101 |
 | 5B | Purchase Orders | 39 |
 | 5C | Down Payments | 37 |
 | 5D | Delivery Orders | 30 |
@@ -914,7 +1193,8 @@
 | 8A | Stock Opname | 23 |
 | 8B | Goods Receipt Note | 26 |
 | 9 | Authentication | ~20 |
-| **Total** | | **~850+** |
+| 10 | BOM Variant Comparison | 22 |
+| **Total** | | **~950+** |
 
 ---
 

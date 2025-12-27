@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Accounting\Role;
 use App\Models\User;
 use Database\Seeders\Demo\DemoSeeder;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -42,6 +43,10 @@ class DatabaseSeeder extends Seeder
             ChartOfAccountsSeeder::class,
             RolesAndPermissionsSeeder::class,
         ]);
+
+        // Assign admin role to admin user
+        $adminUser = User::where('email', 'admin@example.com')->first();
+        $adminUser->assignRole(Role::ADMIN);
 
         $this->command->info('');
         $this->command->info('Foundation data seeded successfully.');

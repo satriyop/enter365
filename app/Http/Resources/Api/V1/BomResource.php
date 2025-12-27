@@ -5,13 +5,11 @@ namespace App\Http\Resources\Api\V1;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin \App\Models\Accounting\Bom
+ */
 class BomResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
     public function toArray(Request $request): array
     {
         return [
@@ -35,6 +33,11 @@ class BomResource extends JsonResource
             'status' => $this->status,
             'version' => $this->version,
             'parent_bom_id' => $this->parent_bom_id,
+            'variant_group_id' => $this->variant_group_id,
+            'variant_name' => $this->variant_name,
+            'variant_label' => $this->variant_label,
+            'is_primary_variant' => $this->is_primary_variant,
+            'variant_sort_order' => $this->variant_sort_order,
             'notes' => $this->notes,
             'items' => BomItemResource::collection($this->whenLoaded('items')),
             'items_count' => $this->whenCounted('items'),

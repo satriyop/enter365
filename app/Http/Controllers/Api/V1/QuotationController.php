@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\StoreQuotationFromBomRequest;
 use App\Http\Requests\Api\V1\StoreQuotationRequest;
 use App\Http\Requests\Api\V1\UpdateQuotationRequest;
 use App\Http\Resources\Api\V1\InvoiceResource;
 use App\Http\Resources\Api\V1\QuotationResource;
+use App\Http\Resources\Api\V1\QuotationVariantOptionResource;
 use App\Models\Accounting\Quotation;
+use App\Models\Accounting\QuotationVariantOption;
 use App\Services\Accounting\QuotationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -35,6 +38,10 @@ class QuotationController extends Controller
             $query->where('contact_id', $request->input('contact_id'));
         }
 
+        if ($request->has('quotation_type')) {
+            $query->where('quotation_type', $request->input('quotation_type'));
+        }
+
         if ($request->has('start_date')) {
             $query->where('quotation_date', '>=', $request->input('start_date'));
         }
@@ -49,6 +56,10 @@ class QuotationController extends Controller
 
         if ($request->boolean('active_only')) {
             $query->active();
+        }
+
+        if ($request->boolean('multi_option_only')) {
+            $query->where('quotation_type', Quotation::TYPE_MULTI_OPTION);
         }
 
         if ($request->has('search')) {
@@ -81,13 +92,46 @@ class QuotationController extends Controller
     }
 
     /**
+     * Create a quotation from a BOM.
+     *
+     * Allows salespeople to pick a specific BOM (e.g., from a variant group)
+     * and auto-generate a quotation with proper pricing.
+     *
+     * Options:
+     * - margin_percent: Add margin on top of BOM cost (default: 20%)
+     * - selling_price: Override with direct selling price
+     * - expand_items: true = expand BOM items as quotation lines, false = single line item
+     */
+    public function fromBom(StoreQuotationFromBomRequest $request): JsonResponse
+    {
+        try {
+            $quotation = $this->quotationService->createFromBom($request->validated());
+
+            return (new QuotationResource($quotation))
+                ->response()
+                ->setStatusCode(201);
+        } catch (InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+    }
+
+    /**
      * Display the specified quotation.
      */
     public function show(Quotation $quotation): QuotationResource
     {
-        return new QuotationResource(
-            $quotation->load(['contact', 'items.product', 'revisions', 'convertedInvoice'])
-        );
+        $relations = ['contact', 'items.product', 'revisions', 'convertedInvoice'];
+
+        // Load variant relationships for multi-option quotations
+        if ($quotation->isMultiOption()) {
+            $relations = array_merge($relations, [
+                'variantGroup',
+                'selectedVariant',
+                'variantOptions.bom',
+            ]);
+        }
+
+        return new QuotationResource($quotation->load($relations));
     }
 
     /**
@@ -238,5 +282,163 @@ class QuotationController extends Controller
         );
 
         return response()->json(['data' => $statistics]);
+    }
+
+    /**
+     * Get variant options for a multi-option quotation.
+     */
+    public function variantOptions(Quotation $quotation): JsonResponse
+    {
+        if (! $quotation->isMultiOption()) {
+            return response()->json([
+                'message' => 'Penawaran ini bukan tipe multi-option.',
+            ], 422);
+        }
+
+        $options = $quotation->variantOptions()
+            ->with('bom')
+            ->orderBy('sort_order')
+            ->get();
+
+        return response()->json([
+            'data' => QuotationVariantOptionResource::collection($options),
+            'meta' => [
+                'quotation_id' => $quotation->id,
+                'quotation_number' => $quotation->getFullNumber(),
+                'variant_group_id' => $quotation->variant_group_id,
+                'selected_variant_id' => $quotation->selected_variant_id,
+                'has_selected_variant' => $quotation->hasSelectedVariant(),
+            ],
+        ]);
+    }
+
+    /**
+     * Add or update variant options for a multi-option quotation.
+     */
+    public function syncVariantOptions(Request $request, Quotation $quotation): JsonResponse
+    {
+        if (! $quotation->isEditable()) {
+            return response()->json([
+                'message' => 'Penawaran ini tidak dapat diubah.',
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'options' => ['required', 'array', 'min:2'],
+            'options.*.bom_id' => ['required', 'exists:boms,id'],
+            'options.*.display_name' => ['required', 'string', 'max:255'],
+            'options.*.tagline' => ['nullable', 'string', 'max:255'],
+            'options.*.is_recommended' => ['boolean'],
+            'options.*.selling_price' => ['required', 'integer', 'min:0'],
+            'options.*.features' => ['nullable', 'array'],
+            'options.*.features.*' => ['string'],
+            'options.*.specifications' => ['nullable', 'array'],
+            'options.*.warranty_terms' => ['nullable', 'string', 'max:500'],
+        ], [
+            'options.required' => 'Opsi varian harus diisi.',
+            'options.min' => 'Minimal 2 opsi varian diperlukan.',
+            'options.*.bom_id.required' => 'BOM harus dipilih untuk setiap opsi.',
+            'options.*.display_name.required' => 'Nama tampilan harus diisi.',
+            'options.*.selling_price.required' => 'Harga jual harus diisi.',
+        ]);
+
+        // Update quotation type to multi-option if not already
+        if (! $quotation->isMultiOption()) {
+            $quotation->update(['quotation_type' => Quotation::TYPE_MULTI_OPTION]);
+        }
+
+        // Sync variant options
+        $quotation->variantOptions()->delete();
+
+        $options = collect($validated['options'])->map(function ($option, $index) use ($quotation) {
+            return $quotation->variantOptions()->create([
+                'bom_id' => $option['bom_id'],
+                'display_name' => $option['display_name'],
+                'tagline' => $option['tagline'] ?? null,
+                'is_recommended' => $option['is_recommended'] ?? false,
+                'selling_price' => $option['selling_price'],
+                'features' => $option['features'] ?? null,
+                'specifications' => $option['specifications'] ?? null,
+                'warranty_terms' => $option['warranty_terms'] ?? null,
+                'sort_order' => $index,
+            ]);
+        });
+
+        // Reload with BOM relationship
+        $savedOptions = $quotation->variantOptions()->with('bom')->orderBy('sort_order')->get();
+
+        return response()->json([
+            'message' => 'Opsi varian berhasil disimpan.',
+            'data' => QuotationVariantOptionResource::collection($savedOptions),
+        ]);
+    }
+
+    /**
+     * Select a variant for a multi-option quotation.
+     */
+    public function selectVariant(Request $request, Quotation $quotation): QuotationResource|JsonResponse
+    {
+        if (! $quotation->isMultiOption()) {
+            return response()->json([
+                'message' => 'Penawaran ini bukan tipe multi-option.',
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'variant_option_id' => ['required', 'exists:quotation_variant_options,id'],
+        ], [
+            'variant_option_id.required' => 'Pilihan varian harus dipilih.',
+            'variant_option_id.exists' => 'Pilihan varian tidak ditemukan.',
+        ]);
+
+        /** @var QuotationVariantOption $variantOption */
+        $variantOption = QuotationVariantOption::findOrFail($validated['variant_option_id']);
+
+        // Verify the variant option belongs to this quotation
+        if ($variantOption->quotation_id !== $quotation->id) {
+            return response()->json([
+                'message' => 'Pilihan varian tidak valid untuk penawaran ini.',
+            ], 422);
+        }
+
+        $quotation->update([
+            'selected_variant_id' => $variantOption->bom_id,
+            'total' => $variantOption->selling_price,
+        ]);
+
+        return new QuotationResource(
+            $quotation->fresh(['contact', 'items', 'variantGroup', 'selectedVariant', 'variantOptions.bom'])
+        );
+    }
+
+    /**
+     * Get variant comparison data for customer-facing display.
+     */
+    public function variantComparison(Quotation $quotation): JsonResponse
+    {
+        if (! $quotation->isMultiOption()) {
+            return response()->json([
+                'message' => 'Penawaran ini bukan tipe multi-option.',
+            ], 422);
+        }
+
+        $comparison = $quotation->getVariantComparison();
+
+        return response()->json([
+            'data' => [
+                'quotation' => [
+                    'id' => $quotation->id,
+                    'quotation_number' => $quotation->getFullNumber(),
+                    'subject' => $quotation->subject,
+                    'contact' => $quotation->contact ? [
+                        'id' => $quotation->contact->id,
+                        'name' => $quotation->contact->name,
+                    ] : null,
+                    'selected_variant_id' => $quotation->selected_variant_id,
+                ],
+                'options' => $comparison['options'] ?? [],
+                'price_range' => $comparison['price_range'] ?? null,
+            ],
+        ]);
     }
 }

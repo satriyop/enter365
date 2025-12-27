@@ -56,7 +56,7 @@ class RecurringService
      */
     public function generateFromTemplate(RecurringTemplate $template): Invoice|Bill|null
     {
-        if (!$template->shouldGenerate()) {
+        if (! $template->shouldGenerate()) {
             return null;
         }
 
@@ -218,7 +218,7 @@ class RecurringService
         })->toArray();
 
         return RecurringTemplate::create([
-            'name' => $scheduleData['name'] ?? 'Recurring: ' . $invoice->invoice_number,
+            'name' => $scheduleData['name'] ?? 'Recurring: '.$invoice->invoice_number,
             'type' => RecurringTemplate::TYPE_INVOICE,
             'contact_id' => $invoice->contact_id,
             'frequency' => $scheduleData['frequency'],
@@ -259,7 +259,7 @@ class RecurringService
         })->toArray();
 
         return RecurringTemplate::create([
-            'name' => $scheduleData['name'] ?? 'Recurring: ' . $bill->bill_number,
+            'name' => $scheduleData['name'] ?? 'Recurring: '.$bill->bill_number,
             'type' => RecurringTemplate::TYPE_BILL,
             'contact_id' => $bill->contact_id,
             'frequency' => $scheduleData['frequency'],

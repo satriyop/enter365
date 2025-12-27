@@ -19,7 +19,7 @@ class ReminderService
      */
     public function scheduleInvoiceReminders(Invoice $invoice): Collection
     {
-        if (!config('accounting.notifications.payment_reminder.enabled', true)) {
+        if (! config('accounting.notifications.payment_reminder.enabled', true)) {
             return collect();
         }
 

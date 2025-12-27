@@ -75,7 +75,7 @@ class FiscalPeriod extends Model
      */
     public function isOpen(): bool
     {
-        return !$this->is_closed && !$this->is_locked;
+        return ! $this->is_closed && ! $this->is_locked;
     }
 
     /**
@@ -83,7 +83,7 @@ class FiscalPeriod extends Model
      */
     public function canPost(): bool
     {
-        return !$this->is_closed;
+        return ! $this->is_closed;
     }
 
     /**

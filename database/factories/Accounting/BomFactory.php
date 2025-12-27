@@ -3,6 +3,7 @@
 namespace Database\Factories\Accounting;
 
 use App\Models\Accounting\Bom;
+use App\Models\Accounting\BomVariantGroup;
 use App\Models\Accounting\Product;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -34,6 +35,11 @@ class BomFactory extends Factory
             'unit_cost' => 0,
             'status' => Bom::STATUS_DRAFT,
             'version' => '1.0',
+            'variant_group_id' => null,
+            'variant_name' => null,
+            'variant_label' => null,
+            'is_primary_variant' => false,
+            'variant_sort_order' => 0,
             'notes' => $this->faker->optional()->sentence(),
         ];
     }
@@ -107,6 +113,39 @@ class BomFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'output_quantity' => $quantity,
+        ]);
+    }
+
+    /**
+     * For specific variant group.
+     */
+    public function forVariantGroup(BomVariantGroup $group, ?string $variantName = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'product_id' => $group->product_id,
+            'variant_group_id' => $group->id,
+            'variant_name' => $variantName ?? $this->faker->randomElement(['Budget', 'Standard', 'Premium']),
+            'variant_label' => $this->faker->optional()->words(3, true),
+        ]);
+    }
+
+    /**
+     * As primary variant.
+     */
+    public function asPrimaryVariant(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_primary_variant' => true,
+        ]);
+    }
+
+    /**
+     * With variant sort order.
+     */
+    public function withVariantSortOrder(int $order): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'variant_sort_order' => $order,
         ]);
     }
 }

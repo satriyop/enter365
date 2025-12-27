@@ -106,7 +106,7 @@ class RecurringTemplate extends Model
      */
     public function shouldGenerate(): bool
     {
-        if (!$this->is_active) {
+        if (! $this->is_active) {
             return false;
         }
 

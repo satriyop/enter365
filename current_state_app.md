@@ -1,6 +1,6 @@
 # Application Current State
 
-**Stack:** Laravel 12 + PHP 8.4 + PostgreSQL | **API:** RESTful v1 (401 routes) | **Auth:** Sanctum
+**Stack:** Laravel 12 + PHP 8.4 + PostgreSQL | **API:** RESTful v1 (418 routes) | **Auth:** Sanctum
 
 ---
 
@@ -22,6 +22,8 @@
 
 ### Sales Cycle
 - Quotations → Approval → Convert to Invoice
+- Multi-Option Quotations with BOM Variant pricing (Budget/Standard/Premium)
+- Create Quotation from BOM (single variant, auto-expand items, custom margins)
 - Quotation Follow-up (activities, assign, priority, won/lost)
 - Invoices → Delivery Orders → Sales Returns
 - PDF generation for quotations
@@ -40,6 +42,8 @@
 
 ### Manufacturing (MRP)
 - Bills of Material (BOM) with alternatives
+- Multi-Alternative BOM Comparison (Budget/Standard/Premium variants)
+- BOM Variant Groups with side-by-side cost comparison
 - Work Orders with material consumption
 - Material Requisitions (request, approve, issue)
 - MRP Runs with demand forecasting
@@ -71,7 +75,7 @@
 ---
 
 ## Database Summary
-**77 tables** including: accounts, invoices, bills, payments, products, warehouses, work_orders, projects, mrp_runs, stock_opnames, goods_receipt_notes, budgets, roles, permissions
+**79 tables** including: accounts, invoices, bills, payments, products, warehouses, work_orders, projects, mrp_runs, stock_opnames, goods_receipt_notes, budgets, roles, permissions, bom_variant_groups, quotation_variant_options
 
 ---
 
@@ -82,7 +86,6 @@
 |---------|-------------|
 | Email Notifications | Payment reminders exist in DB but no sending mechanism |
 | Bank Statement Import | CSV/OFX import for reconciliation |
-| Multi-Alternative BOM Comparison | Compare pricing across suppliers (ABB vs Siemens) |
 | Solar Proposal Generator | Energy savings, ESG metrics, ROI calculation |
 
 ### Medium Priority
@@ -95,13 +98,13 @@
 
 ---
 
-## API Endpoint Categories (401 total)
+## API Endpoint Categories (418 total)
 - Accounts (7) | Attachments (6) | Auth (5) | Bank Transactions (9)
-- Bills (8) | BOMs (10) | Budgets (15) | Contacts (6)
+- Bills (8) | BOMs (10) | BOM Variant Groups (12) | Budgets (15) | Contacts (6)
 - Dashboard (6) | Delivery Orders (10) | Down Payments (11) | Export (9)
 - Features (1) | Fiscal Periods (7) | GRNs (9) | Inventory (10)
 - Invoices (10) | Journal Entries (5) | Material Requisitions (7) | MRP (16)
 - Payments (4) | Permissions (4) | Products (10) | Projects (16)
-- Purchase Orders (13) | Purchase Returns (10) | Quotations (17) | Recurring (6)
+- Purchase Orders (13) | Purchase Returns (10) | Quotations (22) | Recurring (6)
 - Reports (24) | Roles (7) | Sales Returns (10) | Stock Opnames (13)
 - Subcontractors (14) | Users (7) | Warehouses (6) | Work Orders (15)

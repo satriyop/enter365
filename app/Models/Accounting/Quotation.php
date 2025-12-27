@@ -67,6 +67,11 @@ class Quotation extends Model
 
     public const PRIORITY_URGENT = 'urgent';
 
+    // Quotation types
+    public const TYPE_SINGLE = 'single';
+
+    public const TYPE_MULTI_OPTION = 'multi_option';
+
     protected $fillable = [
         'quotation_number',
         'revision',
@@ -76,6 +81,10 @@ class Quotation extends Model
         'valid_until',
         'reference',
         'subject',
+        'quotation_type',
+        'variant_group_id',
+        'selected_variant_id',
+        'source_bom_id',
         'status',
         // Follow-up fields
         'next_follow_up_at',
@@ -237,6 +246,99 @@ class Quotation extends Model
     public function activities(): HasMany
     {
         return $this->hasMany(QuotationActivity::class)->orderByDesc('activity_at');
+    }
+
+    /**
+     * @return BelongsTo<BomVariantGroup, $this>
+     */
+    public function variantGroup(): BelongsTo
+    {
+        return $this->belongsTo(BomVariantGroup::class, 'variant_group_id');
+    }
+
+    /**
+     * @return BelongsTo<Bom, $this>
+     */
+    public function selectedVariant(): BelongsTo
+    {
+        return $this->belongsTo(Bom::class, 'selected_variant_id');
+    }
+
+    /**
+     * Source BOM when quotation is created from a BOM.
+     *
+     * @return BelongsTo<Bom, $this>
+     */
+    public function sourceBom(): BelongsTo
+    {
+        return $this->belongsTo(Bom::class, 'source_bom_id');
+    }
+
+    /**
+     * @return HasMany<QuotationVariantOption, $this>
+     */
+    public function variantOptions(): HasMany
+    {
+        return $this->hasMany(QuotationVariantOption::class)->orderBy('sort_order');
+    }
+
+    /**
+     * Check if this is a multi-option quotation.
+     */
+    public function isMultiOption(): bool
+    {
+        return $this->quotation_type === self::TYPE_MULTI_OPTION;
+    }
+
+    /**
+     * Check if customer has selected a variant.
+     */
+    public function hasSelectedVariant(): bool
+    {
+        return $this->selected_variant_id !== null;
+    }
+
+    /**
+     * Get the recommended variant option.
+     */
+    public function getRecommendedOption(): ?QuotationVariantOption
+    {
+        return $this->variantOptions->firstWhere('is_recommended', true);
+    }
+
+    /**
+     * Get variant comparison summary for customer display.
+     *
+     * @return array{options: array<int, array<string, mixed>>, price_range: array{min: int, max: int, difference: int}}|null
+     */
+    public function getVariantComparison(): ?array
+    {
+        if (! $this->isMultiOption() || $this->variantOptions->isEmpty()) {
+            return null;
+        }
+
+        $options = $this->variantOptions->map(fn (QuotationVariantOption $option) => [
+            'id' => $option->id,
+            'bom_id' => $option->bom_id,
+            'display_name' => $option->display_name,
+            'tagline' => $option->tagline,
+            'is_recommended' => $option->is_recommended,
+            'selling_price' => $option->selling_price,
+            'features' => $option->features,
+            'specifications' => $option->specifications,
+            'warranty_terms' => $option->warranty_terms,
+        ])->toArray();
+
+        $prices = $this->variantOptions->pluck('selling_price');
+
+        return [
+            'options' => $options,
+            'price_range' => [
+                'min' => $prices->min(),
+                'max' => $prices->max(),
+                'difference' => $prices->max() - $prices->min(),
+            ],
+        ];
     }
 
     /**

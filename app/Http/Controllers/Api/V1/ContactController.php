@@ -89,7 +89,7 @@ class ContactController extends Controller
 
     public function creditStatus(Contact $contact): JsonResponse
     {
-        if (!$contact->isCustomer()) {
+        if (! $contact->isCustomer()) {
             return response()->json([
                 'message' => 'Status kredit hanya tersedia untuk pelanggan.',
             ], 422);

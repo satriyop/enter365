@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BankReconciliationController;
 use App\Http\Controllers\Api\V1\BillController;
 use App\Http\Controllers\Api\V1\BomController;
+use App\Http\Controllers\Api\V1\BomVariantGroupController;
 use App\Http\Controllers\Api\V1\BudgetController;
 use App\Http\Controllers\Api\V1\ContactController;
 use App\Http\Controllers\Api\V1\DashboardController;
@@ -148,6 +149,15 @@ Route::prefix('v1')->group(function () {
             Route::get('quotations/{quotation}/pdf', [QuotationController::class, 'pdf']);
             Route::get('quotations-statistics', [QuotationController::class, 'statistics']);
 
+            // Create Quotation from BOM
+            Route::post('quotations/from-bom', [QuotationController::class, 'fromBom']);
+
+            // Multi-Option Quotation Variant Routes
+            Route::get('quotations/{quotation}/variant-options', [QuotationController::class, 'variantOptions']);
+            Route::put('quotations/{quotation}/variant-options', [QuotationController::class, 'syncVariantOptions']);
+            Route::post('quotations/{quotation}/select-variant', [QuotationController::class, 'selectVariant']);
+            Route::get('quotations/{quotation}/variant-comparison', [QuotationController::class, 'variantComparison']);
+
             // Quotation Follow-Up & Sales Pipeline
             Route::prefix('quotation-follow-up')->group(function () {
                 Route::get('/', [QuotationFollowUpController::class, 'index']);
@@ -249,6 +259,16 @@ Route::prefix('v1')->group(function () {
             Route::get('boms-for-product/{product}', [BomController::class, 'forProduct']);
             Route::post('boms-calculate-cost', [BomController::class, 'calculateCost']);
             Route::get('boms-statistics', [BomController::class, 'statistics']);
+
+            // BOM Variant Groups (Multi-BOM Comparison)
+            Route::apiResource('bom-variant-groups', BomVariantGroupController::class);
+            Route::get('bom-variant-groups/{bom_variant_group}/compare', [BomVariantGroupController::class, 'compare']);
+            Route::get('bom-variant-groups/{bom_variant_group}/compare-detailed', [BomVariantGroupController::class, 'compareDetailed']);
+            Route::post('bom-variant-groups/{bom_variant_group}/boms', [BomVariantGroupController::class, 'addBom']);
+            Route::delete('bom-variant-groups/{bom_variant_group}/boms/{bom}', [BomVariantGroupController::class, 'removeBom']);
+            Route::post('bom-variant-groups/{bom_variant_group}/boms/{bom}/set-primary', [BomVariantGroupController::class, 'setPrimary']);
+            Route::post('bom-variant-groups/{bom_variant_group}/reorder', [BomVariantGroupController::class, 'reorder']);
+            Route::post('bom-variant-groups/{bom_variant_group}/create-variant', [BomVariantGroupController::class, 'createVariant']);
         });
 
         // Projects (Proyek)

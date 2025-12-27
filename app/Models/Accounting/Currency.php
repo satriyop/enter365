@@ -58,6 +58,6 @@ class Currency extends Model
     {
         $formatted = number_format($amount, $this->decimal_places, ',', '.');
 
-        return $this->symbol . ' ' . $formatted;
+        return $this->symbol.' '.$formatted;
     }
 }

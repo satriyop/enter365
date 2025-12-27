@@ -2,6 +2,8 @@
 
 namespace App\Services\Accounting;
 
+use App\Models\Accounting\Bom;
+use App\Models\Accounting\BomItem;
 use App\Models\Accounting\Invoice;
 use App\Models\Accounting\InvoiceItem;
 use App\Models\Accounting\Quotation;
@@ -61,6 +63,189 @@ class QuotationService
 
             return $quotation->load('items', 'contact');
         });
+    }
+
+    /**
+     * Create a quotation from a BOM.
+     *
+     * This allows salespeople to pick a specific BOM (e.g., from a variant group)
+     * and auto-generate a quotation with proper pricing.
+     *
+     * @param  array<string, mixed>  $data  {
+     *                                      bom_id: int,           Required - BOM to create quotation from
+     *                                      contact_id: int,       Required - Customer contact
+     *                                      margin_percent?: float, Margin percentage to add on top of BOM cost (default: 20)
+     *                                      selling_price?: int,   Override: direct selling price (ignores margin)
+     *                                      expand_items?: bool,   Expand BOM items as quotation lines (default: false)
+     *                                      quotation_date?: date,
+     *                                      valid_until?: date,
+     *                                      subject?: string,
+     *                                      reference?: string,
+     *                                      notes?: string,
+     *                                      terms_conditions?: string,
+     *                                      tax_rate?: float,
+     *                                      currency?: string,
+     *                                      exchange_rate?: float,
+     *                                      }
+     */
+    public function createFromBom(array $data): Quotation
+    {
+        $bomId = $data['bom_id'] ?? null;
+        if (! $bomId) {
+            throw new InvalidArgumentException('BOM harus dipilih.');
+        }
+
+        $bom = Bom::with(['items.product', 'product'])->find($bomId);
+        if (! $bom) {
+            throw new InvalidArgumentException('BOM tidak ditemukan.');
+        }
+
+        if ($bom->status !== Bom::STATUS_ACTIVE) {
+            throw new InvalidArgumentException('Hanya BOM dengan status aktif yang dapat digunakan.');
+        }
+
+        $marginPercent = $data['margin_percent'] ?? 20;
+        $expandItems = $data['expand_items'] ?? false;
+
+        // Calculate selling price
+        $bomCost = $bom->total_cost ?? 0;
+        if (isset($data['selling_price'])) {
+            $sellingPrice = (int) $data['selling_price'];
+        } else {
+            $sellingPrice = (int) round($bomCost * (1 + ($marginPercent / 100)));
+        }
+
+        return DB::transaction(function () use ($data, $bom, $sellingPrice, $marginPercent, $expandItems) {
+            $taxRate = $data['tax_rate'] ?? config('accounting.tax.default_rate', 11.00);
+            $quotationDate = $data['quotation_date'] ?? now();
+            $validityDays = config('accounting.quotation.default_validity_days', 30);
+
+            // Build subject from BOM if not provided
+            $subject = $data['subject'] ?? $bom->name;
+            if ($bom->variant_name) {
+                $subject .= ' - '.$bom->variant_name;
+            }
+
+            // Create quotation
+            $quotation = Quotation::create([
+                'quotation_number' => Quotation::generateQuotationNumber(),
+                'revision' => 0,
+                'contact_id' => $data['contact_id'],
+                'quotation_date' => $quotationDate,
+                'valid_until' => $data['valid_until'] ?? now()->parse($quotationDate)->addDays($validityDays),
+                'reference' => $data['reference'] ?? $bom->bom_number,
+                'subject' => $subject,
+                'quotation_type' => Quotation::TYPE_SINGLE,
+                'source_bom_id' => $bom->id,
+                'status' => Quotation::STATUS_DRAFT,
+                'currency' => $data['currency'] ?? 'IDR',
+                'exchange_rate' => $data['exchange_rate'] ?? 1,
+                'tax_rate' => $taxRate,
+                'subtotal' => 0,
+                'discount_type' => null,
+                'discount_value' => 0,
+                'discount_amount' => 0,
+                'tax_amount' => 0,
+                'total' => 0,
+                'base_currency_total' => 0,
+                'notes' => $data['notes'] ?? "Dibuat dari BOM: {$bom->bom_number}\nMargin: {$marginPercent}%\nBiaya BOM: ".number_format($bom->total_cost, 0, ',', '.'),
+                'terms_conditions' => $data['terms_conditions'] ?? Quotation::getDefaultTermsConditions(),
+                'created_by' => auth()->id(),
+            ]);
+
+            // Create items
+            if ($expandItems) {
+                $this->createItemsFromBomExpanded($quotation, $bom, $marginPercent);
+            } else {
+                $this->createItemsFromBomSingle($quotation, $bom, $sellingPrice);
+            }
+
+            // Calculate totals
+            $quotation->refresh();
+            $quotation->calculateTotals();
+            $quotation->save();
+
+            return $quotation->load('items', 'contact');
+        });
+    }
+
+    /**
+     * Create quotation items by expanding BOM items (detailed view).
+     */
+    private function createItemsFromBomExpanded(Quotation $quotation, Bom $bom, float $marginPercent): void
+    {
+        $sortOrder = 0;
+        $multiplier = 1 + ($marginPercent / 100);
+
+        foreach ($bom->items as $bomItem) {
+            // Calculate selling price with margin
+            $unitPrice = (int) round($bomItem->unit_cost * $multiplier);
+            $quantity = (float) $bomItem->quantity;
+            $lineTotal = (int) round($quantity * $unitPrice);
+
+            // Get description
+            $description = $bomItem->description;
+            if ($bomItem->product) {
+                $description = $bomItem->product->name;
+                if ($bomItem->description) {
+                    $description .= ' - '.$bomItem->description;
+                }
+            }
+
+            // Add type indicator for clarity
+            $typeLabel = match ($bomItem->type) {
+                BomItem::TYPE_MATERIAL => '[Material]',
+                BomItem::TYPE_LABOR => '[Jasa]',
+                BomItem::TYPE_OVERHEAD => '[Overhead]',
+                default => '',
+            };
+
+            QuotationItem::create([
+                'quotation_id' => $quotation->id,
+                'product_id' => $bomItem->product_id,
+                'description' => trim("{$typeLabel} {$description}"),
+                'quantity' => $quantity,
+                'unit' => $bomItem->unit ?? 'unit',
+                'unit_price' => $unitPrice,
+                'discount_percent' => 0,
+                'discount_amount' => 0,
+                'tax_rate' => $quotation->tax_rate,
+                'tax_amount' => (int) round($lineTotal * ($quotation->tax_rate / 100)),
+                'line_total' => $lineTotal,
+                'sort_order' => $sortOrder++,
+                'notes' => $bomItem->notes,
+            ]);
+        }
+    }
+
+    /**
+     * Create single quotation item from BOM (simplified view for customer).
+     */
+    private function createItemsFromBomSingle(Quotation $quotation, Bom $bom, int $sellingPrice): void
+    {
+        // Build description from BOM product
+        $description = $bom->product?->name ?? $bom->name;
+        if ($bom->variant_name) {
+            $description .= ' ('.$bom->variant_name.')';
+        }
+
+        $taxAmount = (int) round($sellingPrice * ($quotation->tax_rate / 100));
+
+        QuotationItem::create([
+            'quotation_id' => $quotation->id,
+            'product_id' => $bom->product_id,
+            'description' => $description,
+            'quantity' => (float) $bom->output_quantity ?? 1,
+            'unit' => $bom->output_unit ?? 'system',
+            'unit_price' => $sellingPrice,
+            'discount_percent' => 0,
+            'discount_amount' => 0,
+            'tax_rate' => $quotation->tax_rate,
+            'tax_amount' => $taxAmount,
+            'line_total' => $sellingPrice,
+            'sort_order' => 0,
+            'notes' => $bom->description,
+        ]);
     }
 
     /**

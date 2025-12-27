@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\Bill;
 use App\Models\Accounting\Invoice;
-use App\Models\Accounting\JournalEntry;
 use App\Services\Accounting\AccountBalanceService;
 use App\Services\Accounting\AgingReportService;
 use App\Services\Accounting\FinancialReportService;
@@ -333,7 +332,7 @@ class ExportController extends Controller
 
         return response($csv, 200, [
             'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => "attachment; filename=\"{$filename}-" . now()->format('Y-m-d') . ".csv\"",
+            'Content-Disposition' => "attachment; filename=\"{$filename}-".now()->format('Y-m-d').'.csv"',
         ]);
     }
 

@@ -13,19 +13,31 @@ class Account extends Model
     use HasFactory, SoftDeletes;
 
     public const TYPE_ASSET = 'asset';
+
     public const TYPE_LIABILITY = 'liability';
+
     public const TYPE_EQUITY = 'equity';
+
     public const TYPE_REVENUE = 'revenue';
+
     public const TYPE_EXPENSE = 'expense';
 
     public const SUBTYPE_CURRENT_ASSET = 'current_asset';
+
     public const SUBTYPE_FIXED_ASSET = 'fixed_asset';
+
     public const SUBTYPE_CURRENT_LIABILITY = 'current_liability';
+
     public const SUBTYPE_LONG_TERM_LIABILITY = 'long_term_liability';
+
     public const SUBTYPE_EQUITY = 'equity';
+
     public const SUBTYPE_OPERATING_REVENUE = 'operating_revenue';
+
     public const SUBTYPE_OTHER_REVENUE = 'other_revenue';
+
     public const SUBTYPE_OPERATING_EXPENSE = 'operating_expense';
+
     public const SUBTYPE_OTHER_EXPENSE = 'other_expense';
 
     protected $fillable = [

@@ -104,8 +104,8 @@ class AuditLog extends Model
             $model instanceof Bill => $model->bill_number,
             $model instanceof Payment => $model->payment_number,
             $model instanceof JournalEntry => $model->entry_number,
-            $model instanceof Account => $model->code . ' - ' . $model->name,
-            $model instanceof Contact => $model->code . ' - ' . $model->name,
+            $model instanceof Account => $model->code.' - '.$model->name,
+            $model instanceof Contact => $model->code.' - '.$model->name,
             $model instanceof FiscalPeriod => $model->name,
             default => (string) $model->getKey(),
         };

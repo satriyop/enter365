@@ -241,6 +241,6 @@ class AgingReportService
         }
 
         // Default to last bucket
-        return 'bucket_' . (count($buckets) - 1);
+        return 'bucket_'.(count($buckets) - 1);
     }
 }

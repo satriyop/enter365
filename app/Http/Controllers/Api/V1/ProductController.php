@@ -274,7 +274,7 @@ class ProductController extends Controller
         $newProduct->sku = Product::generateSku(
             $product->type === Product::TYPE_SERVICE ? 'SVC' : 'PRD'
         );
-        $newProduct->name = $product->name . ' (Copy)';
+        $newProduct->name = $product->name.' (Copy)';
         $newProduct->barcode = null; // Clear barcode
         $newProduct->current_stock = 0;
         $newProduct->save();

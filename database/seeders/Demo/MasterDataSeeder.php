@@ -3,6 +3,7 @@
 namespace Database\Seeders\Demo;
 
 use App\Models\Accounting\ProductCategory;
+use App\Models\Accounting\Role;
 use App\Models\Accounting\Warehouse;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -69,7 +70,7 @@ class MasterDataSeeder extends Seeder
     {
         // Parent categories
         $categories = [
-            // Raw Materials
+            // Raw Materials - Electrical (PT Vahana)
             [
                 'code' => 'RM',
                 'name' => 'Bahan Baku',
@@ -80,9 +81,15 @@ class MasterDataSeeder extends Seeder
                     ['code' => 'RM-BB', 'name' => 'Busbar & Koneksi', 'description' => 'Busbar copper, terminal, lug'],
                     ['code' => 'RM-EN', 'name' => 'Enclosure & Box', 'description' => 'Panel box, junction box'],
                     ['code' => 'RM-AC', 'name' => 'Aksesoris', 'description' => 'DIN rail, duct, label, dll'],
+                    // Solar Components (PT NEX)
+                    ['code' => 'RM-PV', 'name' => 'Modul Surya', 'description' => 'Panel surya / PV modules'],
+                    ['code' => 'RM-INV', 'name' => 'Inverter', 'description' => 'String inverter, central inverter, hybrid'],
+                    ['code' => 'RM-MNT', 'name' => 'Mounting Structure', 'description' => 'Roof mount, ground mount, rail, clamp'],
+                    ['code' => 'RM-DC', 'name' => 'DC Components', 'description' => 'DC cable, MC4 connector, combiner box'],
+                    ['code' => 'RM-MON', 'name' => 'Monitoring & Meter', 'description' => 'Smart meter, monitoring system, CT'],
                 ],
             ],
-            // Finished Goods
+            // Finished Goods - Electrical Panels (PT Vahana)
             [
                 'code' => 'FG',
                 'name' => 'Barang Jadi',
@@ -94,6 +101,9 @@ class MasterDataSeeder extends Seeder
                     ['code' => 'FG-ATS', 'name' => 'Panel ATS/AMF', 'description' => 'Automatic Transfer Switch'],
                     ['code' => 'FG-DB', 'name' => 'Panel DB', 'description' => 'Distribution Board'],
                     ['code' => 'FG-CTM', 'name' => 'Panel Custom', 'description' => 'Custom built panels'],
+                    // Solar Systems (PT NEX)
+                    ['code' => 'FG-PLTS', 'name' => 'Sistem PLTS', 'description' => 'Complete PV system / PLTS rooftop & ground'],
+                    ['code' => 'FG-HYBRID', 'name' => 'Hybrid System', 'description' => 'Solar + battery storage system'],
                 ],
             ],
             // Services
@@ -102,9 +112,14 @@ class MasterDataSeeder extends Seeder
                 'name' => 'Jasa',
                 'description' => 'Services / jasa',
                 'children' => [
+                    // Electrical Services (PT Vahana)
                     ['code' => 'SVC-INS', 'name' => 'Jasa Instalasi', 'description' => 'Instalasi panel dan wiring'],
                     ['code' => 'SVC-COM', 'name' => 'Jasa Commissioning', 'description' => 'Testing dan commissioning'],
                     ['code' => 'SVC-MNT', 'name' => 'Jasa Maintenance', 'description' => 'Perawatan dan perbaikan'],
+                    // Solar Services (PT NEX)
+                    ['code' => 'SVC-SRV', 'name' => 'Survey & Design', 'description' => 'Site survey, system design, proposal'],
+                    ['code' => 'SVC-OM', 'name' => 'O&M Services', 'description' => 'Operations & maintenance PLTS'],
+                    ['code' => 'SVC-CLN', 'name' => 'Panel Cleaning', 'description' => 'Solar panel cleaning service'],
                 ],
             ],
         ];
@@ -130,7 +145,7 @@ class MasterDataSeeder extends Seeder
             }
         }
 
-        $this->command->info('Created product categories (3 parents + 14 children)');
+        $this->command->info('Created product categories (3 parents + 22 children: 10 RM, 8 FG, 6 SVC)');
     }
 
     private function createUsers(): void
@@ -141,46 +156,57 @@ class MasterDataSeeder extends Seeder
                 'email' => 'admin@demo.com',
                 'password' => Hash::make('password'),
                 'is_active' => true,
+                'role' => Role::ADMIN,
             ],
             [
                 'name' => 'Sales Manager',
                 'email' => 'sales@demo.com',
                 'password' => Hash::make('password'),
                 'is_active' => true,
+                'role' => Role::SALES,
             ],
             [
                 'name' => 'Purchasing Staff',
                 'email' => 'purchasing@demo.com',
                 'password' => Hash::make('password'),
                 'is_active' => true,
+                'role' => Role::PURCHASING,
             ],
             [
                 'name' => 'Production Manager',
                 'email' => 'produksi@demo.com',
                 'password' => Hash::make('password'),
                 'is_active' => true,
+                'role' => Role::INVENTORY,
             ],
             [
                 'name' => 'Finance Staff',
                 'email' => 'finance@demo.com',
                 'password' => Hash::make('password'),
                 'is_active' => true,
+                'role' => Role::ACCOUNTANT,
             ],
             [
                 'name' => 'Warehouse Staff',
                 'email' => 'gudang@demo.com',
                 'password' => Hash::make('password'),
                 'is_active' => true,
+                'role' => Role::INVENTORY,
             ],
         ];
 
-        foreach ($users as $user) {
-            User::updateOrCreate(
-                ['email' => $user['email']],
-                $user
+        foreach ($users as $userData) {
+            $role = $userData['role'];
+            unset($userData['role']);
+
+            $user = User::updateOrCreate(
+                ['email' => $userData['email']],
+                $userData
             );
+
+            $user->assignRole($role);
         }
 
-        $this->command->info('Created 6 demo users');
+        $this->command->info('Created 6 demo users with roles');
     }
 }

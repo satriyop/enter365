@@ -227,7 +227,13 @@ class VahanaTransactionSeeder extends Seeder
             }
         }
 
-        $quotation = Quotation::create($quotationData);
+        $quotation = Quotation::updateOrCreate(
+            ['quotation_number' => $quotationNumber, 'revision' => 0],
+            $quotationData
+        );
+
+        // Delete existing items and recreate
+        QuotationItem::where('quotation_id', $quotation->id)->delete();
 
         // Create items
         $sortOrder = 1;
@@ -275,18 +281,20 @@ class VahanaTransactionSeeder extends Seeder
 
             // Create payment
             if ($invoice && $bankAccount) {
-                Payment::create([
-                    'payment_number' => 'PAY-'.now()->format('Ym').'-0001',
-                    'payment_date' => now()->subDays(15),
-                    'type' => Payment::TYPE_RECEIVE,
-                    'contact_id' => $plnJbr->id,
-                    'cash_account_id' => $bankAccount->id,
-                    'amount' => $invoice->total_amount,
-                    'reference' => 'TRF-PLN-'.rand(100000, 999999),
-                    'notes' => 'Pembayaran Invoice '.$invoice->invoice_number,
-                    'payable_type' => Invoice::class,
-                    'payable_id' => $invoice->id,
-                ]);
+                Payment::updateOrCreate(
+                    ['payment_number' => 'PAY-'.now()->format('Ym').'-0001'],
+                    [
+                        'payment_date' => now()->subDays(15),
+                        'type' => Payment::TYPE_RECEIVE,
+                        'contact_id' => $plnJbr->id,
+                        'cash_account_id' => $bankAccount->id,
+                        'amount' => $invoice->total_amount,
+                        'reference' => 'TRF-PLN-001',
+                        'notes' => 'Pembayaran Invoice '.$invoice->invoice_number,
+                        'payable_type' => Invoice::class,
+                        'payable_id' => $invoice->id,
+                    ]
+                );
             }
         }
 
@@ -306,18 +314,20 @@ class VahanaTransactionSeeder extends Seeder
             // 50% payment
             if ($invoice && $bankAccount) {
                 $partialAmount = (int) ($invoice->total_amount * 0.5);
-                Payment::create([
-                    'payment_number' => 'PAY-'.now()->format('Ym').'-0002',
-                    'payment_date' => now()->subDays(10),
-                    'type' => Payment::TYPE_RECEIVE,
-                    'contact_id' => $trias->id,
-                    'cash_account_id' => $bankAccount->id,
-                    'amount' => $partialAmount,
-                    'reference' => 'TRF-TRIAS-'.rand(100000, 999999),
-                    'notes' => 'DP 50% Invoice '.$invoice->invoice_number,
-                    'payable_type' => Invoice::class,
-                    'payable_id' => $invoice->id,
-                ]);
+                Payment::updateOrCreate(
+                    ['payment_number' => 'PAY-'.now()->format('Ym').'-0002'],
+                    [
+                        'payment_date' => now()->subDays(10),
+                        'type' => Payment::TYPE_RECEIVE,
+                        'contact_id' => $trias->id,
+                        'cash_account_id' => $bankAccount->id,
+                        'amount' => $partialAmount,
+                        'reference' => 'TRF-TRIAS-002',
+                        'notes' => 'DP 50% Invoice '.$invoice->invoice_number,
+                        'payable_type' => Invoice::class,
+                        'payable_id' => $invoice->id,
+                    ]
+                );
 
                 $invoice->update([
                     'paid_amount' => $partialAmount,
@@ -379,21 +389,26 @@ class VahanaTransactionSeeder extends Seeder
             default => Invoice::STATUS_SENT,
         };
 
-        $invoice = Invoice::create([
-            'invoice_number' => $invoiceNumber,
-            'contact_id' => $contact->id,
-            'invoice_date' => $invoiceDate,
-            'due_date' => $dueDate,
-            'status' => $invoiceStatus,
-            'currency' => 'IDR',
-            'exchange_rate' => 1,
-            'subtotal' => $subtotal,
-            'discount_amount' => 0,
-            'tax_rate' => $taxRate,
-            'tax_amount' => $taxAmount,
-            'total_amount' => $total,
-            'paid_amount' => $status === 'paid' ? $total : 0,
-        ]);
+        $invoice = Invoice::updateOrCreate(
+            ['invoice_number' => $invoiceNumber],
+            [
+                'contact_id' => $contact->id,
+                'invoice_date' => $invoiceDate,
+                'due_date' => $dueDate,
+                'status' => $invoiceStatus,
+                'currency' => 'IDR',
+                'exchange_rate' => 1,
+                'subtotal' => $subtotal,
+                'discount_amount' => 0,
+                'tax_rate' => $taxRate,
+                'tax_amount' => $taxAmount,
+                'total_amount' => $total,
+                'paid_amount' => $status === 'paid' ? $total : 0,
+            ]
+        );
+
+        // Delete existing items and recreate
+        InvoiceItem::where('invoice_id', $invoice->id)->delete();
 
         foreach ($items as $index => $item) {
             $lineTotal = $item['product']->selling_price * $item['qty'];
@@ -552,7 +567,13 @@ class VahanaTransactionSeeder extends Seeder
             $poData['approved_by'] = User::where('email', 'admin@demo.com')->first()?->id;
         }
 
-        $po = PurchaseOrder::create($poData);
+        $po = PurchaseOrder::updateOrCreate(
+            ['po_number' => $poNumber],
+            $poData
+        );
+
+        // Delete existing items and recreate
+        PurchaseOrderItem::where('purchase_order_id', $po->id)->delete();
 
         $sortOrder = 1;
         foreach ($items as $item) {
@@ -647,25 +668,27 @@ class VahanaTransactionSeeder extends Seeder
         $completedQty = $status === 'completed' ? $quantity : ($status === 'in_progress' ? (int) ($quantity * 0.3) : 0);
         $progressPercentage = $quantity > 0 ? (int) min(100, round(($completedQty / $quantity) * 100)) : 0;
 
-        $wo = WorkOrder::create([
-            'wo_number' => $woNumber,
-            'name' => 'Produksi '.$bom->name,
-            'bom_id' => $bom->id,
-            'product_id' => $bom->product_id,
-            'warehouse_id' => $warehouse->id,
-            'quantity_ordered' => $quantity,
-            'quantity_completed' => $completedQty,
-            'quantity_scrapped' => 0,
-            'progress_percentage' => $progressPercentage,
-            'planned_start_date' => $startDate,
-            'planned_end_date' => (clone $startDate)->addDays(7),
-            'actual_start_date' => in_array($status, ['in_progress', 'completed']) ? $startDate : null,
-            'actual_end_date' => $status === 'completed' ? (clone $startDate)->addDays(5) : null,
-            'status' => $woStatus,
-            'priority' => 'normal',
-            'notes' => 'Work Order untuk '.$bom->name,
-            'created_by' => $user?->id,
-        ]);
+        $wo = WorkOrder::updateOrCreate(
+            ['wo_number' => $woNumber],
+            [
+                'name' => 'Produksi '.$bom->name,
+                'bom_id' => $bom->id,
+                'product_id' => $bom->product_id,
+                'warehouse_id' => $warehouse->id,
+                'quantity_ordered' => $quantity,
+                'quantity_completed' => $completedQty,
+                'quantity_scrapped' => 0,
+                'progress_percentage' => $progressPercentage,
+                'planned_start_date' => $startDate,
+                'planned_end_date' => (clone $startDate)->addDays(7),
+                'actual_start_date' => in_array($status, ['in_progress', 'completed']) ? $startDate : null,
+                'actual_end_date' => $status === 'completed' ? (clone $startDate)->addDays(5) : null,
+                'status' => $woStatus,
+                'priority' => 'normal',
+                'notes' => 'Work Order untuk '.$bom->name,
+                'created_by' => $user?->id,
+            ]
+        );
 
         return $wo;
     }

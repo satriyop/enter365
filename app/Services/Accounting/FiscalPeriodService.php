@@ -23,7 +23,7 @@ class FiscalPeriodService
     {
         // Check if can close
         $canClose = $period->canClose();
-        if (!$canClose['can_close']) {
+        if (! $canClose['can_close']) {
             return [
                 'success' => false,
                 'message' => implode(' ', $canClose['errors']),
@@ -73,7 +73,7 @@ class FiscalPeriodService
     {
         // Get retained earnings account
         $retainedEarningsAccount = Account::where('code', '3-2000')->first();
-        if (!$retainedEarningsAccount) {
+        if (! $retainedEarningsAccount) {
             // Create if not exists
             $retainedEarningsAccount = Account::create([
                 'code' => '3-2000',
@@ -105,7 +105,7 @@ class FiscalPeriodService
             if ($line->balance != 0) {
                 $lines[] = [
                     'account_id' => $line->account_id,
-                    'description' => 'Penutupan pendapatan periode ' . $period->name,
+                    'description' => 'Penutupan pendapatan periode '.$period->name,
                     'debit' => $line->balance > 0 ? $line->balance : 0,
                     'credit' => $line->balance < 0 ? abs($line->balance) : 0,
                 ];
@@ -130,7 +130,7 @@ class FiscalPeriodService
             if ($line->balance != 0) {
                 $lines[] = [
                     'account_id' => $line->account_id,
-                    'description' => 'Penutupan beban periode ' . $period->name,
+                    'description' => 'Penutupan beban periode '.$period->name,
                     'debit' => $line->balance < 0 ? abs($line->balance) : 0,
                     'credit' => $line->balance > 0 ? $line->balance : 0,
                 ];
@@ -141,7 +141,7 @@ class FiscalPeriodService
         if ($netIncome != 0) {
             $lines[] = [
                 'account_id' => $retainedEarningsAccount->id,
-                'description' => 'Laba/Rugi bersih periode ' . $period->name,
+                'description' => 'Laba/Rugi bersih periode '.$period->name,
                 'debit' => $netIncome < 0 ? abs($netIncome) : 0,
                 'credit' => $netIncome > 0 ? $netIncome : 0,
             ];
@@ -150,8 +150,8 @@ class FiscalPeriodService
         // Create the closing entry
         return $this->journalService->createEntry([
             'entry_date' => $period->end_date->toDateString(),
-            'description' => 'Jurnal penutup periode ' . $period->name,
-            'reference' => 'CLOSE-' . $period->id,
+            'description' => 'Jurnal penutup periode '.$period->name,
+            'reference' => 'CLOSE-'.$period->id,
             'source_type' => JournalEntry::SOURCE_CLOSING,
             'lines' => $lines,
         ], autoPost: true);
@@ -162,7 +162,7 @@ class FiscalPeriodService
      */
     public function reopenPeriod(FiscalPeriod $period): bool
     {
-        if (!$period->is_closed) {
+        if (! $period->is_closed) {
             return false;
         }
 
@@ -171,7 +171,7 @@ class FiscalPeriodService
             if ($period->closingEntry) {
                 $this->journalService->reverseEntry(
                     $period->closingEntry,
-                    'Pembatalan penutupan periode ' . $period->name
+                    'Pembatalan penutupan periode '.$period->name
                 );
             }
 

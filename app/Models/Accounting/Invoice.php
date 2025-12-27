@@ -178,7 +178,7 @@ class Invoice extends Model
      */
     public function calculateEarlyDiscountAmount(): int
     {
-        if (!$this->hasEarlyPaymentDiscount()) {
+        if (! $this->hasEarlyPaymentDiscount()) {
             return 0;
         }
 
@@ -209,7 +209,7 @@ class Invoice extends Model
      */
     public function getDaysOverdue(): int
     {
-        if (!$this->isOverdue()) {
+        if (! $this->isOverdue()) {
             return 0;
         }
 
@@ -300,9 +300,9 @@ class Invoice extends Model
      */
     public static function generateInvoiceNumber(): string
     {
-        $prefix = 'INV-' . now()->format('Ym') . '-';
+        $prefix = 'INV-'.now()->format('Ym').'-';
         $lastInvoice = static::query()
-            ->where('invoice_number', 'like', $prefix . '%')
+            ->where('invoice_number', 'like', $prefix.'%')
             ->orderBy('invoice_number', 'desc')
             ->first();
 
@@ -313,6 +313,6 @@ class Invoice extends Model
             $nextNumber = 1;
         }
 
-        return $prefix . str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
+        return $prefix.str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
     }
 }

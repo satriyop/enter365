@@ -179,7 +179,7 @@ class Bill extends Model
      */
     public function calculateEarlyDiscountAmount(): int
     {
-        if (!$this->hasEarlyPaymentDiscount()) {
+        if (! $this->hasEarlyPaymentDiscount()) {
             return 0;
         }
 
@@ -210,7 +210,7 @@ class Bill extends Model
      */
     public function getDaysOverdue(): int
     {
-        if (!$this->isOverdue()) {
+        if (! $this->isOverdue()) {
             return 0;
         }
 
@@ -288,9 +288,9 @@ class Bill extends Model
      */
     public static function generateBillNumber(): string
     {
-        $prefix = 'BILL-' . now()->format('Ym') . '-';
+        $prefix = 'BILL-'.now()->format('Ym').'-';
         $lastBill = static::query()
-            ->where('bill_number', 'like', $prefix . '%')
+            ->where('bill_number', 'like', $prefix.'%')
             ->orderBy('bill_number', 'desc')
             ->first();
 
@@ -301,6 +301,6 @@ class Bill extends Model
             $nextNumber = 1;
         }
 
-        return $prefix . str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
+        return $prefix.str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
     }
 }

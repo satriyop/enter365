@@ -5,7 +5,148 @@
 @source '../**/*.blade.php';
 @source '../**/*.js';
 
+/*
+ * Enter365 Design System - Tailwind v4 Theme Configuration
+ *
+ * Color palette focused on sustainability (emerald green) for solar EPC market
+ * with amber accent for electrical panel manufacturing industry.
+ */
+
 @theme {
+    /* Font Family */
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+
+    /* Primary - Emerald Green (Sustainability) */
+    --color-primary: oklch(0.765 0.177 163);
+    --color-primary-dark: oklch(0.696 0.17 162);
+    --color-primary-light: oklch(0.82 0.19 165);
+
+    /* Accent - Amber (Electrical Industry) */
+    --color-accent: oklch(0.769 0.188 70);
+    --color-accent-dark: oklch(0.666 0.179 55);
+
+    /* Typography Scale */
+    --font-size-display: 3.75rem;
+    --font-size-headline: 2.25rem;
+    --font-size-title: 1.5rem;
+
+    /* Animation */
+    --animate-fade-in: fade-in 0.5s ease-out;
+    --animate-slide-up: slide-up 0.5s ease-out;
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slide-up {
+    from {
+        opacity: 0;
+        transform: translateY(1rem);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Base Layer - Typography Defaults */
+@layer base {
+    html {
+        scroll-behavior: smooth;
+    }
+
+    body {
+        @apply text-gray-800 antialiased;
+        font-feature-settings: 'cv11', 'ss01';
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+        @apply font-bold tracking-tight text-gray-900;
+    }
+}
+
+/* Component Layer - Reusable Patterns */
+@layer components {
+    .container-lg {
+        @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+    }
+
+    .section-padding {
+        @apply py-16 md:py-24;
+    }
+
+    .text-display {
+        font-size: var(--font-size-display);
+        line-height: 1;
+        @apply font-bold tracking-tight;
+    }
+
+    .text-headline {
+        font-size: var(--font-size-headline);
+        line-height: 1.2;
+        @apply font-bold tracking-tight;
+    }
+
+    .text-title {
+        font-size: var(--font-size-title);
+        line-height: 1.3;
+        @apply font-semibold;
+    }
+
+    .text-gradient {
+        @apply bg-gradient-to-r from-emerald-600 to-emerald-400 bg-clip-text text-transparent;
+    }
+
+    .card {
+        @apply rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100;
+    }
+
+    .card-elevated {
+        @apply rounded-xl bg-white p-6 shadow-lg ring-1 ring-gray-100;
+    }
+
+    .icon-container {
+        @apply inline-flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600;
+    }
+
+    .icon-container-amber {
+        @apply inline-flex h-12 w-12 items-center justify-center rounded-lg bg-amber-100 text-amber-600;
+    }
+}
+
+/* Utility Layer */
+@layer utilities {
+    .animate-fade-in {
+        animation: var(--animate-fade-in);
+    }
+
+    .animate-slide-up {
+        animation: var(--animate-slide-up);
+    }
+
+    .delay-100 {
+        animation-delay: 100ms;
+    }
+    .delay-200 {
+        animation-delay: 200ms;
+    }
+    .delay-300 {
+        animation-delay: 300ms;
+    }
+    .delay-400 {
+        animation-delay: 400ms;
+    }
+    .delay-500 {
+        animation-delay: 500ms;
+    }
 }

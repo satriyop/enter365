@@ -72,7 +72,7 @@ class PaymentController extends Controller
 
             if (isset($data['invoice_id'])) {
                 $invoice = Invoice::findOrFail($data['invoice_id']);
-                if (!in_array($invoice->status, [Invoice::STATUS_SENT, Invoice::STATUS_PARTIAL, Invoice::STATUS_OVERDUE])) {
+                if (! in_array($invoice->status, [Invoice::STATUS_SENT, Invoice::STATUS_PARTIAL, Invoice::STATUS_OVERDUE])) {
                     abort(422, 'Faktur tidak dalam status yang bisa dibayar.');
                 }
                 if ($data['amount'] > $invoice->getOutstandingAmount()) {
@@ -85,7 +85,7 @@ class PaymentController extends Controller
 
             if (isset($data['bill_id'])) {
                 $bill = Bill::findOrFail($data['bill_id']);
-                if (!in_array($bill->status, [Bill::STATUS_RECEIVED, Bill::STATUS_PARTIAL, Bill::STATUS_OVERDUE])) {
+                if (! in_array($bill->status, [Bill::STATUS_RECEIVED, Bill::STATUS_PARTIAL, Bill::STATUS_OVERDUE])) {
                     abort(422, 'Tagihan tidak dalam status yang bisa dibayar.');
                 }
                 if ($data['amount'] > $bill->getOutstandingAmount()) {

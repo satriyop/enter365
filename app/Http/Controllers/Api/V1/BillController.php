@@ -128,7 +128,7 @@ class BillController extends Controller
 
         return DB::transaction(function () use ($request, $bill) {
             $data = $request->validated();
-            
+
             if (isset($data['items'])) {
                 $items = $data['items'];
                 unset($data['items']);
@@ -140,7 +140,7 @@ class BillController extends Controller
                 foreach ($items as $item) {
                     $amount = (int) round($item['quantity'] * $item['unit_price']);
                     $subtotal += $amount;
-                    
+
                     BillItem::create([
                         'bill_id' => $bill->id,
                         'description' => $item['description'],
