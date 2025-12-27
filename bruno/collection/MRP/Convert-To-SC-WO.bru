@@ -1,0 +1,23 @@
+meta {
+  name: Convert to Subcontractor Work Order
+  type: http
+  seq: 17
+}
+
+post {
+  url: {{baseUrl}}/mrp-suggestions/:id/convert-to-sc-wo
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "contact_id": 1,
+    "due_date": "2024-02-15",
+    "notes": "Subcontracted work"
+  }
+}

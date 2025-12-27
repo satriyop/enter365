@@ -1,0 +1,21 @@
+meta {
+  name: List Delivery Orders
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/delivery-orders
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~status: pending
+  ~invoice_id: 1
+  ~contact_id: 1
+  ~start_date: 2024-01-01
+  ~end_date: 2024-12-31
+  ~per_page: 15
+  ~page: 1
+}

@@ -1,0 +1,15 @@
+meta {
+  name: Approve Purchase Return
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/purchase-returns/:id/approve
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}

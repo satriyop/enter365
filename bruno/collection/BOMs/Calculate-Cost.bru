@@ -1,0 +1,18 @@
+meta {
+  name: Calculate BOM Cost
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/boms-calculate-cost
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "bom_id": 1,
+    "quantity": 10
+  }
+}

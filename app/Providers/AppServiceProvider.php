@@ -4,6 +4,9 @@ namespace App\Providers;
 
 use App\Contracts\FeatureManager;
 use App\Support\ConfigFeatureManager;
+use Dedoc\Scramble\Scramble;
+use Dedoc\Scramble\Support\Generator\OpenApi;
+use Dedoc\Scramble\Support\Generator\SecurityScheme;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -21,6 +24,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Scramble::configure()
+            ->withDocumentTransformers(function (OpenApi $openApi) {
+                $openApi->secure(
+                    SecurityScheme::http('bearer', 'JWT')
+                        ->setDescription('Sanctum Bearer Token. Obtain via POST /api/v1/auth/login')
+                );
+            });
     }
 }

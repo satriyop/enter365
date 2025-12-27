@@ -1,0 +1,19 @@
+meta {
+  name: List Purchase Returns
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/purchase-returns
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~status: pending
+  ~bill_id: 1
+  ~contact_id: 1
+  ~per_page: 15
+  ~page: 1
+}

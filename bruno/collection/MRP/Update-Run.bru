@@ -1,0 +1,22 @@
+meta {
+  name: Update MRP Run
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/mrp-runs/:id
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "name": "Updated MRP Run",
+    "notes": "Updated notes"
+  }
+}

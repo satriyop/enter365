@@ -1,0 +1,23 @@
+meta {
+  name: Update Budget Line
+  type: http
+  seq: 15
+}
+
+put {
+  url: {{baseUrl}}/budgets/:budgetId/lines/:lineId
+  body: json
+  auth: inherit
+}
+
+params:path {
+  budgetId: 1
+  lineId: 1
+}
+
+body:json {
+  {
+    "amount": 15000000,
+    "notes": "Revised allocation"
+  }
+}

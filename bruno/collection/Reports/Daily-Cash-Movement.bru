@@ -1,0 +1,16 @@
+meta {
+  name: Daily Cash Movement Report
+  type: http
+  seq: 12
+}
+
+get {
+  url: {{baseUrl}}/reports/daily-cash-movement
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~start_date: 2024-01-01
+  ~end_date: 2024-01-31
+}

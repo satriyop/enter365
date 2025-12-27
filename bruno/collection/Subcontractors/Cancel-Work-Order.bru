@@ -1,0 +1,21 @@
+meta {
+  name: Cancel Subcontractor Work Order
+  type: http
+  seq: 12
+}
+
+post {
+  url: {{baseUrl}}/subcontractor-work-orders/:id/cancel
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "reason": "Project cancelled"
+  }
+}

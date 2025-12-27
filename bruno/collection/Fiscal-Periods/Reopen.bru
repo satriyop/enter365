@@ -1,0 +1,15 @@
+meta {
+  name: Reopen Fiscal Period
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/fiscal-periods/:id/reopen
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}

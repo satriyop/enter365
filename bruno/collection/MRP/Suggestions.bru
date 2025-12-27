@@ -1,0 +1,15 @@
+meta {
+  name: Get MRP Suggestions
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/mrp-runs/:id/suggestions
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}

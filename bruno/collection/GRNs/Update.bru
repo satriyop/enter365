@@ -1,0 +1,21 @@
+meta {
+  name: Update GRN
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/goods-receipt-notes/:id
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "notes": "Updated notes"
+  }
+}

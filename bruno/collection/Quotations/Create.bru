@@ -1,0 +1,30 @@
+meta {
+  name: Create Quotation
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/quotations
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "contact_id": 1,
+    "date": "2024-01-15",
+    "valid_until": "2024-02-15",
+    "subject": "Quote for Widget Manufacturing",
+    "notes": "Terms and conditions apply",
+    "items": [
+      {
+        "product_id": 1,
+        "quantity": 100,
+        "unit_price": 50000,
+        "discount": 5,
+        "description": "Premium widgets"
+      }
+    ]
+  }
+}

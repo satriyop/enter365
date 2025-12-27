@@ -1,0 +1,15 @@
+meta {
+  name: Receivable Aging Report
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/reports/receivable-aging
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~as_of_date: 2024-12-31
+}

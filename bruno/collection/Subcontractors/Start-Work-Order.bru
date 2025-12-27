@@ -1,0 +1,15 @@
+meta {
+  name: Start Subcontractor Work Order
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/subcontractor-work-orders/:id/start
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}

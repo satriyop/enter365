@@ -1,0 +1,15 @@
+meta {
+  name: Submit for Review
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{baseUrl}}/stock-opnames/:id/submit-review
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}

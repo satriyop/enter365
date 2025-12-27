@@ -1,0 +1,23 @@
+meta {
+  name: Refund Down Payment
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{baseUrl}}/down-payments/:id/refund
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "amount": 5000000,
+    "account_id": 1,
+    "notes": "Full refund"
+  }
+}

@@ -1,0 +1,21 @@
+meta {
+  name: Reject Sales Return
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/sales-returns/:id/reject
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "reason": "Return policy expired"
+  }
+}

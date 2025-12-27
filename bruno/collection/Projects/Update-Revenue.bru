@@ -1,0 +1,22 @@
+meta {
+  name: Update Project Revenue
+  type: http
+  seq: 18
+}
+
+put {
+  url: {{baseUrl}}/projects/:projectId/revenues/:revenueId
+  body: json
+  auth: inherit
+}
+
+params:path {
+  projectId: 1
+  revenueId: 1
+}
+
+body:json {
+  {
+    "amount": 27500000
+  }
+}

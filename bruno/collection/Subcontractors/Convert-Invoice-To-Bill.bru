@@ -1,0 +1,15 @@
+meta {
+  name: Convert Invoice to Bill
+  type: http
+  seq: 19
+}
+
+post {
+  url: {{baseUrl}}/subcontractor-invoices/:id/convert-to-bill
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}

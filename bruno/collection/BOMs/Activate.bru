@@ -1,0 +1,15 @@
+meta {
+  name: Activate BOM
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/boms/:id/activate
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}

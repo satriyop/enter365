@@ -1,0 +1,15 @@
+meta {
+  name: Delete Sales Return
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/sales-returns/:id
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}

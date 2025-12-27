@@ -1,0 +1,18 @@
+meta {
+  name: List Material Requisitions
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/material-requisitions
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~work_order_id: 1
+  ~status: pending
+  ~per_page: 15
+  ~page: 1
+}

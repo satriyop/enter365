@@ -1,0 +1,21 @@
+meta {
+  name: Create Budget
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/budgets
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "Operating Budget 2024",
+    "fiscal_year": 2024,
+    "start_date": "2024-01-01",
+    "end_date": "2024-12-31",
+    "description": "Annual operating budget"
+  }
+}

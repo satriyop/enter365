@@ -1,0 +1,23 @@
+meta {
+  name: Create Down Payment
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/down-payments
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "contact_id": 1,
+    "type": "customer",
+    "amount": 5000000,
+    "date": "2024-01-15",
+    "account_id": 1,
+    "reference": "DP-001",
+    "notes": "Advance payment for project"
+  }
+}

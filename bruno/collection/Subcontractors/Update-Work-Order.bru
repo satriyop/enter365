@@ -1,0 +1,22 @@
+meta {
+  name: Update Subcontractor Work Order
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{baseUrl}}/subcontractor-work-orders/:id
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "description": "Updated description",
+    "notes": "Updated notes"
+  }
+}

@@ -1,0 +1,21 @@
+meta {
+  name: Cancel Delivery Order
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{baseUrl}}/delivery-orders/:id/cancel
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "reason": "Customer requested cancellation"
+  }
+}

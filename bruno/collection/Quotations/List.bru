@@ -1,0 +1,19 @@
+meta {
+  name: List Quotations
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/quotations
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~status: pending
+  ~contact_id: 1
+  ~search: widget
+  ~per_page: 15
+  ~page: 1
+}

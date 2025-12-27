@@ -1,0 +1,17 @@
+meta {
+  name: Income Statement Report
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/reports/income-statement
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~start_date: 2024-01-01
+  ~end_date: 2024-12-31
+  ~comparative: true
+}

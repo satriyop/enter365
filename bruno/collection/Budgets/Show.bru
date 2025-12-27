@@ -1,0 +1,15 @@
+meta {
+  name: Show Budget
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/budgets/:id
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}

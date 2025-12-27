@@ -1,0 +1,15 @@
+meta {
+  name: Delete Subcontractor Work Order
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{baseUrl}}/subcontractor-work-orders/:id
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}

@@ -1,0 +1,16 @@
+meta {
+  name: List Subcontractors
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/subcontractors
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~per_page: 15
+  ~page: 1
+}

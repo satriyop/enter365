@@ -1,0 +1,23 @@
+meta {
+  name: Update Delivery Order
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/delivery-orders/:id
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "delivery_date": "2024-01-25",
+    "shipping_address": "456 Oak Ave, City",
+    "notes": "Updated delivery notes"
+  }
+}

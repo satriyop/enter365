@@ -1,0 +1,15 @@
+meta {
+  name: Show Fiscal Period
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/fiscal-periods/:id
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}

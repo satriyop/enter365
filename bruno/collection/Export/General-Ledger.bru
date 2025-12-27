@@ -1,0 +1,18 @@
+meta {
+  name: Export General Ledger
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/export/general-ledger
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~start_date: 2024-01-01
+  ~end_date: 2024-12-31
+  ~account_id: 1
+  ~format: xlsx
+}

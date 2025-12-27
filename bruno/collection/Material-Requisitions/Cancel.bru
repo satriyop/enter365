@@ -1,0 +1,21 @@
+meta {
+  name: Cancel Material Requisition
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/material-requisitions/:id/cancel
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "reason": "No longer needed"
+  }
+}

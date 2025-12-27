@@ -1,0 +1,15 @@
+meta {
+  name: Approve Subcontractor Invoice
+  type: http
+  seq: 17
+}
+
+post {
+  url: {{baseUrl}}/subcontractor-invoices/:id/approve
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}

@@ -1,0 +1,21 @@
+meta {
+  name: Cancel Sales Return
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{baseUrl}}/sales-returns/:id/cancel
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "reason": "Customer changed mind"
+  }
+}

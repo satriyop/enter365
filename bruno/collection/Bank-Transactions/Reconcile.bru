@@ -1,0 +1,21 @@
+meta {
+  name: Reconcile Transaction
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/bank-transactions/:id/reconcile
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "notes": "Reconciled manually"
+  }
+}

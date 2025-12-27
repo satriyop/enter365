@@ -1,0 +1,21 @@
+meta {
+  name: Mark as Lost
+  type: http
+  seq: 18
+}
+
+post {
+  url: {{baseUrl}}/quotations/:id/mark-lost
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "reason": "Competitor offered better price"
+  }
+}

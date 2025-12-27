@@ -1,0 +1,21 @@
+meta {
+  name: Hold Project
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/projects/:id/hold
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "reason": "Waiting for client approval"
+  }
+}

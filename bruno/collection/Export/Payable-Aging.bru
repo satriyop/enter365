@@ -1,0 +1,16 @@
+meta {
+  name: Export Payable Aging
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/export/payable-aging
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~as_of_date: 2024-12-31
+  ~format: xlsx
+}

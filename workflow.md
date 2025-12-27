@@ -1,4 +1,4 @@
-# Akuntansi - Simple Accounting System API
+# Enter365 - Simple Accounting System API
 ## Complete System Workflow Diagrams
 
 **Target Customers:** Indonesian SMEs - Electrical Panel Makers & Solar EPC Contractors

@@ -1,0 +1,15 @@
+meta {
+  name: Delete Purchase Return
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/purchase-returns/:id
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}

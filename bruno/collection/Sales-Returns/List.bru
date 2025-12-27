@@ -1,0 +1,19 @@
+meta {
+  name: List Sales Returns
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/sales-returns
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~status: pending
+  ~invoice_id: 1
+  ~contact_id: 1
+  ~per_page: 15
+  ~page: 1
+}

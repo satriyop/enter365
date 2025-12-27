@@ -1,0 +1,19 @@
+meta {
+  name: List Journal Entries
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/journal-entries
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~start_date: 2024-01-01
+  ~end_date: 2024-12-31
+  ~status: posted
+  ~per_page: 15
+  ~page: 1
+}

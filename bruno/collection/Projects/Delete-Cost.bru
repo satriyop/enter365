@@ -1,0 +1,16 @@
+meta {
+  name: Delete Project Cost
+  type: http
+  seq: 16
+}
+
+delete {
+  url: {{baseUrl}}/projects/:projectId/costs/:costId
+  body: none
+  auth: inherit
+}
+
+params:path {
+  projectId: 1
+  costId: 1
+}

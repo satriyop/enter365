@@ -1,0 +1,21 @@
+meta {
+  name: Mark as Won
+  type: http
+  seq: 17
+}
+
+post {
+  url: {{baseUrl}}/quotations/:id/mark-won
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "notes": "Customer accepted our offer"
+  }
+}

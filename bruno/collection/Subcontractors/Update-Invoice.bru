@@ -1,0 +1,21 @@
+meta {
+  name: Update Subcontractor Invoice
+  type: http
+  seq: 16
+}
+
+put {
+  url: {{baseUrl}}/subcontractor-invoices/:id
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "notes": "Updated notes"
+  }
+}

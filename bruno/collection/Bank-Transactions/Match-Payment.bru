@@ -1,0 +1,16 @@
+meta {
+  name: Match with Payment
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/bank-transactions/:id/match-payment/:paymentId
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 1
+  paymentId: 1
+}
