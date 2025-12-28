@@ -24,6 +24,8 @@ class SolarProposal extends Model
 
     public const STATUS_EXPIRED = 'expired';
 
+    public const STATUS_CONVERTED = 'converted';
+
     // Roof type constants
     public const ROOF_TYPE_FLAT = 'flat';
 
@@ -54,6 +56,8 @@ class SolarProposal extends Model
         'proposal_number',
         'contact_id',
         'status',
+        'public_token',
+        'public_token_expires_at',
         // Site Information
         'site_name',
         'site_address',
@@ -62,6 +66,7 @@ class SolarProposal extends Model
         'latitude',
         'longitude',
         'roof_area_m2',
+        'roof_polygon',
         'roof_type',
         'roof_orientation',
         'roof_tilt_degrees',
@@ -103,6 +108,7 @@ class SolarProposal extends Model
             'latitude' => 'decimal:8',
             'longitude' => 'decimal:8',
             'roof_area_m2' => 'decimal:2',
+            'roof_polygon' => 'array',
             'roof_tilt_degrees' => 'decimal:2',
             'shading_percentage' => 'decimal:2',
             'monthly_consumption_kwh' => 'decimal:2',
@@ -121,6 +127,7 @@ class SolarProposal extends Model
             'sent_at' => 'datetime',
             'accepted_at' => 'datetime',
             'rejected_at' => 'datetime',
+            'public_token_expires_at' => 'datetime',
         ];
     }
 
@@ -227,6 +234,48 @@ class SolarProposal extends Model
         ]);
     }
 
+    /**
+     * Find proposal by public token.
+     */
+    public static function findByPublicToken(string $token): ?self
+    {
+        return static::query()
+            ->where('public_token', $token)
+            ->first();
+    }
+
+    // ========================================
+    // Public Token Helpers
+    // ========================================
+
+    /**
+     * Check if public token is valid.
+     */
+    public function hasValidPublicToken(): bool
+    {
+        if ($this->public_token === null) {
+            return false;
+        }
+
+        if ($this->public_token_expires_at === null) {
+            return true;
+        }
+
+        return ! $this->public_token_expires_at->isPast();
+    }
+
+    /**
+     * Get the public URL for this proposal.
+     */
+    public function getPublicUrl(): ?string
+    {
+        if ($this->public_token === null) {
+            return null;
+        }
+
+        return config('app.frontend_url').'/p/'.$this->public_token;
+    }
+
     // ========================================
     // Status Checks
     // ========================================
@@ -263,7 +312,8 @@ class SolarProposal extends Model
      */
     public function canReject(): bool
     {
-        return $this->status === self::STATUS_SENT;
+        return $this->status === self::STATUS_SENT
+            && ! $this->isExpired();
     }
 
     /**
@@ -323,6 +373,7 @@ class SolarProposal extends Model
             self::STATUS_ACCEPTED => 'Diterima',
             self::STATUS_REJECTED => 'Ditolak',
             self::STATUS_EXPIRED => 'Kedaluwarsa',
+            self::STATUS_CONVERTED => 'Terkonversi',
             default => $this->status,
         };
     }

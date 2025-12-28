@@ -12,9 +12,11 @@ use App\Http\Resources\Api\V1\SolarProposalListResource;
 use App\Http\Resources\Api\V1\SolarProposalResource;
 use App\Models\Accounting\SolarProposal;
 use App\Services\Accounting\SolarProposalService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
 use InvalidArgumentException;
 
 class SolarProposalController extends Controller
@@ -300,5 +302,32 @@ class SolarProposalController extends Controller
         ];
 
         return response()->json(['data' => $stats]);
+    }
+
+    /**
+     * Download PDF for a solar proposal.
+     *
+     * @operationId downloadSolarProposalPdf
+     */
+    public function pdf(SolarProposal $solarProposal): Response
+    {
+        // Load relationships needed for the PDF
+        $solarProposal->load([
+            'contact',
+            'selectedBom',
+            'variantGroup.activeBoms',
+        ]);
+
+        $pdf = Pdf::loadView('pdf.solar-proposal', [
+            'proposal' => $solarProposal,
+        ]);
+
+        // Set paper size to A4
+        $pdf->setPaper('a4', 'portrait');
+
+        // Generate filename
+        $filename = $solarProposal->proposal_number.'.pdf';
+
+        return $pdf->download($filename);
     }
 }

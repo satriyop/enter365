@@ -35,6 +35,9 @@ class StoreSolarProposalRequest extends FormRequest
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'roof_area_m2' => ['nullable', 'numeric', 'min:0'],
+            'roof_polygon' => ['nullable', 'array'],
+            'roof_polygon.type' => ['required_with:roof_polygon', 'string', 'in:Polygon'],
+            'roof_polygon.coordinates' => ['required_with:roof_polygon', 'array'],
             'roof_type' => ['nullable', Rule::in([
                 SolarProposal::ROOF_TYPE_FLAT,
                 SolarProposal::ROOF_TYPE_SLOPED,

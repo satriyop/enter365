@@ -237,13 +237,19 @@ class Bom extends Model
 
     /**
      * Generate the next BOM number.
+     * Uses lockForUpdate to prevent race conditions in concurrent transactions.
+     * Includes soft-deleted records to avoid duplicate key violations.
      */
     public static function generateBomNumber(): string
     {
         $prefix = 'BOM-'.now()->format('Ym').'-';
-        $lastBom = static::query()
+
+        // Include soft-deleted records to avoid duplicate key violations
+        // Use lockForUpdate to prevent race conditions when called within transactions
+        $lastBom = static::withTrashed()
             ->where('bom_number', 'like', $prefix.'%')
-            ->orderBy('bom_number', 'desc')
+            ->orderByRaw("CAST(SUBSTRING(bom_number FROM '[0-9]+$') AS INTEGER) DESC")
+            ->lockForUpdate()
             ->first();
 
         if ($lastBom) {

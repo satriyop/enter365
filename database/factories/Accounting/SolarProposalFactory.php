@@ -117,6 +117,8 @@ class SolarProposalFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'status' => SolarProposal::STATUS_SENT,
             'sent_at' => now(),
+            'public_token' => \Illuminate\Support\Str::uuid()->toString(),
+            'public_token_expires_at' => $attributes['valid_until'] ?? now()->addDays(30),
         ]);
     }
 
@@ -126,6 +128,8 @@ class SolarProposalFactory extends Factory
             'status' => SolarProposal::STATUS_ACCEPTED,
             'sent_at' => now()->subDays(3),
             'accepted_at' => now(),
+            'public_token' => \Illuminate\Support\Str::uuid()->toString(),
+            'public_token_expires_at' => $attributes['valid_until'] ?? now()->addDays(30),
         ]);
     }
 

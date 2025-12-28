@@ -266,6 +266,11 @@ class SolarProposalService
         return DB::transaction(function () use ($proposal) {
             $proposal->status = SolarProposal::STATUS_SENT;
             $proposal->sent_at = now();
+
+            // Generate public token for customer portal
+            $proposal->public_token = \Illuminate\Support\Str::uuid()->toString();
+            $proposal->public_token_expires_at = $proposal->valid_until;
+
             $proposal->save();
 
             return $proposal->fresh();

@@ -35,6 +35,7 @@ class SolarProposalResource extends JsonResource
             'latitude' => $this->latitude ? (float) $this->latitude : null,
             'longitude' => $this->longitude ? (float) $this->longitude : null,
             'roof_area_m2' => $this->roof_area_m2 ? (float) $this->roof_area_m2 : null,
+            'roof_polygon' => $this->roof_polygon,
             'roof_type' => $this->roof_type,
             'roof_type_label' => $this->getRoofTypeLabel(),
             'roof_orientation' => $this->roof_orientation,
@@ -96,6 +97,10 @@ class SolarProposalResource extends JsonResource
             'rejection_reason' => $this->rejection_reason,
             'converted_quotation_id' => $this->converted_quotation_id,
             'converted_quotation' => new QuotationResource($this->whenLoaded('convertedQuotation')),
+
+            // Public Access
+            'public_url' => $this->getPublicUrl(),
+            'has_valid_public_token' => $this->hasValidPublicToken(),
 
             // Permissions
             'can_edit' => $this->isEditable(),

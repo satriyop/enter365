@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\PublicSolarProposalController;
 use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\AttachmentController;
 use App\Http\Controllers\Api\V1\AuthController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\Api\V1\BomVariantGroupController;
 use App\Http\Controllers\Api\V1\BudgetController;
 use App\Http\Controllers\Api\V1\ComponentBrandMappingController;
 use App\Http\Controllers\Api\V1\ComponentCrossReferenceController;
+use App\Http\Controllers\Api\V1\ComponentMappingImportController;
 use App\Http\Controllers\Api\V1\ComponentStandardController;
 use App\Http\Controllers\Api\V1\ContactController;
 use App\Http\Controllers\Api\V1\DashboardController;
@@ -66,6 +68,18 @@ Route::prefix('v1')->group(function () {
     */
     Route::prefix('auth')->group(function () {
         Route::post('login', [AuthController::class, 'login'])->name('auth.login');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Public Routes (No Authentication Required)
+    |--------------------------------------------------------------------------
+    */
+    // Public Solar Proposal (Customer Portal)
+    Route::prefix('public/solar-proposals')->group(function () {
+        Route::get('{token}', [PublicSolarProposalController::class, 'show']);
+        Route::post('{token}/accept', [PublicSolarProposalController::class, 'accept']);
+        Route::post('{token}/reject', [PublicSolarProposalController::class, 'reject']);
     });
 
     /*
@@ -299,8 +313,20 @@ Route::prefix('v1')->group(function () {
             Route::get('available-brands', [ComponentCrossReferenceController::class, 'availableBrands']);
 
             // BOM Brand Swap
+            Route::get('boms/{bom}/brand-comparison', [ComponentCrossReferenceController::class, 'compareBrands']);
+            Route::post('boms/{bom}/swap-brand-preview', [ComponentCrossReferenceController::class, 'previewSwapBrand']);
             Route::post('boms/{bom}/swap-brand', [ComponentCrossReferenceController::class, 'swapBrand']);
             Route::post('boms/{bom}/generate-brand-variants', [ComponentCrossReferenceController::class, 'generateBrandVariants']);
+
+            // Cost Optimization (Mixed-brand cheapest option)
+            Route::get('boms/{bom}/cost-optimization', [ComponentCrossReferenceController::class, 'previewCostOptimization']);
+            Route::post('boms/{bom}/apply-cost-optimization', [ComponentCrossReferenceController::class, 'applyCostOptimization']);
+
+            // Bulk Import Component Mappings
+            Route::get('component-mappings/template', [ComponentMappingImportController::class, 'downloadTemplate']);
+            Route::post('component-mappings/validate', [ComponentMappingImportController::class, 'validate']);
+            Route::post('component-mappings/import', [ComponentMappingImportController::class, 'import']);
+            Route::get('component-mappings/stats', [ComponentMappingImportController::class, 'stats']);
         });
 
         // Solar Proposals (Proposal Panel Surya)
@@ -314,6 +340,7 @@ Route::prefix('v1')->group(function () {
             Route::post('solar-proposals/{solarProposal}/accept', [SolarProposalController::class, 'accept']);
             Route::post('solar-proposals/{solarProposal}/reject', [SolarProposalController::class, 'reject']);
             Route::post('solar-proposals/{solarProposal}/convert-to-quotation', [SolarProposalController::class, 'convertToQuotation']);
+            Route::get('solar-proposals/{solarProposal}/pdf', [SolarProposalController::class, 'pdf']);
             Route::get('solar-proposals-statistics', [SolarProposalController::class, 'statistics']);
 
             // Solar Data Lookup

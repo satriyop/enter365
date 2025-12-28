@@ -6897,6 +6897,347 @@
                 }
             }
         },
+        "/boms/{bom}/brand-comparison": {
+            "get": {
+                "operationId": "componentCrossReference.compareBrands",
+                "summary": "Compare BOM across all available brands.\nReturns side-by-side comparison for quick decision making",
+                "tags": [
+                    "ComponentCrossReference"
+                ],
+                "parameters": [
+                    {
+                        "name": "bom",
+                        "in": "path",
+                        "required": true,
+                        "description": "The bom ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "current": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "total": {
+                                                            "type": "string"
+                                                        },
+                                                        "total_items": {
+                                                            "type": "integer",
+                                                            "minimum": 0
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "total",
+                                                        "total_items"
+                                                    ]
+                                                },
+                                                "brands": {
+                                                    "type": "array",
+                                                    "prefixItems": [
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "brand": {
+                                                                    "type": "string"
+                                                                },
+                                                                "brand_label": {
+                                                                    "type": "string"
+                                                                },
+                                                                "estimated_total": {
+                                                                    "type": "integer",
+                                                                    "enum": [
+                                                                        0
+                                                                    ]
+                                                                },
+                                                                "savings": {
+                                                                    "type": "string"
+                                                                },
+                                                                "savings_percentage": {
+                                                                    "type": "number"
+                                                                },
+                                                                "coverage_percentage": {
+                                                                    "anyOf": [
+                                                                        {
+                                                                            "type": "number"
+                                                                        },
+                                                                        {
+                                                                            "type": "integer",
+                                                                            "enum": [
+                                                                                0
+                                                                            ]
+                                                                        }
+                                                                    ]
+                                                                },
+                                                                "swappable_items": {
+                                                                    "type": "integer",
+                                                                    "enum": [
+                                                                        0
+                                                                    ]
+                                                                },
+                                                                "no_mapping_items": {
+                                                                    "type": "integer",
+                                                                    "enum": [
+                                                                        0
+                                                                    ]
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "brand",
+                                                                "brand_label",
+                                                                "estimated_total",
+                                                                "savings",
+                                                                "savings_percentage",
+                                                                "coverage_percentage",
+                                                                "swappable_items",
+                                                                "no_mapping_items"
+                                                            ]
+                                                        }
+                                                    ],
+                                                    "minItems": 1,
+                                                    "maxItems": 1,
+                                                    "additionalItems": false
+                                                },
+                                                "recommendations": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "best_value": {
+                                                            "type": "string"
+                                                        },
+                                                        "best_coverage": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "best_value",
+                                                        "best_coverage"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "current",
+                                                "brands",
+                                                "recommendations"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/boms/{bom}/swap-brand-preview": {
+            "post": {
+                "operationId": "componentCrossReference.previewSwapBrand",
+                "summary": "Preview swap without creating a new BOM.\nReturns estimated costs and item-by-item breakdown",
+                "tags": [
+                    "ComponentCrossReference"
+                ],
+                "parameters": [
+                    {
+                        "name": "bom",
+                        "in": "path",
+                        "required": true,
+                        "description": "The bom ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "target_brand": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "target_brand"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "target_brand": {},
+                                                "current_total": {
+                                                    "type": "integer",
+                                                    "enum": [
+                                                        0
+                                                    ]
+                                                },
+                                                "estimated_total": {
+                                                    "type": "integer",
+                                                    "enum": [
+                                                        0
+                                                    ]
+                                                },
+                                                "savings": {
+                                                    "type": "string"
+                                                },
+                                                "savings_percentage": {
+                                                    "type": "number"
+                                                },
+                                                "coverage": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "total": {
+                                                            "type": "integer"
+                                                        },
+                                                        "swappable": {
+                                                            "type": "integer",
+                                                            "enum": [
+                                                                0
+                                                            ]
+                                                        },
+                                                        "no_mapping": {
+                                                            "type": "integer",
+                                                            "enum": [
+                                                                0
+                                                            ]
+                                                        },
+                                                        "percentage": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "number"
+                                                                },
+                                                                {
+                                                                    "type": "integer",
+                                                                    "enum": [
+                                                                        0
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "total",
+                                                        "swappable",
+                                                        "no_mapping",
+                                                        "percentage"
+                                                    ]
+                                                },
+                                                "items": {
+                                                    "type": "array",
+                                                    "prefixItems": [
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "description": {
+                                                                    "type": "string"
+                                                                },
+                                                                "quantity": {
+                                                                    "type": "string"
+                                                                },
+                                                                "current_unit_cost": {
+                                                                    "type": "string"
+                                                                },
+                                                                "current_total": {
+                                                                    "type": "string"
+                                                                },
+                                                                "estimated_unit_cost": {
+                                                                    "type": "string"
+                                                                },
+                                                                "estimated_total": {
+                                                                    "type": "string"
+                                                                },
+                                                                "cost_change": {
+                                                                    "type": "string"
+                                                                },
+                                                                "can_swap": {
+                                                                    "type": "string"
+                                                                },
+                                                                "target_product": {
+                                                                    "type": "string"
+                                                                },
+                                                                "target_sku": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "description",
+                                                                "quantity",
+                                                                "current_unit_cost",
+                                                                "current_total",
+                                                                "estimated_unit_cost",
+                                                                "estimated_total",
+                                                                "cost_change",
+                                                                "can_swap",
+                                                                "target_product",
+                                                                "target_sku"
+                                                            ]
+                                                        }
+                                                    ],
+                                                    "minItems": 1,
+                                                    "maxItems": 1,
+                                                    "additionalItems": false
+                                                }
+                                            },
+                                            "required": [
+                                                "target_brand",
+                                                "current_total",
+                                                "estimated_total",
+                                                "savings",
+                                                "savings_percentage",
+                                                "coverage",
+                                                "items"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/boms/{bom}/swap-brand": {
             "post": {
                 "operationId": "componentCrossReference.swapBrand",
@@ -7094,6 +7435,482 @@
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/boms/{bom}/cost-optimization": {
+            "get": {
+                "operationId": "componentCrossReference.previewCostOptimization",
+                "summary": "Preview mixed-brand cost optimization.\nFinds cheapest alternative for each item across all brands",
+                "tags": [
+                    "ComponentCrossReference"
+                ],
+                "parameters": [
+                    {
+                        "name": "bom",
+                        "in": "path",
+                        "required": true,
+                        "description": "The bom ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "current_total": {
+                                                    "type": "integer",
+                                                    "enum": [
+                                                        0
+                                                    ]
+                                                },
+                                                "optimized_total": {
+                                                    "type": "integer",
+                                                    "enum": [
+                                                        0
+                                                    ]
+                                                },
+                                                "savings": {
+                                                    "type": "string"
+                                                },
+                                                "savings_percentage": {
+                                                    "type": "number"
+                                                },
+                                                "summary": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "total_items": {
+                                                            "type": "integer"
+                                                        },
+                                                        "can_optimize": {
+                                                            "type": "integer",
+                                                            "minimum": 0
+                                                        },
+                                                        "already_cheapest": {
+                                                            "type": "integer",
+                                                            "minimum": 0
+                                                        },
+                                                        "no_alternative": {
+                                                            "type": "integer",
+                                                            "minimum": 0
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "total_items",
+                                                        "can_optimize",
+                                                        "already_cheapest",
+                                                        "no_alternative"
+                                                    ]
+                                                },
+                                                "items": {
+                                                    "type": "array",
+                                                    "prefixItems": [
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "bom_item_id": {
+                                                                    "type": "string"
+                                                                },
+                                                                "description": {
+                                                                    "type": "string"
+                                                                },
+                                                                "quantity": {
+                                                                    "type": "string"
+                                                                },
+                                                                "unit": {
+                                                                    "type": "string"
+                                                                },
+                                                                "current_brand": {
+                                                                    "type": "string"
+                                                                },
+                                                                "current_unit_cost": {
+                                                                    "type": "string"
+                                                                },
+                                                                "current_total": {
+                                                                    "type": "string"
+                                                                },
+                                                                "cheapest_brand": {
+                                                                    "type": "string"
+                                                                },
+                                                                "cheapest_brand_label": {
+                                                                    "type": "string"
+                                                                },
+                                                                "cheapest_unit_cost": {
+                                                                    "type": "string"
+                                                                },
+                                                                "cheapest_total": {
+                                                                    "type": "string"
+                                                                },
+                                                                "cheapest_product_id": {
+                                                                    "type": "string"
+                                                                },
+                                                                "cheapest_product_name": {
+                                                                    "type": "string"
+                                                                },
+                                                                "cheapest_sku": {
+                                                                    "type": "string"
+                                                                },
+                                                                "savings": {
+                                                                    "type": "string"
+                                                                },
+                                                                "savings_percentage": {
+                                                                    "anyOf": [
+                                                                        {
+                                                                            "type": "number"
+                                                                        },
+                                                                        {
+                                                                            "type": "integer",
+                                                                            "enum": [
+                                                                                0
+                                                                            ]
+                                                                        }
+                                                                    ]
+                                                                },
+                                                                "can_optimize": {
+                                                                    "type": "string"
+                                                                },
+                                                                "is_already_cheapest": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "bom_item_id",
+                                                                "description",
+                                                                "quantity",
+                                                                "unit",
+                                                                "current_brand",
+                                                                "current_unit_cost",
+                                                                "current_total",
+                                                                "cheapest_brand",
+                                                                "cheapest_brand_label",
+                                                                "cheapest_unit_cost",
+                                                                "cheapest_total",
+                                                                "cheapest_product_id",
+                                                                "cheapest_product_name",
+                                                                "cheapest_sku",
+                                                                "savings",
+                                                                "savings_percentage",
+                                                                "can_optimize",
+                                                                "is_already_cheapest"
+                                                            ]
+                                                        }
+                                                    ],
+                                                    "minItems": 1,
+                                                    "maxItems": 1,
+                                                    "additionalItems": false
+                                                }
+                                            },
+                                            "required": [
+                                                "current_total",
+                                                "optimized_total",
+                                                "savings",
+                                                "savings_percentage",
+                                                "summary",
+                                                "items"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/boms/{bom}/apply-cost-optimization": {
+            "post": {
+                "operationId": "componentCrossReference.applyCostOptimization",
+                "summary": "Apply cost optimization to create a new BOM with cheapest alternatives",
+                "tags": [
+                    "ComponentCrossReference"
+                ],
+                "parameters": [
+                    {
+                        "name": "bom",
+                        "in": "path",
+                        "required": true,
+                        "description": "The bom ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "item_ids": {
+                                        "type": [
+                                            "array",
+                                            "null"
+                                        ],
+                                        "items": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Cost optimization berhasil diterapkan."
+                                            ]
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "bom": {
+                                                    "$ref": "#/components/schemas/BomResource"
+                                                },
+                                                "optimization_report": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                }
+                                            },
+                                            "required": [
+                                                "bom",
+                                                "optimization_report"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/component-mappings/template": {
+            "get": {
+                "operationId": "componentMappingImport.downloadTemplate",
+                "description": "Downloads an Excel template for bulk importing component mappings.\nThe template includes:\n- Main sheet with column headers and example data\n- Products reference sheet with all available products\n- Categories reference sheet with valid category codes\n- Brands reference sheet with valid brand codes",
+                "summary": "Download component mapping template",
+                "tags": [
+                    "ComponentMappingImport"
+                ],
+                "parameters": [
+                    {
+                        "name": "include_examples",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    },
+                    {
+                        "name": "include_products",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    },
+                    {
+                        "name": "format",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "default": "xlsx"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "enum": [
+                                        200
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/component-mappings/validate": {
+            "post": {
+                "operationId": "componentMappingImport.validate",
+                "description": "Validates the uploaded file without actually importing.\nReturns a preview of what will be imported and any errors found.",
+                "summary": "Validate component mapping import file",
+                "tags": [
+                    "ComponentMappingImport"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary",
+                                        "contentMediaType": "application/octet-stream",
+                                        "maxLength": 10240
+                                    }
+                                },
+                                "required": [
+                                    "file"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "enum": [
+                                        200
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/component-mappings/import": {
+            "post": {
+                "operationId": "componentMappingImport.import",
+                "description": "Imports component mappings from the uploaded Excel or CSV file.\nCreates component standards and brand mappings.",
+                "summary": "Import component mappings from file",
+                "tags": [
+                    "ComponentMappingImport"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary",
+                                        "contentMediaType": "application/octet-stream",
+                                        "maxLength": 10240
+                                    },
+                                    "skip_errors": {
+                                        "type": [
+                                            "boolean",
+                                            "null"
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "file"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "enum": [
+                                        201
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/component-mappings/stats": {
+            "get": {
+                "operationId": "componentMappingImport.stats",
+                "description": "Returns current statistics about component mappings in the system.",
+                "summary": "Get import statistics",
+                "tags": [
+                    "ComponentMappingImport"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "enum": [
+                                        200
+                                    ]
+                                }
+                            }
+                        }
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -21807,6 +22624,316 @@
                 }
             }
         },
+        "/public/solar-proposals/{token}": {
+            "get": {
+                "operationId": "getPublicProposal",
+                "summary": "Show a solar proposal by public token",
+                "tags": [
+                    "PublicSolarProposal"
+                ],
+                "parameters": [
+                    {
+                        "name": "token",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/SolarProposalResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "410": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Link proposal sudah kedaluwarsa."
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Proposal tidak ditemukan."
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/public/solar-proposals/{token}/accept": {
+            "post": {
+                "operationId": "acceptPublicProposal",
+                "summary": "Accept a solar proposal by public token",
+                "tags": [
+                    "PublicSolarProposal"
+                ],
+                "parameters": [
+                    {
+                        "name": "token",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Proposal berhasil diterima."
+                                            ]
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/SolarProposalResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Proposal tidak dapat diterima."
+                                            ]
+                                        },
+                                        "reason": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Proposal sudah diterima sebelumnya.",
+                                                "Proposal sudah ditolak.",
+                                                "Proposal belum dikirim.",
+                                                "Proposal sudah kedaluwarsa.",
+                                                "Status proposal tidak valid."
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "reason"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "410": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Link proposal sudah kedaluwarsa."
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Proposal tidak ditemukan."
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/public/solar-proposals/{token}/reject": {
+            "post": {
+                "operationId": "rejectPublicProposal",
+                "summary": "Reject a solar proposal by public token",
+                "tags": [
+                    "PublicSolarProposal"
+                ],
+                "parameters": [
+                    {
+                        "name": "token",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "reason": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 1000
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Proposal berhasil ditolak."
+                                            ]
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/SolarProposalResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "410": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Link proposal sudah kedaluwarsa."
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Proposal tidak ditemukan."
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/purchase-orders": {
             "get": {
                 "operationId": "purchase-orders.index",
@@ -34943,6 +36070,59 @@
                 }
             }
         },
+        "/solar-proposals/{solarProposal}/pdf": {
+            "get": {
+                "operationId": "downloadSolarProposalPdf",
+                "summary": "Download PDF for a solar proposal",
+                "tags": [
+                    "SolarProposal"
+                ],
+                "parameters": [
+                    {
+                        "name": "solarProposal",
+                        "in": "path",
+                        "required": true,
+                        "description": "The solar proposal ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "501": {
+                        "description": "TODO: Implement PDF generation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Fitur PDF belum tersedia."
+                                            ]
+                                        },
+                                        "proposal_number": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "proposal_number"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/solar-proposals-statistics": {
             "get": {
                 "operationId": "getSolarProposalStatistics",
@@ -41188,6 +42368,50 @@
                                 "total_cost",
                                 "unit_cost",
                                 "cost_breakdown"
+                            ]
+                        }
+                    },
+                    "active_boms": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "integer"
+                                },
+                                "bom_number": {
+                                    "type": "string"
+                                },
+                                "name": {
+                                    "type": "string"
+                                },
+                                "variant_name": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "variant_label": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "is_primary_variant": {
+                                    "type": "boolean"
+                                },
+                                "total_cost": {
+                                    "type": "integer"
+                                }
+                            },
+                            "required": [
+                                "id",
+                                "bom_number",
+                                "name",
+                                "variant_name",
+                                "variant_label",
+                                "is_primary_variant",
+                                "total_cost"
                             ]
                         }
                     },
@@ -47605,6 +48829,13 @@
                             "null"
                         ]
                     },
+                    "roof_polygon": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {}
+                    },
                     "roof_type": {
                         "type": "string"
                     },
@@ -47856,6 +49087,16 @@
                     "converted_quotation": {
                         "$ref": "#/components/schemas/QuotationResource"
                     },
+                    "public_url": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Public Access"
+                    },
+                    "has_valid_public_token": {
+                        "type": "boolean"
+                    },
                     "can_edit": {
                         "type": "boolean",
                         "description": "Permissions"
@@ -47892,6 +49133,7 @@
                     "latitude",
                     "longitude",
                     "roof_area_m2",
+                    "roof_polygon",
                     "roof_type",
                     "roof_type_label",
                     "roof_orientation",
@@ -47935,6 +49177,8 @@
                     "rejected_at",
                     "rejection_reason",
                     "converted_quotation_id",
+                    "public_url",
+                    "has_valid_public_token",
                     "can_edit",
                     "can_send",
                     "can_accept",
@@ -51335,6 +52579,23 @@
                             "null"
                         ],
                         "maxLength": 2000
+                    },
+                    "roof_polygon": {
+                        "type": "object",
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "enum": [
+                                    "Polygon"
+                                ]
+                            },
+                            "coordinates": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        }
                     }
                 },
                 "required": [
@@ -54352,6 +55613,23 @@
                         ],
                         "items": {
                             "type": "string"
+                        }
+                    },
+                    "roof_polygon": {
+                        "type": "object",
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "enum": [
+                                    "Polygon"
+                                ]
+                            },
+                            "coordinates": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
                         }
                     }
                 },

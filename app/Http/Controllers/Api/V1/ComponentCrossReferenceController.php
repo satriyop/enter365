@@ -63,6 +63,39 @@ class ComponentCrossReferenceController extends Controller
     }
 
     /**
+     * Compare BOM across all available brands.
+     * Returns side-by-side comparison for quick decision making.
+     */
+    public function compareBrands(Bom $bom): JsonResponse
+    {
+        $comparison = $this->service->compareBrands($bom);
+
+        return response()->json([
+            'data' => $comparison,
+        ]);
+    }
+
+    /**
+     * Preview swap without creating a new BOM.
+     * Returns estimated costs and item-by-item breakdown.
+     */
+    public function previewSwapBrand(Request $request, Bom $bom): JsonResponse
+    {
+        $request->validate([
+            'target_brand' => 'required|string',
+        ]);
+
+        $preview = $this->service->previewSwapBrand(
+            $bom,
+            $request->input('target_brand')
+        );
+
+        return response()->json([
+            'data' => $preview,
+        ]);
+    }
+
+    /**
      * Swap BOM to a different brand.
      */
     public function swapBrand(Request $request, Bom $bom): JsonResponse
@@ -119,6 +152,43 @@ class ComponentCrossReferenceController extends Controller
                 'variant_group' => new BomVariantGroupResource($result['variant_group']),
                 'boms' => BomResource::collection($result['boms']),
                 'report' => $result['report'],
+            ],
+        ], 201);
+    }
+
+    /**
+     * Preview mixed-brand cost optimization.
+     * Finds cheapest alternative for each item across all brands.
+     */
+    public function previewCostOptimization(Bom $bom): JsonResponse
+    {
+        $preview = $this->service->previewCostOptimization($bom);
+
+        return response()->json([
+            'data' => $preview,
+        ]);
+    }
+
+    /**
+     * Apply cost optimization to create a new BOM with cheapest alternatives.
+     */
+    public function applyCostOptimization(Request $request, Bom $bom): JsonResponse
+    {
+        $request->validate([
+            'item_ids' => 'nullable|array',
+            'item_ids.*' => 'integer|exists:bom_items,id',
+        ]);
+
+        $result = $this->service->applyCostOptimization(
+            $bom,
+            $request->input('item_ids', [])
+        );
+
+        return response()->json([
+            'message' => 'Cost optimization berhasil diterapkan.',
+            'data' => [
+                'bom' => new BomResource($result['bom']),
+                'optimization_report' => $result['optimization_report'],
             ],
         ], 201);
     }

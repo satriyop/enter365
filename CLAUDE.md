@@ -576,3 +576,58 @@ $pages->assertNoJavascriptErrors()->assertNoConsoleLogs();
 | decoration-slice | box-decoration-slice |
 | decoration-clone | box-decoration-clone |
 </laravel-boost-guidelines>
+
+<!-- Project-Specific Instructions (Not managed by Laravel Boost) -->
+
+## API Documentation with Scramble
+
+This project uses [Scramble](https://scramble.dedoc.co/) for automatic OpenAPI documentation generation.
+
+### After Creating or Modifying API Endpoints
+
+**IMPORTANT:** After creating or modifying any API endpoints, always run:
+
+```bash
+php artisan scramble:export --path=api.json
+```
+
+This generates the OpenAPI specification that the Vue frontend uses for TypeScript type generation.
+
+### Scramble Best Practices
+
+1. **Add PHPDoc annotations** to controller methods for better documentation:
+   - `@bodyParam` for request body parameters
+   - `@queryParam` for query string parameters
+   - `@response` for response examples
+   - `@unauthenticated` for public endpoints
+
+2. **Use Form Request classes** - Scramble automatically extracts validation rules from Form Requests
+
+3. **Use API Resources** - Scramble understands Laravel API Resources for response documentation
+
+### Example Controller Documentation
+
+```php
+/**
+ * List all products.
+ *
+ * Returns a paginated list of products with optional filtering.
+ *
+ * @queryParam search string Search by product name or SKU. Example: MCB-16A
+ * @queryParam category string Filter by category. Example: circuit_breaker
+ * @queryParam per_page int Items per page. Default: 15. Example: 25
+ *
+ * @response 200 {
+ *   "data": [{"id": 1, "name": "MCB 16A", "sku": "MCB-16A-1P"}],
+ *   "meta": {"current_page": 1, "total": 50}
+ * }
+ */
+public function index(Request $request): AnonymousResourceCollection
+```
+
+### Workflow Reminder
+
+1. Create/modify API endpoint
+2. Run `php artisan test --filter=YourTest` to verify
+3. Run `php artisan scramble:export --path=api.json`
+4. Regenerate frontend types if needed: `npm run types:generate`
