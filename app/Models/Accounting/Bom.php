@@ -39,6 +39,7 @@ class Bom extends Model
         'variant_label',
         'is_primary_variant',
         'variant_sort_order',
+        'spec_rule_set_id',
         'notes',
         'created_by',
         'approved_by',
@@ -122,6 +123,22 @@ class Bom extends Model
     public function variantGroup(): BelongsTo
     {
         return $this->belongsTo(BomVariantGroup::class, 'variant_group_id');
+    }
+
+    /**
+     * @return BelongsTo<SpecValidationRuleSet, $this>
+     */
+    public function specRuleSet(): BelongsTo
+    {
+        return $this->belongsTo(SpecValidationRuleSet::class, 'spec_rule_set_id');
+    }
+
+    /**
+     * Get the effective rule set (BOM's rule set or default).
+     */
+    public function getEffectiveRuleSet(): ?SpecValidationRuleSet
+    {
+        return $this->specRuleSet ?? SpecValidationRuleSet::getDefault();
     }
 
     /**
@@ -245,14 +262,15 @@ class Bom extends Model
         $prefix = 'BOM-'.now()->format('Ym').'-';
 
         // Include soft-deleted records to avoid duplicate key violations
-        // Use lockForUpdate to prevent race conditions when called within transactions
+        // Get all BOMs with this prefix and find the max number in PHP
+        // This approach is database-agnostic (works with MySQL, PostgreSQL, SQLite)
         $lastBom = static::withTrashed()
             ->where('bom_number', 'like', $prefix.'%')
-            ->orderByRaw("CAST(SUBSTRING(bom_number FROM '[0-9]+$') AS INTEGER) DESC")
-            ->lockForUpdate()
+            ->orderBy('bom_number', 'desc')
             ->first();
 
         if ($lastBom) {
+            // Extract the numeric suffix from the bom_number
             $lastNumber = (int) substr($lastBom->bom_number, -4);
             $nextNumber = $lastNumber + 1;
         } else {

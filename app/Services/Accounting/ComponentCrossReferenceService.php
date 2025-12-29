@@ -8,6 +8,7 @@ use App\Models\Accounting\BomVariantGroup;
 use App\Models\Accounting\ComponentBrandMapping;
 use App\Models\Accounting\ComponentStandard;
 use App\Models\Accounting\Product;
+use App\Models\Accounting\SpecValidationRuleSet;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -15,7 +16,8 @@ class ComponentCrossReferenceService
 {
     public function __construct(
         private BomService $bomService,
-        private BomVariantGroupService $variantGroupService
+        private BomVariantGroupService $variantGroupService,
+        private SpecValidationService $validationService
     ) {}
 
     /**
@@ -85,17 +87,26 @@ class ComponentCrossReferenceService
 
     /**
      * Preview swap without creating a new BOM.
-     * Shows estimated costs and which items can be swapped.
+     * Shows estimated costs, which items can be swapped, and validation warnings/errors.
      *
-     * @return array{current_total: float, estimated_total: float, savings: float, savings_percentage: float, coverage: array, items: array}
+     * @return array{current_total: float, estimated_total: float, savings: float, savings_percentage: float, coverage: array, items: array, validation: array}
      */
-    public function previewSwapBrand(Bom $bom, string $targetBrand): array
+    public function previewSwapBrand(Bom $bom, string $targetBrand, ?SpecValidationRuleSet $ruleSet = null): array
     {
         $currentTotal = 0;
         $estimatedTotal = 0;
         $items = [];
         $swappable = 0;
         $noMapping = 0;
+
+        // Get validation results
+        $ruleSet = $ruleSet ?? $bom->getEffectiveRuleSet();
+        $validation = $ruleSet
+            ? $this->validationService->validateBomBrandSwap($bom, $targetBrand, $ruleSet)
+            : ['valid' => true, 'items' => [], 'summary' => []];
+
+        // Index validation results by bom_item_id
+        $validationByItem = collect($validation['items'])->keyBy('bom_item_id');
 
         foreach ($bom->materialItems as $item) {
             $currentCost = $item->unit_cost * $item->quantity;
@@ -111,7 +122,11 @@ class ComponentCrossReferenceService
                 $noMapping++;
             }
 
+            // Get validation for this item
+            $itemValidation = $validationByItem->get($item->id);
+
             $items[] = [
+                'bom_item_id' => $item->id,
                 'description' => $item->description,
                 'quantity' => $item->quantity,
                 'current_unit_cost' => $item->unit_cost,
@@ -122,6 +137,11 @@ class ComponentCrossReferenceService
                 'can_swap' => $preview['can_swap'],
                 'target_product' => $preview['target_product'],
                 'target_sku' => $preview['target_sku'],
+                'validation' => $itemValidation ? [
+                    'status' => $itemValidation['status'] ?? 'valid',
+                    'warnings' => $itemValidation['warnings'] ?? [],
+                    'errors' => $itemValidation['errors'] ?? [],
+                ] : null,
             ];
         }
 
@@ -141,6 +161,15 @@ class ComponentCrossReferenceService
                 'percentage' => count($items) > 0 ? round(($swappable / count($items)) * 100) : 0,
             ],
             'items' => $items,
+            'validation' => [
+                'valid' => $validation['valid'],
+                'rule_set' => $ruleSet ? [
+                    'id' => $ruleSet->id,
+                    'name' => $ruleSet->name,
+                    'code' => $ruleSet->code,
+                ] : null,
+                'summary' => $validation['summary'] ?? [],
+            ],
         ];
     }
 

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\PublicCompanyProfileController;
 use App\Http\Controllers\Api\PublicSolarCalculatorController;
 use App\Http\Controllers\Api\PublicSolarProposalController;
 use App\Http\Controllers\Api\V1\AccountController;
@@ -8,8 +9,10 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BankReconciliationController;
 use App\Http\Controllers\Api\V1\BillController;
 use App\Http\Controllers\Api\V1\BomController;
+use App\Http\Controllers\Api\V1\BomTemplateController;
 use App\Http\Controllers\Api\V1\BomVariantGroupController;
 use App\Http\Controllers\Api\V1\BudgetController;
+use App\Http\Controllers\Api\V1\CompanyProfileController;
 use App\Http\Controllers\Api\V1\ComponentBrandMappingController;
 use App\Http\Controllers\Api\V1\ComponentCrossReferenceController;
 use App\Http\Controllers\Api\V1\ComponentMappingImportController;
@@ -42,6 +45,7 @@ use App\Http\Controllers\Api\V1\RoleController;
 use App\Http\Controllers\Api\V1\SalesReturnController;
 use App\Http\Controllers\Api\V1\SolarDataController;
 use App\Http\Controllers\Api\V1\SolarProposalController;
+use App\Http\Controllers\Api\V1\SpecValidationRuleSetController;
 use App\Http\Controllers\Api\V1\StockOpnameController;
 use App\Http\Controllers\Api\V1\SubcontractorInvoiceController;
 use App\Http\Controllers\Api\V1\SubcontractorWorkOrderController;
@@ -89,6 +93,12 @@ Route::prefix('v1')->group(function () {
         Route::get('tariffs', [PublicSolarCalculatorController::class, 'tariffs']);
     });
 
+    // Public Company Profiles
+    Route::prefix('public/company-profiles')->group(function () {
+        Route::get('/', [PublicCompanyProfileController::class, 'index']);
+        Route::get('{identifier}', [PublicCompanyProfileController::class, 'show']);
+    });
+
     /*
     |--------------------------------------------------------------------------
     | Protected Routes (Requires Authentication)
@@ -122,6 +132,11 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('contacts', ContactController::class);
         Route::get('contacts/{contact}/balances', [ContactController::class, 'balances']);
         Route::get('contacts/{contact}/credit-status', [ContactController::class, 'creditStatus']);
+
+        // Company Profiles (Profil Perusahaan)
+        Route::apiResource('company-profiles', CompanyProfileController::class);
+        Route::delete('company-profiles/{company_profile}/logo', [CompanyProfileController::class, 'removeLogo']);
+        Route::delete('company-profiles/{company_profile}/cover', [CompanyProfileController::class, 'removeCover']);
 
         // Product Categories (Kategori Produk)
         Route::apiResource('product-categories', ProductCategoryController::class);
@@ -346,6 +361,46 @@ Route::prefix('v1')->group(function () {
             Route::post('component-mappings/validate', [ComponentMappingImportController::class, 'validate']);
             Route::post('component-mappings/import', [ComponentMappingImportController::class, 'import']);
             Route::get('component-mappings/stats', [ComponentMappingImportController::class, 'stats']);
+
+            // Spec Validation Rule Sets (Configurable Rules for Swap Validation)
+            Route::prefix('spec-rule-sets')->group(function () {
+                Route::get('/', [SpecValidationRuleSetController::class, 'index']);
+                Route::post('/', [SpecValidationRuleSetController::class, 'store']);
+                Route::get('/metadata', [SpecValidationRuleSetController::class, 'metadata']);
+                Route::get('/{specRuleSet}', [SpecValidationRuleSetController::class, 'show']);
+                Route::put('/{specRuleSet}', [SpecValidationRuleSetController::class, 'update']);
+                Route::delete('/{specRuleSet}', [SpecValidationRuleSetController::class, 'destroy']);
+                Route::post('/{specRuleSet}/set-default', [SpecValidationRuleSetController::class, 'setDefault']);
+
+                // Rules within Rule Sets
+                Route::post('/{specRuleSet}/rules', [SpecValidationRuleSetController::class, 'storeRule']);
+                Route::put('/{specRuleSet}/rules/{rule}', [SpecValidationRuleSetController::class, 'updateRule']);
+                Route::delete('/{specRuleSet}/rules/{rule}', [SpecValidationRuleSetController::class, 'destroyRule']);
+                Route::post('/{specRuleSet}/rules/reorder', [SpecValidationRuleSetController::class, 'reorderRules']);
+            });
+
+            // BOM Templates (Reusable Panel Configurations)
+            Route::prefix('bom-templates')->group(function () {
+                Route::get('/', [BomTemplateController::class, 'index']);
+                Route::post('/', [BomTemplateController::class, 'store']);
+                Route::get('/metadata', [BomTemplateController::class, 'metadata']);
+                Route::get('/{bomTemplate}', [BomTemplateController::class, 'show']);
+                Route::put('/{bomTemplate}', [BomTemplateController::class, 'update']);
+                Route::delete('/{bomTemplate}', [BomTemplateController::class, 'destroy']);
+                Route::post('/{bomTemplate}/duplicate', [BomTemplateController::class, 'duplicate']);
+                Route::post('/{bomTemplate}/toggle-active', [BomTemplateController::class, 'toggleActive']);
+
+                // Items within Templates
+                Route::post('/{bomTemplate}/items', [BomTemplateController::class, 'storeItem']);
+                Route::put('/{bomTemplate}/items/{item}', [BomTemplateController::class, 'updateItem']);
+                Route::delete('/{bomTemplate}/items/{item}', [BomTemplateController::class, 'destroyItem']);
+                Route::post('/{bomTemplate}/items/reorder', [BomTemplateController::class, 'reorderItems']);
+
+                // Create BOM from Template
+                Route::get('/{bomTemplate}/available-brands', [BomTemplateController::class, 'availableBrands']);
+                Route::post('/{bomTemplate}/preview-bom', [BomTemplateController::class, 'previewCreateBom']);
+                Route::post('/{bomTemplate}/create-bom', [BomTemplateController::class, 'createBom']);
+            });
         });
 
         // Solar Proposals (Proposal Panel Surya)
