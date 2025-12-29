@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Exports\SolarProposalExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\AcceptSolarProposalRequest;
 use App\Http\Requests\Api\V1\AttachSolarVariantsRequest;
@@ -329,5 +330,23 @@ class SolarProposalController extends Controller
         $filename = $solarProposal->proposal_number.'.pdf';
 
         return $pdf->download($filename);
+    }
+
+    /**
+     * Download Excel for a solar proposal.
+     *
+     * @operationId downloadSolarProposalExcel
+     */
+    public function excel(SolarProposal $solarProposal): \Symfony\Component\HttpFoundation\BinaryFileResponse
+    {
+        // Load relationships needed for the export
+        $solarProposal->load([
+            'contact',
+            'selectedBom',
+        ]);
+
+        $filename = $solarProposal->proposal_number.'.xlsx';
+
+        return (new SolarProposalExport($solarProposal))->download($filename);
     }
 }

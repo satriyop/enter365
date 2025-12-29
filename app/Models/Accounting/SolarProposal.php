@@ -500,22 +500,33 @@ class SolarProposal extends Model
     // ========================================
 
     /**
-     * Generate the next proposal number.
+     * Generate the next proposal number (with locking for concurrency safety).
+     *
+     * Uses a subquery approach to work around PostgreSQL's limitation
+     * that FOR UPDATE cannot be used with aggregate functions.
      */
     public static function generateProposalNumber(): string
     {
         $prefix = 'SPR-'.now()->format('Ym').'-';
-        $lastProposal = static::query()
-            ->where('proposal_number', 'like', $prefix.'%')
-            ->orderBy('proposal_number', 'desc')
-            ->first();
 
-        if ($lastProposal) {
-            $lastNumber = (int) substr($lastProposal->proposal_number, -4);
-            $nextNumber = $lastNumber + 1;
-        } else {
-            $nextNumber = 1;
+        // Get all matching proposal numbers with row lock, then find max in PHP
+        // The lockForUpdate() prevents other transactions from reading these rows
+        // until our transaction commits
+        $proposals = \DB::table('solar_proposals')
+            ->where('proposal_number', 'like', $prefix.'%')
+            ->lockForUpdate()
+            ->pluck('proposal_number');
+
+        $maxNumber = 0;
+        foreach ($proposals as $number) {
+            // Extract last 4 digits
+            $suffix = (int) substr($number, -4);
+            if ($suffix > $maxNumber) {
+                $maxNumber = $suffix;
+            }
         }
+
+        $nextNumber = $maxNumber + 1;
 
         return $prefix.str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
     }

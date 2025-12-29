@@ -20,36 +20,60 @@ class SolarProposalService
     /**
      * Create a new solar proposal.
      *
+     * Includes retry mechanism for race condition handling on proposal number generation.
+     *
      * @param  array<string, mixed>  $data
      */
     public function create(array $data): SolarProposal
     {
-        return DB::transaction(function () use ($data) {
-            // Set defaults
-            $data['proposal_number'] = SolarProposal::generateProposalNumber();
-            $data['status'] = SolarProposal::STATUS_DRAFT;
-            $data['created_by'] = auth()->id();
-            $data['performance_ratio'] = $data['performance_ratio'] ?? 0.80;
+        $maxRetries = 3;
+        $attempt = 0;
 
-            // Set default validity (30 days)
-            if (empty($data['valid_until'])) {
-                $data['valid_until'] = now()->addDays(30);
-            }
+        while ($attempt < $maxRetries) {
+            try {
+                return DB::transaction(function () use ($data) {
+                    // Set defaults - number generated inside transaction with lock
+                    $data['proposal_number'] = SolarProposal::generateProposalNumber();
+                    $data['status'] = SolarProposal::STATUS_DRAFT;
+                    $data['created_by'] = auth()->id();
+                    $data['performance_ratio'] = $data['performance_ratio'] ?? 0.80;
 
-            // Lookup solar data if province/city provided but not peak_sun_hours
-            if (empty($data['peak_sun_hours']) && ! empty($data['province']) && ! empty($data['city'])) {
-                $solarData = $this->calculator->getSolarDataByLocation($data['province'], $data['city']);
-                if ($solarData) {
-                    $data['peak_sun_hours'] = $solarData->peak_sun_hours;
-                    $data['solar_irradiance'] = $solarData->solar_irradiance_kwh_m2_day;
+                    // Set default validity (30 days)
+                    if (empty($data['valid_until'])) {
+                        $data['valid_until'] = now()->addDays(30);
+                    }
+
+                    // Lookup solar data if province/city provided but not peak_sun_hours
+                    if (empty($data['peak_sun_hours']) && ! empty($data['province']) && ! empty($data['city'])) {
+                        $solarData = $this->calculator->getSolarDataByLocation($data['province'], $data['city']);
+                        if ($solarData) {
+                            $data['peak_sun_hours'] = $solarData->peak_sun_hours;
+                            $data['solar_irradiance'] = $solarData->solar_irradiance_kwh_m2_day;
+                        }
+                    }
+
+                    // Create proposal
+                    $proposal = SolarProposal::create($data);
+
+                    return $proposal->load(['contact', 'creator']);
+                });
+            } catch (\Illuminate\Database\QueryException $e) {
+                // Check if it's a duplicate key violation (PostgreSQL: 23505)
+                if ($e->getCode() === '23505' && str_contains($e->getMessage(), 'proposal_number')) {
+                    $attempt++;
+                    if ($attempt >= $maxRetries) {
+                        throw new \RuntimeException('Gagal membuat nomor proposal setelah beberapa percobaan. Silakan coba lagi.');
+                    }
+                    // Small delay before retry
+                    usleep(50000); // 50ms
+
+                    continue;
                 }
+                throw $e;
             }
+        }
 
-            // Create proposal
-            $proposal = SolarProposal::create($data);
-
-            return $proposal->load(['contact', 'creator']);
-        });
+        throw new \RuntimeException('Gagal membuat proposal.');
     }
 
     /**
@@ -77,6 +101,27 @@ class SolarProposalService
                     if ($solarData) {
                         $data['peak_sun_hours'] = $solarData->peak_sun_hours;
                         $data['solar_irradiance'] = $solarData->solar_irradiance_kwh_m2_day;
+                    }
+                }
+            }
+
+            // Auto-attach BOM when variant_group_id is set/changed
+            if (
+                isset($data['variant_group_id']) &&
+                $data['variant_group_id'] !== $proposal->variant_group_id
+            ) {
+                $variantGroup = BomVariantGroup::with('activeBoms')->find($data['variant_group_id']);
+                if ($variantGroup) {
+                    // Auto-select the primary (recommended) BOM if not explicitly set
+                    if (empty($data['selected_bom_id'])) {
+                        $primaryBom = $variantGroup->primaryBom();
+                        if ($primaryBom) {
+                            $data['selected_bom_id'] = $primaryBom->id;
+                            // Extract capacity from BOM if not already set
+                            if (empty($data['system_capacity_kwp']) && empty($proposal->system_capacity_kwp)) {
+                                $data['system_capacity_kwp'] = $this->extractCapacityFromBom($primaryBom);
+                            }
+                        }
                     }
                 }
             }

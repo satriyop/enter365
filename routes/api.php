@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\PublicSolarCalculatorController;
 use App\Http\Controllers\Api\PublicSolarProposalController;
 use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\AttachmentController;
@@ -80,6 +81,12 @@ Route::prefix('v1')->group(function () {
         Route::get('{token}', [PublicSolarProposalController::class, 'show']);
         Route::post('{token}/accept', [PublicSolarProposalController::class, 'accept']);
         Route::post('{token}/reject', [PublicSolarProposalController::class, 'reject']);
+    });
+
+    // Public Solar Calculator (Marketing Tool)
+    Route::prefix('public/solar-calculator')->group(function () {
+        Route::post('calculate', [PublicSolarCalculatorController::class, 'calculate']);
+        Route::get('tariffs', [PublicSolarCalculatorController::class, 'tariffs']);
     });
 
     /*
@@ -322,6 +329,18 @@ Route::prefix('v1')->group(function () {
             Route::get('boms/{bom}/cost-optimization', [ComponentCrossReferenceController::class, 'previewCostOptimization']);
             Route::post('boms/{bom}/apply-cost-optimization', [ComponentCrossReferenceController::class, 'applyCostOptimization']);
 
+            // Quick Swap (Inline item-level swap)
+            Route::get('boms/{bom}/items/{item}/alternatives', [ComponentCrossReferenceController::class, 'getItemAlternatives']);
+            Route::patch('boms/{bom}/items/{item}/swap', [ComponentCrossReferenceController::class, 'quickSwapItem']);
+
+            // Auto-Mapping Suggestions
+            Route::get('auto-mapping/unmapped-products', [ComponentCrossReferenceController::class, 'getUnmappedProducts']);
+            Route::get('auto-mapping/products/{product}/suggest', [ComponentCrossReferenceController::class, 'suggestMapping']);
+            Route::post('auto-mapping/suggest-batch', [ComponentCrossReferenceController::class, 'suggestMappingsBatch']);
+            Route::post('auto-mapping/products/{product}/accept', [ComponentCrossReferenceController::class, 'acceptSuggestion']);
+            Route::post('auto-mapping/bulk-accept', [ComponentCrossReferenceController::class, 'bulkAcceptSuggestions']);
+            Route::get('auto-mapping/parse-name', [ComponentCrossReferenceController::class, 'parseProductName']);
+
             // Bulk Import Component Mappings
             Route::get('component-mappings/template', [ComponentMappingImportController::class, 'downloadTemplate']);
             Route::post('component-mappings/validate', [ComponentMappingImportController::class, 'validate']);
@@ -341,6 +360,7 @@ Route::prefix('v1')->group(function () {
             Route::post('solar-proposals/{solarProposal}/reject', [SolarProposalController::class, 'reject']);
             Route::post('solar-proposals/{solarProposal}/convert-to-quotation', [SolarProposalController::class, 'convertToQuotation']);
             Route::get('solar-proposals/{solarProposal}/pdf', [SolarProposalController::class, 'pdf']);
+            Route::get('solar-proposals/{solarProposal}/excel', [SolarProposalController::class, 'excel']);
             Route::get('solar-proposals-statistics', [SolarProposalController::class, 'statistics']);
 
             // Solar Data Lookup

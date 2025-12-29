@@ -33,6 +33,7 @@ class BomItemResource extends JsonResource
             'effective_quantity' => $this->getEffectiveQuantity(),
             'sort_order' => $this->sort_order,
             'notes' => $this->notes,
+            'component_standard_id' => $this->component_standard_id,
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),
             'updated_at' => $this->updated_at->format('Y-m-d H:i:s'),
         ];
