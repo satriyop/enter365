@@ -3,18 +3,18 @@
 namespace Database\Seeders\Demo\Vahana;
 
 use App\Models\Accounting\Account;
-use App\Models\Accounting\Bom;
-use App\Models\Accounting\Contact;
-use App\Models\Accounting\Invoice;
-use App\Models\Accounting\InvoiceItem;
-use App\Models\Accounting\Payment;
-use App\Models\Accounting\Product;
-use App\Models\Accounting\PurchaseOrder;
-use App\Models\Accounting\PurchaseOrderItem;
-use App\Models\Accounting\Quotation;
-use App\Models\Accounting\QuotationItem;
-use App\Models\Accounting\Warehouse;
-use App\Models\Accounting\WorkOrder;
+use App\Models\Contacts\Contact;
+use App\Models\Inventory\Product;
+use App\Models\Inventory\Warehouse;
+use App\Models\Manufacturing\Bom;
+use App\Models\Manufacturing\WorkOrder;
+use App\Models\Purchasing\PurchaseOrder;
+use App\Models\Purchasing\PurchaseOrderItem;
+use App\Models\Sales\Invoice;
+use App\Models\Sales\InvoiceItem;
+use App\Models\Sales\Quotation;
+use App\Models\Sales\QuotationItem;
+use App\Models\Shared\Payment;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 

@@ -583,6 +583,10 @@ $pages->assertNoJavascriptErrors()->assertNoConsoleLogs();
 
 This project uses [Scramble](https://scramble.dedoc.co/) for automatic OpenAPI documentation generation.
 
+### On Planning for Refactor
+**This is a fresh development app** - no production data or backward compatibility concerns
+
+
 ### After Creating or Modifying API Endpoints
 
 **IMPORTANT:** After creating or modifying any API endpoints, always run:

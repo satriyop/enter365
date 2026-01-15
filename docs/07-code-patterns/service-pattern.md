@@ -1,8 +1,9 @@
 ---
 pattern: service
 title: "Service Pattern"
-location: app/Services/Accounting/
+location: app/Services/
 tags: [architecture, services]
+updated: 2026-01-15
 ---
 
 # Service Pattern
@@ -16,6 +17,35 @@ tags: [architecture, services]
 - Coordinating multiple models
 
 **Key rule:** All business logic lives in services, not controllers or models.
+
+---
+
+## Service Architecture Overview
+
+```
+app/
+├── Contracts/
+│   └── Services/               # Service interfaces
+│       ├── DocumentLifecycleInterface.php
+│       ├── FinancialCalculationInterface.php
+│       ├── WorkflowServiceInterface.php
+│       └── Domains/
+│           ├── QuotationServiceInterface.php
+│           ├── BomServiceInterface.php
+│           └── MrpServiceInterface.php
+├── Services/
+│   ├── Base/                   # Abstract base classes
+│   │   ├── AbstractDocumentService.php
+│   │   └── AbstractReportService.php
+│   ├── Accounting/             # Core accounting services
+│   │   └── Reports/            # Report services + factory
+│   ├── Sales/                  # Sales domain
+│   ├── Purchasing/             # Purchasing domain
+│   ├── Inventory/              # Inventory domain
+│   ├── Manufacturing/          # Manufacturing domain
+│   ├── Projects/               # Project domain
+│   └── Solar/                  # Solar EPC domain
+```
 
 ---
 
@@ -277,6 +307,113 @@ throw new BusinessException(
     message: 'Not enough stock to fulfill order.',
     details: ['available' => 10, 'requested' => 15]
 );
+```
+
+---
+
+## Service Interfaces
+
+Services implement interfaces for better testability and dependency inversion:
+
+```php
+// app/Contracts/Services/DocumentLifecycleInterface.php
+namespace App\Contracts\Services;
+
+use Illuminate\Database\Eloquent\Model;
+
+interface DocumentLifecycleInterface
+{
+    public function create(array $data): Model;
+    public function update(Model $model, array $data): Model;
+    public function delete(Model $model): bool;
+    public function post(Model $model): Model;
+    public function void(Model $model): Model;
+}
+```
+
+### Binding Interfaces
+
+```php
+// AppServiceProvider.php
+public function register(): void
+{
+    $this->app->bind(
+        QuotationServiceInterface::class,
+        QuotationService::class
+    );
+}
+```
+
+### Using Interfaces in Controllers
+
+```php
+public function __construct(
+    private QuotationServiceInterface $quotationService
+) {}
+```
+
+---
+
+## Service Factory Pattern
+
+For controllers with many service dependencies, use a factory:
+
+```php
+// app/Services/Accounting/Reports/ReportServiceFactory.php
+namespace App\Services\Accounting\Reports;
+
+class ReportServiceFactory
+{
+    public const TYPE_FINANCIAL = 'financial';
+    public const TYPE_AGING = 'aging';
+    public const TYPE_TAX = 'tax';
+
+    public function make(string $type): object
+    {
+        return match ($type) {
+            self::TYPE_FINANCIAL => app(FinancialReportService::class),
+            self::TYPE_AGING => app(AgingReportService::class),
+            self::TYPE_TAX => app(TaxReportService::class),
+            // ...
+            default => throw new InvalidArgumentException("Unknown report type: {$type}"),
+        };
+    }
+
+    // Typed accessor methods
+    public function financial(): FinancialReportService
+    {
+        return $this->make(self::TYPE_FINANCIAL);
+    }
+
+    public function aging(): AgingReportService
+    {
+        return $this->make(self::TYPE_AGING);
+    }
+}
+```
+
+### Using Factory in Controller
+
+```php
+// Before: 10 dependencies
+public function __construct(
+    private FinancialReportService $financialService,
+    private AgingReportService $agingService,
+    private TaxReportService $taxService,
+    // ... 7 more
+) {}
+
+// After: 1 dependency with lazy loading
+public function __construct(
+    private ReportServiceFactory $reports
+) {}
+
+public function aging(): JsonResponse
+{
+    return response()->json(
+        $this->reports->aging()->generate($dateRange)
+    );
+}
 ```
 
 ---

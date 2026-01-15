@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\Accounting\PlnTariff;
+use App\Models\Solar\PlnTariff;
 use Illuminate\Database\Seeder;
 
 class PlnTariffSeeder extends Seeder

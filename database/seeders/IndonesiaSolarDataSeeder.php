@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\Accounting\IndonesiaSolarData;
+use App\Models\Solar\IndonesiaSolarData;
 use Illuminate\Database\Seeder;
 
 class IndonesiaSolarDataSeeder extends Seeder

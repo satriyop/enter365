@@ -2,12 +2,12 @@
 
 namespace Database\Seeders\Demo;
 
-use App\Models\Accounting\ComponentBrandMapping;
-use App\Models\Accounting\ComponentStandard;
-use App\Models\Accounting\Product;
-use App\Models\Accounting\ProductCategory;
-use App\Models\Accounting\Role;
-use App\Models\Accounting\Warehouse;
+use App\Models\Core\Role;
+use App\Models\Inventory\Product;
+use App\Models\Inventory\ProductCategory;
+use App\Models\Inventory\Warehouse;
+use App\Models\Manufacturing\ComponentBrandMapping;
+use App\Models\Manufacturing\ComponentStandard;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;

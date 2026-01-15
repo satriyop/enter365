@@ -2,13 +2,14 @@
 section: architecture
 title: "Service Layer"
 order: 3
+updated: 2026-01-15
 ---
 
 # Service Layer Architecture
 
-> **37 service classes containing all business logic**
+> **40+ service classes containing all business logic**
 >
-> All business logic lives in `/app/Services/Accounting/`. Controllers are thin, services are smart.
+> Business logic is organized by domain in `/app/Services/`. Controllers are thin, services are smart.
 
 ---
 
@@ -21,6 +22,66 @@ order: 3
 - Learning the service pattern
 
 **Key takeaway:** Never put business logic in controllers. Create or use a service class.
+
+---
+
+## Service Organization
+
+Services are now organized by domain:
+
+```
+app/Services/
+├── Accounting/           # Core accounting
+│   ├── JournalService.php
+│   ├── AccountBalanceService.php
+│   ├── FiscalPeriodService.php
+│   └── Reports/          # Report services + factory
+│       ├── ReportServiceFactory.php
+│       ├── FinancialReportService.php
+│       ├── AgingReportService.php
+│       ├── TaxReportService.php
+│       ├── CashFlowReportService.php
+│       └── BankReconciliationReportService.php
+├── Sales/                # Sales domain
+│   ├── QuotationService.php
+│   ├── QuotationWorkflowService.php
+│   ├── DeliveryOrderService.php
+│   ├── SalesReturnService.php
+│   ├── DownPaymentService.php
+│   ├── RecurringService.php
+│   ├── ReminderService.php
+│   └── OverdueService.php
+├── Purchasing/           # Purchasing domain
+│   ├── PurchaseOrderService.php
+│   ├── GoodsReceiptNoteService.php
+│   └── PurchaseReturnService.php
+├── Inventory/            # Inventory domain
+│   ├── InventoryService.php
+│   ├── StockOpnameService.php
+│   └── Reports/
+│       └── COGSReportService.php
+├── Manufacturing/        # Manufacturing domain
+│   ├── BomService.php
+│   ├── BomTemplateService.php
+│   ├── BomVariantGroupService.php
+│   ├── WorkOrderService.php
+│   ├── MaterialRequisitionService.php
+│   ├── MrpService.php
+│   ├── MrpDemandService.php
+│   ├── MrpSuggestionService.php
+│   ├── ComponentCrossReferenceService.php
+│   ├── SpecValidationService.php
+│   ├── SubcontractorService.php
+│   └── Reports/
+│       ├── WorkOrderReportService.php
+│       └── SubcontractorReportService.php
+├── Projects/             # Project domain
+│   ├── ProjectService.php
+│   └── ProjectReportService.php
+└── Solar/                # Solar EPC domain
+    ├── SolarProposalService.php
+    └── SolarCalculationService.php
+```
 
 ---
 
@@ -79,29 +140,28 @@ class QuotationService
 
 ## Service Directory
 
-All services: `/app/Services/Accounting/`
-
-### Core Accounting Services
+### Core Accounting (`app/Services/Accounting/`)
 
 | Service | Responsibility |
 |---------|----------------|
 | `JournalService` | Journal entries, posting, reversals |
 | `AccountBalanceService` | Account balance calculations |
-| `FinancialReportService` | Balance sheet, income statement |
 | `FiscalPeriodService` | Fiscal year management, period closing |
-| `CashFlowReportService` | Cash flow statement |
 
-### Sales Services
+### Sales (`app/Services/Sales/`)
 
 | Service | Responsibility |
 |---------|----------------|
-| `QuotationService` | Quotation CRUD, conversion to invoice |
+| `QuotationService` | Quotation CRUD, calculations |
+| `QuotationWorkflowService` | Status transitions (win/lose) |
 | `DeliveryOrderService` | Delivery order processing |
 | `SalesReturnService` | Sales returns, credit notes |
 | `DownPaymentService` | Down payment tracking, application |
+| `RecurringService` | Recurring document generation |
 | `ReminderService` | Payment reminders |
+| `OverdueService` | Overdue detection |
 
-### Purchasing Services
+### Purchasing (`app/Services/Purchasing/`)
 
 | Service | Responsibility |
 |---------|----------------|
@@ -109,14 +169,14 @@ All services: `/app/Services/Accounting/`
 | `GoodsReceiptNoteService` | GRN processing, stock updates |
 | `PurchaseReturnService` | Purchase returns |
 
-### Inventory Services
+### Inventory (`app/Services/Inventory/`)
 
 | Service | Responsibility |
 |---------|----------------|
 | `InventoryService` | Stock movements, transfers |
 | `StockOpnameService` | Physical inventory counts |
 
-### Manufacturing Services
+### Manufacturing (`app/Services/Manufacturing/`)
 
 | Service | Responsibility |
 |---------|----------------|
@@ -126,17 +186,19 @@ All services: `/app/Services/Accounting/`
 | `WorkOrderService` | Work order lifecycle |
 | `MaterialRequisitionService` | Material requests |
 | `MrpService` | MRP calculations, demand planning |
+| `MrpDemandService` | Demand collection, BOM explosion |
+| `MrpSuggestionService` | Suggestion generation, conversion |
 | `ComponentCrossReferenceService` | Component alternatives |
 | `SpecValidationService` | Component specification validation |
+| `SubcontractorService` | Subcontractor management |
 
-### Project Services
+### Projects (`app/Services/Projects/`)
 
 | Service | Responsibility |
 |---------|----------------|
 | `ProjectService` | Project CRUD, cost allocation |
-| `SubcontractorService` | Subcontractor management |
 
-### Solar EPC Services
+### Solar (`app/Services/Solar/`)
 
 | Service | Responsibility |
 |---------|----------------|
@@ -145,23 +207,45 @@ All services: `/app/Services/Accounting/`
 
 ### Report Services
 
-| Service | Responsibility |
-|---------|----------------|
-| `AgingReportService` | AR/AP aging reports |
-| `COGSReportService` | Cost of goods sold |
-| `TaxReportService` | PPN reports |
-| `ProjectReportService` | Project profitability |
-| `WorkOrderReportService` | Work order analytics |
-| `SubcontractorReportService` | Subcontractor reports |
-| `BankReconciliationReportService` | Bank reconciliation |
+Report services are accessed via `ReportServiceFactory` for lazy loading:
 
-### Other Services
+| Service | Location | Responsibility |
+|---------|----------|----------------|
+| `FinancialReportService` | `Accounting/Reports/` | Balance sheet, income statement |
+| `AgingReportService` | `Accounting/Reports/` | AR/AP aging reports |
+| `TaxReportService` | `Accounting/Reports/` | PPN reports |
+| `CashFlowReportService` | `Accounting/Reports/` | Cash flow statement |
+| `BankReconciliationReportService` | `Accounting/Reports/` | Bank reconciliation |
+| `COGSReportService` | `Inventory/Reports/` | Cost of goods sold |
+| `ProjectReportService` | `Projects/` | Project profitability |
+| `WorkOrderReportService` | `Manufacturing/Reports/` | Work order analytics |
+| `SubcontractorReportService` | `Manufacturing/Reports/` | Subcontractor reports |
 
-| Service | Responsibility |
-|---------|----------------|
-| `RecurringService` | Recurring document generation |
-| `OverdueService` | Overdue detection |
-| `BudgetService` | Budget management |
+#### Using ReportServiceFactory
+
+```php
+// In ReportController - only 1 dependency instead of 10
+public function __construct(
+    private ReportServiceFactory $reports
+) {}
+
+public function aging(): JsonResponse
+{
+    return response()->json(
+        $this->reports->aging()->generateAgingReport($dateRange)
+    );
+}
+
+public function financialStatements(): JsonResponse
+{
+    return response()->json([
+        'balance_sheet' => $this->reports->financial()->generateBalanceSheet($date),
+        'income_statement' => $this->reports->financial()->generateIncomeStatement($dateRange),
+    ]);
+}
+```
+
+See [Service Pattern: Factory Pattern](../07-code-patterns/service-pattern.md#service-factory-pattern) for implementation details.
 
 ---
 

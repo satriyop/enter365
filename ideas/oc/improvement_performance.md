@@ -1,5 +1,5 @@
 Top 3 Performance Recommendations for Enter365
-1. Database Query Optimization & Caching Strategy
+# 1. Database Query Optimization & Caching Strategy
 Why This Matters
 - Impact: 40-60% reduction in API response times
 - Scalability: Application can handle 5-10x more concurrent users
@@ -118,7 +118,7 @@ Expected Results
 | Database queries per request | 50-100 | 5-10 | 90% |
 | Concurrent users supported | 50 | 500+ | 900% |
 ---
-2. Queue System for Heavy Operations
+# 2. Queue System for Heavy Operations
 Why This Matters
 - Impact: 5-10x faster response times for heavy operations
 - Reliability: Background jobs prevent timeouts and failures
@@ -273,7 +273,7 @@ Expected Results
 | MRP run browser timeout | 60s+ timeout | Background job | ∞ |
 | User satisfaction | Low | High | ⬆️ |
 ---
-3. API Response Optimization
+# 3. API Response Optimization
 Why This Matters
 - Impact: 60-80% faster API responses
 - Bandwidth: 70% reduction in data transfer

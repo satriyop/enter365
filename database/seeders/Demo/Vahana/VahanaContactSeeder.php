@@ -2,7 +2,7 @@
 
 namespace Database\Seeders\Demo\Vahana;
 
-use App\Models\Accounting\Contact;
+use App\Models\Contacts\Contact;
 use Illuminate\Database\Seeder;
 
 class VahanaContactSeeder extends Seeder

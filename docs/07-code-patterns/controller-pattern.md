@@ -26,35 +26,36 @@ tags: [architecture, controllers]
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers\Accounting;
+namespace App\Http\Controllers\Api\V1;
 
+use App\Filters\InvoiceFilter;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Invoice\StoreInvoiceRequest;
-use App\Http\Requests\Invoice\UpdateInvoiceRequest;
-use App\Http\Requests\Invoice\ApproveInvoiceRequest;
-use App\Http\Resources\InvoiceResource;
-use App\Models\Accounting\Invoice;
-use App\Services\Accounting\InvoiceService;
+use App\Http\Requests\Api\V1\StoreInvoiceRequest;
+use App\Http\Requests\Api\V1\UpdateInvoiceRequest;
+use App\Http\Resources\Api\V1\InvoiceResource;
+use App\Models\Sales\Invoice;
+use App\Services\Accounting\JournalService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class InvoiceController extends Controller
 {
     public function __construct(
-        private InvoiceService $invoiceService
+        private JournalService $journalService
     ) {}
 
     /**
      * List invoices with filtering and pagination.
+     *
+     * Filters are injected via dependency injection using QueryFilter pattern.
+     * See ADR-0037 for filter architecture details.
      */
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(InvoiceFilter $filter): AnonymousResourceCollection
     {
         $invoices = Invoice::query()
             ->with(['contact', 'items'])
-            ->filter($request->input('filter', []))
-            ->orderBy($request->input('sort', 'date'), 'desc')
-            ->paginate($request->input('per_page', 15));
+            ->filter($filter)
+            ->paginate($filter->getRequest()->input('per_page', 25));
 
         return InvoiceResource::collection($invoices);
     }
@@ -149,15 +150,40 @@ class InvoiceController extends Controller
 
 ## Key Principles
 
-### 1. Inject Service via Constructor
+### 1. Inject Dependencies via Constructor
 
 ```php
 public function __construct(
-    private InvoiceService $invoiceService
+    private JournalService $journalService
 ) {}
 ```
 
-### 2. Use Form Requests for Validation
+### 2. Inject Filters for Index Methods
+
+Use `QueryFilter` classes for filtering instead of inline conditions:
+
+```php
+// ✓ Good: Filter injected via DI
+public function index(InvoiceFilter $filter): AnonymousResourceCollection
+{
+    return InvoiceResource::collection(
+        Invoice::query()->filter($filter)->paginate()
+    );
+}
+
+// ✗ Bad: Inline filtering
+public function index(Request $request): AnonymousResourceCollection
+{
+    $query = Invoice::query();
+    if ($request->has('status')) { $query->where('status', $request->status); }
+    if ($request->has('contact_id')) { $query->where('contact_id', $request->contact_id); }
+    // ... 10 more conditions
+}
+```
+
+See [ADR-0037: API Filtering](../08-adr/0037-api-filtering.md) for filter implementation details.
+
+### 3. Use Form Requests for Validation
 
 ```php
 public function store(StoreInvoiceRequest $request): InvoiceResource
@@ -168,7 +194,7 @@ public function store(StoreInvoiceRequest $request): InvoiceResource
 }
 ```
 
-### 3. Use Resources for Output
+### 4. Use Resources for Output
 
 ```php
 // Single resource
@@ -178,7 +204,7 @@ return new InvoiceResource($invoice);
 return InvoiceResource::collection($invoices);
 ```
 
-### 4. Authorize with Policies
+### 5. Authorize with Policies
 
 ```php
 public function show(Invoice $invoice): InvoiceResource
@@ -261,6 +287,7 @@ Route::get('/invoices', fn () => view('pages.invoices.index'))
 ## Related Documents
 
 - [Service Pattern](./service-pattern.md)
+- [ADR-0037: API Filtering](../08-adr/0037-api-filtering.md) - QueryFilter pattern for index endpoints
 - [ADR-0039: Form Request Validation](../08-adr/0039-form-request-validation.md)
 - [ADR-0035: API Resource Conventions](../08-adr/0035-api-resource-conventions.md)
 - [API Design](../01-architecture/api-design.md)

@@ -3,10 +3,10 @@
 namespace Database\Seeders\Demo\Vahana;
 
 use App\Models\Accounting\Account;
-use App\Models\Accounting\Bom;
-use App\Models\Accounting\BomItem;
-use App\Models\Accounting\Product;
-use App\Models\Accounting\ProductCategory;
+use App\Models\Inventory\Product;
+use App\Models\Inventory\ProductCategory;
+use App\Models\Manufacturing\Bom;
+use App\Models\Manufacturing\BomItem;
 use Illuminate\Database\Seeder;
 
 class VahanaProductSeeder extends Seeder
