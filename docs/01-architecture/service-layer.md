@@ -2,7 +2,7 @@
 section: architecture
 title: "Service Layer"
 order: 3
-updated: 2026-01-15
+updated: 2026-01-16
 ---
 
 # Service Layer Architecture
@@ -90,11 +90,13 @@ app/Services/
 ### Controller → Service Flow
 
 ```php
-// Controller: HTTP concerns only
+// Controller: HTTP concerns only (uses interface)
+use App\Contracts\Services\Domains\QuotationServiceInterface;
+
 class QuotationController extends Controller
 {
     public function __construct(
-        private QuotationService $quotationService
+        private QuotationServiceInterface $quotationService
     ) {}
 
     public function store(StoreQuotationRequest $request): JsonResponse
@@ -112,8 +114,11 @@ class QuotationController extends Controller
 ```
 
 ```php
-// Service: Business logic
-class QuotationService
+// Service: Business logic (implements interface)
+use App\Contracts\Services\Domains\QuotationServiceInterface;
+use App\Models\Sales\Quotation;
+
+class QuotationService implements QuotationServiceInterface
 {
     public function create(array $data): Quotation
     {
@@ -268,19 +273,30 @@ public function create(array $data): Model
 }
 ```
 
-### 2. Constructor Injection
+### 2. Interface-Based Constructor Injection
 
-Dependencies injected via constructor:
+Dependencies injected via constructor using interfaces for testability:
 
 ```php
-class MrpService
+use App\Contracts\Services\Domains\BomServiceInterface;
+use App\Contracts\Services\Domains\InventoryServiceInterface;
+use App\Contracts\Services\Domains\PurchaseOrderServiceInterface;
+use App\Contracts\Services\Domains\MrpServiceInterface;
+
+class MrpService implements MrpServiceInterface
 {
     public function __construct(
-        private BomService $bomService,
-        private InventoryService $inventoryService,
-        private PurchaseOrderService $poService
+        private BomServiceInterface $bomService,
+        private InventoryServiceInterface $inventoryService,
+        private PurchaseOrderServiceInterface $poService
     ) {}
 }
+```
+
+This enables easy mocking in tests:
+```php
+$mock = $this->mock(BomServiceInterface::class);
+$mock->shouldReceive('explode')->andReturn($mockItems);
 ```
 
 ### 3. Return Fresh Models
@@ -309,36 +325,46 @@ Document complex array parameters:
 public function create(array $data): Quotation
 ```
 
-### 5. Exception for Business Rules
+### 5. Domain Exceptions for Business Rules
 
-Throw exceptions for business rule violations:
+Use semantic domain exceptions for business rule violations:
 
 ```php
+use App\Exceptions\Domain\StateTransitionException;
+
 public function convertToInvoice(Quotation $quotation): Invoice
 {
-    if (!$quotation->canConvert()) {
-        throw new InvalidArgumentException('Quotation cannot be converted.');
+    if ($quotation->status !== Quotation::STATUS_APPROVED) {
+        throw new StateTransitionException(
+            entity: 'Quotation',
+            currentState: $quotation->status,
+            targetState: 'converted',
+            message: 'Only approved quotations can be converted.'
+        );
     }
 
     // Proceed with conversion
 }
 ```
 
+See [Service Pattern: Domain Exceptions](../07-code-patterns/service-pattern.md#domain-exceptions) for all exception types.
+
 ---
 
 ## Example Service: QuotationService
 
 ```php
-// File: /app/Services/Accounting/QuotationService.php
+// File: /app/Services/Sales/QuotationService.php
 
-namespace App\Services\Accounting;
+namespace App\Services\Sales;
 
-use App\Models\Accounting\Quotation;
-use App\Models\Accounting\Invoice;
+use App\Contracts\Services\Domains\QuotationServiceInterface;
+use App\Exceptions\Domain\StateTransitionException;
+use App\Models\Sales\Quotation;
+use App\Models\Sales\Invoice;
 use Illuminate\Support\Facades\DB;
-use InvalidArgumentException;
 
-class QuotationService
+class QuotationService implements QuotationServiceInterface
 {
     /**
      * Create a new quotation with items.
@@ -379,16 +405,21 @@ class QuotationService
     /**
      * Submit quotation for approval.
      */
-    public function submit(Quotation $quotation): Quotation
+    public function submit(Quotation $quotation, ?int $userId = null): Quotation
     {
         if ($quotation->status !== Quotation::STATUS_DRAFT) {
-            throw new InvalidArgumentException('Only draft quotations can be submitted.');
+            throw new StateTransitionException(
+                entity: 'Quotation',
+                currentState: $quotation->status,
+                targetState: 'submitted',
+                message: 'Only draft quotations can be submitted.'
+            );
         }
 
         $quotation->update([
             'status' => Quotation::STATUS_SUBMITTED,
             'submitted_at' => now(),
-            'submitted_by' => auth()->id(),
+            'submitted_by' => $userId ?? auth()->id(),
         ]);
 
         return $quotation->fresh();
@@ -397,16 +428,21 @@ class QuotationService
     /**
      * Approve quotation.
      */
-    public function approve(Quotation $quotation): Quotation
+    public function approve(Quotation $quotation, ?int $userId = null): Quotation
     {
         if ($quotation->status !== Quotation::STATUS_SUBMITTED) {
-            throw new InvalidArgumentException('Only submitted quotations can be approved.');
+            throw new StateTransitionException(
+                entity: 'Quotation',
+                currentState: $quotation->status,
+                targetState: 'approved',
+                message: 'Only submitted quotations can be approved.'
+            );
         }
 
         $quotation->update([
             'status' => Quotation::STATUS_APPROVED,
             'approved_at' => now(),
-            'approved_by' => auth()->id(),
+            'approved_by' => $userId ?? auth()->id(),
         ]);
 
         return $quotation->fresh();
@@ -418,7 +454,12 @@ class QuotationService
     public function convertToInvoice(Quotation $quotation): Invoice
     {
         if ($quotation->status !== Quotation::STATUS_APPROVED) {
-            throw new InvalidArgumentException('Only approved quotations can be converted.');
+            throw new StateTransitionException(
+                entity: 'Quotation',
+                currentState: $quotation->status,
+                targetState: 'converted',
+                message: 'Only approved quotations can be converted.'
+            );
         }
 
         return DB::transaction(function () use ($quotation) {
@@ -497,15 +538,19 @@ class QuotationService
 
 ## Testing Services
 
-Services are tested in isolation:
+Services are tested in isolation using interface-based resolution:
 
 ```php
 // File: /tests/Unit/Services/QuotationServiceTest.php
 
-use App\Services\Accounting\QuotationService;
+use App\Contracts\Services\Domains\QuotationServiceInterface;
+use App\Exceptions\Domain\StateTransitionException;
+use App\Models\Contacts\Contact;
+use App\Models\Inventory\Product;
+use App\Models\Sales\Quotation;
 
 it('creates quotation with items', function () {
-    $service = app(QuotationService::class);
+    $service = app(QuotationServiceInterface::class);
     $contact = Contact::factory()->create();
     $product = Product::factory()->create();
 
@@ -524,11 +569,11 @@ it('creates quotation with items', function () {
 });
 
 it('prevents converting draft quotation', function () {
-    $service = app(QuotationService::class);
+    $service = app(QuotationServiceInterface::class);
     $quotation = Quotation::factory()->draft()->create();
 
     expect(fn() => $service->convertToInvoice($quotation))
-        ->toThrow(InvalidArgumentException::class);
+        ->toThrow(StateTransitionException::class);
 });
 ```
 

@@ -3,6 +3,7 @@ pattern: controller
 title: "Controller Pattern"
 location: app/Http/Controllers/
 tags: [architecture, controllers]
+updated: 2026-01-16
 ---
 
 # Controller Pattern
@@ -28,20 +29,20 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Contracts\Services\Domains\InvoiceServiceInterface;
 use App\Filters\InvoiceFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreInvoiceRequest;
 use App\Http\Requests\Api\V1\UpdateInvoiceRequest;
 use App\Http\Resources\Api\V1\InvoiceResource;
 use App\Models\Sales\Invoice;
-use App\Services\Accounting\JournalService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class InvoiceController extends Controller
 {
     public function __construct(
-        private JournalService $journalService
+        private InvoiceServiceInterface $invoiceService
     ) {}
 
     /**
@@ -150,13 +151,26 @@ class InvoiceController extends Controller
 
 ## Key Principles
 
-### 1. Inject Dependencies via Constructor
+### 1. Inject Service Interfaces via Constructor
+
+Use interfaces for dependency injection, enabling easy mocking in tests:
 
 ```php
+use App\Contracts\Services\Domains\InvoiceServiceInterface;
+use App\Contracts\Services\Domains\QuotationServiceInterface;
+
 public function __construct(
-    private JournalService $journalService
+    private InvoiceServiceInterface $invoiceService,
+    private QuotationServiceInterface $quotationService
 ) {}
 ```
+
+**Why interfaces?**
+- Controllers depend on abstractions, not concrete implementations
+- Services can be easily mocked in tests
+- Enables swapping implementations without changing controller code
+
+All 23 domain services have interfaces in `app/Contracts/Services/Domains/`. See [Service Pattern: Interfaces](./service-pattern.md#service-interfaces) for the complete list.
 
 ### 2. Inject Filters for Index Methods
 

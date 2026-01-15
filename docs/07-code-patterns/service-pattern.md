@@ -3,7 +3,7 @@ pattern: service
 title: "Service Pattern"
 location: app/Services/
 tags: [architecture, services]
-updated: 2026-01-15
+updated: 2026-01-16
 ---
 
 # Service Pattern
@@ -29,13 +29,26 @@ app/
 │       ├── DocumentLifecycleInterface.php
 │       ├── FinancialCalculationInterface.php
 │       ├── WorkflowServiceInterface.php
-│       └── Domains/
+│       └── Domains/            # 23 domain-specific interfaces
+│           ├── InvoiceServiceInterface.php
+│           ├── BillServiceInterface.php
 │           ├── QuotationServiceInterface.php
+│           ├── PurchaseOrderServiceInterface.php
 │           ├── BomServiceInterface.php
-│           └── MrpServiceInterface.php
+│           ├── WorkOrderServiceInterface.php
+│           ├── MrpServiceInterface.php
+│           └── ... (16 more)
+├── Exceptions/
+│   └── Domain/                 # Domain exceptions
+│       ├── DomainException.php
+│       ├── ValidationException.php
+│       ├── StateTransitionException.php
+│       ├── InsufficientStockException.php
+│       └── DocumentLockedException.php
 ├── Services/
 │   ├── Base/                   # Abstract base classes
 │   │   ├── AbstractDocumentService.php
+│   │   ├── AbstractWorkflowService.php
 │   │   └── AbstractReportService.php
 │   ├── Accounting/             # Core accounting services
 │   │   └── Reports/            # Report services + factory
@@ -56,16 +69,18 @@ app/
 
 declare(strict_types=1);
 
-namespace App\Services\Accounting;
+namespace App\Services\Sales;
 
-use App\Models\Accounting\Invoice;
-use App\Models\Accounting\InvoiceItem;
+use App\Contracts\Services\Domains\InvoiceServiceInterface;
+use App\Models\Sales\Invoice;
+use App\Services\Accounting\JournalService;
+use App\Services\Inventory\InventoryService;
 use Illuminate\Support\Facades\DB;
 
-class InvoiceService
+class InvoiceService implements InvoiceServiceInterface
 {
     public function __construct(
-        private JournalEntryService $journalService,
+        private JournalService $journalService,
         private InventoryService $inventoryService
     ) {}
 
@@ -189,8 +204,9 @@ class InvoiceService
     private function ensureCanEdit(Invoice $invoice): void
     {
         if ($invoice->status !== 'draft') {
-            throw new BusinessException(
-                'INVOICE_NOT_EDITABLE',
+            throw new DocumentLockedException(
+                'Invoice',
+                $invoice->id,
                 'Only draft invoices can be edited.'
             );
         }
@@ -199,16 +215,18 @@ class InvoiceService
     private function ensureCanApprove(Invoice $invoice): void
     {
         if ($invoice->status !== 'draft') {
-            throw new BusinessException(
-                'INVOICE_ALREADY_APPROVED',
+            throw new StateTransitionException(
+                'Invoice',
+                $invoice->status,
+                'approved',
                 'Invoice is not in draft status.'
             );
         }
 
         if ($invoice->items->isEmpty()) {
-            throw new BusinessException(
-                'INVOICE_NO_ITEMS',
-                'Invoice must have at least one item.'
+            throw new ValidationException(
+                'Invoice must have at least one item.',
+                ['items' => 'At least one item is required']
             );
         }
     }
@@ -298,49 +316,161 @@ public function complete(WorkOrder $workOrder): void
 
 ---
 
-## Error Handling
+## Domain Exceptions
+
+Use semantic domain exceptions instead of generic `InvalidArgumentException`:
 
 ```php
-// Custom business exception
-throw new BusinessException(
-    errorCode: 'INSUFFICIENT_STOCK',
-    message: 'Not enough stock to fulfill order.',
-    details: ['available' => 10, 'requested' => 15]
+use App\Exceptions\Domain\ValidationException;
+use App\Exceptions\Domain\StateTransitionException;
+use App\Exceptions\Domain\InsufficientStockException;
+use App\Exceptions\Domain\DocumentLockedException;
+```
+
+### Exception Types
+
+| Exception | Use Case | Example |
+|-----------|----------|---------|
+| `ValidationException` | Business rule violations | Missing required items |
+| `StateTransitionException` | Invalid workflow transitions | Approving non-draft document |
+| `InsufficientStockException` | Stock availability issues | Not enough inventory |
+| `DocumentLockedException` | Editing posted/locked documents | Modifying approved invoice |
+
+### Usage Examples
+
+```php
+// Validation failure
+throw new ValidationException(
+    message: 'Invoice must have at least one item.',
+    errors: ['items' => 'At least one item is required']
 );
+
+// Invalid state transition
+throw new StateTransitionException(
+    entity: 'WorkOrder',
+    currentState: 'draft',
+    targetState: 'completed',
+    message: 'Work order must be started before completion.'
+);
+
+// Insufficient stock
+throw new InsufficientStockException(
+    productId: $product->id,
+    productName: $product->name,
+    requested: 100,
+    available: 50
+);
+
+// Document locked
+throw new DocumentLockedException(
+    documentType: 'Invoice',
+    documentId: $invoice->id,
+    message: 'Posted invoices cannot be modified.'
+);
+```
+
+### API Response Format
+
+Domain exceptions return structured JSON responses:
+
+```json
+{
+    "code": "INSUFFICIENT_STOCK",
+    "message": "Stok tidak mencukupi untuk transfer.",
+    "context": {
+        "product_id": 123,
+        "requested": 100,
+        "available": 50
+    }
+}
 ```
 
 ---
 
 ## Service Interfaces
 
-Services implement interfaces for better testability and dependency inversion:
+All 23 domain services implement interfaces for testability and dependency inversion.
+
+### Complete Interface List
+
+| Domain | Interface | Service |
+|--------|-----------|---------|
+| **Sales** | `InvoiceServiceInterface` | `InvoiceService` |
+| | `QuotationServiceInterface` | `QuotationService` |
+| | `DeliveryOrderServiceInterface` | `DeliveryOrderService` |
+| | `DownPaymentServiceInterface` | `DownPaymentService` |
+| | `SalesReturnServiceInterface` | `SalesReturnService` |
+| | `RecurringServiceInterface` | `RecurringService` |
+| **Purchasing** | `BillServiceInterface` | `BillService` |
+| | `PurchaseOrderServiceInterface` | `PurchaseOrderService` |
+| | `GoodsReceiptNoteServiceInterface` | `GoodsReceiptNoteService` |
+| | `PurchaseReturnServiceInterface` | `PurchaseReturnService` |
+| **Manufacturing** | `BomServiceInterface` | `BomService` |
+| | `BomTemplateServiceInterface` | `BomTemplateService` |
+| | `BomVariantGroupServiceInterface` | `BomVariantGroupService` |
+| | `WorkOrderServiceInterface` | `WorkOrderService` |
+| | `MaterialRequisitionServiceInterface` | `MaterialRequisitionService` |
+| | `MrpServiceInterface` | `MrpService` |
+| | `SubcontractorServiceInterface` | `SubcontractorService` |
+| **Inventory** | `InventoryServiceInterface` | `InventoryService` |
+| | `StockOpnameServiceInterface` | `StockOpnameService` |
+| | `ProductServiceInterface` | `ProductService` |
+| **Projects** | `ProjectServiceInterface` | `ProjectService` |
+| **Solar** | `SolarProposalServiceInterface` | `SolarProposalService` |
+| | `SolarCalculationServiceInterface` | `SolarCalculationService` |
+
+### Interface Definition Example
 
 ```php
-// app/Contracts/Services/DocumentLifecycleInterface.php
-namespace App\Contracts\Services;
+// app/Contracts/Services/Domains/InvoiceServiceInterface.php
+namespace App\Contracts\Services\Domains;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Contracts\Services\DocumentLifecycleInterface;
+use App\Models\Sales\Invoice;
 
-interface DocumentLifecycleInterface
+interface InvoiceServiceInterface extends DocumentLifecycleInterface
 {
-    public function create(array $data): Model;
-    public function update(Model $model, array $data): Model;
-    public function delete(Model $model): bool;
-    public function post(Model $model): Model;
-    public function void(Model $model): Model;
+    /**
+     * Post an invoice to the journal.
+     */
+    public function post(Invoice $invoice): Invoice;
 }
 ```
 
-### Binding Interfaces
+### Service Implementation
 
 ```php
-// AppServiceProvider.php
+// app/Services/Sales/InvoiceService.php
+namespace App\Services\Sales;
+
+use App\Contracts\Services\Domains\InvoiceServiceInterface;
+use App\Services\Base\AbstractDocumentService;
+
+class InvoiceService extends AbstractDocumentService implements InvoiceServiceInterface
+{
+    // Implementation...
+}
+```
+
+### Binding Interfaces (AppServiceProvider)
+
+```php
+// app/Providers/AppServiceProvider.php
 public function register(): void
 {
-    $this->app->bind(
-        QuotationServiceInterface::class,
-        QuotationService::class
-    );
+    // Sales
+    $this->app->bind(InvoiceServiceInterface::class, InvoiceService::class);
+    $this->app->bind(QuotationServiceInterface::class, QuotationService::class);
+
+    // Purchasing
+    $this->app->bind(BillServiceInterface::class, BillService::class);
+    $this->app->bind(PurchaseOrderServiceInterface::class, PurchaseOrderService::class);
+
+    // Manufacturing
+    $this->app->bind(BomServiceInterface::class, BomService::class);
+    $this->app->bind(WorkOrderServiceInterface::class, WorkOrderService::class);
+
+    // ... all 23 bindings
 }
 ```
 
