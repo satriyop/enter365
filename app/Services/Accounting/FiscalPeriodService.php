@@ -210,8 +210,8 @@ class FiscalPeriodService
         ];
 
         // Draft invoices
-        $draftInvoices = \App\Models\Accounting\Invoice::query()
-            ->where('status', \App\Models\Accounting\Invoice::STATUS_DRAFT)
+        $draftInvoices = \App\Models\Sales\Invoice::query()
+            ->where('status', \App\Enums\DocumentStatus::Draft)
             ->whereBetween('invoice_date', [$period->start_date, $period->end_date])
             ->count();
         $checklist['draft_invoices'] = [
@@ -223,8 +223,8 @@ class FiscalPeriodService
         ];
 
         // Draft bills
-        $draftBills = \App\Models\Accounting\Bill::query()
-            ->where('status', \App\Models\Accounting\Bill::STATUS_DRAFT)
+        $draftBills = \App\Models\Purchasing\Bill::query()
+            ->where('status', \App\Enums\DocumentStatus::Draft)
             ->whereBetween('bill_date', [$period->start_date, $period->end_date])
             ->count();
         $checklist['draft_bills'] = [

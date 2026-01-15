@@ -2,6 +2,7 @@
 
 namespace App\Services\Accounting;
 
+use App\Enums\DocumentStatus;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\Budget;
 use App\Models\Accounting\BudgetLine;
@@ -306,7 +307,7 @@ class BudgetService
                 'description' => $budget->description,
                 'fiscal_period_id' => $newPeriod->id,
                 'type' => $budget->type,
-                'status' => Budget::STATUS_DRAFT,
+                'status' => DocumentStatus::Draft,
                 'total_revenue' => $budget->total_revenue,
                 'total_expense' => $budget->total_expense,
                 'net_budget' => $budget->net_budget,

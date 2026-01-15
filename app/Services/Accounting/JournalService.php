@@ -2,13 +2,14 @@
 
 namespace App\Services\Accounting;
 
+use App\Enums\DocumentStatus;
 use App\Models\Accounting\Account;
-use App\Models\Accounting\Bill;
 use App\Models\Accounting\FiscalPeriod;
-use App\Models\Accounting\Invoice;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Accounting\JournalEntryLine;
-use App\Models\Accounting\Payment;
+use App\Models\Purchasing\Bill;
+use App\Models\Sales\Invoice;
+use App\Models\Shared\Payment;
 use Illuminate\Support\Facades\DB;
 
 class JournalService
@@ -201,7 +202,7 @@ class JournalService
         $invoice->update([
             'journal_entry_id' => $entry->id,
             'receivable_account_id' => $receivableAccount->id,
-            'status' => Invoice::STATUS_SENT,
+            'status' => DocumentStatus::Sent,
         ]);
 
         return $entry;
@@ -273,7 +274,7 @@ class JournalService
         $bill->update([
             'journal_entry_id' => $entry->id,
             'payable_account_id' => $payableAccount->id,
-            'status' => Bill::STATUS_RECEIVED,
+            'status' => DocumentStatus::Received,
         ]);
 
         return $entry;
