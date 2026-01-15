@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Api\V1;
 
-use App\Models\Accounting\BomTemplateItem;
+use App\Models\Manufacturing\BomTemplateItem;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 

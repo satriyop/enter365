@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Filters\PurchaseOrderFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StorePurchaseOrderRequest;
 use App\Http\Requests\Api\V1\UpdatePurchaseOrderRequest;
 use App\Http\Resources\Api\V1\BillResource;
 use App\Http\Resources\Api\V1\PurchaseOrderResource;
-use App\Models\Accounting\PurchaseOrder;
-use App\Services\Accounting\PurchaseOrderService;
+use App\Models\Purchasing\PurchaseOrder;
+use App\Services\Purchasing\PurchaseOrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -23,47 +24,12 @@ class PurchaseOrderController extends Controller
     /**
      * Display a listing of purchase orders.
      */
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(PurchaseOrderFilter $filter): AnonymousResourceCollection
     {
-        $query = PurchaseOrder::query()->with(['contact', 'items']);
-
-        if ($request->has('status')) {
-            $query->where('status', $request->input('status'));
-        }
-
-        if ($request->has('contact_id')) {
-            $query->where('contact_id', $request->input('contact_id'));
-        }
-
-        if ($request->has('start_date')) {
-            $query->where('po_date', '>=', $request->input('start_date'));
-        }
-
-        if ($request->has('end_date')) {
-            $query->where('po_date', '<=', $request->input('end_date'));
-        }
-
-        if ($request->boolean('outstanding_only')) {
-            $query->outstanding();
-        }
-
-        if ($request->boolean('active_only')) {
-            $query->active();
-        }
-
-        if ($request->has('search')) {
-            $search = strtolower($request->input('search'));
-            $query->where(function ($q) use ($search) {
-                $q->whereRaw('LOWER(po_number) LIKE ?', ["%{$search}%"])
-                    ->orWhereRaw('LOWER(subject) LIKE ?', ["%{$search}%"])
-                    ->orWhereRaw('LOWER(reference) LIKE ?', ["%{$search}%"])
-                    ->orWhereHas('contact', fn ($q) => $q->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]));
-            });
-        }
-
-        $purchaseOrders = $query->orderByDesc('po_date')
-            ->orderByDesc('id')
-            ->paginate($request->input('per_page', 25));
+        $purchaseOrders = PurchaseOrder::query()
+            ->with(['contact', 'items'])
+            ->filter($filter)
+            ->paginate($filter->getRequest()->input('per_page', 25));
 
         return PurchaseOrderResource::collection($purchaseOrders);
     }

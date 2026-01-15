@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Api\V1;
 
-use App\Models\Accounting\WorkOrder;
-use App\Models\Accounting\WorkOrderItem;
+use App\Models\Manufacturing\WorkOrder;
+use App\Models\Manufacturing\WorkOrderItem;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 

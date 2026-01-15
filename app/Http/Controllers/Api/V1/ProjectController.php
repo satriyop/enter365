@@ -2,17 +2,19 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\DocumentStatus;
+use App\Filters\ProjectFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreProjectRequest;
 use App\Http\Requests\Api\V1\UpdateProjectRequest;
 use App\Http\Resources\Api\V1\ProjectCostResource;
 use App\Http\Resources\Api\V1\ProjectResource;
 use App\Http\Resources\Api\V1\ProjectRevenueResource;
-use App\Models\Accounting\Project;
-use App\Models\Accounting\ProjectCost;
-use App\Models\Accounting\ProjectRevenue;
-use App\Models\Accounting\Quotation;
-use App\Services\Accounting\ProjectService;
+use App\Models\Projects\Project;
+use App\Models\Projects\ProjectCost;
+use App\Models\Projects\ProjectRevenue;
+use App\Models\Sales\Quotation;
+use App\Services\Projects\ProjectService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -28,55 +30,12 @@ class ProjectController extends Controller
     /**
      * Display a listing of projects.
      */
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(ProjectFilter $filter): AnonymousResourceCollection
     {
-        $query = Project::query()->with(['contact', 'manager']);
-
-        if ($request->has('status')) {
-            $query->where('status', $request->input('status'));
-        }
-
-        if ($request->has('priority')) {
-            $query->where('priority', $request->input('priority'));
-        }
-
-        if ($request->has('contact_id')) {
-            $query->where('contact_id', $request->input('contact_id'));
-        }
-
-        if ($request->has('manager_id')) {
-            $query->where('manager_id', $request->input('manager_id'));
-        }
-
-        if ($request->has('start_date')) {
-            $query->where('start_date', '>=', $request->input('start_date'));
-        }
-
-        if ($request->has('end_date')) {
-            $query->where('start_date', '<=', $request->input('end_date'));
-        }
-
-        if ($request->boolean('overdue_only')) {
-            $query->where('status', Project::STATUS_IN_PROGRESS)
-                ->where('end_date', '<', now());
-        }
-
-        if ($request->boolean('over_budget_only')) {
-            $query->whereColumn('total_cost', '>', 'budget_amount');
-        }
-
-        if ($request->has('search')) {
-            $search = strtolower($request->input('search'));
-            $query->where(function ($q) use ($search) {
-                $q->whereRaw('LOWER(project_number) LIKE ?', ["%{$search}%"])
-                    ->orWhereRaw('LOWER(name) LIKE ?', ["%{$search}%"])
-                    ->orWhereHas('contact', fn ($q) => $q->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]));
-            });
-        }
-
-        $projects = $query->orderByDesc('created_at')
-            ->orderByDesc('id')
-            ->paginate($request->input('per_page', 25));
+        $projects = Project::query()
+            ->with(['contact', 'manager'])
+            ->filter($filter)
+            ->paginate($filter->getRequest()->input('per_page', 25));
 
         return ProjectResource::collection($projects);
     }
@@ -148,7 +107,7 @@ class ProjectController extends Controller
             'manager_id' => ['nullable', 'integer', 'exists:users,id'],
         ]);
 
-        if (! in_array($quotation->status, [Quotation::STATUS_APPROVED, Quotation::STATUS_CONVERTED])) {
+        if (! in_array($quotation->status, [DocumentStatus::Approved, DocumentStatus::Converted])) {
             return response()->json([
                 'message' => 'Hanya penawaran yang sudah disetujui yang dapat dibuat menjadi proyek.',
             ], 422);

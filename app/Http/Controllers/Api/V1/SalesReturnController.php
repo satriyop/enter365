@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Filters\SalesReturnFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreSalesReturnRequest;
 use App\Http\Requests\Api\V1\UpdateSalesReturnRequest;
 use App\Http\Resources\Api\V1\SalesReturnResource;
-use App\Models\Accounting\Invoice;
-use App\Models\Accounting\SalesReturn;
-use App\Services\Accounting\SalesReturnService;
+use App\Models\Sales\Invoice;
+use App\Models\Sales\SalesReturn;
+use App\Services\Sales\SalesReturnService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -22,62 +23,21 @@ class SalesReturnController extends Controller
     /**
      * Display a listing of sales returns.
      */
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(SalesReturnFilter $filter): AnonymousResourceCollection
     {
-        $query = SalesReturn::query()
+        $request = $filter->getRequest();
+
+        $salesReturns = SalesReturn::query()
             ->with(['contact', 'invoice', 'warehouse', 'creator'])
-            ->withCount('items');
+            ->withCount('items')
+            ->filter($filter);
 
-        // Filter by status
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
+        // Support both paginated and non-paginated responses
+        if ($request->has('per_page')) {
+            $salesReturns = $salesReturns->paginate($request->per_page);
+        } else {
+            $salesReturns = $salesReturns->get();
         }
-
-        // Filter by contact
-        if ($request->has('contact_id')) {
-            $query->where('contact_id', $request->contact_id);
-        }
-
-        // Filter by invoice
-        if ($request->has('invoice_id')) {
-            $query->where('invoice_id', $request->invoice_id);
-        }
-
-        // Filter by date range
-        if ($request->has('start_date')) {
-            $query->where('return_date', '>=', $request->start_date);
-        }
-        if ($request->has('end_date')) {
-            $query->where('return_date', '<=', $request->end_date);
-        }
-
-        // Filter by reason
-        if ($request->has('reason')) {
-            $query->where('reason', $request->reason);
-        }
-
-        // Search
-        if ($request->has('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('return_number', 'like', "%{$search}%")
-                    ->orWhereHas('contact', function ($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%");
-                    })
-                    ->orWhereHas('invoice', function ($q) use ($search) {
-                        $q->where('invoice_number', 'like', "%{$search}%");
-                    });
-            });
-        }
-
-        // Sorting
-        $sortField = $request->get('sort', 'return_date');
-        $sortDirection = $request->get('direction', 'desc');
-        $query->orderBy($sortField, $sortDirection);
-
-        $salesReturns = $request->has('per_page')
-            ? $query->paginate($request->per_page)
-            : $query->get();
 
         return SalesReturnResource::collection($salesReturns);
     }

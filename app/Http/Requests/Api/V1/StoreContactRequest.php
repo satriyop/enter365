@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Api\V1;
 
-use App\Models\Accounting\Contact;
+use App\Models\Contacts\Contact;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 

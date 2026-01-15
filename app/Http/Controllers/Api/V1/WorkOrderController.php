@@ -2,14 +2,16 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\DocumentStatus;
+use App\Filters\WorkOrderFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreWorkOrderRequest;
 use App\Http\Requests\Api\V1\UpdateWorkOrderRequest;
 use App\Http\Resources\Api\V1\WorkOrderResource;
-use App\Models\Accounting\Bom;
-use App\Models\Accounting\Project;
-use App\Models\Accounting\WorkOrder;
-use App\Services\Accounting\WorkOrderService;
+use App\Models\Manufacturing\Bom;
+use App\Models\Manufacturing\WorkOrder;
+use App\Models\Projects\Project;
+use App\Services\Manufacturing\WorkOrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -24,61 +26,12 @@ class WorkOrderController extends Controller
     /**
      * Display a listing of work orders.
      */
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(WorkOrderFilter $filter): AnonymousResourceCollection
     {
-        $query = WorkOrder::query()->with(['project', 'product', 'bom', 'warehouse']);
-
-        if ($request->has('status')) {
-            $query->where('status', $request->input('status'));
-        }
-
-        if ($request->has('type')) {
-            $query->where('type', $request->input('type'));
-        }
-
-        if ($request->has('priority')) {
-            $query->where('priority', $request->input('priority'));
-        }
-
-        if ($request->has('project_id')) {
-            $query->where('project_id', $request->input('project_id'));
-        }
-
-        if ($request->has('bom_id')) {
-            $query->where('bom_id', $request->input('bom_id'));
-        }
-
-        if ($request->has('product_id')) {
-            $query->where('product_id', $request->input('product_id'));
-        }
-
-        if ($request->has('warehouse_id')) {
-            $query->where('warehouse_id', $request->input('warehouse_id'));
-        }
-
-        if ($request->has('start_date')) {
-            $query->where('planned_start_date', '>=', $request->input('start_date'));
-        }
-
-        if ($request->has('end_date')) {
-            $query->where('planned_end_date', '<=', $request->input('end_date'));
-        }
-
-        if ($request->boolean('parent_only')) {
-            $query->whereNull('parent_work_order_id');
-        }
-
-        if ($request->has('search')) {
-            $search = strtolower($request->input('search'));
-            $query->where(function ($q) use ($search) {
-                $q->whereRaw('LOWER(wo_number) LIKE ?', ["%{$search}%"])
-                    ->orWhereRaw('LOWER(name) LIKE ?', ["%{$search}%"]);
-            });
-        }
-
-        $workOrders = $query->orderByDesc('created_at')
-            ->orderByDesc('id')
-            ->paginate($request->input('per_page', 25));
+        $workOrders = WorkOrder::query()
+            ->with(['project', 'product', 'bom', 'warehouse'])
+            ->filter($filter)
+            ->paginate($filter->getRequest()->input('per_page', 25));
 
         return WorkOrderResource::collection($workOrders);
     }
@@ -174,7 +127,7 @@ class WorkOrderController extends Controller
             'quantity.min' => 'Kuantitas harus lebih dari 0.',
         ]);
 
-        if ($bom->status !== Bom::STATUS_ACTIVE) {
+        if ($bom->status !== DocumentStatus::Active) {
             return response()->json([
                 'message' => 'BOM harus dalam status aktif untuk membuat work order.',
             ], 422);

@@ -8,7 +8,7 @@ use App\Http\Requests\Api\V1\StoreBankTransactionRequest;
 use App\Http\Resources\Api\V1\BankTransactionResource;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\BankTransaction;
-use App\Models\Accounting\Payment;
+use App\Models\Shared\Payment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;

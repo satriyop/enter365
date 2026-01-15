@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Api\V1;
 
-use App\Models\Accounting\SubcontractorWorkOrder;
+use App\Models\Manufacturing\SubcontractorWorkOrder;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreSubcontractorWorkOrderRequest extends FormRequest

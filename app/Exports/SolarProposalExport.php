@@ -2,7 +2,7 @@
 
 namespace App\Exports;
 
-use App\Models\Accounting\SolarProposal;
+use App\Models\Solar\SolarProposal;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 

@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreContactRequest;
 use App\Http\Requests\Api\V1\UpdateContactRequest;
 use App\Http\Resources\Api\V1\ContactResource;
-use App\Models\Accounting\Contact;
+use App\Models\Contacts\Contact;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;

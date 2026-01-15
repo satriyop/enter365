@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\DocumentStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreQuotationActivityRequest;
 use App\Http\Resources\Api\V1\QuotationActivityResource;
 use App\Http\Resources\Api\V1\QuotationResource;
-use App\Models\Accounting\Quotation;
-use App\Models\Accounting\QuotationActivity;
+use App\Models\Sales\Quotation;
+use App\Models\Sales\QuotationActivity;
+use App\Services\Sales\QuotationFollowUpService;
+use App\Services\Sales\QuotationWorkflowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -16,6 +19,11 @@ use Illuminate\Validation\Rule;
 
 class QuotationFollowUpController extends Controller
 {
+    public function __construct(
+        private QuotationWorkflowService $workflowService,
+        private QuotationFollowUpService $followUpService
+    ) {}
+
     /**
      * List quotations that need follow-up.
      */
@@ -91,12 +99,11 @@ class QuotationFollowUpController extends Controller
             ]);
 
             // Update quotation's last_contacted_at and follow_up_count
-            $quotation->recordContact();
+            $this->followUpService->recordContact($quotation);
 
             // If activity includes next_follow_up_at, update quotation's next_follow_up_at
             if ($request->filled('next_follow_up_at')) {
-                $quotation->next_follow_up_at = $request->input('next_follow_up_at');
-                $quotation->save();
+                $this->followUpService->scheduleFollowUpAt($quotation, $request->input('next_follow_up_at'));
             }
 
             return $activity;
@@ -188,17 +195,16 @@ class QuotationFollowUpController extends Controller
      */
     public function markAsWon(Request $request, Quotation $quotation): QuotationResource|JsonResponse
     {
-        // Only approved quotations can be marked as won
-        if ($quotation->status !== Quotation::STATUS_APPROVED) {
+        // Check if quotation can be marked as won
+        if (! $this->workflowService->canMarkAsWon($quotation)) {
+            if ($quotation->outcome !== null) {
+                return response()->json([
+                    'message' => 'Penawaran sudah memiliki hasil.',
+                ], 422);
+            }
+
             return response()->json([
                 'message' => 'Hanya penawaran yang disetujui yang dapat ditandai sebagai menang.',
-            ], 422);
-        }
-
-        // Already has outcome
-        if ($quotation->outcome !== null) {
-            return response()->json([
-                'message' => 'Penawaran sudah memiliki hasil.',
             ], 422);
         }
 
@@ -207,8 +213,8 @@ class QuotationFollowUpController extends Controller
             'outcome_notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        DB::transaction(function () use ($quotation, $validated, $request) {
-            $quotation->markAsWon($validated);
+        $quotation = DB::transaction(function () use ($quotation, $validated, $request) {
+            $quotation = $this->workflowService->markAsWon($quotation, $validated);
 
             // Record activity
             $quotation->activities()->create([
@@ -218,6 +224,8 @@ class QuotationFollowUpController extends Controller
                 'description' => $validated['outcome_notes'] ?? 'Penawaran ditandai sebagai menang.',
                 'activity_at' => now(),
             ]);
+
+            return $quotation;
         });
 
         return new QuotationResource($quotation->fresh(['contact', 'assignedTo']));
@@ -228,17 +236,16 @@ class QuotationFollowUpController extends Controller
      */
     public function markAsLost(Request $request, Quotation $quotation): QuotationResource|JsonResponse
     {
-        // Only approved/submitted quotations can be marked as lost
-        if (! in_array($quotation->status, [Quotation::STATUS_APPROVED, Quotation::STATUS_SUBMITTED])) {
+        // Check if quotation can be marked as lost
+        if (! $this->workflowService->canMarkAsLost($quotation)) {
+            if ($quotation->outcome !== null) {
+                return response()->json([
+                    'message' => 'Penawaran sudah memiliki hasil.',
+                ], 422);
+            }
+
             return response()->json([
                 'message' => 'Hanya penawaran yang diajukan atau disetujui yang dapat ditandai sebagai kalah.',
-            ], 422);
-        }
-
-        // Already has outcome
-        if ($quotation->outcome !== null) {
-            return response()->json([
-                'message' => 'Penawaran sudah memiliki hasil.',
             ], 422);
         }
 
@@ -248,8 +255,8 @@ class QuotationFollowUpController extends Controller
             'outcome_notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        DB::transaction(function () use ($quotation, $validated, $request) {
-            $quotation->markAsLost($validated);
+        $quotation = DB::transaction(function () use ($quotation, $validated, $request) {
+            $quotation = $this->workflowService->markAsLost($quotation, $validated);
 
             // Record activity
             $quotation->activities()->create([
@@ -259,6 +266,8 @@ class QuotationFollowUpController extends Controller
                 'description' => $validated['outcome_notes'] ?? 'Penawaran ditandai sebagai kalah.',
                 'activity_at' => now(),
             ]);
+
+            return $quotation;
         });
 
         return new QuotationResource($quotation->fresh(['contact', 'assignedTo']));
@@ -338,7 +347,7 @@ class QuotationFollowUpController extends Controller
         $noFollowUp = (clone $query)
             ->whereNull('next_follow_up_at')
             ->whereNull('outcome')
-            ->whereIn('status', [Quotation::STATUS_SUBMITTED, Quotation::STATUS_APPROVED])
+            ->whereIn('status', [DocumentStatus::Submitted, DocumentStatus::Approved])
             ->count();
 
         return response()->json([

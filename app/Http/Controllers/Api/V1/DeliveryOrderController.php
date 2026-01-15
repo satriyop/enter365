@@ -2,13 +2,15 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\DocumentStatus;
+use App\Filters\DeliveryOrderFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreDeliveryOrderRequest;
 use App\Http\Requests\Api\V1\UpdateDeliveryOrderRequest;
 use App\Http\Resources\Api\V1\DeliveryOrderResource;
-use App\Models\Accounting\DeliveryOrder;
-use App\Models\Accounting\Invoice;
-use App\Services\Accounting\DeliveryOrderService;
+use App\Models\Sales\DeliveryOrder;
+use App\Models\Sales\Invoice;
+use App\Services\Sales\DeliveryOrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -22,61 +24,21 @@ class DeliveryOrderController extends Controller
     /**
      * Display a listing of delivery orders.
      */
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(DeliveryOrderFilter $filter): AnonymousResourceCollection
     {
-        $query = DeliveryOrder::query()
+        $request = $filter->getRequest();
+
+        $deliveryOrders = DeliveryOrder::query()
             ->with(['contact', 'invoice', 'warehouse', 'creator'])
-            ->withCount('items');
+            ->withCount('items')
+            ->filter($filter);
 
-        // Filter by status
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
+        // Support both paginated and non-paginated responses
+        if ($request->has('per_page')) {
+            $deliveryOrders = $deliveryOrders->paginate($request->per_page);
+        } else {
+            $deliveryOrders = $deliveryOrders->get();
         }
-
-        // Filter by contact
-        if ($request->has('contact_id')) {
-            $query->where('contact_id', $request->contact_id);
-        }
-
-        // Filter by invoice
-        if ($request->has('invoice_id')) {
-            $query->where('invoice_id', $request->invoice_id);
-        }
-
-        // Filter by date range
-        if ($request->has('start_date')) {
-            $query->where('do_date', '>=', $request->start_date);
-        }
-        if ($request->has('end_date')) {
-            $query->where('do_date', '<=', $request->end_date);
-        }
-
-        // Filter by warehouse
-        if ($request->has('warehouse_id')) {
-            $query->where('warehouse_id', $request->warehouse_id);
-        }
-
-        // Search
-        if ($request->has('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('do_number', 'like', "%{$search}%")
-                    ->orWhere('tracking_number', 'like', "%{$search}%")
-                    ->orWhere('driver_name', 'like', "%{$search}%")
-                    ->orWhereHas('contact', function ($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%");
-                    });
-            });
-        }
-
-        // Sorting
-        $sortField = $request->get('sort', 'do_date');
-        $sortDirection = $request->get('direction', 'desc');
-        $query->orderBy($sortField, $sortDirection);
-
-        $deliveryOrders = $request->has('per_page')
-            ? $query->paginate($request->per_page)
-            : $query->get();
 
         return DeliveryOrderResource::collection($deliveryOrders);
     }
@@ -317,18 +279,18 @@ class DeliveryOrderController extends Controller
         $stats = [
             'total_count' => (clone $query)->count(),
             'by_status' => [
-                'draft' => (clone $query)->where('status', DeliveryOrder::STATUS_DRAFT)->count(),
-                'confirmed' => (clone $query)->where('status', DeliveryOrder::STATUS_CONFIRMED)->count(),
-                'shipped' => (clone $query)->where('status', DeliveryOrder::STATUS_SHIPPED)->count(),
-                'delivered' => (clone $query)->where('status', DeliveryOrder::STATUS_DELIVERED)->count(),
-                'cancelled' => (clone $query)->where('status', DeliveryOrder::STATUS_CANCELLED)->count(),
+                'draft' => (clone $query)->where('status', DocumentStatus::Draft)->count(),
+                'confirmed' => (clone $query)->where('status', DocumentStatus::Confirmed)->count(),
+                'shipped' => (clone $query)->where('status', DocumentStatus::Shipped)->count(),
+                'delivered' => (clone $query)->where('status', DocumentStatus::Delivered)->count(),
+                'cancelled' => (clone $query)->where('status', DocumentStatus::Cancelled)->count(),
             ],
             'pending_delivery' => (clone $query)->whereIn('status', [
-                DeliveryOrder::STATUS_CONFIRMED,
-                DeliveryOrder::STATUS_SHIPPED,
+                DocumentStatus::Confirmed,
+                DocumentStatus::Shipped,
             ])->count(),
             'delivered_this_month' => DeliveryOrder::query()
-                ->where('status', DeliveryOrder::STATUS_DELIVERED)
+                ->where('status', DocumentStatus::Delivered)
                 ->whereMonth('delivered_at', now()->month)
                 ->whereYear('delivered_at', now()->year)
                 ->count(),

@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Api\V1;
 
-use App\Models\Accounting\Payment;
+use App\Models\Shared\Payment;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 

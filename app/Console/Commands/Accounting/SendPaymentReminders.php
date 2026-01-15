@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands\Accounting;
 
-use App\Services\Accounting\ReminderService;
+use App\Services\Sales\ReminderService;
 use Illuminate\Console\Command;
 
 class SendPaymentReminders extends Command

@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreProductCategoryRequest;
 use App\Http\Requests\Api\V1\UpdateProductCategoryRequest;
 use App\Http\Resources\Api\V1\ProductCategoryResource;
-use App\Models\Accounting\ProductCategory;
+use App\Models\Inventory\ProductCategory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;

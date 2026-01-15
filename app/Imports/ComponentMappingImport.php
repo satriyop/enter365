@@ -2,9 +2,9 @@
 
 namespace App\Imports;
 
-use App\Models\Accounting\ComponentBrandMapping;
-use App\Models\Accounting\ComponentStandard;
-use App\Models\Accounting\Product;
+use App\Models\Inventory\Product;
+use App\Models\Manufacturing\ComponentBrandMapping;
+use App\Models\Manufacturing\ComponentStandard;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\Importable;

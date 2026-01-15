@@ -7,19 +7,26 @@ use App\Http\Resources\Api\V1\BomResource;
 use App\Http\Resources\Api\V1\BomVariantGroupResource;
 use App\Http\Resources\Api\V1\ComponentBrandMappingResource;
 use App\Http\Resources\Api\V1\ComponentStandardResource;
-use App\Models\Accounting\Bom;
-use App\Models\Accounting\BomItem;
-use App\Models\Accounting\BomVariantGroup;
-use App\Models\Accounting\ComponentBrandMapping;
-use App\Models\Accounting\Product;
-use App\Services\Accounting\ComponentCrossReferenceService;
+use App\Models\Inventory\Product;
+use App\Models\Manufacturing\Bom;
+use App\Models\Manufacturing\BomItem;
+use App\Models\Manufacturing\BomVariantGroup;
+use App\Models\Manufacturing\ComponentBrandMapping;
+use App\Models\Manufacturing\ComponentStandard;
+use App\Services\Manufacturing\BrandSwapService;
+use App\Services\Manufacturing\ComponentMappingService;
+use App\Services\Manufacturing\CostOptimizationService;
+use App\Services\Manufacturing\ProductEquivalenceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ComponentCrossReferenceController extends Controller
 {
     public function __construct(
-        private ComponentCrossReferenceService $service
+        private ProductEquivalenceService $equivalenceService,
+        private BrandSwapService $brandSwapService,
+        private CostOptimizationService $costOptimizationService,
+        private ComponentMappingService $mappingService
     ) {}
 
     /**
@@ -28,7 +35,7 @@ class ComponentCrossReferenceController extends Controller
     public function productEquivalents(Request $request, Product $product): JsonResponse
     {
         $targetBrand = $request->input('brand');
-        $equivalents = $this->service->findEquivalents($product, $targetBrand);
+        $equivalents = $this->equivalenceService->findEquivalents($product, $targetBrand);
 
         return response()->json([
             'data' => ComponentBrandMappingResource::collection($equivalents),
@@ -52,7 +59,7 @@ class ComponentCrossReferenceController extends Controller
             'brand' => 'nullable|string',
         ]);
 
-        $results = $this->service->searchBySpecs(
+        $results = $this->equivalenceService->searchBySpecs(
             $request->input('category'),
             $request->input('specs', []),
             $request->input('brand')
@@ -69,7 +76,7 @@ class ComponentCrossReferenceController extends Controller
      */
     public function compareBrands(Bom $bom): JsonResponse
     {
-        $comparison = $this->service->compareBrands($bom);
+        $comparison = $this->brandSwapService->compareBrands($bom);
 
         return response()->json([
             'data' => $comparison,
@@ -86,7 +93,7 @@ class ComponentCrossReferenceController extends Controller
             'target_brand' => 'required|string',
         ]);
 
-        $preview = $this->service->previewSwapBrand(
+        $preview = $this->brandSwapService->previewSwapBrand(
             $bom,
             $request->input('target_brand')
         );
@@ -114,7 +121,7 @@ class ComponentCrossReferenceController extends Controller
             );
         }
 
-        $result = $this->service->swapBomBrand(
+        $result = $this->brandSwapService->swapBomBrand(
             $bom,
             $request->input('target_brand'),
             $request->boolean('create_variant', true),
@@ -141,7 +148,7 @@ class ComponentCrossReferenceController extends Controller
             'group_name' => 'nullable|string|max:255',
         ]);
 
-        $result = $this->service->generateBrandVariants(
+        $result = $this->brandSwapService->generateBrandVariants(
             $bom,
             $request->input('brands'),
             $request->input('group_name')
@@ -163,7 +170,7 @@ class ComponentCrossReferenceController extends Controller
      */
     public function previewCostOptimization(Bom $bom): JsonResponse
     {
-        $preview = $this->service->previewCostOptimization($bom);
+        $preview = $this->costOptimizationService->previewOptimization($bom);
 
         return response()->json([
             'data' => $preview,
@@ -180,7 +187,7 @@ class ComponentCrossReferenceController extends Controller
             'item_ids.*' => 'integer|exists:bom_items,id',
         ]);
 
-        $result = $this->service->applyCostOptimization(
+        $result = $this->costOptimizationService->applyOptimization(
             $bom,
             $request->input('item_ids', [])
         );
@@ -218,39 +225,6 @@ class ComponentCrossReferenceController extends Controller
 
     /**
      * Get alternatives for a BOM item.
-     *
-     * Returns all equivalent products from other brands that can replace the item.
-     *
-     * @queryParam bom int required The BOM ID. Example: 1
-     * @queryParam item int required The BOM item ID. Example: 5
-     *
-     * @response 200 {
-     *   "data": {
-     *     "current": {
-     *       "product_id": 1,
-     *       "product_name": "MCB Schneider 16A",
-     *       "product_sku": "SCH-MCB-16A",
-     *       "unit_cost": 185000,
-     *       "brand": "schneider",
-     *       "brand_label": "Schneider Electric"
-     *     },
-     *     "alternatives": [
-     *       {
-     *         "product_id": 5,
-     *         "product_name": "MCB ABB 16A",
-     *         "product_sku": "ABB-S201-C16",
-     *         "brand": "abb",
-     *         "brand_label": "ABB",
-     *         "unit_cost": 165000,
-     *         "price_diff": -20000,
-     *         "price_diff_percent": -10.8,
-     *         "is_preferred": false,
-     *         "stock": 50
-     *       }
-     *     ],
-     *     "has_standard": true
-     *   }
-     * }
      */
     public function getItemAlternatives(Bom $bom, BomItem $item): JsonResponse
     {
@@ -259,30 +233,13 @@ class ComponentCrossReferenceController extends Controller
             return response()->json(['message' => 'Item does not belong to this BOM'], 404);
         }
 
-        $data = $this->service->getItemAlternatives($item);
+        $data = $this->brandSwapService->getItemAlternatives($item);
 
         return response()->json(['data' => $data]);
     }
 
     /**
      * Quick swap a BOM item to a different product.
-     *
-     * Replaces the product in-place without creating a new BOM.
-     * Use this for quick edits; use swap-brand for creating variants.
-     *
-     * @bodyParam product_id int required The new product ID. Example: 5
-     * @bodyParam reason string Optional reason for the swap. Example: cost_optimization
-     *
-     * @response 200 {
-     *   "message": "Item berhasil diganti.",
-     *   "data": {
-     *     "item": { "id": 5, "description": "MCB ABB 16A", "unit_cost": 165000 },
-     *     "previous": { "product_id": 1, "product_name": "MCB Schneider 16A", "unit_cost": 185000 },
-     *     "new": { "product_id": 5, "product_name": "MCB ABB 16A", "unit_cost": 165000 },
-     *     "savings": 20000
-     *   }
-     * }
-     * @response 422 {"message": "Product tidak valid untuk item ini."}
      */
     public function quickSwapItem(Request $request, Bom $bom, BomItem $item): JsonResponse
     {
@@ -312,7 +269,7 @@ class ComponentCrossReferenceController extends Controller
             }
         }
 
-        $result = $this->service->quickSwapItem(
+        $result = $this->brandSwapService->quickSwapItem(
             $item,
             $newProduct,
             $request->reason
@@ -330,26 +287,13 @@ class ComponentCrossReferenceController extends Controller
 
     /**
      * Get unmapped products for a given brand.
-     *
-     * Returns products that don't have any component mappings yet.
-     *
-     * @queryParam brand string Filter by brand code. Example: schneider
-     * @queryParam limit int Max products to return. Default: 50. Example: 100
-     *
-     * @response 200 {
-     *   "data": [
-     *     {"id": 1, "name": "MCB Schneider 16A 1P", "sku": "A9F74116", "brand": "schneider"},
-     *     {"id": 2, "name": "MCB Schneider 20A 1P", "sku": "A9F74120", "brand": "schneider"}
-     *   ],
-     *   "meta": {"total": 2, "brand": "schneider"}
-     * }
      */
     public function getUnmappedProducts(Request $request): JsonResponse
     {
         $brand = $request->input('brand');
         $limit = min($request->input('limit', 50), 200);
 
-        $products = $this->service->getUnmappedProducts($brand, $limit);
+        $products = $this->mappingService->getUnmappedProducts($brand, $limit);
 
         return response()->json([
             'data' => $products->map(fn ($p) => [
@@ -369,37 +313,10 @@ class ComponentCrossReferenceController extends Controller
 
     /**
      * Get mapping suggestions for a single product.
-     *
-     * Parses product name to extract specs and suggests matching component standards.
-     *
-     * @response 200 {
-     *   "data": {
-     *     "product_id": 1,
-     *     "product_name": "MCB Schneider Easy9 16A 1P C-Curve",
-     *     "product_sku": "A9F74116",
-     *     "product_brand": "schneider",
-     *     "parsed_specs": {
-     *       "category": "circuit_breaker",
-     *       "subcategory": "mcb",
-     *       "specs": {"rating_amps": 16, "poles": 1, "curve": "C"},
-     *       "brand": "schneider"
-     *     },
-     *     "suggestions": [
-     *       {
-     *         "component_standard_id": 5,
-     *         "code": "MCB-1P-16A-C",
-     *         "name": "MCB 1 Pole 16A C-Curve",
-     *         "match_score": 95,
-     *         "existing_brands": ["abb", "siemens"]
-     *       }
-     *     ],
-     *     "has_suggestions": true
-     *   }
-     * }
      */
     public function suggestMapping(Product $product): JsonResponse
     {
-        $suggestion = $this->service->suggestMappingForProduct($product);
+        $suggestion = $this->mappingService->suggestMappingForProduct($product);
 
         return response()->json([
             'data' => $suggestion,
@@ -408,17 +325,6 @@ class ComponentCrossReferenceController extends Controller
 
     /**
      * Get mapping suggestions for multiple products.
-     *
-     * Batch version of suggestMapping for efficiency.
-     *
-     * @bodyParam product_ids array required List of product IDs. Example: [1, 2, 3]
-     *
-     * @response 200 {
-     *   "data": [
-     *     {"product_id": 1, "product_name": "MCB Schneider 16A", "suggestions": [...], "has_suggestions": true},
-     *     {"product_id": 2, "product_name": "Cable NYY 3x2.5", "suggestions": [...], "has_suggestions": true}
-     *   ]
-     * }
      */
     public function suggestMappingsBatch(Request $request): JsonResponse
     {
@@ -428,7 +334,7 @@ class ComponentCrossReferenceController extends Controller
         ]);
 
         $products = Product::whereIn('id', $request->product_ids)->get();
-        $suggestions = $this->service->suggestMappingsForProducts($products);
+        $suggestions = $this->mappingService->suggestMappingsForProducts($products);
 
         return response()->json([
             'data' => $suggestions,
@@ -437,25 +343,6 @@ class ComponentCrossReferenceController extends Controller
 
     /**
      * Accept a single mapping suggestion.
-     *
-     * Creates a brand mapping for the product to the selected component standard.
-     *
-     * @bodyParam component_standard_id int required The component standard ID. Example: 5
-     * @bodyParam brand_sku string Optional vendor SKU. Example: A9F74116
-     * @bodyParam is_preferred bool Set as preferred mapping. Default: false. Example: true
-     *
-     * @response 201 {
-     *   "message": "Mapping berhasil dibuat.",
-     *   "data": {
-     *     "id": 10,
-     *     "component_standard_id": 5,
-     *     "brand": "schneider",
-     *     "product_id": 1,
-     *     "brand_sku": "A9F74116",
-     *     "is_preferred": false,
-     *     "is_verified": false
-     *   }
-     * }
      */
     public function acceptSuggestion(Request $request, Product $product): JsonResponse
     {
@@ -477,9 +364,9 @@ class ComponentCrossReferenceController extends Controller
             ], 422);
         }
 
-        $standard = \App\Models\Accounting\ComponentStandard::findOrFail($request->component_standard_id);
+        $standard = ComponentStandard::findOrFail($request->component_standard_id);
 
-        $mapping = $this->service->acceptMappingSuggestion(
+        $mapping = $this->mappingService->acceptMappingSuggestion(
             $product,
             $standard,
             $request->brand_sku,
@@ -494,23 +381,6 @@ class ComponentCrossReferenceController extends Controller
 
     /**
      * Bulk accept mapping suggestions.
-     *
-     * Creates multiple mappings at once for efficiency.
-     *
-     * @bodyParam mappings array required Array of mappings to create.
-     * @bodyParam mappings[].product_id int required Product ID. Example: 1
-     * @bodyParam mappings[].component_standard_id int required Component standard ID. Example: 5
-     * @bodyParam mappings[].brand_sku string Optional vendor SKU. Example: A9F74116
-     * @bodyParam mappings[].is_preferred bool Set as preferred. Default: false. Example: false
-     *
-     * @response 201 {
-     *   "message": "Bulk mapping selesai.",
-     *   "data": {
-     *     "created": 8,
-     *     "skipped": 2,
-     *     "errors": []
-     *   }
-     * }
      */
     public function bulkAcceptSuggestions(Request $request): JsonResponse
     {
@@ -522,7 +392,7 @@ class ComponentCrossReferenceController extends Controller
             'mappings.*.is_preferred' => ['nullable', 'boolean'],
         ]);
 
-        $result = $this->service->bulkAcceptMappingSuggestions($request->mappings);
+        $result = $this->mappingService->bulkAcceptMappingSuggestions($request->mappings);
 
         $status = $result['created'] > 0 ? 201 : 200;
 
@@ -534,19 +404,6 @@ class ComponentCrossReferenceController extends Controller
 
     /**
      * Parse a product name to extract specs (debug/preview endpoint).
-     *
-     * Useful for testing the parsing logic before accepting suggestions.
-     *
-     * @queryParam name string required Product name to parse. Example: MCB Schneider Easy9 16A 1P C-Curve
-     *
-     * @response 200 {
-     *   "data": {
-     *     "category": "circuit_breaker",
-     *     "subcategory": "mcb",
-     *     "specs": {"rating_amps": 16, "poles": 1, "curve": "C"},
-     *     "brand": "schneider"
-     *   }
-     * }
      */
     public function parseProductName(Request $request): JsonResponse
     {
@@ -554,7 +411,7 @@ class ComponentCrossReferenceController extends Controller
             'name' => ['required', 'string', 'min:3', 'max:255'],
         ]);
 
-        $parsed = $this->service->parseProductName($request->name);
+        $parsed = $this->mappingService->parseProductName($request->name);
 
         return response()->json([
             'data' => $parsed,

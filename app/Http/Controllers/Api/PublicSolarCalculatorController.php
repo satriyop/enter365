@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Accounting\PlnTariff;
-use App\Services\Accounting\SolarCalculationService;
+use App\Models\Solar\PlnTariff;
+use App\Services\Solar\SolarCalculationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

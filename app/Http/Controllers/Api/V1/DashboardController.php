@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\DocumentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Accounting\Account;
-use App\Models\Accounting\Bill;
-use App\Models\Accounting\Contact;
-use App\Models\Accounting\Invoice;
-use App\Models\Accounting\Payment;
+use App\Models\Contacts\Contact;
+use App\Models\Purchasing\Bill;
+use App\Models\Sales\Invoice;
+use App\Models\Shared\Payment;
 use App\Services\Accounting\AccountBalanceService;
-use App\Services\Accounting\AgingReportService;
+use App\Services\Accounting\Reports\AgingReportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -42,19 +43,19 @@ class DashboardController extends Controller
     public function receivables(): JsonResponse
     {
         $invoices = Invoice::query()
-            ->whereIn('status', [Invoice::STATUS_SENT, Invoice::STATUS_PARTIAL, Invoice::STATUS_OVERDUE])
+            ->whereIn('status', [DocumentStatus::Sent, DocumentStatus::Partial, DocumentStatus::Overdue])
             ->with('contact')
             ->orderBy('due_date')
             ->get();
 
         $total = $invoices->sum(fn ($inv) => $inv->total_amount - $inv->paid_amount);
-        $overdue = $invoices->where('status', Invoice::STATUS_OVERDUE)->sum(fn ($inv) => $inv->total_amount - $inv->paid_amount);
+        $overdue = $invoices->where('status', DocumentStatus::Overdue)->sum(fn ($inv) => $inv->total_amount - $inv->paid_amount);
 
         return response()->json([
             'total_outstanding' => $total,
             'total_overdue' => $overdue,
             'count' => $invoices->count(),
-            'overdue_count' => $invoices->where('status', Invoice::STATUS_OVERDUE)->count(),
+            'overdue_count' => $invoices->where('status', DocumentStatus::Overdue)->count(),
             'aging' => $this->agingService->getReceivableAging(),
             'top_debtors' => $this->getTopDebtors(5),
         ]);
@@ -63,19 +64,19 @@ class DashboardController extends Controller
     public function payables(): JsonResponse
     {
         $bills = Bill::query()
-            ->whereIn('status', [Bill::STATUS_RECEIVED, Bill::STATUS_PARTIAL, Bill::STATUS_OVERDUE])
+            ->whereIn('status', [DocumentStatus::Received, DocumentStatus::Partial, DocumentStatus::Overdue])
             ->with('contact')
             ->orderBy('due_date')
             ->get();
 
         $total = $bills->sum(fn ($bill) => $bill->total_amount - $bill->paid_amount);
-        $overdue = $bills->where('status', Bill::STATUS_OVERDUE)->sum(fn ($bill) => $bill->total_amount - $bill->paid_amount);
+        $overdue = $bills->where('status', DocumentStatus::Overdue)->sum(fn ($bill) => $bill->total_amount - $bill->paid_amount);
 
         return response()->json([
             'total_outstanding' => $total,
             'total_overdue' => $overdue,
             'count' => $bills->count(),
-            'overdue_count' => $bills->where('status', Bill::STATUS_OVERDUE)->count(),
+            'overdue_count' => $bills->where('status', DocumentStatus::Overdue)->count(),
             'aging' => $this->agingService->getPayableAging(),
             'top_creditors' => $this->getTopCreditors(5),
         ]);
@@ -163,13 +164,13 @@ class DashboardController extends Controller
         $lastMonth = now()->subMonth()->startOfMonth();
 
         // Current month revenue
-        $currentRevenue = Invoice::where('status', Invoice::STATUS_PAID)
+        $currentRevenue = Invoice::where('status', DocumentStatus::Paid)
             ->whereMonth('invoice_date', $currentMonth->month)
             ->whereYear('invoice_date', $currentMonth->year)
             ->sum('total_amount');
 
         // Last month revenue
-        $lastRevenue = Invoice::where('status', Invoice::STATUS_PAID)
+        $lastRevenue = Invoice::where('status', DocumentStatus::Paid)
             ->whereMonth('invoice_date', $lastMonth->month)
             ->whereYear('invoice_date', $lastMonth->year)
             ->sum('total_amount');
@@ -199,7 +200,7 @@ class DashboardController extends Controller
             ],
             'collection' => [
                 'average_days' => round($avgCollectionDays),
-                'overdue_invoices' => Invoice::where('status', Invoice::STATUS_OVERDUE)->count(),
+                'overdue_invoices' => Invoice::where('status', DocumentStatus::Overdue)->count(),
             ],
             'customers' => [
                 'total' => Contact::where('type', '!=', Contact::TYPE_SUPPLIER)->count(),
@@ -214,12 +215,12 @@ class DashboardController extends Controller
     protected function getReceivablesSummary(): array
     {
         $outstanding = Invoice::query()
-            ->whereIn('status', [Invoice::STATUS_SENT, Invoice::STATUS_PARTIAL, Invoice::STATUS_OVERDUE])
+            ->whereIn('status', [DocumentStatus::Sent, DocumentStatus::Partial, DocumentStatus::Overdue])
             ->selectRaw('SUM(total_amount - paid_amount) as total, COUNT(*) as count')
             ->first();
 
         $overdue = Invoice::query()
-            ->where('status', Invoice::STATUS_OVERDUE)
+            ->where('status', DocumentStatus::Overdue)
             ->selectRaw('SUM(total_amount - paid_amount) as total, COUNT(*) as count')
             ->first();
 
@@ -234,12 +235,12 @@ class DashboardController extends Controller
     protected function getPayablesSummary(): array
     {
         $outstanding = Bill::query()
-            ->whereIn('status', [Bill::STATUS_RECEIVED, Bill::STATUS_PARTIAL, Bill::STATUS_OVERDUE])
+            ->whereIn('status', [DocumentStatus::Received, DocumentStatus::Partial, DocumentStatus::Overdue])
             ->selectRaw('SUM(total_amount - paid_amount) as total, COUNT(*) as count')
             ->first();
 
         $overdue = Bill::query()
-            ->where('status', Bill::STATUS_OVERDUE)
+            ->where('status', DocumentStatus::Overdue)
             ->selectRaw('SUM(total_amount - paid_amount) as total, COUNT(*) as count')
             ->first();
 
@@ -324,12 +325,12 @@ class DashboardController extends Controller
             $monthEnd = $date->copy()->endOfMonth();
 
             $revenue = Invoice::query()
-                ->where('status', Invoice::STATUS_PAID)
+                ->where('status', DocumentStatus::Paid)
                 ->whereBetween('invoice_date', [$monthStart, $monthEnd])
                 ->sum('total_amount');
 
             $expenses = Bill::query()
-                ->where('status', Bill::STATUS_PAID)
+                ->where('status', DocumentStatus::Paid)
                 ->whereBetween('bill_date', [$monthStart, $monthEnd])
                 ->sum('total_amount');
 
@@ -350,7 +351,7 @@ class DashboardController extends Controller
         return DB::table('contacts')
             ->join('invoices', 'contacts.id', '=', 'invoices.contact_id')
             ->whereIn('contacts.type', [Contact::TYPE_CUSTOMER, Contact::TYPE_BOTH])
-            ->whereIn('invoices.status', [Invoice::STATUS_SENT, Invoice::STATUS_PARTIAL, Invoice::STATUS_OVERDUE])
+            ->whereIn('invoices.status', [DocumentStatus::Sent, DocumentStatus::Partial, DocumentStatus::Overdue])
             ->whereNull('contacts.deleted_at')
             ->select(
                 'contacts.id',
@@ -375,7 +376,7 @@ class DashboardController extends Controller
         return DB::table('contacts')
             ->join('bills', 'contacts.id', '=', 'bills.contact_id')
             ->whereIn('contacts.type', [Contact::TYPE_SUPPLIER, Contact::TYPE_BOTH])
-            ->whereIn('bills.status', [Bill::STATUS_RECEIVED, Bill::STATUS_PARTIAL, Bill::STATUS_OVERDUE])
+            ->whereIn('bills.status', [DocumentStatus::Received, DocumentStatus::Partial, DocumentStatus::Overdue])
             ->whereNull('contacts.deleted_at')
             ->select(
                 'contacts.id',

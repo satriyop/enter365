@@ -2,7 +2,7 @@
 
 namespace App\Exports\Sheets;
 
-use App\Models\Accounting\SolarProposal;
+use App\Models\Solar\SolarProposal;
 use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;

@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreRoleRequest;
 use App\Http\Requests\Api\V1\UpdateRoleRequest;
 use App\Http\Resources\Api\V1\RoleResource;
-use App\Models\Accounting\Role;
+use App\Models\Core\Role;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;

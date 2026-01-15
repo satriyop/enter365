@@ -2,8 +2,8 @@
 
 namespace App\Notifications;
 
-use App\Models\Accounting\Invoice;
-use App\Models\Accounting\PaymentReminder;
+use App\Models\Sales\Invoice;
+use App\Models\Shared\PaymentReminder;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;

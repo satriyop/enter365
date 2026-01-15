@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Filters\PurchaseReturnFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StorePurchaseReturnRequest;
 use App\Http\Requests\Api\V1\UpdatePurchaseReturnRequest;
 use App\Http\Resources\Api\V1\PurchaseReturnResource;
-use App\Models\Accounting\Bill;
-use App\Models\Accounting\PurchaseReturn;
-use App\Services\Accounting\PurchaseReturnService;
+use App\Models\Purchasing\Bill;
+use App\Models\Purchasing\PurchaseReturn;
+use App\Services\Purchasing\PurchaseReturnService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -22,62 +23,21 @@ class PurchaseReturnController extends Controller
     /**
      * Display a listing of purchase returns.
      */
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(PurchaseReturnFilter $filter): AnonymousResourceCollection
     {
-        $query = PurchaseReturn::query()
+        $request = $filter->getRequest();
+
+        $purchaseReturns = PurchaseReturn::query()
             ->with(['contact', 'bill', 'warehouse', 'creator'])
-            ->withCount('items');
+            ->withCount('items')
+            ->filter($filter);
 
-        // Filter by status
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
+        // Support both paginated and non-paginated responses
+        if ($request->has('per_page')) {
+            $purchaseReturns = $purchaseReturns->paginate($request->per_page);
+        } else {
+            $purchaseReturns = $purchaseReturns->get();
         }
-
-        // Filter by contact
-        if ($request->has('contact_id')) {
-            $query->where('contact_id', $request->contact_id);
-        }
-
-        // Filter by bill
-        if ($request->has('bill_id')) {
-            $query->where('bill_id', $request->bill_id);
-        }
-
-        // Filter by date range
-        if ($request->has('start_date')) {
-            $query->where('return_date', '>=', $request->start_date);
-        }
-        if ($request->has('end_date')) {
-            $query->where('return_date', '<=', $request->end_date);
-        }
-
-        // Filter by reason
-        if ($request->has('reason')) {
-            $query->where('reason', $request->reason);
-        }
-
-        // Search
-        if ($request->has('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('return_number', 'like', "%{$search}%")
-                    ->orWhereHas('contact', function ($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%");
-                    })
-                    ->orWhereHas('bill', function ($q) use ($search) {
-                        $q->where('bill_number', 'like', "%{$search}%");
-                    });
-            });
-        }
-
-        // Sorting
-        $sortField = $request->get('sort', 'return_date');
-        $sortDirection = $request->get('direction', 'desc');
-        $query->orderBy($sortField, $sortDirection);
-
-        $purchaseReturns = $request->has('per_page')
-            ? $query->paginate($request->per_page)
-            : $query->get();
 
         return PurchaseReturnResource::collection($purchaseReturns);
     }

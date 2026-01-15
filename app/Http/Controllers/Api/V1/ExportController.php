@@ -4,12 +4,12 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Accounting\Account;
-use App\Models\Accounting\Bill;
-use App\Models\Accounting\Invoice;
+use App\Models\Purchasing\Bill;
+use App\Models\Sales\Invoice;
 use App\Services\Accounting\AccountBalanceService;
-use App\Services\Accounting\AgingReportService;
-use App\Services\Accounting\FinancialReportService;
-use App\Services\Accounting\TaxReportService;
+use App\Services\Accounting\Reports\AgingReportService;
+use App\Services\Accounting\Reports\FinancialReportService;
+use App\Services\Accounting\Reports\TaxReportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -347,7 +347,9 @@ class ExportController extends Controller
         foreach ($data as $row) {
             $csvRow = [];
             foreach (array_keys($headers) as $key) {
-                $csvRow[] = $row[$key] ?? '';
+                $value = $row[$key] ?? '';
+                // Convert BackedEnum to its string value
+                $csvRow[] = $value instanceof \BackedEnum ? $value->value : $value;
             }
             fputcsv($output, $csvRow);
         }

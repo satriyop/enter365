@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\DocumentStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreBomRequest;
 use App\Http\Requests\Api\V1\UpdateBomRequest;
 use App\Http\Resources\Api\V1\BomResource;
-use App\Models\Accounting\Bom;
-use App\Models\Accounting\Product;
-use App\Services\Accounting\BomService;
+use App\Models\Inventory\Product;
+use App\Models\Manufacturing\Bom;
+use App\Services\Manufacturing\BomService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -177,7 +178,7 @@ class BomController extends Controller
 
         $bom = Bom::with(['items'])->findOrFail($request->input('bom_id'));
 
-        if ($bom->status !== Bom::STATUS_ACTIVE) {
+        if ($bom->status !== DocumentStatus::Active) {
             return response()->json([
                 'message' => 'Hanya BOM aktif yang dapat digunakan untuk kalkulasi.',
             ], 422);

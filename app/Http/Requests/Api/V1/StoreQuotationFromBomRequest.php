@@ -2,7 +2,8 @@
 
 namespace App\Http\Requests\Api\V1;
 
-use App\Models\Accounting\Bom;
+use App\Enums\DocumentStatus;
+use App\Models\Manufacturing\Bom;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -45,7 +46,7 @@ class StoreQuotationFromBomRequest extends FormRequest
                 'exists:boms,id',
                 function ($attribute, $value, $fail) {
                     $bom = Bom::find($value);
-                    if ($bom && $bom->status !== Bom::STATUS_ACTIVE) {
+                    if ($bom && $bom->status !== DocumentStatus::Active) {
                         $fail('BOM harus berstatus aktif.');
                     }
                 },

@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\DocumentStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreMaterialRequisitionRequest;
 use App\Http\Requests\Api\V1\UpdateMaterialRequisitionRequest;
 use App\Http\Resources\Api\V1\MaterialRequisitionResource;
-use App\Models\Accounting\MaterialRequisition;
-use App\Models\Accounting\WorkOrder;
-use App\Services\Accounting\MaterialRequisitionService;
+use App\Models\Manufacturing\MaterialRequisition;
+use App\Models\Manufacturing\WorkOrder;
+use App\Services\Manufacturing\MaterialRequisitionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -67,7 +68,7 @@ class MaterialRequisitionController extends Controller
      */
     public function createForWorkOrder(StoreMaterialRequisitionRequest $request, WorkOrder $workOrder): JsonResponse
     {
-        if (! in_array($workOrder->status, [WorkOrder::STATUS_CONFIRMED, WorkOrder::STATUS_IN_PROGRESS])) {
+        if (! in_array($workOrder->status, [DocumentStatus::Confirmed, DocumentStatus::InProgress])) {
             return response()->json([
                 'message' => 'Material requisition hanya dapat dibuat untuk work order yang sudah dikonfirmasi atau sedang berjalan.',
             ], 422);

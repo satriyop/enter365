@@ -8,9 +8,11 @@ use App\Http\Requests\Api\V1\UpdateMrpSuggestionRequest;
 use App\Http\Resources\Api\V1\MrpDemandResource;
 use App\Http\Resources\Api\V1\MrpRunResource;
 use App\Http\Resources\Api\V1\MrpSuggestionResource;
-use App\Models\Accounting\MrpRun;
-use App\Models\Accounting\MrpSuggestion;
-use App\Services\Accounting\MrpService;
+use App\Models\Manufacturing\MrpRun;
+use App\Models\Manufacturing\MrpSuggestion;
+use App\Services\Manufacturing\MrpDemandService;
+use App\Services\Manufacturing\MrpService;
+use App\Services\Manufacturing\MrpSuggestionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -18,7 +20,9 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 class MrpController extends Controller
 {
     public function __construct(
-        private MrpService $mrpService
+        private MrpService $mrpService,
+        private MrpDemandService $demandService,
+        private MrpSuggestionService $suggestionService
     ) {}
 
     /**
@@ -126,7 +130,7 @@ class MrpController extends Controller
      */
     public function acceptSuggestion(MrpSuggestion $suggestion): MrpSuggestionResource
     {
-        $suggestion = $this->mrpService->acceptSuggestion($suggestion);
+        $suggestion = $this->suggestionService->acceptSuggestion($suggestion);
 
         return new MrpSuggestionResource($suggestion->load('product'));
     }
@@ -136,7 +140,7 @@ class MrpController extends Controller
      */
     public function rejectSuggestion(Request $request, MrpSuggestion $suggestion): MrpSuggestionResource
     {
-        $suggestion = $this->mrpService->rejectSuggestion(
+        $suggestion = $this->suggestionService->rejectSuggestion(
             $suggestion,
             $request->input('reason')
         );
@@ -152,7 +156,7 @@ class MrpController extends Controller
         MrpSuggestion $suggestion
     ): MrpSuggestionResource {
         if ($request->has('adjusted_quantity')) {
-            $suggestion = $this->mrpService->updateSuggestionQuantity(
+            $suggestion = $this->suggestionService->updateSuggestionQuantity(
                 $suggestion,
                 $request->input('adjusted_quantity')
             );
@@ -175,7 +179,7 @@ class MrpController extends Controller
      */
     public function convertToPurchaseOrder(MrpSuggestion $suggestion): JsonResponse
     {
-        $po = $this->mrpService->convertToPurchaseOrder($suggestion);
+        $po = $this->suggestionService->convertToPurchaseOrder($suggestion);
 
         return response()->json([
             'message' => 'Saran berhasil dikonversi ke Purchase Order.',
@@ -191,7 +195,7 @@ class MrpController extends Controller
      */
     public function convertToWorkOrder(MrpSuggestion $suggestion): JsonResponse
     {
-        $wo = $this->mrpService->convertToWorkOrder($suggestion);
+        $wo = $this->suggestionService->convertToWorkOrder($suggestion);
 
         return response()->json([
             'message' => 'Saran berhasil dikonversi ke Work Order.',
@@ -213,7 +217,7 @@ class MrpController extends Controller
             'subcontractor_id' => ['required', 'integer', 'exists:contacts,id'],
         ]);
 
-        $scWo = $this->mrpService->convertToSubcontractorWorkOrder(
+        $scWo = $this->suggestionService->convertToSubcontractorWorkOrder(
             $suggestion,
             $request->input('subcontractor_id')
         );
@@ -237,7 +241,7 @@ class MrpController extends Controller
             'suggestion_ids.*' => ['integer', 'exists:mrp_suggestions,id'],
         ]);
 
-        $count = $this->mrpService->bulkAccept($request->input('suggestion_ids'));
+        $count = $this->suggestionService->bulkAccept($request->input('suggestion_ids'));
 
         return response()->json([
             'message' => "{$count} saran berhasil diterima.",
@@ -256,7 +260,7 @@ class MrpController extends Controller
             'reason' => ['nullable', 'string', 'max:500'],
         ]);
 
-        $count = $this->mrpService->bulkReject(
+        $count = $this->suggestionService->bulkReject(
             $request->input('suggestion_ids'),
             $request->input('reason')
         );
@@ -278,7 +282,7 @@ class MrpController extends Controller
             'warehouse_id' => ['nullable', 'integer', 'exists:warehouses,id'],
         ]);
 
-        $report = $this->mrpService->getShortageReport(
+        $report = $this->demandService->getShortageReport(
             new \DateTime($request->input('horizon_start')),
             new \DateTime($request->input('horizon_end')),
             $request->input('warehouse_id')

@@ -4,20 +4,11 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Accounting\Account;
-use App\Models\Accounting\Contact;
-use App\Models\Accounting\Product;
-use App\Models\Accounting\Project;
-use App\Models\Accounting\WorkOrder;
-use App\Services\Accounting\AccountBalanceService;
-use App\Services\Accounting\AgingReportService;
-use App\Services\Accounting\BankReconciliationReportService;
-use App\Services\Accounting\CashFlowReportService;
-use App\Services\Accounting\COGSReportService;
-use App\Services\Accounting\FinancialReportService;
-use App\Services\Accounting\ProjectReportService;
-use App\Services\Accounting\SubcontractorReportService;
-use App\Services\Accounting\TaxReportService;
-use App\Services\Accounting\WorkOrderReportService;
+use App\Models\Contacts\Contact;
+use App\Models\Inventory\Product;
+use App\Models\Manufacturing\WorkOrder;
+use App\Models\Projects\Project;
+use App\Services\Accounting\Reports\ReportServiceFactory;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -25,16 +16,7 @@ use Illuminate\Http\Request;
 class ReportController extends Controller
 {
     public function __construct(
-        private AccountBalanceService $balanceService,
-        private FinancialReportService $reportService,
-        private AgingReportService $agingService,
-        private TaxReportService $taxService,
-        private CashFlowReportService $cashFlowService,
-        private ProjectReportService $projectReportService,
-        private WorkOrderReportService $workOrderReportService,
-        private SubcontractorReportService $subcontractorReportService,
-        private BankReconciliationReportService $bankReconciliationService,
-        private COGSReportService $cogsService
+        private ReportServiceFactory $reports
     ) {}
 
     /**
@@ -43,7 +25,7 @@ class ReportController extends Controller
     public function trialBalance(Request $request): JsonResponse
     {
         $asOfDate = $request->input('as_of_date');
-        $trialBalance = $this->balanceService->getTrialBalance($asOfDate);
+        $trialBalance = $this->reports->balance()->getTrialBalance($asOfDate);
 
         $totalDebit = $trialBalance->sum('debit_balance');
         $totalCredit = $trialBalance->sum('credit_balance');
@@ -68,12 +50,12 @@ class ReportController extends Controller
 
         // If compare_to is provided, return comparative report
         if ($compareTo) {
-            $comparative = $this->reportService->getComparativeBalanceSheet($asOfDate, $compareTo);
+            $comparative = $this->reports->financial()->getComparativeBalanceSheet($asOfDate, $compareTo);
 
             return response()->json($comparative);
         }
 
-        $balanceSheet = $this->reportService->getBalanceSheet($asOfDate);
+        $balanceSheet = $this->reports->financial()->getBalanceSheet($asOfDate);
 
         return response()->json([
             'report_name' => 'Laporan Posisi Keuangan',
@@ -92,7 +74,7 @@ class ReportController extends Controller
 
         // If compare_previous_period is true, return comparative report
         if ($comparePreviousPeriod) {
-            $comparative = $this->reportService->getComparativeIncomeStatement(
+            $comparative = $this->reports->financial()->getComparativeIncomeStatement(
                 $startDate,
                 $endDate,
                 $request->input('previous_start_date'),
@@ -102,7 +84,7 @@ class ReportController extends Controller
             return response()->json($comparative);
         }
 
-        $incomeStatement = $this->reportService->getIncomeStatement($startDate, $endDate);
+        $incomeStatement = $this->reports->financial()->getIncomeStatement($startDate, $endDate);
 
         return response()->json([
             'report_name' => 'Laporan Laba Rugi',
@@ -117,7 +99,7 @@ class ReportController extends Controller
     {
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
-        $generalLedger = $this->reportService->getGeneralLedger($startDate, $endDate);
+        $generalLedger = $this->reports->financial()->getGeneralLedger($startDate, $endDate);
 
         return response()->json([
             'report_name' => 'Buku Besar',
@@ -136,7 +118,7 @@ class ReportController extends Controller
             ? Carbon::parse($request->input('as_of_date'))
             : null;
 
-        $report = $this->agingService->getReceivableAging($asOfDate);
+        $report = $this->reports->aging()->getReceivableAging($asOfDate);
 
         return response()->json([
             'report_name' => 'Laporan Umur Piutang',
@@ -153,7 +135,7 @@ class ReportController extends Controller
             ? Carbon::parse($request->input('as_of_date'))
             : null;
 
-        $report = $this->agingService->getPayableAging($asOfDate);
+        $report = $this->reports->aging()->getPayableAging($asOfDate);
 
         return response()->json([
             'report_name' => 'Laporan Umur Hutang',
@@ -170,7 +152,7 @@ class ReportController extends Controller
             ? Carbon::parse($request->input('as_of_date'))
             : null;
 
-        $report = $this->agingService->getContactAging($contact, $asOfDate);
+        $report = $this->reports->aging()->getContactAging($contact, $asOfDate);
 
         return response()->json([
             'report_name' => 'Laporan Umur - '.$contact->name,
@@ -196,7 +178,7 @@ class ReportController extends Controller
             ? Carbon::parse($request->input('end_date'))
             : now()->endOfMonth();
 
-        $report = $this->taxService->getPpnSummary($startDate, $endDate);
+        $report = $this->reports->tax()->getPpnSummary($startDate, $endDate);
 
         return response()->json([
             'report_name' => 'Laporan PPN',
@@ -211,7 +193,7 @@ class ReportController extends Controller
     {
         $year = (int) $request->input('year', now()->year);
 
-        $report = $this->taxService->getMonthlyPpnSummary($year);
+        $report = $this->reports->tax()->getMonthlyPpnSummary($year);
 
         return response()->json([
             'report_name' => "Laporan PPN Tahun {$year}",
@@ -235,7 +217,7 @@ class ReportController extends Controller
             ? Carbon::parse($request->input('end_date'))
             : now()->endOfMonth();
 
-        $invoices = $this->taxService->getTaxInvoiceList($startDate, $endDate);
+        $invoices = $this->reports->tax()->getTaxInvoiceList($startDate, $endDate);
 
         return response()->json([
             'report_name' => 'Daftar Faktur Pajak Keluaran',
@@ -261,7 +243,7 @@ class ReportController extends Controller
             ? Carbon::parse($request->input('end_date'))
             : now()->endOfMonth();
 
-        $bills = $this->taxService->getInputTaxList($startDate, $endDate);
+        $bills = $this->reports->tax()->getInputTaxList($startDate, $endDate);
 
         return response()->json([
             'report_name' => 'Daftar Faktur Pajak Masukan',
@@ -287,7 +269,7 @@ class ReportController extends Controller
             ? Carbon::parse($request->input('end_date'))
             : now()->endOfMonth();
 
-        $report = $this->cashFlowService->generateCashFlow($startDate, $endDate);
+        $report = $this->reports->cashFlow()->generateCashFlow($startDate, $endDate);
 
         return response()->json([
             'report_name' => 'Laporan Arus Kas',
@@ -307,7 +289,7 @@ class ReportController extends Controller
             ? Carbon::parse($request->input('end_date'))
             : now()->endOfMonth();
 
-        $movements = $this->cashFlowService->getDailyCashMovement($startDate, $endDate);
+        $movements = $this->reports->cashFlow()->getDailyCashMovement($startDate, $endDate);
 
         return response()->json([
             'report_name' => 'Pergerakan Kas Harian',
@@ -327,7 +309,7 @@ class ReportController extends Controller
      */
     public function projectProfitability(Request $request): JsonResponse
     {
-        $report = $this->projectReportService->getProjectProfitabilitySummary(
+        $report = $this->reports->project()->getProjectProfitabilitySummary(
             $request->input('start_date'),
             $request->input('end_date'),
             $request->input('status')
@@ -341,7 +323,7 @@ class ReportController extends Controller
      */
     public function projectProfitabilityDetail(Project $project): JsonResponse
     {
-        $report = $this->projectReportService->getProjectProfitabilityDetail($project);
+        $report = $this->reports->project()->getProjectProfitabilityDetail($project);
 
         return response()->json($report);
     }
@@ -351,7 +333,7 @@ class ReportController extends Controller
      */
     public function projectCostAnalysis(Request $request): JsonResponse
     {
-        $report = $this->projectReportService->getProjectCostAnalysis(
+        $report = $this->reports->project()->getProjectCostAnalysis(
             $request->input('start_date'),
             $request->input('end_date')
         );
@@ -364,7 +346,7 @@ class ReportController extends Controller
      */
     public function workOrderCosts(Request $request): JsonResponse
     {
-        $report = $this->workOrderReportService->getWorkOrderCostSummary(
+        $report = $this->reports->workOrder()->getWorkOrderCostSummary(
             $request->input('start_date'),
             $request->input('end_date'),
             $request->input('status'),
@@ -379,7 +361,7 @@ class ReportController extends Controller
      */
     public function workOrderCostDetail(WorkOrder $workOrder): JsonResponse
     {
-        $report = $this->workOrderReportService->getWorkOrderCostDetail($workOrder);
+        $report = $this->reports->workOrder()->getWorkOrderCostDetail($workOrder);
 
         return response()->json($report);
     }
@@ -389,7 +371,7 @@ class ReportController extends Controller
      */
     public function costVariance(Request $request): JsonResponse
     {
-        $report = $this->workOrderReportService->getCostVarianceReport(
+        $report = $this->reports->workOrder()->getCostVarianceReport(
             $request->input('start_date'),
             $request->input('end_date')
         );
@@ -402,7 +384,7 @@ class ReportController extends Controller
      */
     public function subcontractorSummary(Request $request): JsonResponse
     {
-        $report = $this->subcontractorReportService->getSubcontractorSummary(
+        $report = $this->reports->subcontractor()->getSubcontractorSummary(
             $request->input('start_date'),
             $request->input('end_date')
         );
@@ -415,7 +397,7 @@ class ReportController extends Controller
      */
     public function subcontractorDetail(Request $request, Contact $contact): JsonResponse
     {
-        $report = $this->subcontractorReportService->getSubcontractorDetail(
+        $report = $this->reports->subcontractor()->getSubcontractorDetail(
             $contact,
             $request->input('start_date'),
             $request->input('end_date')
@@ -429,7 +411,7 @@ class ReportController extends Controller
      */
     public function subcontractorRetention(): JsonResponse
     {
-        $report = $this->subcontractorReportService->getRetentionSummary();
+        $report = $this->reports->subcontractor()->getRetentionSummary();
 
         return response()->json($report);
     }
@@ -439,7 +421,7 @@ class ReportController extends Controller
      */
     public function changesInEquity(Request $request): JsonResponse
     {
-        $report = $this->reportService->getStatementOfChangesInEquity(
+        $report = $this->reports->financial()->getStatementOfChangesInEquity(
             $request->input('start_date'),
             $request->input('end_date')
         );
@@ -455,7 +437,7 @@ class ReportController extends Controller
      */
     public function bankReconciliation(Request $request, Account $account): JsonResponse
     {
-        $report = $this->bankReconciliationService->getReconciliationReport(
+        $report = $this->reports->bankReconciliation()->getReconciliationReport(
             $account,
             $request->input('as_of_date')
         );
@@ -471,7 +453,7 @@ class ReportController extends Controller
      */
     public function bankReconciliationOutstanding(Request $request, Account $account): JsonResponse
     {
-        $report = $this->bankReconciliationService->getOutstandingItems(
+        $report = $this->reports->bankReconciliation()->getOutstandingItems(
             $account,
             $request->input('as_of_date')
         );
@@ -493,7 +475,7 @@ class ReportController extends Controller
      */
     public function cogsSummary(Request $request): JsonResponse
     {
-        $report = $this->cogsService->getCOGSSummary(
+        $report = $this->reports->cogs()->getCOGSSummary(
             $request->input('start_date'),
             $request->input('end_date')
         );
@@ -509,7 +491,7 @@ class ReportController extends Controller
      */
     public function cogsByProduct(Request $request): JsonResponse
     {
-        $products = $this->cogsService->getCOGSByProduct(
+        $products = $this->reports->cogs()->getCOGSByProduct(
             $request->input('start_date'),
             $request->input('end_date')
         );
@@ -533,7 +515,7 @@ class ReportController extends Controller
      */
     public function cogsByCategory(Request $request): JsonResponse
     {
-        $categories = $this->cogsService->getCOGSByCategory(
+        $categories = $this->reports->cogs()->getCOGSByCategory(
             $request->input('start_date'),
             $request->input('end_date')
         );
@@ -558,7 +540,7 @@ class ReportController extends Controller
     public function cogsMonthlyTrend(Request $request): JsonResponse
     {
         $year = (int) $request->input('year', now()->year);
-        $months = $this->cogsService->getMonthlyCOGSTrend($year);
+        $months = $this->reports->cogs()->getMonthlyCOGSTrend($year);
 
         return response()->json([
             'report_name' => "Trend HPP Tahun {$year}",
@@ -573,7 +555,7 @@ class ReportController extends Controller
      */
     public function productCOGSDetail(Request $request, Product $product): JsonResponse
     {
-        $details = $this->cogsService->getProductCOGSDetail(
+        $details = $this->reports->cogs()->getProductCOGSDetail(
             $product,
             $request->input('start_date'),
             $request->input('end_date')

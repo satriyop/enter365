@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands\Accounting;
 
-use App\Services\Accounting\OverdueService;
+use App\Services\Sales\OverdueService;
 use Illuminate\Console\Command;
 
 class MarkOverdueDocuments extends Command

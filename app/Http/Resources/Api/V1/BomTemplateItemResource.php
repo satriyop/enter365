@@ -2,7 +2,7 @@
 
 namespace App\Http\Resources\Api\V1;
 
-use App\Models\Accounting\BomTemplateItem;
+use App\Models\Manufacturing\BomTemplateItem;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 

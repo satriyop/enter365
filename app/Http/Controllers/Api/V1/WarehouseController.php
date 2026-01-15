@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreWarehouseRequest;
 use App\Http\Requests\Api\V1\UpdateWarehouseRequest;
 use App\Http\Resources\Api\V1\WarehouseResource;
-use App\Models\Accounting\Warehouse;
+use App\Models\Inventory\Warehouse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;

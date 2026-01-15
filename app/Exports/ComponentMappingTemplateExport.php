@@ -2,9 +2,9 @@
 
 namespace App\Exports;
 
-use App\Models\Accounting\ComponentBrandMapping;
-use App\Models\Accounting\ComponentStandard;
-use App\Models\Accounting\Product;
+use App\Models\Inventory\Product;
+use App\Models\Manufacturing\ComponentBrandMapping;
+use App\Models\Manufacturing\ComponentStandard;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 

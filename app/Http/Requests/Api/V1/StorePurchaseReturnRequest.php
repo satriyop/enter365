@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Api\V1;
 
-use App\Models\Accounting\PurchaseReturn;
-use App\Models\Accounting\PurchaseReturnItem;
+use App\Models\Purchasing\PurchaseReturn;
+use App\Models\Purchasing\PurchaseReturnItem;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 

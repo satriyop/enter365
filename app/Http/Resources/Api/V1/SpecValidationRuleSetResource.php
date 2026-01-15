@@ -2,7 +2,7 @@
 
 namespace App\Http\Resources\Api\V1;
 
-use App\Models\Accounting\SpecValidationRuleSet;
+use App\Models\Manufacturing\SpecValidationRuleSet;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 

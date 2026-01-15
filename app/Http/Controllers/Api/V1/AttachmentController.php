@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreAttachmentRequest;
 use App\Http\Resources\Api\V1\AttachmentResource;
-use App\Models\Accounting\Attachment;
+use App\Models\Shared\Attachment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -117,11 +117,11 @@ class AttachmentController extends Controller
     protected function resolveModelClass(string $type): ?string
     {
         $models = [
-            'invoice' => \App\Models\Accounting\Invoice::class,
-            'bill' => \App\Models\Accounting\Bill::class,
-            'payment' => \App\Models\Accounting\Payment::class,
+            'invoice' => \App\Models\Sales\Invoice::class,
+            'bill' => \App\Models\Purchasing\Bill::class,
+            'payment' => \App\Models\Shared\Payment::class,
             'journal-entry' => \App\Models\Accounting\JournalEntry::class,
-            'contact' => \App\Models\Accounting\Contact::class,
+            'contact' => \App\Models\Contacts\Contact::class,
         ];
 
         return $models[$type] ?? null;

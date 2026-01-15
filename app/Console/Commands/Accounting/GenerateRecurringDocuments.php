@@ -2,9 +2,9 @@
 
 namespace App\Console\Commands\Accounting;
 
-use App\Models\Accounting\Bill;
-use App\Models\Accounting\Invoice;
-use App\Services\Accounting\RecurringService;
+use App\Models\Purchasing\Bill;
+use App\Models\Sales\Invoice;
+use App\Services\Sales\RecurringService;
 use Illuminate\Console\Command;
 
 class GenerateRecurringDocuments extends Command

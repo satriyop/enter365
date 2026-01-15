@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\DocumentStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\SolarProposalResource;
-use App\Models\Accounting\SolarProposal;
+use App\Models\Solar\SolarProposal;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -64,17 +65,17 @@ class PublicSolarProposalController extends Controller
             return response()->json([
                 'message' => 'Proposal tidak dapat diterima.',
                 'reason' => match ($proposal->status) {
-                    SolarProposal::STATUS_ACCEPTED => 'Proposal sudah diterima sebelumnya.',
-                    SolarProposal::STATUS_REJECTED => 'Proposal sudah ditolak.',
-                    SolarProposal::STATUS_DRAFT => 'Proposal belum dikirim.',
-                    SolarProposal::STATUS_EXPIRED => 'Proposal sudah kedaluwarsa.',
+                    DocumentStatus::Accepted => 'Proposal sudah diterima sebelumnya.',
+                    DocumentStatus::Rejected => 'Proposal sudah ditolak.',
+                    DocumentStatus::Draft => 'Proposal belum dikirim.',
+                    DocumentStatus::Expired => 'Proposal sudah kedaluwarsa.',
                     default => 'Status proposal tidak valid.',
                 },
             ], 422);
         }
 
         $proposal->update([
-            'status' => SolarProposal::STATUS_ACCEPTED,
+            'status' => DocumentStatus::Accepted,
             'accepted_at' => now(),
         ]);
 
@@ -113,17 +114,17 @@ class PublicSolarProposalController extends Controller
             return response()->json([
                 'message' => 'Proposal tidak dapat ditolak.',
                 'reason' => match ($proposal->status) {
-                    SolarProposal::STATUS_ACCEPTED => 'Proposal sudah diterima.',
-                    SolarProposal::STATUS_REJECTED => 'Proposal sudah ditolak sebelumnya.',
-                    SolarProposal::STATUS_DRAFT => 'Proposal belum dikirim.',
-                    SolarProposal::STATUS_EXPIRED => 'Proposal sudah kedaluwarsa.',
+                    DocumentStatus::Accepted => 'Proposal sudah diterima.',
+                    DocumentStatus::Rejected => 'Proposal sudah ditolak sebelumnya.',
+                    DocumentStatus::Draft => 'Proposal belum dikirim.',
+                    DocumentStatus::Expired => 'Proposal sudah kedaluwarsa.',
                     default => 'Status proposal tidak valid.',
                 },
             ], 422);
         }
 
         $proposal->update([
-            'status' => SolarProposal::STATUS_REJECTED,
+            'status' => DocumentStatus::Rejected,
             'rejected_at' => now(),
             'rejection_reason' => $request->input('reason'),
         ]);

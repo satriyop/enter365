@@ -2,8 +2,9 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Accounting\Bill;
-use App\Models\Accounting\Invoice;
+use App\Enums\DocumentStatus;
+use App\Models\Purchasing\Bill;
+use App\Models\Sales\Invoice;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -73,7 +74,7 @@ class MarkOverdueDocuments extends Command
         // Get invoices that are past due and not already marked as overdue/paid/cancelled
         $overdueInvoices = Invoice::query()
             ->where('due_date', '<', today())
-            ->whereIn('status', [Invoice::STATUS_SENT, Invoice::STATUS_PARTIAL])
+            ->whereIn('status', [DocumentStatus::Sent, DocumentStatus::Partial])
             ->get();
 
         if ($overdueInvoices->isEmpty()) {
@@ -100,7 +101,7 @@ class MarkOverdueDocuments extends Command
 
             if (! $dryRun) {
                 DB::transaction(function () use ($invoice) {
-                    $invoice->status = Invoice::STATUS_OVERDUE;
+                    $invoice->status = DocumentStatus::Overdue;
                     $invoice->save();
                 });
             }
@@ -119,7 +120,7 @@ class MarkOverdueDocuments extends Command
         // Get bills that are past due and not already marked as overdue/paid/cancelled
         $overdueBills = Bill::query()
             ->where('due_date', '<', today())
-            ->whereIn('status', [Bill::STATUS_RECEIVED, Bill::STATUS_PARTIAL])
+            ->whereIn('status', [DocumentStatus::Received, DocumentStatus::Partial])
             ->get();
 
         if ($overdueBills->isEmpty()) {
@@ -147,7 +148,7 @@ class MarkOverdueDocuments extends Command
 
             if (! $dryRun) {
                 DB::transaction(function () use ($bill) {
-                    $bill->status = Bill::STATUS_OVERDUE;
+                    $bill->status = DocumentStatus::Overdue;
                     $bill->save();
                 });
             }

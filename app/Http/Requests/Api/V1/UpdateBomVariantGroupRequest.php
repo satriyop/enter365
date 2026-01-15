@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Api\V1;
 
-use App\Models\Accounting\BomVariantGroup;
+use App\Enums\DocumentStatus;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -28,9 +28,9 @@ class UpdateBomVariantGroupRequest extends FormRequest
             'description' => ['nullable', 'string', 'max:1000'],
             'comparison_notes' => ['nullable', 'string'],
             'status' => ['nullable', 'string', Rule::in([
-                BomVariantGroup::STATUS_DRAFT,
-                BomVariantGroup::STATUS_ACTIVE,
-                BomVariantGroup::STATUS_ARCHIVED,
+                DocumentStatus::Draft->value,
+                DocumentStatus::Active->value,
+                DocumentStatus::Archived->value,
             ])],
         ];
     }

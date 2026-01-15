@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\DocumentStatus;
+use App\Filters\PaymentFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StorePaymentRequest;
 use App\Http\Resources\Api\V1\PaymentResource;
-use App\Models\Accounting\Bill;
-use App\Models\Accounting\Invoice;
-use App\Models\Accounting\Payment;
+use App\Models\Purchasing\Bill;
+use App\Models\Sales\Invoice;
+use App\Models\Shared\Payment;
 use App\Services\Accounting\JournalService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -21,42 +22,15 @@ class PaymentController extends Controller
         private JournalService $journalService
     ) {}
 
-    public function index(Request $request): AnonymousResourceCollection
+    /**
+     * Display a listing of payments.
+     */
+    public function index(PaymentFilter $filter): AnonymousResourceCollection
     {
-        $query = Payment::query()->with(['contact', 'cashAccount']);
-
-        if ($request->has('type')) {
-            $query->where('type', $request->input('type'));
-        }
-
-        if ($request->has('contact_id')) {
-            $query->where('contact_id', $request->input('contact_id'));
-        }
-
-        if ($request->has('is_voided')) {
-            $query->where('is_voided', $request->boolean('is_voided'));
-        }
-
-        if ($request->has('start_date')) {
-            $query->where('payment_date', '>=', $request->input('start_date'));
-        }
-
-        if ($request->has('end_date')) {
-            $query->where('payment_date', '<=', $request->input('end_date'));
-        }
-
-        if ($request->has('search')) {
-            $search = strtolower($request->input('search'));
-            $query->where(function ($q) use ($search) {
-                $q->whereRaw('LOWER(payment_number) LIKE ?', ["%{$search}%"])
-                    ->orWhereRaw('LOWER(reference) LIKE ?', ["%{$search}%"])
-                    ->orWhereHas('contact', fn ($q) => $q->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]));
-            });
-        }
-
-        $payments = $query->orderByDesc('payment_date')
-            ->orderByDesc('id')
-            ->paginate($request->input('per_page', 25));
+        $payments = Payment::query()
+            ->with(['contact', 'cashAccount'])
+            ->filter($filter)
+            ->paginate($filter->getRequest()->input('per_page', 25));
 
         return PaymentResource::collection($payments);
     }
@@ -72,7 +46,7 @@ class PaymentController extends Controller
 
             if (isset($data['invoice_id'])) {
                 $invoice = Invoice::findOrFail($data['invoice_id']);
-                if (! in_array($invoice->status, [Invoice::STATUS_SENT, Invoice::STATUS_PARTIAL, Invoice::STATUS_OVERDUE])) {
+                if (! in_array($invoice->status, [DocumentStatus::Sent, DocumentStatus::Partial, DocumentStatus::Overdue])) {
                     abort(422, 'Faktur tidak dalam status yang bisa dibayar.');
                 }
                 if ($data['amount'] > $invoice->getOutstandingAmount()) {
@@ -85,7 +59,7 @@ class PaymentController extends Controller
 
             if (isset($data['bill_id'])) {
                 $bill = Bill::findOrFail($data['bill_id']);
-                if (! in_array($bill->status, [Bill::STATUS_RECEIVED, Bill::STATUS_PARTIAL, Bill::STATUS_OVERDUE])) {
+                if (! in_array($bill->status, [DocumentStatus::Received, DocumentStatus::Partial, DocumentStatus::Overdue])) {
                     abort(422, 'Tagihan tidak dalam status yang bisa dibayar.');
                 }
                 if ($data['amount'] > $bill->getOutstandingAmount()) {

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\DocumentStatus;
 use App\Exports\SolarProposalExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\AcceptSolarProposalRequest;
@@ -11,8 +12,8 @@ use App\Http\Requests\Api\V1\UpdateSolarProposalRequest;
 use App\Http\Resources\Api\V1\QuotationResource;
 use App\Http\Resources\Api\V1\SolarProposalListResource;
 use App\Http\Resources\Api\V1\SolarProposalResource;
-use App\Models\Accounting\SolarProposal;
-use App\Services\Accounting\SolarProposalService;
+use App\Models\Solar\SolarProposal;
+use App\Services\Solar\SolarProposalService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -52,7 +53,7 @@ class SolarProposalController extends Controller
         }
 
         if ($request->boolean('expired_only')) {
-            $query->where('status', SolarProposal::STATUS_EXPIRED);
+            $query->where('status', DocumentStatus::Expired);
         }
 
         if ($request->boolean('active_only')) {
@@ -282,8 +283,8 @@ class SolarProposalController extends Controller
             'draft' => SolarProposal::draft()->count(),
             'sent' => SolarProposal::sent()->count(),
             'accepted' => SolarProposal::accepted()->count(),
-            'rejected' => SolarProposal::where('status', SolarProposal::STATUS_REJECTED)->count(),
-            'expired' => SolarProposal::where('status', SolarProposal::STATUS_EXPIRED)->count(),
+            'rejected' => SolarProposal::where('status', DocumentStatus::Rejected)->count(),
+            'expired' => SolarProposal::where('status', DocumentStatus::Expired)->count(),
             'active' => SolarProposal::active()->count(),
 
             // Financial metrics

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Filters\QuotationFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreQuotationFromBomRequest;
 use App\Http\Requests\Api\V1\StoreQuotationRequest;
@@ -9,9 +10,9 @@ use App\Http\Requests\Api\V1\UpdateQuotationRequest;
 use App\Http\Resources\Api\V1\InvoiceResource;
 use App\Http\Resources\Api\V1\QuotationResource;
 use App\Http\Resources\Api\V1\QuotationVariantOptionResource;
-use App\Models\Accounting\Quotation;
-use App\Models\Accounting\QuotationVariantOption;
-use App\Services\Accounting\QuotationService;
+use App\Models\Sales\Quotation;
+use App\Models\Sales\QuotationVariantOption;
+use App\Services\Sales\QuotationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -26,55 +27,12 @@ class QuotationController extends Controller
     /**
      * Display a listing of quotations.
      */
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(QuotationFilter $filter): AnonymousResourceCollection
     {
-        $query = Quotation::query()->with(['contact', 'items']);
-
-        if ($request->has('status')) {
-            $query->where('status', $request->input('status'));
-        }
-
-        if ($request->has('contact_id')) {
-            $query->where('contact_id', $request->input('contact_id'));
-        }
-
-        if ($request->has('quotation_type')) {
-            $query->where('quotation_type', $request->input('quotation_type'));
-        }
-
-        if ($request->has('start_date')) {
-            $query->where('quotation_date', '>=', $request->input('start_date'));
-        }
-
-        if ($request->has('end_date')) {
-            $query->where('quotation_date', '<=', $request->input('end_date'));
-        }
-
-        if ($request->boolean('expired_only')) {
-            $query->expired();
-        }
-
-        if ($request->boolean('active_only')) {
-            $query->active();
-        }
-
-        if ($request->boolean('multi_option_only')) {
-            $query->where('quotation_type', Quotation::TYPE_MULTI_OPTION);
-        }
-
-        if ($request->has('search')) {
-            $search = strtolower($request->input('search'));
-            $query->where(function ($q) use ($search) {
-                $q->whereRaw('LOWER(quotation_number) LIKE ?', ["%{$search}%"])
-                    ->orWhereRaw('LOWER(subject) LIKE ?', ["%{$search}%"])
-                    ->orWhereRaw('LOWER(reference) LIKE ?', ["%{$search}%"])
-                    ->orWhereHas('contact', fn ($q) => $q->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]));
-            });
-        }
-
-        $quotations = $query->orderByDesc('quotation_date')
-            ->orderByDesc('id')
-            ->paginate($request->input('per_page', 25));
+        $quotations = Quotation::query()
+            ->with(['contact', 'items'])
+            ->filter($filter)
+            ->paginate($filter->getRequest()->input('per_page', 25));
 
         return QuotationResource::collection($quotations);
     }
