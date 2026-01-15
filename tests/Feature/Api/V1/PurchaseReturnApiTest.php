@@ -1,12 +1,12 @@
 <?php
 
-use App\Models\Accounting\Bill;
-use App\Models\Accounting\BillItem;
-use App\Models\Accounting\Contact;
-use App\Models\Accounting\Product;
-use App\Models\Accounting\PurchaseReturn;
-use App\Models\Accounting\PurchaseReturnItem;
-use App\Models\Accounting\Warehouse;
+use App\Models\Contacts\Contact;
+use App\Models\Inventory\Product;
+use App\Models\Inventory\Warehouse;
+use App\Models\Purchasing\Bill;
+use App\Models\Purchasing\BillItem;
+use App\Models\Purchasing\PurchaseReturn;
+use App\Models\Purchasing\PurchaseReturnItem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 

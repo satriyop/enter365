@@ -1,10 +1,11 @@
 <?php
 
-use App\Models\Accounting\Contact;
-use App\Models\Accounting\Invoice;
-use App\Models\Accounting\Product;
-use App\Models\Accounting\Quotation;
-use App\Models\Accounting\QuotationItem;
+use App\Enums\DocumentStatus;
+use App\Models\Contacts\Contact;
+use App\Models\Inventory\Product;
+use App\Models\Sales\Invoice;
+use App\Models\Sales\Quotation;
+use App\Models\Sales\QuotationItem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -393,7 +394,7 @@ describe('Quotation Conversion', function () {
             ->assertJsonStructure(['message', 'invoice', 'quotation']);
 
         $quotation->refresh();
-        expect($quotation->status)->toBe('converted');
+        expect($quotation->status)->toBe(DocumentStatus::Converted);
         expect($quotation->converted_to_invoice_id)->not->toBeNull();
         expect($quotation->converted_at)->not->toBeNull();
     });
@@ -446,7 +447,7 @@ describe('Quotation Expiry', function () {
     it('shows expired status for past valid_until', function () {
         $quotation = Quotation::factory()->create([
             'valid_until' => now()->subDays(5),
-            'status' => Quotation::STATUS_SUBMITTED,
+            'status' => DocumentStatus::Submitted,
         ]);
 
         $response = $this->getJson("/api/v1/quotations/{$quotation->id}");

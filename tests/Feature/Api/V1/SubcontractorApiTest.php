@@ -1,10 +1,10 @@
 <?php
 
-use App\Models\Accounting\Bill;
-use App\Models\Accounting\Contact;
-use App\Models\Accounting\Project;
-use App\Models\Accounting\SubcontractorInvoice;
-use App\Models\Accounting\SubcontractorWorkOrder;
+use App\Models\Contacts\Contact;
+use App\Models\Manufacturing\SubcontractorWorkOrder;
+use App\Models\Projects\Project;
+use App\Models\Purchasing\Bill;
+use App\Models\Shared\SubcontractorInvoice;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;

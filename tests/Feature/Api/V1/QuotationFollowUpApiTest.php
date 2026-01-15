@@ -1,8 +1,8 @@
 <?php
 
-use App\Models\Accounting\Contact;
-use App\Models\Accounting\Quotation;
-use App\Models\Accounting\QuotationActivity;
+use App\Models\Contacts\Contact;
+use App\Models\Sales\Quotation;
+use App\Models\Sales\QuotationActivity;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;

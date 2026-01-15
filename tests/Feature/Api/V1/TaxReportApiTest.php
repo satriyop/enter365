@@ -1,8 +1,9 @@
 <?php
 
-use App\Models\Accounting\Bill;
-use App\Models\Accounting\Contact;
-use App\Models\Accounting\Invoice;
+use App\Enums\DocumentStatus;
+use App\Models\Contacts\Contact;
+use App\Models\Purchasing\Bill;
+use App\Models\Sales\Invoice;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -31,7 +32,7 @@ describe('Tax Report API (PPN)', function () {
         ]);
 
         Bill::factory()->forContact($supplier)->create([
-            'status' => Bill::STATUS_RECEIVED,
+            'status' => DocumentStatus::Received,
             'bill_date' => now(),
             'subtotal' => 5000000,
             'tax_amount' => 550000,
@@ -96,7 +97,7 @@ describe('Tax Report API (PPN)', function () {
         $supplier = Contact::factory()->supplier()->withNpwp()->create();
 
         Bill::factory()->forContact($supplier)->count(3)->create([
-            'status' => Bill::STATUS_RECEIVED,
+            'status' => DocumentStatus::Received,
             'bill_date' => now(),
             'tax_amount' => 110000,
         ]);

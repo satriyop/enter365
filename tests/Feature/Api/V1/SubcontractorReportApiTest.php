@@ -1,8 +1,8 @@
 <?php
 
-use App\Models\Accounting\Contact;
-use App\Models\Accounting\Project;
-use App\Models\Accounting\SubcontractorWorkOrder;
+use App\Models\Contacts\Contact;
+use App\Models\Manufacturing\SubcontractorWorkOrder;
+use App\Models\Projects\Project;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;

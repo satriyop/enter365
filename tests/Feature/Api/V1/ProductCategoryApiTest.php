@@ -1,7 +1,7 @@
 <?php
 
-use App\Models\Accounting\Product;
-use App\Models\Accounting\ProductCategory;
+use App\Models\Inventory\Product;
+use App\Models\Inventory\ProductCategory;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;

@@ -1,10 +1,11 @@
 <?php
 
-use App\Models\Accounting\InventoryMovement;
-use App\Models\Accounting\Product;
-use App\Models\Accounting\ProductCategory;
-use App\Models\Accounting\Warehouse;
+use App\Models\Inventory\InventoryMovement;
+use App\Models\Inventory\Product;
+use App\Models\Inventory\ProductCategory;
+use App\Models\Inventory\Warehouse;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 
@@ -300,12 +301,15 @@ describe('COGS Monthly Trend Report', function () {
         $warehouse = Warehouse::factory()->create();
         $product = Product::factory()->create(['purchase_price' => 100000]);
 
+        // Use last year so all 12 months are available (not in the future)
+        $year = now()->subYear()->year;
+
         // Create stock outs in different months
         InventoryMovement::factory()
             ->forProduct($product)
             ->inWarehouse($warehouse)
             ->stockOut()
-            ->onDate(now()->startOfYear()->addMonth()->toDateString())
+            ->onDate(Carbon::create($year, 2, 15)->toDateString())
             ->create([
                 'quantity' => -5,
                 'quantity_before' => 20,
@@ -318,7 +322,7 @@ describe('COGS Monthly Trend Report', function () {
             ->forProduct($product)
             ->inWarehouse($warehouse)
             ->stockOut()
-            ->onDate(now()->startOfYear()->addMonths(2)->toDateString())
+            ->onDate(Carbon::create($year, 3, 15)->toDateString())
             ->create([
                 'quantity' => -3,
                 'quantity_before' => 15,
@@ -327,7 +331,7 @@ describe('COGS Monthly Trend Report', function () {
                 'total_cost' => 300000,
             ]);
 
-        $response = $this->getJson('/api/v1/reports/cogs-monthly-trend?year='.now()->year);
+        $response = $this->getJson('/api/v1/reports/cogs-monthly-trend?year='.$year);
 
         $response->assertOk();
 

@@ -1,8 +1,9 @@
 <?php
 
-use App\Models\Accounting\Bill;
-use App\Models\Accounting\Contact;
-use App\Models\Accounting\Invoice;
+use App\Enums\DocumentStatus;
+use App\Models\Contacts\Contact;
+use App\Models\Purchasing\Bill;
+use App\Models\Sales\Invoice;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -24,13 +25,13 @@ describe('Mark Overdue Invoices', function () {
                 'due_date' => now()->subDays(5),
             ]);
 
-        expect($invoice->status)->toBe(Invoice::STATUS_SENT);
+        expect($invoice->status)->toBe(DocumentStatus::Sent);
 
         $this->artisan('documents:mark-overdue')
             ->assertSuccessful();
 
         $invoice->refresh();
-        expect($invoice->status)->toBe(Invoice::STATUS_OVERDUE);
+        expect($invoice->status)->toBe(DocumentStatus::Overdue);
     });
 
     it('marks partial invoices as overdue when past due date', function () {
@@ -43,13 +44,13 @@ describe('Mark Overdue Invoices', function () {
                 'due_date' => now()->subDays(10),
             ]);
 
-        expect($invoice->status)->toBe(Invoice::STATUS_PARTIAL);
+        expect($invoice->status)->toBe(DocumentStatus::Partial);
 
         $this->artisan('documents:mark-overdue')
             ->assertSuccessful();
 
         $invoice->refresh();
-        expect($invoice->status)->toBe(Invoice::STATUS_OVERDUE);
+        expect($invoice->status)->toBe(DocumentStatus::Overdue);
     });
 
     it('does not mark invoices that are not past due', function () {
@@ -66,7 +67,7 @@ describe('Mark Overdue Invoices', function () {
             ->assertSuccessful();
 
         $invoice->refresh();
-        expect($invoice->status)->toBe(Invoice::STATUS_SENT);
+        expect($invoice->status)->toBe(DocumentStatus::Sent);
     });
 
     it('does not mark draft invoices as overdue', function () {
@@ -83,7 +84,7 @@ describe('Mark Overdue Invoices', function () {
             ->assertSuccessful();
 
         $invoice->refresh();
-        expect($invoice->status)->toBe(Invoice::STATUS_DRAFT);
+        expect($invoice->status)->toBe(DocumentStatus::Draft);
     });
 
     it('does not mark paid invoices as overdue', function () {
@@ -100,7 +101,7 @@ describe('Mark Overdue Invoices', function () {
             ->assertSuccessful();
 
         $invoice->refresh();
-        expect($invoice->status)->toBe(Invoice::STATUS_PAID);
+        expect($invoice->status)->toBe(DocumentStatus::Paid);
     });
 
     it('does not mark already overdue invoices again', function () {
@@ -115,7 +116,7 @@ describe('Mark Overdue Invoices', function () {
             ->assertSuccessful();
 
         $invoice->refresh();
-        expect($invoice->status)->toBe(Invoice::STATUS_OVERDUE);
+        expect($invoice->status)->toBe(DocumentStatus::Overdue);
     });
 
 });
@@ -132,13 +133,13 @@ describe('Mark Overdue Bills', function () {
                 'due_date' => now()->subDays(5),
             ]);
 
-        expect($bill->status)->toBe(Bill::STATUS_RECEIVED);
+        expect($bill->status)->toBe(DocumentStatus::Received);
 
         $this->artisan('documents:mark-overdue')
             ->assertSuccessful();
 
         $bill->refresh();
-        expect($bill->status)->toBe(Bill::STATUS_OVERDUE);
+        expect($bill->status)->toBe(DocumentStatus::Overdue);
     });
 
     it('marks partial bills as overdue when past due date', function () {
@@ -151,13 +152,13 @@ describe('Mark Overdue Bills', function () {
                 'due_date' => now()->subDays(10),
             ]);
 
-        expect($bill->status)->toBe(Bill::STATUS_PARTIAL);
+        expect($bill->status)->toBe(DocumentStatus::Partial);
 
         $this->artisan('documents:mark-overdue')
             ->assertSuccessful();
 
         $bill->refresh();
-        expect($bill->status)->toBe(Bill::STATUS_OVERDUE);
+        expect($bill->status)->toBe(DocumentStatus::Overdue);
     });
 
     it('does not mark bills that are not past due', function () {
@@ -174,7 +175,7 @@ describe('Mark Overdue Bills', function () {
             ->assertSuccessful();
 
         $bill->refresh();
-        expect($bill->status)->toBe(Bill::STATUS_RECEIVED);
+        expect($bill->status)->toBe(DocumentStatus::Received);
     });
 
     it('does not mark draft bills as overdue', function () {
@@ -191,7 +192,7 @@ describe('Mark Overdue Bills', function () {
             ->assertSuccessful();
 
         $bill->refresh();
-        expect($bill->status)->toBe(Bill::STATUS_DRAFT);
+        expect($bill->status)->toBe(DocumentStatus::Draft);
     });
 
     it('does not mark paid bills as overdue', function () {
@@ -208,7 +209,7 @@ describe('Mark Overdue Bills', function () {
             ->assertSuccessful();
 
         $bill->refresh();
-        expect($bill->status)->toBe(Bill::STATUS_PAID);
+        expect($bill->status)->toBe(DocumentStatus::Paid);
     });
 
 });
@@ -239,8 +240,8 @@ describe('Dry Run Mode', function () {
         $invoice->refresh();
         $bill->refresh();
 
-        expect($invoice->status)->toBe(Invoice::STATUS_SENT);
-        expect($bill->status)->toBe(Bill::STATUS_RECEIVED);
+        expect($invoice->status)->toBe(DocumentStatus::Sent);
+        expect($bill->status)->toBe(DocumentStatus::Received);
     });
 
 });

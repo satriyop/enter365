@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Accounting\Permission;
+use App\Models\Core\Permission;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;

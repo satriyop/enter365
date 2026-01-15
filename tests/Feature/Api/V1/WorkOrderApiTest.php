@@ -1,13 +1,13 @@
 <?php
 
-use App\Models\Accounting\Bom;
-use App\Models\Accounting\BomItem;
-use App\Models\Accounting\Product;
-use App\Models\Accounting\ProductStock;
-use App\Models\Accounting\Project;
-use App\Models\Accounting\Warehouse;
-use App\Models\Accounting\WorkOrder;
-use App\Models\Accounting\WorkOrderItem;
+use App\Models\Inventory\Product;
+use App\Models\Inventory\ProductStock;
+use App\Models\Inventory\Warehouse;
+use App\Models\Manufacturing\Bom;
+use App\Models\Manufacturing\BomItem;
+use App\Models\Manufacturing\WorkOrder;
+use App\Models\Manufacturing\WorkOrderItem;
+use App\Models\Projects\Project;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;

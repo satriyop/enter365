@@ -1,9 +1,10 @@
 <?php
 
-use App\Models\Accounting\Invoice;
-use App\Models\Accounting\InvoiceItem;
-use App\Models\Accounting\Product;
-use App\Models\Accounting\ProductCategory;
+use App\Models\Inventory\Product;
+use App\Models\Inventory\ProductCategory;
+use App\Models\Inventory\Warehouse;
+use App\Models\Sales\Invoice;
+use App\Models\Sales\InvoiceItem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -280,19 +281,22 @@ describe('Product API', function () {
     });
 
     it('can adjust product stock', function () {
+        $warehouse = Warehouse::factory()->create();
         $product = Product::factory()->create([
             'track_inventory' => true,
             'current_stock' => 50,
         ]);
 
         $response = $this->postJson("/api/v1/products/{$product->id}/adjust-stock", [
+            'warehouse_id' => $warehouse->id,
             'quantity' => 10,
             'reason' => 'Received shipment',
         ]);
 
         $response->assertOk()
             ->assertJsonPath('current_stock', 60)
-            ->assertJsonPath('adjustment', 10);
+            ->assertJsonPath('adjustment', 10)
+            ->assertJsonStructure(['movement_id', 'movement_number']);
 
         $this->assertDatabaseHas('products', [
             'id' => $product->id,
@@ -301,12 +305,14 @@ describe('Product API', function () {
     });
 
     it('can decrease product stock', function () {
+        $warehouse = Warehouse::factory()->create();
         $product = Product::factory()->create([
             'track_inventory' => true,
             'current_stock' => 50,
         ]);
 
         $response = $this->postJson("/api/v1/products/{$product->id}/adjust-stock", [
+            'warehouse_id' => $warehouse->id,
             'quantity' => -20,
         ]);
 
@@ -315,12 +321,14 @@ describe('Product API', function () {
     });
 
     it('prevents negative stock', function () {
+        $warehouse = Warehouse::factory()->create();
         $product = Product::factory()->create([
             'track_inventory' => true,
             'current_stock' => 10,
         ]);
 
         $response = $this->postJson("/api/v1/products/{$product->id}/adjust-stock", [
+            'warehouse_id' => $warehouse->id,
             'quantity' => -20,
         ]);
 
@@ -329,9 +337,11 @@ describe('Product API', function () {
     });
 
     it('cannot adjust stock for non-inventory product', function () {
+        $warehouse = Warehouse::factory()->create();
         $product = Product::factory()->service()->create();
 
         $response = $this->postJson("/api/v1/products/{$product->id}/adjust-stock", [
+            'warehouse_id' => $warehouse->id,
             'quantity' => 10,
         ]);
 

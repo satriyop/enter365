@@ -1,10 +1,10 @@
 <?php
 
-use App\Models\Accounting\Bom;
-use App\Models\Accounting\BomItem;
-use App\Models\Accounting\ComponentBrandMapping;
-use App\Models\Accounting\ComponentStandard;
-use App\Models\Accounting\Product;
+use App\Models\Inventory\Product;
+use App\Models\Manufacturing\Bom;
+use App\Models\Manufacturing\BomItem;
+use App\Models\Manufacturing\ComponentBrandMapping;
+use App\Models\Manufacturing\ComponentStandard;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;

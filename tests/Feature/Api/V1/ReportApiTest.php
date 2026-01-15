@@ -291,21 +291,27 @@ describe('Comparative Reports', function () {
         $cashAccount = Account::where('code', '1-1001')->first();
         $revenueAccount = Account::where('code', '4-1001')->first();
 
-        // Previous year: 10M revenue
+        // Use specific date ranges to avoid issues with default date calculations
+        $currentStart = now()->startOfYear()->toDateString();
+        $currentEnd = now()->toDateString();
+        $previousStart = now()->subYear()->startOfYear()->toDateString();
+        $previousEnd = now()->subYear()->toDateString();
+
+        // Previous year: 10M revenue (within the previous period range)
         $previousEntry = JournalEntry::factory()->posted()->create([
-            'entry_date' => now()->subYear()->startOfYear()->addMonth()->toDateString(),
+            'entry_date' => now()->subYear()->startOfYear()->addDays(5)->toDateString(),
         ]);
         JournalEntryLine::factory()->forEntry($previousEntry)->forAccount($cashAccount)->debit(10000000)->create();
         JournalEntryLine::factory()->forEntry($previousEntry)->forAccount($revenueAccount)->credit(10000000)->create();
 
-        // Current year: 25M revenue
+        // Current year: 25M revenue (within the current period range)
         $currentEntry = JournalEntry::factory()->posted()->create([
-            'entry_date' => now()->startOfYear()->addMonth()->toDateString(),
+            'entry_date' => now()->startOfYear()->addDays(5)->toDateString(),
         ]);
         JournalEntryLine::factory()->forEntry($currentEntry)->forAccount($cashAccount)->debit(25000000)->create();
         JournalEntryLine::factory()->forEntry($currentEntry)->forAccount($revenueAccount)->credit(25000000)->create();
 
-        $response = $this->getJson('/api/v1/reports/income-statement?compare_previous_period=true');
+        $response = $this->getJson("/api/v1/reports/income-statement?compare_previous_period=true&start_date={$currentStart}&end_date={$currentEnd}&previous_start_date={$previousStart}&previous_end_date={$previousEnd}");
 
         $response->assertOk();
 

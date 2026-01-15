@@ -1,9 +1,9 @@
 <?php
 
-use App\Models\Accounting\Bom;
-use App\Models\Accounting\BomVariantGroup;
-use App\Models\Accounting\Quotation;
-use App\Models\Accounting\QuotationVariantOption;
+use App\Models\Manufacturing\Bom;
+use App\Models\Manufacturing\BomVariantGroup;
+use App\Models\Sales\Quotation;
+use App\Models\Sales\QuotationVariantOption;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;

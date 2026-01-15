@@ -1,9 +1,10 @@
 <?php
 
-use App\Models\Accounting\Bom;
-use App\Models\Accounting\BomVariantGroup;
-use App\Models\Accounting\Contact;
-use App\Models\Accounting\SolarProposal;
+use App\Enums\DocumentStatus;
+use App\Models\Contacts\Contact;
+use App\Models\Manufacturing\Bom;
+use App\Models\Manufacturing\BomVariantGroup;
+use App\Models\Solar\SolarProposal;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -405,7 +406,7 @@ describe('Solar Proposal Workflow', function () {
         $proposal = SolarProposal::factory()
             ->withVariantGroup($variantGroup)
             ->create([
-                'status' => SolarProposal::STATUS_SENT,
+                'status' => DocumentStatus::Sent,
                 'sent_at' => now()->subDays(60),
                 'valid_until' => now()->subDays(30),
             ]);

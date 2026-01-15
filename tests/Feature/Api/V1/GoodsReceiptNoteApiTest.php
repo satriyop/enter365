@@ -1,12 +1,13 @@
 <?php
 
-use App\Models\Accounting\GoodsReceiptNote;
-use App\Models\Accounting\GoodsReceiptNoteItem;
-use App\Models\Accounting\Product;
-use App\Models\Accounting\ProductStock;
-use App\Models\Accounting\PurchaseOrder;
-use App\Models\Accounting\PurchaseOrderItem;
-use App\Models\Accounting\Warehouse;
+use App\Enums\DocumentStatus;
+use App\Models\Inventory\Product;
+use App\Models\Inventory\ProductStock;
+use App\Models\Inventory\Warehouse;
+use App\Models\Purchasing\GoodsReceiptNote;
+use App\Models\Purchasing\GoodsReceiptNoteItem;
+use App\Models\Purchasing\PurchaseOrder;
+use App\Models\Purchasing\PurchaseOrderItem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -403,7 +404,7 @@ describe('GRN Integration with Purchase Order', function () {
 
         // Verify PO status changed to received
         $po->refresh();
-        expect($po->status)->toBe('received');
+        expect($po->status)->toBe(DocumentStatus::Received);
     });
 
     it('updates purchase order to partial status for partial receiving', function () {
@@ -437,7 +438,7 @@ describe('GRN Integration with Purchase Order', function () {
 
         // Verify PO status changed to partial
         $po->refresh();
-        expect($po->status)->toBe('partial');
+        expect($po->status)->toBe(DocumentStatus::Partial);
 
         // Verify PO item quantity_received updated
         $poItem->refresh();

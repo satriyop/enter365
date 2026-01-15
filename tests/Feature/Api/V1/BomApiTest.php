@@ -1,8 +1,9 @@
 <?php
 
-use App\Models\Accounting\Bom;
-use App\Models\Accounting\BomItem;
-use App\Models\Accounting\Product;
+use App\Enums\DocumentStatus;
+use App\Models\Inventory\Product;
+use App\Models\Manufacturing\Bom;
+use App\Models\Manufacturing\BomItem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -252,7 +253,7 @@ describe('BOM Workflow', function () {
             ->assertJsonPath('data.status', 'active');
 
         $oldBom->refresh();
-        expect($oldBom->status)->toBe('inactive');
+        expect($oldBom->status)->toBe(DocumentStatus::Inactive);
     });
 
     it('can deactivate an active bom', function () {

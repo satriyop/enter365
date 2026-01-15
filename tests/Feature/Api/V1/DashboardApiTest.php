@@ -1,8 +1,9 @@
 <?php
 
-use App\Models\Accounting\Bill;
-use App\Models\Accounting\Contact;
-use App\Models\Accounting\Invoice;
+use App\Enums\DocumentStatus;
+use App\Models\Contacts\Contact;
+use App\Models\Purchasing\Bill;
+use App\Models\Sales\Invoice;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -66,7 +67,7 @@ describe('Dashboard API', function () {
         $supplier = Contact::factory()->supplier()->create();
 
         Bill::factory()->forContact($supplier)->create([
-            'status' => Bill::STATUS_RECEIVED,
+            'status' => DocumentStatus::Received,
             'total_amount' => 5000000,
             'paid_amount' => 0,
         ]);

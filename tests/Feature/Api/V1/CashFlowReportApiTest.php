@@ -1,12 +1,13 @@
 <?php
 
+use App\Enums\DocumentStatus;
 use App\Models\Accounting\Account;
-use App\Models\Accounting\Bill;
-use App\Models\Accounting\Contact;
-use App\Models\Accounting\Invoice;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Accounting\JournalEntryLine;
-use App\Models\Accounting\Payment;
+use App\Models\Contacts\Contact;
+use App\Models\Purchasing\Bill;
+use App\Models\Sales\Invoice;
+use App\Models\Shared\Payment;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -90,7 +91,7 @@ describe('Cash Flow Statement', function () {
         $bill = Bill::factory()
             ->forContact($supplier)
             ->create([
-                'status' => Bill::STATUS_RECEIVED,
+                'status' => DocumentStatus::Received,
                 'total_amount' => 5000000,
                 'paid_amount' => 0,
             ]);
@@ -133,7 +134,7 @@ describe('Cash Flow Statement', function () {
 
         // Pay to supplier
         $bill = Bill::factory()->forContact($supplier)->create([
-            'status' => Bill::STATUS_RECEIVED,
+            'status' => DocumentStatus::Received,
             'total_amount' => 3000000,
             'paid_amount' => 0,
         ]);
@@ -281,7 +282,7 @@ describe('Daily Cash Movement', function () {
 
         // Payments
         $bill = Bill::factory()->forContact($supplier)->create([
-            'status' => Bill::STATUS_RECEIVED,
+            'status' => DocumentStatus::Received,
             'total_amount' => 4000000,
             'paid_amount' => 0,
         ]);

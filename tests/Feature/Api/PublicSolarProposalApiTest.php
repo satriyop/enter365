@@ -1,9 +1,10 @@
 <?php
 
-use App\Models\Accounting\Bom;
-use App\Models\Accounting\BomVariantGroup;
-use App\Models\Accounting\Contact;
-use App\Models\Accounting\SolarProposal;
+use App\Enums\DocumentStatus;
+use App\Models\Contacts\Contact;
+use App\Models\Manufacturing\Bom;
+use App\Models\Manufacturing\BomVariantGroup;
+use App\Models\Solar\SolarProposal;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -104,7 +105,7 @@ describe('Public Solar Proposal Portal', function () {
             ]);
 
         $this->proposal->refresh();
-        expect($this->proposal->status)->toBe(SolarProposal::STATUS_ACCEPTED);
+        expect($this->proposal->status)->toBe(DocumentStatus::Accepted);
         expect($this->proposal->accepted_at)->not->toBeNull();
     });
 
@@ -135,7 +136,7 @@ describe('Public Solar Proposal Portal', function () {
             ]);
 
         $this->proposal->refresh();
-        expect($this->proposal->status)->toBe(SolarProposal::STATUS_REJECTED);
+        expect($this->proposal->status)->toBe(DocumentStatus::Rejected);
         expect($this->proposal->rejection_reason)->toBe('Harga terlalu mahal');
         expect($this->proposal->rejected_at)->not->toBeNull();
     });
@@ -146,7 +147,7 @@ describe('Public Solar Proposal Portal', function () {
         $response->assertOk();
 
         $this->proposal->refresh();
-        expect($this->proposal->status)->toBe(SolarProposal::STATUS_REJECTED);
+        expect($this->proposal->status)->toBe(DocumentStatus::Rejected);
         expect($this->proposal->rejection_reason)->toBeNull();
     });
 

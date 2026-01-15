@@ -1,9 +1,9 @@
 <?php
 
-use App\Models\Accounting\InventoryMovement;
-use App\Models\Accounting\Product;
-use App\Models\Accounting\ProductStock;
-use App\Models\Accounting\Warehouse;
+use App\Models\Inventory\InventoryMovement;
+use App\Models\Inventory\Product;
+use App\Models\Inventory\ProductStock;
+use App\Models\Inventory\Warehouse;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;

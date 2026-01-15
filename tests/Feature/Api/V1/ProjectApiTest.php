@@ -1,11 +1,11 @@
 <?php
 
-use App\Models\Accounting\Contact;
-use App\Models\Accounting\Project;
-use App\Models\Accounting\ProjectCost;
-use App\Models\Accounting\ProjectRevenue;
-use App\Models\Accounting\Quotation;
-use App\Models\Accounting\QuotationItem;
+use App\Models\Contacts\Contact;
+use App\Models\Projects\Project;
+use App\Models\Projects\ProjectCost;
+use App\Models\Projects\ProjectRevenue;
+use App\Models\Sales\Quotation;
+use App\Models\Sales\QuotationItem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;

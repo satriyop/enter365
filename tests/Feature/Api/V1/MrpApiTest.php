@@ -1,17 +1,17 @@
 <?php
 
-use App\Models\Accounting\Bom;
-use App\Models\Accounting\BomItem;
-use App\Models\Accounting\Contact;
-use App\Models\Accounting\MrpDemand;
-use App\Models\Accounting\MrpRun;
-use App\Models\Accounting\MrpSuggestion;
-use App\Models\Accounting\Product;
-use App\Models\Accounting\ProductStock;
-use App\Models\Accounting\PurchaseOrder;
-use App\Models\Accounting\Warehouse;
-use App\Models\Accounting\WorkOrder;
-use App\Models\Accounting\WorkOrderItem;
+use App\Models\Contacts\Contact;
+use App\Models\Inventory\Product;
+use App\Models\Inventory\ProductStock;
+use App\Models\Inventory\Warehouse;
+use App\Models\Manufacturing\Bom;
+use App\Models\Manufacturing\BomItem;
+use App\Models\Manufacturing\MrpDemand;
+use App\Models\Manufacturing\MrpRun;
+use App\Models\Manufacturing\MrpSuggestion;
+use App\Models\Manufacturing\WorkOrder;
+use App\Models\Manufacturing\WorkOrderItem;
+use App\Models\Purchasing\PurchaseOrder;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -352,7 +352,7 @@ describe('MRP Suggestion Conversion', function () {
             ->assertJsonStructure(['message', 'purchase_order']);
 
         $suggestion->refresh();
-        expect($suggestion->status)->toBe('converted');
+        expect($suggestion->status)->toBe(MrpSuggestion::STATUS_CONVERTED);
         expect($suggestion->converted_to_type)->toBe(PurchaseOrder::class);
     });
 
@@ -383,7 +383,7 @@ describe('MRP Suggestion Conversion', function () {
             ->assertJsonStructure(['message', 'work_order']);
 
         $suggestion->refresh();
-        expect($suggestion->status)->toBe('converted');
+        expect($suggestion->status)->toBe(MrpSuggestion::STATUS_CONVERTED);
         expect($suggestion->converted_to_type)->toBe(WorkOrder::class);
     });
 
@@ -407,7 +407,7 @@ describe('MRP Suggestion Conversion', function () {
             ->assertJsonStructure(['message', 'subcontractor_work_order']);
 
         $suggestion->refresh();
-        expect($suggestion->status)->toBe('converted');
+        expect($suggestion->status)->toBe(MrpSuggestion::STATUS_CONVERTED);
     });
 });
 

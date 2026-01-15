@@ -1,6 +1,6 @@
 <?php
 
-use App\Services\Accounting\SolarCalculationService;
+use App\Services\Solar\SolarCalculationService;
 
 beforeEach(function () {
     $this->service = new SolarCalculationService;

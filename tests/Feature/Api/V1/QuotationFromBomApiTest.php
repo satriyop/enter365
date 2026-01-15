@@ -1,10 +1,10 @@
 <?php
 
-use App\Models\Accounting\Bom;
-use App\Models\Accounting\BomItem;
-use App\Models\Accounting\Contact;
-use App\Models\Accounting\Product;
-use App\Models\Accounting\Quotation;
+use App\Models\Contacts\Contact;
+use App\Models\Inventory\Product;
+use App\Models\Manufacturing\Bom;
+use App\Models\Manufacturing\BomItem;
+use App\Models\Sales\Quotation;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;

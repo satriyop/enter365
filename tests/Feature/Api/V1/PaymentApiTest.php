@@ -1,12 +1,13 @@
 <?php
 
+use App\Enums\DocumentStatus;
 use App\Models\Accounting\Account;
-use App\Models\Accounting\Bill;
-use App\Models\Accounting\BillItem;
-use App\Models\Accounting\Contact;
-use App\Models\Accounting\Invoice;
-use App\Models\Accounting\InvoiceItem;
-use App\Models\Accounting\Payment;
+use App\Models\Contacts\Contact;
+use App\Models\Purchasing\Bill;
+use App\Models\Purchasing\BillItem;
+use App\Models\Sales\Invoice;
+use App\Models\Sales\InvoiceItem;
+use App\Models\Shared\Payment;
 use App\Models\User;
 use App\Services\Accounting\JournalService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -90,7 +91,7 @@ describe('Payment API', function () {
     it('can allocate payment to invoice', function () {
         $customer = Contact::factory()->customer()->create();
         $invoice = Invoice::factory()->forContact($customer)->create([
-            'status' => Invoice::STATUS_SENT,
+            'status' => DocumentStatus::Sent,
             'subtotal' => 1000000,
             'tax_amount' => 110000,
             'total_amount' => 1110000,
@@ -121,13 +122,13 @@ describe('Payment API', function () {
         // Verify invoice paid amount was updated
         $invoice->refresh();
         expect($invoice->paid_amount)->toBe(500000);
-        expect($invoice->status)->toBe(Invoice::STATUS_PARTIAL);
+        expect($invoice->status)->toBe(DocumentStatus::Partial);
     });
 
     it('can allocate payment to bill', function () {
         $supplier = Contact::factory()->supplier()->create();
         $bill = Bill::factory()->forContact($supplier)->create([
-            'status' => Bill::STATUS_RECEIVED,
+            'status' => DocumentStatus::Received,
             'subtotal' => 1000000,
             'tax_amount' => 110000,
             'total_amount' => 1110000,
@@ -157,7 +158,7 @@ describe('Payment API', function () {
         // Verify bill is fully paid
         $bill->refresh();
         expect($bill->paid_amount)->toBe(1110000);
-        expect($bill->status)->toBe(Bill::STATUS_PAID);
+        expect($bill->status)->toBe(DocumentStatus::Paid);
     });
 
     it('validates required fields', function () {

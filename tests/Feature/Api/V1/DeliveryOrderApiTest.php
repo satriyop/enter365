@@ -1,12 +1,12 @@
 <?php
 
-use App\Models\Accounting\Contact;
-use App\Models\Accounting\DeliveryOrder;
-use App\Models\Accounting\DeliveryOrderItem;
-use App\Models\Accounting\Invoice;
-use App\Models\Accounting\InvoiceItem;
-use App\Models\Accounting\Product;
-use App\Models\Accounting\Warehouse;
+use App\Models\Contacts\Contact;
+use App\Models\Inventory\Product;
+use App\Models\Inventory\Warehouse;
+use App\Models\Sales\DeliveryOrder;
+use App\Models\Sales\DeliveryOrderItem;
+use App\Models\Sales\Invoice;
+use App\Models\Sales\InvoiceItem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;

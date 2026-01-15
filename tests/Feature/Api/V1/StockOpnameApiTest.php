@@ -1,10 +1,10 @@
 <?php
 
-use App\Models\Accounting\Product;
-use App\Models\Accounting\ProductStock;
-use App\Models\Accounting\StockOpname;
-use App\Models\Accounting\StockOpnameItem;
-use App\Models\Accounting\Warehouse;
+use App\Models\Inventory\Product;
+use App\Models\Inventory\ProductStock;
+use App\Models\Inventory\StockOpname;
+use App\Models\Inventory\StockOpnameItem;
+use App\Models\Inventory\Warehouse;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;

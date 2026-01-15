@@ -1,11 +1,12 @@
 <?php
 
+use App\Enums\DocumentStatus;
 use App\Models\Accounting\Account;
-use App\Models\Accounting\Bill;
-use App\Models\Accounting\Contact;
-use App\Models\Accounting\DownPayment;
-use App\Models\Accounting\DownPaymentApplication;
-use App\Models\Accounting\Invoice;
+use App\Models\Contacts\Contact;
+use App\Models\Purchasing\Bill;
+use App\Models\Sales\DownPayment;
+use App\Models\Sales\DownPaymentApplication;
+use App\Models\Sales\Invoice;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -226,7 +227,7 @@ describe('Down Payment Apply to Invoice', function () {
             'contact_id' => $contact->id,
             'total_amount' => 15000000,
             'paid_amount' => 0,
-            'status' => 'sent',
+            'status' => DocumentStatus::Sent,
             'receivable_account_id' => $receivableAccount->id,
         ]);
 
@@ -342,7 +343,7 @@ describe('Down Payment Apply to Invoice', function () {
             'contact_id' => $contact->id,
             'total_amount' => 10000000,
             'paid_amount' => 0,
-            'status' => 'sent',
+            'status' => DocumentStatus::Sent,
             'receivable_account_id' => $receivableAccount->id,
         ]);
 
@@ -353,7 +354,7 @@ describe('Down Payment Apply to Invoice', function () {
         $response->assertCreated();
 
         $invoice->refresh();
-        expect($invoice->status)->toBe('paid');
+        expect($invoice->status)->toBe(DocumentStatus::Paid);
     });
 });
 
@@ -373,7 +374,7 @@ describe('Down Payment Apply to Bill', function () {
             'contact_id' => $contact->id,
             'total_amount' => 15000000,
             'paid_amount' => 0,
-            'status' => 'received',
+            'status' => DocumentStatus::Received,
             'payable_account_id' => $payableAccount->id,
         ]);
 
@@ -445,7 +446,7 @@ describe('Down Payment Unapply', function () {
         $invoice->refresh();
 
         expect($downPayment->applied_amount)->toBe(0);
-        expect($downPayment->status)->toBe('active');
+        expect($downPayment->status)->toBe(DownPayment::STATUS_ACTIVE);
         expect($invoice->paid_amount)->toBe(0);
     });
 
@@ -483,7 +484,7 @@ describe('Down Payment Refund', function () {
             ->assertJsonPath('refund_payment.amount', 7000000);
 
         $downPayment->refresh();
-        expect($downPayment->status)->toBe('refunded');
+        expect($downPayment->status)->toBe(DownPayment::STATUS_REFUNDED);
         expect($downPayment->refunded_at)->not->toBeNull();
     });
 
@@ -541,7 +542,7 @@ describe('Down Payment Cancel', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'cancelled');
+            ->assertJsonPath('data.status', DocumentStatus::Cancelled->value);
 
         $downPayment->refresh();
         expect($downPayment->notes)->toContain('Cancelled: Customer cancelled project');
@@ -679,7 +680,7 @@ describe('Down Payment Status Updates', function () {
             'contact_id' => $contact->id,
             'total_amount' => 10000000,
             'paid_amount' => 0,
-            'status' => 'sent',
+            'status' => DocumentStatus::Sent,
             'receivable_account_id' => $receivableAccount->id,
         ]);
 
@@ -690,6 +691,6 @@ describe('Down Payment Status Updates', function () {
         $response->assertCreated();
 
         $downPayment->refresh();
-        expect($downPayment->status)->toBe('fully_applied');
+        expect($downPayment->status)->toBe(DownPayment::STATUS_FULLY_APPLIED);
     });
 });

@@ -2,11 +2,11 @@
 
 use App\Models\Accounting\Account;
 use App\Models\Accounting\BankTransaction;
-use App\Models\Accounting\Contact;
-use App\Models\Accounting\Invoice;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Accounting\JournalEntryLine;
-use App\Models\Accounting\Payment;
+use App\Models\Contacts\Contact;
+use App\Models\Sales\Invoice;
+use App\Models\Shared\Payment;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;

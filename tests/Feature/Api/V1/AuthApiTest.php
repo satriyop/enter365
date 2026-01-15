@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Accounting\Role;
+use App\Models\Core\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;

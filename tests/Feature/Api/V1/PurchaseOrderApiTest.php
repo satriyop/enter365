@@ -1,10 +1,10 @@
 <?php
 
-use App\Models\Accounting\Bill;
-use App\Models\Accounting\Contact;
-use App\Models\Accounting\Product;
-use App\Models\Accounting\PurchaseOrder;
-use App\Models\Accounting\PurchaseOrderItem;
+use App\Models\Contacts\Contact;
+use App\Models\Inventory\Product;
+use App\Models\Purchasing\Bill;
+use App\Models\Purchasing\PurchaseOrder;
+use App\Models\Purchasing\PurchaseOrderItem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;

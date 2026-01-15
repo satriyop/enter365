@@ -1,8 +1,8 @@
 <?php
 
-use App\Models\Accounting\Contact;
-use App\Models\Accounting\Invoice;
-use App\Models\Accounting\RecurringTemplate;
+use App\Models\Contacts\Contact;
+use App\Models\Sales\Invoice;
+use App\Models\Shared\RecurringTemplate;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
