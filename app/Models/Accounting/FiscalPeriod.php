@@ -2,6 +2,9 @@
 
 namespace App\Models\Accounting;
 
+use App\Enums\DocumentStatus;
+use App\Models\Purchasing\Bill;
+use App\Models\Sales\Invoice;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -154,7 +157,7 @@ class FiscalPeriod extends Model
 
         // Check for draft invoices
         $draftInvoices = Invoice::query()
-            ->where('status', Invoice::STATUS_DRAFT)
+            ->where('status', DocumentStatus::Draft)
             ->whereBetween('invoice_date', [$this->start_date, $this->end_date])
             ->count();
         if ($draftInvoices > 0) {
@@ -163,7 +166,7 @@ class FiscalPeriod extends Model
 
         // Check for draft bills
         $draftBills = Bill::query()
-            ->where('status', Bill::STATUS_DRAFT)
+            ->where('status', DocumentStatus::Draft)
             ->whereBetween('bill_date', [$this->start_date, $this->end_date])
             ->count();
         if ($draftBills > 0) {

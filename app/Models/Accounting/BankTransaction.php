@@ -2,6 +2,7 @@
 
 namespace App\Models\Accounting;
 
+use App\Models\Shared\Payment;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
