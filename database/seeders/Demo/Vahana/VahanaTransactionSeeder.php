@@ -2,6 +2,7 @@
 
 namespace Database\Seeders\Demo\Vahana;
 
+use App\Enums\DocumentStatus;
 use App\Models\Accounting\Account;
 use App\Models\Contacts\Contact;
 use App\Models\Inventory\Product;
@@ -180,7 +181,7 @@ class VahanaTransactionSeeder extends Seeder
             'quotation_date' => now()->subDays(rand(1, 30)),
             'valid_until' => now()->addDays(30),
             'subject' => $subject,
-            'status' => Quotation::STATUS_DRAFT,
+            'status' => DocumentStatus::Draft,
             'currency' => 'IDR',
             'exchange_rate' => 1,
             'subtotal' => $subtotal,
@@ -204,13 +205,13 @@ class VahanaTransactionSeeder extends Seeder
 
         // Handle status transitions
         if ($status === 'submitted' || $status === 'approved') {
-            $quotationData['status'] = Quotation::STATUS_SUBMITTED;
+            $quotationData['status'] = DocumentStatus::Submitted;
             $quotationData['submitted_at'] = now()->subDays(rand(1, 5));
             $quotationData['submitted_by'] = $salesUser?->id;
         }
 
         if ($status === 'approved') {
-            $quotationData['status'] = Quotation::STATUS_APPROVED;
+            $quotationData['status'] = DocumentStatus::Approved;
             $quotationData['approved_at'] = now()->subDays(rand(0, 3));
             $quotationData['approved_by'] = User::where('email', 'admin@demo.com')->first()?->id;
         }
@@ -331,7 +332,7 @@ class VahanaTransactionSeeder extends Seeder
 
                 $invoice->update([
                     'paid_amount' => $partialAmount,
-                    'status' => Invoice::STATUS_PARTIAL,
+                    'status' => DocumentStatus::Partial,
                 ]);
             }
         }
@@ -383,10 +384,10 @@ class VahanaTransactionSeeder extends Seeder
         $dueDate = (clone $invoiceDate)->addDays($contact->payment_term_days ?? 30);
 
         $invoiceStatus = match ($status) {
-            'paid' => Invoice::STATUS_PAID,
-            'partial' => Invoice::STATUS_PARTIAL,
-            'overdue' => Invoice::STATUS_OVERDUE,
-            default => Invoice::STATUS_SENT,
+            'paid' => DocumentStatus::Paid,
+            'partial' => DocumentStatus::Partial,
+            'overdue' => DocumentStatus::Overdue,
+            default => DocumentStatus::Sent,
         };
 
         $invoice = Invoice::updateOrCreate(
@@ -532,9 +533,9 @@ class VahanaTransactionSeeder extends Seeder
         $total = $subtotal + $taxAmount;
 
         $poStatus = match ($status) {
-            'approved' => PurchaseOrder::STATUS_APPROVED,
-            'submitted' => PurchaseOrder::STATUS_SUBMITTED,
-            default => PurchaseOrder::STATUS_DRAFT,
+            'approved' => DocumentStatus::Approved,
+            'submitted' => DocumentStatus::Submitted,
+            default => DocumentStatus::Draft,
         };
 
         $poData = [
@@ -659,10 +660,10 @@ class VahanaTransactionSeeder extends Seeder
         $woNumber = 'WO-'.now()->format('Ym').'-'.str_pad(self::$woSeq, 4, '0', STR_PAD_LEFT);
 
         $woStatus = match ($status) {
-            'completed' => WorkOrder::STATUS_COMPLETED,
-            'in_progress' => WorkOrder::STATUS_IN_PROGRESS,
-            'confirmed' => WorkOrder::STATUS_CONFIRMED,
-            default => WorkOrder::STATUS_DRAFT,
+            'completed' => DocumentStatus::Completed,
+            'in_progress' => DocumentStatus::InProgress,
+            'confirmed' => DocumentStatus::Confirmed,
+            default => DocumentStatus::Draft,
         };
 
         $completedQty = $status === 'completed' ? $quantity : ($status === 'in_progress' ? (int) ($quantity * 0.3) : 0);

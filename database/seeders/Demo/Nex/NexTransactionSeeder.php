@@ -2,6 +2,7 @@
 
 namespace Database\Seeders\Demo\Nex;
 
+use App\Enums\DocumentStatus;
 use App\Models\Contacts\Contact;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomVariantGroup;
@@ -73,7 +74,7 @@ class NexTransactionSeeder extends Seeder
                 'reference' => 'RFQ-PIK-2024-001',
                 'quotation_type' => Quotation::TYPE_MULTI_OPTION,
                 'variant_group_id' => $variantGroup->id,
-                'status' => Quotation::STATUS_SUBMITTED,
+                'status' => DocumentStatus::Submitted,
                 'currency' => 'IDR',
                 'exchange_rate' => 1,
                 'subtotal' => 0, // Will be calculated based on selected variant
@@ -224,7 +225,7 @@ class NexTransactionSeeder extends Seeder
                     'valid_until' => now()->addDays(30),
                     'subject' => 'PLTS Rooftop 30 kWp untuk Cold Storage',
                     'quotation_type' => Quotation::TYPE_SINGLE,
-                    'status' => Quotation::STATUS_APPROVED,
+                    'status' => DocumentStatus::Approved,
                     'currency' => 'IDR',
                     'exchange_rate' => 1,
                     'subtotal' => $sellingPrice,

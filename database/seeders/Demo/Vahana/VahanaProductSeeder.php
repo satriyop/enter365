@@ -2,6 +2,7 @@
 
 namespace Database\Seeders\Demo\Vahana;
 
+use App\Enums\DocumentStatus;
 use App\Models\Accounting\Account;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\ProductCategory;
@@ -643,7 +644,7 @@ class VahanaProductSeeder extends Seeder
                 'product_id' => $product->id,
                 'output_quantity' => 1,
                 'output_unit' => 'unit',
-                'status' => Bom::STATUS_ACTIVE,
+                'status' => DocumentStatus::Active,
                 'version' => '1.0',
             ]
         );
@@ -728,7 +729,7 @@ class VahanaProductSeeder extends Seeder
                 'product_id' => $product->id,
                 'output_quantity' => 1,
                 'output_unit' => 'unit',
-                'status' => Bom::STATUS_ACTIVE,
+                'status' => DocumentStatus::Active,
                 'version' => '1.0',
             ]
         );
@@ -809,7 +810,7 @@ class VahanaProductSeeder extends Seeder
                 'product_id' => $product->id,
                 'output_quantity' => 1,
                 'output_unit' => 'unit',
-                'status' => Bom::STATUS_ACTIVE,
+                'status' => DocumentStatus::Active,
                 'version' => '1.0',
             ]
         );

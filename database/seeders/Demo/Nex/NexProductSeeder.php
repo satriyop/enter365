@@ -2,6 +2,7 @@
 
 namespace Database\Seeders\Demo\Nex;
 
+use App\Enums\DocumentStatus;
 use App\Models\Accounting\Account;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\ProductCategory;
@@ -721,7 +722,7 @@ class NexProductSeeder extends Seeder
                 'product_id' => $product->id,
                 'output_quantity' => 1,
                 'output_unit' => 'system',
-                'status' => Bom::STATUS_ACTIVE,
+                'status' => DocumentStatus::Active,
                 'version' => '1.0',
             ]
         );
@@ -824,7 +825,7 @@ class NexProductSeeder extends Seeder
                 'product_id' => $product->id,
                 'output_quantity' => 1,
                 'output_unit' => 'system',
-                'status' => Bom::STATUS_ACTIVE,
+                'status' => DocumentStatus::Active,
                 'version' => '1.0',
             ]
         );
@@ -940,7 +941,7 @@ class NexProductSeeder extends Seeder
                 'product_id' => $product->id,
                 'description' => 'Perbandingan konfigurasi material untuk sistem PLTS 50 kWp',
                 'comparison_notes' => 'Budget: Growatt + NUSA (hemat biaya), Standard: Huawei + NUSA (balanced), Premium: SMA + LONGi (performa maksimal)',
-                'status' => BomVariantGroup::STATUS_ACTIVE,
+                'status' => DocumentStatus::Active,
             ]
         );
 
@@ -973,7 +974,7 @@ class NexProductSeeder extends Seeder
                 'product_id' => $product->id,
                 'output_quantity' => 1,
                 'output_unit' => 'system',
-                'status' => Bom::STATUS_ACTIVE,
+                'status' => DocumentStatus::Active,
                 'version' => '1.0',
                 'variant_group_id' => $variantGroup->id,
                 'variant_name' => 'Budget',
@@ -1020,7 +1021,7 @@ class NexProductSeeder extends Seeder
                 'product_id' => $product->id,
                 'output_quantity' => 1,
                 'output_unit' => 'system',
-                'status' => Bom::STATUS_ACTIVE,
+                'status' => DocumentStatus::Active,
                 'version' => '1.0',
                 'variant_group_id' => $variantGroup->id,
                 'variant_name' => 'Premium',
