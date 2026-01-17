@@ -65,7 +65,11 @@ readonly class FollowUpManager
 
     public function getPriorityLabel(string $priority): string
     {
-        return QuotationPriority::from($priority)->label();
+        try {
+            return QuotationPriority::from($priority)->label();
+        } catch (\ValueError) {
+            return QuotationPriority::Normal->label();
+        }
     }
 
     public function isHighPriority(string $priority): bool

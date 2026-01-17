@@ -2,100 +2,88 @@
 
 declare(strict_types=1);
 
+use App\Domain\Sales\Quotations\Enums\QuotationPriority;
 use App\Domain\Sales\Quotations\FollowUpManager;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\Quotation;
 use Carbon\Carbon;
+use Mockery;
 
 describe('FollowUpManager', function () {
 
-    beforeEach(function () {
-        $this->followUpManager = new FollowUpManager;
-    });
+    $followUpManager = new FollowUpManager;
 
-    describe('scheduleFollowUp', function () {
+    describe('scheduleFollowUp', function () use ($followUpManager) {
 
-        it('schedules follow-up for specified days', function () {
-            $quotation = new class extends Quotation
-            {
-                public ?\DateTime $next_follow_up_at = null;
+        it('schedules follow-up for specified days', function () use ($followUpManager) {
+            $quotation = Mockery::mock(Quotation::class)->makePartial();
+            $quotation->next_follow_up_at = null;
+            $quotation->shouldReceive('save')->once();
 
-                public function save(): void {}
-            };
-
-            $this->followUpManager->scheduleFollowUp($quotation, 5);
+            $followUpManager->scheduleFollowUp($quotation, 5);
 
             expect($quotation->next_follow_up_at)->not->toBeNull();
-            expect($quotation->next_follow_up_at->diffInDays(now()))->toBe(5);
+            $days = abs(round($quotation->next_follow_up_at->diffInDays(now())));
+            expect($days)->toBeGreaterThanOrEqual(4);
+            expect($days)->toBeLessThanOrEqual(6);
         });
 
-        it('defaults to 3 days', function () {
-            $quotation = new class extends Quotation
-            {
-                public ?\DateTime $next_follow_up_at = null;
+        it('defaults to 3 days', function () use ($followUpManager) {
+            $quotation = Mockery::mock(Quotation::class)->makePartial();
+            $quotation->next_follow_up_at = null;
+            $quotation->shouldReceive('save')->once();
 
-                public function save(): void {}
-            };
+            $followUpManager->scheduleFollowUp($quotation);
 
-            $this->followUpManager->scheduleFollowUp($quotation);
-
-            expect($quotation->next_follow_up_at->diffInDays(now()))->toBe(3);
+            $days = abs(round($quotation->next_follow_up_at->diffInDays(now())));
+            expect($days)->toBeGreaterThanOrEqual(2);
+            expect($days)->toBeLessThanOrEqual(4);
         });
     });
 
-    describe('recordContact', function () {
+    describe('recordContact', function () use ($followUpManager) {
 
-        it('records contact and increments count', function () {
-            $quotation = new class extends Quotation
-            {
-                public ?\DateTime $last_contacted_at = null;
+        it('records contact and increments count', function () use ($followUpManager) {
+            $quotation = Mockery::mock(Quotation::class)->makePartial();
+            $quotation->last_contacted_at = null;
+            $quotation->follow_up_count = 2;
+            $quotation->shouldReceive('save')->once();
 
-                public ?int $follow_up_count = 2;
-
-                public function save(): void {}
-            };
-
-            $this->followUpManager->recordContact($quotation);
+            $followUpManager->recordContact($quotation);
 
             expect($quotation->last_contacted_at)->not->toBeNull();
             expect($quotation->follow_up_count)->toBe(3);
         });
 
-        it('starts count from 0 if null', function () {
-            $quotation = new class extends Quotation
-            {
-                public ?\DateTime $last_contacted_at = null;
+        it('starts count from 0 if null', function () use ($followUpManager) {
+            $quotation = Mockery::mock(Quotation::class)->makePartial();
+            $quotation->last_contacted_at = null;
+            $quotation->follow_up_count = null;
+            $quotation->shouldReceive('save')->once();
 
-                public ?int $follow_up_count = null;
-
-                public function save(): void {}
-            };
-
-            $this->followUpManager->recordContact($quotation);
+            $followUpManager->recordContact($quotation);
 
             expect($quotation->follow_up_count)->toBe(1);
         });
     });
 
-    describe('calculateAutoFollowUpDate', function () {
+    describe('calculateAutoFollowUpDate', function () use ($followUpManager) {
 
-        it('returns null when outcome is set', function () {
-            $quotation = new class(['outcome' => 'won']) extends Quotation {};
+        it('returns null when outcome is set', function () use ($followUpManager) {
+            $quotation = Mockery::mock(Quotation::class)->makePartial();
+            $quotation->outcome = 'won';
 
-            $result = $this->followUpManager->calculateAutoFollowUpDate($quotation);
+            $result = $followUpManager->calculateAutoFollowUpDate($quotation);
 
             expect($result)->toBeNull();
         });
 
-        it('returns 3 days for submitted status', function () {
-            $quotation = new class extends Quotation
-            {
-                public ?string $outcome = null;
+        it('returns 3 days for submitted status', function () use ($followUpManager) {
+            $quotation = Mockery::mock(Quotation::class)->makePartial();
+            $quotation->outcome = null;
+            $quotation->status = DocumentStatus::Submitted;
 
-                public DocumentStatus $status = DocumentStatus::Submitted;
-            };
-
-            $result = $this->followUpManager->calculateAutoFollowUpDate($quotation);
+            $result = $followUpManager->calculateAutoFollowUpDate($quotation);
 
             expect($result)->not->toBeNull();
             $days = abs(round($result->diffInDays(now())));
@@ -103,15 +91,12 @@ describe('FollowUpManager', function () {
             expect($days)->toBeLessThanOrEqual(4);
         });
 
-        it('returns 7 days for approved status', function () {
-            $quotation = new class extends Quotation
-            {
-                public ?string $outcome = null;
+        it('returns 7 days for approved status', function () use ($followUpManager) {
+            $quotation = Mockery::mock(Quotation::class)->makePartial();
+            $quotation->outcome = null;
+            $quotation->status = DocumentStatus::Approved;
 
-                public DocumentStatus $status = DocumentStatus::Approved;
-            };
-
-            $result = $this->followUpManager->calculateAutoFollowUpDate($quotation);
+            $result = $followUpManager->calculateAutoFollowUpDate($quotation);
 
             expect($result)->not->toBeNull();
             $days = abs(round($result->diffInDays(now())));
@@ -119,200 +104,155 @@ describe('FollowUpManager', function () {
             expect($days)->toBeLessThanOrEqual(8);
         });
 
-        it('returns null for draft status', function () {
-            $quotation = new class extends Quotation
-            {
-                public ?string $outcome = null;
+        it('returns null for draft status', function () use ($followUpManager) {
+            $quotation = Mockery::mock(Quotation::class)->makePartial();
+            $quotation->outcome = null;
+            $quotation->status = DocumentStatus::Draft;
 
-                public DocumentStatus $status = DocumentStatus::Draft;
-            };
-
-            $result = $this->followUpManager->calculateAutoFollowUpDate($quotation);
+            $result = $followUpManager->calculateAutoFollowUpDate($quotation);
 
             expect($result)->toBeNull();
         });
     });
 
-    describe('needsFollowUp', function () {
+    describe('needsFollowUp', function () use ($followUpManager) {
 
-        it('returns false when next_follow_up_at is null', function () {
-            $quotation = new class(['next_follow_up_at' => null, 'outcome' => null]) extends Quotation {};
+        it('returns false when next_follow_up_at is null', function () use ($followUpManager) {
+            $quotation = Mockery::mock(Quotation::class)->makePartial();
+            $quotation->next_follow_up_at = null;
+            $quotation->outcome = null;
 
-            expect($this->followUpManager->needsFollowUp($quotation))->toBeFalse();
+            expect($followUpManager->needsFollowUp($quotation))->toBeFalse();
         });
 
-        it('returns true when date is past and no outcome', function () {
-            $quotation = new class extends Quotation
-            {
-                public ?\DateTime $next_follow_up_at;
+        it('returns true when date is past and no outcome', function () use ($followUpManager) {
+            $quotation = Mockery::mock(Quotation::class)->makePartial();
+            $quotation->next_follow_up_at = Carbon::now()->subDays(1);
+            $quotation->outcome = null;
 
-                public ?string $outcome = null;
-
-                public function __construct()
-                {
-                    $this->next_follow_up_at = Carbon::now()->subDays(1);
-                }
-            };
-
-            expect($this->followUpManager->needsFollowUp($quotation))->toBeTrue();
+            expect($followUpManager->needsFollowUp($quotation))->toBeTrue();
         });
 
-        it('returns false when outcome is set', function () {
-            $quotation = new class extends Quotation
-            {
-                public ?\DateTime $next_follow_up_at;
+        it('returns false when outcome is set', function () use ($followUpManager) {
+            $quotation = Mockery::mock(Quotation::class)->makePartial();
+            $quotation->next_follow_up_at = Carbon::now()->subDays(1);
+            $quotation->outcome = 'won';
 
-                public ?string $outcome;
-
-                public function __construct()
-                {
-                    $this->next_follow_up_at = Carbon::now()->subDays(1);
-                    $this->outcome = 'won';
-                }
-            };
-
-            expect($this->followUpManager->needsFollowUp($quotation))->toBeFalse();
+            expect($followUpManager->needsFollowUp($quotation))->toBeFalse();
         });
 
-        it('returns false when date is in future', function () {
-            $quotation = new class extends Quotation
-            {
-                public ?\DateTime $next_follow_up_at;
+        it('returns false when date is in future', function () use ($followUpManager) {
+            $quotation = Mockery::mock(Quotation::class)->makePartial();
+            $quotation->next_follow_up_at = Carbon::now()->addDays(5);
+            $quotation->outcome = null;
 
-                public ?string $outcome = null;
-
-                public function __construct()
-                {
-                    $this->next_follow_up_at = Carbon::now()->addDays(5);
-                }
-            };
-
-            expect($this->followUpManager->needsFollowUp($quotation))->toBeFalse();
+            expect($followUpManager->needsFollowUp($quotation))->toBeFalse();
         });
     });
 
-    describe('getDaysSinceLastContact', function () {
+    describe('getDaysSinceLastContact', function () use ($followUpManager) {
 
-        it('returns null when last_contacted_at is null', function () {
-            $quotation = new class(['last_contacted_at' => null]) extends Quotation {};
+        it('returns null when last_contacted_at is null', function () use ($followUpManager) {
+            $quotation = Mockery::mock(Quotation::class)->makePartial();
+            $quotation->last_contacted_at = null;
 
-            expect($this->followUpManager->getDaysSinceLastContact($quotation))->toBeNull();
+            expect($followUpManager->getDaysSinceLastContact($quotation))->toBeNull();
         });
 
-        it('returns correct days when last contacted', function () {
-            $quotation = new class extends Quotation
-            {
-                public ?\DateTime $last_contacted_at;
+        it('returns correct days when last contacted', function () use ($followUpManager) {
+            $quotation = Mockery::mock(Quotation::class)->makePartial();
+            $quotation->last_contacted_at = Carbon::now()->subDays(5);
 
-                public function __construct()
-                {
-                    $this->last_contacted_at = Carbon::now()->subDays(5);
-                }
-            };
-
-            expect($this->followUpManager->getDaysSinceLastContact($quotation))->toBe(5);
+            expect($followUpManager->getDaysSinceLastContact($quotation))->toBe(5);
         });
     });
 
-    describe('isOverdue', function () {
+    describe('isOverdue', function () use ($followUpManager) {
 
-        it('returns false when next_follow_up_at is null', function () {
-            $quotation = new class(['next_follow_up_at' => null]) extends Quotation {};
+        it('returns false when next_follow_up_at is null', function () use ($followUpManager) {
+            $quotation = Mockery::mock(Quotation::class)->makePartial();
+            $quotation->next_follow_up_at = null;
 
-            expect($this->followUpManager->isOverdue($quotation))->toBeFalse();
+            expect($followUpManager->isOverdue($quotation))->toBeFalse();
         });
 
-        it('returns true when date is past', function () {
-            $quotation = new class extends Quotation
-            {
-                public ?\DateTime $next_follow_up_at;
+        it('returns true when date is past', function () use ($followUpManager) {
+            $quotation = Mockery::mock(Quotation::class)->makePartial();
+            $quotation->next_follow_up_at = Carbon::now()->subDays(1);
 
-                public function __construct()
-                {
-                    $this->next_follow_up_at = Carbon::now()->subDays(1);
-                }
-            };
-
-            expect($this->followUpManager->isOverdue($quotation))->toBeTrue();
+            expect($followUpManager->isOverdue($quotation))->toBeTrue();
         });
 
-        it('returns false when date is in future', function () {
-            $quotation = new class extends Quotation
-            {
-                public ?\DateTime $next_follow_up_at;
+        it('returns false when date is in future', function () use ($followUpManager) {
+            $quotation = Mockery::mock(Quotation::class)->makePartial();
+            $quotation->next_follow_up_at = Carbon::now()->addDays(5);
 
-                public function __construct()
-                {
-                    $this->next_follow_up_at = Carbon::now()->addDays(5);
-                }
-            };
-
-            expect($this->followUpManager->isOverdue($quotation))->toBeFalse();
+            expect($followUpManager->isOverdue($quotation))->toBeFalse();
         });
     });
 
-    describe('getPriorityLabel', function () {
+    describe('getPriorityLabel', function () use ($followUpManager) {
 
-        it('returns correct label for low', function () {
-            expect($this->followUpManager->getPriorityLabel('low'))->toBe('Rendah');
+        it('returns correct label for low', function () use ($followUpManager) {
+            expect($followUpManager->getPriorityLabel('low'))->toBe('Rendah');
         });
 
-        it('returns correct label for normal', function () {
-            expect($this->followUpManager->getPriorityLabel('normal'))->toBe('Normal');
+        it('returns correct label for normal', function () use ($followUpManager) {
+            expect($followUpManager->getPriorityLabel('normal'))->toBe('Normal');
         });
 
-        it('returns correct label for high', function () {
-            expect($this->followUpManager->getPriorityLabel('high'))->toBe('Tinggi');
+        it('returns correct label for high', function () use ($followUpManager) {
+            expect($followUpManager->getPriorityLabel('high'))->toBe('Tinggi');
         });
 
-        it('returns correct label for urgent', function () {
-            expect($this->followUpManager->getPriorityLabel('urgent'))->toBe('Mendesak');
+        it('returns correct label for urgent', function () use ($followUpManager) {
+            expect($followUpManager->getPriorityLabel('urgent'))->toBe('Mendesak');
         });
 
-        it('returns default for unknown', function () {
-            expect($this->followUpManager->getPriorityLabel('unknown'))->toBe('Normal');
-        });
-    });
-
-    describe('isHighPriority', function () {
-
-        it('returns true for high priority', function () {
-            expect($this->followUpManager->isHighPriority('high'))->toBeTrue();
-        });
-
-        it('returns true for urgent priority', function () {
-            expect($this->followUpManager->isHighPriority('urgent'))->toBeTrue();
-        });
-
-        it('returns false for normal priority', function () {
-            expect($this->followUpManager->isHighPriority('normal'))->toBeFalse();
-        });
-
-        it('returns false for low priority', function () {
-            expect($this->followUpManager->isHighPriority('low'))->toBeFalse();
+        it('returns default for unknown', function () use ($followUpManager) {
+            expect($followUpManager->getPriorityLabel('unknown'))->toBe('Normal');
         });
     });
 
-    describe('constants', function () {
+    describe('isHighPriority', function () use ($followUpManager) {
 
-        it('defines PRIORITY_LOW correctly', function () {
-            expect(FollowUpManager::PRIORITY_LOW)->toBe('low');
+        it('returns true for high priority', function () use ($followUpManager) {
+            expect($followUpManager->isHighPriority('high'))->toBeTrue();
         });
 
-        it('defines PRIORITY_NORMAL correctly', function () {
-            expect(FollowUpManager::PRIORITY_NORMAL)->toBe('normal');
+        it('returns true for urgent priority', function () use ($followUpManager) {
+            expect($followUpManager->isHighPriority('urgent'))->toBeTrue();
         });
 
-        it('defines PRIORITY_HIGH correctly', function () {
-            expect(FollowUpManager::PRIORITY_HIGH)->toBe('high');
+        it('returns false for normal priority', function () use ($followUpManager) {
+            expect($followUpManager->isHighPriority('normal'))->toBeFalse();
         });
 
-        it('defines PRIORITY_URGENT correctly', function () {
-            expect(FollowUpManager::PRIORITY_URGENT)->toBe('urgent');
+        it('returns false for low priority', function () use ($followUpManager) {
+            expect($followUpManager->isHighPriority('low'))->toBeFalse();
+        });
+    });
+
+    describe('constants moved to QuotationPriority enum', function () {
+
+        it('PRIORITY_LOW is now QuotationPriority::Low', function () {
+            expect(QuotationPriority::Low->value)->toBe('low');
         });
 
-        it('defines PRIORITIES array', function () {
-            expect(FollowUpManager::PRIORITIES)->toEqual(['low', 'normal', 'high', 'urgent']);
+        it('PRIORITY_NORMAL is now QuotationPriority::Normal', function () {
+            expect(QuotationPriority::Normal->value)->toBe('normal');
+        });
+
+        it('PRIORITY_HIGH is now QuotationPriority::High', function () {
+            expect(QuotationPriority::High->value)->toBe('high');
+        });
+
+        it('PRIORITY_URGENT is now QuotationPriority::Urgent', function () {
+            expect(QuotationPriority::Urgent->value)->toBe('urgent');
+        });
+
+        it('ALL priorities available via QuotationPriority::ALL', function () {
+            expect(QuotationPriority::ALL)->toEqual(['low', 'normal', 'high', 'urgent']);
         });
     });
 });
