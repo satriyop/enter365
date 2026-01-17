@@ -8,6 +8,7 @@ use App\Contracts\Services\Domains\QuotationNumberGeneratorInterface;
 use App\Contracts\Services\Domains\QuotationServiceInterface;
 use App\Domain\Sales\Quotations\DiscountCalculator;
 use App\Domain\Sales\Quotations\Enums\QuotationType;
+use App\Domain\Sales\Quotations\QuotationDefaults;
 use App\Domain\Sales\Quotations\TaxCalculator;
 use App\Enums\DocumentStatus;
 use App\Models\Manufacturing\Bom;
@@ -23,7 +24,8 @@ class QuotationService implements QuotationServiceInterface
 {
     public function __construct(
         private QuotationConversionService $conversionService,
-        private QuotationNumberGeneratorInterface $numberGenerator
+        private QuotationNumberGeneratorInterface $numberGenerator,
+        private QuotationDefaults $defaults
     ) {}
 
     /**
@@ -40,40 +42,13 @@ class QuotationService implements QuotationServiceInterface
             $items = $data['items'] ?? [];
             unset($data['items']);
 
-            // Set defaults
-            $data['quotation_number'] = $this->numberGenerator->generateQuotationNumber();
-            $data['status'] = DocumentStatus::Draft;
-            $data['currency'] = $data['currency'] ?? 'IDR';
-            $data['exchange_rate'] = $data['exchange_rate'] ?? 1;
-            $taxRate = (float) ($data['tax_rate'] ?? config('accounting.tax.default_rate', 11.00));
-            $data['tax_rate'] = $taxRate;
+            $defaults = $this->defaults->getForCreate($data, $userId);
+            $defaults['quotation_number'] = $this->numberGenerator->generateQuotationNumber();
+            $taxRate = $defaults['tax_rate'];
 
-            // Set validity if not provided
-            if (empty($data['valid_until'])) {
-                $quotationDate = $data['quotation_date'] ?? now();
-                $validityDays = config('accounting.quotation.default_validity_days', 30);
-                $data['valid_until'] = now()->parse($quotationDate)->addDays($validityDays);
-            }
+            $quotation = Quotation::create($defaults);
 
-            // Set default terms if not provided
-            if (empty($data['terms_conditions'])) {
-                $data['terms_conditions'] = Quotation::getDefaultTermsConditions();
-            }
-
-            // Create quotation with zero totals first
-            $data['subtotal'] = 0;
-            $data['discount_amount'] = 0;
-            $data['tax_amount'] = 0;
-            $data['total'] = 0;
-            $data['base_currency_total'] = 0;
-            $data['created_by'] = $userId;
-
-            $quotation = Quotation::create($data);
-
-            // Create items
             $this->createItems($quotation, $items);
-
-            // Calculate totals using domain calculators
             $this->calculateTotals($quotation, $taxRate);
 
             return $quotation->load('items', 'contact');
@@ -413,33 +388,11 @@ class QuotationService implements QuotationServiceInterface
             $originalId = $quotation->original_quotation_id ?? $quotation->id;
             $nextRevision = $this->numberGenerator->getNextRevisionNumber($quotation);
 
-            // Create new quotation as revision
-            $newQuotation = Quotation::create([
-                'quotation_number' => $quotation->quotation_number,
-                'revision' => $nextRevision,
-                'contact_id' => $quotation->contact_id,
-                'quotation_date' => now(),
-                'valid_until' => now()->addDays(config('accounting.quotation.default_validity_days', 30)),
-                'reference' => $quotation->reference,
-                'subject' => $quotation->subject,
-                'status' => DocumentStatus::Draft,
-                'currency' => $quotation->currency,
-                'exchange_rate' => $quotation->exchange_rate,
-                'subtotal' => $quotation->subtotal,
-                'discount_type' => $quotation->discount_type,
-                'discount_value' => $quotation->discount_value,
-                'discount_amount' => $quotation->discount_amount,
-                'tax_rate' => $quotation->tax_rate,
-                'tax_amount' => $quotation->tax_amount,
-                'total' => $quotation->total,
-                'base_currency_total' => $quotation->base_currency_total,
-                'notes' => $quotation->notes,
-                'terms_conditions' => $quotation->terms_conditions,
-                'original_quotation_id' => $originalId,
-                'created_by' => auth()->id(),
-            ]);
+            $defaults = $this->defaults->forRevision($quotation, $originalId, $nextRevision);
+            $defaults['created_by'] = auth()->id();
 
-            // Copy items
+            $newQuotation = Quotation::create($defaults);
+
             foreach ($quotation->items as $item) {
                 QuotationItem::create([
                     'quotation_id' => $newQuotation->id,
@@ -476,31 +429,12 @@ class QuotationService implements QuotationServiceInterface
     public function duplicate(Quotation $quotation): Quotation
     {
         return DB::transaction(function () use ($quotation) {
-            $newQuotation = Quotation::create([
-                'quotation_number' => $this->numberGenerator->generateQuotationNumber(),
-                'revision' => 0,
-                'contact_id' => $quotation->contact_id,
-                'quotation_date' => now(),
-                'valid_until' => now()->addDays(config('accounting.quotation.default_validity_days', 30)),
-                'reference' => null,
-                'subject' => $quotation->subject,
-                'status' => DocumentStatus::Draft,
-                'currency' => $quotation->currency,
-                'exchange_rate' => $quotation->exchange_rate,
-                'subtotal' => $quotation->subtotal,
-                'discount_type' => $quotation->discount_type,
-                'discount_value' => $quotation->discount_value,
-                'discount_amount' => $quotation->discount_amount,
-                'tax_rate' => $quotation->tax_rate,
-                'tax_amount' => $quotation->tax_amount,
-                'total' => $quotation->total,
-                'base_currency_total' => $quotation->base_currency_total,
-                'notes' => $quotation->notes,
-                'terms_conditions' => $quotation->terms_conditions,
-                'created_by' => auth()->id(),
-            ]);
+            $defaults = $this->defaults->forDuplication($quotation);
+            $defaults['quotation_number'] = $this->numberGenerator->generateQuotationNumber();
+            $defaults['created_by'] = auth()->id();
 
-            // Copy items
+            $newQuotation = Quotation::create($defaults);
+
             foreach ($quotation->items as $item) {
                 QuotationItem::create([
                     'quotation_id' => $newQuotation->id,
