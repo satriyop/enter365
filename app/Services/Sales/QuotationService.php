@@ -9,13 +9,12 @@ use App\Contracts\Services\Domains\QuotationServiceInterface;
 use App\Domain\Sales\Quotations\DiscountCalculator;
 use App\Domain\Sales\Quotations\Enums\QuotationType;
 use App\Domain\Sales\Quotations\QuotationDefaults;
+use App\Domain\Sales\Quotations\QuotationItemCreator;
 use App\Domain\Sales\Quotations\TaxCalculator;
 use App\Enums\DocumentStatus;
 use App\Models\Manufacturing\Bom;
-use App\Models\Manufacturing\BomItem;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\Quotation;
-use App\Models\Sales\QuotationItem;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -25,7 +24,8 @@ class QuotationService implements QuotationServiceInterface
     public function __construct(
         private QuotationConversionService $conversionService,
         private QuotationNumberGeneratorInterface $numberGenerator,
-        private QuotationDefaults $defaults
+        private QuotationDefaults $defaults,
+        private QuotationItemCreator $itemCreator
     ) {}
 
     /**
@@ -48,7 +48,7 @@ class QuotationService implements QuotationServiceInterface
 
             $quotation = Quotation::create($defaults);
 
-            $this->createItems($quotation, $items);
+            $this->itemCreator->createItems($quotation, $items);
             $this->calculateTotals($quotation, $taxRate);
 
             return $quotation->load('items', 'contact');
@@ -193,9 +193,9 @@ class QuotationService implements QuotationServiceInterface
 
             // Create items
             if ($expandItems) {
-                $this->createItemsFromBomExpanded($quotation, $bom, $marginPercent);
+                $this->itemCreator->createFromBomExpanded($quotation, $bom, $marginPercent);
             } else {
-                $this->createItemsFromBomSingle($quotation, $bom, $sellingPrice);
+                $this->itemCreator->createFromBomSingle($quotation, $bom, $sellingPrice);
             }
 
             // Calculate totals using domain calculators
@@ -204,85 +204,6 @@ class QuotationService implements QuotationServiceInterface
 
             return $quotation->load('items', 'contact');
         });
-    }
-
-    /**
-     * Create quotation items by expanding BOM items (detailed view).
-     */
-    private function createItemsFromBomExpanded(Quotation $quotation, Bom $bom, float $marginPercent): void
-    {
-        $sortOrder = 0;
-        $multiplier = 1 + ($marginPercent / 100);
-
-        foreach ($bom->items as $bomItem) {
-            // Calculate selling price with margin
-            $unitPrice = (int) round($bomItem->unit_cost * $multiplier);
-            $quantity = (float) $bomItem->quantity;
-            $lineTotal = (int) round($quantity * $unitPrice);
-
-            // Get description
-            $description = $bomItem->description;
-            if ($bomItem->product) {
-                $description = $bomItem->product->name;
-                if ($bomItem->description) {
-                    $description .= ' - '.$bomItem->description;
-                }
-            }
-
-            // Add type indicator for clarity
-            $typeLabel = match ($bomItem->type) {
-                BomItem::TYPE_MATERIAL => '[Material]',
-                BomItem::TYPE_LABOR => '[Jasa]',
-                BomItem::TYPE_OVERHEAD => '[Overhead]',
-                default => '',
-            };
-
-            QuotationItem::create([
-                'quotation_id' => $quotation->id,
-                'product_id' => $bomItem->product_id,
-                'description' => trim("{$typeLabel} {$description}"),
-                'quantity' => $quantity,
-                'unit' => $bomItem->unit ?? 'unit',
-                'unit_price' => $unitPrice,
-                'discount_percent' => 0,
-                'discount_amount' => 0,
-                'tax_rate' => $quotation->tax_rate,
-                'tax_amount' => (int) round($lineTotal * ($quotation->tax_rate / 100)),
-                'line_total' => $lineTotal,
-                'sort_order' => $sortOrder++,
-                'notes' => $bomItem->notes,
-            ]);
-        }
-    }
-
-    /**
-     * Create single quotation item from BOM (simplified view for customer).
-     */
-    private function createItemsFromBomSingle(Quotation $quotation, Bom $bom, int $sellingPrice): void
-    {
-        // Build description from BOM product
-        $description = $bom->product?->name ?? $bom->name;
-        if ($bom->variant_name) {
-            $description .= ' ('.$bom->variant_name.')';
-        }
-
-        $taxAmount = (int) round($sellingPrice * ($quotation->tax_rate / 100));
-
-        QuotationItem::create([
-            'quotation_id' => $quotation->id,
-            'product_id' => $bom->product_id,
-            'description' => $description,
-            'quantity' => (float) $bom->output_quantity ?? 1,
-            'unit' => $bom->output_unit ?? 'system',
-            'unit_price' => $sellingPrice,
-            'discount_percent' => 0,
-            'discount_amount' => 0,
-            'tax_rate' => $quotation->tax_rate,
-            'tax_amount' => $taxAmount,
-            'line_total' => $sellingPrice,
-            'sort_order' => 0,
-            'notes' => $bom->description,
-        ]);
     }
 
     /**
@@ -303,12 +224,10 @@ class QuotationService implements QuotationServiceInterface
             $quotation->update($data);
 
             if ($items !== null) {
-                // Delete existing items and recreate
                 $quotation->items()->delete();
-                $this->createItems($quotation, $items);
+                $this->itemCreator->createItems($quotation, $items);
             }
 
-            // Recalculate totals using domain calculators
             $quotation->refresh();
             $this->calculateTotals($quotation, (float) $quotation->tax_rate);
 
@@ -393,23 +312,7 @@ class QuotationService implements QuotationServiceInterface
 
             $newQuotation = Quotation::create($defaults);
 
-            foreach ($quotation->items as $item) {
-                QuotationItem::create([
-                    'quotation_id' => $newQuotation->id,
-                    'product_id' => $item->product_id,
-                    'description' => $item->description,
-                    'quantity' => $item->quantity,
-                    'unit' => $item->unit,
-                    'unit_price' => $item->unit_price,
-                    'discount_percent' => $item->discount_percent,
-                    'discount_amount' => $item->discount_amount,
-                    'tax_rate' => $item->tax_rate,
-                    'tax_amount' => $item->tax_amount,
-                    'line_total' => $item->line_total,
-                    'sort_order' => $item->sort_order,
-                    'notes' => $item->notes,
-                ]);
-            }
+            $this->itemCreator->copyFromQuotation($quotation, $newQuotation);
 
             return $newQuotation->load('items', 'contact');
         });
@@ -435,23 +338,7 @@ class QuotationService implements QuotationServiceInterface
 
             $newQuotation = Quotation::create($defaults);
 
-            foreach ($quotation->items as $item) {
-                QuotationItem::create([
-                    'quotation_id' => $newQuotation->id,
-                    'product_id' => $item->product_id,
-                    'description' => $item->description,
-                    'quantity' => $item->quantity,
-                    'unit' => $item->unit,
-                    'unit_price' => $item->unit_price,
-                    'discount_percent' => $item->discount_percent,
-                    'discount_amount' => $item->discount_amount,
-                    'tax_rate' => $item->tax_rate,
-                    'tax_amount' => $item->tax_amount,
-                    'line_total' => $item->line_total,
-                    'sort_order' => $item->sort_order,
-                    'notes' => $item->notes,
-                ]);
-            }
+            $this->itemCreator->copyFromQuotation($quotation, $newQuotation);
 
             return $newQuotation->load('items', 'contact');
         });
@@ -518,43 +405,5 @@ class QuotationService implements QuotationServiceInterface
             'approval_rate' => $approvalRate,
             'conversion_rate' => $conversionRate,
         ];
-    }
-
-    /**
-     * Create quotation items.
-     *
-     * @param  array<int, array<string, mixed>>  $items
-     */
-    private function createItems(Quotation $quotation, array $items): void
-    {
-        foreach ($items as $index => $itemData) {
-            $quantity = $itemData['quantity'] ?? 1;
-            $unitPrice = $itemData['unit_price'] ?? 0;
-            $discountPercent = $itemData['discount_percent'] ?? 0;
-            $taxRate = $itemData['tax_rate'] ?? $quotation->tax_rate;
-
-            $grossAmount = (int) round($quantity * $unitPrice);
-            $discountAmount = $discountPercent > 0
-                ? (int) round($grossAmount * ($discountPercent / 100))
-                : 0;
-            $netAmount = $grossAmount - $discountAmount;
-            $taxAmount = (int) round($netAmount * ($taxRate / 100));
-
-            QuotationItem::create([
-                'quotation_id' => $quotation->id,
-                'product_id' => $itemData['product_id'] ?? null,
-                'description' => $itemData['description'],
-                'quantity' => $quantity,
-                'unit' => $itemData['unit'] ?? 'unit',
-                'unit_price' => $unitPrice,
-                'discount_percent' => $discountPercent,
-                'discount_amount' => $discountAmount,
-                'tax_rate' => $taxRate,
-                'tax_amount' => $taxAmount,
-                'line_total' => $netAmount,
-                'sort_order' => $itemData['sort_order'] ?? $index,
-                'notes' => $itemData['notes'] ?? null,
-            ]);
-        }
     }
 }
