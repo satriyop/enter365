@@ -22,6 +22,11 @@ use InvalidArgumentException;
 
 class QuotationService implements QuotationServiceInterface
 {
+    private const EXPIRABLE_STATUSES = [
+        DocumentStatus::Draft,
+        DocumentStatus::Submitted,
+    ];
+
     public function __construct(
         private QuotationConversionService $conversionService,
         private QuotationNumberGeneratorInterface $numberGenerator,
@@ -297,7 +302,7 @@ class QuotationService implements QuotationServiceInterface
     public function markExpired(): int
     {
         return Quotation::query()
-            ->whereIn('status', [DocumentStatus::Draft, DocumentStatus::Submitted])
+            ->whereIn('status', self::EXPIRABLE_STATUSES)
             ->where('valid_until', '<', now()->startOfDay())
             ->update(['status' => DocumentStatus::Expired]);
     }
