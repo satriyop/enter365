@@ -2,6 +2,7 @@
 
 namespace App\Models\Sales;
 
+use App\Contracts\Services\Domains\QuotationNumberGeneratorInterface;
 use App\Domain\Sales\Quotations\Enums\QuotationOutcome;
 use App\Domain\Sales\Quotations\Enums\QuotationPriority;
 use App\Domain\Sales\Quotations\Enums\QuotationType;
@@ -465,18 +466,6 @@ class Quotation extends Model
     }
 
     /**
-     * Get the full quotation number with revision suffix.
-     */
-    public function getFullNumber(): string
-    {
-        if ($this->revision > 0) {
-            return "{$this->quotation_number}-R{$this->revision}";
-        }
-
-        return $this->quotation_number;
-    }
-
-    /**
      * Get status label in Indonesian.
      */
     public function getStatusLabel(): string
@@ -496,42 +485,11 @@ class Quotation extends Model
     }
 
     /**
-     * Generate the next quotation number.
+     * Get the full quotation number with revision suffix.
      */
-    public static function generateQuotationNumber(): string
+    public function getFullNumber(): string
     {
-        $prefix = 'QUO-'.now()->format('Ym').'-';
-        $lastQuotation = static::query()
-            ->where('quotation_number', 'like', $prefix.'%')
-            ->orderBy('quotation_number', 'desc')
-            ->first();
-
-        if ($lastQuotation) {
-            $lastNumber = (int) substr($lastQuotation->quotation_number, -4);
-            $nextNumber = $lastNumber + 1;
-        } else {
-            $nextNumber = 1;
-        }
-
-        return $prefix.str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
-    }
-
-    /**
-     * Get the next revision number for this quotation.
-     */
-    public function getNextRevisionNumber(): int
-    {
-        // If this is already a revision, find the original
-        $originalId = $this->original_quotation_id ?? $this->id;
-
-        $maxRevision = static::query()
-            ->where(function ($query) use ($originalId) {
-                $query->where('id', $originalId)
-                    ->orWhere('original_quotation_id', $originalId);
-            })
-            ->max('revision');
-
-        return ($maxRevision ?? 0) + 1;
+        return app(QuotationNumberGeneratorInterface::class)->getFullNumber($this);
     }
 
     // ========================================

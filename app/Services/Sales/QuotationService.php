@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Sales;
 
-use App\Contracts\Services\Domain\DocumentNumberGeneratorInterface;
+use App\Contracts\Services\Domains\QuotationNumberGeneratorInterface;
 use App\Contracts\Services\Domains\QuotationServiceInterface;
 use App\Domain\Sales\Quotations\DiscountCalculator;
 use App\Domain\Sales\Quotations\Enums\QuotationType;
@@ -23,7 +23,7 @@ class QuotationService implements QuotationServiceInterface
 {
     public function __construct(
         private QuotationConversionService $conversionService,
-        private DocumentNumberGeneratorInterface $numberGenerator
+        private QuotationNumberGeneratorInterface $numberGenerator
     ) {}
 
     /**
@@ -41,7 +41,7 @@ class QuotationService implements QuotationServiceInterface
             unset($data['items']);
 
             // Set defaults
-            $data['quotation_number'] = $this->numberGenerator->generate('QUO-'.now()->format('Ym').'-', 'quotations', 'quotation_number');
+            $data['quotation_number'] = $this->numberGenerator->generateQuotationNumber();
             $data['status'] = DocumentStatus::Draft;
             $data['currency'] = $data['currency'] ?? 'IDR';
             $data['exchange_rate'] = $data['exchange_rate'] ?? 1;
@@ -191,7 +191,7 @@ class QuotationService implements QuotationServiceInterface
 
             // Create quotation
             $quotation = Quotation::create([
-                'quotation_number' => $this->numberGenerator->generate('QUO-'.now()->format('Ym').'-', 'quotations', 'quotation_number'),
+                'quotation_number' => $this->numberGenerator->generateQuotationNumber(),
                 'revision' => 0,
                 'contact_id' => $data['contact_id'],
                 'quotation_date' => $quotationDate,
@@ -411,7 +411,7 @@ class QuotationService implements QuotationServiceInterface
 
         return DB::transaction(function () use ($quotation) {
             $originalId = $quotation->original_quotation_id ?? $quotation->id;
-            $nextRevision = $quotation->getNextRevisionNumber();
+            $nextRevision = $this->numberGenerator->getNextRevisionNumber($quotation);
 
             // Create new quotation as revision
             $newQuotation = Quotation::create([
@@ -477,7 +477,7 @@ class QuotationService implements QuotationServiceInterface
     {
         return DB::transaction(function () use ($quotation) {
             $newQuotation = Quotation::create([
-                'quotation_number' => $this->numberGenerator->generate('QUO-'.now()->format('Ym').'-', 'quotations', 'quotation_number'),
+                'quotation_number' => $this->numberGenerator->generateQuotationNumber(),
                 'revision' => 0,
                 'contact_id' => $quotation->contact_id,
                 'quotation_date' => now(),
