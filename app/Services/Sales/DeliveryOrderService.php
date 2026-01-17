@@ -2,6 +2,7 @@
 
 namespace App\Services\Sales;
 
+use App\Contracts\Services\Domain\DocumentNumberGeneratorInterface;
 use App\Contracts\Services\Domains\DeliveryOrderServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\DeliveryOrder;
@@ -13,7 +14,8 @@ use Illuminate\Support\Facades\DB;
 class DeliveryOrderService implements DeliveryOrderServiceInterface
 {
     public function __construct(
-        private InventoryService $inventoryService
+        private InventoryService $inventoryService,
+        private DocumentNumberGeneratorInterface $numberGenerator
     ) {}
 
     /**
@@ -25,7 +27,7 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
     {
         return DB::transaction(function () use ($data) {
             $deliveryOrder = new DeliveryOrder($data);
-            $deliveryOrder->do_number = DeliveryOrder::generateDoNumber();
+            $deliveryOrder->do_number = $this->numberGenerator->generate('DO-'.now()->format('Ym').'-', 'delivery_orders', 'do_number');
             $deliveryOrder->save();
 
             // Create items
@@ -55,7 +57,7 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
                 'notes' => $data['notes'] ?? null,
                 'created_by' => $data['created_by'] ?? null,
             ]);
-            $deliveryOrder->do_number = DeliveryOrder::generateDoNumber();
+            $deliveryOrder->do_number = $this->numberGenerator->generate('DO-'.now()->format('Ym').'-', 'delivery_orders', 'do_number');
             $deliveryOrder->save();
 
             // Create items from invoice items

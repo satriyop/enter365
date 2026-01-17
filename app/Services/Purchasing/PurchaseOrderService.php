@@ -2,6 +2,7 @@
 
 namespace App\Services\Purchasing;
 
+use App\Contracts\Services\Domain\DocumentNumberGeneratorInterface;
 use App\Contracts\Services\Domains\PurchaseOrderServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Purchasing\Bill;
@@ -14,9 +15,11 @@ use InvalidArgumentException;
 class PurchaseOrderService implements PurchaseOrderServiceInterface
 {
     public function __construct(
-        private ?PurchaseOrderReceivingService $receivingService = null
+        private ?PurchaseOrderReceivingService $receivingService = null,
+        private ?DocumentNumberGeneratorInterface $numberGenerator = null
     ) {
         $this->receivingService ??= app(PurchaseOrderReceivingService::class);
+        $this->numberGenerator ??= app(DocumentNumberGeneratorInterface::class);
     }
 
     /**
@@ -31,7 +34,7 @@ class PurchaseOrderService implements PurchaseOrderServiceInterface
             unset($data['items']);
 
             // Set defaults
-            $data['po_number'] = PurchaseOrder::generatePoNumber();
+            $data['po_number'] = $this->numberGenerator->generate('PO-'.now()->format('Ym').'-', 'purchase_orders', 'po_number');
             $data['status'] = DocumentStatus::Draft;
             $data['currency'] = $data['currency'] ?? 'IDR';
             $data['exchange_rate'] = $data['exchange_rate'] ?? 1;

@@ -4,45 +4,48 @@ declare(strict_types=1);
 
 namespace App\Services\Sales;
 
+use App\Contracts\Services\Domain\DocumentNumberGeneratorInterface;
 use App\Contracts\Services\Domains\QuotationServiceInterface;
+use App\Domain\Sales\Quotations\DiscountCalculator;
+use App\Domain\Sales\Quotations\TaxCalculator;
 use App\Enums\DocumentStatus;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomItem;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\Quotation;
 use App\Models\Sales\QuotationItem;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
-/**
- * Service for quotation lifecycle management.
- *
- * Handles CRUD operations, workflow transitions, and quotation management.
- * Delegates conversion operations to QuotationConversionService.
- */
 class QuotationService implements QuotationServiceInterface
 {
     public function __construct(
-        private QuotationConversionService $conversionService
+        private QuotationConversionService $conversionService,
+        private DocumentNumberGeneratorInterface $numberGenerator
     ) {}
 
     /**
      * Create a new quotation with items.
      *
      * @param  array<string, mixed>  $data
+     * @param  User|int|null  $user  The user creating the quotation (optional, defaults to auth)
      */
-    public function create(array $data): Quotation
+    public function create(array $data, User|int|null $user = null): Quotation
     {
-        return DB::transaction(function () use ($data) {
+        $userId = $this->resolveUserId($user);
+
+        return DB::transaction(function () use ($data, $userId) {
             $items = $data['items'] ?? [];
             unset($data['items']);
 
             // Set defaults
-            $data['quotation_number'] = Quotation::generateQuotationNumber();
+            $data['quotation_number'] = $this->numberGenerator->generate('QUO-'.now()->format('Ym').'-', 'quotations', 'quotation_number');
             $data['status'] = DocumentStatus::Draft;
             $data['currency'] = $data['currency'] ?? 'IDR';
             $data['exchange_rate'] = $data['exchange_rate'] ?? 1;
-            $data['tax_rate'] = $data['tax_rate'] ?? config('accounting.tax.default_rate', 11.00);
+            $taxRate = (float) ($data['tax_rate'] ?? config('accounting.tax.default_rate', 11.00));
+            $data['tax_rate'] = $taxRate;
 
             // Set validity if not provided
             if (empty($data['valid_until'])) {
@@ -62,20 +65,66 @@ class QuotationService implements QuotationServiceInterface
             $data['tax_amount'] = 0;
             $data['total'] = 0;
             $data['base_currency_total'] = 0;
-            $data['created_by'] = auth()->id();
+            $data['created_by'] = $userId;
 
             $quotation = Quotation::create($data);
 
             // Create items
             $this->createItems($quotation, $items);
 
-            // Calculate totals
-            $quotation->refresh();
-            $quotation->calculateTotals();
-            $quotation->save();
+            // Calculate totals using domain calculators
+            $this->calculateTotals($quotation, $taxRate);
 
             return $quotation->load('items', 'contact');
         });
+    }
+
+    /**
+     * Resolve user ID from various input types.
+     */
+    private function resolveUserId(User|int|null $user): int
+    {
+        if ($user instanceof User) {
+            return $user->id;
+        }
+
+        if (is_int($user)) {
+            return $user;
+        }
+
+        return (int) auth()->id();
+    }
+
+    /**
+     * Calculate and update quotation totals using domain calculators.
+     */
+    private function calculateTotals(Quotation $quotation, float $taxRate): void
+    {
+        $subtotal = $quotation->items->sum('line_total');
+
+        $discountCalculator = new DiscountCalculator(
+            $quotation->discount_type,
+            (float) ($quotation->discount_value ?? 0)
+        );
+        $discountAmount = $discountCalculator->calculate($subtotal);
+
+        // Calculate tax on (subtotal - discount)
+        $taxableAmount = $subtotal - $discountAmount;
+        $taxCalculator = new TaxCalculator((int) round($taxRate));
+        $taxAmount = $taxCalculator->calculateFromSubtotal($taxableAmount);
+
+        $total = $taxableAmount + $taxAmount;
+
+        $baseCurrencyTotal = $quotation->currency !== 'IDR' && $quotation->exchange_rate > 0
+            ? (int) round($total * $quotation->exchange_rate)
+            : $total;
+
+        $quotation->subtotal = $subtotal;
+        $quotation->discount_amount = $discountAmount;
+        $quotation->tax_amount = $taxAmount;
+        $quotation->total = $total;
+        $quotation->base_currency_total = $baseCurrencyTotal;
+        $quotation->save();
     }
 
     /**
@@ -141,7 +190,7 @@ class QuotationService implements QuotationServiceInterface
 
             // Create quotation
             $quotation = Quotation::create([
-                'quotation_number' => Quotation::generateQuotationNumber(),
+                'quotation_number' => $this->numberGenerator->generate('QUO-'.now()->format('Ym').'-', 'quotations', 'quotation_number'),
                 'revision' => 0,
                 'contact_id' => $data['contact_id'],
                 'quotation_date' => $quotationDate,
@@ -173,10 +222,9 @@ class QuotationService implements QuotationServiceInterface
                 $this->createItemsFromBomSingle($quotation, $bom, $sellingPrice);
             }
 
-            // Calculate totals
+            // Calculate totals using domain calculators
             $quotation->refresh();
-            $quotation->calculateTotals();
-            $quotation->save();
+            $this->calculateTotals($quotation, (float) $quotation->tax_rate);
 
             return $quotation->load('items', 'contact');
         });
@@ -284,10 +332,9 @@ class QuotationService implements QuotationServiceInterface
                 $this->createItems($quotation, $items);
             }
 
-            // Recalculate totals
+            // Recalculate totals using domain calculators
             $quotation->refresh();
-            $quotation->calculateTotals();
-            $quotation->save();
+            $this->calculateTotals($quotation, (float) $quotation->tax_rate);
 
             return $quotation->load('items', 'contact');
         });
@@ -429,7 +476,7 @@ class QuotationService implements QuotationServiceInterface
     {
         return DB::transaction(function () use ($quotation) {
             $newQuotation = Quotation::create([
-                'quotation_number' => Quotation::generateQuotationNumber(),
+                'quotation_number' => $this->numberGenerator->generate('QUO-'.now()->format('Ym').'-', 'quotations', 'quotation_number'),
                 'revision' => 0,
                 'contact_id' => $quotation->contact_id,
                 'quotation_date' => now(),

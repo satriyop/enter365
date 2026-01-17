@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services\Purchasing;
 
+use App\Contracts\Services\Accounting\JournalServiceInterface;
+use App\Contracts\Services\Domain\DocumentNumberGeneratorInterface;
 use App\Contracts\Services\Domains\BillServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Purchasing\Bill;
 use App\Models\Purchasing\BillItem;
-use App\Services\Accounting\JournalService;
 use App\Services\Base\AbstractDocumentService;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
@@ -16,7 +17,8 @@ use InvalidArgumentException;
 class BillService extends AbstractDocumentService implements BillServiceInterface
 {
     public function __construct(
-        private JournalService $journalService
+        private JournalServiceInterface $journalService,
+        private DocumentNumberGeneratorInterface $numberGenerator
     ) {}
 
     protected function getModelClass(): string
@@ -31,7 +33,9 @@ class BillService extends AbstractDocumentService implements BillServiceInterfac
 
     protected function generateDocumentNumber(?Model $context = null): string
     {
-        return Bill::generateBillNumber();
+        $prefix = 'BILL-'.now()->format('Ym').'-';
+
+        return $this->numberGenerator->generate($prefix, 'bills', 'bill_number');
     }
 
     protected function getDocumentNumberField(): string

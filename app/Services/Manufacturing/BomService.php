@@ -2,6 +2,7 @@
 
 namespace App\Services\Manufacturing;
 
+use App\Contracts\Services\Domain\DocumentNumberGeneratorInterface;
 use App\Contracts\Services\Domains\BomServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Inventory\Product;
@@ -11,6 +12,10 @@ use Illuminate\Support\Facades\DB;
 
 class BomService implements BomServiceInterface
 {
+    public function __construct(
+        private DocumentNumberGeneratorInterface $numberGenerator
+    ) {}
+
     /**
      * Create a new BOM.
      *
@@ -20,7 +25,7 @@ class BomService implements BomServiceInterface
     {
         return DB::transaction(function () use ($data) {
             $bom = new Bom($data);
-            $bom->bom_number = Bom::generateBomNumber();
+            $bom->bom_number = $this->numberGenerator->generate('BOM-'.now()->format('Ym').'-', 'boms', 'bom_number');
             $bom->save();
 
             // Create items

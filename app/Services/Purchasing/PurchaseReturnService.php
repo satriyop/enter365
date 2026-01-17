@@ -2,6 +2,8 @@
 
 namespace App\Services\Purchasing;
 
+use App\Contracts\Services\Accounting\JournalServiceInterface;
+use App\Contracts\Services\Domain\DocumentNumberGeneratorInterface;
 use App\Contracts\Services\Domains\PurchaseReturnServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Accounting\Account;
@@ -10,7 +12,6 @@ use App\Models\Inventory\Product;
 use App\Models\Purchasing\Bill;
 use App\Models\Purchasing\PurchaseReturn;
 use App\Models\Purchasing\PurchaseReturnItem;
-use App\Services\Accounting\JournalService;
 use App\Services\Inventory\InventoryService;
 use Illuminate\Support\Facades\DB;
 
@@ -18,7 +19,8 @@ class PurchaseReturnService implements PurchaseReturnServiceInterface
 {
     public function __construct(
         private InventoryService $inventoryService,
-        private JournalService $journalService
+        private JournalServiceInterface $journalService,
+        private DocumentNumberGeneratorInterface $numberGenerator
     ) {}
 
     /**
@@ -30,7 +32,7 @@ class PurchaseReturnService implements PurchaseReturnServiceInterface
     {
         return DB::transaction(function () use ($data) {
             $purchaseReturn = new PurchaseReturn($data);
-            $purchaseReturn->return_number = PurchaseReturn::generateReturnNumber();
+            $purchaseReturn->return_number = $this->numberGenerator->generate('PR-'.now()->format('Ym').'-', 'purchase_returns', 'return_number');
             $purchaseReturn->save();
 
             // Create items
@@ -64,7 +66,7 @@ class PurchaseReturnService implements PurchaseReturnServiceInterface
                 'tax_rate' => $bill->tax_rate,
                 'created_by' => $data['created_by'] ?? auth()->id(),
             ]);
-            $purchaseReturn->return_number = PurchaseReturn::generateReturnNumber();
+            $purchaseReturn->return_number = $this->numberGenerator->generate('PR-'.now()->format('Ym').'-', 'purchase_returns', 'return_number');
             $purchaseReturn->save();
 
             // Create items from bill items

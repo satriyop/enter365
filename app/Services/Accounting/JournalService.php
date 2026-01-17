@@ -2,6 +2,7 @@
 
 namespace App\Services\Accounting;
 
+use App\Contracts\Services\Accounting\JournalServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\FiscalPeriod;
@@ -12,7 +13,7 @@ use App\Models\Sales\Invoice;
 use App\Models\Shared\Payment;
 use Illuminate\Support\Facades\DB;
 
-class JournalService
+class JournalService implements JournalServiceInterface
 {
     /**
      * Create a journal entry with lines.

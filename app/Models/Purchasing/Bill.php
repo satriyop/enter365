@@ -2,6 +2,7 @@
 
 namespace App\Models\Purchasing;
 
+use App\Contracts\Services\Domain\InvoiceCalculatorInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\JournalEntry;
@@ -230,11 +231,22 @@ class Bill extends Model
     /**
      * Calculate and update totals from items.
      */
-    public function calculateTotals(): void
+    public function calculateTotals(?InvoiceCalculatorInterface $calculator = null): void
     {
-        $this->subtotal = (int) $this->items()->sum('line_total');
-        $this->tax_amount = (int) round($this->subtotal * ($this->tax_rate / 100));
-        $this->total_amount = $this->subtotal + $this->tax_amount - $this->discount_amount;
+        $calculator ??= app(InvoiceCalculatorInterface::class);
+
+        $lineTotals = $this->items->pluck('line_total')->toArray();
+        $totals = $calculator->calculate(
+            $lineTotals,
+            $this->tax_rate,
+            $this->discount_amount,
+            $this->currency,
+            $this->exchange_rate
+        );
+
+        $this->subtotal = $totals->subtotal;
+        $this->tax_amount = $totals->taxAmount;
+        $this->total_amount = $totals->totalAmount;
 
         // Calculate base currency total if multi-currency
         if ($this->currency !== 'IDR' && $this->exchange_rate > 0) {

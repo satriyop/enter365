@@ -4,20 +4,22 @@ declare(strict_types=1);
 
 namespace App\Services\Sales;
 
+use App\Contracts\Services\Accounting\JournalServiceInterface;
+use App\Contracts\Services\Domain\DocumentNumberGeneratorInterface;
 use App\Contracts\Services\Domains\InvoiceServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Exceptions\Domain\DocumentLockedException;
 use App\Exceptions\Domain\StateTransitionException;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\InvoiceItem;
-use App\Services\Accounting\JournalService;
 use App\Services\Base\AbstractDocumentService;
 use Illuminate\Database\Eloquent\Model;
 
 class InvoiceService extends AbstractDocumentService implements InvoiceServiceInterface
 {
     public function __construct(
-        private JournalService $journalService
+        private JournalServiceInterface $journalService,
+        private DocumentNumberGeneratorInterface $numberGenerator
     ) {}
 
     protected function getModelClass(): string
@@ -32,7 +34,9 @@ class InvoiceService extends AbstractDocumentService implements InvoiceServiceIn
 
     protected function generateDocumentNumber(?Model $context = null): string
     {
-        return Invoice::generateInvoiceNumber();
+        $prefix = 'INV-'.now()->format('Ym').'-';
+
+        return $this->numberGenerator->generate($prefix, 'invoices', 'invoice_number');
     }
 
     protected function getDocumentNumberField(): string

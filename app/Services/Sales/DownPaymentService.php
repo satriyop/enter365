@@ -2,6 +2,7 @@
 
 namespace App\Services\Sales;
 
+use App\Contracts\Services\Accounting\JournalServiceInterface;
 use App\Contracts\Services\Domains\DownPaymentServiceInterface;
 use App\Models\Accounting\Account;
 use App\Models\Purchasing\Bill;
@@ -9,13 +10,14 @@ use App\Models\Sales\DownPayment;
 use App\Models\Sales\DownPaymentApplication;
 use App\Models\Sales\Invoice;
 use App\Models\Shared\Payment;
-use App\Services\Accounting\JournalService;
 use Illuminate\Support\Facades\DB;
 
 class DownPaymentService implements DownPaymentServiceInterface
 {
     public function __construct(
-        private JournalService $journalService
+        private JournalServiceInterface $journalService,
+        private DownPaymentNumberGenerator $dpNumberGenerator,
+        private PaymentNumberGenerator $paymentNumberGenerator
     ) {}
 
     /**
@@ -27,7 +29,7 @@ class DownPaymentService implements DownPaymentServiceInterface
     {
         return DB::transaction(function () use ($data) {
             $downPayment = new DownPayment($data);
-            $downPayment->dp_number = DownPayment::generateDpNumber($data['type']);
+            $downPayment->dp_number = $this->dpNumberGenerator->generate($data['type']);
             $downPayment->save();
 
             // Create journal entry for the down payment
@@ -265,7 +267,7 @@ class DownPaymentService implements DownPaymentServiceInterface
             $paymentType = $downPayment->isReceivable() ? Payment::TYPE_SEND : Payment::TYPE_RECEIVE;
 
             $payment = new Payment([
-                'payment_number' => Payment::generatePaymentNumber($paymentType),
+                'payment_number' => $this->paymentNumberGenerator->generate($paymentType),
                 'type' => $paymentType,
                 'contact_id' => $downPayment->contact_id,
                 'payment_date' => $data['refund_date'] ?? now()->toDateString(),

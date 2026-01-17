@@ -14,17 +14,12 @@ use App\Models\Projects\Project;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
-/**
- * Service for work order lifecycle management.
- *
- * Handles CRUD operations and status transitions, coordinating with
- * WorkOrderMaterialService and WorkOrderCostService for specialized operations.
- */
 class WorkOrderService implements WorkOrderServiceInterface
 {
     public function __construct(
         private WorkOrderMaterialService $materialService,
-        private WorkOrderCostService $costService
+        private WorkOrderCostService $costService,
+        private WorkOrderNumberGenerator $numberGenerator
     ) {}
 
     /**
@@ -38,7 +33,7 @@ class WorkOrderService implements WorkOrderServiceInterface
             $project = isset($data['project_id']) ? Project::find($data['project_id']) : null;
 
             $wo = new WorkOrder($data);
-            $wo->wo_number = WorkOrder::generateWoNumber($project);
+            $wo->wo_number = $this->numberGenerator->generate($project);
             $wo->status = DocumentStatus::Draft;
             $wo->save();
 
@@ -93,7 +88,7 @@ class WorkOrderService implements WorkOrderServiceInterface
                 'notes' => $data['notes'] ?? null,
                 'created_by' => $data['created_by'] ?? auth()->id(),
             ]);
-            $wo->wo_number = WorkOrder::generateWoNumber($project);
+            $wo->wo_number = $this->numberGenerator->generate($project);
             $wo->status = DocumentStatus::Draft;
             $wo->save();
 

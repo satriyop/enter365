@@ -2,6 +2,9 @@
 
 namespace App\Models\Sales;
 
+use App\Domain\Sales\Quotations\FollowUpManager;
+use App\Domain\Sales\Quotations\OutcomeManager;
+use App\Domain\Sales\Quotations\QuotationStateMachine;
 use App\Enums\DocumentStatus;
 use App\Models\Contacts\Contact;
 use App\Models\Manufacturing\Bom;
@@ -407,11 +410,40 @@ class Quotation extends Model
     }
 
     /**
+     * Get the state machine instance for this quotation.
+     */
+    public function stateMachine(): QuotationStateMachine
+    {
+        return QuotationStateMachine::fromQuotation(
+            $this->status,
+            $this->items()->exists(),
+            $this->valid_until,
+            $this->converted_to_invoice_id
+        );
+    }
+
+    /**
+     * Get the outcome manager instance for this quotation.
+     */
+    public function outcomeManager(): OutcomeManager
+    {
+        return new OutcomeManager;
+    }
+
+    /**
+     * Get the follow-up manager instance for this quotation.
+     */
+    public function followUpManager(): FollowUpManager
+    {
+        return new FollowUpManager;
+    }
+
+    /**
      * Check if quotation is editable.
      */
     public function isEditable(): bool
     {
-        return $this->status === DocumentStatus::Draft;
+        return $this->stateMachine()->canEdit();
     }
 
     /**
@@ -419,8 +451,7 @@ class Quotation extends Model
      */
     public function canSubmit(): bool
     {
-        return $this->status === DocumentStatus::Draft
-            && $this->items()->exists();
+        return $this->stateMachine()->canSubmit();
     }
 
     /**
@@ -428,8 +459,7 @@ class Quotation extends Model
      */
     public function canApprove(): bool
     {
-        return $this->status === DocumentStatus::Submitted
-            && ! $this->isExpired();
+        return $this->stateMachine()->canApprove();
     }
 
     /**
@@ -437,7 +467,7 @@ class Quotation extends Model
      */
     public function canReject(): bool
     {
-        return $this->status === DocumentStatus::Submitted;
+        return $this->stateMachine()->canReject();
     }
 
     /**
@@ -445,8 +475,7 @@ class Quotation extends Model
      */
     public function canConvert(): bool
     {
-        return $this->status === DocumentStatus::Approved
-            && $this->converted_to_invoice_id === null;
+        return $this->stateMachine()->canConvert();
     }
 
     /**
@@ -454,11 +483,7 @@ class Quotation extends Model
      */
     public function canRevise(): bool
     {
-        return in_array($this->status, [
-            DocumentStatus::Approved,
-            DocumentStatus::Rejected,
-            DocumentStatus::Expired,
-        ], true);
+        return $this->stateMachine()->canRevise();
     }
 
     /**
@@ -466,11 +491,7 @@ class Quotation extends Model
      */
     public function isExpired(): bool
     {
-        if ($this->status === DocumentStatus::Expired) {
-            return true;
-        }
-
-        return $this->valid_until->isPast();
+        return $this->stateMachine()->isExpired();
     }
 
     /**
@@ -478,7 +499,7 @@ class Quotation extends Model
      */
     public function getDaysUntilExpiry(): int
     {
-        if ($this->valid_until->isPast()) {
+        if ($this->isExpired()) {
             return 0;
         }
 
@@ -503,45 +524,6 @@ class Quotation extends Model
     public function getStatusLabel(): string
     {
         return $this->status->label();
-    }
-
-    /**
-     * Calculate and update totals from items.
-     */
-    public function calculateTotals(): void
-    {
-        $subtotal = 0;
-        $taxAmount = 0;
-
-        foreach ($this->items as $item) {
-            $subtotal += $item->line_total;
-            $taxAmount += $item->tax_amount;
-        }
-
-        $this->subtotal = $subtotal;
-
-        // Apply header-level discount
-        if ($this->discount_type === 'percentage' && $this->discount_value > 0) {
-            $this->discount_amount = (int) round($subtotal * ($this->discount_value / 100));
-        } elseif ($this->discount_type === 'fixed') {
-            $this->discount_amount = (int) $this->discount_value;
-        } else {
-            $this->discount_amount = 0;
-        }
-
-        // Calculate tax on (subtotal - discount)
-        $taxableAmount = $subtotal - $this->discount_amount;
-        $this->tax_amount = (int) round($taxableAmount * ($this->tax_rate / 100));
-
-        // Total
-        $this->total = $taxableAmount + $this->tax_amount;
-
-        // Base currency total
-        if ($this->currency !== 'IDR' && $this->exchange_rate > 0) {
-            $this->base_currency_total = (int) round($this->total * $this->exchange_rate);
-        } else {
-            $this->base_currency_total = $this->total;
-        }
     }
 
     /**
@@ -677,8 +659,7 @@ class Quotation extends Model
      */
     public function scheduleFollowUp(int $daysFromNow = 3): void
     {
-        $this->next_follow_up_at = now()->addDays($daysFromNow);
-        $this->save();
+        $this->followUpManager()->scheduleFollowUp($this, $daysFromNow);
     }
 
     /**
@@ -686,27 +667,15 @@ class Quotation extends Model
      */
     public function recordContact(): void
     {
-        $this->last_contacted_at = now();
-        $this->follow_up_count = ($this->follow_up_count ?? 0) + 1;
-        $this->save();
+        $this->followUpManager()->recordContact($this);
     }
 
     /**
      * Calculate auto follow-up date based on quotation stage.
      */
-    public function calculateAutoFollowUpDate(): ?\DateTime
+    public function calculateAutoFollowUpDate(): ?\DateTimeInterface
     {
-        // If already has outcome, no follow-up needed
-        if ($this->outcome !== null) {
-            return null;
-        }
-
-        // Follow-up schedule based on status and time elapsed
-        return match ($this->status) {
-            DocumentStatus::Submitted => now()->addDays(3)->toDateTime(),
-            DocumentStatus::Approved => now()->addDays(7)->toDateTime(),
-            default => null,
-        };
+        return $this->followUpManager()->calculateAutoFollowUpDate($this);
     }
 
     /**
@@ -714,11 +683,7 @@ class Quotation extends Model
      */
     public function needsFollowUp(): bool
     {
-        if ($this->next_follow_up_at === null) {
-            return false;
-        }
-
-        return $this->next_follow_up_at->isPast() && $this->outcome === null;
+        return $this->followUpManager()->needsFollowUp($this);
     }
 
     /**
@@ -726,11 +691,7 @@ class Quotation extends Model
      */
     public function getDaysSinceLastContact(): ?int
     {
-        if ($this->last_contacted_at === null) {
-            return null;
-        }
-
-        return (int) $this->last_contacted_at->diffInDays(now());
+        return $this->followUpManager()->getDaysSinceLastContact($this);
     }
 
     // ========================================
@@ -744,12 +705,7 @@ class Quotation extends Model
      */
     public function markAsWon(array $data = []): void
     {
-        $this->outcome = self::OUTCOME_WON;
-        $this->won_reason = $data['won_reason'] ?? null;
-        $this->outcome_notes = $data['outcome_notes'] ?? null;
-        $this->outcome_at = now();
-        $this->next_follow_up_at = null; // Clear follow-up when won
-        $this->save();
+        $this->outcomeManager()->markAsWon($this, $data);
     }
 
     /**
@@ -759,13 +715,7 @@ class Quotation extends Model
      */
     public function markAsLost(array $data = []): void
     {
-        $this->outcome = self::OUTCOME_LOST;
-        $this->lost_reason = $data['lost_reason'] ?? null;
-        $this->lost_to_competitor = $data['lost_to_competitor'] ?? null;
-        $this->outcome_notes = $data['outcome_notes'] ?? null;
-        $this->outcome_at = now();
-        $this->next_follow_up_at = null; // Clear follow-up when lost
-        $this->save();
+        $this->outcomeManager()->markAsLost($this, $data);
     }
 
     /**
@@ -773,12 +723,7 @@ class Quotation extends Model
      */
     public function getOutcomeLabel(): ?string
     {
-        return match ($this->outcome) {
-            self::OUTCOME_WON => 'Menang',
-            self::OUTCOME_LOST => 'Kalah',
-            self::OUTCOME_CANCELLED => 'Dibatalkan',
-            default => null,
-        };
+        return $this->outcomeManager()->getOutcomeLabel($this->outcome);
     }
 
     /**

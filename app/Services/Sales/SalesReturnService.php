@@ -2,6 +2,8 @@
 
 namespace App\Services\Sales;
 
+use App\Contracts\Services\Accounting\JournalServiceInterface;
+use App\Contracts\Services\Domain\DocumentNumberGeneratorInterface;
 use App\Contracts\Services\Domains\SalesReturnServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Accounting\Account;
@@ -10,7 +12,6 @@ use App\Models\Inventory\Product;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\SalesReturn;
 use App\Models\Sales\SalesReturnItem;
-use App\Services\Accounting\JournalService;
 use App\Services\Inventory\InventoryService;
 use Illuminate\Support\Facades\DB;
 
@@ -18,7 +19,8 @@ class SalesReturnService implements SalesReturnServiceInterface
 {
     public function __construct(
         private InventoryService $inventoryService,
-        private JournalService $journalService
+        private JournalServiceInterface $journalService,
+        private DocumentNumberGeneratorInterface $numberGenerator
     ) {}
 
     /**
@@ -30,7 +32,7 @@ class SalesReturnService implements SalesReturnServiceInterface
     {
         return DB::transaction(function () use ($data) {
             $salesReturn = new SalesReturn($data);
-            $salesReturn->return_number = SalesReturn::generateReturnNumber();
+            $salesReturn->return_number = $this->numberGenerator->generate('SR-'.now()->format('Ym').'-', 'sales_returns', 'return_number');
             $salesReturn->save();
 
             // Create items
@@ -64,7 +66,7 @@ class SalesReturnService implements SalesReturnServiceInterface
                 'tax_rate' => $invoice->tax_rate,
                 'created_by' => $data['created_by'] ?? auth()->id(),
             ]);
-            $salesReturn->return_number = SalesReturn::generateReturnNumber();
+            $salesReturn->return_number = $this->numberGenerator->generate('SR-'.now()->format('Ym').'-', 'sales_returns', 'return_number');
             $salesReturn->save();
 
             // Create items from invoice items

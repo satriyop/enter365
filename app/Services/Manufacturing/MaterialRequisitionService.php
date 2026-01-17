@@ -13,6 +13,10 @@ use InvalidArgumentException;
 
 class MaterialRequisitionService implements MaterialRequisitionServiceInterface
 {
+    public function __construct(
+        private MaterialRequisitionNumberGenerator $numberGenerator
+    ) {}
+
     /**
      * Create material requisition from work order.
      *
@@ -30,7 +34,7 @@ class MaterialRequisitionService implements MaterialRequisitionServiceInterface
                 'notes' => $data['notes'] ?? null,
                 'requested_by' => $data['requested_by'] ?? auth()->id(),
             ]);
-            $mr->requisition_number = MaterialRequisition::generateRequisitionNumber();
+            $mr->requisition_number = $this->numberGenerator->generate();
             $mr->save();
 
             // Populate items from work order

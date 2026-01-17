@@ -3,21 +3,22 @@
 namespace App\Services\Purchasing;
 
 use App\Contracts\Services\Domains\GoodsReceiptNoteServiceInterface;
+use App\Contracts\Services\Domains\InventoryServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Inventory\Warehouse;
 use App\Models\Purchasing\GoodsReceiptNote;
 use App\Models\Purchasing\GoodsReceiptNoteItem;
 use App\Models\Purchasing\PurchaseOrder;
-use App\Services\Inventory\InventoryService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class GoodsReceiptNoteService implements GoodsReceiptNoteServiceInterface
 {
     public function __construct(
-        private InventoryService $inventoryService,
+        private InventoryServiceInterface $inventoryService,
         private PurchaseOrderService $purchaseOrderService,
-        private PurchaseOrderReceivingService $receivingService
+        private PurchaseOrderReceivingService $receivingService,
+        private GoodsReceiptNoteNumberGenerator $numberGenerator
     ) {}
 
     /**
@@ -27,7 +28,7 @@ class GoodsReceiptNoteService implements GoodsReceiptNoteServiceInterface
     {
         return DB::transaction(function () use ($data) {
             $grn = GoodsReceiptNote::create([
-                'grn_number' => GoodsReceiptNote::generateGrnNumber(),
+                'grn_number' => $this->numberGenerator->generate(),
                 'purchase_order_id' => $data['purchase_order_id'],
                 'warehouse_id' => $data['warehouse_id'],
                 'receipt_date' => $data['receipt_date'] ?? now()->toDateString(),
