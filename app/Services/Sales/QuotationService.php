@@ -90,15 +90,14 @@ class QuotationService implements QuotationServiceInterface
     {
         $subtotal = $quotation->items->sum('line_total');
 
-        $discountCalculator = new DiscountCalculator(
+        $discountAmount = DiscountCalculator::calculate(
             $quotation->discount_type,
-            (float) $quotation->discount_value
+            (float) $quotation->discount_value,
+            $subtotal
         );
-        $discountAmount = $discountCalculator->calculate($subtotal);
 
         $taxableAmount = $subtotal - $discountAmount;
-        $taxCalculator = new TaxCalculator((int) $quotation->tax_rate);
-        $taxAmount = $taxCalculator->calculateFromSubtotal($taxableAmount);
+        $taxAmount = TaxCalculator::calculateFromSubtotal($taxableAmount, (int) $quotation->tax_rate);
 
         $total = $taxableAmount + $taxAmount;
 

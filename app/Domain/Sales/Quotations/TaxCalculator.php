@@ -6,13 +6,9 @@ namespace App\Domain\Sales\Quotations;
 
 use App\Models\Sales\QuotationItem;
 
-readonly class TaxCalculator
+class TaxCalculator
 {
-    public function __construct(
-        public int $taxRate,
-    ) {}
-
-    public function calculateFromItems(iterable $items): int
+    public static function calculateFromItems(iterable $items, int $taxRate = 11): int
     {
         $subtotal = 0;
 
@@ -24,11 +20,11 @@ readonly class TaxCalculator
             }
         }
 
-        return $this->calculateFromSubtotal($subtotal);
+        return self::calculateFromSubtotal($subtotal, $taxRate);
     }
 
-    public function calculateFromSubtotal(int $subtotal): int
+    public static function calculateFromSubtotal(int $subtotal, int $taxRate): int
     {
-        return (int) round($subtotal * ($this->taxRate / 100));
+        return (int) round($subtotal * ($taxRate / 100));
     }
 }
