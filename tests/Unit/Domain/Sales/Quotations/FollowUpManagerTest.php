@@ -7,7 +7,6 @@ use App\Domain\Sales\Quotations\FollowUpManager;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\Quotation;
 use Carbon\Carbon;
-use Mockery;
 
 describe('FollowUpManager', function () {
 
