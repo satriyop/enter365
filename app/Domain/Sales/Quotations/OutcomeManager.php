@@ -4,41 +4,14 @@ declare(strict_types=1);
 
 namespace App\Domain\Sales\Quotations;
 
+use App\Domain\Sales\Quotations\Enums\QuotationOutcome;
 use App\Models\Sales\Quotation;
 
 readonly class OutcomeManager
 {
-    public const OUTCOME_WON = 'won';
-
-    public const OUTCOME_LOST = 'lost';
-
-    public const OUTCOME_CANCELLED = 'cancelled';
-
-    public const WON_REASONS = [
-        'harga_kompetitif' => 'Harga Kompetitif',
-        'kualitas_produk' => 'Kualitas Produk',
-        'layanan_baik' => 'Layanan yang Baik',
-        'waktu_pengiriman' => 'Waktu Pengiriman Cepat',
-        'hubungan_baik' => 'Hubungan Baik dengan Pelanggan',
-        'spesifikasi_sesuai' => 'Spesifikasi Sesuai Kebutuhan',
-        'rekomendasi' => 'Rekomendasi dari Pelanggan Lain',
-        'lainnya' => 'Lainnya',
-    ];
-
-    public const LOST_REASONS = [
-        'harga_tinggi' => 'Harga Terlalu Tinggi',
-        'kalah_kompetitor' => 'Kalah dari Kompetitor',
-        'spesifikasi_tidak_sesuai' => 'Spesifikasi Tidak Sesuai',
-        'waktu_pengiriman_lama' => 'Waktu Pengiriman Terlalu Lama',
-        'proyek_dibatalkan' => 'Proyek Dibatalkan',
-        'tidak_ada_budget' => 'Tidak Ada Budget',
-        'tidak_ada_respon' => 'Tidak Ada Respon dari Pelanggan',
-        'lainnya' => 'Lainnya',
-    ];
-
     public function markAsWon(Quotation $quotation, array $data = []): void
     {
-        $quotation->outcome = self::OUTCOME_WON;
+        $quotation->outcome = QuotationOutcome::Won->value;
         $quotation->won_reason = $data['won_reason'] ?? null;
         $quotation->outcome_notes = $data['outcome_notes'] ?? null;
         $quotation->outcome_at = now();
@@ -48,7 +21,7 @@ readonly class OutcomeManager
 
     public function markAsLost(Quotation $quotation, array $data = []): void
     {
-        $quotation->outcome = self::OUTCOME_LOST;
+        $quotation->outcome = QuotationOutcome::Lost->value;
         $quotation->lost_reason = $data['lost_reason'] ?? null;
         $quotation->lost_to_competitor = $data['lost_to_competitor'] ?? null;
         $quotation->outcome_notes = $data['outcome_notes'] ?? null;
@@ -59,12 +32,11 @@ readonly class OutcomeManager
 
     public function getOutcomeLabel(?string $outcome): ?string
     {
-        return match ($outcome) {
-            self::OUTCOME_WON => 'Menang',
-            self::OUTCOME_LOST => 'Kalah',
-            self::OUTCOME_CANCELLED => 'Dibatalkan',
-            default => null,
-        };
+        if ($outcome === null) {
+            return null;
+        }
+
+        return QuotationOutcome::from($outcome)->label();
     }
 
     public function canMarkAsWon(Quotation $quotation): bool
@@ -80,5 +52,15 @@ readonly class OutcomeManager
     public function hasOutcome(Quotation $quotation): bool
     {
         return $quotation->outcome !== null;
+    }
+
+    public function wonReasons(): array
+    {
+        return QuotationOutcome::WON_REASONS;
+    }
+
+    public function lostReasons(): array
+    {
+        return QuotationOutcome::LOST_REASONS;
     }
 }

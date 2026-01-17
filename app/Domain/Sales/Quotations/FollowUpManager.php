@@ -4,26 +4,12 @@ declare(strict_types=1);
 
 namespace App\Domain\Sales\Quotations;
 
+use App\Domain\Sales\Quotations\Enums\QuotationPriority;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\Quotation;
 
 readonly class FollowUpManager
 {
-    public const PRIORITY_LOW = 'low';
-
-    public const PRIORITY_NORMAL = 'normal';
-
-    public const PRIORITY_HIGH = 'high';
-
-    public const PRIORITY_URGENT = 'urgent';
-
-    public const PRIORITIES = [
-        self::PRIORITY_LOW,
-        self::PRIORITY_NORMAL,
-        self::PRIORITY_HIGH,
-        self::PRIORITY_URGENT,
-    ];
-
     public function scheduleFollowUp(Quotation $quotation, int $daysFromNow = 3): void
     {
         $quotation->next_follow_up_at = now()->addDays($daysFromNow);
@@ -79,17 +65,11 @@ readonly class FollowUpManager
 
     public function getPriorityLabel(string $priority): string
     {
-        return match ($priority) {
-            self::PRIORITY_LOW => 'Rendah',
-            self::PRIORITY_NORMAL => 'Normal',
-            self::PRIORITY_HIGH => 'Tinggi',
-            self::PRIORITY_URGENT => 'Mendesak',
-            default => 'Normal',
-        };
+        return QuotationPriority::from($priority)->label();
     }
 
     public function isHighPriority(string $priority): bool
     {
-        return in_array($priority, [self::PRIORITY_HIGH, self::PRIORITY_URGENT], true);
+        return QuotationPriority::from($priority)->isHigh();
     }
 }
