@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Contracts\Services\Domain;
 
-use App\Services\Domain\InvoiceTotals;
+use App\Domain\Sales\Invoices\InvoiceTotals;
 
 interface InvoiceCalculatorInterface
 {

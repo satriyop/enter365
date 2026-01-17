@@ -7,11 +7,11 @@ namespace App\Providers;
 use App\Contracts\Services\Accounting\JournalServiceInterface;
 use App\Contracts\Services\Domain\DocumentNumberGeneratorInterface;
 use App\Contracts\Services\Domain\InvoiceCalculatorInterface;
+use App\Domain\Sales\Invoices\InvoiceCalculator;
+use App\Domain\Shared\DatabaseBackedNumberGenerator;
 use App\Events\Sales\InvoicePosted;
 use App\Listeners\Sales\PostInvoiceToJournal;
 use App\Services\Accounting\JournalService;
-use App\Services\Domain\DatabaseBackedNumberGenerator;
-use App\Services\Domain\InvoiceCalculator;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
