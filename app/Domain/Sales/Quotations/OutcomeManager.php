@@ -36,7 +36,11 @@ readonly class OutcomeManager
             return null;
         }
 
-        return QuotationOutcome::from($outcome)->label();
+        try {
+            return QuotationOutcome::from($outcome)->label();
+        } catch (\ValueError) {
+            return null;
+        }
     }
 
     public function canMarkAsWon(Quotation $quotation): bool
