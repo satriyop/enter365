@@ -27,6 +27,10 @@ class QuotationService implements QuotationServiceInterface
         DocumentStatus::Submitted,
     ];
 
+    private const DEFAULT_MARGIN_PERCENT = 20;
+
+    private const DEFAULT_VALIDITY_DAYS = 30;
+
     public function __construct(
         private QuotationConversionService $conversionService,
         private QuotationNumberGeneratorInterface $numberGenerator,
@@ -88,13 +92,12 @@ class QuotationService implements QuotationServiceInterface
 
         $discountCalculator = new DiscountCalculator(
             $quotation->discount_type,
-            (float) ($quotation->discount_value ?? 0)
+            (float) $quotation->discount_value
         );
         $discountAmount = $discountCalculator->calculate($subtotal);
 
-        // Calculate tax on (subtotal - discount)
         $taxableAmount = $subtotal - $discountAmount;
-        $taxCalculator = new TaxCalculator((int) round($taxRate));
+        $taxCalculator = new TaxCalculator((int) $quotation->tax_rate);
         $taxAmount = $taxCalculator->calculateFromSubtotal($taxableAmount);
 
         $total = $taxableAmount + $taxAmount;
@@ -138,7 +141,7 @@ class QuotationService implements QuotationServiceInterface
     {
         $bom = $this->validateBomForQuotation($data);
 
-        $marginPercent = $data['margin_percent'] ?? 20;
+        $marginPercent = $data['margin_percent'] ?? self::DEFAULT_MARGIN_PERCENT;
         $expandItems = $data['expand_items'] ?? false;
 
         // Calculate selling price
@@ -260,11 +263,7 @@ class QuotationService implements QuotationServiceInterface
             $defaults = $this->defaults->forRevision($quotation, $originalId, $nextRevision);
             $defaults['created_by'] = auth()->id();
 
-            $newQuotation = Quotation::create($defaults);
-
-            $this->itemCreator->copyFromQuotation($quotation, $newQuotation);
-
-            return $newQuotation->load('items', 'contact');
+            return $this->createQuotationCopy($quotation, $defaults);
         });
     }
 
@@ -286,12 +285,19 @@ class QuotationService implements QuotationServiceInterface
             $defaults['quotation_number'] = $this->numberGenerator->generateQuotationNumber();
             $defaults['created_by'] = auth()->id();
 
-            $newQuotation = Quotation::create($defaults);
-
-            $this->itemCreator->copyFromQuotation($quotation, $newQuotation);
-
-            return $newQuotation->load('items', 'contact');
+            return $this->createQuotationCopy($quotation, $defaults);
         });
+    }
+
+    /**
+     * Create a quotation copy with items copied from source.
+     */
+    private function createQuotationCopy(Quotation $source, array $defaults): Quotation
+    {
+        $newQuotation = Quotation::create($defaults);
+        $this->itemCreator->copyFromQuotation($source, $newQuotation);
+
+        return $newQuotation->load('items', 'contact');
     }
 
     /**
