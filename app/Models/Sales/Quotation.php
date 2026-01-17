@@ -2,6 +2,9 @@
 
 namespace App\Models\Sales;
 
+use App\Domain\Sales\Quotations\Enums\QuotationOutcome;
+use App\Domain\Sales\Quotations\Enums\QuotationPriority;
+use App\Domain\Sales\Quotations\Enums\QuotationType;
 use App\Domain\Sales\Quotations\FollowUpManager;
 use App\Domain\Sales\Quotations\OutcomeManager;
 use App\Domain\Sales\Quotations\QuotationStateMachine;
@@ -23,51 +26,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Quotation extends Model
 {
     use Filterable, HasFactory, SoftDeletes;
-
-    // Win/Loss outcome constants
-    public const OUTCOME_WON = 'won';
-
-    public const OUTCOME_LOST = 'lost';
-
-    public const OUTCOME_CANCELLED = 'cancelled';
-
-    // Won reasons (in Indonesian)
-    public const WON_REASONS = [
-        'harga_kompetitif' => 'Harga Kompetitif',
-        'kualitas_produk' => 'Kualitas Produk',
-        'layanan_baik' => 'Layanan yang Baik',
-        'waktu_pengiriman' => 'Waktu Pengiriman Cepat',
-        'hubungan_baik' => 'Hubungan Baik dengan Pelanggan',
-        'spesifikasi_sesuai' => 'Spesifikasi Sesuai Kebutuhan',
-        'rekomendasi' => 'Rekomendasi dari Pelanggan Lain',
-        'lainnya' => 'Lainnya',
-    ];
-
-    // Lost reasons (in Indonesian)
-    public const LOST_REASONS = [
-        'harga_tinggi' => 'Harga Terlalu Tinggi',
-        'kalah_kompetitor' => 'Kalah dari Kompetitor',
-        'spesifikasi_tidak_sesuai' => 'Spesifikasi Tidak Sesuai',
-        'waktu_pengiriman_lama' => 'Waktu Pengiriman Terlalu Lama',
-        'proyek_dibatalkan' => 'Proyek Dibatalkan',
-        'tidak_ada_budget' => 'Tidak Ada Budget',
-        'tidak_ada_respon' => 'Tidak Ada Respon dari Pelanggan',
-        'lainnya' => 'Lainnya',
-    ];
-
-    // Priority levels
-    public const PRIORITY_LOW = 'low';
-
-    public const PRIORITY_NORMAL = 'normal';
-
-    public const PRIORITY_HIGH = 'high';
-
-    public const PRIORITY_URGENT = 'urgent';
-
-    // Quotation types
-    public const TYPE_SINGLE = 'single';
-
-    public const TYPE_MULTI_OPTION = 'multi_option';
 
     protected $fillable = [
         'quotation_number',
@@ -285,7 +243,7 @@ class Quotation extends Model
      */
     public function isMultiOption(): bool
     {
-        return $this->quotation_type === self::TYPE_MULTI_OPTION;
+        return $this->quotation_type === QuotationType::MultiOption->value;
     }
 
     /**
@@ -625,7 +583,7 @@ class Quotation extends Model
      */
     public function scopeHighPriority(Builder $query): Builder
     {
-        return $query->whereIn('priority', [self::PRIORITY_HIGH, self::PRIORITY_URGENT]);
+        return $query->whereIn('priority', [QuotationPriority::High->value, QuotationPriority::Urgent->value]);
     }
 
     /**
@@ -636,7 +594,7 @@ class Quotation extends Model
      */
     public function scopeWon(Builder $query): Builder
     {
-        return $query->where('outcome', self::OUTCOME_WON);
+        return $query->where('outcome', QuotationOutcome::Won->value);
     }
 
     /**
@@ -647,7 +605,7 @@ class Quotation extends Model
      */
     public function scopeLost(Builder $query): Builder
     {
-        return $query->where('outcome', self::OUTCOME_LOST);
+        return $query->where('outcome', QuotationOutcome::Lost->value);
     }
 
     // ========================================
@@ -731,12 +689,10 @@ class Quotation extends Model
      */
     public function getPriorityLabel(): string
     {
-        return match ($this->priority) {
-            self::PRIORITY_LOW => 'Rendah',
-            self::PRIORITY_NORMAL => 'Normal',
-            self::PRIORITY_HIGH => 'Tinggi',
-            self::PRIORITY_URGENT => 'Mendesak',
-            default => $this->priority ?? 'Normal',
-        };
+        if ($this->priority === null) {
+            return 'Normal';
+        }
+
+        return QuotationPriority::from($this->priority)->label();
     }
 }

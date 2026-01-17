@@ -405,7 +405,7 @@ public function createFromVariantGroup(
     return DB::transaction(function () use ($group, $data) {
         $quotation = Quotation::create([
             'contact_id' => $data['contact_id'],
-            'quotation_type' => Quotation::TYPE_MULTI_OPTION,
+            'quotation_type' => QuotationType::MultiOption->value,
             'bom_variant_group_id' => $group->id,
             'quotation_date' => $data['quotation_date'] ?? now(),
             'valid_until' => $data['valid_until'] ?? now()->addDays(30),

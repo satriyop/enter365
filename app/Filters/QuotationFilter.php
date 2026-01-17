@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filters;
 
+use App\Domain\Sales\Quotations\Enums\QuotationType;
 use App\Filters\Traits\HasDateRangeFilter;
 use App\Filters\Traits\HasSearchFilter;
 use App\Filters\Traits\HasStatusFilter;
@@ -112,7 +113,7 @@ class QuotationFilter extends QueryFilter
     public function multiOptionOnly(bool|string $value): void
     {
         if (filter_var($value, FILTER_VALIDATE_BOOLEAN)) {
-            $this->builder->where('quotation_type', Quotation::TYPE_MULTI_OPTION);
+            $this->builder->where('quotation_type', QuotationType::MultiOption->value);
         }
     }
 }

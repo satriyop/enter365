@@ -7,6 +7,7 @@ namespace App\Services\Sales;
 use App\Contracts\Services\Domain\DocumentNumberGeneratorInterface;
 use App\Contracts\Services\Domains\QuotationServiceInterface;
 use App\Domain\Sales\Quotations\DiscountCalculator;
+use App\Domain\Sales\Quotations\Enums\QuotationType;
 use App\Domain\Sales\Quotations\TaxCalculator;
 use App\Enums\DocumentStatus;
 use App\Models\Manufacturing\Bom;
@@ -197,7 +198,7 @@ class QuotationService implements QuotationServiceInterface
                 'valid_until' => $data['valid_until'] ?? now()->parse($quotationDate)->addDays($validityDays),
                 'reference' => $data['reference'] ?? $bom->bom_number,
                 'subject' => $subject,
-                'quotation_type' => Quotation::TYPE_SINGLE,
+                'quotation_type' => QuotationType::Single->value,
                 'source_bom_id' => $bom->id,
                 'status' => DocumentStatus::Draft,
                 'currency' => $data['currency'] ?? 'IDR',

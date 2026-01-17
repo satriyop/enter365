@@ -2,6 +2,8 @@
 
 namespace Database\Seeders\Demo\Nex;
 
+use App\Domain\Sales\Quotations\Enums\QuotationOutcome;
+use App\Domain\Sales\Quotations\Enums\QuotationType;
 use App\Enums\DocumentStatus;
 use App\Models\Contacts\Contact;
 use App\Models\Manufacturing\Bom;
@@ -72,7 +74,7 @@ class NexTransactionSeeder extends Seeder
                 'valid_until' => now()->addDays(30),
                 'subject' => 'PLTS Rooftop 50 kWp - Pilihan Konfigurasi Material',
                 'reference' => 'RFQ-PIK-2024-001',
-                'quotation_type' => Quotation::TYPE_MULTI_OPTION,
+                'quotation_type' => QuotationType::MultiOption->value,
                 'variant_group_id' => $variantGroup->id,
                 'status' => DocumentStatus::Submitted,
                 'currency' => 'IDR',
@@ -224,7 +226,7 @@ class NexTransactionSeeder extends Seeder
                     'quotation_date' => now()->subDays(10),
                     'valid_until' => now()->addDays(30),
                     'subject' => 'PLTS Rooftop 30 kWp untuk Cold Storage',
-                    'quotation_type' => Quotation::TYPE_SINGLE,
+                    'quotation_type' => QuotationType::Single->value,
                     'status' => DocumentStatus::Approved,
                     'currency' => 'IDR',
                     'exchange_rate' => 1,
@@ -241,7 +243,7 @@ class NexTransactionSeeder extends Seeder
                     'approved_at' => now()->subDays(5),
                     'approved_by' => User::where('email', 'admin@demo.com')->first()?->id,
                     'priority' => 'normal',
-                    'outcome' => Quotation::OUTCOME_WON,
+                    'outcome' => QuotationOutcome::Won->value,
                     'won_reason' => 'kecepatan_respons',
                     'outcome_at' => now()->subDays(3),
                 ]

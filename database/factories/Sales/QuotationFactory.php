@@ -2,6 +2,9 @@
 
 namespace Database\Factories\Sales;
 
+use App\Domain\Sales\Quotations\Enums\QuotationOutcome;
+use App\Domain\Sales\Quotations\Enums\QuotationPriority;
+use App\Domain\Sales\Quotations\Enums\QuotationType;
 use App\Enums\DocumentStatus;
 use App\Models\Contacts\Contact;
 use App\Models\Sales\Invoice;
@@ -235,21 +238,21 @@ class QuotationFactory extends Factory
     public function highPriority(): static
     {
         return $this->state(fn (array $attributes) => [
-            'priority' => Quotation::PRIORITY_HIGH,
+            'priority' => QuotationPriority::High->value,
         ]);
     }
 
     public function urgentPriority(): static
     {
         return $this->state(fn (array $attributes) => [
-            'priority' => Quotation::PRIORITY_URGENT,
+            'priority' => QuotationPriority::Urgent->value,
         ]);
     }
 
     public function won(string $reason = 'harga_kompetitif'): static
     {
         return $this->approved()->state(fn (array $attributes) => [
-            'outcome' => Quotation::OUTCOME_WON,
+            'outcome' => QuotationOutcome::Won->value,
             'won_reason' => $reason,
             'outcome_at' => now(),
         ]);
@@ -258,7 +261,7 @@ class QuotationFactory extends Factory
     public function lost(string $reason = 'harga_tinggi', ?string $competitor = null): static
     {
         return $this->approved()->state(fn (array $attributes) => [
-            'outcome' => Quotation::OUTCOME_LOST,
+            'outcome' => QuotationOutcome::Lost->value,
             'lost_reason' => $reason,
             'lost_to_competitor' => $competitor,
             'outcome_at' => now(),
@@ -268,14 +271,14 @@ class QuotationFactory extends Factory
     public function multiOption(): static
     {
         return $this->state(fn (array $attributes) => [
-            'quotation_type' => Quotation::TYPE_MULTI_OPTION,
+            'quotation_type' => QuotationType::MultiOption->value,
         ]);
     }
 
     public function singleOption(): static
     {
         return $this->state(fn (array $attributes) => [
-            'quotation_type' => Quotation::TYPE_SINGLE,
+            'quotation_type' => QuotationType::Single->value,
         ]);
     }
 }

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Domain\Sales\Quotations\Enums\QuotationOutcome;
+use App\Domain\Sales\Quotations\Enums\QuotationPriority;
 use App\Enums\DocumentStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreQuotationActivityRequest;
@@ -172,12 +174,7 @@ class QuotationFollowUpController extends Controller
         $validated = $request->validate([
             'priority' => [
                 'required',
-                Rule::in([
-                    Quotation::PRIORITY_LOW,
-                    Quotation::PRIORITY_NORMAL,
-                    Quotation::PRIORITY_HIGH,
-                    Quotation::PRIORITY_URGENT,
-                ]),
+                Rule::in(QuotationPriority::ALL),
             ],
         ], [
             'priority.required' => 'Prioritas harus diisi.',
@@ -209,7 +206,7 @@ class QuotationFollowUpController extends Controller
         }
 
         $validated = $request->validate([
-            'won_reason' => ['nullable', 'string', Rule::in(array_keys(Quotation::WON_REASONS))],
+            'won_reason' => ['nullable', 'string', Rule::in(array_keys(QuotationOutcome::WON_REASONS))],
             'outcome_notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
@@ -250,7 +247,7 @@ class QuotationFollowUpController extends Controller
         }
 
         $validated = $request->validate([
-            'lost_reason' => ['nullable', 'string', Rule::in(array_keys(Quotation::LOST_REASONS))],
+            'lost_reason' => ['nullable', 'string', Rule::in(array_keys(QuotationOutcome::LOST_REASONS))],
             'lost_to_competitor' => ['nullable', 'string', 'max:100'],
             'outcome_notes' => ['nullable', 'string', 'max:2000'],
         ]);
@@ -380,7 +377,7 @@ class QuotationFollowUpController extends Controller
 
         return $results->map(fn ($row) => [
             'reason' => $row->lost_reason,
-            'label' => Quotation::LOST_REASONS[$row->lost_reason] ?? $row->lost_reason,
+            'label' => QuotationOutcome::LOST_REASONS[$row->lost_reason] ?? $row->lost_reason,
             'count' => (int) $row->count,
             'value' => (int) $row->value,
         ])->toArray();
@@ -408,7 +405,7 @@ class QuotationFollowUpController extends Controller
 
         return $results->map(fn ($row) => [
             'reason' => $row->won_reason,
-            'label' => Quotation::WON_REASONS[$row->won_reason] ?? $row->won_reason,
+            'label' => QuotationOutcome::WON_REASONS[$row->won_reason] ?? $row->won_reason,
             'count' => (int) $row->count,
             'value' => (int) $row->value,
         ])->toArray();

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Sales;
 
+use App\Domain\Sales\Quotations\Enums\QuotationOutcome;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\Quotation;
 use Illuminate\Support\Facades\DB;
@@ -35,7 +36,7 @@ class QuotationWorkflowService
         }
 
         return DB::transaction(function () use ($quotation, $data) {
-            $quotation->outcome = Quotation::OUTCOME_WON;
+            $quotation->outcome = QuotationOutcome::Won->value;
             $quotation->won_reason = $data['won_reason'] ?? null;
             $quotation->outcome_notes = $data['outcome_notes'] ?? null;
             $quotation->outcome_at = now();
@@ -64,7 +65,7 @@ class QuotationWorkflowService
         }
 
         return DB::transaction(function () use ($quotation, $data) {
-            $quotation->outcome = Quotation::OUTCOME_LOST;
+            $quotation->outcome = QuotationOutcome::Lost->value;
             $quotation->lost_reason = $data['lost_reason'] ?? null;
             $quotation->lost_to_competitor = $data['lost_to_competitor'] ?? null;
             $quotation->outcome_notes = $data['outcome_notes'] ?? null;

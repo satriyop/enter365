@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Domain\Sales\Quotations\Enums\QuotationType;
 use App\Filters\QuotationFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreQuotationFromBomRequest;
@@ -302,7 +303,7 @@ class QuotationController extends Controller
 
         // Update quotation type to multi-option if not already
         if (! $quotation->isMultiOption()) {
-            $quotation->update(['quotation_type' => Quotation::TYPE_MULTI_OPTION]);
+            $quotation->update(['quotation_type' => QuotationType::MultiOption->value]);
         }
 
         // Sync variant options

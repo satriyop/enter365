@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Sales\Quotations\Enums\QuotationOutcome;
 use App\Models\Contacts\Contact;
 use App\Models\Sales\Quotation;
 use App\Models\Sales\QuotationActivity;
@@ -282,7 +283,7 @@ describe('Win/Loss Tracking', function () {
             ->assertJsonPath('data.won_reason', 'harga_kompetitif');
 
         $quotation->refresh();
-        expect($quotation->outcome)->toBe(Quotation::OUTCOME_WON);
+        expect($quotation->outcome)->toBe(QuotationOutcome::Won->value);
         expect($quotation->outcome_at)->not->toBeNull();
     });
 
@@ -313,7 +314,7 @@ describe('Win/Loss Tracking', function () {
             ->assertJsonPath('data.lost_to_competitor', 'PT Competitor');
 
         $quotation->refresh();
-        expect($quotation->outcome)->toBe(Quotation::OUTCOME_LOST);
+        expect($quotation->outcome)->toBe(QuotationOutcome::Lost->value);
     });
 
     it('cannot mark already decided quotation', function () {
