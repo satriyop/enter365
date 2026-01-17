@@ -11,6 +11,7 @@ use App\Domain\Sales\Quotations\Enums\QuotationType;
 use App\Domain\Sales\Quotations\QuotationDefaults;
 use App\Domain\Sales\Quotations\QuotationItemCreator;
 use App\Domain\Sales\Quotations\QuotationStatistics;
+use App\Domain\Sales\Quotations\QuotationWorkflow;
 use App\Domain\Sales\Quotations\TaxCalculator;
 use App\Enums\DocumentStatus;
 use App\Models\Manufacturing\Bom;
@@ -27,7 +28,8 @@ class QuotationService implements QuotationServiceInterface
         private QuotationNumberGeneratorInterface $numberGenerator,
         private QuotationDefaults $defaults,
         private QuotationItemCreator $itemCreator,
-        private QuotationStatistics $statistics
+        private QuotationStatistics $statistics,
+        private QuotationWorkflow $workflow
     ) {}
 
     /**
@@ -242,17 +244,7 @@ class QuotationService implements QuotationServiceInterface
      */
     public function submit(Quotation $quotation, ?int $userId = null): Quotation
     {
-        if (! $quotation->canSubmit()) {
-            throw new InvalidArgumentException('Penawaran tidak dapat diajukan. Pastikan status draft dan memiliki item.');
-        }
-
-        $quotation->update([
-            'status' => DocumentStatus::Submitted,
-            'submitted_at' => now(),
-            'submitted_by' => $userId ?? auth()->id(),
-        ]);
-
-        return $quotation->fresh(['items', 'contact']);
+        return $this->workflow->submit($quotation, $userId);
     }
 
     /**
@@ -260,17 +252,7 @@ class QuotationService implements QuotationServiceInterface
      */
     public function approve(Quotation $quotation, ?int $userId = null): Quotation
     {
-        if (! $quotation->canApprove()) {
-            throw new InvalidArgumentException('Penawaran tidak dapat disetujui. Pastikan sudah diajukan dan belum kedaluwarsa.');
-        }
-
-        $quotation->update([
-            'status' => DocumentStatus::Approved,
-            'approved_at' => now(),
-            'approved_by' => $userId ?? auth()->id(),
-        ]);
-
-        return $quotation->fresh(['items', 'contact']);
+        return $this->workflow->approve($quotation, $userId);
     }
 
     /**
@@ -278,22 +260,7 @@ class QuotationService implements QuotationServiceInterface
      */
     public function reject(Quotation $quotation, string $reason, ?int $userId = null): Quotation
     {
-        if (! $quotation->canReject()) {
-            throw new InvalidArgumentException('Penawaran tidak dapat ditolak. Pastikan sudah diajukan.');
-        }
-
-        if (empty($reason)) {
-            throw new InvalidArgumentException('Alasan penolakan harus diisi.');
-        }
-
-        $quotation->update([
-            'status' => DocumentStatus::Rejected,
-            'rejected_at' => now(),
-            'rejected_by' => $userId ?? auth()->id(),
-            'rejection_reason' => $reason,
-        ]);
-
-        return $quotation->fresh(['items', 'contact']);
+        return $this->workflow->reject($quotation, $reason, $userId);
     }
 
     /**
