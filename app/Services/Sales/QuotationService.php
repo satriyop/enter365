@@ -10,6 +10,7 @@ use App\Domain\Sales\Quotations\DiscountCalculator;
 use App\Domain\Sales\Quotations\Enums\QuotationType;
 use App\Domain\Sales\Quotations\QuotationDefaults;
 use App\Domain\Sales\Quotations\QuotationItemCreator;
+use App\Domain\Sales\Quotations\QuotationStatistics;
 use App\Domain\Sales\Quotations\TaxCalculator;
 use App\Enums\DocumentStatus;
 use App\Models\Manufacturing\Bom;
@@ -25,7 +26,8 @@ class QuotationService implements QuotationServiceInterface
         private QuotationConversionService $conversionService,
         private QuotationNumberGeneratorInterface $numberGenerator,
         private QuotationDefaults $defaults,
-        private QuotationItemCreator $itemCreator
+        private QuotationItemCreator $itemCreator,
+        private QuotationStatistics $statistics
     ) {}
 
     /**
@@ -364,46 +366,6 @@ class QuotationService implements QuotationServiceInterface
      */
     public function getStatistics(?string $startDate = null, ?string $endDate = null): array
     {
-        $query = Quotation::query();
-
-        if ($startDate) {
-            $query->where('quotation_date', '>=', $startDate);
-        }
-
-        if ($endDate) {
-            $query->where('quotation_date', '<=', $endDate);
-        }
-
-        $total = (clone $query)->count();
-        $draft = (clone $query)->where('status', DocumentStatus::Draft)->count();
-        $submitted = (clone $query)->where('status', DocumentStatus::Submitted)->count();
-        $approved = (clone $query)->where('status', DocumentStatus::Approved)->count();
-        $rejected = (clone $query)->where('status', DocumentStatus::Rejected)->count();
-        $expired = (clone $query)->where('status', DocumentStatus::Expired)->count();
-        $converted = (clone $query)->where('status', DocumentStatus::Converted)->count();
-
-        $totalValue = (clone $query)->sum('total');
-        $approvedValue = (clone $query)->where('status', DocumentStatus::Approved)->sum('total');
-        $convertedValue = (clone $query)->where('status', DocumentStatus::Converted)->sum('total');
-
-        $approvalRate = $total > 0 ? round((($approved + $converted) / $total) * 100, 2) : 0;
-        $conversionRate = ($approved + $converted) > 0 ? round(($converted / ($approved + $converted)) * 100, 2) : 0;
-
-        return [
-            'total' => $total,
-            'by_status' => [
-                'draft' => $draft,
-                'submitted' => $submitted,
-                'approved' => $approved,
-                'rejected' => $rejected,
-                'expired' => $expired,
-                'converted' => $converted,
-            ],
-            'total_value' => $totalValue,
-            'approved_value' => $approvedValue,
-            'converted_value' => $convertedValue,
-            'approval_rate' => $approvalRate,
-            'conversion_rate' => $conversionRate,
-        ];
+        return $this->statistics->get($startDate, $endDate);
     }
 }
