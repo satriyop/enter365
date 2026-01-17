@@ -83,6 +83,57 @@ class QuotationDefaults
     }
 
     /**
+     * Get default values for a quotation created from a BOM.
+     *
+     * @param  array<string, mixed>  $data  Input data from request
+     * @param  \App\Models\Manufacturing\Bom  $bom  The BOM being used
+     * @param  int  $userId  The user creating the quotation
+     * @return array<string, mixed>
+     */
+    public function forBom(array $data, $bom, int $userId): array
+    {
+        $taxRate = (float) ($data['tax_rate'] ?? config('accounting.tax.default_rate', 11.00));
+        $quotationDate = $data['quotation_date'] ?? now();
+        $validityDays = config('accounting.quotation.default_validity_days', 30);
+        $marginPercent = $data['margin_percent'] ?? 20;
+
+        $subject = $data['subject'] ?? $bom->name;
+        if ($bom->variant_name) {
+            $subject .= ' - '.$bom->variant_name;
+        }
+
+        $notes = $data['notes'] ?? "Dibuat dari BOM: {$bom->bom_number}\nMargin: {$marginPercent}%\nBiaya BOM: ".number_format($bom->total_cost, 0, ',', '.');
+
+        return [
+            'quotation_number' => '',
+            'contact_id' => $data['contact_id'] ?? null,
+            'project_id' => $data['project_id'] ?? null,
+            'status' => 'draft',
+            'currency' => $data['currency'] ?? 'IDR',
+            'exchange_rate' => $data['exchange_rate'] ?? 1,
+            'tax_rate' => $taxRate,
+            'quotation_date' => $quotationDate,
+            'valid_until' => $data['valid_until'] ?? now()->parse($quotationDate)->addDays($validityDays),
+            'reference' => $data['reference'] ?? $bom->bom_number,
+            'subject' => $subject,
+            'quotation_type' => 'single',
+            'variant_group_id' => null,
+            'selected_variant_id' => null,
+            'source_bom_id' => $bom->id,
+            'discount_type' => null,
+            'discount_value' => 0,
+            'notes' => $notes,
+            'terms_conditions' => $data['terms_conditions'] ?? $this->getTermsConditions($data['locale'] ?? 'id'),
+            'subtotal' => 0,
+            'discount_amount' => 0,
+            'tax_amount' => 0,
+            'total' => 0,
+            'base_currency_total' => 0,
+            'created_by' => $userId,
+        ];
+    }
+
+    /**
      * Get default values for a revised quotation.
      *
      * @param  Quotation  $source  The quotation to revise from
