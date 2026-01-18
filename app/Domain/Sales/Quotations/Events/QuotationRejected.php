@@ -1,0 +1,49 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domain\Sales\Quotations\Events;
+
+use App\Models\Sales\Quotation;
+
+class QuotationRejected
+{
+    public function __construct(
+        public readonly int $quotationId,
+        public readonly string $quotationNumber,
+        public readonly int $customerId,
+        public readonly int $totalAmount,
+        public readonly string $currency,
+        public readonly ?int $userId,
+        public readonly \Carbon\Carbon $rejectedAt,
+        public readonly ?string $reason = null
+    ) {}
+
+    public static function fromQuotation(Quotation $quotation, ?int $userId = null, ?string $reason = null): self
+    {
+        return new self(
+            quotationId: $quotation->id,
+            quotationNumber: $quotation->quotation_number,
+            customerId: $quotation->contact_id,
+            totalAmount: $quotation->total_amount,
+            currency: $quotation->currency,
+            userId: $userId,
+            rejectedAt: now(),
+            reason: $reason
+        );
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'quotation_id' => $this->quotationId,
+            'quotation_number' => $this->quotationNumber,
+            'customer_id' => $this->customerId,
+            'total_amount' => $this->totalAmount,
+            'currency' => $this->currency,
+            'user_id' => $this->userId,
+            'rejected_at' => $this->rejectedAt->toIso8601String(),
+            'reason' => $this->reason,
+        ];
+    }
+}

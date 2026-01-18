@@ -5,66 +5,91 @@ declare(strict_types=1);
 namespace App\Domain\Sales\Quotations;
 
 use App\Enums\DocumentStatus;
+use App\Models\Sales\Quotation;
+use Illuminate\Support\Facades\Event;
 
-readonly class QuotationStateMachine
+class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
 {
-    private const VALID_TRANSITIONS = [
-        DocumentStatus::Draft->value => [
-            DocumentStatus::Submitted->value,
-        ],
-        DocumentStatus::Submitted->value => [
-            DocumentStatus::Approved->value,
-            DocumentStatus::Rejected->value,
-        ],
-        DocumentStatus::Approved->value => [
-            DocumentStatus::Converted->value,
-            DocumentStatus::Expired->value,
-        ],
-        DocumentStatus::Rejected->value => [
-            DocumentStatus::Draft->value, // Revision
-        ],
-    ];
+    private Quotation $quotation;
 
-    public function __construct(
-        private DocumentStatus $currentStatus,
-        private bool $hasItems,
-        private bool $isExpired,
-        private ?int $convertedInvoiceId,
-    ) {}
-
-    public static function fromQuotation(
-        DocumentStatus $status,
-        bool $hasItems,
-        \DateTimeInterface $validUntil,
-        ?int $convertedInvoiceId = null
-    ): self {
-        return new self(
-            $status,
-            $hasItems,
-            self::checkExpired($status, $validUntil),
-            $convertedInvoiceId
-        );
+    public function __construct(DocumentStatus $initialStatus, Quotation $quotation)
+    {
+        parent::__construct($initialStatus);
+        $this->quotation = $quotation;
     }
 
-    private static function checkExpired(DocumentStatus $status, \DateTimeInterface $validUntil): bool
+    public static function fromQuotation(Quotation $quotation): self
     {
-        if ($status === DocumentStatus::Expired) {
-            return true;
-        }
+        return new self($quotation->status, $quotation);
+    }
 
-        return \Carbon\Carbon::parse($validUntil)->isPast();
+    protected function getTransitions(): array
+    {
+        return [
+            DocumentStatus::Draft->value => [
+                DocumentStatus::Submitted->value,
+                DocumentStatus::Expired->value,
+            ],
+            DocumentStatus::Submitted->value => [
+                DocumentStatus::Approved->value,
+                DocumentStatus::Rejected->value,
+                DocumentStatus::Expired->value,
+            ],
+            DocumentStatus::Approved->value => [
+                DocumentStatus::Converted->value,
+                DocumentStatus::Expired->value,
+            ],
+            DocumentStatus::Rejected->value => [
+                DocumentStatus::Draft->value,
+            ],
+            DocumentStatus::Expired->value => [
+                DocumentStatus::Draft->value,
+            ],
+        ];
+    }
+
+    protected function getContextData(): array
+    {
+        return [
+            'quotation_id' => $this->quotation->id,
+            'quotation_number' => $this->quotation->quotation_number,
+            'contact_id' => $this->quotation->contact_id,
+            'total_amount' => $this->quotation->total,
+            'currency' => $this->quotation->currency,
+        ];
+    }
+
+    protected function updateDocumentStatus(DocumentStatus $status): void
+    {
+        $this->quotation->status = $status;
+        $this->quotation->save();
+    }
+
+    protected function getDocumentType(): string
+    {
+        return 'Penawaran';
+    }
+
+    protected function getDocumentId(): int
+    {
+        return $this->quotation->id;
+    }
+
+    protected function getStatusChangedEvent(): string
+    {
+        return \App\Domain\Sales\Quotations\Events\QuotationStatusChanged::class;
     }
 
     public function canSubmit(): bool
     {
         return $this->currentStatus === DocumentStatus::Draft
-            && $this->hasItems;
+            && $this->quotation->items()->exists();
     }
 
     public function canApprove(): bool
     {
         return $this->currentStatus === DocumentStatus::Submitted
-            && ! $this->isExpired;
+            && ! $this->quotation->valid_until->isPast();
     }
 
     public function canReject(): bool
@@ -75,7 +100,7 @@ readonly class QuotationStateMachine
     public function canConvert(): bool
     {
         return $this->currentStatus === DocumentStatus::Approved
-            && $this->convertedInvoiceId === null;
+            && $this->quotation->converted_to_invoice_id === null;
     }
 
     public function canRevise(): bool
@@ -85,11 +110,6 @@ readonly class QuotationStateMachine
             DocumentStatus::Rejected,
             DocumentStatus::Expired,
         ], true);
-    }
-
-    public function canEdit(): bool
-    {
-        return $this->currentStatus === DocumentStatus::Draft;
     }
 
     public function canMarkAsWon(): bool
@@ -105,33 +125,183 @@ readonly class QuotationStateMachine
         return $this->canMarkAsWon();
     }
 
+    public function canEdit(): bool
+    {
+        return $this->currentStatus === DocumentStatus::Draft;
+    }
+
     public function canDelete(): bool
     {
         return $this->canEdit();
     }
 
-    public function getNextValidStatuses(): array
-    {
-        return self::VALID_TRANSITIONS[$this->currentStatus->value] ?? [];
-    }
-
-    public function getStatus(): DocumentStatus
-    {
-        return $this->currentStatus;
-    }
-
     public function isExpired(): bool
     {
-        return $this->isExpired;
+        return $this->currentStatus === DocumentStatus::Expired
+            || $this->quotation->valid_until->isPast();
     }
 
-    public function hasItems(): bool
+    protected function beforeTransition(DocumentStatus $from, DocumentStatus $to): void
     {
-        return $this->hasItems;
+        if ($to === DocumentStatus::Submitted && ! $this->quotation->items()->exists()) {
+            throw new \InvalidArgumentException('Penawaran tidak dapat diajukan karena tidak memiliki item.');
+        }
+
+        if (in_array($to, [DocumentStatus::Approved, DocumentStatus::Rejected], true)
+            && $from === DocumentStatus::Submitted
+            && $this->quotation->valid_until->isPast()) {
+            throw new \InvalidArgumentException('Penawaran sudah kedaluwarsa.');
+        }
     }
 
-    public function getConvertedInvoiceId(): ?int
+    protected function afterTransition(DocumentStatus $from, DocumentStatus $to): void
     {
-        return $this->convertedInvoiceId;
+        $this->updateTimestamps($from, $to);
+    }
+
+    private function updateTimestamps(DocumentStatus $from, DocumentStatus $to): void
+    {
+        $userId = $this->getContextUserId();
+
+        $updates = [];
+
+        switch ($to) {
+            case DocumentStatus::Submitted:
+                $updates['submitted_at'] = now();
+                $updates['submitted_by'] = $userId;
+                break;
+            case DocumentStatus::Approved:
+                $updates['approved_at'] = now();
+                $updates['approved_by'] = $userId;
+                break;
+            case DocumentStatus::Rejected:
+                $updates['rejected_at'] = now();
+                $updates['rejected_by'] = $userId;
+                $updates['rejection_reason'] = $this->context['rejection_reason'] ?? '';
+                break;
+        }
+
+        if (! empty($updates)) {
+            $this->quotation->update($updates);
+        }
+    }
+
+    protected function beforeSubmitted(DocumentStatus $from, DocumentStatus $to): void
+    {
+        Event::dispatch(new Events\QuotationSubmitted(
+            $this->quotation->id,
+            $this->quotation->quotation_number,
+            $this->quotation->contact_id,
+            $this->quotation->total,
+            $this->quotation->currency,
+            $this->getContextUserId(),
+            now()
+        ));
+    }
+
+    protected function afterSubmitted(DocumentStatus $from, DocumentStatus $to): void
+    {
+        Event::dispatch(new Events\QuotationStatusChanged(
+            $this->quotation->id,
+            $from,
+            $to,
+            $this->getContextUserId()
+        ));
+    }
+
+    protected function beforeApproved(DocumentStatus $from, DocumentStatus $to): void
+    {
+        Event::dispatch(new Events\QuotationApproved(
+            $this->quotation->id,
+            $this->quotation->quotation_number,
+            $this->quotation->contact_id,
+            $this->quotation->total,
+            $this->quotation->currency,
+            $this->getContextUserId(),
+            now()
+        ));
+    }
+
+    protected function afterApproved(DocumentStatus $from, DocumentStatus $to): void
+    {
+        Event::dispatch(new Events\QuotationStatusChanged(
+            $this->quotation->id,
+            $from,
+            $to,
+            $this->getContextUserId()
+        ));
+    }
+
+    protected function beforeRejected(DocumentStatus $from, DocumentStatus $to): void
+    {
+        $reason = $this->context['rejection_reason'] ?? '';
+        Event::dispatch(new Events\QuotationRejected(
+            $this->quotation->id,
+            $this->quotation->quotation_number,
+            $this->quotation->contact_id,
+            $this->quotation->total,
+            $this->quotation->currency,
+            $this->getContextUserId(),
+            now(),
+            $reason
+        ));
+    }
+
+    protected function afterRejected(DocumentStatus $from, DocumentStatus $to): void
+    {
+        Event::dispatch(new Events\QuotationStatusChanged(
+            $this->quotation->id,
+            $from,
+            $to,
+            $this->getContextUserId()
+        ));
+    }
+
+    protected function beforeConverted(DocumentStatus $from, DocumentStatus $to): void
+    {
+        $invoiceId = $this->quotation->converted_to_invoice_id ?? 0;
+        Event::dispatch(new Events\QuotationConverted(
+            $this->quotation->id,
+            $this->quotation->quotation_number,
+            $this->quotation->contact_id,
+            $this->quotation->total,
+            $this->quotation->currency,
+            $invoiceId,
+            $this->getContextUserId(),
+            now()
+        ));
+    }
+
+    protected function afterConverted(DocumentStatus $from, DocumentStatus $to): void
+    {
+        Event::dispatch(new Events\QuotationStatusChanged(
+            $this->quotation->id,
+            $from,
+            $to,
+            $this->getContextUserId()
+        ));
+    }
+
+    protected function beforeExpired(DocumentStatus $from, DocumentStatus $to): void
+    {
+        Event::dispatch(new Events\QuotationExpired(
+            $this->quotation->id,
+            $this->quotation->quotation_number,
+            $this->quotation->contact_id,
+            $this->quotation->total,
+            $this->quotation->currency,
+            $this->quotation->valid_until,
+            now()
+        ));
+    }
+
+    protected function afterExpired(DocumentStatus $from, DocumentStatus $to): void
+    {
+        Event::dispatch(new Events\QuotationStatusChanged(
+            $this->quotation->id,
+            $from,
+            $to,
+            $this->getContextUserId()
+        ));
     }
 }
