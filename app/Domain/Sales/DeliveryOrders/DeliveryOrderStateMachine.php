@@ -4,23 +4,28 @@ declare(strict_types=1);
 
 namespace App\Domain\Sales\DeliveryOrders;
 
+use App\Contracts\Events\EventDispatcherInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\DeliveryOrder;
-use Illuminate\Support\Facades\Event;
 
 class DeliveryOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
 {
     private DeliveryOrder $deliveryOrder;
 
-    public function __construct(DocumentStatus $initialStatus, DeliveryOrder $deliveryOrder)
-    {
-        parent::__construct($initialStatus);
+    public function __construct(
+        DocumentStatus $initialStatus,
+        DeliveryOrder $deliveryOrder,
+        ?EventDispatcherInterface $eventDispatcher = null
+    ) {
+        parent::__construct($initialStatus, $eventDispatcher);
         $this->deliveryOrder = $deliveryOrder;
     }
 
-    public static function fromDeliveryOrder(DeliveryOrder $deliveryOrder): self
-    {
-        return new self($deliveryOrder->status, $deliveryOrder);
+    public static function fromDeliveryOrder(
+        DeliveryOrder $deliveryOrder,
+        ?EventDispatcherInterface $eventDispatcher = null
+    ): self {
+        return new self($deliveryOrder->status, $deliveryOrder, $eventDispatcher);
     }
 
     protected function getTransitions(): array
@@ -152,7 +157,7 @@ class DeliveryOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
 
     protected function beforeConfirmed(DocumentStatus $from, DocumentStatus $to): void
     {
-        Event::dispatch(new Events\DeliveryOrderConfirmed(
+        $this->eventDispatcher->dispatch(new Events\DeliveryOrderConfirmed(
             $this->deliveryOrder->id,
             $this->deliveryOrder->do_number,
             $this->deliveryOrder->contact_id,
@@ -163,7 +168,7 @@ class DeliveryOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
 
     protected function afterConfirmed(DocumentStatus $from, DocumentStatus $to): void
     {
-        Event::dispatch(new Events\DeliveryOrderStatusChanged(
+        $this->eventDispatcher->dispatch(new Events\DeliveryOrderStatusChanged(
             $this->deliveryOrder->id,
             $from,
             $to,
@@ -173,7 +178,7 @@ class DeliveryOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
 
     protected function beforeShipped(DocumentStatus $from, DocumentStatus $to): void
     {
-        Event::dispatch(new Events\DeliveryOrderShipped(
+        $this->eventDispatcher->dispatch(new Events\DeliveryOrderShipped(
             $this->deliveryOrder->id,
             $this->deliveryOrder->do_number,
             $this->deliveryOrder->contact_id,
@@ -186,7 +191,7 @@ class DeliveryOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
 
     protected function afterShipped(DocumentStatus $from, DocumentStatus $to): void
     {
-        Event::dispatch(new Events\DeliveryOrderStatusChanged(
+        $this->eventDispatcher->dispatch(new Events\DeliveryOrderStatusChanged(
             $this->deliveryOrder->id,
             $from,
             $to,
@@ -196,7 +201,7 @@ class DeliveryOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
 
     protected function beforeDelivered(DocumentStatus $from, DocumentStatus $to): void
     {
-        Event::dispatch(new Events\DeliveryOrderDelivered(
+        $this->eventDispatcher->dispatch(new Events\DeliveryOrderDelivered(
             $this->deliveryOrder->id,
             $this->deliveryOrder->do_number,
             $this->deliveryOrder->contact_id,
@@ -207,7 +212,7 @@ class DeliveryOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
 
     protected function afterDelivered(DocumentStatus $from, DocumentStatus $to): void
     {
-        Event::dispatch(new Events\DeliveryOrderStatusChanged(
+        $this->eventDispatcher->dispatch(new Events\DeliveryOrderStatusChanged(
             $this->deliveryOrder->id,
             $from,
             $to,
@@ -218,7 +223,7 @@ class DeliveryOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
     protected function beforeCancelled(DocumentStatus $from, DocumentStatus $to): void
     {
         $reason = $this->context['cancellation_reason'] ?? '';
-        Event::dispatch(new Events\DeliveryOrderCancelled(
+        $this->eventDispatcher->dispatch(new Events\DeliveryOrderCancelled(
             $this->deliveryOrder->id,
             $this->deliveryOrder->do_number,
             $this->deliveryOrder->contact_id,
@@ -230,7 +235,7 @@ class DeliveryOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
 
     protected function afterCancelled(DocumentStatus $from, DocumentStatus $to): void
     {
-        Event::dispatch(new Events\DeliveryOrderStatusChanged(
+        $this->eventDispatcher->dispatch(new Events\DeliveryOrderStatusChanged(
             $this->deliveryOrder->id,
             $from,
             $to,

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Domain\Core;
 
+use App\Contracts\Events\EventDispatcherInterface;
 use App\Enums\DocumentStatus;
 use App\Exceptions\Domain\StateTransitionException;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
 
 abstract class AbstractStateMachine
@@ -15,9 +15,14 @@ abstract class AbstractStateMachine
 
     protected array $context = [];
 
-    public function __construct(DocumentStatus $initialStatus)
-    {
+    protected EventDispatcherInterface $eventDispatcher;
+
+    public function __construct(
+        DocumentStatus $initialStatus,
+        ?EventDispatcherInterface $eventDispatcher = null
+    ) {
         $this->currentStatus = $initialStatus;
+        $this->eventDispatcher = $eventDispatcher ?? app(EventDispatcherInterface::class);
     }
 
     abstract protected function getTransitions(): array;
@@ -67,7 +72,7 @@ abstract class AbstractStateMachine
         $this->afterTransition($from, $target);
         $this->{'after'.$this->getHookName($target)}($from, $target);
 
-        Event::dispatch(new ($this->getStatusChangedEvent())(
+        $this->eventDispatcher->dispatch(new ($this->getStatusChangedEvent())(
             $this->getDocumentId(),
             $from,
             $target,

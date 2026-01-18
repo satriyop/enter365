@@ -4,25 +4,27 @@ declare(strict_types=1);
 
 namespace App\Domain\Purchasing\Bills;
 
+use App\Contracts\Events\EventDispatcherInterface;
 use App\Domain\Core\AbstractStateMachine;
 use App\Enums\DocumentStatus;
 use App\Exceptions\Domain\StateTransitionException;
 use App\Models\Purchasing\Bill;
-use Illuminate\Support\Facades\Event;
 
 class BillStateMachine extends AbstractStateMachine
 {
     private Bill $bill;
 
-    public function __construct(Bill $bill)
+    public function __construct(Bill $bill, ?EventDispatcherInterface $eventDispatcher = null)
     {
-        parent::__construct($bill->status);
+        parent::__construct($bill->status, $eventDispatcher);
         $this->bill = $bill;
     }
 
-    public static function fromBill(Bill $bill): self
-    {
-        return new self($bill);
+    public static function fromBill(
+        Bill $bill,
+        ?EventDispatcherInterface $eventDispatcher = null
+    ): self {
+        return new self($bill, $eventDispatcher);
     }
 
     protected function getTransitions(): array
@@ -157,11 +159,11 @@ class BillStateMachine extends AbstractStateMachine
 
     protected function afterReceived(DocumentStatus $from, DocumentStatus $to): void
     {
-        Event::dispatch(\App\Domain\Purchasing\Bills\Events\BillReceived::fromBill($this->bill, $this->getContextUserId()));
+        $this->eventDispatcher->dispatch(\App\Domain\Purchasing\Bills\Events\BillReceived::fromBill($this->bill, $this->getContextUserId()));
     }
 
     protected function afterVoid(DocumentStatus $from, DocumentStatus $to): void
     {
-        Event::dispatch(\App\Domain\Purchasing\Bills\Events\BillVoided::fromBill($this->bill, $this->getContextUserId()));
+        $this->eventDispatcher->dispatch(\App\Domain\Purchasing\Bills\Events\BillVoided::fromBill($this->bill, $this->getContextUserId()));
     }
 }

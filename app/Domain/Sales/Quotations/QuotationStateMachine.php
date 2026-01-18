@@ -4,23 +4,28 @@ declare(strict_types=1);
 
 namespace App\Domain\Sales\Quotations;
 
+use App\Contracts\Events\EventDispatcherInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\Quotation;
-use Illuminate\Support\Facades\Event;
 
 class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
 {
     private Quotation $quotation;
 
-    public function __construct(DocumentStatus $initialStatus, Quotation $quotation)
-    {
-        parent::__construct($initialStatus);
+    public function __construct(
+        DocumentStatus $initialStatus,
+        Quotation $quotation,
+        ?EventDispatcherInterface $eventDispatcher = null
+    ) {
+        parent::__construct($initialStatus, $eventDispatcher);
         $this->quotation = $quotation;
     }
 
-    public static function fromQuotation(Quotation $quotation): self
-    {
-        return new self($quotation->status, $quotation);
+    public static function fromQuotation(
+        Quotation $quotation,
+        ?EventDispatcherInterface $eventDispatcher = null
+    ): self {
+        return new self($quotation->status, $quotation, $eventDispatcher);
     }
 
     protected function getTransitions(): array
@@ -188,7 +193,7 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
 
     protected function beforeSubmitted(DocumentStatus $from, DocumentStatus $to): void
     {
-        Event::dispatch(new Events\QuotationSubmitted(
+        $this->eventDispatcher->dispatch(new Events\QuotationSubmitted(
             $this->quotation->id,
             $this->quotation->quotation_number,
             $this->quotation->contact_id,
@@ -201,7 +206,7 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
 
     protected function afterSubmitted(DocumentStatus $from, DocumentStatus $to): void
     {
-        Event::dispatch(new Events\QuotationStatusChanged(
+        $this->eventDispatcher->dispatch(new Events\QuotationStatusChanged(
             $this->quotation->id,
             $from,
             $to,
@@ -211,7 +216,7 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
 
     protected function beforeApproved(DocumentStatus $from, DocumentStatus $to): void
     {
-        Event::dispatch(new Events\QuotationApproved(
+        $this->eventDispatcher->dispatch(new Events\QuotationApproved(
             $this->quotation->id,
             $this->quotation->quotation_number,
             $this->quotation->contact_id,
@@ -224,7 +229,7 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
 
     protected function afterApproved(DocumentStatus $from, DocumentStatus $to): void
     {
-        Event::dispatch(new Events\QuotationStatusChanged(
+        $this->eventDispatcher->dispatch(new Events\QuotationStatusChanged(
             $this->quotation->id,
             $from,
             $to,
@@ -235,7 +240,7 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
     protected function beforeRejected(DocumentStatus $from, DocumentStatus $to): void
     {
         $reason = $this->context['rejection_reason'] ?? '';
-        Event::dispatch(new Events\QuotationRejected(
+        $this->eventDispatcher->dispatch(new Events\QuotationRejected(
             $this->quotation->id,
             $this->quotation->quotation_number,
             $this->quotation->contact_id,
@@ -249,7 +254,7 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
 
     protected function afterRejected(DocumentStatus $from, DocumentStatus $to): void
     {
-        Event::dispatch(new Events\QuotationStatusChanged(
+        $this->eventDispatcher->dispatch(new Events\QuotationStatusChanged(
             $this->quotation->id,
             $from,
             $to,
@@ -260,7 +265,7 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
     protected function beforeConverted(DocumentStatus $from, DocumentStatus $to): void
     {
         $invoiceId = $this->quotation->converted_to_invoice_id ?? 0;
-        Event::dispatch(new Events\QuotationConverted(
+        $this->eventDispatcher->dispatch(new Events\QuotationConverted(
             $this->quotation->id,
             $this->quotation->quotation_number,
             $this->quotation->contact_id,
@@ -274,7 +279,7 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
 
     protected function afterConverted(DocumentStatus $from, DocumentStatus $to): void
     {
-        Event::dispatch(new Events\QuotationStatusChanged(
+        $this->eventDispatcher->dispatch(new Events\QuotationStatusChanged(
             $this->quotation->id,
             $from,
             $to,
@@ -284,7 +289,7 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
 
     protected function beforeExpired(DocumentStatus $from, DocumentStatus $to): void
     {
-        Event::dispatch(new Events\QuotationExpired(
+        $this->eventDispatcher->dispatch(new Events\QuotationExpired(
             $this->quotation->id,
             $this->quotation->quotation_number,
             $this->quotation->contact_id,
@@ -297,7 +302,7 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
 
     protected function afterExpired(DocumentStatus $from, DocumentStatus $to): void
     {
-        Event::dispatch(new Events\QuotationStatusChanged(
+        $this->eventDispatcher->dispatch(new Events\QuotationStatusChanged(
             $this->quotation->id,
             $from,
             $to,

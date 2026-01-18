@@ -4,23 +4,28 @@ declare(strict_types=1);
 
 namespace App\Domain\Projects;
 
+use App\Contracts\Events\EventDispatcherInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Projects\Project;
-use Illuminate\Support\Facades\Event;
 
 class ProjectStateMachine extends \App\Domain\Core\AbstractStateMachine
 {
     private Project $project;
 
-    public function __construct(DocumentStatus $initialStatus, Project $project)
-    {
-        parent::__construct($initialStatus);
+    public function __construct(
+        DocumentStatus $initialStatus,
+        Project $project,
+        ?EventDispatcherInterface $eventDispatcher = null
+    ) {
+        parent::__construct($initialStatus, $eventDispatcher);
         $this->project = $project;
     }
 
-    public static function fromProject(Project $project): self
-    {
-        return new self($project->status, $project);
+    public static function fromProject(
+        Project $project,
+        ?EventDispatcherInterface $eventDispatcher = null
+    ): self {
+        return new self($project->status, $project, $eventDispatcher);
     }
 
     protected function getTransitions(): array
@@ -136,7 +141,7 @@ class ProjectStateMachine extends \App\Domain\Core\AbstractStateMachine
     {
         $userId = $this->getContextUserId();
 
-        Event::dispatch(new Events\ProjectStatusChanged(
+        $this->eventDispatcher->dispatch(new Events\ProjectStatusChanged(
             $this->project->id,
             $from,
             $to,
@@ -154,7 +159,7 @@ class ProjectStateMachine extends \App\Domain\Core\AbstractStateMachine
             ]);
         }
 
-        Event::dispatch(new Events\ProjectStarted(
+        $this->eventDispatcher->dispatch(new Events\ProjectStarted(
             $this->project->id,
             $this->project->project_number,
             $this->project->contact_id,
@@ -168,7 +173,7 @@ class ProjectStateMachine extends \App\Domain\Core\AbstractStateMachine
         $userId = $this->getContextUserId();
         $reason = $this->context['hold_reason'] ?? null;
 
-        Event::dispatch(new Events\ProjectOnHold(
+        $this->eventDispatcher->dispatch(new Events\ProjectOnHold(
             $this->project->id,
             $this->project->project_number,
             $this->project->contact_id,
@@ -186,7 +191,7 @@ class ProjectStateMachine extends \App\Domain\Core\AbstractStateMachine
             'progress_percentage' => 100,
         ]);
 
-        Event::dispatch(new Events\ProjectCompleted(
+        $this->eventDispatcher->dispatch(new Events\ProjectCompleted(
             $this->project->id,
             $this->project->project_number,
             $this->project->contact_id,
@@ -200,7 +205,7 @@ class ProjectStateMachine extends \App\Domain\Core\AbstractStateMachine
         $userId = $this->getContextUserId();
         $reason = $this->context['cancellation_reason'] ?? null;
 
-        Event::dispatch(new Events\ProjectCancelled(
+        $this->eventDispatcher->dispatch(new Events\ProjectCancelled(
             $this->project->id,
             $this->project->project_number,
             $this->project->contact_id,

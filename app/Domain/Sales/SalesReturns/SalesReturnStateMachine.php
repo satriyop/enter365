@@ -4,23 +4,28 @@ declare(strict_types=1);
 
 namespace App\Domain\Sales\SalesReturns;
 
+use App\Contracts\Events\EventDispatcherInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\SalesReturn;
-use Illuminate\Support\Facades\Event;
 
 class SalesReturnStateMachine extends \App\Domain\Core\AbstractStateMachine
 {
     private SalesReturn $sr;
 
-    public function __construct(DocumentStatus $initialStatus, SalesReturn $sr)
-    {
-        parent::__construct($initialStatus);
+    public function __construct(
+        DocumentStatus $initialStatus,
+        SalesReturn $sr,
+        ?EventDispatcherInterface $eventDispatcher = null
+    ) {
+        parent::__construct($initialStatus, $eventDispatcher);
         $this->sr = $sr;
     }
 
-    public static function fromSalesReturn(SalesReturn $sr): self
-    {
-        return new self($sr->status, $sr);
+    public static function fromSalesReturn(
+        SalesReturn $sr,
+        ?EventDispatcherInterface $eventDispatcher = null
+    ): self {
+        return new self($sr->status, $sr, $eventDispatcher);
     }
 
     protected function getTransitions(): array
@@ -136,7 +141,7 @@ class SalesReturnStateMachine extends \App\Domain\Core\AbstractStateMachine
             'submitted_at' => now(),
         ]);
 
-        Event::dispatch(new Events\SalesReturnSubmitted(
+        $this->eventDispatcher->dispatch(new Events\SalesReturnSubmitted(
             $this->sr->id,
             $this->sr->return_number,
             $this->sr->contact_id,
@@ -154,7 +159,7 @@ class SalesReturnStateMachine extends \App\Domain\Core\AbstractStateMachine
             'approved_at' => now(),
         ]);
 
-        Event::dispatch(new Events\SalesReturnApproved(
+        $this->eventDispatcher->dispatch(new Events\SalesReturnApproved(
             $this->sr->id,
             $this->sr->return_number,
             $this->sr->contact_id,
@@ -175,7 +180,7 @@ class SalesReturnStateMachine extends \App\Domain\Core\AbstractStateMachine
             'rejection_reason' => $reason,
         ]);
 
-        Event::dispatch(new Events\SalesReturnRejected(
+        $this->eventDispatcher->dispatch(new Events\SalesReturnRejected(
             $this->sr->id,
             $this->sr->return_number,
             $this->sr->contact_id,
@@ -194,7 +199,7 @@ class SalesReturnStateMachine extends \App\Domain\Core\AbstractStateMachine
             'completed_at' => now(),
         ]);
 
-        Event::dispatch(new Events\SalesReturnCompleted(
+        $this->eventDispatcher->dispatch(new Events\SalesReturnCompleted(
             $this->sr->id,
             $this->sr->return_number,
             $this->sr->contact_id,
@@ -209,7 +214,7 @@ class SalesReturnStateMachine extends \App\Domain\Core\AbstractStateMachine
         $userId = $this->getContextUserId();
         $reason = $this->context['reason'] ?? null;
 
-        Event::dispatch(new Events\SalesReturnCancelled(
+        $this->eventDispatcher->dispatch(new Events\SalesReturnCancelled(
             $this->sr->id,
             $this->sr->return_number,
             $this->sr->contact_id,

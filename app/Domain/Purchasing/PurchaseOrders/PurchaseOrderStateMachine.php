@@ -4,23 +4,28 @@ declare(strict_types=1);
 
 namespace App\Domain\Purchasing\PurchaseOrders;
 
+use App\Contracts\Events\EventDispatcherInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Purchasing\PurchaseOrder;
-use Illuminate\Support\Facades\Event;
 
 class PurchaseOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
 {
     private PurchaseOrder $purchaseOrder;
 
-    public function __construct(DocumentStatus $initialStatus, PurchaseOrder $purchaseOrder)
-    {
-        parent::__construct($initialStatus);
+    public function __construct(
+        DocumentStatus $initialStatus,
+        PurchaseOrder $purchaseOrder,
+        ?EventDispatcherInterface $eventDispatcher = null
+    ) {
+        parent::__construct($initialStatus, $eventDispatcher);
         $this->purchaseOrder = $purchaseOrder;
     }
 
-    public static function fromPurchaseOrder(PurchaseOrder $purchaseOrder): self
-    {
-        return new self($purchaseOrder->status, $purchaseOrder);
+    public static function fromPurchaseOrder(
+        PurchaseOrder $purchaseOrder,
+        ?EventDispatcherInterface $eventDispatcher = null
+    ): self {
+        return new self($purchaseOrder->status, $purchaseOrder, $eventDispatcher);
     }
 
     protected function getTransitions(): array
@@ -187,7 +192,7 @@ class PurchaseOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
 
     protected function beforeSubmitted(DocumentStatus $from, DocumentStatus $to): void
     {
-        Event::dispatch(new Events\PurchaseOrderSubmitted(
+        $this->eventDispatcher->dispatch(new Events\PurchaseOrderSubmitted(
             $this->purchaseOrder->id,
             $this->purchaseOrder->po_number,
             $this->purchaseOrder->contact_id,
@@ -200,7 +205,7 @@ class PurchaseOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
 
     protected function afterSubmitted(DocumentStatus $from, DocumentStatus $to): void
     {
-        Event::dispatch(new Events\PurchaseOrderStatusChanged(
+        $this->eventDispatcher->dispatch(new Events\PurchaseOrderStatusChanged(
             $this->purchaseOrder->id,
             $from,
             $to,
@@ -210,7 +215,7 @@ class PurchaseOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
 
     protected function beforeApproved(DocumentStatus $from, DocumentStatus $to): void
     {
-        Event::dispatch(new Events\PurchaseOrderApproved(
+        $this->eventDispatcher->dispatch(new Events\PurchaseOrderApproved(
             $this->purchaseOrder->id,
             $this->purchaseOrder->po_number,
             $this->purchaseOrder->contact_id,
@@ -223,7 +228,7 @@ class PurchaseOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
 
     protected function afterApproved(DocumentStatus $from, DocumentStatus $to): void
     {
-        Event::dispatch(new Events\PurchaseOrderStatusChanged(
+        $this->eventDispatcher->dispatch(new Events\PurchaseOrderStatusChanged(
             $this->purchaseOrder->id,
             $from,
             $to,
@@ -234,7 +239,7 @@ class PurchaseOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
     protected function beforeRejected(DocumentStatus $from, DocumentStatus $to): void
     {
         $reason = $this->context['rejection_reason'] ?? '';
-        Event::dispatch(new Events\PurchaseOrderRejected(
+        $this->eventDispatcher->dispatch(new Events\PurchaseOrderRejected(
             $this->purchaseOrder->id,
             $this->purchaseOrder->po_number,
             $this->purchaseOrder->contact_id,
@@ -248,7 +253,7 @@ class PurchaseOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
 
     protected function afterRejected(DocumentStatus $from, DocumentStatus $to): void
     {
-        Event::dispatch(new Events\PurchaseOrderStatusChanged(
+        $this->eventDispatcher->dispatch(new Events\PurchaseOrderStatusChanged(
             $this->purchaseOrder->id,
             $from,
             $to,
@@ -259,7 +264,7 @@ class PurchaseOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
     protected function beforeCancelled(DocumentStatus $from, DocumentStatus $to): void
     {
         $reason = $this->context['cancellation_reason'] ?? '';
-        Event::dispatch(new Events\PurchaseOrderCancelled(
+        $this->eventDispatcher->dispatch(new Events\PurchaseOrderCancelled(
             $this->purchaseOrder->id,
             $this->purchaseOrder->po_number,
             $this->purchaseOrder->contact_id,
@@ -273,7 +278,7 @@ class PurchaseOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
 
     protected function afterCancelled(DocumentStatus $from, DocumentStatus $to): void
     {
-        Event::dispatch(new Events\PurchaseOrderStatusChanged(
+        $this->eventDispatcher->dispatch(new Events\PurchaseOrderStatusChanged(
             $this->purchaseOrder->id,
             $from,
             $to,
@@ -283,7 +288,7 @@ class PurchaseOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
 
     protected function beforePartial(DocumentStatus $from, DocumentStatus $to): void
     {
-        Event::dispatch(new Events\PurchaseOrderPartial(
+        $this->eventDispatcher->dispatch(new Events\PurchaseOrderPartial(
             $this->purchaseOrder->id,
             $this->purchaseOrder->po_number,
             $this->purchaseOrder->contact_id,
@@ -297,7 +302,7 @@ class PurchaseOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
 
     protected function afterPartial(DocumentStatus $from, DocumentStatus $to): void
     {
-        Event::dispatch(new Events\PurchaseOrderStatusChanged(
+        $this->eventDispatcher->dispatch(new Events\PurchaseOrderStatusChanged(
             $this->purchaseOrder->id,
             $from,
             $to,
@@ -307,7 +312,7 @@ class PurchaseOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
 
     protected function beforeReceived(DocumentStatus $from, DocumentStatus $to): void
     {
-        Event::dispatch(new Events\PurchaseOrderReceived(
+        $this->eventDispatcher->dispatch(new Events\PurchaseOrderReceived(
             $this->purchaseOrder->id,
             $this->purchaseOrder->po_number,
             $this->purchaseOrder->contact_id,
@@ -320,7 +325,7 @@ class PurchaseOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
 
     protected function afterReceived(DocumentStatus $from, DocumentStatus $to): void
     {
-        Event::dispatch(new Events\PurchaseOrderStatusChanged(
+        $this->eventDispatcher->dispatch(new Events\PurchaseOrderStatusChanged(
             $this->purchaseOrder->id,
             $from,
             $to,

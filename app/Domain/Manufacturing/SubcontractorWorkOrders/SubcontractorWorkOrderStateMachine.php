@@ -4,23 +4,28 @@ declare(strict_types=1);
 
 namespace App\Domain\Manufacturing\SubcontractorWorkOrders;
 
+use App\Contracts\Events\EventDispatcherInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Manufacturing\SubcontractorWorkOrder;
-use Illuminate\Support\Facades\Event;
 
 class SubcontractorWorkOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
 {
     private SubcontractorWorkOrder $scWo;
 
-    public function __construct(DocumentStatus $initialStatus, SubcontractorWorkOrder $scWo)
-    {
-        parent::__construct($initialStatus);
+    public function __construct(
+        DocumentStatus $initialStatus,
+        SubcontractorWorkOrder $scWo,
+        ?EventDispatcherInterface $eventDispatcher = null
+    ) {
+        parent::__construct($initialStatus, $eventDispatcher);
         $this->scWo = $scWo;
     }
 
-    public static function fromSubcontractorWorkOrder(SubcontractorWorkOrder $scWo): self
-    {
-        return new self($scWo->status, $scWo);
+    public static function fromSubcontractorWorkOrder(
+        SubcontractorWorkOrder $scWo,
+        ?EventDispatcherInterface $eventDispatcher = null
+    ): self {
+        return new self($scWo->status, $scWo, $eventDispatcher);
     }
 
     protected function getTransitions(): array
@@ -125,7 +130,7 @@ class SubcontractorWorkOrderStateMachine extends \App\Domain\Core\AbstractStateM
             'assigned_by' => $userId,
         ]);
 
-        Event::dispatch(Events\SubcontractorWorkOrderAssigned::fromSubcontractorWorkOrder($this->scWo, $userId));
+        $this->eventDispatcher->dispatch(Events\SubcontractorWorkOrderAssigned::fromSubcontractorWorkOrder($this->scWo, $userId));
     }
 
     protected function afterInProgress(DocumentStatus $from, DocumentStatus $to): void
@@ -138,7 +143,7 @@ class SubcontractorWorkOrderStateMachine extends \App\Domain\Core\AbstractStateM
             'started_by' => $userId,
         ]);
 
-        Event::dispatch(Events\SubcontractorWorkOrderStarted::fromSubcontractorWorkOrder($this->scWo, $userId));
+        $this->eventDispatcher->dispatch(Events\SubcontractorWorkOrderStarted::fromSubcontractorWorkOrder($this->scWo, $userId));
     }
 
     protected function afterCompleted(DocumentStatus $from, DocumentStatus $to): void
@@ -152,7 +157,7 @@ class SubcontractorWorkOrderStateMachine extends \App\Domain\Core\AbstractStateM
             'completion_percentage' => 100,
         ]);
 
-        Event::dispatch(Events\SubcontractorWorkOrderCompleted::fromSubcontractorWorkOrder($this->scWo, $userId));
+        $this->eventDispatcher->dispatch(Events\SubcontractorWorkOrderCompleted::fromSubcontractorWorkOrder($this->scWo, $userId));
     }
 
     protected function afterCancelled(DocumentStatus $from, DocumentStatus $to): void
@@ -166,6 +171,6 @@ class SubcontractorWorkOrderStateMachine extends \App\Domain\Core\AbstractStateM
             'cancellation_reason' => $reason,
         ]);
 
-        Event::dispatch(Events\SubcontractorWorkOrderCancelled::fromSubcontractorWorkOrder($this->scWo, $userId, $reason));
+        $this->eventDispatcher->dispatch(Events\SubcontractorWorkOrderCancelled::fromSubcontractorWorkOrder($this->scWo, $userId, $reason));
     }
 }

@@ -4,23 +4,28 @@ declare(strict_types=1);
 
 namespace App\Domain\Purchasing\PurchaseReturns;
 
+use App\Contracts\Events\EventDispatcherInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Purchasing\PurchaseReturn;
-use Illuminate\Support\Facades\Event;
 
 class PurchaseReturnStateMachine extends \App\Domain\Core\AbstractStateMachine
 {
     private PurchaseReturn $pr;
 
-    public function __construct(DocumentStatus $initialStatus, PurchaseReturn $pr)
-    {
-        parent::__construct($initialStatus);
+    public function __construct(
+        DocumentStatus $initialStatus,
+        PurchaseReturn $pr,
+        ?EventDispatcherInterface $eventDispatcher = null
+    ) {
+        parent::__construct($initialStatus, $eventDispatcher);
         $this->pr = $pr;
     }
 
-    public static function fromPurchaseReturn(PurchaseReturn $pr): self
-    {
-        return new self($pr->status, $pr);
+    public static function fromPurchaseReturn(
+        PurchaseReturn $pr,
+        ?EventDispatcherInterface $eventDispatcher = null
+    ): self {
+        return new self($pr->status, $pr, $eventDispatcher);
     }
 
     protected function getTransitions(): array
@@ -135,7 +140,7 @@ class PurchaseReturnStateMachine extends \App\Domain\Core\AbstractStateMachine
             'submitted_at' => now(),
         ]);
 
-        Event::dispatch(new Events\PurchaseReturnSubmitted(
+        $this->eventDispatcher->dispatch(new Events\PurchaseReturnSubmitted(
             $this->pr->id,
             $this->pr->return_number,
             $this->pr->contact_id,
@@ -153,7 +158,7 @@ class PurchaseReturnStateMachine extends \App\Domain\Core\AbstractStateMachine
             'approved_at' => now(),
         ]);
 
-        Event::dispatch(new Events\PurchaseReturnApproved(
+        $this->eventDispatcher->dispatch(new Events\PurchaseReturnApproved(
             $this->pr->id,
             $this->pr->return_number,
             $this->pr->contact_id,
@@ -174,7 +179,7 @@ class PurchaseReturnStateMachine extends \App\Domain\Core\AbstractStateMachine
             'rejection_reason' => $reason,
         ]);
 
-        Event::dispatch(new Events\PurchaseReturnRejected(
+        $this->eventDispatcher->dispatch(new Events\PurchaseReturnRejected(
             $this->pr->id,
             $this->pr->return_number,
             $this->pr->contact_id,
@@ -193,7 +198,7 @@ class PurchaseReturnStateMachine extends \App\Domain\Core\AbstractStateMachine
             'completed_at' => now(),
         ]);
 
-        Event::dispatch(new Events\PurchaseReturnCompleted(
+        $this->eventDispatcher->dispatch(new Events\PurchaseReturnCompleted(
             $this->pr->id,
             $this->pr->return_number,
             $this->pr->contact_id,
@@ -208,7 +213,7 @@ class PurchaseReturnStateMachine extends \App\Domain\Core\AbstractStateMachine
         $userId = $this->getContextUserId();
         $reason = $this->context['cancellation_reason'] ?? null;
 
-        Event::dispatch(new Events\PurchaseReturnCancelled(
+        $this->eventDispatcher->dispatch(new Events\PurchaseReturnCancelled(
             $this->pr->id,
             $this->pr->return_number,
             $this->pr->contact_id,

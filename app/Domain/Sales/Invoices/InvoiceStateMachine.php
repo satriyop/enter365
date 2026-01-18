@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Sales\Invoices;
 
+use App\Contracts\Events\EventDispatcherInterface;
 use App\Domain\Core\AbstractStateMachine;
 use App\Domain\Sales\Invoices\Events\InvoiceSent;
 use App\Domain\Sales\Invoices\Events\InvoiceStatusChanged;
@@ -11,21 +12,22 @@ use App\Domain\Sales\Invoices\Events\InvoiceVoided;
 use App\Enums\DocumentStatus;
 use App\Exceptions\Domain\StateTransitionException;
 use App\Models\Sales\Invoice;
-use Illuminate\Support\Facades\Event;
 
 class InvoiceStateMachine extends AbstractStateMachine
 {
     private Invoice $invoice;
 
-    public function __construct(Invoice $invoice)
+    public function __construct(Invoice $invoice, ?EventDispatcherInterface $eventDispatcher = null)
     {
-        parent::__construct($invoice->status);
+        parent::__construct($invoice->status, $eventDispatcher);
         $this->invoice = $invoice;
     }
 
-    public static function fromInvoice(Invoice $invoice): self
-    {
-        return new self($invoice);
+    public static function fromInvoice(
+        Invoice $invoice,
+        ?EventDispatcherInterface $eventDispatcher = null
+    ): self {
+        return new self($invoice, $eventDispatcher);
     }
 
     protected function getTransitions(): array
@@ -160,11 +162,11 @@ class InvoiceStateMachine extends AbstractStateMachine
 
     protected function afterSent(DocumentStatus $from, DocumentStatus $to): void
     {
-        Event::dispatch(InvoiceSent::fromInvoice($this->invoice, $this->getContextUserId()));
+        $this->eventDispatcher->dispatch(InvoiceSent::fromInvoice($this->invoice, $this->getContextUserId()));
     }
 
     protected function afterVoid(DocumentStatus $from, DocumentStatus $to): void
     {
-        Event::dispatch(InvoiceVoided::fromInvoice($this->invoice, $this->getContextUserId()));
+        $this->eventDispatcher->dispatch(InvoiceVoided::fromInvoice($this->invoice, $this->getContextUserId()));
     }
 }

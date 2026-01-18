@@ -4,23 +4,28 @@ declare(strict_types=1);
 
 namespace App\Domain\Manufacturing\MaterialRequisitions;
 
+use App\Contracts\Events\EventDispatcherInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Manufacturing\MaterialRequisition;
-use Illuminate\Support\Facades\Event;
 
 class MaterialRequisitionStateMachine extends \App\Domain\Core\AbstractStateMachine
 {
     private MaterialRequisition $mr;
 
-    public function __construct(DocumentStatus $initialStatus, MaterialRequisition $mr)
-    {
-        parent::__construct($initialStatus);
+    public function __construct(
+        DocumentStatus $initialStatus,
+        MaterialRequisition $mr,
+        ?EventDispatcherInterface $eventDispatcher = null
+    ) {
+        parent::__construct($initialStatus, $eventDispatcher);
         $this->mr = $mr;
     }
 
-    public static function fromMaterialRequisition(MaterialRequisition $mr): self
-    {
-        return new self($mr->status, $mr);
+    public static function fromMaterialRequisition(
+        MaterialRequisition $mr,
+        ?EventDispatcherInterface $eventDispatcher = null
+    ): self {
+        return new self($mr->status, $mr, $eventDispatcher);
     }
 
     protected function getTransitions(): array
@@ -126,7 +131,7 @@ class MaterialRequisitionStateMachine extends \App\Domain\Core\AbstractStateMach
             'approved_at' => now(),
         ]);
 
-        Event::dispatch(new Events\MaterialRequisitionApproved(
+        $this->eventDispatcher->dispatch(new Events\MaterialRequisitionApproved(
             $this->mr->id,
             $this->mr->requisition_number,
             $this->mr->work_order_id ?? 0,
@@ -143,7 +148,7 @@ class MaterialRequisitionStateMachine extends \App\Domain\Core\AbstractStateMach
             'issued_at' => now(),
         ]);
 
-        Event::dispatch(new Events\MaterialRequisitionIssued(
+        $this->eventDispatcher->dispatch(new Events\MaterialRequisitionIssued(
             $this->mr->id,
             $this->mr->requisition_number,
             $this->mr->work_order_id ?? 0,
@@ -162,7 +167,7 @@ class MaterialRequisitionStateMachine extends \App\Domain\Core\AbstractStateMach
         $userId = $this->getContextUserId();
         $reason = $this->context['cancellation_reason'] ?? null;
 
-        Event::dispatch(new Events\MaterialRequisitionCancelled(
+        $this->eventDispatcher->dispatch(new Events\MaterialRequisitionCancelled(
             $this->mr->id,
             $this->mr->requisition_number,
             $this->mr->work_order_id ?? 0,

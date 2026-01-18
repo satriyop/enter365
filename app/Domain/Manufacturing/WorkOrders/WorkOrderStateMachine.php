@@ -4,23 +4,28 @@ declare(strict_types=1);
 
 namespace App\Domain\Manufacturing\WorkOrders;
 
+use App\Contracts\Events\EventDispatcherInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Manufacturing\WorkOrder;
-use Illuminate\Support\Facades\Event;
 
 class WorkOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
 {
     private WorkOrder $workOrder;
 
-    public function __construct(DocumentStatus $initialStatus, WorkOrder $workOrder)
-    {
-        parent::__construct($initialStatus);
+    public function __construct(
+        DocumentStatus $initialStatus,
+        WorkOrder $workOrder,
+        ?EventDispatcherInterface $eventDispatcher = null
+    ) {
+        parent::__construct($initialStatus, $eventDispatcher);
         $this->workOrder = $workOrder;
     }
 
-    public static function fromWorkOrder(WorkOrder $workOrder): self
-    {
-        return new self($workOrder->status, $workOrder);
+    public static function fromWorkOrder(
+        WorkOrder $workOrder,
+        ?EventDispatcherInterface $eventDispatcher = null
+    ): self {
+        return new self($workOrder->status, $workOrder, $eventDispatcher);
     }
 
     protected function getTransitions(): array
@@ -135,7 +140,7 @@ class WorkOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
             'confirmed_at' => now(),
         ]);
 
-        Event::dispatch(new Events\WorkOrderConfirmed(
+        $this->eventDispatcher->dispatch(new Events\WorkOrderConfirmed(
             $this->workOrder->id,
             $this->workOrder->wo_number,
             $this->workOrder->project_id ?? 0,
@@ -153,7 +158,7 @@ class WorkOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
             'actual_start_date' => now(),
         ]);
 
-        Event::dispatch(new Events\WorkOrderStarted(
+        $this->eventDispatcher->dispatch(new Events\WorkOrderStarted(
             $this->workOrder->id,
             $this->workOrder->wo_number,
             $this->workOrder->project_id ?? 0,
@@ -176,7 +181,7 @@ class WorkOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
             'actual_end_date' => now(),
         ]);
 
-        Event::dispatch(new Events\WorkOrderCompleted(
+        $this->eventDispatcher->dispatch(new Events\WorkOrderCompleted(
             $this->workOrder->id,
             $this->workOrder->wo_number,
             $this->workOrder->project_id ?? 0,
@@ -196,7 +201,7 @@ class WorkOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
             'cancellation_reason' => $reason,
         ]);
 
-        Event::dispatch(new Events\WorkOrderCancelled(
+        $this->eventDispatcher->dispatch(new Events\WorkOrderCancelled(
             $this->workOrder->id,
             $this->workOrder->wo_number,
             $this->workOrder->project_id ?? 0,
