@@ -1,696 +1,698 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Seeders\Demo\Vahana;
 
-use App\Enums\DocumentStatus;
+use App\Contracts\Purchasing\BillServiceInterface;
+use App\Contracts\Purchasing\GoodsReceiptNoteServiceInterface;
+use App\Contracts\Purchasing\PurchaseOrderServiceInterface;
+use App\Contracts\Purchasing\PurchaseReturnServiceInterface;
+use App\Contracts\Sales\DeliveryOrderServiceInterface;
+use App\Contracts\Sales\InvoiceServiceInterface;
+use App\Contracts\Sales\QuotationServiceInterface;
+use App\Contracts\Sales\SalesReturnServiceInterface;
+use App\Contracts\Shared\PaymentServiceInterface;
 use App\Models\Accounting\Account;
 use App\Models\Contacts\Contact;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\Warehouse;
-use App\Models\Manufacturing\Bom;
-use App\Models\Manufacturing\WorkOrder;
-use App\Models\Purchasing\PurchaseOrder;
-use App\Models\Purchasing\PurchaseOrderItem;
-use App\Models\Sales\Invoice;
-use App\Models\Sales\InvoiceItem;
-use App\Models\Sales\Quotation;
-use App\Models\Sales\QuotationItem;
-use App\Models\Shared\Payment;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Auth;
 
+/**
+ * Seeds realistic business transactions for PT Vahana demo.
+ *
+ * Uses the service layer to create complete business flows including:
+ * - Journal entries for accounting reports
+ * - Inventory movements for stock tracking
+ * - Proper document state transitions
+ */
 class VahanaTransactionSeeder extends Seeder
 {
-    private static int $quotationSeq = 0;
+    private QuotationServiceInterface $quotationService;
 
-    private static int $invoiceSeq = 0;
+    private InvoiceServiceInterface $invoiceService;
 
-    private static int $poSeq = 0;
+    private DeliveryOrderServiceInterface $deliveryOrderService;
 
-    private static int $woSeq = 0;
+    private PaymentServiceInterface $paymentService;
+
+    private PurchaseOrderServiceInterface $purchaseOrderService;
+
+    private GoodsReceiptNoteServiceInterface $grnService;
+
+    private BillServiceInterface $billService;
+
+    private SalesReturnServiceInterface $salesReturnService;
+
+    private PurchaseReturnServiceInterface $purchaseReturnService;
+
+    private ?User $adminUser = null;
+
+    private ?User $salesUser = null;
+
+    private ?User $purchasingUser = null;
+
+    private ?Warehouse $warehouse = null;
+
+    private ?Account $bankAccount = null;
+
+    private ?Account $cashAccount = null;
+
+    /**
+     * Base date for seeding (start of month simulation).
+     */
+    private Carbon $baseDate;
 
     /**
      * Seed transactions for PT Vahana - full business cycle demo.
      */
     public function run(): void
     {
-        $this->createQuotations();
-        $this->createInvoicesWithPayments();
-        $this->createPurchaseOrders();
-        $this->createWorkOrders();
+        $this->initializeServices();
+        $this->loadDependencies();
+
+        // Set base date to start of current month for realistic data
+        $this->baseDate = now()->startOfMonth();
+
+        $this->command->info('Seeding complete business transactions with journal entries...');
+
+        // Authenticate as admin for seeding
+        Auth::login($this->adminUser);
+
+        try {
+            $this->seedCompleteSalesCycles();
+            $this->seedDirectInvoicesWithPartialPayments();
+            $this->seedCompletePurchaseCycles();
+            $this->seedSalesReturns();
+            $this->seedPurchaseReturns();
+        } finally {
+            Auth::logout();
+        }
+
+        $this->command->info('Transaction seeding completed!');
+        $this->outputSummary();
     }
 
-    private function createQuotations(): void
+    /**
+     * Initialize services via service container.
+     */
+    private function initializeServices(): void
     {
-        $customers = Contact::where('type', Contact::TYPE_CUSTOMER)->get();
-        $salesUser = User::where('email', 'sales@demo.com')->first();
-
-        // Get finished goods
-        $lvmdp100 = Product::where('sku', 'FG-LVMDP-100')->first();
-        $lvmdp250 = Product::where('sku', 'FG-LVMDP-250')->first();
-        $mccDol = Product::where('sku', 'FG-MCC-DOL-25')->first();
-        $ats100 = Product::where('sku', 'FG-ATS-100')->first();
-        $db8w = Product::where('sku', 'FG-DB-8W')->first();
-        $svcInstall = Product::where('sku', 'SVC-INS-PANEL')->first();
-        $svcTest = Product::where('sku', 'SVC-COM-TEST')->first();
-
-        // Quotation 1: PLN - Large order - Won
-        $plnJkt = $customers->firstWhere('code', 'C-PLN-JKT');
-        if ($plnJkt && $lvmdp250) {
-            $this->createQuotation(
-                $plnJkt,
-                'Pengadaan Panel LVMDP untuk Gardu Induk Cawang',
-                [
-                    ['product' => $lvmdp250, 'qty' => 3, 'desc' => 'Panel LVMDP 250A untuk GI Cawang'],
-                    ['product' => $svcInstall, 'qty' => 3, 'desc' => 'Jasa Instalasi'],
-                    ['product' => $svcTest, 'qty' => 3, 'desc' => 'Jasa Commissioning'],
-                ],
-                'approved',
-                $salesUser,
-                ['priority' => 'high', 'outcome' => 'won', 'won_reason' => 'harga_kompetitif']
-            );
-        }
-
-        // Quotation 2: Krakatau Steel - Medium order - Approved
-        $krakatau = $customers->firstWhere('code', 'C-KRK');
-        if ($krakatau && $mccDol) {
-            $this->createQuotation(
-                $krakatau,
-                'Panel MCC untuk Plant Expansion',
-                [
-                    ['product' => $mccDol, 'qty' => 5, 'desc' => 'Panel MCC DOL 25A untuk conveyor'],
-                    ['product' => $lvmdp100, 'qty' => 1, 'desc' => 'Panel LVMDP 100A main'],
-                    ['product' => $svcInstall, 'qty' => 6, 'desc' => 'Jasa Instalasi'],
-                ],
-                'approved',
-                $salesUser,
-                ['priority' => 'normal']
-            );
-        }
-
-        // Quotation 3: Wijaya Karya - Submitted, pending
-        $wika = $customers->firstWhere('code', 'C-WKA');
-        if ($wika && $ats100) {
-            $this->createQuotation(
-                $wika,
-                'Panel ATS untuk Proyek Tol Jakarta-Cikampek',
-                [
-                    ['product' => $ats100, 'qty' => 10, 'desc' => 'Panel ATS 100A untuk rest area'],
-                    ['product' => $db8w, 'qty' => 20, 'desc' => 'Distribution Board 8 Way'],
-                    ['product' => $svcInstall, 'qty' => 30, 'desc' => 'Jasa Instalasi'],
-                ],
-                'submitted',
-                $salesUser,
-                ['priority' => 'urgent', 'next_follow_up_at' => now()->addDays(3)]
-            );
-        }
-
-        // Quotation 4: Astra - Draft
-        $astra = $customers->firstWhere('code', 'C-AST');
-        if ($astra && $lvmdp100) {
-            $this->createQuotation(
-                $astra,
-                'Panel LVMDP untuk Workshop Sunter',
-                [
-                    ['product' => $lvmdp100, 'qty' => 2, 'desc' => 'Panel LVMDP 100A'],
-                    ['product' => $mccDol, 'qty' => 8, 'desc' => 'Panel MCC DOL untuk mesin produksi'],
-                ],
-                'draft',
-                $salesUser
-            );
-        }
-
-        // Quotation 5: Summarecon - Lost
-        $summarecon = $customers->firstWhere('code', 'C-SML');
-        if ($summarecon && $db8w) {
-            $this->createQuotation(
-                $summarecon,
-                'DB Panel untuk Apartment Tower B',
-                [
-                    ['product' => $db8w, 'qty' => 100, 'desc' => 'Distribution Board 8 Way per unit'],
-                    ['product' => $svcInstall, 'qty' => 100, 'desc' => 'Jasa Instalasi'],
-                ],
-                'approved',
-                $salesUser,
-                ['outcome' => 'lost', 'lost_reason' => 'harga_tinggi', 'lost_to_competitor' => 'PT Panel Elektrik Indonesia']
-            );
-        }
-
-        // Quotation 6: CV Elektrik Mandiri - Small, submitted
-        $elmandiri = $customers->firstWhere('code', 'C-ELM');
-        if ($elmandiri && $db8w) {
-            $this->createQuotation(
-                $elmandiri,
-                'DB Panel untuk Ruko Bekasi',
-                [
-                    ['product' => $db8w, 'qty' => 5, 'desc' => 'Distribution Board 8 Way'],
-                ],
-                'submitted',
-                $salesUser,
-                ['priority' => 'low']
-            );
-        }
-
-        $this->command->info('Created 6 quotations');
+        $this->quotationService = app(QuotationServiceInterface::class);
+        $this->invoiceService = app(InvoiceServiceInterface::class);
+        $this->deliveryOrderService = app(DeliveryOrderServiceInterface::class);
+        $this->paymentService = app(PaymentServiceInterface::class);
+        $this->purchaseOrderService = app(PurchaseOrderServiceInterface::class);
+        $this->grnService = app(GoodsReceiptNoteServiceInterface::class);
+        $this->billService = app(BillServiceInterface::class);
+        $this->salesReturnService = app(SalesReturnServiceInterface::class);
+        $this->purchaseReturnService = app(PurchaseReturnServiceInterface::class);
     }
 
-    private function createQuotation(
-        Contact $contact,
+    /**
+     * Load required dependencies from existing seeders.
+     */
+    private function loadDependencies(): void
+    {
+        $this->adminUser = User::where('email', 'admin@demo.com')->first();
+        $this->salesUser = User::where('email', 'sales@demo.com')->first();
+        $this->purchasingUser = User::where('email', 'purchasing@demo.com')->first();
+        $this->warehouse = Warehouse::where('is_default', true)->first();
+        $this->bankAccount = Account::where('code', '1-1010')->first(); // Bank BCA
+        $this->cashAccount = Account::where('code', '1-1001')->first(); // Kas
+
+        if (! $this->adminUser || ! $this->warehouse || ! $this->bankAccount) {
+            throw new \RuntimeException('Required dependencies not found. Ensure UserSeeder, WarehouseSeeder, and AccountSeeder have run.');
+        }
+    }
+
+    /**
+     * Scenario 1: Complete Sales Cycles (Quotation → Invoice → Delivery → Payment).
+     *
+     * Creates 3 complete sales transactions with full journal entries.
+     */
+    private function seedCompleteSalesCycles(): void
+    {
+        $this->command->info('Creating complete sales cycles...');
+
+        $customers = Contact::where('type', Contact::TYPE_CUSTOMER)->get();
+
+        // Sale 1: PLN JKT - Large order (LVMDP 250A)
+        $this->createCompleteSaleCycle(
+            customer: $customers->firstWhere('code', 'C-PLN-JKT'),
+            products: [
+                ['sku' => 'FG-LVMDP-250', 'qty' => 2, 'desc' => 'Panel LVMDP 250A untuk GI Cawang'],
+                ['sku' => 'SVC-INS-PANEL', 'qty' => 2, 'desc' => 'Jasa Instalasi'],
+            ],
+            subject: 'Pengadaan Panel LVMDP untuk Gardu Induk Cawang',
+            dayOffsets: ['quotation' => 1, 'approve' => 3, 'invoice' => 5, 'delivery' => 7, 'payment' => 10]
+        );
+
+        // Sale 2: Krakatau Steel - Medium order (MCC panels)
+        $this->createCompleteSaleCycle(
+            customer: $customers->firstWhere('code', 'C-KRK'),
+            products: [
+                ['sku' => 'FG-MCC-DOL-25', 'qty' => 3, 'desc' => 'Panel MCC DOL 25A untuk conveyor'],
+                ['sku' => 'FG-LVMDP-100', 'qty' => 1, 'desc' => 'Panel LVMDP 100A main'],
+            ],
+            subject: 'Panel MCC untuk Plant Expansion',
+            dayOffsets: ['quotation' => 2, 'approve' => 4, 'invoice' => 6, 'delivery' => 9, 'payment' => 14]
+        );
+
+        // Sale 3: Astra - DB panels
+        $this->createCompleteSaleCycle(
+            customer: $customers->firstWhere('code', 'C-AST'),
+            products: [
+                ['sku' => 'FG-DB-8W', 'qty' => 10, 'desc' => 'Distribution Board 8 Way untuk workshop'],
+                ['sku' => 'SVC-INS-PANEL', 'qty' => 10, 'desc' => 'Jasa Instalasi'],
+            ],
+            subject: 'Panel DB untuk Workshop Sunter',
+            dayOffsets: ['quotation' => 3, 'approve' => 5, 'invoice' => 7, 'delivery' => 10, 'payment' => 15]
+        );
+
+        $this->command->info('  Created 3 complete sales cycles');
+    }
+
+    /**
+     * Create a complete sales cycle using services.
+     */
+    private function createCompleteSaleCycle(
+        ?Contact $customer,
+        array $products,
         string $subject,
-        array $items,
-        string $status,
-        ?User $salesUser = null,
-        array $options = []
-    ): Quotation {
-        self::$quotationSeq++;
-        $quotationNumber = 'QUO-'.now()->format('Ym').'-'.str_pad(self::$quotationSeq, 4, '0', STR_PAD_LEFT);
-
-        $subtotal = 0;
-        foreach ($items as $item) {
-            $subtotal += $item['product']->selling_price * $item['qty'];
+        array $dayOffsets
+    ): void {
+        if (! $customer) {
+            return;
         }
 
-        $taxRate = 11.0;
-        $taxAmount = (int) round($subtotal * ($taxRate / 100));
-        $total = $subtotal + $taxAmount;
+        // Build items array
+        $items = $this->buildSalesItems($products);
+        if (empty($items)) {
+            return;
+        }
 
-        $quotationData = [
-            'quotation_number' => $quotationNumber,
-            'revision' => 0,
-            'contact_id' => $contact->id,
-            'quotation_date' => now()->subDays(rand(1, 30)),
-            'valid_until' => now()->addDays(30),
+        // Step 1: Create Quotation
+        Carbon::setTestNow($this->baseDate->copy()->addDays($dayOffsets['quotation']));
+
+        $quotation = $this->quotationService->create([
+            'contact_id' => $customer->id,
+            'quotation_date' => now()->toDateString(),
+            'valid_until' => now()->addDays(30)->toDateString(),
             'subject' => $subject,
-            'status' => DocumentStatus::Draft,
-            'currency' => 'IDR',
-            'exchange_rate' => 1,
-            'subtotal' => $subtotal,
-            'discount_type' => null,
-            'discount_value' => 0,
-            'discount_amount' => 0,
-            'tax_rate' => $taxRate,
-            'tax_amount' => $taxAmount,
-            'total' => $total,
-            'base_currency_total' => $total,
-            'terms_conditions' => Quotation::getDefaultTermsConditions(),
-            'created_by' => $salesUser?->id,
-            'assigned_to' => $salesUser?->id,
-            'priority' => $options['priority'] ?? 'normal',
-        ];
+            'items' => $items,
+        ], $this->salesUser);
 
-        // Handle next follow up
-        if (isset($options['next_follow_up_at'])) {
-            $quotationData['next_follow_up_at'] = $options['next_follow_up_at'];
-        }
+        // Step 2: Submit and Approve Quotation
+        Carbon::setTestNow($this->baseDate->copy()->addDays($dayOffsets['approve']));
 
-        // Handle status transitions
-        if ($status === 'submitted' || $status === 'approved') {
-            $quotationData['status'] = DocumentStatus::Submitted;
-            $quotationData['submitted_at'] = now()->subDays(rand(1, 5));
-            $quotationData['submitted_by'] = $salesUser?->id;
-        }
+        $quotation = $this->quotationService->submit($quotation, $this->salesUser->id);
+        $quotation = $this->quotationService->approve($quotation, $this->adminUser->id);
 
-        if ($status === 'approved') {
-            $quotationData['status'] = DocumentStatus::Approved;
-            $quotationData['approved_at'] = now()->subDays(rand(0, 3));
-            $quotationData['approved_by'] = User::where('email', 'admin@demo.com')->first()?->id;
-        }
+        // Step 3: Convert to Invoice and Post
+        Carbon::setTestNow($this->baseDate->copy()->addDays($dayOffsets['invoice']));
 
-        // Handle outcomes
-        if (isset($options['outcome'])) {
-            $quotationData['outcome'] = $options['outcome'];
-            $quotationData['outcome_at'] = now();
-            if ($options['outcome'] === 'won') {
-                $quotationData['won_reason'] = $options['won_reason'] ?? 'lainnya';
-            } elseif ($options['outcome'] === 'lost') {
-                $quotationData['lost_reason'] = $options['lost_reason'] ?? 'lainnya';
-                $quotationData['lost_to_competitor'] = $options['lost_to_competitor'] ?? null;
-            }
-        }
+        $invoice = $this->quotationService->convertToInvoice($quotation);
+        $invoice = $this->invoiceService->post($invoice);
 
-        $quotation = Quotation::updateOrCreate(
-            ['quotation_number' => $quotationNumber, 'revision' => 0],
-            $quotationData
-        );
+        // Step 4: Create Delivery Order and Ship
+        Carbon::setTestNow($this->baseDate->copy()->addDays($dayOffsets['delivery']));
 
-        // Delete existing items and recreate
-        QuotationItem::where('quotation_id', $quotation->id)->delete();
+        $deliveryOrder = $this->deliveryOrderService->createFromInvoice($invoice, [
+            'warehouse_id' => $this->warehouse->id,
+            'do_date' => now()->toDateString(),
+            'created_by' => $this->salesUser->id,
+        ]);
+        $deliveryOrder = $this->deliveryOrderService->confirm($deliveryOrder, $this->salesUser->id);
+        $this->deliveryOrderService->ship($deliveryOrder, [], $this->salesUser->id);
 
-        // Create items
-        $sortOrder = 1;
-        foreach ($items as $item) {
-            $lineTotal = $item['product']->selling_price * $item['qty'];
-            $itemTaxAmount = (int) round($lineTotal * ($taxRate / 100));
+        // Step 5: Receive Full Payment
+        Carbon::setTestNow($this->baseDate->copy()->addDays($dayOffsets['payment']));
 
-            QuotationItem::create([
-                'quotation_id' => $quotation->id,
-                'product_id' => $item['product']->id,
-                'description' => $item['desc'],
-                'quantity' => $item['qty'],
-                'unit' => $item['product']->unit,
-                'unit_price' => $item['product']->selling_price,
-                'discount_percent' => 0,
-                'discount_amount' => 0,
-                'tax_rate' => $taxRate,
-                'tax_amount' => $itemTaxAmount,
-                'line_total' => $lineTotal,
-                'sort_order' => $sortOrder++,
-            ]);
-        }
+        $this->paymentService->createForInvoice($invoice, [
+            'payment_date' => now()->toDateString(),
+            'amount' => $invoice->total_amount,
+            'cash_account_id' => $this->bankAccount->id,
+            'reference' => 'TRF-'.strtoupper(substr($customer->code, 2)).'-'.now()->format('Ymd'),
+            'notes' => 'Pembayaran Invoice '.$invoice->invoice_number,
+        ]);
 
-        return $quotation;
+        Carbon::setTestNow(null);
     }
 
-    private function createInvoicesWithPayments(): void
+    /**
+     * Scenario 2: Direct Invoices with Partial Payments.
+     *
+     * Creates 2 invoices directly (without quotations) with multiple payments.
+     */
+    private function seedDirectInvoicesWithPartialPayments(): void
     {
+        $this->command->info('Creating invoices with partial payments...');
+
         $customers = Contact::where('type', Contact::TYPE_CUSTOMER)->get();
-        $cashAccount = Account::where('code', '1-1001')->first(); // Kas
-        $bankAccount = Account::where('code', '1-1010')->first(); // Bank BCA
 
-        // Invoice 1: Paid - from PLN
-        $plnJbr = $customers->firstWhere('code', 'C-PLN-JBR');
-        $lvmdp100 = Product::where('sku', 'FG-LVMDP-100')->first();
-        if ($plnJbr && $lvmdp100) {
-            $invoice = $this->createInvoice(
-                $plnJbr,
-                [
-                    ['product' => $lvmdp100, 'qty' => 2],
-                ],
-                'paid',
-                now()->subDays(45)
-            );
-
-            // Create payment
-            if ($invoice && $bankAccount) {
-                Payment::updateOrCreate(
-                    ['payment_number' => 'PAY-'.now()->format('Ym').'-0001'],
-                    [
-                        'payment_date' => now()->subDays(15),
-                        'type' => Payment::TYPE_RECEIVE,
-                        'contact_id' => $plnJbr->id,
-                        'cash_account_id' => $bankAccount->id,
-                        'amount' => $invoice->total_amount,
-                        'reference' => 'TRF-PLN-001',
-                        'notes' => 'Pembayaran Invoice '.$invoice->invoice_number,
-                        'payable_type' => Invoice::class,
-                        'payable_id' => $invoice->id,
-                    ]
-                );
-            }
-        }
-
-        // Invoice 2: Partial payment - from Trias
-        $trias = $customers->firstWhere('code', 'C-TRIA');
-        $mccDol = Product::where('sku', 'FG-MCC-DOL-25')->first();
-        if ($trias && $mccDol) {
-            $invoice = $this->createInvoice(
-                $trias,
-                [
-                    ['product' => $mccDol, 'qty' => 3],
-                ],
-                'partial',
-                now()->subDays(30)
-            );
-
-            // 50% payment
-            if ($invoice && $bankAccount) {
-                $partialAmount = (int) ($invoice->total_amount * 0.5);
-                Payment::updateOrCreate(
-                    ['payment_number' => 'PAY-'.now()->format('Ym').'-0002'],
-                    [
-                        'payment_date' => now()->subDays(10),
-                        'type' => Payment::TYPE_RECEIVE,
-                        'contact_id' => $trias->id,
-                        'cash_account_id' => $bankAccount->id,
-                        'amount' => $partialAmount,
-                        'reference' => 'TRF-TRIAS-002',
-                        'notes' => 'DP 50% Invoice '.$invoice->invoice_number,
-                        'payable_type' => Invoice::class,
-                        'payable_id' => $invoice->id,
-                    ]
-                );
-
-                $invoice->update([
-                    'paid_amount' => $partialAmount,
-                    'status' => DocumentStatus::Partial,
-                ]);
-            }
-        }
-
-        // Invoice 3: Sent, awaiting payment - from PP
-        $pp = $customers->firstWhere('code', 'C-PP');
-        $ats100 = Product::where('sku', 'FG-ATS-100')->first();
-        if ($pp && $ats100) {
-            $this->createInvoice(
-                $pp,
-                [
-                    ['product' => $ats100, 'qty' => 2],
-                ],
-                'sent',
-                now()->subDays(10)
-            );
-        }
-
-        // Invoice 4: Overdue - from Mitra Kontraktor
-        $mkt = $customers->firstWhere('code', 'C-MKT');
-        $db8w = Product::where('sku', 'FG-DB-8W')->first();
-        if ($mkt && $db8w) {
-            $this->createInvoice(
-                $mkt,
-                [
-                    ['product' => $db8w, 'qty' => 10],
-                ],
-                'overdue',
-                now()->subDays(60)
-            );
-        }
-
-        $this->command->info('Created 4 invoices with payments');
-    }
-
-    private function createInvoice(Contact $contact, array $items, string $status, $invoiceDate): ?Invoice
-    {
-        self::$invoiceSeq++;
-        $invoiceNumber = 'INV-'.now()->format('Ym').'-'.str_pad(self::$invoiceSeq, 4, '0', STR_PAD_LEFT);
-
-        $subtotal = 0;
-        foreach ($items as $item) {
-            $subtotal += $item['product']->selling_price * $item['qty'];
-        }
-
-        $taxRate = 11.0;
-        $taxAmount = (int) round($subtotal * ($taxRate / 100));
-        $total = $subtotal + $taxAmount;
-        $dueDate = (clone $invoiceDate)->addDays($contact->payment_term_days ?? 30);
-
-        $invoiceStatus = match ($status) {
-            'paid' => DocumentStatus::Paid,
-            'partial' => DocumentStatus::Partial,
-            'overdue' => DocumentStatus::Overdue,
-            default => DocumentStatus::Sent,
-        };
-
-        $invoice = Invoice::updateOrCreate(
-            ['invoice_number' => $invoiceNumber],
-            [
-                'contact_id' => $contact->id,
-                'invoice_date' => $invoiceDate,
-                'due_date' => $dueDate,
-                'status' => $invoiceStatus,
-                'currency' => 'IDR',
-                'exchange_rate' => 1,
-                'subtotal' => $subtotal,
-                'discount_amount' => 0,
-                'tax_rate' => $taxRate,
-                'tax_amount' => $taxAmount,
-                'total_amount' => $total,
-                'paid_amount' => $status === 'paid' ? $total : 0,
-            ]
+        // Invoice 1: PP Construction - 50% payment received
+        $this->createInvoiceWithPartialPayment(
+            customer: $customers->firstWhere('code', 'C-PP'),
+            products: [
+                ['sku' => 'FG-ATS-100', 'qty' => 3, 'desc' => 'Panel ATS 100A untuk rest area'],
+            ],
+            paymentPercents: [50],
+            dayOffsets: ['invoice' => 5, 'payment1' => 12]
         );
 
-        // Delete existing items and recreate
-        InvoiceItem::where('invoice_id', $invoice->id)->delete();
+        // Invoice 2: Trias Sentosa - Two partial payments (30%, 40%)
+        $this->createInvoiceWithPartialPayment(
+            customer: $customers->firstWhere('code', 'C-TRIA'),
+            products: [
+                ['sku' => 'FG-MCC-DOL-25', 'qty' => 2, 'desc' => 'Panel MCC DOL 25A'],
+                ['sku' => 'FG-DB-8W', 'qty' => 5, 'desc' => 'Distribution Board 8 Way'],
+            ],
+            paymentPercents: [30, 40],
+            dayOffsets: ['invoice' => 6, 'payment1' => 15, 'payment2' => 22]
+        );
 
-        foreach ($items as $index => $item) {
-            $lineTotal = $item['product']->selling_price * $item['qty'];
+        $this->command->info('  Created 2 invoices with partial payments');
+    }
 
-            InvoiceItem::create([
-                'invoice_id' => $invoice->id,
-                'product_id' => $item['product']->id,
-                'description' => $item['product']->name,
-                'quantity' => $item['qty'],
-                'unit' => $item['product']->unit,
-                'unit_price' => $item['product']->selling_price,
-                'discount_percent' => 0,
-                'discount_amount' => 0,
-                'tax_rate' => 0,
-                'tax_amount' => 0,
-                'line_total' => $lineTotal,
-                'sort_order' => $index,
+    /**
+     * Create an invoice with partial payments.
+     */
+    private function createInvoiceWithPartialPayment(
+        ?Contact $customer,
+        array $products,
+        array $paymentPercents,
+        array $dayOffsets
+    ): void {
+        if (! $customer) {
+            return;
+        }
+
+        $items = $this->buildInvoiceItems($products);
+        if (empty($items)) {
+            return;
+        }
+
+        // Create and post invoice
+        Carbon::setTestNow($this->baseDate->copy()->addDays($dayOffsets['invoice']));
+
+        $invoice = $this->invoiceService->create([
+            'contact_id' => $customer->id,
+            'invoice_date' => now()->toDateString(),
+            'due_date' => now()->addDays($customer->payment_term_days ?? 30)->toDateString(),
+            'items' => $items,
+        ]);
+        $invoice = $this->invoiceService->post($invoice);
+
+        // Create partial payments
+        foreach ($paymentPercents as $index => $percent) {
+            $paymentKey = 'payment'.($index + 1);
+            if (! isset($dayOffsets[$paymentKey])) {
+                continue;
+            }
+
+            Carbon::setTestNow($this->baseDate->copy()->addDays($dayOffsets[$paymentKey]));
+
+            $amount = (int) round($invoice->total_amount * ($percent / 100));
+
+            $this->paymentService->createForInvoice($invoice->fresh(), [
+                'payment_date' => now()->toDateString(),
+                'amount' => $amount,
+                'cash_account_id' => $this->bankAccount->id,
+                'reference' => 'TRF-'.strtoupper(substr($customer->code, 2)).'-'.now()->format('Ymd'),
+                'notes' => "Pembayaran {$percent}% Invoice {$invoice->invoice_number}",
             ]);
         }
 
-        return $invoice;
+        Carbon::setTestNow(null);
     }
 
-    private function createPurchaseOrders(): void
+    /**
+     * Scenario 3: Complete Purchase Cycles (PO → GRN → Bill → Payment).
+     *
+     * Creates 3 complete purchase transactions with inventory movements.
+     */
+    private function seedCompletePurchaseCycles(): void
     {
-        $vendors = Contact::where('type', Contact::TYPE_SUPPLIER)
+        $this->command->info('Creating complete purchase cycles...');
+
+        $suppliers = Contact::where('type', Contact::TYPE_SUPPLIER)
             ->where('is_subcontractor', false)
             ->get();
 
-        $purchasingUser = User::where('email', 'purchasing@demo.com')->first();
-
-        // PO 1: Schneider - Approved, partially received
-        $schneider = $vendors->firstWhere('code', 'S-SCH');
-        $mccb100 = Product::where('sku', 'EL-MCCB-100')->first();
-        $mccb250 = Product::where('sku', 'EL-MCCB-250')->first();
-        $ctr25 = Product::where('sku', 'EL-CTR-25')->first();
-
-        if ($schneider && $mccb100) {
-            $this->createPurchaseOrder(
-                $schneider,
-                [
-                    ['product' => $mccb100, 'qty' => 10],
-                    ['product' => $mccb250, 'qty' => 5],
-                    ['product' => $ctr25, 'qty' => 20],
-                ],
-                'approved',
-                $purchasingUser
-            );
-        }
-
-        // PO 2: Supreme Cable - Approved
-        $supreme = $vendors->firstWhere('code', 'S-SUM');
-        $nyy4x35 = Product::where('sku', 'CB-NYY-4X35')->first();
-        $nyy4x70 = Product::where('sku', 'CB-NYY-4X70')->first();
-
-        if ($supreme && $nyy4x35) {
-            $this->createPurchaseOrder(
-                $supreme,
-                [
-                    ['product' => $nyy4x35, 'qty' => 500],
-                    ['product' => $nyy4x70, 'qty' => 200],
-                ],
-                'approved',
-                $purchasingUser
-            );
-        }
-
-        // PO 3: Busbar Indonesia - Draft
-        $busbar = $vendors->firstWhere('code', 'S-BBR');
-        $bb30x5 = Product::where('sku', 'BB-CU-30X5')->first();
-        $bb40x5 = Product::where('sku', 'BB-CU-40X5')->first();
-
-        if ($busbar && $bb30x5) {
-            $this->createPurchaseOrder(
-                $busbar,
-                [
-                    ['product' => $bb30x5, 'qty' => 50],
-                    ['product' => $bb40x5, 'qty' => 30],
-                ],
-                'draft',
-                $purchasingUser
-            );
-        }
-
-        // PO 4: Rittal - Submitted
-        $rittal = $vendors->firstWhere('code', 'S-RTL');
-        $en800 = Product::where('sku', 'EN-800X600')->first();
-        $en1000 = Product::where('sku', 'EN-1000X800')->first();
-
-        if ($rittal && $en800) {
-            $this->createPurchaseOrder(
-                $rittal,
-                [
-                    ['product' => $en800, 'qty' => 10],
-                    ['product' => $en1000, 'qty' => 5],
-                ],
-                'submitted',
-                $purchasingUser
-            );
-        }
-
-        $this->command->info('Created 4 purchase orders');
-    }
-
-    private function createPurchaseOrder(
-        Contact $vendor,
-        array $items,
-        string $status,
-        ?User $user = null
-    ): PurchaseOrder {
-        self::$poSeq++;
-        $poNumber = 'PO-'.now()->format('Ym').'-'.str_pad(self::$poSeq, 4, '0', STR_PAD_LEFT);
-
-        $subtotal = 0;
-        foreach ($items as $item) {
-            $subtotal += $item['product']->purchase_price * $item['qty'];
-        }
-
-        $taxRate = 11.0;
-        $taxAmount = (int) round($subtotal * ($taxRate / 100));
-        $total = $subtotal + $taxAmount;
-
-        $poStatus = match ($status) {
-            'approved' => DocumentStatus::Approved,
-            'submitted' => DocumentStatus::Submitted,
-            default => DocumentStatus::Draft,
-        };
-
-        $poData = [
-            'po_number' => $poNumber,
-            'contact_id' => $vendor->id,
-            'po_date' => now()->subDays(rand(1, 20)),
-            'expected_date' => now()->addDays(rand(7, 30)),
-            'status' => $poStatus,
-            'currency' => 'IDR',
-            'exchange_rate' => 1,
-            'subtotal' => $subtotal,
-            'discount_type' => null,
-            'discount_value' => 0,
-            'discount_amount' => 0,
-            'tax_rate' => $taxRate,
-            'tax_amount' => $taxAmount,
-            'total' => $total,
-            'base_currency_total' => $total,
-            'notes' => 'Mohon dikirim sesuai jadwal',
-            'created_by' => $user?->id,
-        ];
-
-        if ($status === 'submitted' || $status === 'approved') {
-            $poData['submitted_at'] = now()->subDays(rand(1, 5));
-            $poData['submitted_by'] = $user?->id;
-        }
-
-        if ($status === 'approved') {
-            $poData['approved_at'] = now()->subDays(rand(0, 3));
-            $poData['approved_by'] = User::where('email', 'admin@demo.com')->first()?->id;
-        }
-
-        $po = PurchaseOrder::updateOrCreate(
-            ['po_number' => $poNumber],
-            $poData
+        // Purchase 1: Schneider - Electrical components
+        $this->createCompletePurchaseCycle(
+            supplier: $suppliers->firstWhere('code', 'S-SCH'),
+            products: [
+                ['sku' => 'EL-MCCB-100', 'qty' => 5],
+                ['sku' => 'EL-MCCB-250', 'qty' => 3],
+                ['sku' => 'EL-CTR-25', 'qty' => 10],
+            ],
+            dayOffsets: ['po' => 1, 'approve' => 2, 'grn' => 6, 'bill' => 7, 'payment' => 20]
         );
 
-        // Delete existing items and recreate
-        PurchaseOrderItem::where('purchase_order_id', $po->id)->delete();
+        // Purchase 2: Supreme Cable - Cables
+        $this->createCompletePurchaseCycle(
+            supplier: $suppliers->firstWhere('code', 'S-SUM'),
+            products: [
+                ['sku' => 'CB-NYY-4X35', 'qty' => 200],
+                ['sku' => 'CB-NYY-4X70', 'qty' => 100],
+            ],
+            dayOffsets: ['po' => 2, 'approve' => 3, 'grn' => 8, 'bill' => 9, 'payment' => 25]
+        );
 
-        $sortOrder = 1;
-        foreach ($items as $item) {
-            $lineTotal = $item['product']->purchase_price * $item['qty'];
-            $itemTaxAmount = (int) round($lineTotal * ($taxRate / 100));
+        // Purchase 3: Rittal - Enclosures
+        $this->createCompletePurchaseCycle(
+            supplier: $suppliers->firstWhere('code', 'S-RTL'),
+            products: [
+                ['sku' => 'EN-800X600', 'qty' => 5],
+                ['sku' => 'EN-1000X800', 'qty' => 3],
+            ],
+            dayOffsets: ['po' => 3, 'approve' => 4, 'grn' => 10, 'bill' => 11, 'payment' => 28]
+        );
 
-            PurchaseOrderItem::create([
-                'purchase_order_id' => $po->id,
-                'product_id' => $item['product']->id,
-                'description' => $item['product']->name,
-                'quantity' => $item['qty'],
-                'quantity_received' => 0,
-                'unit' => $item['product']->unit,
-                'unit_price' => $item['product']->purchase_price,
-                'discount_percent' => 0,
-                'discount_amount' => 0,
-                'tax_rate' => $taxRate,
-                'tax_amount' => $itemTaxAmount,
-                'line_total' => $lineTotal,
-                'sort_order' => $sortOrder++,
+        $this->command->info('  Created 3 complete purchase cycles');
+    }
+
+    /**
+     * Create a complete purchase cycle using services.
+     */
+    private function createCompletePurchaseCycle(
+        ?Contact $supplier,
+        array $products,
+        array $dayOffsets
+    ): void {
+        if (! $supplier) {
+            return;
+        }
+
+        $items = $this->buildPurchaseItems($products);
+        if (empty($items)) {
+            return;
+        }
+
+        // Step 1: Create Purchase Order
+        Carbon::setTestNow($this->baseDate->copy()->addDays($dayOffsets['po']));
+
+        $po = $this->purchaseOrderService->create([
+            'contact_id' => $supplier->id,
+            'po_date' => now()->toDateString(),
+            'expected_date' => now()->addDays(14)->toDateString(),
+            'items' => $items,
+            'notes' => 'Mohon dikirim sesuai jadwal',
+        ]);
+
+        // Step 2: Submit and Approve PO
+        Carbon::setTestNow($this->baseDate->copy()->addDays($dayOffsets['approve']));
+
+        $po = $this->purchaseOrderService->submit($po, $this->purchasingUser->id);
+        $po = $this->purchaseOrderService->approve($po, $this->adminUser->id);
+
+        // Step 3: Create GRN and Complete (adds inventory)
+        Carbon::setTestNow($this->baseDate->copy()->addDays($dayOffsets['grn']));
+
+        $grn = $this->grnService->createFromPurchaseOrder($po, [
+            'warehouse_id' => $this->warehouse->id,
+            'receipt_date' => now()->toDateString(),
+            'supplier_do_number' => 'DO-'.$supplier->code.'-'.now()->format('Ymd'),
+            'created_by' => $this->purchasingUser->id,
+        ]);
+
+        // Update received quantities on GRN items
+        foreach ($grn->items as $item) {
+            $this->grnService->updateItem($item, [
+                'quantity_received' => $item->quantity_ordered,
             ]);
         }
 
-        return $po;
+        $grn = $this->grnService->complete($grn, $this->purchasingUser->id);
+
+        // Step 4: Create Bill and Post
+        Carbon::setTestNow($this->baseDate->copy()->addDays($dayOffsets['bill']));
+
+        $bill = $this->billService->create([
+            'contact_id' => $supplier->id,
+            'bill_date' => now()->toDateString(),
+            'due_date' => now()->addDays($supplier->payment_term_days ?? 30)->toDateString(),
+            'vendor_invoice_number' => 'INV-'.$supplier->code.'-'.now()->format('Ymd'),
+            'items' => $this->buildBillItemsFromGrn($grn),
+        ]);
+        $bill = $this->billService->post($bill);
+
+        // Step 5: Pay Bill
+        Carbon::setTestNow($this->baseDate->copy()->addDays($dayOffsets['payment']));
+
+        $this->paymentService->createForBill($bill, [
+            'payment_date' => now()->toDateString(),
+            'amount' => $bill->total_amount,
+            'cash_account_id' => $this->bankAccount->id,
+            'reference' => 'PAY-'.strtoupper(substr($supplier->code, 2)).'-'.now()->format('Ymd'),
+            'notes' => 'Pembayaran Bill '.$bill->bill_number,
+        ]);
+
+        Carbon::setTestNow(null);
     }
 
-    private function createWorkOrders(): void
+    /**
+     * Scenario 5: Sales Returns.
+     *
+     * Creates 1 sales return against a posted invoice.
+     */
+    private function seedSalesReturns(): void
     {
-        $productionUser = User::where('email', 'produksi@demo.com')->first();
-        $warehouse = Warehouse::where('is_default', true)->first();
+        $this->command->info('Creating sales returns...');
 
-        // WO 1: LVMDP 100A - Completed
-        $bomLvmdp = Bom::where('bom_number', 'BOM-LVMDP-100')->first();
-        if ($bomLvmdp && $warehouse) {
-            $this->createWorkOrder(
-                $bomLvmdp,
-                2,
-                'completed',
-                $productionUser,
-                $warehouse,
-                now()->subDays(20)
-            );
+        // Get a posted invoice to create return against
+        $invoice = \App\Models\Sales\Invoice::where('status', \App\Enums\DocumentStatus::Partial)
+            ->orWhere('status', \App\Enums\DocumentStatus::Paid)
+            ->with('items')
+            ->first();
+
+        if (! $invoice) {
+            $this->command->warn('  No posted invoice found for sales return');
+
+            return;
         }
 
-        // WO 2: MCC DOL 25A - In Progress
-        $bomMcc = Bom::where('bom_number', 'BOM-MCC-DOL-25')->first();
-        if ($bomMcc && $warehouse) {
-            $this->createWorkOrder(
-                $bomMcc,
-                3,
-                'in_progress',
-                $productionUser,
-                $warehouse,
-                now()->subDays(5)
-            );
-        }
+        Carbon::setTestNow($this->baseDate->copy()->addDays(25));
 
-        // WO 3: DB 8 Way - Planned
-        $bomDb = Bom::where('bom_number', 'BOM-DB-8W')->first();
-        if ($bomDb && $warehouse) {
-            $this->createWorkOrder(
-                $bomDb,
-                10,
-                'confirmed',
-                $productionUser,
-                $warehouse,
-                now()
-            );
-        }
+        // Create sales return from invoice (copies all items)
+        $salesReturn = $this->salesReturnService->createFromInvoice($invoice, [
+            'warehouse_id' => $this->warehouse->id,
+            'return_date' => now()->toDateString(),
+            'reason' => 'Barang tidak sesuai spesifikasi',
+            'created_by' => $this->salesUser->id,
+        ]);
 
-        $this->command->info('Created 3 work orders');
+        // Reduce quantities (return only partial)
+        foreach ($salesReturn->items as $item) {
+            $returnQty = max(1, (int) floor($item->quantity / 2));
+            $item->quantity = $returnQty;
+            $item->calculateLineTotal();
+            $item->save();
+        }
+        $salesReturn->refresh();
+        $salesReturn->calculateTotals();
+        $salesReturn->save();
+
+        // Submit and approve (triggers inventory and journal handlers)
+        Carbon::setTestNow($this->baseDate->copy()->addDays(26));
+
+        $salesReturn = $this->salesReturnService->submit($salesReturn, $this->salesUser->id);
+        $this->salesReturnService->approve($salesReturn, $this->adminUser->id);
+
+        Carbon::setTestNow(null);
+
+        $this->command->info('  Created 1 sales return');
     }
 
-    private function createWorkOrder(
-        Bom $bom,
-        int $quantity,
-        string $status,
-        ?User $user,
-        Warehouse $warehouse,
-        $startDate
-    ): WorkOrder {
-        self::$woSeq++;
-        $woNumber = 'WO-'.now()->format('Ym').'-'.str_pad(self::$woSeq, 4, '0', STR_PAD_LEFT);
+    /**
+     * Scenario 6: Purchase Returns.
+     *
+     * Creates 1 purchase return against a posted bill.
+     */
+    private function seedPurchaseReturns(): void
+    {
+        $this->command->info('Creating purchase returns...');
 
-        $woStatus = match ($status) {
-            'completed' => DocumentStatus::Completed,
-            'in_progress' => DocumentStatus::InProgress,
-            'confirmed' => DocumentStatus::Confirmed,
-            default => DocumentStatus::Draft,
-        };
+        // Get a posted bill to create return against
+        $bill = \App\Models\Purchasing\Bill::where('status', \App\Enums\DocumentStatus::Partial)
+            ->orWhere('status', \App\Enums\DocumentStatus::Paid)
+            ->with('items')
+            ->first();
 
-        $completedQty = $status === 'completed' ? $quantity : ($status === 'in_progress' ? (int) ($quantity * 0.3) : 0);
-        $progressPercentage = $quantity > 0 ? (int) min(100, round(($completedQty / $quantity) * 100)) : 0;
+        if (! $bill) {
+            $this->command->warn('  No posted bill found for purchase return');
 
-        $wo = WorkOrder::updateOrCreate(
-            ['wo_number' => $woNumber],
-            [
-                'name' => 'Produksi '.$bom->name,
-                'bom_id' => $bom->id,
-                'product_id' => $bom->product_id,
-                'warehouse_id' => $warehouse->id,
-                'quantity_ordered' => $quantity,
-                'quantity_completed' => $completedQty,
-                'quantity_scrapped' => 0,
-                'progress_percentage' => $progressPercentage,
-                'planned_start_date' => $startDate,
-                'planned_end_date' => (clone $startDate)->addDays(7),
-                'actual_start_date' => in_array($status, ['in_progress', 'completed']) ? $startDate : null,
-                'actual_end_date' => $status === 'completed' ? (clone $startDate)->addDays(5) : null,
-                'status' => $woStatus,
-                'priority' => 'normal',
-                'notes' => 'Work Order untuk '.$bom->name,
-                'created_by' => $user?->id,
-            ]
-        );
+            return;
+        }
 
-        return $wo;
+        Carbon::setTestNow($this->baseDate->copy()->addDays(28));
+
+        // Create purchase return from bill
+        $purchaseReturn = $this->purchaseReturnService->createFromBill($bill, [
+            'warehouse_id' => $this->warehouse->id,
+            'return_date' => now()->toDateString(),
+            'reason' => 'Barang rusak saat diterima',
+            'created_by' => $this->purchasingUser->id,
+        ]);
+
+        // Reduce quantities (return only partial)
+        foreach ($purchaseReturn->items as $item) {
+            $returnQty = max(1, (int) floor($item->quantity / 3));
+            $item->quantity = $returnQty;
+            $item->calculateLineTotal();
+            $item->save();
+        }
+        $purchaseReturn->refresh();
+        $purchaseReturn->calculateTotals();
+        $purchaseReturn->save();
+
+        // Submit and approve (triggers inventory and journal handlers)
+        Carbon::setTestNow($this->baseDate->copy()->addDays(29));
+
+        $purchaseReturn = $this->purchaseReturnService->submit($purchaseReturn, $this->purchasingUser->id);
+        $this->purchaseReturnService->approve($purchaseReturn, $this->adminUser->id);
+
+        Carbon::setTestNow(null);
+
+        $this->command->info('  Created 1 purchase return');
+    }
+
+    /**
+     * Build items array for quotations/invoices.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function buildSalesItems(array $products): array
+    {
+        $items = [];
+
+        foreach ($products as $productData) {
+            $product = Product::where('sku', $productData['sku'])->first();
+            if (! $product) {
+                continue;
+            }
+
+            $items[] = [
+                'product_id' => $product->id,
+                'description' => $productData['desc'] ?? $product->name,
+                'quantity' => $productData['qty'],
+                'unit' => $product->unit,
+                'unit_price' => $product->selling_price,
+                'tax_rate' => $product->tax_rate ?? 11,
+            ];
+        }
+
+        return $items;
+    }
+
+    /**
+     * Build items array for direct invoices.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function buildInvoiceItems(array $products): array
+    {
+        $items = [];
+
+        foreach ($products as $productData) {
+            $product = Product::where('sku', $productData['sku'])->first();
+            if (! $product) {
+                continue;
+            }
+
+            $items[] = [
+                'description' => $productData['desc'] ?? $product->name,
+                'quantity' => $productData['qty'],
+                'unit' => $product->unit,
+                'unit_price' => $product->selling_price,
+            ];
+        }
+
+        return $items;
+    }
+
+    /**
+     * Build items array for purchase orders.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function buildPurchaseItems(array $products): array
+    {
+        $items = [];
+
+        foreach ($products as $productData) {
+            $product = Product::where('sku', $productData['sku'])->first();
+            if (! $product) {
+                continue;
+            }
+
+            $items[] = [
+                'product_id' => $product->id,
+                'description' => $product->name,
+                'quantity' => $productData['qty'],
+                'unit' => $product->unit,
+                'unit_price' => $product->purchase_price,
+                'tax_rate' => $product->tax_rate ?? 11,
+            ];
+        }
+
+        return $items;
+    }
+
+    /**
+     * Build bill items from completed GRN.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function buildBillItemsFromGrn(\App\Models\Purchasing\GoodsReceiptNote $grn): array
+    {
+        $items = [];
+
+        foreach ($grn->items as $grnItem) {
+            if ($grnItem->quantity_received <= 0) {
+                continue;
+            }
+
+            $items[] = [
+                'description' => $grnItem->product?->name ?? 'Item',
+                'quantity' => $grnItem->quantity_received,
+                'unit' => $grnItem->product?->unit ?? 'unit',
+                'unit_price' => $grnItem->unit_price,
+            ];
+        }
+
+        return $items;
+    }
+
+    /**
+     * Output summary of seeded data.
+     */
+    private function outputSummary(): void
+    {
+        $journalCount = \App\Models\Accounting\JournalEntry::count();
+        $inventoryCount = \App\Models\Inventory\InventoryMovement::count();
+        $invoiceCount = \App\Models\Sales\Invoice::whereIn('status', [
+            \App\Enums\DocumentStatus::Sent,
+            \App\Enums\DocumentStatus::Partial,
+            \App\Enums\DocumentStatus::Paid,
+        ])->count();
+        $billCount = \App\Models\Purchasing\Bill::whereIn('status', [
+            \App\Enums\DocumentStatus::Received,
+            \App\Enums\DocumentStatus::Partial,
+            \App\Enums\DocumentStatus::Paid,
+        ])->count();
+
+        $this->command->newLine();
+        $this->command->info('=== Transaction Summary ===');
+        $this->command->info("Journal Entries: {$journalCount}");
+        $this->command->info("Inventory Movements: {$inventoryCount}");
+        $this->command->info("Posted Invoices: {$invoiceCount}");
+        $this->command->info("Posted Bills: {$billCount}");
     }
 }
