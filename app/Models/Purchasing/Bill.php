@@ -313,4 +313,22 @@ class Bill extends Model
 
         return $prefix.str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
     }
+
+    /**
+     * Get the bill state machine instance.
+     */
+    public function stateMachine(): \App\Domain\Purchasing\Bills\BillStateMachine
+    {
+        return \App\Domain\Purchasing\Bills\BillStateMachine::fromBill($this);
+    }
+
+    /**
+     * Transition the bill to a new status.
+     */
+    public function transitionTo(DocumentStatus $status, ?int $userId = null): self
+    {
+        $this->stateMachine()->transitionTo($status, ['user_id' => $userId]);
+
+        return $this->refresh();
+    }
 }

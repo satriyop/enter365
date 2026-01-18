@@ -327,4 +327,22 @@ class Invoice extends Model
 
         return $prefix.str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
     }
+
+    /**
+     * Get the invoice state machine instance.
+     */
+    public function stateMachine(): \App\Domain\Sales\Invoices\InvoiceStateMachine
+    {
+        return \App\Domain\Sales\Invoices\InvoiceStateMachine::fromInvoice($this);
+    }
+
+    /**
+     * Transition the invoice to a new status.
+     */
+    public function transitionTo(DocumentStatus $status, ?int $userId = null): self
+    {
+        $this->stateMachine()->transitionTo($status, ['user_id' => $userId]);
+
+        return $this->refresh();
+    }
 }
