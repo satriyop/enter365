@@ -4,12 +4,11 @@ namespace App\Services\Purchasing;
 
 use App\Contracts\Services\Domain\DocumentNumberGeneratorInterface;
 use App\Contracts\Services\Domains\PurchaseOrderServiceInterface;
+use App\Domain\Purchasing\PurchaseOrderBillConverter;
 use App\Domain\Purchasing\PurchaseOrderDefaults;
 use App\Domain\Purchasing\PurchaseOrderItemCreator;
+use App\Domain\Purchasing\PurchaseOrderStatistics;
 use App\Domain\Purchasing\PurchaseOrderWorkflow;
-use App\Enums\DocumentStatus;
-use App\Models\Purchasing\Bill;
-use App\Models\Purchasing\BillItem;
 use App\Models\Purchasing\PurchaseOrder;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -21,13 +20,17 @@ class PurchaseOrderService implements PurchaseOrderServiceInterface
         private ?DocumentNumberGeneratorInterface $numberGenerator = null,
         private ?PurchaseOrderDefaults $defaults = null,
         private ?PurchaseOrderItemCreator $itemCreator = null,
-        private ?PurchaseOrderWorkflow $workflow = null
+        private ?PurchaseOrderWorkflow $workflow = null,
+        private ?PurchaseOrderBillConverter $billConverter = null,
+        private ?PurchaseOrderStatistics $statistics = null
     ) {
         $this->receivingService ??= app(PurchaseOrderReceivingService::class);
         $this->numberGenerator ??= app(DocumentNumberGeneratorInterface::class);
         $this->defaults ??= app(PurchaseOrderDefaults::class);
         $this->itemCreator ??= app(PurchaseOrderItemCreator::class);
         $this->workflow ??= app(PurchaseOrderWorkflow::class);
+        $this->billConverter ??= app(PurchaseOrderBillConverter::class);
+        $this->statistics ??= app(PurchaseOrderStatistics::class);
     }
 
     public function create(array $data): PurchaseOrder
@@ -130,57 +133,9 @@ class PurchaseOrderService implements PurchaseOrderServiceInterface
         });
     }
 
-    public function convertToBill(PurchaseOrder $purchaseOrder): Bill
+    public function convertToBill(PurchaseOrder $purchaseOrder): \App\Models\Purchasing\Bill
     {
-        if (! $purchaseOrder->canConvert()) {
-            throw new InvalidArgumentException('PO tidak dapat dikonversi. Pastikan sudah menerima barang dan belum dikonversi.');
-        }
-
-        return DB::transaction(function () use ($purchaseOrder) {
-            $bill = Bill::create([
-                'bill_number' => Bill::generateBillNumber(),
-                'contact_id' => $purchaseOrder->contact_id,
-                'bill_date' => now(),
-                'due_date' => now()->addDays(config('accounting.payment.default_term_days', 30)),
-                'description' => $purchaseOrder->subject,
-                'reference' => $purchaseOrder->getFullNumber(),
-                'subtotal' => $purchaseOrder->subtotal,
-                'tax_amount' => $purchaseOrder->tax_amount,
-                'tax_rate' => $purchaseOrder->tax_rate,
-                'discount_amount' => $purchaseOrder->discount_amount,
-                'total_amount' => $purchaseOrder->total,
-                'currency' => $purchaseOrder->currency,
-                'exchange_rate' => $purchaseOrder->exchange_rate,
-                'base_currency_total' => $purchaseOrder->base_currency_total,
-                'paid_amount' => 0,
-                'status' => DocumentStatus::Draft,
-                'created_by' => auth()->id(),
-            ]);
-
-            foreach ($purchaseOrder->items as $item) {
-                if ($item->quantity_received > 0) {
-                    $receivedRatio = $item->quantity_received / $item->quantity;
-                    $lineTotal = (int) round($item->line_total * $receivedRatio);
-
-                    BillItem::create([
-                        'bill_id' => $bill->id,
-                        'product_id' => $item->product_id,
-                        'description' => $item->description,
-                        'quantity' => $item->quantity_received,
-                        'unit' => $item->unit,
-                        'unit_price' => $item->unit_price,
-                        'amount' => $lineTotal,
-                    ]);
-                }
-            }
-
-            $purchaseOrder->update([
-                'converted_to_bill_id' => $bill->id,
-                'converted_at' => now(),
-            ]);
-
-            return $bill->load('items', 'contact');
-        });
+        return $this->billConverter->convert($purchaseOrder);
     }
 
     public function duplicate(PurchaseOrder $purchaseOrder): PurchaseOrder
@@ -201,58 +156,11 @@ class PurchaseOrderService implements PurchaseOrderServiceInterface
 
     public function getOutstanding(?int $contactId = null): \Illuminate\Database\Eloquent\Collection
     {
-        $query = PurchaseOrder::query()
-            ->with(['contact', 'items'])
-            ->outstanding()
-            ->orderBy('expected_date');
-
-        if ($contactId) {
-            $query->where('contact_id', $contactId);
-        }
-
-        return $query->get();
+        return $this->statistics->getOutstanding($contactId);
     }
 
     public function getStatistics(?string $startDate = null, ?string $endDate = null): array
     {
-        $query = PurchaseOrder::query();
-
-        if ($startDate) {
-            $query->where('po_date', '>=', $startDate);
-        }
-
-        if ($endDate) {
-            $query->where('po_date', '<=', $endDate);
-        }
-
-        $total = (clone $query)->count();
-        $draft = (clone $query)->where('status', DocumentStatus::Draft)->count();
-        $submitted = (clone $query)->where('status', DocumentStatus::Submitted)->count();
-        $approved = (clone $query)->where('status', DocumentStatus::Approved)->count();
-        $rejected = (clone $query)->where('status', DocumentStatus::Rejected)->count();
-        $partial = (clone $query)->where('status', DocumentStatus::Partial)->count();
-        $received = (clone $query)->where('status', DocumentStatus::Received)->count();
-        $cancelled = (clone $query)->where('status', DocumentStatus::Cancelled)->count();
-
-        $totalValue = (clone $query)->sum('total');
-        $outstandingValue = (clone $query)->whereIn('status', [
-            DocumentStatus::Approved,
-            DocumentStatus::Partial,
-        ])->sum('total');
-
-        return [
-            'total' => $total,
-            'by_status' => [
-                'draft' => $draft,
-                'submitted' => $submitted,
-                'approved' => $approved,
-                'rejected' => $rejected,
-                'partial' => $partial,
-                'received' => $received,
-                'cancelled' => $cancelled,
-            ],
-            'total_value' => $totalValue,
-            'outstanding_value' => $outstandingValue,
-        ];
+        return $this->statistics->getStatistics($startDate, $endDate);
     }
 }
