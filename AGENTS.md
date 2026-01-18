@@ -736,21 +736,121 @@ Overdue → Paid (full payment received)
 Overdue → Cancelled
 ```
 
-### Bill Status Transitions
+### Quotation Status Transitions
 
 ```
-Draft → Received (posting to journal)
-Draft → Cancelled
-Received → Partial (partial payment made)
-Received → Paid (full payment made)
-Received → Overdue (past due date)
-Partial → Paid (full payment)
-Partial → Overdue (past due date)
-Paid → Cancelled
-Overdue → Partial (additional payment)
-Overdue → Paid (full payment)
-Overdue → Cancelled
+Draft → Submitted (requires items, not expired)
+Draft → Expired (past validity date)
+Submitted → Approved (by sales manager, not expired)
+Submitted → Rejected (by sales manager)
+Submitted → Expired (past validity date)
+Approved → Converted (to invoice)
+Approved → Expired (past validity date)
+Rejected → Draft (revision)
+Rejected → Expired (past validity date)
+Expired → Draft (extension)
+Expired → Converted (late conversion)
 ```
+
+**Note:** Quotation also tracks business outcome (Won/Lost) separately via `QuotationOutcome` enum, allowing "Approved" quotations to be marked "Won" later without status change.
+
+### Purchase Order Status Transitions
+
+```
+Draft → Submitted (requires items)
+Draft → Cancelled
+Submitted → Approved (by manager)
+Submitted → Rejected (by manager)
+Submitted → Cancelled
+Approved → Partial (partial items received)
+Approved → Cancelled
+Approved → Received (all items received)
+Partial → Received (remaining items received)
+Partial → Cancelled
+Rejected → Draft (revision)
+```
+
+### Delivery Order Status Transitions
+
+```
+Draft → Confirmed (requires items)
+Draft → Cancelled
+Confirmed → Shipped
+Confirmed → Cancelled
+Shipped → Delivered
+Shipped → Cancelled (if returned before delivery)
+Delivered → Cancelled (if rejected/returned after delivery)
+```
+
+**Note:** Delivery Order status tracking differs from other documents - it tracks fulfillment progress (Draft → Confirmed → Shipped → Delivered).
+
+### Work Order Status Transitions
+
+```
+Draft → Confirmed (requires items)
+Draft → Cancelled
+Confirmed → In Progress
+Confirmed → Cancelled
+In Progress → Completed
+In Progress → Cancelled
+```
+
+**Note:** Work Order tracks production/installation progress. Sub-work orders must be completed before the parent can be completed.
+
+### Material Requisition Status Transitions
+
+```
+Draft → Approved (requires items)
+Draft → Cancelled
+Approved → Issued
+Approved → Partial
+Approved → Cancelled
+Partial → Issued (remaining items issued)
+Partial → Cancelled
+```
+
+### Sales Return Status Transitions
+
+```
+Draft → Submitted (requires items)
+Draft → Cancelled
+Submitted → Approved
+Submitted → Rejected
+Submitted → Cancelled
+Approved → Completed
+Approved → Cancelled
+```
+
+### Project Status Transitions
+
+```
+Draft → Planning
+Draft → In Progress (direct start)
+Draft → Cancelled
+Planning → In Progress
+Planning → Cancelled
+In Progress → On Hold
+In Progress → Completed
+In Progress → Cancelled
+On Hold → In Progress (resume)
+On Hold → Completed
+On Hold → Cancelled
+```
+
+**Note:** Project supports flexible workflow - can skip Planning phase, can be put On Hold, and resumed.
+
+### Subcontractor Work Order Status Transitions
+
+```
+Draft → Assigned
+Draft → Cancelled
+Assigned → In Progress
+Assigned → Cancelled
+In Progress → Completed
+In Progress → Cancelled
+```
+
+**Note:** Subcontractor Work Order tracks subcontractor assignment and progress.
 
 ### Hook System
 
@@ -848,6 +948,23 @@ readonly class InvoiceSent
 - `BillReceived` - Dispatched when bill is received from vendor
 - `BillVoided` - Dispatched when bill is voided
 - `BillFullyPaid` - Dispatched when bill becomes fully paid
+
+**Quotation Events:**
+- `QuotationStatusChanged` - Generic status change (audit trail)
+- `QuotationSubmitted` - Dispatched when quotation is submitted for approval
+- `QuotationApproved` - Dispatched when quotation is approved by sales manager
+- `QuotationRejected` - Dispatched when quotation is rejected
+- `QuotationConverted` - Dispatched when quotation is converted to invoice
+- `QuotationExpired` - Dispatched when quotation becomes expired
+
+**Purchase Order Events:**
+- `PurchaseOrderStatusChanged` - Generic status change (audit trail)
+- `PurchaseOrderSubmitted` - Dispatched when PO is submitted for approval
+- `PurchaseOrderApproved` - Dispatched when PO is approved by manager
+- `PurchaseOrderRejected` - Dispatched when PO is rejected
+- `PurchaseOrderCancelled` - Dispatched when PO is cancelled
+- `PurchaseOrderPartial` - Dispatched when PO is partially received
+- `PurchaseOrderReceived` - Dispatched when PO is fully received
 
 **Payment Events:**
 - `PaymentReceived` - Dispatched when payment is received
@@ -957,6 +1074,28 @@ it('dispatches InvoiceFullyPaid event when invoice becomes fully paid', function
 
     Event::assertDispatched(InvoiceFullyPaid::class);
 });
+
+it('dispatches QuotationApproved event when quotation is approved', function () {
+    Event::fake();
+
+    $quotation = Quotation::factory()->submitted()->create();
+    QuotationItem::factory()->forQuotation($quotation)->create();
+
+    $this->postJson("/api/v1/quotations/{$quotation->id}/approve");
+
+    Event::assertDispatched(QuotationApproved::class);
+});
+
+it('dispatches PurchaseOrderApproved event when PO is approved', function () {
+    Event::fake();
+
+    $po = PurchaseOrder::factory()->submitted()->create();
+    PurchaseOrderItem::factory()->forPurchaseOrder($po)->create();
+
+    $this->postJson("/api/v1/purchase-orders/{$po->id}/approve");
+
+    Event::assertDispatched(PurchaseOrderApproved::class);
+});
 ```
 
 
@@ -1019,6 +1158,39 @@ app/Domain/Purchasing/
 └── ... (existing)
 ```
 
+### Example: Quotation
+
+```
+app/Domain/Sales/Quotations/
+├── QuotationStateMachine.php
+├── QuotationWorkflow.php
+├── Events/
+│   ├── QuotationStatusChanged.php
+│   ├── QuotationSubmitted.php
+│   ├── QuotationApproved.php
+│   ├── QuotationRejected.php
+│   ├── QuotationConverted.php
+│   └── QuotationExpired.php
+└── ... (existing)
+```
+
+### Example: Purchase Order
+
+```
+app/Domain/Purchasing/PurchaseOrders/
+├── PurchaseOrderStateMachine.php
+├── PurchaseOrderWorkflow.php
+├── Events/
+│   ├── PurchaseOrderStatusChanged.php
+│   ├── PurchaseOrderSubmitted.php
+│   ├── PurchaseOrderApproved.php
+│   ├── PurchaseOrderRejected.php
+│   ├── PurchaseOrderCancelled.php
+│   ├── PurchaseOrderPartial.php
+│   └── PurchaseOrderReceived.php
+└── ... (existing)
+```
+
 ### Cross-Cutting Events
 
 Events that span multiple subdomains stay at the domain level:
@@ -1029,16 +1201,24 @@ app/Domain/Sales/Events/
 └── PaymentVoided.php       # Used by both Invoice and Bill
 ```
 
+**Note on Quotation Outcomes:**
+Quotations track business outcome (Won/Lost/Cancelled) separately via the `outcome` column and `QuotationOutcome` enum. This is independent of DocumentStatus transitions, allowing flexibility for marking "Approved" quotations as "Won" later without changing the document status.
+
 ### Listeners
 
 ```
 app/Infrastructure/Listeners/
 ├── Sales/
 │   ├── LogInvoiceActivity.php
+│   ├── LogQuotationActivity.php
 │   ├── NotifyCustomerOnInvoiceSent.php
+│   ├── NotifyCustomerOnQuotationApproved.php
+│   ├── NotifySalesTeamOnQuotationSubmitted.php
+│   ├── NotifySalesTeamOnQuotationWon.php
 │   └── SendInvoicePaidNotification.php
 └── Purchasing/
     ├── LogBillActivity.php
+    ├── LogPurchaseOrderActivity.php
     └── NotifyAccountPayableOnBillReceived.php
 ```
 
