@@ -118,11 +118,13 @@ class BillService extends AbstractDocumentService implements BillServiceInterfac
      */
     public function post(Bill $bill): Bill
     {
-        if ($bill->status !== DocumentStatus::Draft) {
+        if (! $bill->stateMachine()->canPost()) {
             throw new InvalidArgumentException('Tagihan sudah diposting.');
         }
 
         $this->journalService->postBill($bill);
+
+        $bill->transitionTo(DocumentStatus::Received, auth()->id());
 
         return $bill->fresh(['contact', 'items', 'journalEntry.lines.account']);
     }

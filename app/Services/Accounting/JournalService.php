@@ -3,6 +3,10 @@
 namespace App\Services\Accounting;
 
 use App\Contracts\Services\Accounting\JournalServiceInterface;
+use App\Domain\Purchasing\Bills\Events\BillFullyPaid;
+use App\Domain\Sales\Events\PaymentReceived;
+use App\Domain\Sales\Events\PaymentVoided;
+use App\Domain\Sales\Invoices\Events\InvoiceFullyPaid;
 use App\Enums\DocumentStatus;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\FiscalPeriod;
@@ -12,6 +16,7 @@ use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
 use App\Models\Shared\Payment;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 
 class JournalService implements JournalServiceInterface
 {
@@ -353,12 +358,60 @@ class JournalService implements JournalServiceInterface
 
         $payment->update(['journal_entry_id' => $entry->id]);
 
-        // Update invoice/bill paid amount
+        // Dispatch payment received event for incoming payments
+        if ($payment->type === Payment::TYPE_RECEIVE && $payment->payable_type === Invoice::class && $payment->payable) {
+            Event::dispatch(PaymentReceived::fromPayment(
+                invoice: $payment->payable,
+                paymentId: $payment->id,
+                amount: $payment->amount,
+                userId: auth()->id() ?? $payment->created_by
+            ));
+        }
+
+        // Update invoice/bill paid amount and transition status
         if ($payment->payable) {
             $payable = $payment->payable;
+            $previousPaidAmount = $payable->paid_amount;
             $payable->paid_amount += $payment->amount;
-            $payable->updatePaymentStatus();
             $payable->save();
+
+            // Transition invoice status using state machine
+            if ($payable instanceof Invoice) {
+                $targetStatus = $payable->paid_amount >= $payable->total_amount
+                    ? DocumentStatus::Paid
+                    : DocumentStatus::Partial;
+
+                if ($payable->stateMachine()->canTransitionTo($targetStatus)) {
+                    $payable->stateMachine()->transitionTo($targetStatus, ['user_id' => auth()->id() ?? $payment->created_by]);
+                }
+            } elseif ($payable instanceof Bill) {
+                $targetStatus = $payable->paid_amount >= $payable->total_amount
+                    ? DocumentStatus::Paid
+                    : DocumentStatus::Partial;
+
+                if ($payable->stateMachine()->canTransitionTo($targetStatus)) {
+                    $payable->stateMachine()->transitionTo($targetStatus, ['user_id' => auth()->id() ?? $payment->created_by]);
+                }
+            } else {
+                $payable->updatePaymentStatus();
+                $payable->save();
+            }
+
+            // Dispatch InvoiceFullyPaid if invoice just became fully paid
+            if ($payable instanceof Invoice
+                && $previousPaidAmount < $payable->total_amount
+                && $payable->paid_amount >= $payable->total_amount
+            ) {
+                Event::dispatch(InvoiceFullyPaid::fromInvoice($payable, auth()->id() ?? $payment->created_by));
+            }
+
+            // Dispatch BillFullyPaid if bill just became fully paid
+            if ($payable instanceof Bill
+                && $previousPaidAmount < $payable->total_amount
+                && $payable->paid_amount >= $payable->total_amount
+            ) {
+                Event::dispatch(BillFullyPaid::fromBill($payable, auth()->id() ?? $payment->created_by));
+            }
         }
 
         return $entry;
@@ -380,14 +433,40 @@ class JournalService implements JournalServiceInterface
             }
 
             // Revert the paid amount on invoice/bill
+            $wasFullyPaid = false;
             if ($payment->payable) {
                 $payable = $payment->payable;
+                $wasFullyPaid = $payable->paid_amount >= $payable->total_amount;
                 $payable->paid_amount = max(0, $payable->paid_amount - $payment->amount);
-                $payable->updatePaymentStatus();
                 $payable->save();
+
+                // Transition invoice/bill status using state machine
+                if ($payable instanceof Invoice || $payable instanceof Bill) {
+                    $targetStatus = $payable->paid_amount >= $payable->total_amount
+                        ? DocumentStatus::Paid
+                        : ($payable->paid_amount > 0 ? DocumentStatus::Partial : DocumentStatus::Received);
+
+                    if ($payable->stateMachine()->canTransitionTo($targetStatus)) {
+                        $payable->stateMachine()->transitionTo($targetStatus, ['user_id' => auth()->id() ?? $payment->created_by]);
+                    }
+                } else {
+                    $payable->updatePaymentStatus();
+                    $payable->save();
+                }
             }
 
             $payment->update(['is_voided' => true]);
+
+            // Dispatch PaymentVoided event
+            Event::dispatch(new PaymentVoided(
+                paymentId: $payment->id,
+                invoiceId: $payment->payable_type === Invoice::class ? $payment->payable_id : null,
+                amount: $payment->amount,
+                currency: $payment->currency ?? 'IDR',
+                customerId: $payment->contact_id,
+                userId: auth()->id() ?? $payment->created_by,
+                voidedAt: now()
+            ));
         });
     }
 }

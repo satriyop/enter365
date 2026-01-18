@@ -121,11 +121,13 @@ class InvoiceService extends AbstractDocumentService implements InvoiceServiceIn
      */
     public function post(Invoice $invoice): Invoice
     {
-        if ($invoice->status !== DocumentStatus::Draft) {
-            throw StateTransitionException::alreadyProcessed('Faktur', 'posting');
+        if (! $invoice->stateMachine()->canPost()) {
+            throw StateTransitionException::actionNotAvailable('posting', $invoice->status->label());
         }
 
         $this->journalService->postInvoice($invoice);
+
+        $invoice->transitionTo(DocumentStatus::Sent, auth()->id());
 
         return $invoice->fresh(['contact', 'items', 'journalEntry.lines.account']);
     }
