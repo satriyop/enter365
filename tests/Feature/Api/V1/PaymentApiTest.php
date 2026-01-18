@@ -1,5 +1,9 @@
 <?php
 
+use App\Domain\Sales\Events\PaymentReceived;
+use App\Domain\Sales\Events\PaymentVoided;
+use App\Domain\Sales\Invoices\Events\InvoiceFullyPaid;
+use App\Domain\Purchasing\Bills\Events\BillFullyPaid;
 use App\Enums\DocumentStatus;
 use App\Models\Accounting\Account;
 use App\Models\Contacts\Contact;
@@ -11,6 +15,7 @@ use App\Models\Shared\Payment;
 use App\Models\User;
 use App\Services\Accounting\JournalService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
@@ -248,5 +253,212 @@ describe('Payment API', function () {
         $response = $this->postJson("/api/v1/payments/{$payment->id}/void");
 
         $response->assertUnprocessable();
+    });
+
+    it('dispatches PaymentReceived event when payment is posted to invoice', function () {
+        Event::fake();
+
+        $customer = Contact::factory()->customer()->create();
+        $invoice = Invoice::factory()->forContact($customer)->create([
+            'status' => DocumentStatus::Sent,
+            'subtotal' => 1000000,
+            'tax_amount' => 0,
+            'total_amount' => 1000000,
+            'paid_amount' => 0,
+        ]);
+        InvoiceItem::factory()->forInvoice($invoice)->create([
+            'line_total' => 1000000,
+        ]);
+
+        app(JournalService::class)->postInvoice($invoice->fresh());
+
+        $bankAccount = Account::where('code', '1-1010')->first();
+
+        $response = $this->postJson('/api/v1/payments', [
+            'type' => Payment::TYPE_RECEIVE,
+            'contact_id' => $customer->id,
+            'payment_date' => '2024-12-25',
+            'amount' => 500000,
+            'payment_method' => Payment::METHOD_TRANSFER,
+            'cash_account_id' => $bankAccount->id,
+            'invoice_id' => $invoice->id,
+        ]);
+
+        $response->assertCreated();
+
+        Event::assertDispatched(PaymentReceived::class);
+    });
+
+    it('dispatches InvoiceFullyPaid event when invoice becomes fully paid', function () {
+        Event::fake();
+
+        $customer = Contact::factory()->customer()->create();
+        $invoice = Invoice::factory()->forContact($customer)->create([
+            'status' => DocumentStatus::Sent,
+            'subtotal' => 1000000,
+            'tax_amount' => 110000,
+            'total_amount' => 1110000,
+            'paid_amount' => 0,
+        ]);
+        InvoiceItem::factory()->forInvoice($invoice)->create([
+            'line_total' => 1000000,
+        ]);
+
+        app(JournalService::class)->postInvoice($invoice->fresh());
+
+        $bankAccount = Account::where('code', '1-1010')->first();
+
+        $this->postJson('/api/v1/payments', [
+            'type' => Payment::TYPE_RECEIVE,
+            'contact_id' => $customer->id,
+            'payment_date' => '2024-12-25',
+            'amount' => 1110000,
+            'payment_method' => Payment::METHOD_TRANSFER,
+            'cash_account_id' => $bankAccount->id,
+            'invoice_id' => $invoice->id,
+        ]);
+
+        Event::assertDispatched(InvoiceFullyPaid::class);
+    });
+
+    it('does not dispatch InvoiceFullyPaid when invoice is partially paid', function () {
+        Event::fake();
+
+        $customer = Contact::factory()->customer()->create();
+        $invoice = Invoice::factory()->forContact($customer)->create([
+            'status' => DocumentStatus::Sent,
+            'subtotal' => 1000000,
+            'tax_amount' => 110000,
+            'total_amount' => 1110000,
+            'paid_amount' => 0,
+        ]);
+        InvoiceItem::factory()->forInvoice($invoice)->create([
+            'line_total' => 1000000,
+        ]);
+
+        app(JournalService::class)->postInvoice($invoice->fresh());
+
+        $bankAccount = Account::where('code', '1-1010')->first();
+
+        $this->postJson('/api/v1/payments', [
+            'type' => Payment::TYPE_RECEIVE,
+            'contact_id' => $customer->id,
+            'payment_date' => '2024-12-25',
+            'amount' => 500000,
+            'payment_method' => Payment::METHOD_TRANSFER,
+            'cash_account_id' => $bankAccount->id,
+            'invoice_id' => $invoice->id,
+        ]);
+
+        Event::assertNotDispatched(InvoiceFullyPaid::class);
+    });
+
+    it('dispatches PaymentVoided event when payment is voided', function () {
+        Event::fake();
+
+        $customer = Contact::factory()->customer()->create();
+        $bankAccount = Account::where('code', '1-1010')->first();
+
+        $payment = Payment::factory()
+            ->receive()
+            ->forContact($customer)
+            ->withCashAccount($bankAccount)
+            ->withAmount(500000)
+            ->create();
+
+        app(JournalService::class)->postPayment($payment);
+
+        $this->postJson("/api/v1/payments/{$payment->id}/void");
+
+        Event::assertDispatched(PaymentVoided::class);
+    });
+
+    it('dispatches BillReceived event when bill is posted', function () {
+        Event::fake();
+
+        $supplier = Contact::factory()->supplier()->create();
+        $bankAccount = Account::where('code', '1-1010')->first();
+
+        $bill = Bill::factory()->forContact($supplier)->create([
+            'status' => DocumentStatus::Draft,
+            'subtotal' => 1000000,
+            'tax_amount' => 0,
+            'total_amount' => 1000000,
+            'paid_amount' => 0,
+        ]);
+        BillItem::factory()->forBill($bill)->create([
+            'line_total' => 1000000,
+        ]);
+
+        $response = $this->postJson("/api/v1/bills/{$bill->id}/post");
+
+        $response->assertOk()
+            ->assertJsonPath('data.status', 'received');
+
+        Event::assertDispatched(\App\Domain\Purchasing\Bills\Events\BillReceived::class);
+    });
+
+    it('dispatches BillFullyPaid event when bill becomes fully paid', function () {
+        Event::fake();
+
+        $supplier = Contact::factory()->supplier()->create();
+        $bill = Bill::factory()->forContact($supplier)->create([
+            'status' => DocumentStatus::Received,
+            'subtotal' => 1000000,
+            'tax_amount' => 0,
+            'total_amount' => 1000000,
+            'paid_amount' => 0,
+        ]);
+        BillItem::factory()->forBill($bill)->create([
+            'line_total' => 1000000,
+        ]);
+
+        app(JournalService::class)->postBill($bill->fresh());
+
+        $bankAccount = Account::where('code', '1-1010')->first();
+
+        $this->postJson('/api/v1/payments', [
+            'type' => Payment::TYPE_SEND,
+            'contact_id' => $supplier->id,
+            'payment_date' => '2024-12-25',
+            'amount' => 1000000,
+            'payment_method' => Payment::METHOD_TRANSFER,
+            'cash_account_id' => $bankAccount->id,
+            'bill_id' => $bill->id,
+        ]);
+
+        Event::assertDispatched(BillFullyPaid::class);
+    });
+
+    it('does not dispatch BillFullyPaid when bill is partially paid', function () {
+        Event::fake();
+
+        $supplier = Contact::factory()->supplier()->create();
+        $bill = Bill::factory()->forContact($supplier)->create([
+            'status' => DocumentStatus::Received,
+            'subtotal' => 1000000,
+            'tax_amount' => 0,
+            'total_amount' => 1000000,
+            'paid_amount' => 0,
+        ]);
+        BillItem::factory()->forBill($bill)->create([
+            'line_total' => 1000000,
+        ]);
+
+        app(JournalService::class)->postBill($bill->fresh());
+
+        $bankAccount = Account::where('code', '1-1010')->first();
+
+        $this->postJson('/api/v1/payments', [
+            'type' => Payment::TYPE_SEND,
+            'contact_id' => $supplier->id,
+            'payment_date' => '2024-12-25',
+            'amount' => 500000,
+            'payment_method' => Payment::METHOD_TRANSFER,
+            'cash_account_id' => $bankAccount->id,
+            'bill_id' => $bill->id,
+        ]);
+
+        Event::assertNotDispatched(BillFullyPaid::class);
     });
 });

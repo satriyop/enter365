@@ -1,10 +1,14 @@
 <?php
 
+use App\Enums\DocumentStatus;
+use App\Models\Accounting\Account;
 use App\Models\Contacts\Contact;
 use App\Models\Purchasing\Bill;
 use App\Models\Purchasing\BillItem;
+use App\Models\Shared\Payment;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
@@ -173,5 +177,72 @@ describe('Bill API', function () {
         $response = $this->postJson("/api/v1/bills/{$bill->id}/post");
 
         $response->assertUnprocessable();
+    });
+
+    it('cannot post bill without items', function () {
+        $supplier = Contact::factory()->supplier()->create();
+        $bill = Bill::factory()->draft()->forContact($supplier)->create([
+            'subtotal' => 1000000,
+            'tax_amount' => 0,
+            'total_amount' => 1000000,
+        ]);
+
+        $response = $this->postJson("/api/v1/bills/{$bill->id}/post");
+
+        $response->assertUnprocessable();
+    });
+
+    it('transitions to partial status when partially paid', function () {
+        Event::fake();
+
+        $supplier = Contact::factory()->supplier()->create();
+        $bankAccount = Account::where('code', '1-1010')->first();
+
+        $bill = Bill::factory()->received()->forContact($supplier)->create([
+            'subtotal' => 1000000,
+            'tax_amount' => 0,
+            'total_amount' => 1000000,
+            'paid_amount' => 0,
+        ]);
+
+        $this->postJson('/api/v1/payments', [
+            'type' => Payment::TYPE_SEND,
+            'contact_id' => $supplier->id,
+            'payment_date' => '2024-12-25',
+            'amount' => 500000,
+            'payment_method' => Payment::METHOD_TRANSFER,
+            'cash_account_id' => $bankAccount->id,
+            'bill_id' => $bill->id,
+        ]);
+
+        $bill->refresh();
+        expect($bill->status)->toBe(DocumentStatus::Partial);
+    });
+
+    it('transitions to paid status when fully paid', function () {
+        Event::fake();
+
+        $supplier = Contact::factory()->supplier()->create();
+        $bankAccount = Account::where('code', '1-1010')->first();
+
+        $bill = Bill::factory()->received()->forContact($supplier)->create([
+            'subtotal' => 1000000,
+            'tax_amount' => 0,
+            'total_amount' => 1000000,
+            'paid_amount' => 0,
+        ]);
+
+        $this->postJson('/api/v1/payments', [
+            'type' => Payment::TYPE_SEND,
+            'contact_id' => $supplier->id,
+            'payment_date' => '2024-12-25',
+            'amount' => 1000000,
+            'payment_method' => Payment::METHOD_TRANSFER,
+            'cash_account_id' => $bankAccount->id,
+            'bill_id' => $bill->id,
+        ]);
+
+        $bill->refresh();
+        expect($bill->status)->toBe(DocumentStatus::Paid);
     });
 });
