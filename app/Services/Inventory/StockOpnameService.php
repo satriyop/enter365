@@ -2,6 +2,7 @@
 
 namespace App\Services\Inventory;
 
+use App\Contracts\Accounting\Strategies\InventoryAccountingStrategy;
 use App\Contracts\Services\Domains\StockOpnameServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Inventory\Product;
@@ -14,7 +15,8 @@ use Illuminate\Support\Facades\DB;
 class StockOpnameService implements StockOpnameServiceInterface
 {
     public function __construct(
-        private InventoryService $inventoryService
+        private InventoryService $inventoryService,
+        private InventoryAccountingStrategy $inventoryStrategy
     ) {}
 
     /**
@@ -247,6 +249,9 @@ class StockOpnameService implements StockOpnameServiceInterface
 
     /**
      * Approve and apply adjustments.
+     *
+     * Creates inventory movements for each variance item and
+     * creates journal entry for the total adjustment value via strategy.
      */
     public function approve(StockOpname $opname, int $userId): StockOpname
     {
@@ -272,6 +277,10 @@ class StockOpnameService implements StockOpnameServiceInterface
                     $opname->id
                 );
             }
+
+            // Create adjustment journal entry (if strategy is configured)
+            // The journal entry links back to stock_opname via source_id
+            $this->inventoryStrategy->onStockAdjustment($opname);
 
             $opname->update([
                 'status' => DocumentStatus::Completed,

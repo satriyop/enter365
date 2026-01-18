@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Sales;
 
+use App\Contracts\Accounting\Strategies\COGSRecognitionStrategy;
 use App\Contracts\Services\Accounting\JournalServiceInterface;
 use App\Contracts\Services\Domain\DocumentNumberGeneratorInterface;
 use App\Contracts\Services\Domains\InvoiceServiceInterface;
@@ -19,6 +20,7 @@ class InvoiceService extends AbstractDocumentService implements InvoiceServiceIn
 {
     public function __construct(
         private JournalServiceInterface $journalService,
+        private COGSRecognitionStrategy $cogsStrategy,
         private DocumentNumberGeneratorInterface $numberGenerator
     ) {}
 
@@ -117,6 +119,9 @@ class InvoiceService extends AbstractDocumentService implements InvoiceServiceIn
     /**
      * Post an invoice (create journal entry and change status).
      *
+     * Creates both the AR/Revenue journal entry via JournalService
+     * and COGS journal entry via configured strategy (if applicable).
+     *
      * @throws StateTransitionException
      */
     public function post(Invoice $invoice): Invoice
@@ -125,7 +130,12 @@ class InvoiceService extends AbstractDocumentService implements InvoiceServiceIn
             throw StateTransitionException::actionNotAvailable('posting', $invoice->status->label());
         }
 
+        // Create AR/Revenue journal entry
         $this->journalService->postInvoice($invoice);
+
+        // Create COGS journal entry (if strategy is configured for invoice post)
+        // The COGS journal links back to invoice via source_id
+        $this->cogsStrategy->onInvoicePost($invoice);
 
         $invoice->transitionTo(DocumentStatus::Sent, auth()->id());
 

@@ -64,7 +64,7 @@ class HybridInventoryStrategy implements InventoryAccountingStrategy
         }
 
         $inventoryAccount = config('accounting.default_accounts.inventory', '1-1400');
-        $adjustmentAccount = '5-5001'; // Inventory Adjustment Expense
+        $adjustmentAccount = config('accounting.default_accounts.inventory_adjustment', '5-2900');
 
         $lines = [];
 
@@ -118,17 +118,16 @@ class HybridInventoryStrategy implements InventoryAccountingStrategy
 
     /**
      * Calculate the total adjustment value from stock opname items.
+     *
+     * Uses the pre-calculated variance_value from items, which is computed as:
+     * (counted_quantity - system_quantity) * system_cost
      */
     private function calculateAdjustmentValue(StockOpname $stockOpname): int
     {
-        $totalAdjustment = 0;
+        $stockOpname->loadMissing('items');
 
-        foreach ($stockOpname->items as $item) {
-            $difference = $item->actual_quantity - $item->system_quantity;
-            $unitCost = $item->product->purchase_price ?? 0;
-            $totalAdjustment += $difference * $unitCost;
-        }
-
-        return $totalAdjustment;
+        // Sum the pre-calculated variance values
+        // Positive = found more inventory, Negative = shrinkage
+        return (int) $stockOpname->items->sum('variance_value');
     }
 }

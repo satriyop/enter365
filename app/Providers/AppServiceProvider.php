@@ -160,6 +160,9 @@ class AppServiceProvider extends ServiceProvider
         // Solar Domain (2 services)
         $this->app->bind(SolarProposalServiceInterface::class, SolarProposalService::class);
         $this->app->bind(SolarCalculationServiceInterface::class, SolarCalculationService::class);
+
+        // Shared Domain (1 service)
+        $this->app->bind(\App\Contracts\Services\Domains\PaymentServiceInterface::class, \App\Services\Shared\PaymentService::class);
     }
 
     /**

@@ -282,6 +282,7 @@ return [
         'foreign_exchange_loss' => '5-4001',
         'inventory' => '1-1400', // Persediaan
         'cogs' => '5-1001', // Harga Pokok Penjualan
+        'inventory_adjustment' => '5-2900', // Penyesuaian Persediaan (Beban Operasional Lainnya)
         'sales_returns' => '4-1004', // Retur Penjualan
         'purchase_returns' => '5-1004', // Retur Pembelian
         'dp_receivable' => '2-2100', // Uang Muka Penjualan (liability)
