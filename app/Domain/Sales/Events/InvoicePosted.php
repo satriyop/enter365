@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Events\Sales;
+namespace App\Domain\Sales\Events;
 
 use App\Models\Sales\Invoice;
 use Illuminate\Foundation\Events\Dispatchable;

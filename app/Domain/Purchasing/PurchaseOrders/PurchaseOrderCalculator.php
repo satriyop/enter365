@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Purchasing\PurchaseOrders;
 
-use App\Contracts\Services\Purchasing\PurchaseOrderCalculatorInterface;
+use App\Contracts\Purchasing\PurchaseOrderCalculatorInterface;
 
 class PurchaseOrderCalculator implements PurchaseOrderCalculatorInterface
 {

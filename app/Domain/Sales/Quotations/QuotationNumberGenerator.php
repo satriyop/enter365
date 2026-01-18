@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain\Sales\Quotations;
 
-use App\Contracts\Services\Domain\DocumentNumberGeneratorInterface;
-use App\Contracts\Services\Domains\QuotationNumberGeneratorInterface;
+use App\Contracts\Sales\QuotationNumberGeneratorInterface;
+use App\Contracts\Shared\DocumentNumberGeneratorInterface;
 use App\Models\Sales\Quotation;
 
 class QuotationNumberGenerator implements QuotationNumberGeneratorInterface

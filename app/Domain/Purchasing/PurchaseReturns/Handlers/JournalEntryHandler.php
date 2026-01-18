@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Domain\Purchasing\PurchaseReturns\Handlers;
 
-use App\Contracts\Handlers\PurchaseReturnApprovalHandlerInterface;
-use App\Contracts\Services\Accounting\AccountLookupServiceInterface;
-use App\Contracts\Services\Accounting\JournalServiceInterface;
+use App\Contracts\Accounting\AccountLookupServiceInterface;
+use App\Contracts\Accounting\JournalServiceInterface;
+use App\Domain\Purchasing\PurchaseReturns\Contracts\ApprovalHandlerInterface;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Purchasing\PurchaseReturn;
 
@@ -20,7 +20,7 @@ use App\Models\Purchasing\PurchaseReturn;
  *
  * @throws \App\Exceptions\Domain\MissingAccountException When required accounts don't exist
  */
-class JournalEntryHandler implements PurchaseReturnApprovalHandlerInterface
+class JournalEntryHandler implements ApprovalHandlerInterface
 {
     public function __construct(
         private JournalServiceInterface $journalService,

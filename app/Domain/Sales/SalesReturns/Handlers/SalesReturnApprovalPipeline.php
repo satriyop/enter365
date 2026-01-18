@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Sales\SalesReturns\Handlers;
 
-use App\Contracts\Handlers\SalesReturnApprovalHandlerInterface;
+use App\Domain\Sales\SalesReturns\Contracts\ApprovalHandlerInterface;
 use App\Models\Sales\SalesReturn;
 
 /**
@@ -15,11 +15,11 @@ use App\Models\Sales\SalesReturn;
  */
 class SalesReturnApprovalPipeline
 {
-    /** @var array<SalesReturnApprovalHandlerInterface> */
+    /** @var array<ApprovalHandlerInterface> */
     private array $handlers = [];
 
     /**
-     * @param  iterable<SalesReturnApprovalHandlerInterface>  $handlers
+     * @param  iterable<ApprovalHandlerInterface>  $handlers
      */
     public function __construct(iterable $handlers = [])
     {
@@ -31,7 +31,7 @@ class SalesReturnApprovalPipeline
     /**
      * Add a handler to the pipeline.
      */
-    public function addHandler(SalesReturnApprovalHandlerInterface $handler): self
+    public function addHandler(ApprovalHandlerInterface $handler): self
     {
         $this->handlers[] = $handler;
 
@@ -68,7 +68,7 @@ class SalesReturnApprovalPipeline
     /**
      * Get all registered handlers (useful for debugging/testing).
      *
-     * @return array<SalesReturnApprovalHandlerInterface>
+     * @return array<ApprovalHandlerInterface>
      */
     public function getHandlers(): array
     {

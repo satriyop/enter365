@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain\Sales\SalesReturns\Handlers;
 
-use App\Contracts\Handlers\SalesReturnApprovalHandlerInterface;
-use App\Contracts\Services\Domains\InventoryServiceInterface;
+use App\Contracts\Inventory\InventoryServiceInterface;
+use App\Domain\Sales\SalesReturns\Contracts\ApprovalHandlerInterface;
 use App\Models\Inventory\Product;
 use App\Models\Sales\SalesReturn;
 
@@ -14,7 +14,7 @@ use App\Models\Sales\SalesReturn;
  *
  * Returns goods back to inventory when customer returns them.
  */
-class InventoryReturnHandler implements SalesReturnApprovalHandlerInterface
+class InventoryReturnHandler implements ApprovalHandlerInterface
 {
     public function __construct(
         private InventoryServiceInterface $inventoryService

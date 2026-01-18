@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Shared;
 
-use App\Contracts\Services\Domain\DocumentNumberGeneratorInterface;
+use App\Contracts\Shared\DocumentNumberGeneratorInterface;
 
 /**
  * Sequence number generator for testing.

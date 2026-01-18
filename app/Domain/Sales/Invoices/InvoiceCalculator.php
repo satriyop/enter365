@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Sales\Invoices;
 
-use App\Contracts\Services\Domain\InvoiceCalculatorInterface;
+use App\Contracts\Sales\InvoiceCalculatorInterface;
 
 class InvoiceCalculator implements InvoiceCalculatorInterface
 {

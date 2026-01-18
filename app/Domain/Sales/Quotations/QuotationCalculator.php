@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Sales\Quotations;
 
-use App\Contracts\Services\Sales\QuotationCalculatorInterface;
+use App\Contracts\Sales\QuotationCalculatorInterface;
 
 class QuotationCalculator implements QuotationCalculatorInterface
 {

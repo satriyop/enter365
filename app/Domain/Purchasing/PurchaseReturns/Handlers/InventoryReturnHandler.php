@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain\Purchasing\PurchaseReturns\Handlers;
 
-use App\Contracts\Handlers\PurchaseReturnApprovalHandlerInterface;
-use App\Contracts\Services\Domains\InventoryServiceInterface;
+use App\Contracts\Inventory\InventoryServiceInterface;
+use App\Domain\Purchasing\PurchaseReturns\Contracts\ApprovalHandlerInterface;
 use App\Models\Purchasing\PurchaseReturn;
 
 /**
@@ -14,7 +14,7 @@ use App\Models\Purchasing\PurchaseReturn;
  * For purchase returns, items go OUT of inventory (returned to supplier).
  * Only processes items with inventory tracking enabled.
  */
-class InventoryReturnHandler implements PurchaseReturnApprovalHandlerInterface
+class InventoryReturnHandler implements ApprovalHandlerInterface
 {
     public function __construct(
         private InventoryServiceInterface $inventoryService

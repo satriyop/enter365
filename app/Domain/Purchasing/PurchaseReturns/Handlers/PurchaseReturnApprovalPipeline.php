@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Purchasing\PurchaseReturns\Handlers;
 
-use App\Contracts\Handlers\PurchaseReturnApprovalHandlerInterface;
+use App\Domain\Purchasing\PurchaseReturns\Contracts\ApprovalHandlerInterface;
 use App\Models\Purchasing\PurchaseReturn;
 
 /**
@@ -15,11 +15,11 @@ use App\Models\Purchasing\PurchaseReturn;
  */
 class PurchaseReturnApprovalPipeline
 {
-    /** @var array<PurchaseReturnApprovalHandlerInterface> */
+    /** @var array<ApprovalHandlerInterface> */
     private array $handlers = [];
 
     /**
-     * @param  iterable<PurchaseReturnApprovalHandlerInterface>  $handlers
+     * @param  iterable<ApprovalHandlerInterface>  $handlers
      */
     public function __construct(iterable $handlers = [])
     {
@@ -31,7 +31,7 @@ class PurchaseReturnApprovalPipeline
     /**
      * Add a handler to the pipeline.
      */
-    public function addHandler(PurchaseReturnApprovalHandlerInterface $handler): self
+    public function addHandler(ApprovalHandlerInterface $handler): self
     {
         $this->handlers[] = $handler;
 
@@ -68,7 +68,7 @@ class PurchaseReturnApprovalPipeline
     /**
      * Get all registered handlers (useful for debugging/testing).
      *
-     * @return array<PurchaseReturnApprovalHandlerInterface>
+     * @return array<ApprovalHandlerInterface>
      */
     public function getHandlers(): array
     {
