@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Contracts\Services\Domains\BillServiceInterface;
+use App\Contracts\Purchasing\BillServiceInterface;
 use App\Filters\BillFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\MakeRecurringRequest;

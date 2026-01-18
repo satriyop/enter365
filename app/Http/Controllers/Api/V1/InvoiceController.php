@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Contracts\Services\Domains\InvoiceServiceInterface;
+use App\Contracts\Sales\InvoiceServiceInterface;
 use App\Filters\InvoiceFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\MakeRecurringRequest;

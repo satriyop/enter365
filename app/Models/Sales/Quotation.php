@@ -2,8 +2,8 @@
 
 namespace App\Models\Sales;
 
-use App\Contracts\Services\Domains\QuotationNumberGeneratorInterface;
-use App\Contracts\Services\Sales\QuotationCalculatorInterface;
+use App\Contracts\Sales\QuotationCalculatorInterface;
+use App\Contracts\Sales\QuotationNumberGeneratorInterface;
 use App\Domain\Sales\Quotations\Enums\QuotationOutcome;
 use App\Domain\Sales\Quotations\Enums\QuotationPriority;
 use App\Domain\Sales\Quotations\Enums\QuotationType;

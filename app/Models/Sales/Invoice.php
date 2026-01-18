@@ -2,7 +2,7 @@
 
 namespace App\Models\Sales;
 
-use App\Contracts\Services\Domain\InvoiceCalculatorInterface;
+use App\Contracts\Sales\InvoiceCalculatorInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\JournalEntry;

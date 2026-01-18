@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Contracts\Services\Domains\ProductServiceInterface;
+use App\Contracts\Inventory\ProductServiceInterface;
 use App\Filters\ProductFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreProductRequest;

@@ -2,7 +2,7 @@
 
 namespace App\Models\Purchasing;
 
-use App\Contracts\Services\Purchasing\PurchaseOrderCalculatorInterface;
+use App\Contracts\Purchasing\PurchaseOrderCalculatorInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Contacts\Contact;
 use App\Models\Shared\Attachment;
