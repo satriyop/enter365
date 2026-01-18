@@ -4,13 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services\Sales;
 
-use App\Contracts\Services\Accounting\JournalServiceInterface;
-use App\Contracts\Services\Domains\InventoryServiceInterface;
 use App\Contracts\Services\Domains\SalesReturnServiceInterface;
+use App\Domain\Sales\SalesReturns\Handlers\SalesReturnApprovalPipeline;
 use App\Enums\DocumentStatus;
-use App\Models\Accounting\Account;
-use App\Models\Accounting\JournalEntry;
-use App\Models\Inventory\Product;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\SalesReturn;
 use App\Models\Sales\SalesReturnItem;
@@ -21,9 +17,8 @@ use Illuminate\Support\Facades\DB;
 class SalesReturnService extends AbstractDocumentService implements SalesReturnServiceInterface
 {
     public function __construct(
-        private InventoryServiceInterface $inventoryService,
-        private JournalServiceInterface $journalService,
-        private \App\Contracts\Services\Domain\DocumentNumberGeneratorInterface $numberGenerator
+        private \App\Contracts\Services\Domain\DocumentNumberGeneratorInterface $numberGenerator,
+        private SalesReturnApprovalPipeline $approvalPipeline
     ) {}
 
     protected function getModelClass(): string
@@ -168,6 +163,10 @@ class SalesReturnService extends AbstractDocumentService implements SalesReturnS
 
     /**
      * Approve a sales return.
+     *
+     * Delegates to the approval pipeline which runs handlers in priority order:
+     * 1. InventoryReturnHandler - processes stock-in (if warehouse specified)
+     * 2. JournalEntryHandler - creates accounting entries
      */
     public function approve(SalesReturn $salesReturn, ?int $userId = null): SalesReturn
     {
@@ -178,13 +177,8 @@ class SalesReturnService extends AbstractDocumentService implements SalesReturnS
         return DB::transaction(function () use ($salesReturn, $userId) {
             $salesReturn->transitionTo(DocumentStatus::Approved, $userId);
 
-            // Process inventory (stock in - goods returned from customer)
-            if ($salesReturn->warehouse_id) {
-                $this->processInventoryReturn($salesReturn);
-            }
-
-            // Create journal entry for the return
-            $this->createReturnJournalEntry($salesReturn);
+            // Process approval side effects via pipeline
+            $this->approvalPipeline->process($salesReturn);
 
             return $salesReturn->fresh(['items', 'journalEntry']);
         });
@@ -280,90 +274,5 @@ class SalesReturnService extends AbstractDocumentService implements SalesReturnS
                     'total' => $group->sum('total_amount'),
                 ]),
         ];
-    }
-
-    /**
-     * Process inventory for approved return (stock in).
-     */
-    private function processInventoryReturn(SalesReturn $salesReturn): void
-    {
-        $warehouse = $salesReturn->warehouse;
-
-        foreach ($salesReturn->items as $item) {
-            if (! $item->product_id) {
-                continue;
-            }
-
-            $product = Product::find($item->product_id);
-            if (! $product || ! $product->track_inventory) {
-                continue;
-            }
-
-            $this->inventoryService->stockIn(
-                $product,
-                $warehouse,
-                (int) $item->quantity,
-                $item->unit_price,
-                'Retur penjualan: '.$salesReturn->return_number,
-                SalesReturn::class,
-                $salesReturn->id
-            );
-        }
-    }
-
-    /**
-     * Create journal entry for sales return.
-     * Debit: Sales Returns (reduces revenue)
-     * Debit: PPN Keluaran (if applicable)
-     * Credit: Accounts Receivable (reduces receivable)
-     */
-    private function createReturnJournalEntry(SalesReturn $salesReturn): void
-    {
-        $salesReturnsAccount = Account::where('code', '4-2001')->first();
-        $receivableAccount = Account::where('code', '1-1100')->first();
-        $taxPayableAccount = Account::where('code', '2-1200')->first();
-
-        if ($salesReturn->invoice && $salesReturn->invoice->receivable_account_id) {
-            $receivableAccount = Account::find($salesReturn->invoice->receivable_account_id) ?? $receivableAccount;
-        }
-
-        $lines = [];
-
-        if ($salesReturnsAccount) {
-            $lines[] = [
-                'account_id' => $salesReturnsAccount->id,
-                'description' => 'Retur penjualan: '.$salesReturn->return_number,
-                'debit' => $salesReturn->subtotal,
-                'credit' => 0,
-            ];
-        }
-
-        if ($salesReturn->tax_amount > 0 && $taxPayableAccount) {
-            $lines[] = [
-                'account_id' => $taxPayableAccount->id,
-                'description' => 'PPN Retur: '.$salesReturn->return_number,
-                'debit' => $salesReturn->tax_amount,
-                'credit' => 0,
-            ];
-        }
-
-        $lines[] = [
-            'account_id' => $receivableAccount->id,
-            'description' => 'Pengurangan piutang: '.$salesReturn->return_number,
-            'debit' => 0,
-            'credit' => $salesReturn->total_amount,
-        ];
-
-        $entry = $this->journalService->createEntry([
-            'entry_date' => $salesReturn->return_date->toDateString(),
-            'description' => 'Retur penjualan: '.$salesReturn->return_number,
-            'reference' => $salesReturn->return_number,
-            'source_type' => JournalEntry::SOURCE_MANUAL,
-            'source_id' => $salesReturn->id,
-            'lines' => $lines,
-        ], autoPost: true);
-
-        $salesReturn->journal_entry_id = $entry->id;
-        $salesReturn->save();
     }
 }

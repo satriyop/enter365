@@ -4,15 +4,13 @@ declare(strict_types=1);
 
 namespace App\Services\Purchasing;
 
-use App\Contracts\Accounting\Strategies\ReturnAccountingStrategy;
 use App\Contracts\Services\Domains\PurchaseReturnServiceInterface;
+use App\Domain\Purchasing\PurchaseReturns\Handlers\PurchaseReturnApprovalPipeline;
 use App\Enums\DocumentStatus;
-use App\Models\Inventory\Product;
 use App\Models\Purchasing\Bill;
 use App\Models\Purchasing\PurchaseReturn;
 use App\Models\Purchasing\PurchaseReturnItem;
 use App\Services\Base\AbstractDocumentService;
-use App\Services\Inventory\InventoryService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -20,9 +18,8 @@ use InvalidArgumentException;
 class PurchaseReturnService extends AbstractDocumentService implements PurchaseReturnServiceInterface
 {
     public function __construct(
-        private InventoryService $inventoryService,
-        private ReturnAccountingStrategy $returnStrategy,
-        private \App\Contracts\Services\Domain\DocumentNumberGeneratorInterface $numberGenerator
+        private \App\Contracts\Services\Domain\DocumentNumberGeneratorInterface $numberGenerator,
+        private PurchaseReturnApprovalPipeline $approvalPipeline
     ) {}
 
     protected function getModelClass(): string
@@ -144,6 +141,13 @@ class PurchaseReturnService extends AbstractDocumentService implements PurchaseR
         return $purchaseReturn->fresh(['items', 'contact', 'bill']);
     }
 
+    /**
+     * Approve a purchase return.
+     *
+     * Delegates to the approval pipeline which runs handlers in priority order:
+     * 1. InventoryReturnHandler - processes stock-out (if warehouse specified)
+     * 2. JournalEntryHandler - creates accounting entries
+     */
     public function approve(PurchaseReturn $purchaseReturn, ?int $userId = null): PurchaseReturn
     {
         if (! $purchaseReturn->stateMachine()->canApprove()) {
@@ -153,16 +157,8 @@ class PurchaseReturnService extends AbstractDocumentService implements PurchaseR
         return DB::transaction(function () use ($purchaseReturn, $userId) {
             $purchaseReturn->transitionTo(DocumentStatus::Approved, $userId);
 
-            if ($purchaseReturn->warehouse_id) {
-                $this->processInventoryReturn($purchaseReturn);
-            }
-
-            // Use strategy pattern for configurable journal creation
-            $journalEntry = $this->returnStrategy->onPurchaseReturnApprove($purchaseReturn);
-            if ($journalEntry) {
-                $purchaseReturn->journal_entry_id = $journalEntry->id;
-                $purchaseReturn->save();
-            }
+            // Process approval side effects via pipeline
+            $this->approvalPipeline->process($purchaseReturn);
 
             return $purchaseReturn->fresh(['items', 'journalEntry']);
         });
@@ -249,33 +245,5 @@ class PurchaseReturnService extends AbstractDocumentService implements PurchaseR
                     'total' => $group->sum('total_amount'),
                 ]),
         ];
-    }
-
-    /**
-     * Process inventory for approved return (stock out).
-     */
-    private function processInventoryReturn(PurchaseReturn $purchaseReturn): void
-    {
-        $warehouse = $purchaseReturn->warehouse;
-
-        foreach ($purchaseReturn->items as $item) {
-            if (! $item->product_id) {
-                continue;
-            }
-
-            $product = Product::find($item->product_id);
-            if (! $product || ! $product->track_inventory) {
-                continue;
-            }
-
-            $this->inventoryService->stockOut(
-                $product,
-                $warehouse,
-                (int) $item->quantity,
-                'Retur pembelian: '.$purchaseReturn->return_number,
-                PurchaseReturn::class,
-                $purchaseReturn->id
-            );
-        }
     }
 }
