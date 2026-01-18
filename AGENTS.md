@@ -575,4 +575,495 @@ $pages->assertNoJavascriptErrors()->assertNoConsoleLogs();
 | overflow-ellipsis | text-ellipsis |
 | decoration-slice | box-decoration-slice |
 | decoration-clone | box-decoration-clone |
+
+
+=== state-machine/core rules ===
+
+## State Machine Pattern
+
+Use the State Machine pattern to enforce valid status transitions and business rules for domain entities like Invoice, Bill, and Quotation.
+
+### Purpose
+- Prevent invalid status changes
+- Centralize transition logic
+- Enable before/after hooks for side effects
+- Automatically dispatch domain events
+
+### Architecture
+
+**Base Class:** `app/Domain/Core/AbstractStateMachine.php`
+
+**State Machine Files:** `app/Domain/{Domain}/{Resource}s/{Resource}StateMachine.php`
+
+### Usage
+
+```php
+// Check if transition is allowed
+if ($invoice->stateMachine()->canPost()) {
+    // Can be posted
+}
+
+// Transition to new status
+$invoice->transitionTo(DocumentStatus::Sent, auth()->id());
+
+// Check specific permissions
+$invoice->stateMachine()->canEdit();      // Can be edited?
+$invoice->stateMachine()->canDelete();    // Can be deleted?
+$invoice->stateMachine()->canVoid();      // Can be voided?
+```
+
+### Creating a New State Machine
+
+1. Create the state machine class:
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domain\Sales\Invoices;
+
+use App\Domain\Core\AbstractStateMachine;
+use App\Enums\DocumentStatus;
+use App\Models\Sales\Invoice;
+
+class InvoiceStateMachine extends AbstractStateMachine
+{
+    private Invoice $invoice;
+
+    public function __construct(Invoice $invoice)
+    {
+        parent::__construct($invoice->status);
+        $this->invoice = $invoice;
+    }
+
+    public static function fromInvoice(Invoice $invoice): self
+    {
+        return new self($invoice);
+    }
+
+    protected function getTransitions(): array
+    {
+        return [
+            DocumentStatus::Draft->value => [
+                DocumentStatus::Sent->value,
+                DocumentStatus::Cancelled->value,
+            ],
+            DocumentStatus::Sent->value => [
+                DocumentStatus::Partial->value,
+                DocumentStatus::Paid->value,
+                DocumentStatus::Overdue->value,
+                DocumentStatus::Cancelled->value,
+            ],
+            // ... more transitions
+        ];
+    }
+
+    protected function getContextData(): array
+    {
+        return [
+            'invoice_id' => $this->invoice->id,
+            'total_amount' => $this->invoice->total_amount,
+        ];
+    }
+
+    protected function updateDocumentStatus(DocumentStatus $status): void
+    {
+        $this->invoice->status = $status;
+        $this->invoice->save();
+    }
+
+    protected function getDocumentType(): string
+    {
+        return 'Faktur';
+    }
+
+    protected function getDocumentId(): int
+    {
+        return $this->invoice->id;
+    }
+
+    protected function getStatusChangedEvent(): string
+    {
+        return InvoiceStatusChanged::class;
+    }
+
+    // Hooks
+    protected function beforeSent(DocumentStatus $from, DocumentStatus $to): void
+    {
+        if (!$this->invoice->items()->exists()) {
+            throw new InvalidArgumentException('Invoice has no items.');
+        }
+    }
+
+    protected function afterSent(DocumentStatus $from, DocumentStatus $to): void
+    {
+        Event::dispatch(InvoiceSent::fromInvoice($this->invoice, $this->getContextUserId()));
+    }
+}
+```
+
+2. Add methods to the Model:
+
+```php
+// In App\Models\Sales\Invoice.php
+
+public function stateMachine(): \App\Domain\Sales\Invoices\InvoiceStateMachine
+{
+    return \App\Domain\Sales\Invoices\InvoiceStateMachine::fromInvoice($this);
+}
+
+public function transitionTo(DocumentStatus $status, ?int $userId = null): self
+{
+    $this->stateMachine()->transitionTo($status, ['user_id' => $userId]);
+    return $this->refresh();
+}
+```
+
+### Invoice Status Transitions
+
+```
+Draft → Sent (requires items, creates journal entry)
+Draft → Cancelled
+Sent → Partial (partial payment received)
+Sent → Paid (full payment received)
+Sent → Overdue (past due date, no full payment)
+Partial → Paid (additional payment completes invoice)
+Partial → Overdue (past due date)
+Paid → Cancelled (reverse payment, journal entry)
+Overdue → Partial (additional payment)
+Overdue → Paid (full payment received)
+Overdue → Cancelled
+```
+
+### Bill Status Transitions
+
+```
+Draft → Received (posting to journal)
+Draft → Cancelled
+Received → Partial (partial payment made)
+Received → Paid (full payment made)
+Received → Overdue (past due date)
+Partial → Paid (full payment)
+Partial → Overdue (past due date)
+Paid → Cancelled
+Overdue → Partial (additional payment)
+Overdue → Paid (full payment)
+Overdue → Cancelled
+```
+
+### Hook System
+
+**Generic Hooks** (called for all transitions):
+
+```php
+protected function beforeTransition(DocumentStatus $from, DocumentStatus $to): void
+{
+    // Called before any transition
+}
+
+protected function afterTransition(DocumentStatus $from, DocumentStatus $to): void
+{
+    // Called after any transition
+}
+```
+
+**Specific Hooks** (called for specific transitions):
+
+```php
+protected function beforeSent(DocumentStatus $from, DocumentStatus $to): void { }
+protected function afterSent(DocumentStatus $from, DocumentStatus $to): void { }
+protected function beforePartial(DocumentStatus $from, DocumentStatus $to): void { }
+protected function afterPartial(DocumentStatus $from, DocumentStatus $to): void { }
+protected function beforePaid(DocumentStatus $from, DocumentStatus $to): void { }
+protected function afterPaid(DocumentStatus $from, DocumentStatus $to): void { }
+protected function beforeOverdue(DocumentStatus $from, DocumentStatus $to): void { }
+protected function afterOverdue(DocumentStatus $from, DocumentStatus $to): void { }
+protected function beforeVoid(DocumentStatus $from, DocumentStatus $to): void { }
+protected function afterVoid(DocumentStatus $from, DocumentStatus $to): void { }
+```
+
+
+=== domain-events/core rules ===
+
+## Domain Events Pattern
+
+Use Domain Events to decouple business logic and enable reactive workflows.
+
+### Purpose
+- Decouple business logic from side effects
+- Enable audit logging
+- Support notifications and integrations
+- Create audit trail of important actions
+
+### Event Structure
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domain\Sales\Invoices\Events;
+
+use App\Models\Sales\Invoice;
+
+readonly class InvoiceSent
+{
+    public function __construct(
+        public readonly int $invoiceId,
+        public readonly string $invoiceNumber,
+        public readonly int $customerId,
+        public readonly int $totalAmount,
+        public readonly string $currency,
+        public readonly ?int $userId,
+        public readonly \Carbon\Carbon $sentAt
+    ) {}
+
+    public static function fromInvoice(Invoice $invoice, ?int $userId = null): self
+    {
+        return new self(
+            invoiceId: $invoice->id,
+            invoiceNumber: $invoice->invoice_number,
+            customerId: $invoice->contact_id,
+            totalAmount: $invoice->total_amount,
+            currency: $invoice->currency,
+            userId: $userId,
+            sentAt: now()
+        );
+    }
+}
+```
+
+### Key Events
+
+**Invoice Events:**
+- `InvoiceStatusChanged` - Generic status change (audit trail)
+- `InvoiceSent` - Dispatched when invoice is sent to customer
+- `InvoiceVoided` - Dispatched when invoice is voided
+- `InvoiceFullyPaid` - Dispatched when invoice becomes fully paid
+- `InvoiceOverdue` - Dispatched when invoice becomes overdue
+
+**Bill Events:**
+- `BillStatusChanged` - Generic status change (audit trail)
+- `BillReceived` - Dispatched when bill is received from vendor
+- `BillVoided` - Dispatched when bill is voided
+- `BillFullyPaid` - Dispatched when bill becomes fully paid
+
+**Payment Events:**
+- `PaymentReceived` - Dispatched when payment is received
+- `PaymentVoided` - Dispatched when payment is voided
+
+### Dispatching Events
+
+From State Machine hooks:
+
+```php
+protected function afterSent(DocumentStatus $from, DocumentStatus $to): void
+{
+    Event::dispatch(InvoiceSent::fromInvoice($this->invoice, $this->getContextUserId()));
+}
+```
+
+From Services:
+
+```php
+use App\Domain\Sales\Events\PaymentReceived;
+
+public function postPayment(Payment $payment): void
+{
+    // ... process payment
+
+    if ($payment->payable instanceof Invoice) {
+        Event::dispatch(PaymentReceived::fromPayment(
+            invoice: $payment->payable,
+            paymentId: $payment->id,
+            amount: $payment->amount,
+            userId: auth()->id()
+        ));
+    }
+}
+```
+
+### Event Listeners
+
+**Listener Location:** `app/Infrastructure/Listeners/{Domain}/`
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Infrastructure\Listeners\Sales;
+
+use App\Infrastructure\Listeners\Sales\LogInvoiceActivity;
+
+class LogInvoiceActivity
+{
+    public function handle(InvoiceStatusChanged | InvoiceSent | InvoiceVoided $event): void
+    {
+        if ($event instanceof InvoiceStatusChanged) {
+            \Log::info('Invoice status changed', [
+                'invoice_id' => $event->invoiceId,
+                'from_status' => $event->fromStatus->value,
+                'to_status' => $event->toStatus->value,
+            ]);
+        }
+
+        if ($event instanceof InvoiceSent) {
+            \Log::info('Invoice sent to customer', [
+                'invoice_id' => $event->invoiceId,
+                'customer_id' => $event->customerId,
+            ]);
+        }
+    }
+}
+```
+
+### Registering Listeners
+
+In `app/Providers/AppServiceProvider.php`:
+
+```php
+private function registerEventListeners(): void
+{
+    Event::listen(
+        \App\Domain\Sales\Invoices\Events\InvoiceStatusChanged::class,
+        \App\Infrastructure\Listeners\Sales\LogInvoiceActivity::class
+    );
+
+    Event::listen(
+        \App\Domain\Sales\Invoices\Events\InvoiceSent::class,
+        \App\Infrastructure\Listeners\Sales\LogInvoiceActivity::class
+    );
+
+    Event::listen(
+        \App\Domain\Sales\Invoices\Events\InvoiceSent::class,
+        \App\Infrastructure\Listeners\Sales\NotifyCustomerOnInvoiceSent::class
+    );
+}
+```
+
+### Testing Events
+
+```php
+use App\Domain\Sales\Invoices\Events\InvoiceFullyPaid;
+
+it('dispatches InvoiceFullyPaid event when invoice becomes fully paid', function () {
+    Event::fake();
+
+    // ... create invoice and make payment
+
+    $this->postJson('/api/v1/payments', [...]);
+
+    Event::assertDispatched(InvoiceFullyPaid::class);
+});
+```
+
+
+=== file-organization/core rules ===
+
+## File Organization Convention
+
+Follow consistent directory structure for domain code.
+
+### Domain Structure
+
+```
+app/Domain/
+├── {Domain}/
+│   ├── {Resource}StateMachine.php           # State machine for the resource
+│   ├── {Resource}Calculator.php              # Calculation logic (optional)
+│   ├── {Resource}Defaults.php                # Default values (optional)
+│   ├── {Resource}Statistics.php              # Statistics/metrics (optional)
+│   ├── {Resource}Workflow.php                # Workflow logic (optional)
+│   ├── {Resource}s/                          # Resource-specific sub-resources
+│   │   └── {SubResource}Creator.php
+│   └── Events/                               # Domain-specific events
+│       ├── {Resource}StatusChanged.php
+│       ├── {Resource}Sent.php
+│       ├── {Resource}Voided.php
+│       └── {Resource}FullyPaid.php
+└── Core/
+    └── AbstractStateMachine.php              # Base state machine class
+```
+
+### Example: Invoice
+
+```
+app/Domain/Sales/
+├── Invoices/
+│   ├── InvoiceStateMachine.php
+│   ├── InvoiceCalculator.php
+│   ├── InvoiceTotals.php
+│   └── Events/
+│       ├── InvoiceFullyPaid.php
+│       ├── InvoiceOverdue.php
+│       ├── InvoiceSent.php
+│       ├── InvoiceStatusChanged.php
+│       └── InvoiceVoided.php
+└── Quotations/
+    └── ... (existing)
+```
+
+### Example: Bill
+
+```
+app/Domain/Purchasing/
+├── Bills/
+│   ├── BillStateMachine.php
+│   └── Events/
+│       ├── BillFullyPaid.php
+│       ├── BillReceived.php
+│       ├── BillStatusChanged.php
+│       └── BillVoided.php
+└── ... (existing)
+```
+
+### Cross-Cutting Events
+
+Events that span multiple subdomains stay at the domain level:
+
+```
+app/Domain/Sales/Events/
+├── PaymentReceived.php     # Used by both Invoice and Bill
+└── PaymentVoided.php       # Used by both Invoice and Bill
+```
+
+### Listeners
+
+```
+app/Infrastructure/Listeners/
+├── Sales/
+│   ├── LogInvoiceActivity.php
+│   ├── NotifyCustomerOnInvoiceSent.php
+│   └── SendInvoicePaidNotification.php
+└── Purchasing/
+    ├── LogBillActivity.php
+    └── NotifyAccountPayableOnBillReceived.php
+```
+
+### When to Create New Directories
+
+**Create new subdomain directory when:**
+- New business domain (e.g., Inventory, HR)
+- Major feature area with multiple related entities
+
+**Create Events subdirectory when:**
+- Domain has more than 3 domain events
+- Events are specific to that domain
+
+**Create resource subdirectory when:**
+- Resource has multiple related sub-resources
+- Sub-resources need their own logic
+
+### Anti-Patterns to Avoid
+
+| Anti-Pattern | Correct Approach |
+|--------------|------------------|
+| Putting events in root `Domain/` | Group events by domain |
+| Flat structure with many files | Create subdirectories |
+| Mixing Sales and Purchasing events | Separate by domain |
+| Creating listeners without domain prefix | `Sales/LogInvoiceActivity`, `Purchasing/LogBillActivity` |
+
+
 </laravel-boost-guidelines>
