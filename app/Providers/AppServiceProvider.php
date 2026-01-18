@@ -2,7 +2,12 @@
 
 namespace App\Providers;
 
+use App\Contracts\Accounting\Strategies\COGSRecognitionStrategy;
+use App\Contracts\Accounting\Strategies\InventoryAccountingStrategy;
+use App\Contracts\Accounting\Strategies\ManufacturingCostStrategy;
+use App\Contracts\Accounting\Strategies\ReturnAccountingStrategy;
 use App\Contracts\FeatureManager;
+use App\Contracts\Services\Accounting\JournalServiceInterface;
 // Sales Domain Interfaces
 use App\Contracts\Services\Domains\BillServiceInterface;
 use App\Contracts\Services\Domains\BomServiceInterface;
@@ -33,32 +38,35 @@ use App\Contracts\Services\Domains\StockOpnameServiceInterface;
 use App\Contracts\Services\Domains\SubcontractorServiceInterface;
 use App\Contracts\Services\Domains\WorkOrderServiceInterface;
 // Sales Domain Services
+use App\Services\Accounting\AccountingPolicyManager;
+use App\Services\Accounting\JournalService;
 use App\Services\Inventory\InventoryService;
 use App\Services\Inventory\ProductService;
 use App\Services\Inventory\StockOpnameService;
 use App\Services\Manufacturing\BomService;
 use App\Services\Manufacturing\BomTemplateService;
+// Purchasing Domain Services
 use App\Services\Manufacturing\BomVariantGroupService;
 use App\Services\Manufacturing\MaterialRequisitionService;
-// Purchasing Domain Services
 use App\Services\Manufacturing\MrpService;
 use App\Services\Manufacturing\SubcontractorService;
+// Manufacturing Domain Services
 use App\Services\Manufacturing\WorkOrderService;
 use App\Services\Projects\ProjectService;
-// Manufacturing Domain Services
 use App\Services\Purchasing\BillService;
 use App\Services\Purchasing\GoodsReceiptNoteService;
 use App\Services\Purchasing\PurchaseOrderService;
 use App\Services\Purchasing\PurchaseReturnService;
 use App\Services\Sales\DeliveryOrderService;
+// Inventory Domain Services
 use App\Services\Sales\DownPaymentService;
 use App\Services\Sales\InvoiceService;
-// Inventory Domain Services
-use App\Services\Sales\QuotationService;
-use App\Services\Sales\RecurringService;
 // Projects Domain Services
-use App\Services\Sales\SalesReturnService;
+use App\Services\Sales\QuotationService;
 // Solar Domain Services
+use App\Services\Sales\RecurringService;
+use App\Services\Sales\SalesReturnService;
+// Accounting Strategies
 use App\Services\Solar\SolarCalculationService;
 use App\Services\Solar\SolarProposalService;
 use App\Support\ConfigFeatureManager;
@@ -78,7 +86,37 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(FeatureManager::class, ConfigFeatureManager::class);
 
+        $this->registerAccountingServices();
         $this->registerDomainServices();
+    }
+
+    /**
+     * Register accounting services and strategy bindings.
+     */
+    private function registerAccountingServices(): void
+    {
+        // Register JournalService
+        $this->app->bind(JournalServiceInterface::class, JournalService::class);
+
+        // Register AccountingPolicyManager as singleton (reads config once)
+        $this->app->singleton(AccountingPolicyManager::class);
+
+        // Bind strategy interfaces to resolved strategies from PolicyManager
+        $this->app->bind(InventoryAccountingStrategy::class, function ($app) {
+            return $app->make(AccountingPolicyManager::class)->inventory();
+        });
+
+        $this->app->bind(COGSRecognitionStrategy::class, function ($app) {
+            return $app->make(AccountingPolicyManager::class)->cogs();
+        });
+
+        $this->app->bind(ReturnAccountingStrategy::class, function ($app) {
+            return $app->make(AccountingPolicyManager::class)->returns();
+        });
+
+        $this->app->bind(ManufacturingCostStrategy::class, function ($app) {
+            return $app->make(AccountingPolicyManager::class)->manufacturing();
+        });
     }
 
     /**
@@ -93,12 +131,14 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(DeliveryOrderServiceInterface::class, DeliveryOrderService::class);
         $this->app->bind(SalesReturnServiceInterface::class, SalesReturnService::class);
         $this->app->bind(RecurringServiceInterface::class, RecurringService::class);
+        $this->app->bind(\App\Contracts\Services\Sales\QuotationCalculatorInterface::class, \App\Domain\Sales\Quotations\QuotationCalculator::class);
 
         // Purchasing Domain (4 services)
         $this->app->bind(BillServiceInterface::class, BillService::class);
         $this->app->bind(PurchaseOrderServiceInterface::class, PurchaseOrderService::class);
         $this->app->bind(GoodsReceiptNoteServiceInterface::class, GoodsReceiptNoteService::class);
         $this->app->bind(PurchaseReturnServiceInterface::class, PurchaseReturnService::class);
+        $this->app->bind(\App\Contracts\Services\Purchasing\PurchaseOrderCalculatorInterface::class, \App\Domain\Purchasing\PurchaseOrders\PurchaseOrderCalculator::class);
 
         // Manufacturing Domain (6 services)
         $this->app->bind(BomServiceInterface::class, BomService::class);
@@ -184,6 +224,249 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(
             \App\Domain\Purchasing\Bills\Events\BillVoided::class,
             \App\Infrastructure\Listeners\Purchasing\LogBillActivity::class
+        );
+
+        // Sales Domain - Quotation Event Listeners
+        Event::listen(
+            \App\Domain\Sales\Quotations\Events\QuotationStatusChanged::class,
+            \App\Infrastructure\Listeners\Sales\LogQuotationActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Sales\Quotations\Events\QuotationSubmitted::class,
+            \App\Infrastructure\Listeners\Sales\LogQuotationActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Sales\Quotations\Events\QuotationApproved::class,
+            \App\Infrastructure\Listeners\Sales\LogQuotationActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Sales\Quotations\Events\QuotationRejected::class,
+            \App\Infrastructure\Listeners\Sales\LogQuotationActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Sales\Quotations\Events\QuotationConverted::class,
+            \App\Infrastructure\Listeners\Sales\LogQuotationActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Sales\Quotations\Events\QuotationExpired::class,
+            \App\Infrastructure\Listeners\Sales\LogQuotationActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Sales\Quotations\Events\QuotationApproved::class,
+            \App\Infrastructure\Listeners\Sales\NotifyCustomerOnQuotationApproved::class
+        );
+
+        Event::listen(
+            \App\Domain\Sales\Quotations\Events\QuotationSubmitted::class,
+            \App\Infrastructure\Listeners\Sales\NotifySalesTeamOnQuotationSubmitted::class
+        );
+
+        Event::listen(
+            \App\Domain\Sales\Quotations\Events\QuotationWon::class,
+            \App\Infrastructure\Listeners\Sales\NotifySalesTeamOnQuotationWon::class
+        );
+
+        // Purchasing Domain - Purchase Order Event Listeners
+        Event::listen(
+            \App\Domain\Purchasing\PurchaseOrders\Events\PurchaseOrderStatusChanged::class,
+            \App\Infrastructure\Listeners\Purchasing\LogPurchaseOrderActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Purchasing\PurchaseOrders\Events\PurchaseOrderSubmitted::class,
+            \App\Infrastructure\Listeners\Purchasing\LogPurchaseOrderActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Purchasing\PurchaseOrders\Events\PurchaseOrderApproved::class,
+            \App\Infrastructure\Listeners\Purchasing\LogPurchaseOrderActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Purchasing\PurchaseOrders\Events\PurchaseOrderRejected::class,
+            \App\Infrastructure\Listeners\Purchasing\LogPurchaseOrderActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Purchasing\PurchaseOrders\Events\PurchaseOrderCancelled::class,
+            \App\Infrastructure\Listeners\Purchasing\LogPurchaseOrderActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Purchasing\PurchaseOrders\Events\PurchaseOrderPartial::class,
+            \App\Infrastructure\Listeners\Purchasing\LogPurchaseOrderActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Purchasing\PurchaseOrders\Events\PurchaseOrderReceived::class,
+            \App\Infrastructure\Listeners\Purchasing\LogPurchaseOrderActivity::class
+        );
+
+        // Sales Domain - Delivery Order Event Listeners
+        Event::listen(
+            \App\Domain\Sales\DeliveryOrders\Events\DeliveryOrderStatusChanged::class,
+            \App\Infrastructure\Listeners\Sales\LogDeliveryOrderActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Sales\DeliveryOrders\Events\DeliveryOrderConfirmed::class,
+            \App\Infrastructure\Listeners\Sales\LogDeliveryOrderActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Sales\DeliveryOrders\Events\DeliveryOrderShipped::class,
+            \App\Infrastructure\Listeners\Sales\LogDeliveryOrderActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Sales\DeliveryOrders\Events\DeliveryOrderDelivered::class,
+            \App\Infrastructure\Listeners\Sales\LogDeliveryOrderActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Sales\DeliveryOrders\Events\DeliveryOrderCancelled::class,
+            \App\Infrastructure\Listeners\Sales\LogDeliveryOrderActivity::class
+        );
+
+        // Manufacturing Domain - Work Order Event Listeners
+        Event::listen(
+            \App\Domain\Manufacturing\WorkOrders\Events\WorkOrderStatusChanged::class,
+            \App\Infrastructure\Listeners\Manufacturing\LogWorkOrderActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Manufacturing\WorkOrders\Events\WorkOrderConfirmed::class,
+            \App\Infrastructure\Listeners\Manufacturing\LogWorkOrderActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Manufacturing\WorkOrders\Events\WorkOrderStarted::class,
+            \App\Infrastructure\Listeners\Manufacturing\LogWorkOrderActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Manufacturing\WorkOrders\Events\WorkOrderCompleted::class,
+            \App\Infrastructure\Listeners\Manufacturing\LogWorkOrderActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Manufacturing\WorkOrders\Events\WorkOrderCancelled::class,
+            \App\Infrastructure\Listeners\Manufacturing\LogWorkOrderActivity::class
+        );
+
+        // Manufacturing Domain - Material Requisition Event Listeners
+        Event::listen(
+            \App\Domain\Manufacturing\MaterialRequisitions\Events\MaterialRequisitionStatusChanged::class,
+            \App\Infrastructure\Listeners\Manufacturing\LogMaterialRequisitionActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Manufacturing\MaterialRequisitions\Events\MaterialRequisitionApproved::class,
+            \App\Infrastructure\Listeners\Manufacturing\LogMaterialRequisitionActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Manufacturing\MaterialRequisitions\Events\MaterialRequisitionIssued::class,
+            \App\Infrastructure\Listeners\Manufacturing\LogMaterialRequisitionActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Manufacturing\MaterialRequisitions\Events\MaterialRequisitionCancelled::class,
+            \App\Infrastructure\Listeners\Manufacturing\LogMaterialRequisitionActivity::class
+        );
+
+        // Sales Domain - Sales Return Event Listeners
+        Event::listen(
+            \App\Domain\Sales\SalesReturns\Events\SalesReturnStatusChanged::class,
+            \App\Infrastructure\Listeners\Sales\LogSalesReturnActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Sales\SalesReturns\Events\SalesReturnSubmitted::class,
+            \App\Infrastructure\Listeners\Sales\LogSalesReturnActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Sales\SalesReturns\Events\SalesReturnApproved::class,
+            \App\Infrastructure\Listeners\Sales\LogSalesReturnActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Sales\SalesReturns\Events\SalesReturnRejected::class,
+            \App\Infrastructure\Listeners\Sales\LogSalesReturnActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Sales\SalesReturns\Events\SalesReturnCompleted::class,
+            \App\Infrastructure\Listeners\Sales\LogSalesReturnActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Sales\SalesReturns\Events\SalesReturnCancelled::class,
+            \App\Infrastructure\Listeners\Sales\LogSalesReturnActivity::class
+        );
+
+        // Projects Domain - Project Event Listeners
+        Event::listen(
+            \App\Domain\Projects\Events\ProjectStatusChanged::class,
+            \App\Infrastructure\Listeners\Projects\LogProjectActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Projects\Events\ProjectStarted::class,
+            \App\Infrastructure\Listeners\Projects\LogProjectActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Projects\Events\ProjectOnHold::class,
+            \App\Infrastructure\Listeners\Projects\LogProjectActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Projects\Events\ProjectResumed::class,
+            \App\Infrastructure\Listeners\Projects\LogProjectActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Projects\Events\ProjectCompleted::class,
+            \App\Infrastructure\Listeners\Projects\LogProjectActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Projects\Events\ProjectCancelled::class,
+            \App\Infrastructure\Listeners\Projects\LogProjectActivity::class
+        );
+
+        // Manufacturing Domain - Subcontractor Work Order Event Listeners
+        Event::listen(
+            \App\Domain\Manufacturing\SubcontractorWorkOrders\Events\SubcontractorWorkOrderStatusChanged::class,
+            \App\Infrastructure\Listeners\Manufacturing\LogSubcontractorWorkOrderActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Manufacturing\SubcontractorWorkOrders\Events\SubcontractorWorkOrderAssigned::class,
+            \App\Infrastructure\Listeners\Manufacturing\LogSubcontractorWorkOrderActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Manufacturing\SubcontractorWorkOrders\Events\SubcontractorWorkOrderStarted::class,
+            \App\Infrastructure\Listeners\Manufacturing\LogSubcontractorWorkOrderActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Manufacturing\SubcontractorWorkOrders\Events\SubcontractorWorkOrderCompleted::class,
+            \App\Infrastructure\Listeners\Manufacturing\LogSubcontractorWorkOrderActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Manufacturing\SubcontractorWorkOrders\Events\SubcontractorWorkOrderCancelled::class,
+            \App\Infrastructure\Listeners\Manufacturing\LogSubcontractorWorkOrderActivity::class
         );
     }
 

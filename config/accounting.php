@@ -280,5 +280,61 @@ return [
         'early_payment_discount_income' => '4-2001',
         'foreign_exchange_gain' => '4-3001',
         'foreign_exchange_loss' => '5-4001',
+        'inventory' => '1-1400', // Persediaan
+        'cogs' => '5-1001', // Harga Pokok Penjualan
+        'sales_returns' => '4-1004', // Retur Penjualan
+        'purchase_returns' => '5-1004', // Retur Pembelian
+        'dp_receivable' => '2-2100', // Uang Muka Penjualan (liability)
+        'dp_payable' => '1-1500', // Uang Muka Pembelian (asset)
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Accounting Policies (Strategy Pattern)
+    |--------------------------------------------------------------------------
+    |
+    | Configure how the system handles accounting operations.
+    | These settings determine which strategy classes are used.
+    |
+    */
+    'policies' => [
+        /*
+        | Inventory Accounting Method
+        |
+        | Options:
+        | - 'perpetual': Journal on every inventory movement (GRN, DO)
+        | - 'periodic': No auto journals, adjust at period end
+        | - 'hybrid': Journal only on specific events (recommended for EPC)
+        */
+        'inventory_method' => env('ACCOUNTING_INVENTORY_METHOD', 'hybrid'),
+
+        /*
+        | COGS Recognition Timing
+        |
+        | Options:
+        | - 'on_invoice': COGS when invoice is posted (matches revenue)
+        | - 'on_delivery': COGS when goods are shipped
+        | - 'manual': No auto COGS, manual journal entry required
+        */
+        'cogs_recognition' => env('ACCOUNTING_COGS_RECOGNITION', 'on_invoice'),
+
+        /*
+        | Return Accounting Method
+        |
+        | Options:
+        | - 'full_journal': Create reversal journals (AP/AR + Tax)
+        | - 'inventory_only': Only update inventory, no journal
+        */
+        'return_accounting' => env('ACCOUNTING_RETURN_METHOD', 'full_journal'),
+
+        /*
+        | Manufacturing Costing Method
+        |
+        | Options:
+        | - 'project_based': Costs flow to projects (recommended for EPC)
+        | - 'job_costing': Costs accumulate per work order
+        | - 'wip_accounting': Full WIP journal entries
+        */
+        'manufacturing_costing' => env('ACCOUNTING_MFG_METHOD', 'project_based'),
     ],
 ];
