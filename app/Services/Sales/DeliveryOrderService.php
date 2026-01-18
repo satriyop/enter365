@@ -1,44 +1,97 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Sales;
 
-use App\Contracts\Services\Domain\DocumentNumberGeneratorInterface;
 use App\Contracts\Services\Domains\DeliveryOrderServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\DeliveryOrder;
 use App\Models\Sales\DeliveryOrderItem;
 use App\Models\Sales\Invoice;
+use App\Services\Base\AbstractDocumentService;
 use App\Services\Inventory\InventoryService;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 
-class DeliveryOrderService implements DeliveryOrderServiceInterface
+class DeliveryOrderService extends AbstractDocumentService implements DeliveryOrderServiceInterface
 {
     public function __construct(
         private InventoryService $inventoryService,
-        private DocumentNumberGeneratorInterface $numberGenerator
+        private \App\Contracts\Services\Domain\DocumentNumberGeneratorInterface $numberGenerator
     ) {}
 
-    /**
-     * Create a new delivery order.
-     *
-     * @param  array<string, mixed>  $data
-     */
+    protected function getModelClass(): string
+    {
+        return DeliveryOrder::class;
+    }
+
+    protected function getItemRelation(): string
+    {
+        return 'items';
+    }
+
+    protected function generateDocumentNumber(?Model $context = null): string
+    {
+        $prefix = 'DO-'.now()->format('Ym').'-';
+
+        return $this->numberGenerator->generate($prefix, 'delivery_orders', 'do_number');
+    }
+
+    protected function getDocumentNumberField(): string
+    {
+        return 'do_number';
+    }
+
+    protected function getInitialStatus(): string
+    {
+        return DocumentStatus::Draft->value;
+    }
+
+    protected function getEagerLoadRelations(): array
+    {
+        return ['items', 'contact', 'invoice', 'warehouse'];
+    }
+
     public function create(array $data): DeliveryOrder
     {
-        return DB::transaction(function () use ($data) {
-            $deliveryOrder = new DeliveryOrder($data);
-            $deliveryOrder->do_number = $this->numberGenerator->generate('DO-'.now()->format('Ym').'-', 'delivery_orders', 'do_number');
-            $deliveryOrder->save();
+        /** @var DeliveryOrder $result */
+        $result = parent::create($data);
 
-            // Create items
-            if (! empty($data['items'])) {
-                foreach ($data['items'] as $itemData) {
-                    $this->createItem($deliveryOrder, $itemData);
-                }
-            }
+        return $result;
+    }
 
-            return $deliveryOrder->fresh(['items', 'contact', 'invoice', 'warehouse']);
-        });
+    public function update(Model $document, array $data): DeliveryOrder
+    {
+        /** @var DeliveryOrder $document */
+        /** @var DeliveryOrder $result */
+        $result = parent::update($document, $data);
+
+        return $result;
+    }
+
+    protected function validateEditable(Model $document): void
+    {
+        /** @var DeliveryOrder $document */
+        if (! $document->isEditable()) {
+            throw new InvalidArgumentException('Delivery order can only be edited in draft status.');
+        }
+    }
+
+    protected function validateDeletable(Model $document): void
+    {
+        /** @var DeliveryOrder $document */
+        if (! $document->isEditable()) {
+            throw new InvalidArgumentException('Only draft delivery orders can be deleted.');
+        }
+    }
+
+    protected function createItems(Model $document, array $items): void
+    {
+        foreach ($items as $itemData) {
+            $document->items()->create($itemData);
+        }
     }
 
     /**
@@ -60,7 +113,6 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
             $deliveryOrder->do_number = $this->numberGenerator->generate('DO-'.now()->format('Ym').'-', 'delivery_orders', 'do_number');
             $deliveryOrder->save();
 
-            // Create items from invoice items
             foreach ($invoice->items as $invoiceItem) {
                 $item = new DeliveryOrderItem;
                 $item->delivery_order_id = $deliveryOrder->id;
@@ -73,151 +125,98 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
     }
 
     /**
-     * Update a delivery order.
-     *
-     * @param  array<string, mixed>  $data
-     */
-    public function update(DeliveryOrder $deliveryOrder, array $data): DeliveryOrder
-    {
-        if (! $deliveryOrder->canBeEdited()) {
-            throw new \InvalidArgumentException('Delivery order can only be edited in draft status.');
-        }
-
-        return DB::transaction(function () use ($deliveryOrder, $data) {
-            $deliveryOrder->fill($data);
-            $deliveryOrder->save();
-
-            // Update items if provided
-            if (isset($data['items'])) {
-                // Remove existing items and recreate
-                $deliveryOrder->items()->delete();
-
-                foreach ($data['items'] as $itemData) {
-                    $this->createItem($deliveryOrder, $itemData);
-                }
-            }
-
-            return $deliveryOrder->fresh(['items', 'contact', 'invoice', 'warehouse']);
-        });
-    }
-
-    /**
-     * Delete a delivery order.
-     */
-    public function delete(DeliveryOrder $deliveryOrder): bool
-    {
-        if (! $deliveryOrder->canBeEdited()) {
-            throw new \InvalidArgumentException('Only draft delivery orders can be deleted.');
-        }
-
-        return DB::transaction(function () use ($deliveryOrder) {
-            $deliveryOrder->items()->delete();
-
-            return $deliveryOrder->delete();
-        });
-    }
-
-    /**
      * Confirm a delivery order.
      */
     public function confirm(DeliveryOrder $deliveryOrder, ?int $userId = null): DeliveryOrder
     {
-        if (! $deliveryOrder->canBeConfirmed()) {
-            throw new \InvalidArgumentException('Delivery order cannot be confirmed. Ensure it has items and is in draft status.');
+        if (! $deliveryOrder->stateMachine()->canConfirm()) {
+            throw new InvalidArgumentException('Delivery order cannot be confirmed. Ensure it has items and is in draft status.');
         }
 
-        $deliveryOrder->status = DocumentStatus::Confirmed;
-        $deliveryOrder->confirmed_by = $userId;
-        $deliveryOrder->confirmed_at = now();
-        $deliveryOrder->save();
+        $deliveryOrder->transitionTo(DocumentStatus::Confirmed, $userId);
 
-        return $deliveryOrder->fresh();
+        return $deliveryOrder->fresh(['items', 'contact', 'invoice']);
     }
 
     /**
      * Ship a delivery order.
-     *
-     * @param  array<string, mixed>  $data
      */
-    public function ship(DeliveryOrder $deliveryOrder, array $data = []): DeliveryOrder
+    public function ship(DeliveryOrder $deliveryOrder, array $data = [], ?int $userId = null): DeliveryOrder
     {
-        if (! $deliveryOrder->canBeShipped()) {
-            throw new \InvalidArgumentException('Only confirmed delivery orders can be shipped.');
+        if (! $deliveryOrder->stateMachine()->canShip()) {
+            throw new InvalidArgumentException('Only confirmed delivery orders can be shipped.');
         }
 
-        return DB::transaction(function () use ($deliveryOrder, $data) {
-            $deliveryOrder->status = DocumentStatus::Shipped;
-            $deliveryOrder->shipped_by = $data['shipped_by'] ?? null;
-            $deliveryOrder->shipped_at = now();
-            $deliveryOrder->shipping_date = $data['shipping_date'] ?? now()->toDateString();
-            $deliveryOrder->tracking_number = $data['tracking_number'] ?? $deliveryOrder->tracking_number;
-            $deliveryOrder->driver_name = $data['driver_name'] ?? $deliveryOrder->driver_name;
-            $deliveryOrder->vehicle_number = $data['vehicle_number'] ?? $deliveryOrder->vehicle_number;
-            $deliveryOrder->save();
+        return DB::transaction(function () use ($deliveryOrder, $data, $userId) {
+            $deliveryOrder->update([
+                'tracking_number' => $data['tracking_number'] ?? $deliveryOrder->tracking_number,
+                'driver_name' => $data['driver_name'] ?? $deliveryOrder->driver_name,
+                'vehicle_number' => $data['vehicle_number'] ?? $deliveryOrder->vehicle_number,
+            ]);
 
-            // Deduct inventory if warehouse is set
+            $deliveryOrder->transitionTo(DocumentStatus::Shipped, $userId, [
+                'shipped_by' => $data['shipped_by'] ?? null,
+                'shipping_date' => $data['shipping_date'] ?? now()->toDateString(),
+            ]);
+
             if ($deliveryOrder->warehouse_id) {
                 $this->deductInventory($deliveryOrder);
             }
 
-            return $deliveryOrder->fresh();
+            return $deliveryOrder->fresh(['items', 'contact', 'invoice']);
         });
     }
 
     /**
      * Mark delivery order as delivered.
-     *
-     * @param  array<string, mixed>  $data
      */
-    public function deliver(DeliveryOrder $deliveryOrder, array $data = []): DeliveryOrder
+    public function deliver(DeliveryOrder $deliveryOrder, array $data = [], ?int $userId = null): DeliveryOrder
     {
-        if (! $deliveryOrder->canBeDelivered()) {
-            throw new \InvalidArgumentException('Only shipped delivery orders can be marked as delivered.');
+        if (! $deliveryOrder->stateMachine()->canDeliver()) {
+            throw new InvalidArgumentException('Only shipped delivery orders can be marked as delivered.');
         }
 
-        $deliveryOrder->status = DocumentStatus::Delivered;
-        $deliveryOrder->delivered_by = $data['delivered_by'] ?? null;
-        $deliveryOrder->delivered_at = now();
-        $deliveryOrder->received_date = $data['received_date'] ?? now()->toDateString();
-        $deliveryOrder->received_by = $data['received_by'] ?? null;
-        $deliveryOrder->delivery_notes = $data['delivery_notes'] ?? null;
-        $deliveryOrder->save();
+        return DB::transaction(function () use ($deliveryOrder, $data, $userId) {
+            $deliveryOrder->update([
+                'received_by' => $data['received_by'] ?? null,
+                'delivery_notes' => $data['delivery_notes'] ?? null,
+            ]);
 
-        // Mark all items as fully delivered
-        $deliveryOrder->items()->update([
-            'quantity_delivered' => DB::raw('quantity'),
-        ]);
+            $deliveryOrder->items()->update([
+                'quantity_delivered' => DB::raw('quantity'),
+            ]);
 
-        return $deliveryOrder->fresh(['items']);
+            $deliveryOrder->transitionTo(DocumentStatus::Delivered, $userId, [
+                'received_date' => $data['received_date'] ?? now()->toDateString(),
+            ]);
+
+            return $deliveryOrder->fresh(['items']);
+        });
     }
 
     /**
      * Cancel a delivery order.
      */
-    public function cancel(DeliveryOrder $deliveryOrder, ?string $reason = null): DeliveryOrder
+    public function cancel(DeliveryOrder $deliveryOrder, ?string $reason = null, ?int $userId = null): DeliveryOrder
     {
-        if (! $deliveryOrder->canBeCancelled()) {
-            throw new \InvalidArgumentException('Only draft or confirmed delivery orders can be cancelled.');
+        if (! $deliveryOrder->stateMachine()->canCancel()) {
+            throw new InvalidArgumentException('Only draft, confirmed, or shipped delivery orders can be cancelled.');
         }
 
-        $deliveryOrder->status = DocumentStatus::Cancelled;
-        if ($reason) {
-            $deliveryOrder->notes = ($deliveryOrder->notes ? $deliveryOrder->notes."\n" : '').'Cancelled: '.$reason;
-        }
-        $deliveryOrder->save();
+        $deliveryOrder->transitionTo(DocumentStatus::Cancelled, $userId, [
+            'cancellation_reason' => $reason,
+        ]);
 
-        return $deliveryOrder->fresh();
+        return $deliveryOrder->fresh(['items', 'contact', 'invoice']);
     }
 
     /**
      * Update delivery progress (partial delivery).
-     *
-     * @param  array<int, array{item_id: int, quantity_delivered: float}>  $itemsDelivered
      */
     public function updateDeliveryProgress(DeliveryOrder $deliveryOrder, array $itemsDelivered): DeliveryOrder
     {
         if ($deliveryOrder->status !== DocumentStatus::Shipped) {
-            throw new \InvalidArgumentException('Only shipped delivery orders can have delivery progress updated.');
+            throw new InvalidArgumentException('Only shipped delivery orders can have delivery progress updated.');
         }
 
         return DB::transaction(function () use ($deliveryOrder, $itemsDelivered) {
@@ -226,23 +225,21 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
                 if ($item) {
                     $newDelivered = $itemData['quantity_delivered'];
                     if ($newDelivered > $item->quantity) {
-                        throw new \InvalidArgumentException("Delivered quantity cannot exceed ordered quantity for item {$item->id}.");
+                        throw new InvalidArgumentException("Delivered quantity cannot exceed ordered quantity for item {$item->id}.");
                     }
                     $item->quantity_delivered = $newDelivered;
                     $item->save();
                 }
             }
 
-            // Check if all items are fully delivered
             $allDelivered = $deliveryOrder->items()
                 ->whereRaw('quantity_delivered < quantity')
                 ->doesntExist();
 
             if ($allDelivered) {
-                $deliveryOrder->status = DocumentStatus::Delivered;
-                $deliveryOrder->delivered_at = now();
-                $deliveryOrder->received_date = now()->toDateString();
-                $deliveryOrder->save();
+                $deliveryOrder->transitionTo(DocumentStatus::Delivered, null, [
+                    'received_date' => now()->toDateString(),
+                ]);
             }
 
             return $deliveryOrder->fresh(['items']);
@@ -275,7 +272,6 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
             $newDo->do_date = now()->toDateString();
             $newDo->save();
 
-            // Duplicate items
             foreach ($deliveryOrder->items as $item) {
                 $newItem = $item->replicate(['quantity_delivered']);
                 $newItem->delivery_order_id = $newDo->id;
@@ -302,34 +298,25 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
     }
 
     /**
-     * Create a delivery order item.
-     *
-     * @param  array<string, mixed>  $data
-     */
-    private function createItem(DeliveryOrder $deliveryOrder, array $data): DeliveryOrderItem
-    {
-        $item = new DeliveryOrderItem($data);
-        $item->delivery_order_id = $deliveryOrder->id;
-        $item->save();
-
-        return $item;
-    }
-
-    /**
      * Deduct inventory when shipping.
      */
     private function deductInventory(DeliveryOrder $deliveryOrder): void
     {
+        $warehouse = $deliveryOrder->warehouse;
+
         foreach ($deliveryOrder->items as $item) {
             if ($item->product_id) {
-                $this->inventoryService->stockOut([
-                    'product_id' => $item->product_id,
-                    'warehouse_id' => $deliveryOrder->warehouse_id,
-                    'quantity' => $item->quantity,
-                    'reference_type' => DeliveryOrder::class,
-                    'reference_id' => $deliveryOrder->id,
-                    'notes' => 'Delivery: '.$deliveryOrder->do_number,
-                ]);
+                $product = \App\Models\Inventory\Product::find($item->product_id);
+                if ($product) {
+                    $this->inventoryService->stockOut(
+                        $product,
+                        $warehouse,
+                        (int) $item->quantity,
+                        'Delivery: '.$deliveryOrder->do_number,
+                        DeliveryOrder::class,
+                        $deliveryOrder->id
+                    );
+                }
             }
         }
     }

@@ -62,12 +62,12 @@ class QuotationConversionService
                 ]);
             }
 
-            // Update quotation
+            // Update quotation using state machine (dispatches events)
             $quotation->update([
-                'status' => DocumentStatus::Converted,
                 'converted_to_invoice_id' => $invoice->id,
                 'converted_at' => now(),
             ]);
+            $quotation->transitionTo(DocumentStatus::Converted);
 
             return $invoice->load('items', 'contact');
         });

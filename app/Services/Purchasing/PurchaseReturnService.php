@@ -1,57 +1,107 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Purchasing;
 
-use App\Contracts\Services\Accounting\JournalServiceInterface;
-use App\Contracts\Services\Domain\DocumentNumberGeneratorInterface;
+use App\Contracts\Accounting\Strategies\ReturnAccountingStrategy;
 use App\Contracts\Services\Domains\PurchaseReturnServiceInterface;
 use App\Enums\DocumentStatus;
-use App\Models\Accounting\Account;
-use App\Models\Accounting\JournalEntry;
 use App\Models\Inventory\Product;
 use App\Models\Purchasing\Bill;
 use App\Models\Purchasing\PurchaseReturn;
 use App\Models\Purchasing\PurchaseReturnItem;
+use App\Services\Base\AbstractDocumentService;
 use App\Services\Inventory\InventoryService;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 
-class PurchaseReturnService implements PurchaseReturnServiceInterface
+class PurchaseReturnService extends AbstractDocumentService implements PurchaseReturnServiceInterface
 {
     public function __construct(
         private InventoryService $inventoryService,
-        private JournalServiceInterface $journalService,
-        private DocumentNumberGeneratorInterface $numberGenerator
+        private ReturnAccountingStrategy $returnStrategy,
+        private \App\Contracts\Services\Domain\DocumentNumberGeneratorInterface $numberGenerator
     ) {}
 
-    /**
-     * Create a new purchase return.
-     *
-     * @param  array<string, mixed>  $data
-     */
+    protected function getModelClass(): string
+    {
+        return PurchaseReturn::class;
+    }
+
+    protected function getItemRelation(): string
+    {
+        return 'items';
+    }
+
+    protected function generateDocumentNumber(?Model $context = null): string
+    {
+        $prefix = 'PR-'.now()->format('Ym').'-';
+
+        return $this->numberGenerator->generate($prefix, 'purchase_returns', 'return_number');
+    }
+
+    protected function getDocumentNumberField(): string
+    {
+        return 'return_number';
+    }
+
+    protected function getInitialStatus(): string
+    {
+        return DocumentStatus::Draft->value;
+    }
+
+    protected function getEagerLoadRelations(): array
+    {
+        return ['items', 'contact', 'bill', 'warehouse'];
+    }
+
     public function create(array $data): PurchaseReturn
     {
-        return DB::transaction(function () use ($data) {
-            $purchaseReturn = new PurchaseReturn($data);
-            $purchaseReturn->return_number = $this->numberGenerator->generate('PR-'.now()->format('Ym').'-', 'purchase_returns', 'return_number');
-            $purchaseReturn->save();
+        /** @var PurchaseReturn $result */
+        $result = parent::create($data);
 
-            // Create items
-            if (! empty($data['items'])) {
-                foreach ($data['items'] as $itemData) {
-                    $this->createItem($purchaseReturn, $itemData);
-                }
+        return $result;
+    }
 
-                // Recalculate totals
-                $purchaseReturn->calculateTotals();
-                $purchaseReturn->save();
-            }
+    public function update(Model $document, array $data): PurchaseReturn
+    {
+        /** @var PurchaseReturn $document */
+        /** @var PurchaseReturn $result */
+        $result = parent::update($document, $data);
 
-            return $purchaseReturn->fresh(['items', 'contact', 'bill', 'warehouse']);
-        });
+        return $result;
+    }
+
+    protected function validateEditable(Model $document): void
+    {
+        /** @var PurchaseReturn $document */
+        if (! $document->isEditable()) {
+            throw new InvalidArgumentException('Purchase return can only be edited in draft status.');
+        }
+    }
+
+    protected function validateDeletable(Model $document): void
+    {
+        /** @var PurchaseReturn $document */
+        if (! $document->isEditable()) {
+            throw new InvalidArgumentException('Only draft purchase returns can be deleted.');
+        }
+    }
+
+    protected function createItems(Model $document, array $items): void
+    {
+        foreach ($items as $itemData) {
+            $item = new PurchaseReturnItem($itemData);
+            $item->purchase_return_id = $document->id;
+            $item->calculateLineTotal();
+            $item->save();
+        }
     }
 
     /**
-     * Create purchase return from bill.
+     * Create a new purchase return.
      */
     public function createFromBill(Bill $bill, array $data = []): PurchaseReturn
     {
@@ -69,7 +119,6 @@ class PurchaseReturnService implements PurchaseReturnServiceInterface
             $purchaseReturn->return_number = $this->numberGenerator->generate('PR-'.now()->format('Ym').'-', 'purchase_returns', 'return_number');
             $purchaseReturn->save();
 
-            // Create items from bill items
             foreach ($bill->items as $billItem) {
                 $item = new PurchaseReturnItem;
                 $item->purchase_return_id = $purchaseReturn->id;
@@ -77,7 +126,6 @@ class PurchaseReturnService implements PurchaseReturnServiceInterface
                 $item->save();
             }
 
-            // Recalculate totals
             $purchaseReturn->calculateTotals();
             $purchaseReturn->save();
 
@@ -85,150 +133,72 @@ class PurchaseReturnService implements PurchaseReturnServiceInterface
         });
     }
 
-    /**
-     * Update a purchase return.
-     *
-     * @param  array<string, mixed>  $data
-     */
-    public function update(PurchaseReturn $purchaseReturn, array $data): PurchaseReturn
-    {
-        if (! $purchaseReturn->canBeEdited()) {
-            throw new \InvalidArgumentException('Purchase return can only be edited in draft status.');
-        }
-
-        return DB::transaction(function () use ($purchaseReturn, $data) {
-            $purchaseReturn->fill($data);
-            $purchaseReturn->save();
-
-            // Update items if provided
-            if (isset($data['items'])) {
-                // Remove existing items and recreate
-                $purchaseReturn->items()->delete();
-
-                foreach ($data['items'] as $itemData) {
-                    $this->createItem($purchaseReturn, $itemData);
-                }
-
-                // Recalculate totals
-                $purchaseReturn->calculateTotals();
-                $purchaseReturn->save();
-            }
-
-            return $purchaseReturn->fresh(['items', 'contact', 'bill', 'warehouse']);
-        });
-    }
-
-    /**
-     * Delete a purchase return.
-     */
-    public function delete(PurchaseReturn $purchaseReturn): bool
-    {
-        if (! $purchaseReturn->canBeEdited()) {
-            throw new \InvalidArgumentException('Only draft purchase returns can be deleted.');
-        }
-
-        return DB::transaction(function () use ($purchaseReturn) {
-            $purchaseReturn->items()->delete();
-
-            return $purchaseReturn->delete();
-        });
-    }
-
-    /**
-     * Submit a purchase return for approval.
-     */
     public function submit(PurchaseReturn $purchaseReturn, ?int $userId = null): PurchaseReturn
     {
-        if (! $purchaseReturn->canBeSubmitted()) {
-            throw new \InvalidArgumentException('Purchase return cannot be submitted. Ensure it has items and is in draft status.');
+        if (! $purchaseReturn->stateMachine()->canSubmit()) {
+            throw new InvalidArgumentException('Purchase return cannot be submitted. Ensure it has items and is in draft status.');
         }
 
-        $purchaseReturn->status = DocumentStatus::Submitted;
-        $purchaseReturn->submitted_by = $userId;
-        $purchaseReturn->submitted_at = now();
-        $purchaseReturn->save();
+        $purchaseReturn->transitionTo(DocumentStatus::Submitted, $userId);
 
-        return $purchaseReturn->fresh();
+        return $purchaseReturn->fresh(['items', 'contact', 'bill']);
     }
 
-    /**
-     * Approve a purchase return.
-     */
     public function approve(PurchaseReturn $purchaseReturn, ?int $userId = null): PurchaseReturn
     {
-        if (! $purchaseReturn->canBeApproved()) {
-            throw new \InvalidArgumentException('Only submitted purchase returns can be approved.');
+        if (! $purchaseReturn->stateMachine()->canApprove()) {
+            throw new InvalidArgumentException('Only submitted purchase returns can be approved.');
         }
 
         return DB::transaction(function () use ($purchaseReturn, $userId) {
-            $purchaseReturn->status = DocumentStatus::Approved;
-            $purchaseReturn->approved_by = $userId;
-            $purchaseReturn->approved_at = now();
-            $purchaseReturn->save();
+            $purchaseReturn->transitionTo(DocumentStatus::Approved, $userId);
 
-            // Process inventory (stock out - goods returned to supplier)
             if ($purchaseReturn->warehouse_id) {
                 $this->processInventoryReturn($purchaseReturn);
             }
 
-            // Create journal entry for the return
-            $this->createReturnJournalEntry($purchaseReturn);
+            // Use strategy pattern for configurable journal creation
+            $journalEntry = $this->returnStrategy->onPurchaseReturnApprove($purchaseReturn);
+            if ($journalEntry) {
+                $purchaseReturn->journal_entry_id = $journalEntry->id;
+                $purchaseReturn->save();
+            }
 
             return $purchaseReturn->fresh(['items', 'journalEntry']);
         });
     }
 
-    /**
-     * Reject a purchase return.
-     */
     public function reject(PurchaseReturn $purchaseReturn, ?string $reason = null, ?int $userId = null): PurchaseReturn
     {
-        if (! $purchaseReturn->canBeRejected()) {
-            throw new \InvalidArgumentException('Only submitted purchase returns can be rejected.');
+        if (! $purchaseReturn->stateMachine()->canReject()) {
+            throw new InvalidArgumentException('Only submitted purchase returns can be rejected.');
         }
 
-        $purchaseReturn->status = DocumentStatus::Cancelled;
-        $purchaseReturn->rejected_by = $userId;
-        $purchaseReturn->rejected_at = now();
-        $purchaseReturn->rejection_reason = $reason;
-        $purchaseReturn->save();
+        $purchaseReturn->transitionTo(DocumentStatus::Rejected, $userId, ['rejection_reason' => $reason]);
 
-        return $purchaseReturn->fresh();
+        return $purchaseReturn->fresh(['items', 'contact']);
     }
 
-    /**
-     * Complete a purchase return (after approved and inventory processed).
-     */
     public function complete(PurchaseReturn $purchaseReturn, ?int $userId = null): PurchaseReturn
     {
-        if (! $purchaseReturn->canBeCompleted()) {
-            throw new \InvalidArgumentException('Only approved purchase returns can be completed.');
+        if (! $purchaseReturn->stateMachine()->canComplete()) {
+            throw new InvalidArgumentException('Only approved purchase returns can be completed.');
         }
 
-        $purchaseReturn->status = DocumentStatus::Completed;
-        $purchaseReturn->completed_by = $userId;
-        $purchaseReturn->completed_at = now();
-        $purchaseReturn->save();
+        $purchaseReturn->transitionTo(DocumentStatus::Completed, $userId);
 
-        return $purchaseReturn->fresh();
+        return $purchaseReturn->fresh(['items', 'contact']);
     }
 
-    /**
-     * Cancel a purchase return.
-     */
-    public function cancel(PurchaseReturn $purchaseReturn, ?string $reason = null): PurchaseReturn
+    public function cancel(PurchaseReturn $purchaseReturn, ?string $reason = null, ?int $userId = null): PurchaseReturn
     {
-        if (! $purchaseReturn->canBeCancelled()) {
-            throw new \InvalidArgumentException('Only draft or submitted purchase returns can be cancelled.');
+        if (! $purchaseReturn->stateMachine()->canCancel()) {
+            throw new InvalidArgumentException('Only draft, submitted, or approved purchase returns can be cancelled.');
         }
 
-        $purchaseReturn->status = DocumentStatus::Cancelled;
-        if ($reason) {
-            $purchaseReturn->notes = ($purchaseReturn->notes ? $purchaseReturn->notes."\n" : '').'Dibatalkan: '.$reason;
-        }
-        $purchaseReturn->save();
+        $purchaseReturn->transitionTo(DocumentStatus::Cancelled, $userId, ['cancellation_reason' => $reason]);
 
-        return $purchaseReturn->fresh();
+        return $purchaseReturn->fresh(['items', 'contact']);
     }
 
     /**
@@ -282,21 +252,6 @@ class PurchaseReturnService implements PurchaseReturnServiceInterface
     }
 
     /**
-     * Create a purchase return item.
-     *
-     * @param  array<string, mixed>  $data
-     */
-    private function createItem(PurchaseReturn $purchaseReturn, array $data): PurchaseReturnItem
-    {
-        $item = new PurchaseReturnItem($data);
-        $item->purchase_return_id = $purchaseReturn->id;
-        $item->calculateLineTotal();
-        $item->save();
-
-        return $item;
-    }
-
-    /**
      * Process inventory for approved return (stock out).
      */
     private function processInventoryReturn(PurchaseReturn $purchaseReturn): void
@@ -322,65 +277,5 @@ class PurchaseReturnService implements PurchaseReturnServiceInterface
                 $purchaseReturn->id
             );
         }
-    }
-
-    /**
-     * Create journal entry for purchase return.
-     * Debit: Accounts Payable (reduces payable)
-     * Credit: Purchase Returns (reduces expense/COGS)
-     * Credit: PPN Masukan (if applicable)
-     */
-    private function createReturnJournalEntry(PurchaseReturn $purchaseReturn): void
-    {
-        $purchaseReturnsAccount = Account::where('code', '5-2001')->first(); // Retur Pembelian
-        $payableAccount = Account::where('code', '2-1100')->first(); // Utang Usaha
-        $taxReceivableAccount = Account::where('code', '1-1300')->first(); // PPN Masukan
-
-        // If linked to bill, use bill's payable account
-        if ($purchaseReturn->bill && $purchaseReturn->bill->payable_account_id) {
-            $payableAccount = Account::find($purchaseReturn->bill->payable_account_id) ?? $payableAccount;
-        }
-
-        $lines = [];
-
-        // Debit: Accounts Payable (reduce what we owe)
-        $lines[] = [
-            'account_id' => $payableAccount->id,
-            'description' => 'Pengurangan utang: '.$purchaseReturn->return_number,
-            'debit' => $purchaseReturn->total_amount,
-            'credit' => 0,
-        ];
-
-        // Credit: Purchase Returns (contra expense)
-        if ($purchaseReturnsAccount) {
-            $lines[] = [
-                'account_id' => $purchaseReturnsAccount->id,
-                'description' => 'Retur pembelian: '.$purchaseReturn->return_number,
-                'debit' => 0,
-                'credit' => $purchaseReturn->subtotal,
-            ];
-        }
-
-        // Credit: PPN Masukan (reverse tax claimed)
-        if ($purchaseReturn->tax_amount > 0 && $taxReceivableAccount) {
-            $lines[] = [
-                'account_id' => $taxReceivableAccount->id,
-                'description' => 'PPN Retur: '.$purchaseReturn->return_number,
-                'debit' => 0,
-                'credit' => $purchaseReturn->tax_amount,
-            ];
-        }
-
-        $entry = $this->journalService->createEntry([
-            'entry_date' => $purchaseReturn->return_date->toDateString(),
-            'description' => 'Retur pembelian: '.$purchaseReturn->return_number,
-            'reference' => $purchaseReturn->return_number,
-            'source_type' => JournalEntry::SOURCE_MANUAL,
-            'source_id' => $purchaseReturn->id,
-            'lines' => $lines,
-        ], autoPost: true);
-
-        $purchaseReturn->journal_entry_id = $entry->id;
-        $purchaseReturn->save();
     }
 }

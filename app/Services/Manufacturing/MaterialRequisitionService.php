@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Manufacturing;
 
 use App\Contracts\Services\Domains\MaterialRequisitionServiceInterface;
@@ -18,9 +20,7 @@ class MaterialRequisitionService implements MaterialRequisitionServiceInterface
     ) {}
 
     /**
-     * Create material requisition from work order.
-     *
-     * @param  array<string, mixed>  $data
+     * Create a new material requisition.
      */
     public function create(WorkOrder $wo, array $data = []): MaterialRequisition
     {
@@ -28,8 +28,7 @@ class MaterialRequisitionService implements MaterialRequisitionServiceInterface
             $mr = new MaterialRequisition([
                 'work_order_id' => $wo->id,
                 'warehouse_id' => $data['warehouse_id'] ?? $wo->warehouse_id,
-                'status' => DocumentStatus::Draft,
-                'requested_date' => $data['requested_date'] ?? now(),
+                'requested_date' => $data['requested_date'] ?? now()->toDateString(),
                 'required_date' => $data['required_date'] ?? null,
                 'notes' => $data['notes'] ?? null,
                 'requested_by' => $data['requested_by'] ?? auth()->id(),
@@ -37,7 +36,6 @@ class MaterialRequisitionService implements MaterialRequisitionServiceInterface
             $mr->requisition_number = $this->numberGenerator->generate();
             $mr->save();
 
-            // Populate items from work order
             $this->populateFromWorkOrder($mr, $wo);
 
             return $mr->fresh(['items', 'workOrder']);
@@ -45,9 +43,7 @@ class MaterialRequisitionService implements MaterialRequisitionServiceInterface
     }
 
     /**
-     * Update material requisition.
-     *
-     * @param  array<string, mixed>  $data
+     * Update an existing material requisition.
      */
     public function update(MaterialRequisition $mr, array $data): MaterialRequisition
     {
@@ -59,7 +55,6 @@ class MaterialRequisitionService implements MaterialRequisitionServiceInterface
             $mr->fill($data);
             $mr->save();
 
-            // Update items if provided
             if (isset($data['items'])) {
                 $mr->items()->delete();
 
@@ -76,7 +71,7 @@ class MaterialRequisitionService implements MaterialRequisitionServiceInterface
     }
 
     /**
-     * Delete material requisition.
+     * Delete a material requisition.
      */
     public function delete(MaterialRequisition $mr): bool
     {
@@ -96,22 +91,18 @@ class MaterialRequisitionService implements MaterialRequisitionServiceInterface
      */
     public function approve(MaterialRequisition $mr, ?int $userId = null): MaterialRequisition
     {
-        if (! $mr->canBeApproved()) {
+        if (! $mr->stateMachine()->canApprove()) {
             throw new InvalidArgumentException('Material requisition tidak dapat disetujui.');
         }
 
         return DB::transaction(function () use ($mr, $userId) {
-            // Set approved quantities equal to requested
             foreach ($mr->items as $item) {
                 $item->quantity_approved = $item->quantity_requested;
                 $item->quantity_pending = $item->quantity_requested;
                 $item->save();
             }
 
-            $mr->status = DocumentStatus::Approved;
-            $mr->approved_by = $userId ?? auth()->id();
-            $mr->approved_at = now();
-            $mr->save();
+            $mr->transitionTo(DocumentStatus::Approved, $userId);
 
             return $mr->fresh(['items']);
         });
@@ -119,12 +110,10 @@ class MaterialRequisitionService implements MaterialRequisitionServiceInterface
 
     /**
      * Issue materials.
-     *
-     * @param  array<array<string, mixed>>  $items
      */
     public function issue(MaterialRequisition $mr, array $items, ?int $userId = null): MaterialRequisition
     {
-        if (! $mr->canBeIssued()) {
+        if (! $mr->stateMachine()->canIssue()) {
             throw new InvalidArgumentException('Material requisition tidak dapat dikeluarkan. Pastikan sudah disetujui.');
         }
 
@@ -145,7 +134,6 @@ class MaterialRequisitionService implements MaterialRequisitionServiceInterface
                     );
                 }
 
-                // Update product stock
                 $stock = ProductStock::where('product_id', $mrItem->product_id)
                     ->where('warehouse_id', $mr->warehouse_id)
                     ->first();
@@ -161,23 +149,20 @@ class MaterialRequisitionService implements MaterialRequisitionServiceInterface
                     }
                 }
 
-                // Update item
                 $mrItem->quantity_issued = (float) $mrItem->quantity_issued + $quantityToIssue;
                 $mrItem->calculatePendingQuantity();
                 $mrItem->save();
             }
 
-            // Update MR status
             $mr->issued_by = $userId ?? auth()->id();
             $mr->issued_at = now();
+            $mr->save();
 
             if ($mr->isFullyIssued()) {
-                $mr->status = DocumentStatus::Issued;
+                $mr->transitionTo(DocumentStatus::Issued, $userId);
             } else {
-                $mr->status = DocumentStatus::Partial;
+                $mr->transitionTo(DocumentStatus::Partial, $userId);
             }
-
-            $mr->save();
 
             return $mr->fresh(['items']);
         });
@@ -186,16 +171,17 @@ class MaterialRequisitionService implements MaterialRequisitionServiceInterface
     /**
      * Cancel material requisition.
      */
-    public function cancel(MaterialRequisition $mr): MaterialRequisition
+    public function cancel(MaterialRequisition $mr, ?string $reason = null, ?int $userId = null): MaterialRequisition
     {
-        if (! $mr->canBeCancelled()) {
+        if (! $mr->stateMachine()->canCancel()) {
             throw new InvalidArgumentException('Material requisition tidak dapat dibatalkan.');
         }
 
-        $mr->status = DocumentStatus::Cancelled;
-        $mr->save();
+        $mr->transitionTo(DocumentStatus::Cancelled, $userId, [
+            'cancellation_reason' => $reason,
+        ]);
 
-        return $mr->fresh();
+        return $mr->fresh(['items', 'workOrder']);
     }
 
     /**
@@ -231,8 +217,6 @@ class MaterialRequisitionService implements MaterialRequisitionServiceInterface
 
     /**
      * Create requisition item.
-     *
-     * @param  array<string, mixed>  $data
      */
     private function createItem(MaterialRequisition $mr, array $data): MaterialRequisitionItem
     {

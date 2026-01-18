@@ -78,7 +78,7 @@ class ProjectService implements ProjectServiceInterface
      */
     public function delete(Project $project): bool
     {
-        if (! $project->canBeEdited()) {
+        if (! $project->isDeletable()) {
             throw new \InvalidArgumentException('Only draft or planning projects can be deleted.');
         }
 
@@ -93,15 +93,13 @@ class ProjectService implements ProjectServiceInterface
     /**
      * Start a project.
      */
-    public function start(Project $project): Project
+    public function start(Project $project, ?int $userId = null): Project
     {
-        if (! $project->canBeStarted()) {
+        if (! $project->stateMachine()->canStart()) {
             throw new \InvalidArgumentException('Project cannot be started.');
         }
 
-        $project->status = DocumentStatus::InProgress;
-        $project->actual_start_date = now();
-        $project->save();
+        $project->transitionTo(DocumentStatus::InProgress, $userId);
 
         return $project->fresh();
     }
@@ -109,50 +107,20 @@ class ProjectService implements ProjectServiceInterface
     /**
      * Put project on hold.
      */
-    public function putOnHold(Project $project, ?string $reason = null): Project
+    public function putOnHold(Project $project, ?string $reason = null, ?int $userId = null): Project
     {
-        if (! $project->canBePutOnHold()) {
+        if (! $project->stateMachine()->canPutOnHold()) {
             throw new \InvalidArgumentException('Only in-progress projects can be put on hold.');
         }
 
-        $project->status = DocumentStatus::OnHold;
         if ($reason) {
             $project->notes = ($project->notes ? $project->notes."\n" : '').'Ditunda: '.$reason;
-        }
-        $project->save();
-
-        return $project->fresh();
-    }
-
-    /**
-     * Resume a project.
-     */
-    public function resume(Project $project): Project
-    {
-        if (! $project->canBeResumed()) {
-            throw new \InvalidArgumentException('Only on-hold projects can be resumed.');
+            $project->save();
         }
 
-        $project->status = DocumentStatus::InProgress;
-        $project->save();
-
-        return $project->fresh();
-    }
-
-    /**
-     * Complete a project.
-     */
-    public function complete(Project $project): Project
-    {
-        if (! $project->canBeCompleted()) {
-            throw new \InvalidArgumentException('Only in-progress projects can be completed.');
-        }
-
-        $project->status = DocumentStatus::Completed;
-        $project->actual_end_date = now();
-        $project->progress_percentage = 100;
-        $project->calculateFinancials();
-        $project->save();
+        $project->transitionTo(DocumentStatus::OnHold, $userId, [
+            'hold_reason' => $reason,
+        ]);
 
         return $project->fresh();
     }
@@ -160,19 +128,56 @@ class ProjectService implements ProjectServiceInterface
     /**
      * Cancel a project.
      */
-    public function cancel(Project $project, ?string $reason = null): Project
+    public function cancel(Project $project, ?string $reason = null, ?int $userId = null): Project
     {
-        if (! $project->canBeCancelled()) {
+        if (! $project->stateMachine()->canCancel()) {
             throw new \InvalidArgumentException('Project cannot be cancelled.');
         }
 
-        $project->status = DocumentStatus::Cancelled;
         if ($reason) {
             $project->notes = ($project->notes ? $project->notes."\n" : '').'Dibatalkan: '.$reason;
+            $project->save();
         }
-        $project->save();
+
+        $project->transitionTo(DocumentStatus::Cancelled, $userId, [
+            'cancellation_reason' => $reason,
+        ]);
 
         return $project->fresh();
+    }
+
+    /**
+     * Resume a project.
+     */
+    public function resume(Project $project, ?int $userId = null): Project
+    {
+        if (! $project->stateMachine()->canResume()) {
+            throw new \InvalidArgumentException('Only on-hold projects can be resumed.');
+        }
+
+        $project->transitionTo(DocumentStatus::InProgress, $userId);
+
+        return $project->fresh();
+    }
+
+    /**
+     * Complete a project.
+     */
+    public function complete(Project $project, ?int $userId = null): Project
+    {
+        if (! $project->stateMachine()->canComplete()) {
+            throw new \InvalidArgumentException('Only in-progress projects can be completed.');
+        }
+
+        return DB::transaction(function () use ($project, $userId) {
+            $project->transitionTo(DocumentStatus::Completed, $userId);
+
+            $project->refresh();
+            $project->calculateFinancials();
+            $project->save();
+
+            return $project->fresh();
+        });
     }
 
     /**

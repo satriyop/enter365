@@ -6,12 +6,10 @@ namespace App\Services\Sales;
 
 use App\Contracts\Services\Domains\QuotationNumberGeneratorInterface;
 use App\Contracts\Services\Domains\QuotationServiceInterface;
-use App\Domain\Sales\Quotations\DiscountCalculator;
+use App\Contracts\Services\Sales\QuotationCalculatorInterface;
 use App\Domain\Sales\Quotations\QuotationDefaults;
 use App\Domain\Sales\Quotations\QuotationItemCreator;
 use App\Domain\Sales\Quotations\QuotationStatistics;
-use App\Domain\Sales\Quotations\QuotationWorkflow;
-use App\Domain\Sales\Quotations\TaxCalculator;
 use App\Enums\DocumentStatus;
 use App\Models\Manufacturing\Bom;
 use App\Models\Sales\Invoice;
@@ -37,7 +35,7 @@ class QuotationService implements QuotationServiceInterface
         private QuotationDefaults $defaults,
         private QuotationItemCreator $itemCreator,
         private QuotationStatistics $statistics,
-        private QuotationWorkflow $workflow
+        private QuotationCalculatorInterface $calculator
     ) {}
 
     /**
@@ -56,12 +54,12 @@ class QuotationService implements QuotationServiceInterface
 
             $defaults = $this->defaults->getForCreate($data, $userId);
             $defaults['quotation_number'] = $this->numberGenerator->generateQuotationNumber();
-            $taxRate = $defaults['tax_rate'];
 
             $quotation = Quotation::create($defaults);
 
             $this->itemCreator->createItems($quotation, $items);
-            $this->calculateTotals($quotation, $taxRate);
+            $quotation->refresh();
+            $quotation->calculateTotals();
 
             return $quotation->load('items', 'contact');
         });
@@ -81,36 +79,6 @@ class QuotationService implements QuotationServiceInterface
         }
 
         return (int) auth()->id();
-    }
-
-    /**
-     * Calculate and update quotation totals using domain calculators.
-     */
-    private function calculateTotals(Quotation $quotation, float $taxRate): void
-    {
-        $subtotal = $quotation->items->sum('line_total');
-
-        $discountAmount = DiscountCalculator::calculate(
-            $quotation->discount_type,
-            (float) $quotation->discount_value,
-            $subtotal
-        );
-
-        $taxableAmount = $subtotal - $discountAmount;
-        $taxAmount = TaxCalculator::calculateFromSubtotal($taxableAmount, (int) $quotation->tax_rate);
-
-        $total = $taxableAmount + $taxAmount;
-
-        $baseCurrencyTotal = $quotation->currency !== 'IDR' && $quotation->exchange_rate > 0
-            ? (int) round($total * $quotation->exchange_rate)
-            : $total;
-
-        $quotation->subtotal = $subtotal;
-        $quotation->discount_amount = $discountAmount;
-        $quotation->tax_amount = $taxAmount;
-        $quotation->total = $total;
-        $quotation->base_currency_total = $baseCurrencyTotal;
-        $quotation->save();
     }
 
     /**
@@ -152,7 +120,6 @@ class QuotationService implements QuotationServiceInterface
         return DB::transaction(function () use ($data, $bom, $sellingPrice, $marginPercent, $expandItems) {
             $defaults = $this->defaults->forBom($data, $bom, (int) auth()->id());
             $defaults['quotation_number'] = $this->numberGenerator->generateQuotationNumber();
-            $taxRate = $defaults['tax_rate'];
 
             $quotation = Quotation::create($defaults);
 
@@ -165,7 +132,7 @@ class QuotationService implements QuotationServiceInterface
 
             // Calculate totals
             $quotation->refresh();
-            $this->calculateTotals($quotation, (float) $taxRate);
+            $quotation->calculateTotals();
 
             return $quotation->load('items', 'contact');
         });
@@ -216,7 +183,7 @@ class QuotationService implements QuotationServiceInterface
             }
 
             $quotation->refresh();
-            $this->calculateTotals($quotation, (float) $quotation->tax_rate);
+            $quotation->calculateTotals();
 
             return $quotation->load('items', 'contact');
         });
@@ -227,7 +194,15 @@ class QuotationService implements QuotationServiceInterface
      */
     public function submit(Quotation $quotation, ?int $userId = null): Quotation
     {
-        return $this->workflow->submit($quotation, $userId);
+        if (! $quotation->stateMachine()->canSubmit()) {
+            throw new InvalidArgumentException(
+                'Penawaran tidak dapat diajukan. Pastikan status draft dan memiliki item.'
+            );
+        }
+
+        $quotation->transitionTo(DocumentStatus::Submitted, $userId);
+
+        return $quotation->fresh(['items', 'contact']);
     }
 
     /**
@@ -235,7 +210,15 @@ class QuotationService implements QuotationServiceInterface
      */
     public function approve(Quotation $quotation, ?int $userId = null): Quotation
     {
-        return $this->workflow->approve($quotation, $userId);
+        if (! $quotation->stateMachine()->canApprove()) {
+            throw new InvalidArgumentException(
+                'Penawaran tidak dapat disetujui. Pastikan sudah diajukan dan belum kedaluwarsa.'
+            );
+        }
+
+        $quotation->transitionTo(DocumentStatus::Approved, $userId);
+
+        return $quotation->fresh(['items', 'contact']);
     }
 
     /**
@@ -243,7 +226,19 @@ class QuotationService implements QuotationServiceInterface
      */
     public function reject(Quotation $quotation, string $reason, ?int $userId = null): Quotation
     {
-        return $this->workflow->reject($quotation, $reason, $userId);
+        if (! $quotation->stateMachine()->canReject()) {
+            throw new InvalidArgumentException(
+                'Penawaran tidak dapat ditolak. Pastikan sudah diajukan.'
+            );
+        }
+
+        if (empty($reason)) {
+            throw new InvalidArgumentException('Alasan penolakan harus diisi.');
+        }
+
+        $quotation->transitionTo(DocumentStatus::Rejected, $userId, ['rejection_reason' => $reason]);
+
+        return $quotation->fresh(['items', 'contact']);
     }
 
     /**

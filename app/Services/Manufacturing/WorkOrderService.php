@@ -166,18 +166,14 @@ class WorkOrderService implements WorkOrderServiceInterface
      */
     public function confirm(WorkOrder $wo, ?int $userId = null): WorkOrder
     {
-        if (! $wo->canBeConfirmed()) {
+        if (! $wo->stateMachine()->canConfirm()) {
             throw new InvalidArgumentException('Work order tidak dapat dikonfirmasi. Pastikan memiliki item dan dalam status draft.');
         }
 
         return DB::transaction(function () use ($wo, $userId) {
-            // Check and reserve materials
             $this->materialService->reserveMaterials($wo);
 
-            $wo->status = DocumentStatus::Confirmed;
-            $wo->confirmed_by = $userId ?? auth()->id();
-            $wo->confirmed_at = now();
-            $wo->save();
+            $wo->transitionTo(DocumentStatus::Confirmed, $userId);
 
             return $wo->fresh();
         });
@@ -188,15 +184,11 @@ class WorkOrderService implements WorkOrderServiceInterface
      */
     public function start(WorkOrder $wo, ?int $userId = null): WorkOrder
     {
-        if (! $wo->canBeStarted()) {
+        if (! $wo->stateMachine()->canStart()) {
             throw new InvalidArgumentException('Work order hanya dapat dimulai setelah dikonfirmasi.');
         }
 
-        $wo->status = DocumentStatus::InProgress;
-        $wo->started_by = $userId ?? auth()->id();
-        $wo->started_at = now();
-        $wo->actual_start_date = now();
-        $wo->save();
+        $wo->transitionTo(DocumentStatus::InProgress, $userId);
 
         return $wo->fresh();
     }
@@ -206,44 +198,23 @@ class WorkOrderService implements WorkOrderServiceInterface
      */
     public function complete(WorkOrder $wo, ?int $userId = null): WorkOrder
     {
-        if (! $wo->canBeCompleted()) {
+        if (! $wo->stateMachine()->canComplete()) {
             throw new InvalidArgumentException('Work order hanya dapat diselesaikan saat dalam proses.');
         }
 
-        // Check if all sub-WOs are completed
-        $incompleteSubWos = $wo->subWorkOrders()
-            ->whereNotIn('status', [DocumentStatus::Completed, DocumentStatus::Cancelled])
-            ->count();
-
-        if ($incompleteSubWos > 0) {
-            throw new InvalidArgumentException('Semua sub-work order harus diselesaikan terlebih dahulu.');
-        }
-
         return DB::transaction(function () use ($wo, $userId) {
-            // Consume materials (deduct from inventory)
             $this->materialService->consumeMaterials($wo);
 
-            // Calculate actual costs
             $wo->calculateActualCosts();
 
-            $wo->status = DocumentStatus::Completed;
-            $wo->completed_by = $userId ?? auth()->id();
-            $wo->completed_at = now();
-            $wo->actual_end_date = now();
+            $wo->transitionTo(DocumentStatus::Completed, $userId);
 
-            // Set quantity completed if not already set
-            if ($wo->quantity_completed <= 0) {
-                $wo->quantity_completed = $wo->quantity_ordered;
-            }
+            $wo->refresh();
 
-            $wo->save();
-
-            // Update project costs if linked
             if ($wo->project_id) {
                 $this->costService->updateProjectCosts($wo);
             }
 
-            // Auto-create delivery order if project has customer
             $this->costService->createDeliveryOrderIfNeeded($wo);
 
             return $wo->fresh();
@@ -255,21 +226,18 @@ class WorkOrderService implements WorkOrderServiceInterface
      */
     public function cancel(WorkOrder $wo, ?string $reason = null, ?int $userId = null): WorkOrder
     {
-        if (! $wo->canBeCancelled()) {
+        if (! $wo->stateMachine()->canCancel()) {
             throw new InvalidArgumentException('Work order tidak dapat dibatalkan.');
         }
 
         return DB::transaction(function () use ($wo, $reason, $userId) {
-            // Release reserved materials if confirmed/in_progress
             if (in_array($wo->status, [DocumentStatus::Confirmed, DocumentStatus::InProgress])) {
                 $this->materialService->releaseMaterials($wo);
             }
 
-            $wo->status = DocumentStatus::Cancelled;
-            $wo->cancelled_by = $userId ?? auth()->id();
-            $wo->cancelled_at = now();
-            $wo->cancellation_reason = $reason;
-            $wo->save();
+            $wo->transitionTo(DocumentStatus::Cancelled, $userId, [
+                'cancellation_reason' => $reason,
+            ]);
 
             return $wo->fresh();
         });

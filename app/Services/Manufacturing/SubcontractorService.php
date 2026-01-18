@@ -66,7 +66,7 @@ class SubcontractorService implements SubcontractorServiceInterface
      */
     public function delete(SubcontractorWorkOrder $scWo): bool
     {
-        if ($scWo->status !== DocumentStatus::Draft) {
+        if (! $scWo->isDeletable()) {
             throw new InvalidArgumentException('Hanya SC WO draft yang dapat dihapus.');
         }
 
@@ -82,14 +82,11 @@ class SubcontractorService implements SubcontractorServiceInterface
      */
     public function assign(SubcontractorWorkOrder $scWo, ?int $userId = null): SubcontractorWorkOrder
     {
-        if (! $scWo->canBeAssigned()) {
+        if (! $scWo->stateMachine()->canAssign()) {
             throw new InvalidArgumentException('SC WO hanya dapat ditugaskan dalam status draft.');
         }
 
-        $scWo->status = DocumentStatus::Assigned;
-        $scWo->assigned_by = $userId ?? auth()->id();
-        $scWo->assigned_at = now();
-        $scWo->save();
+        $scWo->transitionTo(DocumentStatus::Assigned, $userId);
 
         return $scWo->fresh();
     }
@@ -99,15 +96,11 @@ class SubcontractorService implements SubcontractorServiceInterface
      */
     public function start(SubcontractorWorkOrder $scWo, ?int $userId = null): SubcontractorWorkOrder
     {
-        if (! $scWo->canBeStarted()) {
+        if (! $scWo->stateMachine()->canStart()) {
             throw new InvalidArgumentException('SC WO hanya dapat dimulai setelah ditugaskan.');
         }
 
-        $scWo->status = DocumentStatus::InProgress;
-        $scWo->started_by = $userId ?? auth()->id();
-        $scWo->started_at = now();
-        $scWo->actual_start_date = now();
-        $scWo->save();
+        $scWo->transitionTo(DocumentStatus::InProgress, $userId);
 
         return $scWo->fresh();
     }
@@ -118,7 +111,7 @@ class SubcontractorService implements SubcontractorServiceInterface
     public function updateProgress(SubcontractorWorkOrder $scWo, int $percentage): SubcontractorWorkOrder
     {
         if (! $scWo->canUpdateProgress()) {
-            throw new InvalidArgumentException('Progres hanya dapat diperbarui saat SC WO dalam proses.');
+            throw new InvalidArgumentException('Progres hanya saat SC WO dalam dapat diperbarui proses.');
         }
 
         if ($percentage < 0 || $percentage > 100) {
@@ -139,16 +132,14 @@ class SubcontractorService implements SubcontractorServiceInterface
         ?int $actualAmount = null,
         ?int $userId = null
     ): SubcontractorWorkOrder {
-        if (! $scWo->canBeCompleted()) {
+        if (! $scWo->stateMachine()->canComplete()) {
             throw new InvalidArgumentException('SC WO hanya dapat diselesaikan saat dalam proses.');
         }
 
         return DB::transaction(function () use ($scWo, $actualAmount, $userId) {
-            $scWo->status = DocumentStatus::Completed;
-            $scWo->completed_by = $userId ?? auth()->id();
-            $scWo->completed_at = now();
-            $scWo->actual_end_date = now();
-            $scWo->completion_percentage = 100;
+            $scWo->transitionTo(DocumentStatus::Completed, $userId);
+
+            $scWo->refresh();
 
             if ($actualAmount !== null) {
                 $scWo->actual_amount = $actualAmount;
@@ -159,7 +150,6 @@ class SubcontractorService implements SubcontractorServiceInterface
             $scWo->recalculateFinancials();
             $scWo->save();
 
-            // Create project cost entry
             $this->createProjectCost($scWo);
 
             return $scWo->fresh();
@@ -174,15 +164,13 @@ class SubcontractorService implements SubcontractorServiceInterface
         ?string $reason = null,
         ?int $userId = null
     ): SubcontractorWorkOrder {
-        if (! $scWo->canBeCancelled()) {
+        if (! $scWo->stateMachine()->canCancel()) {
             throw new InvalidArgumentException('SC WO tidak dapat dibatalkan.');
         }
 
-        $scWo->status = DocumentStatus::Cancelled;
-        $scWo->cancelled_by = $userId ?? auth()->id();
-        $scWo->cancelled_at = now();
-        $scWo->cancellation_reason = $reason;
-        $scWo->save();
+        $scWo->transitionTo(DocumentStatus::Cancelled, $userId, [
+            'cancellation_reason' => $reason,
+        ]);
 
         return $scWo->fresh();
     }

@@ -1,104 +1,184 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Purchasing;
 
-use App\Contracts\Services\Domain\DocumentNumberGeneratorInterface;
 use App\Contracts\Services\Domains\PurchaseOrderServiceInterface;
-use App\Domain\Purchasing\PurchaseOrderBillConverter;
-use App\Domain\Purchasing\PurchaseOrderDefaults;
-use App\Domain\Purchasing\PurchaseOrderItemCreator;
-use App\Domain\Purchasing\PurchaseOrderStatistics;
-use App\Domain\Purchasing\PurchaseOrderWorkflow;
+use App\Enums\DocumentStatus;
 use App\Models\Purchasing\PurchaseOrder;
+use App\Models\Purchasing\PurchaseOrderItem;
+use App\Services\Base\AbstractDocumentService;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
-class PurchaseOrderService implements PurchaseOrderServiceInterface
+class PurchaseOrderService extends AbstractDocumentService implements PurchaseOrderServiceInterface
 {
     public function __construct(
-        private ?PurchaseOrderReceivingService $receivingService = null,
-        private ?DocumentNumberGeneratorInterface $numberGenerator = null,
-        private ?PurchaseOrderDefaults $defaults = null,
-        private ?PurchaseOrderItemCreator $itemCreator = null,
-        private ?PurchaseOrderWorkflow $workflow = null,
-        private ?PurchaseOrderBillConverter $billConverter = null,
-        private ?PurchaseOrderStatistics $statistics = null
-    ) {
-        $this->receivingService ??= app(PurchaseOrderReceivingService::class);
-        $this->numberGenerator ??= app(DocumentNumberGeneratorInterface::class);
-        $this->defaults ??= app(PurchaseOrderDefaults::class);
-        $this->itemCreator ??= app(PurchaseOrderItemCreator::class);
-        $this->workflow ??= app(PurchaseOrderWorkflow::class);
-        $this->billConverter ??= app(PurchaseOrderBillConverter::class);
-        $this->statistics ??= app(PurchaseOrderStatistics::class);
+        private PurchaseOrderReceivingService $receivingService,
+        private \App\Domain\Purchasing\PurchaseOrderBillConverter $billConverter,
+        private \App\Domain\Purchasing\PurchaseOrderStatistics $statistics,
+        private \App\Contracts\Services\Domain\DocumentNumberGeneratorInterface $numberGenerator
+    ) {}
+
+    protected function getModelClass(): string
+    {
+        return PurchaseOrder::class;
+    }
+
+    protected function getItemRelation(): string
+    {
+        return 'items';
+    }
+
+    protected function generateDocumentNumber(?Model $context = null): string
+    {
+        $prefix = 'PO-'.now()->format('Ym').'-';
+
+        return $this->numberGenerator->generate($prefix, 'purchase_orders', 'po_number');
+    }
+
+    protected function getDocumentNumberField(): string
+    {
+        return 'po_number';
+    }
+
+    protected function getInitialStatus(): string
+    {
+        return DocumentStatus::Draft->value;
+    }
+
+    protected function getDefaultData(): array
+    {
+        return [
+            ...parent::getDefaultData(),
+            'revision' => 0,
+        ];
+    }
+
+    protected function getEagerLoadRelations(): array
+    {
+        return ['items', 'contact'];
     }
 
     public function create(array $data): PurchaseOrder
     {
-        return DB::transaction(function () use ($data) {
-            $items = $data['items'] ?? [];
-            unset($data['items']);
+        /** @var PurchaseOrder $result */
+        $result = parent::create($data);
 
-            $data['po_number'] = $this->numberGenerator->generate('PO-'.now()->format('Ym').'-', 'purchase_orders', 'po_number');
-
-            $defaults = $this->defaults->getForCreate($data, (int) auth()->id());
-            $data = array_merge($defaults, $data);
-
-            $purchaseOrder = PurchaseOrder::create($data);
-
-            $this->itemCreator->create($purchaseOrder, $items);
-
-            $purchaseOrder->refresh();
-            $purchaseOrder->calculateTotals();
-            $purchaseOrder->save();
-
-            return $purchaseOrder->load('items', 'contact');
-        });
+        return $result;
     }
 
-    public function update(PurchaseOrder $purchaseOrder, array $data): PurchaseOrder
+    public function update(Model $document, array $data): PurchaseOrder
     {
-        if (! $purchaseOrder->isEditable()) {
+        /** @var PurchaseOrder $document */
+        /** @var PurchaseOrder $result */
+        $result = parent::update($document, $data);
+
+        return $result;
+    }
+
+    protected function validateEditable(Model $document): void
+    {
+        /** @var PurchaseOrder $document */
+        if (! $document->isEditable()) {
             throw new InvalidArgumentException('Hanya PO draft yang dapat diubah.');
         }
+    }
 
-        return DB::transaction(function () use ($purchaseOrder, $data) {
-            $items = $data['items'] ?? null;
-            unset($data['items']);
+    protected function validateDeletable(Model $document): void
+    {
+        /** @var PurchaseOrder $document */
+        if (! $document->isDraft()) {
+            throw new InvalidArgumentException('Hanya PO draft yang dapat dihapus.');
+        }
+    }
 
-            $purchaseOrder->update($data);
+    protected function createItems(Model $document, array $items): void
+    {
+        foreach ($items as $index => $itemData) {
+            $quantity = $itemData['quantity'] ?? 1;
+            $unitPrice = $itemData['unit_price'] ?? 0;
+            $discountPercent = $itemData['discount_percent'] ?? 0;
+            $taxRate = $itemData['tax_rate'] ?? $document->tax_rate;
 
-            if ($items !== null) {
-                $purchaseOrder->items()->delete();
-                $this->itemCreator->create($purchaseOrder, $items);
-            }
+            $grossAmount = (int) round($quantity * $unitPrice);
+            $discountAmount = $discountPercent > 0
+                ? (int) round($grossAmount * ($discountPercent / 100))
+                : 0;
+            $netAmount = $grossAmount - $discountAmount;
+            $taxAmount = (int) round($netAmount * ($taxRate / 100));
 
-            $purchaseOrder->refresh();
-            $purchaseOrder->calculateTotals();
-            $purchaseOrder->save();
-
-            return $purchaseOrder->load('items', 'contact');
-        });
+            PurchaseOrderItem::create([
+                'purchase_order_id' => $document->id,
+                'product_id' => $itemData['product_id'] ?? null,
+                'description' => $itemData['description'],
+                'quantity' => $quantity,
+                'quantity_received' => 0,
+                'unit' => $itemData['unit'] ?? 'unit',
+                'unit_price' => $unitPrice,
+                'discount_percent' => $discountPercent,
+                'discount_amount' => $discountAmount,
+                'tax_rate' => $taxRate,
+                'tax_amount' => $taxAmount,
+                'line_total' => $netAmount,
+                'sort_order' => $itemData['sort_order'] ?? $index,
+                'notes' => $itemData['notes'] ?? null,
+            ]);
+        }
     }
 
     public function submit(PurchaseOrder $purchaseOrder, ?int $userId = null): PurchaseOrder
     {
-        return $this->workflow->submit($purchaseOrder, $userId);
+        if (! $purchaseOrder->stateMachine()->canSubmit()) {
+            throw new InvalidArgumentException('PO tidak dapat diajukan. Pastikan status draft dan memiliki item.');
+        }
+
+        $purchaseOrder->transitionTo(DocumentStatus::Submitted, $userId);
+
+        return $purchaseOrder->fresh(['items', 'contact']);
     }
 
     public function approve(PurchaseOrder $purchaseOrder, ?int $userId = null): PurchaseOrder
     {
-        return $this->workflow->approve($purchaseOrder, $userId);
+        if (! $purchaseOrder->stateMachine()->canApprove()) {
+            throw new InvalidArgumentException('PO tidak dapat disetujui. Pastikan sudah diajukan.');
+        }
+
+        $purchaseOrder->transitionTo(DocumentStatus::Approved, $userId);
+
+        return $purchaseOrder->fresh(['items', 'contact']);
     }
 
     public function reject(PurchaseOrder $purchaseOrder, string $reason, ?int $userId = null): PurchaseOrder
     {
-        return $this->workflow->reject($purchaseOrder, $reason, $userId);
+        if (! $purchaseOrder->stateMachine()->canReject()) {
+            throw new InvalidArgumentException('PO tidak dapat ditolak. Pastikan sudah diajukan.');
+        }
+
+        if (empty($reason)) {
+            throw new InvalidArgumentException('Alasan penolakan harus diisi.');
+        }
+
+        $purchaseOrder->transitionTo(DocumentStatus::Rejected, $userId, ['rejection_reason' => $reason]);
+
+        return $purchaseOrder->fresh(['items', 'contact']);
     }
 
     public function cancel(PurchaseOrder $purchaseOrder, string $reason, ?int $userId = null): PurchaseOrder
     {
-        return $this->workflow->cancel($purchaseOrder, $reason, $userId);
+        if (! $purchaseOrder->stateMachine()->canCancel()) {
+            throw new InvalidArgumentException('PO tidak dapat dibatalkan.');
+        }
+
+        if (empty($reason)) {
+            throw new InvalidArgumentException('Alasan pembatalan harus diisi.');
+        }
+
+        $purchaseOrder->transitionTo(DocumentStatus::Cancelled, $userId, ['cancellation_reason' => $reason]);
+
+        return $purchaseOrder->fresh(['items', 'contact']);
     }
 
     public function receive(PurchaseOrder $purchaseOrder, array $receivedItems): PurchaseOrder
@@ -141,17 +221,64 @@ class PurchaseOrderService implements PurchaseOrderServiceInterface
     public function duplicate(PurchaseOrder $purchaseOrder): PurchaseOrder
     {
         return DB::transaction(function () use ($purchaseOrder) {
-            $defaults = $this->defaults->forDuplication($purchaseOrder);
+            $defaults = $this->getDefaultsForDuplication($purchaseOrder);
             $defaults['po_number'] = PurchaseOrder::generatePoNumber();
             $defaults['revision'] = 0;
             $defaults['created_by'] = auth()->id();
 
             $newPo = PurchaseOrder::create($defaults);
 
-            $this->itemCreator->copyFromPurchaseOrder($purchaseOrder, $newPo);
+            $this->copyItemsFromPurchaseOrder($purchaseOrder, $newPo);
 
             return $newPo->load('items', 'contact');
         });
+    }
+
+    private function getDefaultsForDuplication(PurchaseOrder $source): array
+    {
+        return [
+            'contact_id' => $source->contact_id,
+            'po_date' => now(),
+            'expected_date' => now()->addDays(14),
+            'reference' => null,
+            'subject' => $source->subject,
+            'status' => 'draft',
+            'currency' => $source->currency,
+            'exchange_rate' => $source->exchange_rate,
+            'subtotal' => $source->subtotal,
+            'discount_type' => $source->discount_type,
+            'discount_value' => $source->discount_value,
+            'discount_amount' => $source->discount_amount,
+            'tax_rate' => $source->tax_rate,
+            'tax_amount' => $source->tax_amount,
+            'total' => $source->total,
+            'base_currency_total' => $source->base_currency_total,
+            'notes' => $source->notes,
+            'terms_conditions' => $source->terms_conditions,
+            'shipping_address' => $source->shipping_address,
+        ];
+    }
+
+    private function copyItemsFromPurchaseOrder(PurchaseOrder $source, PurchaseOrder $target): void
+    {
+        foreach ($source->items as $item) {
+            PurchaseOrderItem::create([
+                'purchase_order_id' => $target->id,
+                'product_id' => $item->product_id,
+                'description' => $item->description,
+                'quantity' => $item->quantity,
+                'quantity_received' => 0,
+                'unit' => $item->unit,
+                'unit_price' => $item->unit_price,
+                'discount_percent' => $item->discount_percent,
+                'discount_amount' => $item->discount_amount,
+                'tax_rate' => $item->tax_rate,
+                'tax_amount' => $item->tax_amount,
+                'line_total' => $item->line_total,
+                'sort_order' => $item->sort_order,
+                'notes' => $item->notes,
+            ]);
+        }
     }
 
     public function getOutstanding(?int $contactId = null): \Illuminate\Database\Eloquent\Collection

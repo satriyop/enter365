@@ -51,9 +51,19 @@ class JournalService implements JournalServiceInterface
             ]);
 
             foreach ($data['lines'] as $lineData) {
+                // Support both account_id and account_code for flexibility
+                $accountId = $lineData['account_id'] ?? null;
+                if (! $accountId && isset($lineData['account_code'])) {
+                    $account = Account::where('code', $lineData['account_code'])->first();
+                    $accountId = $account?->id;
+                    if (! $accountId) {
+                        throw new \InvalidArgumentException("Account not found: {$lineData['account_code']}");
+                    }
+                }
+
                 JournalEntryLine::create([
                     'journal_entry_id' => $entry->id,
-                    'account_id' => $lineData['account_id'],
+                    'account_id' => $accountId,
                     'description' => $lineData['description'] ?? null,
                     'debit' => $lineData['debit'] ?? 0,
                     'credit' => $lineData['credit'] ?? 0,
