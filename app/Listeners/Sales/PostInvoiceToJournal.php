@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Listeners\Sales;
 
-use App\Contracts\Services\Accounting\JournalServiceInterface;
-use App\Events\Sales\InvoicePosted;
+use App\Contracts\Accounting\JournalServiceInterface;
+use App\Domain\Sales\Events\InvoicePosted;
 
 /**
  * Post invoice to journal when InvoicePosted event is dispatched.

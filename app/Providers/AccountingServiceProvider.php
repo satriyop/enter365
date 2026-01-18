@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
-use App\Contracts\Services\Accounting\JournalServiceInterface;
-use App\Contracts\Services\Domain\DocumentNumberGeneratorInterface;
-use App\Contracts\Services\Domain\InvoiceCalculatorInterface;
-use App\Contracts\Services\Domains\QuotationNumberGeneratorInterface;
+use App\Contracts\Accounting\JournalServiceInterface;
+use App\Contracts\Sales\InvoiceCalculatorInterface;
+use App\Contracts\Sales\QuotationNumberGeneratorInterface;
+use App\Contracts\Shared\DocumentNumberGeneratorInterface;
+use App\Domain\Sales\Events\InvoicePosted;
 use App\Domain\Sales\Invoices\InvoiceCalculator;
 use App\Domain\Sales\Quotations\QuotationNumberGenerator;
 use App\Domain\Shared\DatabaseBackedNumberGenerator;
-use App\Events\Sales\InvoicePosted;
 use App\Listeners\Sales\PostInvoiceToJournal;
 use App\Services\Accounting\JournalService;
 use Illuminate\Support\Facades\Event;

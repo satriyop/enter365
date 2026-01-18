@@ -2,7 +2,7 @@
 
 namespace App\Services\Manufacturing;
 
-use App\Contracts\Services\Domains\SubcontractorServiceInterface;
+use App\Contracts\Manufacturing\SubcontractorServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Contacts\Contact;
 use App\Models\Manufacturing\SubcontractorWorkOrder;

@@ -2,7 +2,7 @@
 
 namespace App\Services\Solar;
 
-use App\Contracts\Services\Domains\SolarProposalServiceInterface;
+use App\Contracts\Solar\SolarProposalServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomVariantGroup;

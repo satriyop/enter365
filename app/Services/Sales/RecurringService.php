@@ -2,7 +2,7 @@
 
 namespace App\Services\Sales;
 
-use App\Contracts\Services\Domains\RecurringServiceInterface;
+use App\Contracts\Sales\RecurringServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Purchasing\Bill;
 use App\Models\Purchasing\BillItem;

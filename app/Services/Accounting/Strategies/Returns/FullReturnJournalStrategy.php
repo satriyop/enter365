@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Accounting\Strategies\Returns;
 
+use App\Contracts\Accounting\JournalServiceInterface;
 use App\Contracts\Accounting\Strategies\ReturnAccountingStrategy;
-use App\Contracts\Services\Accounting\JournalServiceInterface;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Purchasing\PurchaseReturn;
 use App\Models\Sales\SalesReturn;

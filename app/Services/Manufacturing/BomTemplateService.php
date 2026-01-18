@@ -2,7 +2,7 @@
 
 namespace App\Services\Manufacturing;
 
-use App\Contracts\Services\Domains\BomTemplateServiceInterface;
+use App\Contracts\Manufacturing\BomTemplateServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomItem;

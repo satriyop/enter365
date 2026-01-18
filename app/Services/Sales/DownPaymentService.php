@@ -2,8 +2,8 @@
 
 namespace App\Services\Sales;
 
-use App\Contracts\Services\Accounting\JournalServiceInterface;
-use App\Contracts\Services\Domains\DownPaymentServiceInterface;
+use App\Contracts\Accounting\JournalServiceInterface;
+use App\Contracts\Sales\DownPaymentServiceInterface;
 use App\Models\Accounting\Account;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\DownPayment;

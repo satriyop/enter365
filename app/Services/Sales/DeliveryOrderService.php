@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Sales;
 
-use App\Contracts\Services\Domains\DeliveryOrderServiceInterface;
+use App\Contracts\Sales\DeliveryOrderServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\DeliveryOrder;
 use App\Models\Sales\DeliveryOrderItem;
@@ -19,7 +19,7 @@ class DeliveryOrderService extends AbstractDocumentService implements DeliveryOr
 {
     public function __construct(
         private InventoryService $inventoryService,
-        private \App\Contracts\Services\Domain\DocumentNumberGeneratorInterface $numberGenerator
+        private \App\Contracts\Shared\DocumentNumberGeneratorInterface $numberGenerator
     ) {}
 
     protected function getModelClass(): string

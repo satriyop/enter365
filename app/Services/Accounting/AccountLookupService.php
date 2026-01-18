@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Accounting;
 
-use App\Contracts\Services\Accounting\AccountLookupServiceInterface;
+use App\Contracts\Accounting\AccountLookupServiceInterface;
 use App\Exceptions\Domain\MissingAccountException;
 use App\Models\Accounting\Account;
 use Illuminate\Support\Collection;

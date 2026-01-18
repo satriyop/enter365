@@ -2,7 +2,7 @@
 
 namespace App\Services\Solar;
 
-use App\Contracts\Services\Domains\SolarCalculationServiceInterface;
+use App\Contracts\Solar\SolarCalculationServiceInterface;
 use App\Models\Solar\IndonesiaSolarData;
 use App\Models\Solar\PlnTariff;
 

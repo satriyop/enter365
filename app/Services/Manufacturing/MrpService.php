@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Manufacturing;
 
-use App\Contracts\Services\Domains\MrpServiceInterface;
+use App\Contracts\Manufacturing\MrpServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Manufacturing\MrpRun;
 use Illuminate\Support\Facades\DB;

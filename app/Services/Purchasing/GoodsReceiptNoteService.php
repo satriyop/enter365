@@ -2,8 +2,8 @@
 
 namespace App\Services\Purchasing;
 
-use App\Contracts\Services\Domains\GoodsReceiptNoteServiceInterface;
-use App\Contracts\Services\Domains\InventoryServiceInterface;
+use App\Contracts\Inventory\InventoryServiceInterface;
+use App\Contracts\Purchasing\GoodsReceiptNoteServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Inventory\Warehouse;
 use App\Models\Purchasing\GoodsReceiptNote;

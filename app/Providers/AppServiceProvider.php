@@ -2,41 +2,41 @@
 
 namespace App\Providers;
 
+use App\Contracts\Accounting\JournalServiceInterface;
 use App\Contracts\Accounting\Strategies\COGSRecognitionStrategy;
 use App\Contracts\Accounting\Strategies\InventoryAccountingStrategy;
 use App\Contracts\Accounting\Strategies\ManufacturingCostStrategy;
 use App\Contracts\Accounting\Strategies\ReturnAccountingStrategy;
 use App\Contracts\FeatureManager;
-use App\Contracts\Services\Accounting\JournalServiceInterface;
 // Sales Domain Interfaces
-use App\Contracts\Services\Domains\BillServiceInterface;
-use App\Contracts\Services\Domains\BomServiceInterface;
-use App\Contracts\Services\Domains\BomTemplateServiceInterface;
-use App\Contracts\Services\Domains\BomVariantGroupServiceInterface;
-use App\Contracts\Services\Domains\DeliveryOrderServiceInterface;
-use App\Contracts\Services\Domains\DownPaymentServiceInterface;
+use App\Contracts\Inventory\InventoryServiceInterface;
+use App\Contracts\Inventory\ProductServiceInterface;
+use App\Contracts\Inventory\StockOpnameServiceInterface;
+use App\Contracts\Manufacturing\BomServiceInterface;
+use App\Contracts\Manufacturing\BomTemplateServiceInterface;
+use App\Contracts\Manufacturing\BomVariantGroupServiceInterface;
 // Purchasing Domain Interfaces
-use App\Contracts\Services\Domains\GoodsReceiptNoteServiceInterface;
-use App\Contracts\Services\Domains\InventoryServiceInterface;
-use App\Contracts\Services\Domains\InvoiceServiceInterface;
-use App\Contracts\Services\Domains\MaterialRequisitionServiceInterface;
+use App\Contracts\Manufacturing\MaterialRequisitionServiceInterface;
+use App\Contracts\Manufacturing\MrpServiceInterface;
+use App\Contracts\Manufacturing\SubcontractorServiceInterface;
+use App\Contracts\Manufacturing\WorkOrderServiceInterface;
 // Manufacturing Domain Interfaces
-use App\Contracts\Services\Domains\MrpServiceInterface;
-use App\Contracts\Services\Domains\ProductServiceInterface;
-use App\Contracts\Services\Domains\ProjectServiceInterface;
-use App\Contracts\Services\Domains\PurchaseOrderServiceInterface;
-use App\Contracts\Services\Domains\PurchaseReturnServiceInterface;
-use App\Contracts\Services\Domains\QuotationServiceInterface;
-use App\Contracts\Services\Domains\RecurringServiceInterface;
+use App\Contracts\Projects\ProjectServiceInterface;
+use App\Contracts\Purchasing\BillServiceInterface;
+use App\Contracts\Purchasing\GoodsReceiptNoteServiceInterface;
+use App\Contracts\Purchasing\PurchaseOrderServiceInterface;
+use App\Contracts\Purchasing\PurchaseReturnServiceInterface;
+use App\Contracts\Sales\DeliveryOrderServiceInterface;
+use App\Contracts\Sales\DownPaymentServiceInterface;
 // Inventory Domain Interfaces
-use App\Contracts\Services\Domains\SalesReturnServiceInterface;
-use App\Contracts\Services\Domains\SolarCalculationServiceInterface;
-use App\Contracts\Services\Domains\SolarProposalServiceInterface;
+use App\Contracts\Sales\InvoiceServiceInterface;
+use App\Contracts\Sales\QuotationServiceInterface;
+use App\Contracts\Sales\RecurringServiceInterface;
 // Projects Domain Interfaces
-use App\Contracts\Services\Domains\StockOpnameServiceInterface;
+use App\Contracts\Sales\SalesReturnServiceInterface;
 // Solar Domain Interfaces
-use App\Contracts\Services\Domains\SubcontractorServiceInterface;
-use App\Contracts\Services\Domains\WorkOrderServiceInterface;
+use App\Contracts\Solar\SolarCalculationServiceInterface;
+use App\Contracts\Solar\SolarProposalServiceInterface;
 // Sales Domain Services
 use App\Services\Accounting\AccountingPolicyManager;
 use App\Services\Accounting\JournalService;
@@ -112,7 +112,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Register AccountLookupService
         $this->app->bind(
-            \App\Contracts\Services\Accounting\AccountLookupServiceInterface::class,
+            \App\Contracts\Accounting\AccountLookupServiceInterface::class,
             \App\Services\Accounting\AccountLookupService::class
         );
 
@@ -162,14 +162,14 @@ class AppServiceProvider extends ServiceProvider
         );
 
         $this->app->bind(RecurringServiceInterface::class, RecurringService::class);
-        $this->app->bind(\App\Contracts\Services\Sales\QuotationCalculatorInterface::class, \App\Domain\Sales\Quotations\QuotationCalculator::class);
+        $this->app->bind(\App\Contracts\Sales\QuotationCalculatorInterface::class, \App\Domain\Sales\Quotations\QuotationCalculator::class);
 
         // Purchasing Domain (4 services)
         $this->app->bind(BillServiceInterface::class, BillService::class);
         $this->app->bind(PurchaseOrderServiceInterface::class, PurchaseOrderService::class);
         $this->app->bind(GoodsReceiptNoteServiceInterface::class, GoodsReceiptNoteService::class);
         $this->app->bind(PurchaseReturnServiceInterface::class, PurchaseReturnService::class);
-        $this->app->bind(\App\Contracts\Services\Purchasing\PurchaseOrderCalculatorInterface::class, \App\Domain\Purchasing\PurchaseOrders\PurchaseOrderCalculator::class);
+        $this->app->bind(\App\Contracts\Purchasing\PurchaseOrderCalculatorInterface::class, \App\Domain\Purchasing\PurchaseOrders\PurchaseOrderCalculator::class);
 
         // Register PurchaseReturnApprovalPipeline with handlers
         $this->app->bind(
@@ -205,7 +205,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(SolarCalculationServiceInterface::class, SolarCalculationService::class);
 
         // Shared Domain (1 service)
-        $this->app->bind(\App\Contracts\Services\Domains\PaymentServiceInterface::class, \App\Services\Shared\PaymentService::class);
+        $this->app->bind(\App\Contracts\Shared\PaymentServiceInterface::class, \App\Services\Shared\PaymentService::class);
     }
 
     /**

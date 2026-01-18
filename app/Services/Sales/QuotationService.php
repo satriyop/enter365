@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services\Sales;
 
-use App\Contracts\Services\Domains\QuotationNumberGeneratorInterface;
-use App\Contracts\Services\Domains\QuotationServiceInterface;
-use App\Contracts\Services\Sales\QuotationCalculatorInterface;
+use App\Contracts\Sales\QuotationCalculatorInterface;
+use App\Contracts\Sales\QuotationNumberGeneratorInterface;
+use App\Contracts\Sales\QuotationServiceInterface;
 use App\Domain\Sales\Quotations\QuotationDefaults;
 use App\Domain\Sales\Quotations\QuotationItemCreator;
 use App\Domain\Sales\Quotations\QuotationStatistics;

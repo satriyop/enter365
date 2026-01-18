@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Accounting\Strategies\COGS;
 
+use App\Contracts\Accounting\JournalServiceInterface;
 use App\Contracts\Accounting\Strategies\COGSRecognitionStrategy;
-use App\Contracts\Services\Accounting\JournalServiceInterface;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Sales\DeliveryOrder;
 use App\Models\Sales\Invoice;

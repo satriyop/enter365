@@ -2,8 +2,8 @@
 
 namespace App\Services\Manufacturing;
 
-use App\Contracts\Services\Domain\DocumentNumberGeneratorInterface;
-use App\Contracts\Services\Domains\BomServiceInterface;
+use App\Contracts\Manufacturing\BomServiceInterface;
+use App\Contracts\Shared\DocumentNumberGeneratorInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Inventory\Product;
 use App\Models\Manufacturing\Bom;

@@ -2,7 +2,7 @@
 
 namespace App\Services\Projects;
 
-use App\Contracts\Services\Domains\ProjectServiceInterface;
+use App\Contracts\Projects\ProjectServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Projects\Project;
 use App\Models\Projects\ProjectCost;

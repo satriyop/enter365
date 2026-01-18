@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Shared;
 
-use App\Contracts\Services\Accounting\JournalServiceInterface;
-use App\Contracts\Services\Domains\PaymentServiceInterface;
+use App\Contracts\Accounting\JournalServiceInterface;
+use App\Contracts\Shared\PaymentServiceInterface;
 use App\Domain\Purchasing\Bills\Events\BillFullyPaid;
 use App\Domain\Sales\Events\PaymentReceived;
 use App\Domain\Sales\Events\PaymentVoided;

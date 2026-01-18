@@ -2,7 +2,7 @@
 
 namespace App\Services\Inventory;
 
-use App\Contracts\Services\Domains\InventoryServiceInterface;
+use App\Contracts\Inventory\InventoryServiceInterface;
 use App\Exceptions\Domain\InsufficientStockException;
 use App\Models\Inventory\InventoryMovement;
 use App\Models\Inventory\Product;

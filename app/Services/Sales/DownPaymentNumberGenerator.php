@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Sales;
 
-use App\Contracts\Services\Domain\DocumentNumberGeneratorInterface;
+use App\Contracts\Shared\DocumentNumberGeneratorInterface;
 use App\Models\Sales\DownPayment;
 
 /**

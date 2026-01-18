@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\Sales;
 
+use App\Contracts\Accounting\JournalServiceInterface;
 use App\Contracts\Accounting\Strategies\COGSRecognitionStrategy;
-use App\Contracts\Services\Accounting\JournalServiceInterface;
-use App\Contracts\Services\Domain\DocumentNumberGeneratorInterface;
-use App\Contracts\Services\Domains\InvoiceServiceInterface;
+use App\Contracts\Sales\InvoiceServiceInterface;
+use App\Contracts\Shared\DocumentNumberGeneratorInterface;
 use App\Enums\DocumentStatus;
 use App\Exceptions\Domain\DocumentLockedException;
 use App\Exceptions\Domain\StateTransitionException;
@@ -54,7 +54,14 @@ class InvoiceService extends AbstractDocumentService implements InvoiceServiceIn
     protected function getDefaultData(): array
     {
         return [
-            ...parent::getDefaultData(),
+            'currency' => 'IDR',
+            'exchange_rate' => 1,
+            'tax_rate' => config('accounting.tax.default_rate', 11.00),
+            'subtotal' => 0,
+            'discount_amount' => 0,
+            'tax_amount' => 0,
+            'total_amount' => 0,
+            'base_currency_total' => 0,
             'paid_amount' => 0,
         ];
     }

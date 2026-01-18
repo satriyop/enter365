@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Manufacturing;
 
-use App\Contracts\Services\Domains\WorkOrderServiceInterface;
+use App\Contracts\Manufacturing\WorkOrderServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomItem;

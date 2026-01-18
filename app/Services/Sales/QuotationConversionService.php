@@ -58,7 +58,7 @@ class QuotationConversionService
                     'quantity' => $item->quantity,
                     'unit' => $item->unit,
                     'unit_price' => $item->unit_price,
-                    'amount' => $item->line_total,
+                    'line_total' => $item->line_total,
                 ]);
             }
 

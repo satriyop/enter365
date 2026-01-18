@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Accounting\Strategies\Inventory;
 
+use App\Contracts\Accounting\JournalServiceInterface;
 use App\Contracts\Accounting\Strategies\InventoryAccountingStrategy;
-use App\Contracts\Services\Accounting\JournalServiceInterface;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Inventory\StockOpname;
 use App\Models\Purchasing\GoodsReceiptNote;

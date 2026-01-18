@@ -2,8 +2,8 @@
 
 namespace App\Services\Accounting;
 
-use App\Contracts\Services\Accounting\AccountLookupServiceInterface;
-use App\Contracts\Services\Accounting\JournalServiceInterface;
+use App\Contracts\Accounting\AccountLookupServiceInterface;
+use App\Contracts\Accounting\JournalServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Accounting\FiscalPeriod;
 use App\Models\Accounting\JournalEntry;

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Accounting\Strategies\Manufacturing;
 
+use App\Contracts\Accounting\JournalServiceInterface;
 use App\Contracts\Accounting\Strategies\ManufacturingCostStrategy;
-use App\Contracts\Services\Accounting\JournalServiceInterface;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Manufacturing\MaterialConsumption;
 use App\Models\Manufacturing\WorkOrder;

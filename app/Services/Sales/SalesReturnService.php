@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Sales;
 
-use App\Contracts\Services\Domains\SalesReturnServiceInterface;
+use App\Contracts\Sales\SalesReturnServiceInterface;
 use App\Domain\Sales\SalesReturns\Handlers\SalesReturnApprovalPipeline;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\Invoice;
@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\DB;
 class SalesReturnService extends AbstractDocumentService implements SalesReturnServiceInterface
 {
     public function __construct(
-        private \App\Contracts\Services\Domain\DocumentNumberGeneratorInterface $numberGenerator,
+        private \App\Contracts\Shared\DocumentNumberGeneratorInterface $numberGenerator,
         private SalesReturnApprovalPipeline $approvalPipeline
     ) {}
 

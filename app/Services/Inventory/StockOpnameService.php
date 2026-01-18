@@ -3,7 +3,7 @@
 namespace App\Services\Inventory;
 
 use App\Contracts\Accounting\Strategies\InventoryAccountingStrategy;
-use App\Contracts\Services\Domains\StockOpnameServiceInterface;
+use App\Contracts\Inventory\StockOpnameServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\ProductStock;

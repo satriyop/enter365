@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Purchasing;
 
-use App\Contracts\Services\Domains\PurchaseReturnServiceInterface;
+use App\Contracts\Purchasing\PurchaseReturnServiceInterface;
 use App\Domain\Purchasing\PurchaseReturns\Handlers\PurchaseReturnApprovalPipeline;
 use App\Enums\DocumentStatus;
 use App\Models\Purchasing\Bill;
@@ -18,7 +18,7 @@ use InvalidArgumentException;
 class PurchaseReturnService extends AbstractDocumentService implements PurchaseReturnServiceInterface
 {
     public function __construct(
-        private \App\Contracts\Services\Domain\DocumentNumberGeneratorInterface $numberGenerator,
+        private \App\Contracts\Shared\DocumentNumberGeneratorInterface $numberGenerator,
         private PurchaseReturnApprovalPipeline $approvalPipeline
     ) {}
 

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Inventory;
 
-use App\Contracts\Services\Domains\InventoryServiceInterface;
-use App\Contracts\Services\Domains\ProductServiceInterface;
+use App\Contracts\Inventory\InventoryServiceInterface;
+use App\Contracts\Inventory\ProductServiceInterface;
 use App\Exceptions\Domain\DocumentLockedException;
 use App\Exceptions\Domain\ValidationException;
 use App\Models\Inventory\Product;

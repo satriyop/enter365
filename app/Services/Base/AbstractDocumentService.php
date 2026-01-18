@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Base;
 
-use App\Contracts\Services\DocumentLifecycleInterface;
+use App\Contracts\Shared\DocumentLifecycleInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;

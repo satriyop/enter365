@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Manufacturing;
 
-use App\Contracts\Services\Domains\MaterialRequisitionServiceInterface;
+use App\Contracts\Manufacturing\MaterialRequisitionServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Inventory\ProductStock;
 use App\Models\Manufacturing\MaterialRequisition;

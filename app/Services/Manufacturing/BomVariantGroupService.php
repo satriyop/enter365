@@ -2,7 +2,7 @@
 
 namespace App\Services\Manufacturing;
 
-use App\Contracts\Services\Domains\BomVariantGroupServiceInterface;
+use App\Contracts\Manufacturing\BomVariantGroupServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomVariantGroup;
