@@ -269,4 +269,17 @@ class SalesReturn extends Model
 
         return $prefix.str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
     }
+
+    public function stateMachine(): \App\Domain\Sales\SalesReturns\SalesReturnStateMachine
+    {
+        return \App\Domain\Sales\SalesReturns\SalesReturnStateMachine::fromSalesReturn($this);
+    }
+
+    public function transitionTo(\App\Enums\DocumentStatus $status, ?int $userId = null, array $context = []): self
+    {
+        $context = array_merge(['user_id' => $userId], $context);
+        $this->stateMachine()->transitionTo($status, $context);
+
+        return $this->refresh();
+    }
 }

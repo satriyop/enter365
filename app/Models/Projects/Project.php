@@ -168,6 +168,16 @@ class Project extends Model
         return in_array($this->status, [DocumentStatus::Draft, DocumentStatus::Planning], true);
     }
 
+    public function isEditable(): bool
+    {
+        return $this->canBeEdited();
+    }
+
+    public function isDeletable(): bool
+    {
+        return $this->status === DocumentStatus::Draft;
+    }
+
     /**
      * Check if project can be started.
      */
@@ -343,5 +353,17 @@ class Project extends Model
         }
 
         return $prefix.str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
+    }
+
+    public function stateMachine(): \App\Domain\Projects\ProjectStateMachine
+    {
+        return \App\Domain\Projects\ProjectStateMachine::fromProject($this);
+    }
+
+    public function transitionTo(DocumentStatus $status, ?int $userId = null, array $context = []): self
+    {
+        $this->stateMachine()->transitionTo($status, array_merge(['user_id' => $userId], $context));
+
+        return $this->refresh();
     }
 }

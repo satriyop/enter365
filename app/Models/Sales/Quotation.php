@@ -3,6 +3,7 @@
 namespace App\Models\Sales;
 
 use App\Contracts\Services\Domains\QuotationNumberGeneratorInterface;
+use App\Contracts\Services\Sales\QuotationCalculatorInterface;
 use App\Domain\Sales\Quotations\Enums\QuotationOutcome;
 use App\Domain\Sales\Quotations\Enums\QuotationPriority;
 use App\Domain\Sales\Quotations\Enums\QuotationType;
@@ -373,12 +374,17 @@ class Quotation extends Model
      */
     public function stateMachine(): QuotationStateMachine
     {
-        return QuotationStateMachine::fromQuotation(
-            $this->status,
-            $this->items()->exists(),
-            $this->valid_until,
-            $this->converted_to_invoice_id
-        );
+        return QuotationStateMachine::fromQuotation($this);
+    }
+
+    /**
+     * Transition this quotation to a new status.
+     */
+    public function transitionTo(DocumentStatus $status, ?int $userId = null, array $context = []): self
+    {
+        $this->stateMachine()->transitionTo($status, array_merge(['user_id' => $userId], $context));
+
+        return $this->refresh();
     }
 
     /**
@@ -652,5 +658,31 @@ class Quotation extends Model
         }
 
         return QuotationPriority::from($this->priority)->label();
+    }
+
+    /**
+     * Calculate and update totals from items.
+     *
+     * @param  QuotationCalculatorInterface|null  $calculator  Optional calculator for unit testing
+     */
+    public function calculateTotals(?QuotationCalculatorInterface $calculator = null): void
+    {
+        $calculator ??= app(QuotationCalculatorInterface::class);
+
+        $lineTotals = $this->items->pluck('line_total')->toArray();
+        $totals = $calculator->calculate(
+            $lineTotals,
+            $this->tax_rate,
+            $this->discount_type,
+            $this->discount_value,
+            $this->currency,
+            $this->exchange_rate
+        );
+
+        $this->subtotal = $totals->subtotal;
+        $this->discount_amount = $totals->discountAmount;
+        $this->tax_amount = $totals->taxAmount;
+        $this->total = $totals->totalAmount;
+        $this->base_currency_total = $totals->baseCurrencyTotal;
     }
 }

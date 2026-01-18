@@ -2,6 +2,7 @@
 
 namespace App\Models\Purchasing;
 
+use App\Contracts\Services\Purchasing\PurchaseOrderCalculatorInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Contacts\Contact;
 use App\Models\Shared\Attachment;
@@ -367,41 +368,28 @@ class PurchaseOrder extends Model
 
     /**
      * Calculate and update totals from items.
+     *
+     * @param  PurchaseOrderCalculatorInterface|null  $calculator  Optional calculator for unit testing
      */
-    public function calculateTotals(): void
+    public function calculateTotals(?PurchaseOrderCalculatorInterface $calculator = null): void
     {
-        $subtotal = 0;
-        $taxAmount = 0;
+        $calculator ??= app(PurchaseOrderCalculatorInterface::class);
 
-        foreach ($this->items as $item) {
-            $subtotal += $item->line_total;
-            $taxAmount += $item->tax_amount;
-        }
+        $lineTotals = $this->items->pluck('line_total')->toArray();
+        $totals = $calculator->calculate(
+            $lineTotals,
+            $this->tax_rate,
+            $this->discount_type,
+            $this->discount_value,
+            $this->currency,
+            $this->exchange_rate
+        );
 
-        $this->subtotal = $subtotal;
-
-        // Apply header-level discount
-        if ($this->discount_type === 'percentage' && $this->discount_value > 0) {
-            $this->discount_amount = (int) round($subtotal * ($this->discount_value / 100));
-        } elseif ($this->discount_type === 'fixed') {
-            $this->discount_amount = (int) $this->discount_value;
-        } else {
-            $this->discount_amount = 0;
-        }
-
-        // Calculate tax on (subtotal - discount)
-        $taxableAmount = $subtotal - $this->discount_amount;
-        $this->tax_amount = (int) round($taxableAmount * ($this->tax_rate / 100));
-
-        // Total
-        $this->total = $taxableAmount + $this->tax_amount;
-
-        // Base currency total
-        if ($this->currency !== 'IDR' && $this->exchange_rate > 0) {
-            $this->base_currency_total = (int) round($this->total * $this->exchange_rate);
-        } else {
-            $this->base_currency_total = $this->total;
-        }
+        $this->subtotal = $totals->subtotal;
+        $this->discount_amount = $totals->discountAmount;
+        $this->tax_amount = $totals->taxAmount;
+        $this->total = $totals->totalAmount;
+        $this->base_currency_total = $totals->baseCurrencyTotal;
     }
 
     /**
@@ -425,6 +413,24 @@ class PurchaseOrder extends Model
                 $this->first_received_at = now();
             }
         }
+    }
+
+    /**
+     * Get the state machine instance for this purchase order.
+     */
+    public function stateMachine(): \App\Domain\Purchasing\PurchaseOrders\PurchaseOrderStateMachine
+    {
+        return \App\Domain\Purchasing\PurchaseOrders\PurchaseOrderStateMachine::fromPurchaseOrder($this);
+    }
+
+    /**
+     * Transition this purchase order to a new status.
+     */
+    public function transitionTo(DocumentStatus $status, ?int $userId = null, array $context = []): self
+    {
+        $this->stateMachine()->transitionTo($status, array_merge(['user_id' => $userId], $context));
+
+        return $this->refresh();
     }
 
     /**

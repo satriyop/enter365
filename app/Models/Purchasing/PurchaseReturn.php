@@ -170,6 +170,16 @@ class PurchaseReturn extends Model
         return $this->status === DocumentStatus::Draft;
     }
 
+    public function isEditable(): bool
+    {
+        return $this->canBeEdited();
+    }
+
+    public function isDeletable(): bool
+    {
+        return $this->isEditable();
+    }
+
     /**
      * Check if the return can be submitted.
      */
@@ -268,5 +278,18 @@ class PurchaseReturn extends Model
         }
 
         return $prefix.str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
+    }
+
+    public function stateMachine(): \App\Domain\Purchasing\PurchaseReturns\PurchaseReturnStateMachine
+    {
+        return \App\Domain\Purchasing\PurchaseReturns\PurchaseReturnStateMachine::fromPurchaseReturn($this);
+    }
+
+    public function transitionTo(\App\Enums\DocumentStatus $status, ?int $userId = null, array $context = []): self
+    {
+        $context = array_merge(['user_id' => $userId], $context);
+        $this->stateMachine()->transitionTo($status, $context);
+
+        return $this->refresh();
     }
 }

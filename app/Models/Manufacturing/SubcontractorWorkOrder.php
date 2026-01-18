@@ -207,6 +207,16 @@ class SubcontractorWorkOrder extends Model
         return in_array($this->status, [DocumentStatus::Draft, DocumentStatus::Assigned], true);
     }
 
+    public function isEditable(): bool
+    {
+        return $this->canBeEdited();
+    }
+
+    public function isDeletable(): bool
+    {
+        return $this->status === DocumentStatus::Draft;
+    }
+
     /**
      * Check if work order can be assigned.
      */
@@ -404,5 +414,17 @@ class SubcontractorWorkOrder extends Model
     public function scopeForProject($query, int $projectId)
     {
         return $query->where('project_id', $projectId);
+    }
+
+    public function stateMachine(): \App\Domain\Manufacturing\SubcontractorWorkOrders\SubcontractorWorkOrderStateMachine
+    {
+        return \App\Domain\Manufacturing\SubcontractorWorkOrders\SubcontractorWorkOrderStateMachine::fromSubcontractorWorkOrder($this);
+    }
+
+    public function transitionTo(DocumentStatus $status, ?int $userId = null, array $context = []): self
+    {
+        $this->stateMachine()->transitionTo($status, array_merge(['user_id' => $userId], $context));
+
+        return $this->refresh();
     }
 }
