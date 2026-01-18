@@ -12,14 +12,18 @@ class AccountFactory extends Factory
 {
     protected $model = Account::class;
 
+    /**
+     * Random code ranges use x-9### to avoid conflicts with fixed codes (x-1xxx, x-2xxx).
+     * Fixed codes: 1-1001, 1-1002, 1-1100, 1-1300, 2-1100, 2-1200, 3-2000, 4-1001, 4-2001, 5-1002, 5-2001
+     */
     public function definition(): array
     {
         return [
-            'code' => $this->faker->unique()->numerify('1-####'),
-            'name' => $this->faker->words(2, true),
+            'code' => fake()->unique()->numerify('1-9###'),
+            'name' => fake()->words(2, true),
             'type' => Account::TYPE_ASSET,
             'subtype' => Account::SUBTYPE_CURRENT_ASSET,
-            'description' => $this->faker->optional()->sentence(),
+            'description' => fake()->optional()->sentence(),
             'parent_id' => null,
             'is_active' => true,
             'is_system' => false,
@@ -30,7 +34,7 @@ class AccountFactory extends Factory
     public function asset(): static
     {
         return $this->state(fn (array $attributes) => [
-            'code' => $this->faker->unique()->numerify('1-####'),
+            'code' => fake()->unique()->numerify('1-9###'),
             'type' => Account::TYPE_ASSET,
             'subtype' => Account::SUBTYPE_CURRENT_ASSET,
         ]);
@@ -39,7 +43,7 @@ class AccountFactory extends Factory
     public function liability(): static
     {
         return $this->state(fn (array $attributes) => [
-            'code' => $this->faker->unique()->numerify('2-####'),
+            'code' => fake()->unique()->numerify('2-9###'),
             'type' => Account::TYPE_LIABILITY,
             'subtype' => Account::SUBTYPE_CURRENT_LIABILITY,
         ]);
@@ -48,7 +52,7 @@ class AccountFactory extends Factory
     public function equity(): static
     {
         return $this->state(fn (array $attributes) => [
-            'code' => $this->faker->unique()->numerify('3-####'),
+            'code' => fake()->unique()->numerify('3-9###'),
             'type' => Account::TYPE_EQUITY,
             'subtype' => Account::SUBTYPE_EQUITY,
         ]);
@@ -57,7 +61,7 @@ class AccountFactory extends Factory
     public function revenue(): static
     {
         return $this->state(fn (array $attributes) => [
-            'code' => $this->faker->unique()->numerify('4-####'),
+            'code' => fake()->unique()->numerify('4-9###'),
             'type' => Account::TYPE_REVENUE,
             'subtype' => Account::SUBTYPE_OPERATING_REVENUE,
         ]);
@@ -66,7 +70,7 @@ class AccountFactory extends Factory
     public function expense(): static
     {
         return $this->state(fn (array $attributes) => [
-            'code' => $this->faker->unique()->numerify('5-####'),
+            'code' => fake()->unique()->numerify('5-9###'),
             'type' => Account::TYPE_EXPENSE,
             'subtype' => Account::SUBTYPE_OPERATING_EXPENSE,
         ]);
@@ -173,7 +177,7 @@ class AccountFactory extends Factory
     public function downPaymentAsset(): static
     {
         return $this->state(fn (array $attributes) => [
-            'code' => $this->faker->unique()->numerify('1-15##'),
+            'code' => fake()->unique()->numerify('1-15##'),
             'name' => 'Uang Muka',
             'type' => Account::TYPE_ASSET,
             'subtype' => Account::SUBTYPE_CURRENT_ASSET,

@@ -287,6 +287,11 @@ return [
         'purchase_returns' => '5-1004', // Retur Pembelian
         'dp_receivable' => '2-2100', // Uang Muka Penjualan (liability)
         'dp_payable' => '1-1500', // Uang Muka Pembelian (asset)
+
+        // Year-end closing accounts
+        'retained_earnings' => '3-2000', // Laba Ditahan
+        'dividends' => '3-3000', // Dividen/Prive (optional, null if not used)
+        'income_summary' => '3-9000', // Ikhtisar Laba/Rugi (for income_summary strategy)
     ],
 
     /*
@@ -337,5 +342,40 @@ return [
         | - 'wip_accounting': Full WIP journal entries
         */
         'manufacturing_costing' => env('ACCOUNTING_MFG_METHOD', 'project_based'),
+
+        /*
+        | Year-End Closing Strategy
+        |
+        | Options:
+        | - 'direct': Close revenue/expense directly to retained earnings (simpler)
+        | - 'income_summary': Use income summary account (clearer audit trail)
+        */
+        'closing_strategy' => env('ACCOUNTING_CLOSING_STRATEGY', 'direct'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Year-End Close Settings
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for fiscal year-end closing process.
+    |
+    */
+    'year_end_close' => [
+        /*
+        | Auto-create next period after closing
+        */
+        'auto_create_next_period' => env('YEC_AUTO_CREATE_PERIOD', true),
+
+        /*
+        | Auto-populate opening balances in new period
+        */
+        'auto_opening_balances' => env('YEC_AUTO_OPENING_BALANCES', true),
+
+        /*
+        | Require all checks to pass before closing (strict mode)
+        | If false, warnings won't block closing
+        */
+        'strict_checklist' => env('YEC_STRICT_CHECKLIST', true),
     ],
 ];

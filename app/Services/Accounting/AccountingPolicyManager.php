@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Services\Accounting;
 
+use App\Contracts\Accounting\Strategies\ClosingStrategy;
 use App\Contracts\Accounting\Strategies\COGSRecognitionStrategy;
 use App\Contracts\Accounting\Strategies\InventoryAccountingStrategy;
 use App\Contracts\Accounting\Strategies\ManufacturingCostStrategy;
 use App\Contracts\Accounting\Strategies\ReturnAccountingStrategy;
+use App\Services\Accounting\Strategies\Closing\DirectClosingStrategy;
+use App\Services\Accounting\Strategies\Closing\IncomeSummaryStrategy;
 use App\Services\Accounting\Strategies\COGS\COGSOnDeliveryStrategy;
 use App\Services\Accounting\Strategies\COGS\COGSOnInvoiceStrategy;
 use App\Services\Accounting\Strategies\COGS\ManualCOGSStrategy;
@@ -73,6 +76,16 @@ class AccountingPolicyManager
         'wip_accounting' => WIPAccountingStrategy::class,
     ];
 
+    /**
+     * Map of closing strategy names to strategy classes.
+     *
+     * @var array<string, class-string<ClosingStrategy>>
+     */
+    private array $closingStrategies = [
+        'direct' => DirectClosingStrategy::class,
+        'income_summary' => IncomeSummaryStrategy::class,
+    ];
+
     public function __construct(
         private Container $container
     ) {}
@@ -134,6 +147,20 @@ class AccountingPolicyManager
     }
 
     /**
+     * Get the configured closing strategy.
+     */
+    public function closing(): ClosingStrategy
+    {
+        $method = config('accounting.policies.closing_strategy', 'direct');
+
+        if (! isset($this->closingStrategies[$method])) {
+            throw new InvalidArgumentException("Unknown closing strategy: {$method}");
+        }
+
+        return $this->container->make($this->closingStrategies[$method]);
+    }
+
+    /**
      * Get current policy configuration summary.
      *
      * @return array<string, string>
@@ -145,6 +172,7 @@ class AccountingPolicyManager
             'cogs_recognition' => config('accounting.policies.cogs_recognition', 'on_invoice'),
             'return_accounting' => config('accounting.policies.return_accounting', 'full_journal'),
             'manufacturing_costing' => config('accounting.policies.manufacturing_costing', 'project_based'),
+            'closing_strategy' => config('accounting.policies.closing_strategy', 'direct'),
         ];
     }
 

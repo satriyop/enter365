@@ -86,8 +86,20 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(FeatureManager::class, ConfigFeatureManager::class);
 
+        $this->registerInfrastructureServices();
         $this->registerAccountingServices();
         $this->registerDomainServices();
+    }
+
+    /**
+     * Register infrastructure services (events, logging, etc.).
+     */
+    private function registerInfrastructureServices(): void
+    {
+        $this->app->bind(
+            \App\Contracts\Events\EventDispatcherInterface::class,
+            \App\Infrastructure\Events\LaravelEventDispatcher::class
+        );
     }
 
     /**
@@ -97,6 +109,12 @@ class AppServiceProvider extends ServiceProvider
     {
         // Register JournalService
         $this->app->bind(JournalServiceInterface::class, JournalService::class);
+
+        // Register AccountLookupService
+        $this->app->bind(
+            \App\Contracts\Services\Accounting\AccountLookupServiceInterface::class,
+            \App\Services\Accounting\AccountLookupService::class
+        );
 
         // Register AccountingPolicyManager as singleton (reads config once)
         $this->app->singleton(AccountingPolicyManager::class);
@@ -130,6 +148,19 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(DownPaymentServiceInterface::class, DownPaymentService::class);
         $this->app->bind(DeliveryOrderServiceInterface::class, DeliveryOrderService::class);
         $this->app->bind(SalesReturnServiceInterface::class, SalesReturnService::class);
+
+        // Register SalesReturnApprovalPipeline with handlers
+        $this->app->bind(
+            \App\Domain\Sales\SalesReturns\Handlers\SalesReturnApprovalPipeline::class,
+            function ($app) {
+                $pipeline = new \App\Domain\Sales\SalesReturns\Handlers\SalesReturnApprovalPipeline;
+                $pipeline->addHandler($app->make(\App\Domain\Sales\SalesReturns\Handlers\InventoryReturnHandler::class));
+                $pipeline->addHandler($app->make(\App\Domain\Sales\SalesReturns\Handlers\JournalEntryHandler::class));
+
+                return $pipeline;
+            }
+        );
+
         $this->app->bind(RecurringServiceInterface::class, RecurringService::class);
         $this->app->bind(\App\Contracts\Services\Sales\QuotationCalculatorInterface::class, \App\Domain\Sales\Quotations\QuotationCalculator::class);
 
@@ -139,6 +170,18 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(GoodsReceiptNoteServiceInterface::class, GoodsReceiptNoteService::class);
         $this->app->bind(PurchaseReturnServiceInterface::class, PurchaseReturnService::class);
         $this->app->bind(\App\Contracts\Services\Purchasing\PurchaseOrderCalculatorInterface::class, \App\Domain\Purchasing\PurchaseOrders\PurchaseOrderCalculator::class);
+
+        // Register PurchaseReturnApprovalPipeline with handlers
+        $this->app->bind(
+            \App\Domain\Purchasing\PurchaseReturns\Handlers\PurchaseReturnApprovalPipeline::class,
+            function ($app) {
+                $pipeline = new \App\Domain\Purchasing\PurchaseReturns\Handlers\PurchaseReturnApprovalPipeline;
+                $pipeline->addHandler($app->make(\App\Domain\Purchasing\PurchaseReturns\Handlers\InventoryReturnHandler::class));
+                $pipeline->addHandler($app->make(\App\Domain\Purchasing\PurchaseReturns\Handlers\JournalEntryHandler::class));
+
+                return $pipeline;
+            }
+        );
 
         // Manufacturing Domain (6 services)
         $this->app->bind(BomServiceInterface::class, BomService::class);

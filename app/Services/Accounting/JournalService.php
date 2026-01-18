@@ -2,9 +2,9 @@
 
 namespace App\Services\Accounting;
 
+use App\Contracts\Services\Accounting\AccountLookupServiceInterface;
 use App\Contracts\Services\Accounting\JournalServiceInterface;
 use App\Enums\DocumentStatus;
-use App\Models\Accounting\Account;
 use App\Models\Accounting\FiscalPeriod;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Accounting\JournalEntryLine;
@@ -15,6 +15,10 @@ use Illuminate\Support\Facades\DB;
 
 class JournalService implements JournalServiceInterface
 {
+    public function __construct(
+        private AccountLookupServiceInterface $accountLookup
+    ) {}
+
     /**
      * Create a journal entry with lines.
      *
@@ -49,11 +53,11 @@ class JournalService implements JournalServiceInterface
                 // Support both account_id and account_code for flexibility
                 $accountId = $lineData['account_id'] ?? null;
                 if (! $accountId && isset($lineData['account_code'])) {
-                    $account = Account::where('code', $lineData['account_code'])->first();
-                    $accountId = $account?->id;
-                    if (! $accountId) {
-                        throw new \InvalidArgumentException("Account not found: {$lineData['account_code']}");
-                    }
+                    $account = $this->accountLookup->findByCodeOrFail(
+                        $lineData['account_code'],
+                        'journal entry line'
+                    );
+                    $accountId = $account->id;
                 }
 
                 JournalEntryLine::create([
@@ -156,11 +160,13 @@ class JournalService implements JournalServiceInterface
             throw new \InvalidArgumentException('Invoice is already posted to journal.');
         }
 
-        $receivableAccount = $invoice->receivableAccount
-            ?? Account::where('code', '1-1100')->first(); // Piutang Usaha
+        // Fail-fast: validate required accounts exist
+        $requiredCodes = ['1-1100', '2-1200', '4-1001'];
+        $accounts = $this->accountLookup->findByCodesOrFail($requiredCodes, 'posting invoice');
 
-        $taxPayableAccount = Account::where('code', '2-1200')->first(); // PPN Keluaran
-        $defaultRevenueAccount = Account::where('code', '4-1001')->first(); // Pendapatan Penjualan
+        $receivableAccount = $invoice->receivableAccount ?? $accounts->get('1-1100');
+        $taxPayableAccount = $accounts->get('2-1200'); // PPN Keluaran
+        $defaultRevenueAccount = $accounts->get('4-1001'); // Pendapatan Penjualan
 
         $lines = [];
 
@@ -228,11 +234,13 @@ class JournalService implements JournalServiceInterface
             throw new \InvalidArgumentException('Bill is already posted to journal.');
         }
 
-        $payableAccount = $bill->payableAccount
-            ?? Account::where('code', '2-1100')->first(); // Utang Usaha
+        // Fail-fast: validate required accounts exist
+        $requiredCodes = ['2-1100', '1-1300', '5-1002'];
+        $accounts = $this->accountLookup->findByCodesOrFail($requiredCodes, 'posting bill');
 
-        $taxReceivableAccount = Account::where('code', '1-1300')->first(); // PPN Masukan
-        $defaultExpenseAccount = Account::where('code', '5-1002')->first(); // Pembelian
+        $payableAccount = $bill->payableAccount ?? $accounts->get('2-1100');
+        $taxReceivableAccount = $accounts->get('1-1300'); // PPN Masukan
+        $defaultExpenseAccount = $accounts->get('5-1002'); // Pembelian
 
         $lines = [];
 
@@ -299,11 +307,17 @@ class JournalService implements JournalServiceInterface
      */
     public function postPayment(Payment $payment): JournalEntry
     {
+        // Fail-fast: validate default accounts exist
+        $defaultAccounts = $this->accountLookup->findByCodesOrFail(
+            ['1-1100', '2-1100'],
+            'posting payment'
+        );
+
         $lines = [];
 
         if ($payment->type === Payment::TYPE_RECEIVE) {
             // Receiving payment from customer
-            $receivableAccount = Account::where('code', '1-1100')->first();
+            $receivableAccount = $defaultAccounts->get('1-1100');
 
             // Get the invoice's receivable account if linked
             if ($payment->payable_type === Invoice::class && $payment->payable) {
@@ -327,7 +341,7 @@ class JournalService implements JournalServiceInterface
             ];
         } else {
             // Sending payment to supplier
-            $payableAccount = Account::where('code', '2-1100')->first();
+            $payableAccount = $defaultAccounts->get('2-1100');
 
             // Get the bill's payable account if linked
             if ($payment->payable_type === Bill::class && $payment->payable) {

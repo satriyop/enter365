@@ -2,6 +2,7 @@
 
 namespace Database\Factories\Accounting;
 
+use App\Domain\Accounting\FiscalPeriods\Enums\FiscalPeriodStatus;
 use App\Models\Accounting\FiscalPeriod;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -20,6 +21,7 @@ class FiscalPeriodFactory extends Factory
             'name' => "Tahun Fiskal {$year}",
             'start_date' => "{$year}-01-01",
             'end_date' => "{$year}-12-31",
+            'status' => FiscalPeriodStatus::Open,
             'is_closed' => false,
             'is_locked' => false,
         ];
@@ -28,7 +30,10 @@ class FiscalPeriodFactory extends Factory
     public function closed(): static
     {
         return $this->state(fn (array $attributes) => [
+            'status' => FiscalPeriodStatus::Closed,
             'is_closed' => true,
+            'is_locked' => true,
+            'closed_at' => now(),
         ]);
     }
 
@@ -40,6 +45,7 @@ class FiscalPeriodFactory extends Factory
             'name' => "Tahun Fiskal {$year}",
             'start_date' => "{$year}-01-01",
             'end_date' => "{$year}-12-31",
+            'status' => FiscalPeriodStatus::Open,
             'is_closed' => false,
             'is_locked' => false,
         ]);
@@ -48,6 +54,15 @@ class FiscalPeriodFactory extends Factory
     public function locked(): static
     {
         return $this->state(fn (array $attributes) => [
+            'status' => FiscalPeriodStatus::Locked,
+            'is_locked' => true,
+        ]);
+    }
+
+    public function closing(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => FiscalPeriodStatus::Closing,
             'is_locked' => true,
         ]);
     }

@@ -2,6 +2,8 @@
 
 namespace App\Models\Accounting;
 
+use App\Domain\Accounting\FiscalPeriods\Enums\FiscalPeriodStatus;
+use App\Domain\Accounting\FiscalPeriods\FiscalPeriodStateMachine;
 use App\Enums\DocumentStatus;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
@@ -20,6 +22,7 @@ class FiscalPeriod extends Model
         'name',
         'start_date',
         'end_date',
+        'status',
         'is_closed',
         'is_locked',
         'closed_at',
@@ -34,6 +37,7 @@ class FiscalPeriod extends Model
         return [
             'start_date' => 'date',
             'end_date' => 'date',
+            'status' => FiscalPeriodStatus::class,
             'is_closed' => 'boolean',
             'is_locked' => 'boolean',
             'closed_at' => 'datetime',
@@ -63,6 +67,38 @@ class FiscalPeriod extends Model
     public function closingEntry(): BelongsTo
     {
         return $this->belongsTo(JournalEntry::class, 'closing_entry_id');
+    }
+
+    /**
+     * Get the status enum value.
+     *
+     * Falls back to deriving from legacy boolean fields if status is not set.
+     */
+    public function getStatus(): FiscalPeriodStatus
+    {
+        // If status attribute is set, use it
+        if ($this->status !== null) {
+            return $this->status;
+        }
+
+        // Fallback: derive from legacy fields
+        if ($this->is_closed) {
+            return FiscalPeriodStatus::Closed;
+        }
+
+        if ($this->is_locked) {
+            return FiscalPeriodStatus::Locked;
+        }
+
+        return FiscalPeriodStatus::Open;
+    }
+
+    /**
+     * Get a state machine instance for this period.
+     */
+    public function stateMachine(): FiscalPeriodStateMachine
+    {
+        return new FiscalPeriodStateMachine($this);
     }
 
     /**

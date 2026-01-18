@@ -165,12 +165,10 @@ class FiscalPeriodController extends Controller
     {
         $checklist = $this->fiscalPeriodService->getClosingChecklist($fiscalPeriod);
 
-        $canClose = collect($checklist)->every(fn ($item) => $item['status'] !== 'error');
-
         return response()->json([
             'period' => new FiscalPeriodResource($fiscalPeriod),
-            'can_close' => $canClose,
-            'checklist' => $checklist,
+            'can_close' => $checklist->canClose(),
+            'checklist' => $checklist->toArray(),
         ]);
     }
 }
