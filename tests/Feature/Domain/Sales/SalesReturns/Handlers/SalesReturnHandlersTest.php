@@ -1,6 +1,6 @@
 <?php
 
-use App\Contracts\Services\Domains\InventoryServiceInterface;
+use App\Contracts\Inventory\InventoryServiceInterface;
 use App\Domain\Sales\SalesReturns\Handlers\InventoryReturnHandler;
 use App\Domain\Sales\SalesReturns\Handlers\JournalEntryHandler;
 use App\Domain\Sales\SalesReturns\Handlers\SalesReturnApprovalPipeline;
