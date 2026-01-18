@@ -2,6 +2,7 @@
 
 namespace App\Services\Accounting;
 
+use App\Domain\Accounting\FiscalPeriods\ValueObjects\ClosingChecklist;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\FiscalPeriod;
 use App\Models\Accounting\JournalEntry;
@@ -11,15 +12,57 @@ use Illuminate\Support\Facades\DB;
 class FiscalPeriodService
 {
     public function __construct(
-        private JournalService $journalService
+        private JournalService $journalService,
+        private ?YearEndCloseService $yearEndCloseService = null
     ) {}
+
+    /**
+     * Get the YearEndCloseService instance.
+     */
+    protected function getYearEndCloseService(): YearEndCloseService
+    {
+        return $this->yearEndCloseService ??= app(YearEndCloseService::class);
+    }
 
     /**
      * Close a fiscal period with closing journal entry.
      *
+     * Delegates to YearEndCloseService for the full closing process.
+     *
      * @return array{success: bool, message: string, closing_entry: ?JournalEntry}
      */
     public function closePeriod(FiscalPeriod $period, ?string $notes = null): array
+    {
+        try {
+            $result = $this->getYearEndCloseService()->executeClose($period, [
+                'notes' => $notes,
+            ]);
+
+            // Refresh period to get updated closing_entry_id
+            $period->refresh();
+
+            return [
+                'success' => $result['success'],
+                'message' => $result['message'],
+                'closing_entry' => $period->closingEntry,
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'closing_entry' => null,
+            ];
+        }
+    }
+
+    /**
+     * Close a fiscal period using the legacy approach (for backward compatibility).
+     *
+     * @return array{success: bool, message: string, closing_entry: ?JournalEntry}
+     *
+     * @deprecated Use closePeriod() which delegates to YearEndCloseService
+     */
+    public function closePeriodLegacy(FiscalPeriod $period, ?string $notes = null): array
     {
         // Check if can close
         $canClose = $period->canClose();
@@ -193,61 +236,20 @@ class FiscalPeriodService
     /**
      * Get the closing checklist for a period.
      *
+     * Returns the enhanced ClosingChecklist from YearEndCloseService.
+     */
+    public function getClosingChecklist(FiscalPeriod $period): ClosingChecklist
+    {
+        return $this->getYearEndCloseService()->getClosingChecklist($period);
+    }
+
+    /**
+     * Get the closing checklist as an array (legacy format).
+     *
      * @return array<string, array{status: string, count: int, message: string}>
      */
-    public function getClosingChecklist(FiscalPeriod $period): array
+    public function getClosingChecklistArray(FiscalPeriod $period): array
     {
-        $checklist = [];
-
-        // Unposted journals
-        $unposted = $period->journalEntries()->where('is_posted', false)->count();
-        $checklist['unposted_journals'] = [
-            'status' => $unposted === 0 ? 'ok' : 'error',
-            'count' => $unposted,
-            'message' => $unposted === 0
-                ? 'Semua jurnal sudah diposting'
-                : "{$unposted} jurnal belum diposting",
-        ];
-
-        // Draft invoices
-        $draftInvoices = \App\Models\Sales\Invoice::query()
-            ->where('status', \App\Enums\DocumentStatus::Draft)
-            ->whereBetween('invoice_date', [$period->start_date, $period->end_date])
-            ->count();
-        $checklist['draft_invoices'] = [
-            'status' => $draftInvoices === 0 ? 'ok' : 'warning',
-            'count' => $draftInvoices,
-            'message' => $draftInvoices === 0
-                ? 'Tidak ada faktur draft'
-                : "{$draftInvoices} faktur masih draft",
-        ];
-
-        // Draft bills
-        $draftBills = \App\Models\Purchasing\Bill::query()
-            ->where('status', \App\Enums\DocumentStatus::Draft)
-            ->whereBetween('bill_date', [$period->start_date, $period->end_date])
-            ->count();
-        $checklist['draft_bills'] = [
-            'status' => $draftBills === 0 ? 'ok' : 'warning',
-            'count' => $draftBills,
-            'message' => $draftBills === 0
-                ? 'Tidak ada tagihan draft'
-                : "{$draftBills} tagihan masih draft",
-        ];
-
-        // Unreconciled bank transactions
-        $unreconciled = \App\Models\Accounting\BankTransaction::query()
-            ->where('status', '!=', 'reconciled')
-            ->whereBetween('transaction_date', [$period->start_date, $period->end_date])
-            ->count();
-        $checklist['unreconciled_bank'] = [
-            'status' => $unreconciled === 0 ? 'ok' : 'warning',
-            'count' => $unreconciled,
-            'message' => $unreconciled === 0
-                ? 'Semua transaksi bank sudah direkonsiliasi'
-                : "{$unreconciled} transaksi bank belum direkonsiliasi",
-        ];
-
-        return $checklist;
+        return $this->getClosingChecklist($period)->toArray();
     }
 }
