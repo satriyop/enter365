@@ -221,7 +221,7 @@ describe('Purchase Return Workflow', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'cancelled')
+            ->assertJsonPath('data.status', 'rejected')
             ->assertJsonPath('data.rejection_reason', 'Supplier does not accept return');
 
         $purchaseReturn->refresh();

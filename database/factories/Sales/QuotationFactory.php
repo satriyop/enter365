@@ -84,6 +84,7 @@ class QuotationFactory extends Factory
             'status' => DocumentStatus::Submitted,
             'submitted_at' => now(),
             'submitted_by' => User::factory(),
+            'valid_until' => now()->addDays(30),
         ]);
     }
 

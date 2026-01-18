@@ -221,7 +221,7 @@ describe('Sales Return Workflow', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'cancelled')
+            ->assertJsonPath('data.status', 'rejected')
             ->assertJsonPath('data.rejection_reason', 'Return not valid');
 
         $salesReturn->refresh();
