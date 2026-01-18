@@ -66,6 +66,7 @@ use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\OpenApi;
 use Dedoc\Scramble\Support\Generator\SecurityScheme;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -127,6 +128,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureMorphMap();
+        $this->registerEventListeners();
 
         Scramble::configure()
             ->withDocumentTransformers(function (OpenApi $openApi) {
@@ -135,6 +137,54 @@ class AppServiceProvider extends ServiceProvider
                         ->setDescription('Sanctum Bearer Token. Obtain via POST /api/v1/auth/login')
                 );
             });
+    }
+
+    /**
+     * Register event listeners for the application.
+     */
+    private function registerEventListeners(): void
+    {
+        // Sales Domain Event Listeners
+        Event::listen(
+            \App\Domain\Sales\Invoices\Events\InvoiceStatusChanged::class,
+            \App\Infrastructure\Listeners\Sales\LogInvoiceActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Sales\Invoices\Events\InvoiceSent::class,
+            \App\Infrastructure\Listeners\Sales\LogInvoiceActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Sales\Invoices\Events\InvoiceSent::class,
+            \App\Infrastructure\Listeners\Sales\NotifyCustomerOnInvoiceSent::class
+        );
+
+        Event::listen(
+            \App\Domain\Sales\Invoices\Events\InvoiceVoided::class,
+            \App\Infrastructure\Listeners\Sales\LogInvoiceActivity::class
+        );
+
+        // Purchasing Domain Event Listeners
+        Event::listen(
+            \App\Domain\Purchasing\Bills\Events\BillStatusChanged::class,
+            \App\Infrastructure\Listeners\Purchasing\LogBillActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Purchasing\Bills\Events\BillReceived::class,
+            \App\Infrastructure\Listeners\Purchasing\LogBillActivity::class
+        );
+
+        Event::listen(
+            \App\Domain\Purchasing\Bills\Events\BillReceived::class,
+            \App\Infrastructure\Listeners\Purchasing\NotifyAccountPayableOnBillReceived::class
+        );
+
+        Event::listen(
+            \App\Domain\Purchasing\Bills\Events\BillVoided::class,
+            \App\Infrastructure\Listeners\Purchasing\LogBillActivity::class
+        );
     }
 
     /**
