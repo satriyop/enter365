@@ -2,7 +2,8 @@
 
 > **AI-First Documentation System**
 >
-> This documentation is optimized for AI agents (LLMs) while remaining useful for humans. Every document includes machine-parseable YAML frontmatter, explicit context, and cross-references.
+> This documentation is optimized for AI agents (LLMs) while remaining useful for humans.
+> Every document includes machine-parseable context and cross-references.
 
 ---
 
@@ -13,18 +14,20 @@
 1. **Read** `/docs/INDEX.md` - One-page index of all documentation
 2. **Scan** `/docs/GLOSSARY.md` - Indonesian ↔ English business terms
 3. **Understand** `/docs/01-architecture/system-overview.md` - High-level architecture
-4. **Explore** `/docs/02-domain/` - Business domain documentation
+4. **Learn DDD patterns** `/docs/01-architecture/domain-layer.md` - StateMachines, Value Objects
+5. **Explore** `/docs/02-domain/` - Business domain documentation
 
 **Need specific information?**
 
 | Task | Document |
 |------|----------|
 | Understand overall system | `/docs/01-architecture/system-overview.md` |
+| Learn DDD patterns (StateMachine, ValueObjects) | `/docs/01-architecture/domain-layer.md` |
 | Implement sales feature | `/docs/02-domain/sales-cycle.md` |
 | Implement manufacturing feature | `/docs/02-domain/manufacturing.md` |
-| Find API endpoint | `/docs/04-api/endpoints.md` |
-| Understand an entity | `/docs/05-entities/{entity}.md` |
-| Learn business rule | `/docs/06-business-rules/` |
+| Create a new StateMachine | `/docs/07-code-patterns/state-machine-pattern.md` |
+| Create a Strategy | `/docs/07-code-patterns/strategy-pattern.md` |
+| Create query filters | `/docs/07-code-patterns/filter-pattern.md` |
 | Why was this decision made? | `/docs/08-adr/` |
 | How to code this pattern? | `/docs/07-code-patterns/` |
 | Indonesian term meaning? | `/docs/GLOSSARY.md` |
@@ -41,27 +44,85 @@
 
 | Metric | Value |
 |--------|-------|
-| API Routes | 418 |
-| Eloquent Models | 70 |
-| Services | 39 |
-| Database Migrations | 101 |
-| Tests | 950+ |
+| API Routes | 513 |
+| Eloquent Models | 71 |
+| Services | 77 |
+| Contracts/Interfaces | 40 |
+| Domain Layer Files | 122 (StateMachines, Events, ValueObjects, Strategies) |
+| Database Migrations | 101+ |
+| Tests | 78 test files |
+| ADRs | 50 |
 
 ### Tech Stack
 
 | Component | Technology |
 |-----------|------------|
-| Framework | Laravel 12 |
-| PHP Version | 8.4 |
+| Framework | Laravel 12.44.0 |
+| PHP Version | 8.4.14 |
 | Database | PostgreSQL |
-| Authentication | Sanctum (token-based) |
-| Frontend | Livewire + Volt + Tailwind v4 |
+| Authentication | Sanctum 4.x (token-based) |
+| Frontend | Livewire 3.x + Volt 1.x + Tailwind v4 |
 | Testing | Pest v4 |
 | API Docs | Scramble (OpenAPI) |
 
 ### Accounting Standard
 
 **SAK EMKM** (Standar Akuntansi Keuangan Entitas Mikro, Kecil, dan Menengah) - Indonesian accounting standard for micro, small, and medium enterprises.
+
+---
+
+## Architecture Overview
+
+### Layer Diagram
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    HTTP / API Layer                          │
+│  Controllers (thin) → Form Requests → API Resources          │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    Service Layer                             │
+│  Business Logic, Transactions, Orchestration                 │
+│  /app/Services/{Domain}/ - 77 services                       │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    Domain Layer (DDD)                        │
+│  StateMachines | ValueObjects | DomainEvents | Calculators   │
+│  /app/Domain/{Domain}/ - 90+ files                           │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                 Contracts / Interfaces                       │
+│  Service interfaces, Strategy interfaces                     │
+│  /app/Contracts/ - 40+ interfaces                            │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    Model Layer                               │
+│  Eloquent Models (thin), Relationships, Casts                │
+│  /app/Models/{Domain}/ - 71 models                           │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Key Architectural Patterns
+
+| Pattern | Implementation | Location | Docs |
+|---------|---------------|----------|------|
+| **State Machine** | Document workflow state transitions | `/app/Domain/*/` | `/docs/07-code-patterns/state-machine-pattern.md` |
+| **Strategy** | Pluggable algorithms (COGS, Closing) | `/app/Contracts/*/Strategies/` | `/docs/07-code-patterns/strategy-pattern.md` |
+| **Domain Events** | Decoupled side effects | `/app/Domain/*/Events/` | `/docs/07-code-patterns/event-listener-pattern.md` |
+| **Value Objects** | Composite domain values | `/app/Domain/*/` (e.g., InvoiceTotals) | `/docs/01-architecture/domain-layer.md` |
+| **Service Layer** | Business logic, not controllers | `/app/Services/{Domain}/` | `/docs/07-code-patterns/service-pattern.md` |
+| **Query Filters** | Reusable filter classes | `/app/Filters/` | `/docs/07-code-patterns/filter-pattern.md` |
+| **Form Requests** | Validation in dedicated classes | `/app/Http/Requests/` | `/docs/07-code-patterns/validation-pattern.md` |
+| **API Resources** | Response transformation | `/app/Http/Resources/` | `/docs/01-architecture/api-design.md` |
+| **Feature Flags** | Module toggling | `/config/features.php` | ADR-0007 |
 
 ---
 
@@ -73,43 +134,57 @@ docs/
 ├── INDEX.md                     # One-page quick reference
 ├── GLOSSARY.md                  # Indonesian ↔ English terms
 │
-├── 00-getting-started/          # Onboarding for new developers/agents
-├── 01-architecture/             # System design (C4, components)
+├── 00-getting-started/          # Quick start guide
+├── 01-architecture/             # System design + Domain Layer
 ├── 02-domain/                   # Business domains (sales, manufacturing)
 ├── 03-workflows/                # Flowcharts and process flows
-├── 04-api/                      # API conventions, endpoints
-├── 05-entities/                 # Entity documentation (70 models)
+├── 04-api/                      # API conventions
+├── 05-entities/                 # Entity documentation
 ├── 06-business-rules/           # Business logic rules
-├── 07-code-patterns/            # Code conventions, patterns
+├── 07-code-patterns/            # Code conventions + DDD patterns
 ├── 08-adr/                      # Architecture Decision Records (48)
 ├── 09-development/              # Setup, testing, debugging
-└── 10-references/               # External references, domain knowledge
+└── 10-references/               # External references
 ```
+
+---
+
+## Code Organization by Domain
+
+| Domain | Models | Services | StateMachines | Events |
+|--------|--------|----------|---------------|--------|
+| **Accounting** | 9 | 26 | FiscalPeriodStateMachine | 5 |
+| **Sales** | 12 | 14 | Invoice, Quotation, DeliveryOrder, SalesReturn | 20+ |
+| **Purchasing** | 8 | 6 | Bill, PurchaseOrder, PurchaseReturn | 15+ |
+| **Manufacturing** | 18 | 20 | - | - |
+| **Inventory** | 7 | 4 | - | - |
+| **Projects** | 3 | 2 | ProjectStateMachine | 6 |
+| **Solar** | 3 | 2 | - | - |
+| **Shared** | 5 | - | - | - |
+| **Contacts** | 1 | - | - | - |
 
 ---
 
 ## Business Domains
 
-Enter365 covers these business domains:
-
 ### Core Accounting
 - **Chart of Accounts** - SAK EMKM compliant hierarchical structure
 - **Journal Entries** - Double-entry bookkeeping with auto-reversals
-- **Fiscal Periods** - Period open/close/lock for compliance
+- **Fiscal Periods** - Period open/close/lock with StateMachine
 - **Multi-Currency** - IDR default with exchange rate tracking
 
 ### Sales & Receivables
-- **Quotations** - Standard and multi-option (Budget/Standard/Premium)
-- **Invoices** - Sales invoices with payment tracking
-- **Delivery Orders** - Shipment documentation
+- **Quotations** - Standard and multi-option (Budget/Standard/Premium), StateMachine
+- **Invoices** - Sales invoices with InvoiceStateMachine, InvoiceCalculator
+- **Delivery Orders** - Shipment with DeliveryOrderStateMachine
 - **Down Payments** - Prepayment tracking and application
-- **Sales Returns** - Credit notes and returns processing
+- **Sales Returns** - Returns with SalesReturnStateMachine + approval pipeline
 
 ### Purchasing & Payables
-- **Purchase Orders** - Procurement documentation
+- **Purchase Orders** - PurchaseOrderStateMachine
 - **Goods Receipt Notes (GRN)** - Multi-step receiving workflow
-- **Bills** - Vendor invoices
-- **Purchase Returns** - Returns to suppliers
+- **Bills** - Vendor invoices with BillStateMachine
+- **Purchase Returns** - PurchaseReturnStateMachine + approval pipeline
 
 ### Inventory Management
 - **Products** - Master catalog with MRP fields
@@ -125,10 +200,9 @@ Enter365 covers these business domains:
 - **MRP** - Material Requirements Planning with suggestions
 
 ### Project Costing
-- **Projects** - Lifecycle tracking (draft → active → complete)
+- **Projects** - ProjectStateMachine (draft → active → complete)
 - **Cost Tracking** - Labor, material, overhead allocation
 - **Revenue Recognition** - Project revenue tracking
-- **Profitability Analysis** - Per-project margins
 
 ### Solar EPC (Killer Feature)
 - **Solar Proposals** - Energy savings, ROI, ESG metrics
@@ -138,16 +212,22 @@ Enter365 covers these business domains:
 
 ---
 
-## Key Architectural Patterns
+## File Locations Quick Reference
 
-| Pattern | Implementation | Location |
-|---------|---------------|----------|
-| Service Layer | Business logic in services, not controllers | `/app/Services/Accounting/` |
-| Form Requests | Validation in dedicated request classes | `/app/Http/Requests/` |
-| API Resources | Response transformation | `/app/Http/Resources/` |
-| Feature Flags | Module toggling via middleware | `/config/features.php` |
-| Soft Deletes | Data retention on all models | All models |
-| Transaction Wrapping | DB::transaction() in services | All services |
+| Component | Path | Count |
+|-----------|------|-------|
+| **Models** | `/app/Models/{Domain}/` | 71 |
+| **Services** | `/app/Services/{Domain}/` | 77 |
+| **Contracts** | `/app/Contracts/{Domain}/` | 40+ |
+| **Domain Layer** | `/app/Domain/{Domain}/` | 90+ |
+| **Controllers** | `/app/Http/Controllers/Api/V1/` | 49 |
+| **Form Requests** | `/app/Http/Requests/Api/V1/` | 92 |
+| **API Resources** | `/app/Http/Resources/Api/V1/` | 75+ |
+| **Filters** | `/app/Filters/` | 16 |
+| **Migrations** | `/database/migrations/` | 101 |
+| **Tests** | `/tests/Feature/`, `/tests/Unit/` | 950+ |
+| **Config** | `/config/accounting.php`, `/config/features.php` | - |
+| **Routes** | `/routes/api.php` | 418 routes |
 
 ---
 
@@ -161,92 +241,18 @@ Architecture Decision Records document the "why" behind decisions.
 - Domain decisions (SAK EMKM, BOM variants, MRP)
 - Indonesian context (PPN, NPWP, fiscal year)
 
-**ADR Template:** `/docs/08-adr/template.md`
 **ADR Index:** `/docs/08-adr/README.md`
 
 ---
 
-## Documentation Conventions
-
-### YAML Frontmatter
-
-Every document includes machine-parseable frontmatter:
-
-```yaml
----
-domain: sales-cycle
-entities: [Quotation, Invoice, Payment]
-services: [QuotationService, InvoiceService]
-related_adrs: [0009, 0015]
-tags: [sales, receivables]
----
-```
-
-### AI Agent Guidance
-
-Every document includes a "Quick Reference" section:
-
-```markdown
-## AI Agent Quick Reference
-
-**Use this document when:**
-- Implementing sales-related features
-- Debugging quotation → invoice flow
-
-**Related documents:**
-- `/docs/03-workflows/sales-workflow.md`
-- `/docs/05-entities/quotation.md`
-```
-
-### Cross-References
-
-Documents link to related content:
-- ADRs link to related ADRs and modules
-- Domain models link to workflows and entities
-- Code patterns link to example files
-
-### Code Examples
-
-All code examples include file paths:
-
-```php
-// File: /app/Services/Accounting/QuotationService.php
-
-public function createFromBom(array $data): Quotation
-{
-    return DB::transaction(function () use ($data) {
-        // Implementation
-    });
-}
-```
-
----
-
-## File Locations Quick Reference
-
-| Component | Path |
-|-----------|------|
-| Models | `/app/Models/Accounting/` (70 files) |
-| Services | `/app/Services/Accounting/` (39 files) |
-| Controllers | `/app/Http/Controllers/Api/V1/` (53 files) |
-| Form Requests | `/app/Http/Requests/Api/V1/` (100+ files) |
-| API Resources | `/app/Http/Resources/Api/V1/` (75+ files) |
-| Migrations | `/database/migrations/` (101 files) |
-| Tests | `/tests/Feature/`, `/tests/Unit/` |
-| Config | `/config/accounting.php`, `/config/features.php` |
-| Routes | `/routes/api.php` |
-
----
-
-## Related Files Outside docs/
+## Related Files
 
 | File | Purpose |
 |------|---------|
 | `/CLAUDE.md` | AI agent instructions (project-specific) |
 | `/api.json` | OpenAPI specification (Scramble-generated) |
-| `/ideas/WORKFLOW.md` | Legacy workflow documentation |
-| `/ideas/ABOUT_APPLICATION.md` | Project overview |
-| `/ideas/CURRENT_STATE_APP.md` | Implementation status |
+| `/.claude/skills/enter365/` | Project-specific AI skill |
+| `/.claude/skills/scaffold-*/` | Code scaffolding skills |
 
 ---
 
@@ -258,6 +264,8 @@ public function createFromBom(array $data): Quotation
 |-------|--------|
 | New architectural decision | Create ADR in `/docs/08-adr/` |
 | New model added | Create entity doc in `/docs/05-entities/` |
+| New StateMachine created | Document in `/docs/07-code-patterns/state-machine-pattern.md` |
+| New Strategy created | Document in `/docs/07-code-patterns/strategy-pattern.md` |
 | Business rule changed | Update `/docs/06-business-rules/` |
 | New Indonesian term | Add to `/docs/GLOSSARY.md` |
 | Workflow changed | Update `/docs/03-workflows/` |
@@ -267,7 +275,7 @@ public function createFromBom(array $data): Quotation
 ## Getting Help
 
 - **Feature implementation**: Start with domain docs (`/docs/02-domain/`)
-- **Bug investigation**: Check entity docs (`/docs/05-entities/`)
+- **DDD patterns**: Check domain layer (`/docs/01-architecture/domain-layer.md`)
+- **Code patterns**: Review patterns (`/docs/07-code-patterns/`)
 - **"Why" questions**: Search ADRs (`/docs/08-adr/`)
 - **Indonesian terms**: Check glossary (`/docs/GLOSSARY.md`)
-- **Code patterns**: Review patterns (`/docs/07-code-patterns/`)
