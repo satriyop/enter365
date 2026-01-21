@@ -108,7 +108,7 @@ class BomController extends Controller
     public function activate(Bom $bom): BomResource|JsonResponse
     {
         try {
-            $bom = $this->bomService->activate($bom, auth()->id());
+            $bom = $this->bomService->activate($bom);
 
             return new BomResource($bom);
         } catch (InvalidArgumentException $e) {

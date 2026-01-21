@@ -90,7 +90,7 @@ class MrpController extends Controller
      */
     public function execute(MrpRun $mrpRun): MrpRunResource
     {
-        $run = $this->mrpService->execute($mrpRun);
+        $run = $this->mrpService->executeRun($mrpRun);
 
         return new MrpRunResource($run->load(['demands.product', 'suggestions.product']));
     }

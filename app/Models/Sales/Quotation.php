@@ -2,13 +2,9 @@
 
 namespace App\Models\Sales;
 
-use App\Contracts\Sales\QuotationCalculatorInterface;
-use App\Contracts\Sales\QuotationNumberGeneratorInterface;
 use App\Domain\Sales\Quotations\Enums\QuotationOutcome;
 use App\Domain\Sales\Quotations\Enums\QuotationPriority;
 use App\Domain\Sales\Quotations\Enums\QuotationType;
-use App\Domain\Sales\Quotations\FollowUpManager;
-use App\Domain\Sales\Quotations\OutcomeManager;
 use App\Domain\Sales\Quotations\QuotationStateMachine;
 use App\Enums\DocumentStatus;
 use App\Models\Contacts\Contact;
@@ -409,36 +405,13 @@ class Quotation extends Model
 
     /**
      * Get the state machine instance for this quotation.
+     *
+     * Note: For mutations (transitionTo), use QuotationDomainFactory
+     * to get a state machine with proper event dispatch.
      */
     public function stateMachine(): QuotationStateMachine
     {
         return QuotationStateMachine::fromQuotation($this);
-    }
-
-    /**
-     * Transition this quotation to a new status.
-     */
-    public function transitionTo(DocumentStatus $status, ?int $userId = null, array $context = []): self
-    {
-        $this->stateMachine()->transitionTo($status, array_merge(['user_id' => $userId], $context));
-
-        return $this->refresh();
-    }
-
-    /**
-     * Get the outcome manager instance for this quotation.
-     */
-    public function outcomeManager(): OutcomeManager
-    {
-        return new OutcomeManager;
-    }
-
-    /**
-     * Get the follow-up manager instance for this quotation.
-     */
-    public function followUpManager(): FollowUpManager
-    {
-        return new FollowUpManager;
     }
 
     /**
@@ -538,10 +511,16 @@ class Quotation extends Model
 
     /**
      * Get the full quotation number with revision suffix.
+     *
+     * Format: QUO-YYYYMM-XXXX or QUO-YYYYMM-XXXX-R{n} for revisions.
      */
     public function getFullNumber(): string
     {
-        return app(QuotationNumberGeneratorInterface::class)->getFullNumber($this);
+        if ($this->revision > 0) {
+            return "{$this->quotation_number}-R{$this->revision}";
+        }
+
+        return $this->quotation_number;
     }
 
     // ========================================
@@ -619,71 +598,31 @@ class Quotation extends Model
     }
 
     // ========================================
-    // Follow-Up Methods
+    // Read-Only Accessors
     // ========================================
 
     /**
-     * Schedule next follow-up.
-     */
-    public function scheduleFollowUp(int $daysFromNow = 3): void
-    {
-        $this->followUpManager()->scheduleFollowUp($this, $daysFromNow);
-    }
-
-    /**
-     * Record a contact activity and update last_contacted_at.
-     */
-    public function recordContact(): void
-    {
-        $this->followUpManager()->recordContact($this);
-    }
-
-    /**
-     * Calculate auto follow-up date based on quotation stage.
-     */
-    public function calculateAutoFollowUpDate(): ?\DateTimeInterface
-    {
-        return $this->followUpManager()->calculateAutoFollowUpDate($this);
-    }
-
-    /**
-     * Check if quotation needs follow-up.
+     * Check if quotation needs follow-up (for API/display).
      */
     public function needsFollowUp(): bool
     {
-        return $this->followUpManager()->needsFollowUp($this);
+        if ($this->next_follow_up_at === null) {
+            return false;
+        }
+
+        return $this->next_follow_up_at->isPast() && $this->outcome === null;
     }
 
     /**
-     * Get days since last contact.
+     * Get days since last contact (for API/display).
      */
     public function getDaysSinceLastContact(): ?int
     {
-        return $this->followUpManager()->getDaysSinceLastContact($this);
-    }
+        if ($this->last_contacted_at === null) {
+            return null;
+        }
 
-    // ========================================
-    // Outcome Methods
-    // ========================================
-
-    /**
-     * Mark quotation as won.
-     *
-     * @param  array{won_reason?: string, outcome_notes?: string}  $data
-     */
-    public function markAsWon(array $data = []): void
-    {
-        $this->outcomeManager()->markAsWon($this, $data);
-    }
-
-    /**
-     * Mark quotation as lost.
-     *
-     * @param  array{lost_reason?: string, lost_to_competitor?: string, outcome_notes?: string}  $data
-     */
-    public function markAsLost(array $data = []): void
-    {
-        $this->outcomeManager()->markAsLost($this, $data);
+        return (int) $this->last_contacted_at->diffInDays(now());
     }
 
     /**
@@ -691,7 +630,15 @@ class Quotation extends Model
      */
     public function getOutcomeLabel(): ?string
     {
-        return $this->outcomeManager()->getOutcomeLabel($this->outcome);
+        if ($this->outcome === null) {
+            return null;
+        }
+
+        try {
+            return QuotationOutcome::from($this->outcome)->label();
+        } catch (\ValueError) {
+            return null;
+        }
     }
 
     /**
@@ -704,31 +651,5 @@ class Quotation extends Model
         }
 
         return QuotationPriority::from($this->priority)->label();
-    }
-
-    /**
-     * Calculate and update totals from items.
-     *
-     * @param  QuotationCalculatorInterface|null  $calculator  Optional calculator for unit testing
-     */
-    public function calculateTotals(?QuotationCalculatorInterface $calculator = null): void
-    {
-        $calculator ??= app(QuotationCalculatorInterface::class);
-
-        $lineTotals = $this->items->pluck('line_total')->toArray();
-        $totals = $calculator->calculate(
-            $lineTotals,
-            $this->tax_rate,
-            $this->discount_type,
-            $this->discount_value,
-            $this->currency,
-            $this->exchange_rate
-        );
-
-        $this->subtotal = $totals->subtotal;
-        $this->discount_amount = $totals->discountAmount;
-        $this->tax_amount = $totals->taxAmount;
-        $this->total = $totals->totalAmount;
-        $this->base_currency_total = $totals->baseCurrencyTotal;
     }
 }

@@ -21,6 +21,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'feature' => \App\Http\Middleware\EnsureFeatureEnabled::class,
         ]);
 
+        // Bind OperationContext to container for all HTTP requests (Laravel way)
+        // Services automatically resolve context - no manual calls needed in controllers
+        $middleware->append(\App\Http\Middleware\BindOperationContext::class);
+
         // Add RequestIdMiddleware to API routes for distributed tracing
         $middleware->api(prepend: [
             \App\Http\Middleware\RequestIdMiddleware::class,

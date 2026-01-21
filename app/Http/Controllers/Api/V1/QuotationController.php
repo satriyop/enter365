@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Domain\Sales\Quotations\Enums\QuotationType;
 use App\Filters\QuotationFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\CancelQuotationRequest;
@@ -13,7 +12,6 @@ use App\Http\Resources\Api\V1\InvoiceResource;
 use App\Http\Resources\Api\V1\QuotationResource;
 use App\Http\Resources\Api\V1\QuotationVariantOptionResource;
 use App\Models\Sales\Quotation;
-use App\Models\Sales\QuotationVariantOption;
 use App\Services\Sales\QuotationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -335,12 +333,6 @@ class QuotationController extends Controller
      */
     public function syncVariantOptions(Request $request, Quotation $quotation): JsonResponse
     {
-        if (! $quotation->isEditable()) {
-            return response()->json([
-                'message' => 'Penawaran ini tidak dapat diubah.',
-            ], 422);
-        }
-
         $validated = $request->validate([
             'options' => ['required', 'array', 'min:2'],
             'options.*.bom_id' => ['required', 'exists:boms,id'],
@@ -360,35 +352,16 @@ class QuotationController extends Controller
             'options.*.selling_price.required' => 'Harga jual harus diisi.',
         ]);
 
-        // Update quotation type to multi-option if not already
-        if (! $quotation->isMultiOption()) {
-            $quotation->update(['quotation_type' => QuotationType::MultiOption->value]);
-        }
+        try {
+            $savedOptions = $this->quotationService->syncVariantOptions($quotation, $validated['options']);
 
-        // Sync variant options
-        $quotation->variantOptions()->delete();
-
-        $options = collect($validated['options'])->map(function ($option, $index) use ($quotation) {
-            return $quotation->variantOptions()->create([
-                'bom_id' => $option['bom_id'],
-                'display_name' => $option['display_name'],
-                'tagline' => $option['tagline'] ?? null,
-                'is_recommended' => $option['is_recommended'] ?? false,
-                'selling_price' => $option['selling_price'],
-                'features' => $option['features'] ?? null,
-                'specifications' => $option['specifications'] ?? null,
-                'warranty_terms' => $option['warranty_terms'] ?? null,
-                'sort_order' => $index,
+            return response()->json([
+                'message' => 'Opsi varian berhasil disimpan.',
+                'data' => QuotationVariantOptionResource::collection($savedOptions),
             ]);
-        });
-
-        // Reload with BOM relationship
-        $savedOptions = $quotation->variantOptions()->with('bom')->orderBy('sort_order')->get();
-
-        return response()->json([
-            'message' => 'Opsi varian berhasil disimpan.',
-            'data' => QuotationVariantOptionResource::collection($savedOptions),
-        ]);
+        } catch (InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
     }
 
     /**
@@ -396,6 +369,7 @@ class QuotationController extends Controller
      */
     public function selectVariant(Request $request, Quotation $quotation): QuotationResource|JsonResponse
     {
+        // Check quotation type BEFORE validation for better UX
         if (! $quotation->isMultiOption()) {
             return response()->json([
                 'message' => 'Penawaran ini bukan tipe multi-option.',
@@ -409,24 +383,15 @@ class QuotationController extends Controller
             'variant_option_id.exists' => 'Pilihan varian tidak ditemukan.',
         ]);
 
-        /** @var QuotationVariantOption $variantOption */
-        $variantOption = QuotationVariantOption::findOrFail($validated['variant_option_id']);
+        try {
+            $quotation = $this->quotationService->selectVariant($quotation, $validated['variant_option_id']);
 
-        // Verify the variant option belongs to this quotation
-        if ($variantOption->quotation_id !== $quotation->id) {
-            return response()->json([
-                'message' => 'Pilihan varian tidak valid untuk penawaran ini.',
-            ], 422);
+            return new QuotationResource(
+                $quotation->load(['variantGroup', 'selectedVariant', 'variantOptions.bom'])
+            );
+        } catch (InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
         }
-
-        $quotation->update([
-            'selected_variant_id' => $variantOption->bom_id,
-            'total' => $variantOption->selling_price,
-        ]);
-
-        return new QuotationResource(
-            $quotation->fresh(['contact', 'items', 'variantGroup', 'selectedVariant', 'variantOptions.bom'])
-        );
     }
 
     /**

@@ -12,7 +12,7 @@ use App\Http\Resources\Api\V1\QuotationResource;
 use App\Models\Sales\Quotation;
 use App\Models\Sales\QuotationActivity;
 use App\Services\Sales\QuotationFollowUpService;
-use App\Services\Sales\QuotationWorkflowService;
+use App\Services\Sales\QuotationOutcomeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -22,7 +22,7 @@ use Illuminate\Validation\Rule;
 class QuotationFollowUpController extends Controller
 {
     public function __construct(
-        private QuotationWorkflowService $workflowService,
+        private QuotationOutcomeService $outcomeService,
         private QuotationFollowUpService $followUpService
     ) {}
 
@@ -193,7 +193,7 @@ class QuotationFollowUpController extends Controller
     public function markAsWon(Request $request, Quotation $quotation): QuotationResource|JsonResponse
     {
         // Check if quotation can be marked as won
-        if (! $this->workflowService->canMarkAsWon($quotation)) {
+        if (! $this->outcomeService->canMarkAsWon($quotation)) {
             if ($quotation->outcome !== null) {
                 return response()->json([
                     'message' => 'Penawaran sudah memiliki hasil.',
@@ -211,7 +211,7 @@ class QuotationFollowUpController extends Controller
         ]);
 
         $quotation = DB::transaction(function () use ($quotation, $validated, $request) {
-            $quotation = $this->workflowService->markAsWon($quotation, $validated);
+            $quotation = $this->outcomeService->markAsWon($quotation, $validated);
 
             // Record activity
             $quotation->activities()->create([
@@ -234,7 +234,7 @@ class QuotationFollowUpController extends Controller
     public function markAsLost(Request $request, Quotation $quotation): QuotationResource|JsonResponse
     {
         // Check if quotation can be marked as lost
-        if (! $this->workflowService->canMarkAsLost($quotation)) {
+        if (! $this->outcomeService->canMarkAsLost($quotation)) {
             if ($quotation->outcome !== null) {
                 return response()->json([
                     'message' => 'Penawaran sudah memiliki hasil.',
@@ -253,7 +253,7 @@ class QuotationFollowUpController extends Controller
         ]);
 
         $quotation = DB::transaction(function () use ($quotation, $validated, $request) {
-            $quotation = $this->workflowService->markAsLost($quotation, $validated);
+            $quotation = $this->outcomeService->markAsLost($quotation, $validated);
 
             // Record activity
             $quotation->activities()->create([

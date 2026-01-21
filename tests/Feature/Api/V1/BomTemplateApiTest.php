@@ -66,10 +66,18 @@ describe('BOM Template CRUD', function () {
     });
 
     it('can search templates by code', function () {
-        BomTemplate::factory()->create(['code' => 'TPL-DIST-001']);
-        BomTemplate::factory()->create(['code' => 'TPL-SOLAR-001']);
+        BomTemplate::factory()->create([
+            'code' => 'TPL-DIST-001',
+            'name' => 'Distribution Panel',
+            'description' => null,
+        ]);
+        BomTemplate::factory()->create([
+            'code' => 'TPL-SOLAR-001',
+            'name' => 'Solar Panel',
+            'description' => null,
+        ]);
 
-        $response = $this->getJson('/api/v1/bom-templates?search=dist');
+        $response = $this->getJson('/api/v1/bom-templates?search=TPL-DIST');
 
         $response->assertOk()
             ->assertJsonCount(1, 'data')
@@ -77,8 +85,14 @@ describe('BOM Template CRUD', function () {
     });
 
     it('can search templates by name', function () {
-        BomTemplate::factory()->create(['name' => 'Distribution Panel Standard']);
-        BomTemplate::factory()->create(['name' => 'Motor Control Center']);
+        BomTemplate::factory()->create([
+            'name' => 'Distribution Panel Standard',
+            'description' => null,
+        ]);
+        BomTemplate::factory()->create([
+            'name' => 'Motor Control Center',
+            'description' => null,
+        ]);
 
         $response = $this->getJson('/api/v1/bom-templates?search=distribution');
 
