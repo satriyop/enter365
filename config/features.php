@@ -51,4 +51,5 @@ return [
         'multi_currency' => env('FEATURE_MULTI_CURRENCY', true),
         'bank_reconciliation' => env('FEATURE_BANK_RECONCILIATION', true),
     ],
+
 ];
