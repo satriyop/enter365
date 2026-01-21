@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Domain\Sales\Quotations\Enums\QuotationType;
 use App\Filters\QuotationFilter;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\CancelQuotationRequest;
 use App\Http\Requests\Api\V1\StoreQuotationFromBomRequest;
 use App\Http\Requests\Api\V1\StoreQuotationRequest;
 use App\Http\Requests\Api\V1\UpdateQuotationRequest;
@@ -172,6 +173,52 @@ class QuotationController extends Controller
     }
 
     /**
+     * Cancel a quotation.
+     *
+     * Cancels a Draft, Submitted, or Approved quotation.
+     * Cancelled quotations can be revised to create a new draft.
+     */
+    public function cancel(CancelQuotationRequest $request, Quotation $quotation): QuotationResource|JsonResponse
+    {
+        try {
+            $quotation = $this->quotationService->cancel(
+                $quotation,
+                $request->input('reason')
+            );
+
+            return new QuotationResource($quotation);
+        } catch (InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+    }
+
+    /**
+     * Mark quotation as sent to customer.
+     *
+     * Sent quotations will NOT auto-expire when past valid_until date.
+     * This protects quotations that customers have seen from silent expiration.
+     */
+    public function markAsSent(Request $request, Quotation $quotation): QuotationResource|JsonResponse
+    {
+        $request->validate([
+            'email' => ['nullable', 'email', 'max:255'],
+            'via' => ['nullable', 'string', 'in:email,print,portal'],
+        ]);
+
+        try {
+            $quotation = $this->quotationService->markAsSent(
+                $quotation,
+                $request->input('email'),
+                $request->input('via', 'email')
+            );
+
+            return new QuotationResource($quotation);
+        } catch (InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+    }
+
+    /**
      * Create a revision of a quotation.
      */
     public function revise(Quotation $quotation): QuotationResource|JsonResponse
@@ -201,7 +248,19 @@ class QuotationController extends Controller
                 'quotation' => new QuotationResource($quotation->fresh(['contact', 'items'])),
             ], 201);
         } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
+            $response = ['message' => $e->getMessage()];
+
+            // Add helpful context for multi-option quotations without variant selection
+            if ($quotation->isMultiOption() && ! $quotation->hasSelectedVariant()) {
+                $response['error_code'] = 'VARIANT_NOT_SELECTED';
+                $response['available_variants'] = $quotation->variantOptions()
+                    ->select('id', 'display_name', 'selling_price', 'is_recommended')
+                    ->orderBy('sort_order')
+                    ->get();
+                $response['suggestion'] = 'Gunakan POST /api/v1/quotations/{id}/select-variant untuk memilih varian.';
+            }
+
+            return response()->json($response, 422);
         }
     }
 

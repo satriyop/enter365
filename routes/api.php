@@ -194,6 +194,8 @@ Route::prefix('v1')->group(function () {
             Route::post('quotations/{quotation}/submit', [QuotationController::class, 'submit']);
             Route::post('quotations/{quotation}/approve', [QuotationController::class, 'approve']);
             Route::post('quotations/{quotation}/reject', [QuotationController::class, 'reject']);
+            Route::post('quotations/{quotation}/cancel', [QuotationController::class, 'cancel']);
+            Route::post('quotations/{quotation}/mark-sent', [QuotationController::class, 'markAsSent']);
             Route::post('quotations/{quotation}/revise', [QuotationController::class, 'revise']);
             Route::post('quotations/{quotation}/convert-to-invoice', [QuotationController::class, 'convertToInvoice']);
             Route::post('quotations/{quotation}/duplicate', [QuotationController::class, 'duplicate']);
