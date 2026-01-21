@@ -19231,7 +19231,7 @@
         "/invoices": {
             "get": {
                 "operationId": "invoices.index",
-                "summary": "Display a listing of invoices",
+                "summary": "List invoices with filtering and pagination",
                 "tags": [
                     "Invoice"
                 ],
@@ -19382,6 +19382,7 @@
             },
             "post": {
                 "operationId": "invoices.store",
+                "summary": "Create new invoice",
                 "tags": [
                     "Invoice"
                 ],
@@ -19396,19 +19397,14 @@
                     }
                 },
                 "responses": {
-                    "201": {
-                        "description": "`InvoiceResource`",
+                    "200": {
+                        "description": "",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/components/schemas/InvoiceResource"
-                                        }
-                                    },
-                                    "required": [
-                                        "data"
+                                    "type": "integer",
+                                    "enum": [
+                                        201
                                     ]
                                 }
                             }
@@ -19426,6 +19422,7 @@
         "/invoices/{invoice}": {
             "get": {
                 "operationId": "invoices.show",
+                "summary": "Get invoice details",
                 "tags": [
                     "Invoice"
                 ],
@@ -19469,6 +19466,8 @@
             },
             "put": {
                 "operationId": "invoices.update",
+                "description": "Only draft invoices can be updated.",
+                "summary": "Update invoice",
                 "tags": [
                     "Invoice"
                 ],
@@ -19524,6 +19523,8 @@
             },
             "delete": {
                 "operationId": "invoices.destroy",
+                "description": "Only draft invoices without payments can be deleted.",
+                "summary": "Delete invoice",
                 "tags": [
                     "Invoice"
                 ],
@@ -19546,6 +19547,9 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
                                         "message": {
                                             "type": "string",
                                             "enum": [
@@ -19554,6 +19558,7 @@
                                         }
                                     },
                                     "required": [
+                                        "success",
                                         "message"
                                     ]
                                 }
@@ -19572,6 +19577,8 @@
         "/invoices/{invoice}/post": {
             "post": {
                 "operationId": "invoice.post",
+                "description": "Creates AR/Revenue journal entry and transitions invoice to Sent status.\nInvoice must be in Draft status with at least one item.",
+                "summary": "Post invoice (create journal entry, change status to Sent)",
                 "tags": [
                     "Invoice"
                 ],
@@ -19588,19 +19595,11 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "`InvoiceResource`",
+                        "description": "",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/components/schemas/InvoiceResource"
-                                        }
-                                    },
-                                    "required": [
-                                        "data"
-                                    ]
+                                    "type": "object"
                                 }
                             }
                         }
@@ -19617,6 +19616,8 @@
         "/invoices/{invoice}/make-recurring": {
             "post": {
                 "operationId": "invoice.makeRecurring",
+                "description": "Creates a recurring template based on the invoice for automatic generation.",
+                "summary": "Create recurring template from invoice",
                 "tags": [
                     "Invoice"
                 ],
@@ -19643,24 +19644,17 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "",
+                        "description": "`JsonResource`",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "enum": [
-                                                "Template recurring berhasil dibuat dari faktur."
-                                            ]
-                                        },
                                         "data": {
-                                            "$ref": "#/components/schemas/RecurringTemplateResource"
+                                            "$ref": "#/components/schemas/JsonResource"
                                         }
                                     },
                                     "required": [
-                                        "message",
                                         "data"
                                     ]
                                 }
@@ -28805,6 +28799,145 @@
                 }
             }
         },
+        "/quotations/{quotation}/cancel": {
+            "post": {
+                "operationId": "quotation.cancel",
+                "description": "Cancels a Draft, Submitted, or Approved quotation.\nCancelled quotations can be revised to create a new draft.",
+                "summary": "Cancel a quotation",
+                "tags": [
+                    "Quotation"
+                ],
+                "parameters": [
+                    {
+                        "name": "quotation",
+                        "in": "path",
+                        "required": true,
+                        "description": "The quotation ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CancelQuotationRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "200": {
+                        "description": "`QuotationResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/QuotationResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/quotations/{quotation}/mark-sent": {
+            "post": {
+                "operationId": "quotation.markAsSent",
+                "description": "Sent quotations will NOT auto-expire when past valid_until date.\nThis protects quotations that customers have seen from silent expiration.",
+                "summary": "Mark quotation as sent to customer",
+                "tags": [
+                    "Quotation"
+                ],
+                "parameters": [
+                    {
+                        "name": "quotation",
+                        "in": "path",
+                        "required": true,
+                        "description": "The quotation ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "email": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "format": "email",
+                                        "maxLength": 255
+                                    },
+                                    "via": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "enum": [
+                                            "email",
+                                            "print",
+                                            "portal"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "200": {
+                        "description": "`QuotationResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/QuotationResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/quotations/{quotation}/revise": {
             "post": {
                 "operationId": "quotation.revise",
@@ -28897,10 +29030,31 @@
                                     "properties": {
                                         "message": {
                                             "type": "string"
+                                        },
+                                        "error_code": {
+                                            "type": "string",
+                                            "enum": [
+                                                "VARIANT_NOT_SELECTED"
+                                            ]
+                                        },
+                                        "available_variants": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/QuotationVariantOption"
+                                            }
+                                        },
+                                        "suggestion": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Gunakan POST /api/v1/quotations/{id}/select-variant untuk memilih varian."
+                                            ]
                                         }
                                     },
                                     "required": [
-                                        "message"
+                                        "message",
+                                        "error_code",
+                                        "available_variants",
+                                        "suggestion"
                                     ]
                                 }
                             }
@@ -30611,6 +30765,7 @@
                                             "hubungan_baik",
                                             "spesifikasi_sesuai",
                                             "rekomendasi",
+                                            "converted_to_invoice",
                                             "lainnya"
                                         ]
                                     },
@@ -43753,6 +43908,19 @@
                 ],
                 "title": "BudgetResource"
             },
+            "CancelQuotationRequest": {
+                "type": "object",
+                "properties": {
+                    "reason": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 1000
+                    }
+                },
+                "title": "CancelQuotationRequest"
+            },
             "CompanyProfileResource": {
                 "type": "object",
                 "properties": {
@@ -45587,102 +45755,456 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "invoice_number": {
                         "type": "string"
                     },
-                    "contact_id": {
-                        "type": "string"
-                    },
-                    "invoice_date": {
-                        "type": "string"
-                    },
-                    "due_date": {
-                        "type": "string"
+                    "reference": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "description": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
-                    "reference": {
-                        "type": "string"
-                    },
-                    "subtotal": {
-                        "type": "string"
-                    },
-                    "tax_amount": {
-                        "type": "string"
-                    },
-                    "tax_rate": {
-                        "type": "number"
-                    },
-                    "discount_amount": {
-                        "type": "string"
-                    },
-                    "total_amount": {
-                        "type": "string"
-                    },
-                    "paid_amount": {
-                        "type": "string"
-                    },
-                    "outstanding_amount": {
-                        "type": "string"
-                    },
-                    "status": {
-                        "type": "string"
-                    },
-                    "journal_entry_id": {
-                        "type": "string"
-                    },
-                    "receivable_account_id": {
-                        "type": "string"
+                    "contact_id": {
+                        "type": "integer",
+                        "description": "Contact"
                     },
                     "contact": {
                         "$ref": "#/components/schemas/ContactResource"
                     },
-                    "items": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/InvoiceItemResource"
-                        }
+                    "invoice_date": {
+                        "type": "string",
+                        "description": "Dates"
+                    },
+                    "due_date": {
+                        "type": "string"
+                    },
+                    "days_until_due": {
+                        "type": "integer"
+                    },
+                    "is_overdue": {
+                        "type": "boolean"
+                    },
+                    "days_overdue": {
+                        "type": "integer"
+                    },
+                    "currency": {
+                        "type": "string",
+                        "description": "Currency"
+                    },
+                    "exchange_rate": {
+                        "type": "number"
+                    },
+                    "subtotal": {
+                        "type": "integer",
+                        "description": "Amounts (raw integers for calculations)"
+                    },
+                    "discount_amount": {
+                        "type": "integer"
+                    },
+                    "tax_rate": {
+                        "type": "number"
+                    },
+                    "tax_amount": {
+                        "type": "integer"
+                    },
+                    "total_amount": {
+                        "type": "integer"
+                    },
+                    "paid_amount": {
+                        "type": "integer"
+                    },
+                    "outstanding_amount": {
+                        "type": "integer"
+                    },
+                    "base_currency_total": {
+                        "type": "integer"
+                    },
+                    "formatted": {
+                        "type": "object",
+                        "description": "Formatted amounts (for display)",
+                        "properties": {
+                            "subtotal": {
+                                "type": "string"
+                            },
+                            "discount_amount": {
+                                "type": "string"
+                            },
+                            "tax_amount": {
+                                "type": "string"
+                            },
+                            "total_amount": {
+                                "type": "string"
+                            },
+                            "paid_amount": {
+                                "type": "string"
+                            },
+                            "outstanding_amount": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "subtotal",
+                            "discount_amount",
+                            "tax_amount",
+                            "total_amount",
+                            "paid_amount",
+                            "outstanding_amount"
+                        ]
+                    },
+                    "status": {
+                        "type": "object",
+                        "description": "Status",
+                        "properties": {
+                            "value": {
+                                "type": "string"
+                            },
+                            "label": {
+                                "type": "string",
+                                "enum": [
+                                    "Draft",
+                                    "Dibatalkan",
+                                    "Diajukan",
+                                    "Disetujui",
+                                    "Ditolak",
+                                    "Selesai",
+                                    "Dikonversi",
+                                    "Kedaluwarsa",
+                                    "Terkirim",
+                                    "Sebagian",
+                                    "Lunas",
+                                    "Jatuh Tempo",
+                                    "Diterima",
+                                    "Aktif",
+                                    "Tidak Aktif",
+                                    "Dikonfirmasi",
+                                    "Dalam Proses",
+                                    "Memproses",
+                                    "Diterapkan",
+                                    "Dikeluarkan",
+                                    "Ditugaskan",
+                                    "Dikirim",
+                                    "Menerima",
+                                    "Perencanaan",
+                                    "Ditunda",
+                                    "Diarsipkan"
+                                ]
+                            },
+                            "color": {
+                                "type": "string",
+                                "enum": [
+                                    "zinc",
+                                    "red",
+                                    "yellow",
+                                    "green",
+                                    "blue",
+                                    "orange",
+                                    "indigo",
+                                    "cyan",
+                                    "emerald",
+                                    "gray",
+                                    "purple"
+                                ]
+                            },
+                            "is_terminal": {
+                                "type": "boolean"
+                            },
+                            "is_editable": {
+                                "type": "boolean"
+                            }
+                        },
+                        "required": [
+                            "value",
+                            "label",
+                            "color",
+                            "is_terminal",
+                            "is_editable"
+                        ]
+                    },
+                    "journal_entry_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "description": "Journal entry"
+                    },
+                    "has_journal_entry": {
+                        "type": "boolean"
                     },
                     "journal_entry": {
                         "$ref": "#/components/schemas/JournalEntryResource"
                     },
+                    "receivable_account_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "description": "Receivable account"
+                    },
+                    "items": {
+                        "type": "array",
+                        "description": "Items",
+                        "items": {
+                            "$ref": "#/components/schemas/InvoiceItemResource"
+                        }
+                    },
+                    "item_count": {
+                        "type": "string"
+                    },
                     "payments": {
                         "type": "array",
+                        "description": "Payments",
                         "items": {
                             "$ref": "#/components/schemas/PaymentResource"
                         }
                     },
-                    "created_by": {
+                    "payment_count": {
                         "type": "string"
+                    },
+                    "workflow": {
+                        "type": "object",
+                        "description": "Workflow (optional - include with ?include_workflow=true)",
+                        "properties": {
+                            "current_status": {
+                                "type": "object",
+                                "properties": {
+                                    "value": {
+                                        "type": "string"
+                                    },
+                                    "label": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Draft",
+                                            "Dibatalkan",
+                                            "Diajukan",
+                                            "Disetujui",
+                                            "Ditolak",
+                                            "Selesai",
+                                            "Dikonversi",
+                                            "Kedaluwarsa",
+                                            "Terkirim",
+                                            "Sebagian",
+                                            "Lunas",
+                                            "Jatuh Tempo",
+                                            "Diterima",
+                                            "Aktif",
+                                            "Tidak Aktif",
+                                            "Dikonfirmasi",
+                                            "Dalam Proses",
+                                            "Memproses",
+                                            "Diterapkan",
+                                            "Dikeluarkan",
+                                            "Ditugaskan",
+                                            "Dikirim",
+                                            "Menerima",
+                                            "Perencanaan",
+                                            "Ditunda",
+                                            "Diarsipkan"
+                                        ]
+                                    },
+                                    "color": {
+                                        "type": "string",
+                                        "enum": [
+                                            "zinc",
+                                            "red",
+                                            "yellow",
+                                            "green",
+                                            "blue",
+                                            "orange",
+                                            "indigo",
+                                            "cyan",
+                                            "emerald",
+                                            "gray",
+                                            "purple"
+                                        ]
+                                    },
+                                    "is_terminal": {
+                                        "type": "boolean"
+                                    }
+                                },
+                                "required": [
+                                    "value",
+                                    "label",
+                                    "color",
+                                    "is_terminal"
+                                ]
+                            },
+                            "next_statuses": {
+                                "type": "array",
+                                "items": {}
+                            },
+                            "all_statuses": {
+                                "type": "array",
+                                "items": {}
+                            },
+                            "transitions": {
+                                "type": "array",
+                                "prefixItems": [
+                                    {
+                                        "type": "object",
+                                        "properties": {
+                                            "from": {
+                                                "type": "string"
+                                            },
+                                            "to": {
+                                                "type": "string"
+                                            },
+                                            "available": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "required": [
+                                            "from",
+                                            "to",
+                                            "available"
+                                        ]
+                                    }
+                                ],
+                                "minItems": 1,
+                                "maxItems": 1,
+                                "additionalItems": false
+                            }
+                        },
+                        "required": [
+                            "current_status",
+                            "next_statuses",
+                            "all_statuses",
+                            "transitions"
+                        ]
+                    },
+                    "status_history": {
+                        "type": "array",
+                        "description": "Status history (optional - include with ?include_history=true)",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "from": {
+                                    "type": "string"
+                                },
+                                "to": {
+                                    "type": "string"
+                                },
+                                "description": {
+                                    "type": "string"
+                                },
+                                "user": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "at": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "from",
+                                "to",
+                                "description",
+                                "user",
+                                "at"
+                            ]
+                        }
+                    },
+                    "actions": {
+                        "type": "object",
+                        "description": "Available actions based on current state",
+                        "properties": {
+                            "can_edit": {
+                                "type": "boolean"
+                            },
+                            "can_post": {
+                                "type": "boolean"
+                            },
+                            "can_cancel": {
+                                "type": "boolean"
+                            },
+                            "can_delete": {
+                                "type": "boolean"
+                            },
+                            "can_mark_as_paid": {
+                                "type": "boolean"
+                            },
+                            "can_mark_as_partial": {
+                                "type": "boolean"
+                            }
+                        },
+                        "required": [
+                            "can_edit",
+                            "can_post",
+                            "can_cancel",
+                            "can_delete",
+                            "can_mark_as_paid",
+                            "can_mark_as_partial"
+                        ]
+                    },
+                    "reminder_count": {
+                        "type": "integer",
+                        "description": "Metadata"
+                    },
+                    "last_reminder_at": {
+                        "type": "string"
+                    },
+                    "created_by": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
                     },
                     "created_at": {
                         "type": "string"
                     },
                     "updated_at": {
                         "type": "string"
+                    },
+                    "links": {
+                        "type": "object",
+                        "description": "Links (for HATEOAS-style responses)",
+                        "properties": {
+                            "self": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "self"
+                        ]
                     }
                 },
                 "required": [
                     "id",
                     "invoice_number",
+                    "reference",
+                    "description",
                     "contact_id",
                     "invoice_date",
                     "due_date",
-                    "description",
-                    "reference",
+                    "days_until_due",
+                    "is_overdue",
+                    "currency",
+                    "exchange_rate",
                     "subtotal",
-                    "tax_amount",
-                    "tax_rate",
                     "discount_amount",
+                    "tax_rate",
+                    "tax_amount",
                     "total_amount",
                     "paid_amount",
                     "outstanding_amount",
+                    "base_currency_total",
+                    "formatted",
                     "status",
                     "journal_entry_id",
+                    "has_journal_entry",
                     "receivable_account_id",
+                    "actions",
+                    "reminder_count",
+                    "last_reminder_at",
                     "created_by",
                     "created_at",
                     "updated_at"
@@ -45836,6 +46358,10 @@
                     "updated_at"
                 ],
                 "title": "JournalEntryResource"
+            },
+            "JsonResource": {
+                "type": "string",
+                "title": "JsonResource"
             },
             "LoginRequest": {
                 "type": "object",
@@ -49110,6 +49636,88 @@
                     "updated_at"
                 ],
                 "title": "QuotationResource"
+            },
+            "QuotationVariantOption": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "quotation_id": {
+                        "type": "integer"
+                    },
+                    "bom_id": {
+                        "type": "integer"
+                    },
+                    "display_name": {
+                        "type": "string"
+                    },
+                    "tagline": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "is_recommended": {
+                        "type": "boolean"
+                    },
+                    "selling_price": {
+                        "type": "integer"
+                    },
+                    "features": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {}
+                    },
+                    "specifications": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {}
+                    },
+                    "warranty_terms": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "sort_order": {
+                        "type": "integer"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "id",
+                    "quotation_id",
+                    "bom_id",
+                    "display_name",
+                    "tagline",
+                    "is_recommended",
+                    "selling_price",
+                    "features",
+                    "specifications",
+                    "warranty_terms",
+                    "sort_order",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "QuotationVariantOption"
             },
             "QuotationVariantOptionResource": {
                 "type": "object",
@@ -58388,7 +58996,7 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "wo_number": {
                         "type": "string"
@@ -58400,10 +59008,70 @@
                         "type": "string"
                     },
                     "description": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "status": {
-                        "type": "string"
+                        "type": "object",
+                        "properties": {
+                            "value": {
+                                "type": "string"
+                            },
+                            "label": {
+                                "type": "string",
+                                "enum": [
+                                    "Draft",
+                                    "Dibatalkan",
+                                    "Diajukan",
+                                    "Disetujui",
+                                    "Ditolak",
+                                    "Selesai",
+                                    "Dikonversi",
+                                    "Kedaluwarsa",
+                                    "Terkirim",
+                                    "Sebagian",
+                                    "Lunas",
+                                    "Jatuh Tempo",
+                                    "Diterima",
+                                    "Aktif",
+                                    "Tidak Aktif",
+                                    "Dikonfirmasi",
+                                    "Dalam Proses",
+                                    "Memproses",
+                                    "Diterapkan",
+                                    "Dikeluarkan",
+                                    "Ditugaskan",
+                                    "Dikirim",
+                                    "Menerima",
+                                    "Perencanaan",
+                                    "Ditunda",
+                                    "Diarsipkan"
+                                ]
+                            },
+                            "color": {
+                                "type": "string",
+                                "enum": [
+                                    "zinc",
+                                    "red",
+                                    "yellow",
+                                    "green",
+                                    "blue",
+                                    "orange",
+                                    "indigo",
+                                    "cyan",
+                                    "emerald",
+                                    "gray",
+                                    "purple"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "value",
+                            "label",
+                            "color"
+                        ]
                     },
                     "priority": {
                         "type": "string"
@@ -58419,7 +59087,7 @@
                         "type": "number"
                     },
                     "completion_percentage": {
-                        "type": "string"
+                        "type": "number"
                     },
                     "planned_start_date": {
                         "type": "string",
@@ -58435,38 +59103,44 @@
                         "type": "string"
                     },
                     "estimated_material_cost": {
-                        "type": "string",
+                        "type": "integer",
                         "description": "Costs"
                     },
                     "estimated_labor_cost": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "estimated_overhead_cost": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "estimated_total_cost": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "actual_material_cost": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "actual_labor_cost": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "actual_overhead_cost": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "actual_total_cost": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "cost_variance": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "notes": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "project_id": {
-                        "type": "string",
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
                         "description": "Relationships"
                     },
                     "project": {
@@ -58476,7 +59150,7 @@
                         ],
                         "properties": {
                             "id": {
-                                "type": "string"
+                                "type": "integer"
                             },
                             "project_number": {
                                 "type": "string"
@@ -58492,7 +59166,10 @@
                         ]
                     },
                     "bom_id": {
-                        "type": "string"
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
                     },
                     "bom": {
                         "type": [
@@ -58501,7 +59178,7 @@
                         ],
                         "properties": {
                             "id": {
-                                "type": "string"
+                                "type": "integer"
                             },
                             "bom_number": {
                                 "type": "string"
@@ -58517,7 +59194,10 @@
                         ]
                     },
                     "product_id": {
-                        "type": "string"
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
                     },
                     "product": {
                         "type": [
@@ -58526,7 +59206,7 @@
                         ],
                         "properties": {
                             "id": {
-                                "type": "string"
+                                "type": "integer"
                             },
                             "sku": {
                                 "type": "string"
@@ -58542,7 +59222,10 @@
                         ]
                     },
                     "warehouse_id": {
-                        "type": "string"
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
                     },
                     "warehouse": {
                         "type": [
@@ -58551,7 +59234,7 @@
                         ],
                         "properties": {
                             "id": {
-                                "type": "string"
+                                "type": "integer"
                             },
                             "name": {
                                 "type": "string"
@@ -58563,7 +59246,10 @@
                         ]
                     },
                     "parent_work_order_id": {
-                        "type": "string"
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
                     },
                     "parent_work_order": {
                         "type": [
@@ -58572,7 +59258,7 @@
                         ],
                         "properties": {
                             "id": {
-                                "type": "string"
+                                "type": "integer"
                             },
                             "wo_number": {
                                 "type": "string"
@@ -58605,6 +59291,183 @@
                             "$ref": "#/components/schemas/MaterialConsumptionResource"
                         }
                     },
+                    "workflow": {
+                        "type": "object",
+                        "description": "Workflow information (optional)",
+                        "properties": {
+                            "current_status": {
+                                "type": "object",
+                                "properties": {
+                                    "value": {
+                                        "type": "string"
+                                    },
+                                    "label": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Draft",
+                                            "Dibatalkan",
+                                            "Diajukan",
+                                            "Disetujui",
+                                            "Ditolak",
+                                            "Selesai",
+                                            "Dikonversi",
+                                            "Kedaluwarsa",
+                                            "Terkirim",
+                                            "Sebagian",
+                                            "Lunas",
+                                            "Jatuh Tempo",
+                                            "Diterima",
+                                            "Aktif",
+                                            "Tidak Aktif",
+                                            "Dikonfirmasi",
+                                            "Dalam Proses",
+                                            "Memproses",
+                                            "Diterapkan",
+                                            "Dikeluarkan",
+                                            "Ditugaskan",
+                                            "Dikirim",
+                                            "Menerima",
+                                            "Perencanaan",
+                                            "Ditunda",
+                                            "Diarsipkan"
+                                        ]
+                                    },
+                                    "color": {
+                                        "type": "string",
+                                        "enum": [
+                                            "zinc",
+                                            "red",
+                                            "yellow",
+                                            "green",
+                                            "blue",
+                                            "orange",
+                                            "indigo",
+                                            "cyan",
+                                            "emerald",
+                                            "gray",
+                                            "purple"
+                                        ]
+                                    },
+                                    "is_terminal": {
+                                        "type": "boolean"
+                                    }
+                                },
+                                "required": [
+                                    "value",
+                                    "label",
+                                    "color",
+                                    "is_terminal"
+                                ]
+                            },
+                            "next_statuses": {
+                                "type": "array",
+                                "items": {}
+                            },
+                            "all_statuses": {
+                                "type": "array",
+                                "items": {}
+                            },
+                            "transitions": {
+                                "type": "array",
+                                "prefixItems": [
+                                    {
+                                        "type": "object",
+                                        "properties": {
+                                            "from": {
+                                                "type": "string"
+                                            },
+                                            "to": {
+                                                "type": "string"
+                                            },
+                                            "available": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "required": [
+                                            "from",
+                                            "to",
+                                            "available"
+                                        ]
+                                    }
+                                ],
+                                "minItems": 1,
+                                "maxItems": 1,
+                                "additionalItems": false
+                            }
+                        },
+                        "required": [
+                            "current_status",
+                            "next_statuses",
+                            "all_statuses",
+                            "transitions"
+                        ]
+                    },
+                    "status_history": {
+                        "type": "array",
+                        "description": "Status history (optional)",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "from": {
+                                    "type": "string"
+                                },
+                                "to": {
+                                    "type": "string"
+                                },
+                                "description": {
+                                    "type": "string"
+                                },
+                                "user": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "at": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "from",
+                                "to",
+                                "description",
+                                "user",
+                                "at"
+                            ]
+                        }
+                    },
+                    "actions": {
+                        "type": "object",
+                        "description": "Available actions",
+                        "properties": {
+                            "can_edit": {
+                                "type": "boolean"
+                            },
+                            "can_confirm": {
+                                "type": "boolean"
+                            },
+                            "can_start": {
+                                "type": "boolean"
+                            },
+                            "can_complete": {
+                                "type": "boolean"
+                            },
+                            "can_cancel": {
+                                "type": "boolean"
+                            },
+                            "can_delete": {
+                                "type": "boolean"
+                            }
+                        },
+                        "required": [
+                            "can_edit",
+                            "can_confirm",
+                            "can_start",
+                            "can_complete",
+                            "can_cancel",
+                            "can_delete"
+                        ]
+                    },
                     "confirmed_at": {
                         "type": "string",
                         "description": "Timestamps"
@@ -58619,7 +59482,10 @@
                         "type": "string"
                     },
                     "cancellation_reason": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "created_at": {
                         "type": "string"
@@ -58659,6 +59525,7 @@
                     "product_id",
                     "warehouse_id",
                     "parent_work_order_id",
+                    "actions",
                     "confirmed_at",
                     "started_at",
                     "completed_at",
