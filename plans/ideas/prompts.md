@@ -27,4 +27,6 @@ peruse the flow for course, from end user perspective : they create invoice, edi
 make a plan to fix all of them (only if the fix need build new feature, MARK it, document it so we can tackle for next feature development), phase by phase. you should maintain phase by phase progress state, even when compacted. put into this project directory : plans/quotation directory
 
 ## POST IMPLEMENTATION
-based on what we have just done what is the insight/pattern/flow that potentially we can extract as new skills in this local project directory, not global skill?
+based on what we have just done what is the insight/pattern/flow that potentially we can extract as new skills in this local project directory, not global skill!
+
+create new skills for what we have done, the issue and the fixing in this project skill, not global. browse the project skills so you can suggest whether to create new or update existing skills (consider the size of existing skill as well).
