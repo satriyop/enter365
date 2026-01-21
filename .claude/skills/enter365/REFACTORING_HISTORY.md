@@ -239,15 +239,15 @@ See: [SKILL.md](SKILL.md#critical-pattern-commitment-read-first) for enforcement
 
 ## Metrics Improvement
 
-| Metric | Before | After (P2) | After (P3) |
-|--------|--------|------------|------------|
-| Services using `app()` fallback | 7+ | 0 | 0 |
-| Duplicate class names | 1 | 0 | 0 |
-| Services using Pattern A | ~40% | ~70% | ~75% |
-| Strategies with `new` internal | 3 | 0 | 0 |
-| CI pattern check | None | Enforced | Enforced |
-| Manufacturing services on Pattern A | 8/18 | 8/18 | 10/18 |
-| Services with raw `DB::transaction()` | ~30% | 20 | 18 (advisory) |
+| Metric | Before | After (P2) | After (P3) | After (P4) |
+|--------|--------|------------|------------|------------|
+| Services using `app()` fallback | 7+ | 0 | 0 | 0 |
+| Duplicate class names | 1 | 0 | 0 | 0 |
+| Services using Pattern A | ~40% | ~70% | ~75% | **100%** ✅ |
+| Strategies with `new` internal | 3 | 0 | 0 | 0 |
+| CI pattern check | None | Enforced | Enforced | Enforced |
+| Manufacturing services on Pattern A | 8/18 | 8/18 | 10/18 | 18/18 |
+| Services with raw `DB::transaction()` | ~30% | 20 | 18 | **0** ✅ |
 
 ---
 
@@ -392,12 +392,102 @@ done
 
 ---
 
-## Remaining Work (P3)
+## P4: Complete Pattern A Migration (Jan 2026)
 
-| Issue | Status | Effort |
-|-------|--------|--------|
-| ~~Audit Manufacturing services~~ | ✅ Complete | Low |
-| Migrate remaining `DB::transaction()` to `executeInTransaction()` | Advisory (18 services) | Medium |
+**Date:** Jan 2026
+**Files Changed:** 7 service files
+**Tests:** All 2002 passing
+
+### Achievement
+
+**100% Pattern A compliance achieved.** All 29 services now use `executeInTransaction()` instead of raw `DB::transaction()`.
+
+### Services Migrated
+
+These services didn't extend `AbstractApplicationService` and used raw `DB::transaction()`:
+
+| Service | Transactions Migrated |
+|---------|----------------------|
+| `ProductService` | 2 |
+| `InvoicePaymentService` | 2 |
+| `DownPaymentService` | 8 |
+| `BudgetService` | 2 |
+| `YearEndCloseService` | 2 |
+| `QuotationFollowUpService` | 1 |
+| `CostOptimizationService` | 1 |
+| **Total** | **18** |
+
+### The Fix Pattern
+
+Each service required:
+
+1. **Extend base class:**
+```php
+// BEFORE
+class BudgetService
+{
+    public function createBudget(array $data, array $lines = []): Budget
+    {
+        return DB::transaction(function () use ($data, $lines) {
+            // No logging, no context
+        });
+    }
+}
+
+// AFTER
+class BudgetService extends AbstractApplicationService
+{
+    public function __construct(
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger
+    ) {
+        parent::__construct($eventDispatcher, $logger);
+    }
+
+    public function createBudget(array $data, array $lines = []): Budget
+    {
+        return $this->executeInTransaction('create_budget', function () use ($data, $lines) {
+            // Automatic logging and context tracking
+        }, ['fiscal_period_id' => $data['fiscal_period_id'] ?? null]);
+    }
+}
+```
+
+2. **Add context to transactions:**
+```php
+// Each executeInTransaction() call includes context for debugging:
+$this->executeInTransaction('apply_optimization', function () use ($bom, $itemIds) {
+    // ...
+}, ['source_bom_id' => $bom->id, 'items_count' => count($itemIds)]);
+```
+
+### Verification
+
+```bash
+# Only AbstractApplicationService.php should have DB::transaction()
+grep -rn "DB::transaction" app/Services/ | grep -v "AbstractApplicationService"
+# Returns: 0 results ✅
+```
+
+### Lesson Learned
+
+> **Services that don't extend AbstractApplicationService easily drift to using raw `DB::transaction()`.** The migration pattern is straightforward: extend base class, add constructor DI, wrap transactions with `executeInTransaction()`.
+
+**Detection Rule:**
+```bash
+# Find services not extending Abstract* but using transactions
+for file in app/Services/**/*.php; do
+    if ! grep -q "extends Abstract" "$file" && grep -q "DB::transaction" "$file"; then
+        echo "Needs migration: $file"
+    fi
+done
+```
+
+---
+
+## Remaining Work
+
+All P0-P4 issues resolved. Pattern A migration complete.
 
 See: [/plans/fixing/pattern-drift-prevention.md](/plans/fixing/pattern-drift-prevention.md)
 

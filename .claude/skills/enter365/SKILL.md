@@ -230,7 +230,7 @@ Use existing skill: `/scaffold-service`
 2. Define `getTransitions()` - valid state flows
 3. Create domain events: `app/Domain/{Domain}/{Entity}/Events/`
 4. Register event listeners in `EventServiceProvider`
-5. Use in service within `DB::transaction()`
+5. Use in service within `executeInTransaction()`
 
 See: `/docs/07-code-patterns/state-machine-pattern.md`
 
@@ -330,14 +330,14 @@ Controllers only handle HTTP concerns:
 
 ### 5. StateMachine Transitions Fire Events
 
-Always wrap state transitions in `DB::transaction()`:
+Always wrap state transitions in `executeInTransaction()`:
 
 ```php
-return DB::transaction(function () use ($invoice) {
+return $this->executeInTransaction('send_invoice', function () use ($invoice) {
     $sm = InvoiceStateMachine::fromInvoice($invoice, $this->eventDispatcher);
     $sm->transitionTo(DocumentStatus::Sent);
     return $invoice->fresh();
-});
+}, ['invoice_id' => $invoice->id]);
 ```
 
 ### 6. Event Dispatcher for Testability
@@ -877,6 +877,49 @@ class QuotationService implements QuotationServiceInterface
 - [ ] No new DI bindings needed (Laravel auto-resolves)
 
 See: [ARCHITECTURE_PATTERNS.md](ARCHITECTURE_PATTERNS.md#real-world-example-quotationservice-refactoring)
+
+### 29. All Services Must Use executeInTransaction() ✅ COMPLETE
+
+**Status:** 100% compliance achieved (Jan 2026). All 29 services now use Pattern A.
+
+All write operations in services MUST use `executeInTransaction()` - never raw `DB::transaction()`:
+
+```php
+// ❌ WRONG - Raw transaction (no logging, no context)
+public function create(array $data): Model
+{
+    return DB::transaction(function () use ($data) {
+        return Model::create($data);
+    });
+}
+
+// ✅ CORRECT - executeInTransaction (automatic logging, context)
+public function create(array $data): Model
+{
+    return $this->executeInTransaction('create', function () use ($data) {
+        $data['created_by'] = $this->getUserId();
+        return Model::create($data);
+    }, ['model_type' => 'SomeModel']);
+}
+```
+
+**Benefits of executeInTransaction():**
+
+| Aspect | Raw `DB::transaction()` | `executeInTransaction()` |
+|--------|------------------------|--------------------------|
+| **Logging** | None | Automatic operation name + context |
+| **Timing** | None | Records execution duration |
+| **User context** | Manual `auth()->id()` | Automatic via `$this->getUserId()` |
+| **Error handling** | Basic | Standardized with context |
+| **Debugging** | Hard | Easy (logs show what ran) |
+
+**Verification:**
+```bash
+# Should return 0 results (only AbstractApplicationService allowed)
+grep -rn "DB::transaction" app/Services/ | grep -v "AbstractApplicationService"
+```
+
+See: [REFACTORING_HISTORY.md](REFACTORING_HISTORY.md#p4-complete-pattern-a-migration-jan-2026)
 
 ---
 

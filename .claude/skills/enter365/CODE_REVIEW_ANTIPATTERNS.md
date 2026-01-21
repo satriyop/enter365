@@ -334,11 +334,11 @@ find app/Services -name "*.php" -exec basename {} \; | sort | uniq -d
 
 ---
 
-### 5. Pattern Drift (Multiple Service Patterns)
+### 5. Pattern Drift (Multiple Service Patterns) ✅ RESOLVED
 
-**Symptom:** Services use different base classes and transaction patterns.
+**Status:** 100% Pattern A compliance achieved (Jan 2026). All 29 services now use `executeInTransaction()`.
 
-**Real Evidence from Codebase:**
+**Previously (the problem):** Services used different base classes and transaction patterns:
 
 | Service | Pattern | Base Class | Transaction |
 |---------|---------|------------|-------------|
@@ -346,40 +346,29 @@ find app/Services -name "*.php" -exec basename {} \; | sort | uniq -d
 | `PurchaseOrderService` | B (legacy) | AbstractDocumentService | Mixed |
 | `QuotationConversionService` | C (bad) | None | Raw `DB::transaction()` |
 
-**Why It's Bad:**
-- Inconsistent logging (some ops logged, others not)
-- Inconsistent error handling
-- New devs don't know which pattern to follow
-- Testing complexity varies by pattern
+**The Fix Applied (Jan 2026):**
 
-**Solution:** Commit to Pattern A for all new services.
+All services now follow Pattern A:
+- Extend `AbstractApplicationService` (or `AbstractDocumentService` for documents)
+- Use `executeInTransaction()` for all write operations
+- Use `$this->getUserId()` instead of `auth()->id()`
 
-See: [SKILL.md - Pattern Commitment](SKILL.md#critical-pattern-commitment-read-first)
+**Services migrated in final phase:**
+- `ProductService` (2 transactions)
+- `InvoicePaymentService` (2 transactions)
+- `DownPaymentService` (8 transactions)
+- `BudgetService` (2 transactions)
+- `YearEndCloseService` (2 transactions)
+- `QuotationFollowUpService` (1 transaction)
+- `CostOptimizationService` (1 transaction)
 
-**Migration for existing Pattern C services:**
-```php
-// BEFORE
-class ConversionService
-{
-    public function convert(): Model
-    {
-        return DB::transaction(function () {
-            // No logging
-        });
-    }
-}
-
-// AFTER
-class ConversionService extends AbstractApplicationService
-{
-    public function convert(): Model
-    {
-        return $this->executeInTransaction('convert', function () {
-            // Automatic logging, context
-        });
-    }
-}
+**Verification:**
+```bash
+# Should return 0 results (only AbstractApplicationService.php allowed)
+grep -rn "DB::transaction" app/Services/ | grep -v "AbstractApplicationService"
 ```
+
+See: [SKILL.md - Pattern Commitment](SKILL.md#critical-pattern-commitment-read-first) and [REFACTORING_HISTORY.md](REFACTORING_HISTORY.md#p4-complete-pattern-a-migration-jan-2026)
 
 ---
 
@@ -425,7 +414,9 @@ grep -r "new.*Strategy" app/Services/Accounting/Strategies/
 
 ---
 
-## Pending Fixes (Jan 2026)
+## Fixes Applied (Jan 2026)
+
+All architectural issues resolved. Pattern A compliance at 100%.
 
 | Priority | Issue | File | Status |
 |----------|-------|------|--------|
@@ -436,13 +427,16 @@ grep -r "new.*Strategy" app/Services/Accounting/Strategies/
 | ~~**P2**~~ | ~~Strategy tight coupling~~ | `Strategies/Inventory/`, `Strategies/COGS/` | ✅ **FIXED** (inject via constructor) |
 | ~~**P2**~~ | ~~FiscalPeriodService `app()` fallback~~ | `FiscalPeriodService.php` | ✅ **FIXED** |
 | ~~**P2**~~ | ~~CI pattern compliance script~~ | `scripts/check-pattern-compliance.sh` | ✅ **CREATED** |
+| ~~**P3**~~ | ~~Manufacturing services Pattern A~~ | `BomService`, `BomVariantGroupService` | ✅ **FIXED** |
+| ~~**P4**~~ | ~~Complete Pattern A migration~~ | 7 remaining services | ✅ **FIXED** (18 transactions migrated) |
 
-**P0 Root Cause Fixed (Jan 2026):**
-- `AbstractDocumentService` now requires `EventDispatcherInterface` and `ContextualLoggerInterface`
-- All 6 child services updated to pass required deps explicitly
-- No more `app()` fallback in document service hierarchy
+**Final State (Jan 2026):**
+- All 29 services extend `AbstractApplicationService` or `AbstractDocumentService`
+- All services use `executeInTransaction()` for write operations
+- All services use `$this->getUserId()` instead of `auth()->id()`
+- CI script prevents regression: `scripts/check-pattern-compliance.sh`
 
-See: `/plans/fixing/pattern-drift-prevention.md` for full remediation plan.
+See: [REFACTORING_HISTORY.md](REFACTORING_HISTORY.md) for detailed migration notes.
 
 ---
 
