@@ -13,6 +13,7 @@ use App\Models\Shared\PaymentReminder;
 use App\Models\Shared\RecurringTemplate;
 use App\Models\User;
 use App\Traits\Filterable;
+use App\Traits\HasStatusHistory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -22,7 +23,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Invoice extends Model
 {
-    use Filterable, HasFactory, SoftDeletes;
+    use Filterable, HasFactory, HasStatusHistory, SoftDeletes;
 
     protected $fillable = [
         'invoice_number',
@@ -272,27 +273,48 @@ class Invoice extends Model
 
     /**
      * Update payment status based on paid amount.
+     *
+     * @deprecated Use InvoiceService::updatePaymentStatus() instead for proper state machine handling.
      */
     public function updatePaymentStatus(): void
     {
+        trigger_error(
+            'Invoice::updatePaymentStatus() is deprecated. Use InvoiceService::updatePaymentStatus() instead.',
+            E_USER_DEPRECATED
+        );
+
         if ($this->status === DocumentStatus::Cancelled) {
             return;
         }
 
+        // Determine target status
+        $targetStatus = null;
         if ($this->paid_amount >= $this->total_amount) {
-            $this->status = DocumentStatus::Paid;
+            $targetStatus = DocumentStatus::Paid;
         } elseif ($this->paid_amount > 0) {
-            $this->status = DocumentStatus::Partial;
+            $targetStatus = DocumentStatus::Partial;
         } elseif ($this->due_date < now() && $this->status !== DocumentStatus::Draft) {
-            $this->status = DocumentStatus::Overdue;
+            $targetStatus = DocumentStatus::Overdue;
+        }
+
+        // Use state machine if possible
+        if ($targetStatus && $this->stateMachine()->canTransitionTo($targetStatus)) {
+            $this->transitionTo($targetStatus);
         }
     }
 
     /**
      * Mark as overdue.
+     *
+     * @deprecated Use InvoiceService::markAsOverdue() instead for proper state machine handling.
      */
     public function markAsOverdue(): bool
     {
+        trigger_error(
+            'Invoice::markAsOverdue() is deprecated. Use InvoiceService::markAsOverdue() instead.',
+            E_USER_DEPRECATED
+        );
+
         if ($this->status === DocumentStatus::Paid || $this->status === DocumentStatus::Cancelled) {
             return false;
         }
@@ -301,10 +323,14 @@ class Invoice extends Model
             return false;
         }
 
-        $this->status = DocumentStatus::Overdue;
-        $this->save();
+        // Use state machine
+        if ($this->stateMachine()->canMarkAsOverdue()) {
+            $this->transitionTo(DocumentStatus::Overdue);
 
-        return true;
+            return true;
+        }
+
+        return false;
     }
 
     /**

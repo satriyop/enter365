@@ -288,4 +288,22 @@ class StockOpname extends Model
     {
         return $query->where('warehouse_id', $warehouseId);
     }
+
+    /**
+     * Get the stock opname state machine instance.
+     */
+    public function stateMachine(): \App\Domain\Inventory\StockOpname\StockOpnameStateMachine
+    {
+        return \App\Domain\Inventory\StockOpname\StockOpnameStateMachine::fromStockOpname($this);
+    }
+
+    /**
+     * Transition the stock opname to a new status.
+     */
+    public function transitionTo(string $status, ?int $userId = null): self
+    {
+        $this->stateMachine()->transitionTo($status, ['user_id' => $userId]);
+
+        return $this->refresh();
+    }
 }

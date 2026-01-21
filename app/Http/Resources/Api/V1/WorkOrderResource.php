@@ -2,9 +2,13 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Domain\Manufacturing\WorkOrders\WorkOrderStateMachine;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin \App\Models\Manufacturing\WorkOrder
+ */
 class WorkOrderResource extends JsonResource
 {
     /**
@@ -14,13 +18,19 @@ class WorkOrderResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $stateMachine = WorkOrderStateMachine::fromWorkOrder($this->resource);
+
         return [
             'id' => $this->id,
             'wo_number' => $this->wo_number,
             'type' => $this->type,
             'name' => $this->name,
             'description' => $this->description,
-            'status' => $this->status,
+            'status' => [
+                'value' => $this->status->value,
+                'label' => $this->status->label(),
+                'color' => $this->status->color(),
+            ],
             'priority' => $this->priority,
 
             // Quantities
@@ -96,6 +106,28 @@ class WorkOrderResource extends JsonResource
             'items' => WorkOrderItemResource::collection($this->whenLoaded('items')),
             'sub_work_orders' => WorkOrderResource::collection($this->whenLoaded('subWorkOrders')),
             'consumptions' => MaterialConsumptionResource::collection($this->whenLoaded('consumptions')),
+
+            // Workflow information (optional)
+            'workflow' => $this->when(
+                $request->boolean('include_workflow'),
+                fn () => $stateMachine->getWorkflowMetadata()
+            ),
+
+            // Status history (optional)
+            'status_history' => $this->when(
+                $request->boolean('include_history'),
+                fn () => $this->getStatusTimeline()
+            ),
+
+            // Available actions
+            'actions' => [
+                'can_edit' => $stateMachine->canEdit(),
+                'can_confirm' => $stateMachine->canConfirm(),
+                'can_start' => $stateMachine->canStart(),
+                'can_complete' => $stateMachine->canComplete(),
+                'can_cancel' => $stateMachine->canCancel(),
+                'can_delete' => $stateMachine->canDelete(),
+            ],
 
             // Timestamps
             'confirmed_at' => $this->confirmed_at?->toIso8601String(),

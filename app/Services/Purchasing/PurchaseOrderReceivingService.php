@@ -17,10 +17,15 @@ class PurchaseOrderReceivingService
 {
     /**
      * Update receiving status based on items.
+     *
+     * Uses state machine for status transitions to ensure proper
+     * event dispatch and timestamp management.
      */
     public function updateReceivingStatus(PurchaseOrder $po): PurchaseOrder
     {
-        if (! in_array($po->status, [DocumentStatus::Approved, DocumentStatus::Partial])) {
+        $stateMachine = $po->stateMachine();
+
+        if (! $stateMachine->canReceive()) {
             return $po;
         }
 
@@ -28,17 +33,16 @@ class PurchaseOrderReceivingService
             $isFullyReceived = $po->isFullyReceived();
             $hasReceivedItems = $po->hasReceivedItems();
 
-            if ($isFullyReceived) {
-                $po->status = DocumentStatus::Received;
-                $po->fully_received_at = now();
-            } elseif ($hasReceivedItems) {
-                $po->status = DocumentStatus::Partial;
-                if (! $po->first_received_at) {
-                    $po->first_received_at = now();
-                }
+            // Determine target status based on receiving state
+            if ($isFullyReceived && $po->status !== DocumentStatus::Received) {
+                // Fully received - transition to Received
+                // State machine handles fully_received_at timestamp
+                $po->transitionTo(DocumentStatus::Received, auth()->id());
+            } elseif ($hasReceivedItems && $po->status === DocumentStatus::Approved) {
+                // Partial receive - transition to Partial
+                // State machine handles first_received_at timestamp
+                $po->transitionTo(DocumentStatus::Partial, auth()->id());
             }
-
-            $po->save();
 
             return $po->fresh();
         });

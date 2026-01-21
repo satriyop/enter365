@@ -10,7 +10,6 @@ use App\Domain\Sales\Invoices\Events\InvoiceSent;
 use App\Domain\Sales\Invoices\Events\InvoiceStatusChanged;
 use App\Domain\Sales\Invoices\Events\InvoiceVoided;
 use App\Enums\DocumentStatus;
-use App\Exceptions\Domain\StateTransitionException;
 use App\Models\Sales\Invoice;
 
 class InvoiceStateMachine extends AbstractStateMachine
@@ -19,8 +18,8 @@ class InvoiceStateMachine extends AbstractStateMachine
 
     public function __construct(Invoice $invoice, ?EventDispatcherInterface $eventDispatcher = null)
     {
-        parent::__construct($invoice->status, $eventDispatcher);
         $this->invoice = $invoice;
+        parent::__construct($invoice->status, $eventDispatcher);
     }
 
     public static function fromInvoice(
@@ -28,6 +27,140 @@ class InvoiceStateMachine extends AbstractStateMachine
         ?EventDispatcherInterface $eventDispatcher = null
     ): self {
         return new self($invoice, $eventDispatcher);
+    }
+
+    protected function registerGuards(): void
+    {
+        // Guard: Can only post (send) if has items
+        $this->addGuard(
+            DocumentStatus::Draft->value,
+            DocumentStatus::Sent->value,
+            fn () => [
+                'passes' => $this->invoice->items()->exists(),
+                'message' => 'Faktur tidak memiliki item.',
+            ]
+        );
+
+        // Guard: Can only mark paid if fully paid
+        $this->addGuard(
+            DocumentStatus::Sent->value,
+            DocumentStatus::Paid->value,
+            fn () => [
+                'passes' => $this->invoice->paid_amount >= $this->invoice->total_amount,
+                'message' => 'Jumlah pembayaran belum mencukupi.',
+            ]
+        );
+
+        $this->addGuard(
+            DocumentStatus::Partial->value,
+            DocumentStatus::Paid->value,
+            fn () => [
+                'passes' => $this->invoice->paid_amount >= $this->invoice->total_amount,
+                'message' => 'Jumlah pembayaran belum mencukupi.',
+            ]
+        );
+
+        $this->addGuard(
+            DocumentStatus::Overdue->value,
+            DocumentStatus::Paid->value,
+            fn () => [
+                'passes' => $this->invoice->paid_amount >= $this->invoice->total_amount,
+                'message' => 'Jumlah pembayaran belum mencukupi.',
+            ]
+        );
+
+        // Guard: Can only mark overdue if past due date
+        $this->addGuard(
+            DocumentStatus::Sent->value,
+            DocumentStatus::Overdue->value,
+            fn () => [
+                'passes' => $this->invoice->due_date->isPast(),
+                'message' => 'Faktur belum melewati tanggal jatuh tempo.',
+            ]
+        );
+
+        $this->addGuard(
+            DocumentStatus::Partial->value,
+            DocumentStatus::Overdue->value,
+            fn () => [
+                'passes' => $this->invoice->due_date->isPast(),
+                'message' => 'Faktur belum melewati tanggal jatuh tempo.',
+            ]
+        );
+
+        // Guard: Can only mark partial if has partial payment
+        $this->addGuard(
+            DocumentStatus::Sent->value,
+            DocumentStatus::Partial->value,
+            fn () => [
+                'passes' => $this->invoice->paid_amount > 0 && $this->invoice->paid_amount < $this->invoice->total_amount,
+                'message' => 'Status partial membutuhkan pembayaran sebagian.',
+            ]
+        );
+
+        $this->addGuard(
+            DocumentStatus::Overdue->value,
+            DocumentStatus::Partial->value,
+            fn () => [
+                'passes' => $this->invoice->paid_amount > 0 && $this->invoice->paid_amount < $this->invoice->total_amount,
+                'message' => 'Status partial membutuhkan pembayaran sebagian.',
+            ]
+        );
+    }
+
+    protected function registerActions(): void
+    {
+        // Action: Fire InvoiceSent when posted
+        $this->addAction(
+            DocumentStatus::Draft->value,
+            DocumentStatus::Sent->value,
+            fn () => $this->eventDispatcher->dispatch(
+                InvoiceSent::fromInvoice($this->invoice, $this->getContextUserId())
+            )
+        );
+
+        // Action: Fire InvoiceVoided when cancelled
+        $this->addAction(
+            DocumentStatus::Sent->value,
+            DocumentStatus::Cancelled->value,
+            fn () => $this->eventDispatcher->dispatch(
+                InvoiceVoided::fromInvoice($this->invoice, $this->getContextUserId())
+            )
+        );
+
+        $this->addAction(
+            DocumentStatus::Partial->value,
+            DocumentStatus::Cancelled->value,
+            fn () => $this->eventDispatcher->dispatch(
+                InvoiceVoided::fromInvoice($this->invoice, $this->getContextUserId())
+            )
+        );
+
+        $this->addAction(
+            DocumentStatus::Paid->value,
+            DocumentStatus::Cancelled->value,
+            fn () => $this->eventDispatcher->dispatch(
+                InvoiceVoided::fromInvoice($this->invoice, $this->getContextUserId())
+            )
+        );
+
+        $this->addAction(
+            DocumentStatus::Overdue->value,
+            DocumentStatus::Cancelled->value,
+            fn () => $this->eventDispatcher->dispatch(
+                InvoiceVoided::fromInvoice($this->invoice, $this->getContextUserId())
+            )
+        );
+    }
+
+    protected function recordHistory(DocumentStatus $from, DocumentStatus $to): void
+    {
+        $this->invoice->recordStatusChange(
+            $from->value,
+            $to->value,
+            $this->getContextUserId(),
+            $this->transitionContext
+        );
     }
 
     protected function getTransitions(): array
@@ -92,43 +225,31 @@ class InvoiceStateMachine extends AbstractStateMachine
         return InvoiceStatusChanged::class;
     }
 
+    // Business rule helpers (delegate to canTransitionTo with guards)
+
     public function canPost(): bool
     {
-        return $this->currentStatus === DocumentStatus::Draft
-            && $this->invoice->items()->exists();
+        return $this->canTransitionTo(DocumentStatus::Sent);
     }
 
     public function canMarkAsPartial(): bool
     {
-        if ($this->currentStatus === DocumentStatus::Partial) {
-            return true;
-        }
-
-        return in_array($this->currentStatus, [DocumentStatus::Sent, DocumentStatus::Overdue], true)
-            && $this->invoice->paid_amount > 0
-            && $this->invoice->paid_amount < $this->invoice->total_amount;
+        return $this->canTransitionTo(DocumentStatus::Partial);
     }
 
     public function canMarkAsPaid(): bool
     {
-        return $this->invoice->paid_amount >= $this->invoice->total_amount;
+        return $this->canTransitionTo(DocumentStatus::Paid);
     }
 
     public function canMarkAsOverdue(): bool
     {
-        return in_array($this->currentStatus, [DocumentStatus::Sent, DocumentStatus::Partial], true)
-            && $this->invoice->due_date->isPast();
+        return $this->canTransitionTo(DocumentStatus::Overdue);
     }
 
-    public function canVoid(): bool
+    public function canCancel(): bool
     {
-        return in_array($this->currentStatus, [
-            DocumentStatus::Draft,
-            DocumentStatus::Sent,
-            DocumentStatus::Partial,
-            DocumentStatus::Paid,
-            DocumentStatus::Overdue,
-        ], true);
+        return $this->canTransitionTo(DocumentStatus::Cancelled);
     }
 
     public function canEdit(): bool
@@ -142,31 +263,11 @@ class InvoiceStateMachine extends AbstractStateMachine
             && ! $this->invoice->payments()->exists();
     }
 
-    public function canCancel(): bool
+    /**
+     * Get the invoice model.
+     */
+    public function getInvoice(): Invoice
     {
-        return in_array($this->currentStatus, [
-            DocumentStatus::Draft,
-            DocumentStatus::Sent,
-            DocumentStatus::Partial,
-            DocumentStatus::Paid,
-            DocumentStatus::Overdue,
-        ], true);
-    }
-
-    protected function beforeSent(DocumentStatus $from, DocumentStatus $to): void
-    {
-        if (! $this->invoice->items()->exists()) {
-            throw StateTransitionException::actionNotAvailable('kirim', 'draft', 'Faktur tidak memiliki item.');
-        }
-    }
-
-    protected function afterSent(DocumentStatus $from, DocumentStatus $to): void
-    {
-        $this->eventDispatcher->dispatch(InvoiceSent::fromInvoice($this->invoice, $this->getContextUserId()));
-    }
-
-    protected function afterVoid(DocumentStatus $from, DocumentStatus $to): void
-    {
-        $this->eventDispatcher->dispatch(InvoiceVoided::fromInvoice($this->invoice, $this->getContextUserId()));
+        return $this->invoice;
     }
 }

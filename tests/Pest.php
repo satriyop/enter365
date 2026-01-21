@@ -1,6 +1,12 @@
 <?php
 
+use App\Enums\DocumentStatus;
+use App\Models\Contacts\Contact;
 use App\Models\Core\Role;
+use App\Models\Manufacturing\WorkOrder;
+use App\Models\Manufacturing\WorkOrderItem;
+use App\Models\Sales\Invoice;
+use App\Models\Sales\InvoiceItem;
 use App\Models\User;
 use Laravel\Sanctum\Sanctum;
 
@@ -18,6 +24,9 @@ use Laravel\Sanctum\Sanctum;
 pest()->extend(Tests\TestCase::class)
     // ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
     ->in('Feature');
+
+pest()->extend(Tests\TestCase::class)
+    ->in('Unit');
 
 /*
 |--------------------------------------------------------------------------
@@ -96,4 +105,79 @@ function withoutFeatures(array $features): void
     foreach ($features as $feature) {
         config(["features.modules.{$feature}" => false]);
     }
+}
+
+/*
+|--------------------------------------------------------------------------
+| Domain Test Helpers
+|--------------------------------------------------------------------------
+|
+| These helpers create common domain objects for testing.
+|
+*/
+
+/**
+ * Create a draft invoice with items.
+ */
+function createDraftInvoiceWithItems(int $itemCount = 2): Invoice
+{
+    return Invoice::factory()
+        ->has(InvoiceItem::factory()->count($itemCount))
+        ->draft()
+        ->create();
+}
+
+/**
+ * Create a draft invoice without items.
+ */
+function createDraftInvoice(): Invoice
+{
+    return Invoice::factory()->draft()->create();
+}
+
+/**
+ * Create a sent invoice with items.
+ */
+function createSentInvoice(int $itemCount = 1): Invoice
+{
+    return Invoice::factory()
+        ->has(InvoiceItem::factory()->count($itemCount))
+        ->sent()
+        ->create();
+}
+
+/**
+ * Create a customer contact.
+ */
+function createCustomer(): Contact
+{
+    return Contact::factory()->customer()->create();
+}
+
+/**
+ * Create a vendor contact.
+ */
+function createVendor(): Contact
+{
+    return Contact::factory()->vendor()->create();
+}
+
+/**
+ * Create a draft work order with items.
+ */
+function createDraftWorkOrderWithItems(int $itemCount = 2): WorkOrder
+{
+    return WorkOrder::factory()
+        ->has(WorkOrderItem::factory()->count($itemCount))
+        ->create(['status' => DocumentStatus::Draft]);
+}
+
+/**
+ * Create a confirmed work order.
+ */
+function createConfirmedWorkOrder(): WorkOrder
+{
+    return WorkOrder::factory()
+        ->has(WorkOrderItem::factory())
+        ->create(['status' => DocumentStatus::Confirmed]);
 }

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\PublicCompanyProfileController;
 use App\Http\Controllers\Api\PublicSolarCalculatorController;
 use App\Http\Controllers\Api\PublicSolarProposalController;
@@ -63,6 +64,15 @@ use Illuminate\Support\Facades\Route;
 | Following SAK EMKM (Standar Akuntansi Keuangan Entitas Mikro, Kecil, dan Menengah)
 |
 */
+
+/*
+|--------------------------------------------------------------------------
+| Health Check Routes (No Authentication Required)
+|--------------------------------------------------------------------------
+*/
+Route::get('/health', [HealthController::class, 'check']);
+Route::get('/health/ready', [HealthController::class, 'ready']);
+Route::get('/health/live', [HealthController::class, 'live']);
 
 Route::prefix('v1')->group(function () {
 

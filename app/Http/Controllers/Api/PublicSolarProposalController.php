@@ -6,11 +6,16 @@ use App\Enums\DocumentStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\SolarProposalResource;
 use App\Models\Solar\SolarProposal;
+use App\Services\Solar\SolarProposalService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class PublicSolarProposalController extends Controller
 {
+    public function __construct(
+        private SolarProposalService $proposalService
+    ) {}
+
     /**
      * Show a solar proposal by public token.
      *
@@ -61,7 +66,7 @@ class PublicSolarProposalController extends Controller
             ], 410);
         }
 
-        if (! $proposal->canAccept()) {
+        if (! $proposal->stateMachine()->canAccept()) {
             return response()->json([
                 'message' => 'Proposal tidak dapat diterima.',
                 'reason' => match ($proposal->status) {
@@ -74,10 +79,8 @@ class PublicSolarProposalController extends Controller
             ], 422);
         }
 
-        $proposal->update([
-            'status' => DocumentStatus::Accepted,
-            'accepted_at' => now(),
-        ]);
+        // Use service for proper state machine handling
+        $proposal = $this->proposalService->accept($proposal);
 
         return response()->json([
             'message' => 'Proposal berhasil diterima.',
@@ -110,7 +113,7 @@ class PublicSolarProposalController extends Controller
             ], 410);
         }
 
-        if (! $proposal->canReject()) {
+        if (! $proposal->stateMachine()->canReject()) {
             return response()->json([
                 'message' => 'Proposal tidak dapat ditolak.',
                 'reason' => match ($proposal->status) {
@@ -123,11 +126,8 @@ class PublicSolarProposalController extends Controller
             ], 422);
         }
 
-        $proposal->update([
-            'status' => DocumentStatus::Rejected,
-            'rejected_at' => now(),
-            'rejection_reason' => $request->input('reason'),
-        ]);
+        // Use service for proper state machine handling
+        $proposal = $this->proposalService->reject($proposal, $request->input('reason'));
 
         return response()->json([
             'message' => 'Proposal berhasil ditolak.',

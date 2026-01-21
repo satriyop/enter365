@@ -305,21 +305,18 @@ class SolarProposalService implements SolarProposalServiceInterface
      */
     public function send(SolarProposal $proposal): SolarProposal
     {
-        if (! $proposal->canSend()) {
+        $stateMachine = $proposal->stateMachine();
+
+        if (! $stateMachine->canSend()) {
             throw new InvalidArgumentException(
                 'Proposal tidak dapat dikirim. Pastikan variant group sudah dipilih dan kalkulasi sudah selesai.'
             );
         }
 
         return DB::transaction(function () use ($proposal) {
-            $proposal->status = DocumentStatus::Sent;
-            $proposal->sent_at = now();
-
-            // Generate public token for customer portal
-            $proposal->public_token = \Illuminate\Support\Str::uuid()->toString();
-            $proposal->public_token_expires_at = $proposal->valid_until;
-
-            $proposal->save();
+            // Use state machine for status transition
+            // State machine handles sent_at, public_token, public_token_expires_at
+            $proposal->transitionTo(DocumentStatus::Sent, auth()->id());
 
             return $proposal->fresh();
         });
@@ -332,7 +329,9 @@ class SolarProposalService implements SolarProposalServiceInterface
      */
     public function accept(SolarProposal $proposal, ?int $selectedBomId = null): SolarProposal
     {
-        if (! $proposal->canAccept()) {
+        $stateMachine = $proposal->stateMachine();
+
+        if (! $stateMachine->canAccept()) {
             throw new InvalidArgumentException('Proposal tidak dapat diterima dalam status saat ini.');
         }
 
@@ -342,12 +341,13 @@ class SolarProposalService implements SolarProposalServiceInterface
                 $bom = Bom::find($selectedBomId);
                 if ($bom && $bom->variant_group_id === $proposal->variant_group_id) {
                     $proposal->selected_bom_id = $selectedBomId;
+                    $proposal->save();
                 }
             }
 
-            $proposal->status = DocumentStatus::Accepted;
-            $proposal->accepted_at = now();
-            $proposal->save();
+            // Use state machine for status transition
+            // State machine handles accepted_at
+            $proposal->transitionTo(DocumentStatus::Accepted);
 
             return $proposal->fresh(['contact', 'selectedBom']);
         });
@@ -358,15 +358,16 @@ class SolarProposalService implements SolarProposalServiceInterface
      */
     public function reject(SolarProposal $proposal, ?string $reason = null): SolarProposal
     {
-        if (! $proposal->canReject()) {
+        $stateMachine = $proposal->stateMachine();
+
+        if (! $stateMachine->canReject()) {
             throw new InvalidArgumentException('Proposal tidak dapat ditolak dalam status saat ini.');
         }
 
         return DB::transaction(function () use ($proposal, $reason) {
-            $proposal->status = DocumentStatus::Rejected;
-            $proposal->rejected_at = now();
-            $proposal->rejection_reason = $reason;
-            $proposal->save();
+            // Use state machine for status transition
+            // State machine handles rejected_at and rejection_reason via context
+            $proposal->transitionTo(DocumentStatus::Rejected, null, ['rejection_reason' => $reason]);
 
             return $proposal->fresh();
         });

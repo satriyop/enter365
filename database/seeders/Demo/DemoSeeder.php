@@ -2,12 +2,14 @@
 
 namespace Database\Seeders\Demo;
 
+use Database\Seeders\ChartOfAccountsSeeder;
 use Database\Seeders\Demo\Nex\NexContactSeeder;
 use Database\Seeders\Demo\Nex\NexProductSeeder;
 use Database\Seeders\Demo\Nex\NexTransactionSeeder;
 use Database\Seeders\Demo\Vahana\VahanaContactSeeder;
 use Database\Seeders\Demo\Vahana\VahanaProductSeeder;
 use Database\Seeders\Demo\Vahana\VahanaTransactionSeeder;
+use Database\Seeders\FiscalPeriodSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Database\Seeder;
 
@@ -52,6 +54,15 @@ class DemoSeeder extends Seeder
         $this->command->info('╚═══════════════════════════════════════════════════════════════════╝');
         $this->command->info('');
 
+        // Ensure foundation data exists
+        $this->command->info('📅 Ensuring Fiscal Periods...');
+        $this->call(FiscalPeriodSeeder::class);
+        $this->command->info('');
+
+        $this->command->info('📊 Ensuring Chart of Accounts...');
+        $this->call(ChartOfAccountsSeeder::class);
+        $this->command->info('');
+
         // Ensure roles and permissions exist (required for user role assignment)
         $this->command->info('🔐 Ensuring Roles & Permissions...');
         $this->call(RolesAndPermissionsSeeder::class);
@@ -77,6 +88,10 @@ class DemoSeeder extends Seeder
             $this->seedNex();
         }
 
+        // Seed extended feature data (Projects, Down Payments, Work Orders, Stock Opnames)
+        $this->command->info('📊 Seeding Extended Features (Projects, Down Payments, Work Orders, Stock Opnames)...');
+        $this->call(DemoExtendedTransactionSeeder::class);
+
         $this->showCompletionMessage($demoChoice);
     }
 
@@ -90,25 +105,25 @@ class DemoSeeder extends Seeder
             return app('demo.choice');
         }
 
-        // Check if running in non-interactive mode (e.g., CI/CD)
-        if (! $this->command->input->isInteractive()) {
+        // Try to use interactive prompt, fall back to DEMO_ALL if not available
+        try {
+            $this->command->info('');
+            $this->command->info('Which demo data would you like to seed?');
+            $this->command->info('');
+
+            return $this->command->choice(
+                'Select demo data',
+                [
+                    self::DEMO_VAHANA => '⚡ Vahana - Electrical Panel Maker (vahana.co.id)',
+                    self::DEMO_NEX => '☀️  NEX - Solar EPC Contractor (energimasadepan.com)',
+                    self::DEMO_ALL => '🔄 Both - Vahana + NEX (full demo)',
+                ],
+                self::DEMO_ALL
+            );
+        } catch (\Throwable) {
+            // Non-interactive mode (e.g., migrate:fresh --seed, CI/CD)
             return self::DEMO_ALL;
         }
-
-        // Interactive prompt
-        $this->command->info('');
-        $this->command->info('Which demo data would you like to seed?');
-        $this->command->info('');
-
-        return $this->command->choice(
-            'Select demo data',
-            [
-                self::DEMO_VAHANA => '⚡ Vahana - Electrical Panel Maker (vahana.co.id)',
-                self::DEMO_NEX => '☀️  NEX - Solar EPC Contractor (energimasadepan.com)',
-                self::DEMO_ALL => '🔄 Both - Vahana + NEX (full demo)',
-            ],
-            self::DEMO_ALL
-        );
     }
 
     /**

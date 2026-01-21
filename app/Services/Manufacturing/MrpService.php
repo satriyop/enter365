@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Services\Manufacturing;
 
 use App\Contracts\Manufacturing\MrpServiceInterface;
+use App\Domain\Manufacturing\MrpRuns\Events\MrpRunCompleted;
+use App\Domain\Manufacturing\MrpRuns\Events\MrpRunFailed;
+use App\Domain\Manufacturing\MrpRuns\Events\MrpRunStarted;
 use App\Enums\DocumentStatus;
 use App\Models\Manufacturing\MrpRun;
 use Illuminate\Support\Facades\DB;
@@ -50,9 +53,14 @@ class MrpService implements MrpServiceInterface
             throw new InvalidArgumentException('Hanya MRP run dalam status draft yang dapat dijalankan.');
         }
 
-        return DB::transaction(function () use ($run) {
+        $userId ??= auth()->id();
+
+        return DB::transaction(function () use ($run, $userId) {
             $run->status = DocumentStatus::Processing;
             $run->save();
+
+            // Dispatch started event
+            event(MrpRunStarted::fromMrpRun($run, $userId));
 
             try {
                 // Step 1: Collect demands from work orders
@@ -74,10 +82,17 @@ class MrpService implements MrpServiceInterface
                 $run->completed_at = now();
                 $run->save();
 
+                // Dispatch completed event
+                event(MrpRunCompleted::fromMrpRun($run, $userId));
+
                 return $run->fresh(['demands', 'suggestions', 'warehouse']);
             } catch (\Exception $e) {
                 $run->status = DocumentStatus::Draft;
                 $run->save();
+
+                // Dispatch failed event
+                event(MrpRunFailed::fromMrpRun($run, $e, $userId));
+
                 throw $e;
             }
         });

@@ -73,8 +73,10 @@ use App\Support\ConfigFeatureManager;
 use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\OpenApi;
 use Dedoc\Scramble\Support\Generator\SecurityScheme;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
-use Illuminate\Support\Facades\Event;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -99,6 +101,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(
             \App\Contracts\Events\EventDispatcherInterface::class,
             \App\Infrastructure\Events\LaravelEventDispatcher::class
+        );
+
+        $this->app->singleton(
+            \App\Contracts\Logging\ContextualLoggerInterface::class,
+            \App\Infrastructure\Logging\LaravelContextualLogger::class
         );
     }
 
@@ -192,6 +199,19 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(MrpServiceInterface::class, MrpService::class);
         $this->app->bind(SubcontractorServiceInterface::class, SubcontractorService::class);
 
+        // Register WorkOrderCompletionPipeline with handlers
+        $this->app->bind(
+            \App\Domain\Manufacturing\WorkOrders\Handlers\WorkOrderCompletionPipeline::class,
+            function ($app) {
+                $pipeline = new \App\Domain\Manufacturing\WorkOrders\Handlers\WorkOrderCompletionPipeline;
+                $pipeline->addHandler($app->make(\App\Domain\Manufacturing\WorkOrders\Handlers\MaterialConsumptionHandler::class));
+                $pipeline->addHandler($app->make(\App\Domain\Manufacturing\WorkOrders\Handlers\FinishedGoodsHandler::class));
+                $pipeline->addHandler($app->make(\App\Domain\Manufacturing\WorkOrders\Handlers\CostCalculationHandler::class));
+
+                return $pipeline;
+            }
+        );
+
         // Inventory Domain (3 services)
         $this->app->bind(InventoryServiceInterface::class, InventoryService::class);
         $this->app->bind(StockOpnameServiceInterface::class, StockOpnameService::class);
@@ -214,7 +234,10 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureMorphMap();
-        $this->registerEventListeners();
+        $this->configureRateLimiting();
+
+        // Events are now handled by EventServiceProvider via subscribers
+        // See: app/Providers/EventServiceProvider.php
 
         Scramble::configure()
             ->withDocumentTransformers(function (OpenApi $openApi) {
@@ -226,294 +249,35 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Register event listeners for the application.
+     * Configure API rate limiting.
+     *
+     * Defines rate limiters for different API endpoint categories:
+     * - api: Standard API rate limit (60 req/min)
+     * - auth: Strict limit for authentication (5 req/min)
+     * - reports: Heavy operations (10 req/min)
+     * - exports: File exports (5 req/min)
      */
-    private function registerEventListeners(): void
+    private function configureRateLimiting(): void
     {
-        // Sales Domain Event Listeners
-        Event::listen(
-            \App\Domain\Sales\Invoices\Events\InvoiceStatusChanged::class,
-            \App\Infrastructure\Listeners\Sales\LogInvoiceActivity::class
-        );
+        // Standard API rate limit
+        RateLimiter::for('api', function (Request $request) {
+            return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+        });
 
-        Event::listen(
-            \App\Domain\Sales\Invoices\Events\InvoiceSent::class,
-            \App\Infrastructure\Listeners\Sales\LogInvoiceActivity::class
-        );
+        // Strict rate limit for auth endpoints (login, register, password reset)
+        RateLimiter::for('auth', function (Request $request) {
+            return Limit::perMinute(5)->by($request->ip());
+        });
 
-        Event::listen(
-            \App\Domain\Sales\Invoices\Events\InvoiceSent::class,
-            \App\Infrastructure\Listeners\Sales\NotifyCustomerOnInvoiceSent::class
-        );
+        // Heavy operations (reports, statistics, dashboard)
+        RateLimiter::for('reports', function (Request $request) {
+            return Limit::perMinute(10)->by($request->user()?->id ?: $request->ip());
+        });
 
-        Event::listen(
-            \App\Domain\Sales\Invoices\Events\InvoiceVoided::class,
-            \App\Infrastructure\Listeners\Sales\LogInvoiceActivity::class
-        );
-
-        // Purchasing Domain Event Listeners
-        Event::listen(
-            \App\Domain\Purchasing\Bills\Events\BillStatusChanged::class,
-            \App\Infrastructure\Listeners\Purchasing\LogBillActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Purchasing\Bills\Events\BillReceived::class,
-            \App\Infrastructure\Listeners\Purchasing\LogBillActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Purchasing\Bills\Events\BillReceived::class,
-            \App\Infrastructure\Listeners\Purchasing\NotifyAccountPayableOnBillReceived::class
-        );
-
-        Event::listen(
-            \App\Domain\Purchasing\Bills\Events\BillVoided::class,
-            \App\Infrastructure\Listeners\Purchasing\LogBillActivity::class
-        );
-
-        // Sales Domain - Quotation Event Listeners
-        Event::listen(
-            \App\Domain\Sales\Quotations\Events\QuotationStatusChanged::class,
-            \App\Infrastructure\Listeners\Sales\LogQuotationActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Sales\Quotations\Events\QuotationSubmitted::class,
-            \App\Infrastructure\Listeners\Sales\LogQuotationActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Sales\Quotations\Events\QuotationApproved::class,
-            \App\Infrastructure\Listeners\Sales\LogQuotationActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Sales\Quotations\Events\QuotationRejected::class,
-            \App\Infrastructure\Listeners\Sales\LogQuotationActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Sales\Quotations\Events\QuotationConverted::class,
-            \App\Infrastructure\Listeners\Sales\LogQuotationActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Sales\Quotations\Events\QuotationExpired::class,
-            \App\Infrastructure\Listeners\Sales\LogQuotationActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Sales\Quotations\Events\QuotationApproved::class,
-            \App\Infrastructure\Listeners\Sales\NotifyCustomerOnQuotationApproved::class
-        );
-
-        Event::listen(
-            \App\Domain\Sales\Quotations\Events\QuotationSubmitted::class,
-            \App\Infrastructure\Listeners\Sales\NotifySalesTeamOnQuotationSubmitted::class
-        );
-
-        Event::listen(
-            \App\Domain\Sales\Quotations\Events\QuotationWon::class,
-            \App\Infrastructure\Listeners\Sales\NotifySalesTeamOnQuotationWon::class
-        );
-
-        // Purchasing Domain - Purchase Order Event Listeners
-        Event::listen(
-            \App\Domain\Purchasing\PurchaseOrders\Events\PurchaseOrderStatusChanged::class,
-            \App\Infrastructure\Listeners\Purchasing\LogPurchaseOrderActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Purchasing\PurchaseOrders\Events\PurchaseOrderSubmitted::class,
-            \App\Infrastructure\Listeners\Purchasing\LogPurchaseOrderActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Purchasing\PurchaseOrders\Events\PurchaseOrderApproved::class,
-            \App\Infrastructure\Listeners\Purchasing\LogPurchaseOrderActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Purchasing\PurchaseOrders\Events\PurchaseOrderRejected::class,
-            \App\Infrastructure\Listeners\Purchasing\LogPurchaseOrderActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Purchasing\PurchaseOrders\Events\PurchaseOrderCancelled::class,
-            \App\Infrastructure\Listeners\Purchasing\LogPurchaseOrderActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Purchasing\PurchaseOrders\Events\PurchaseOrderPartial::class,
-            \App\Infrastructure\Listeners\Purchasing\LogPurchaseOrderActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Purchasing\PurchaseOrders\Events\PurchaseOrderReceived::class,
-            \App\Infrastructure\Listeners\Purchasing\LogPurchaseOrderActivity::class
-        );
-
-        // Sales Domain - Delivery Order Event Listeners
-        Event::listen(
-            \App\Domain\Sales\DeliveryOrders\Events\DeliveryOrderStatusChanged::class,
-            \App\Infrastructure\Listeners\Sales\LogDeliveryOrderActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Sales\DeliveryOrders\Events\DeliveryOrderConfirmed::class,
-            \App\Infrastructure\Listeners\Sales\LogDeliveryOrderActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Sales\DeliveryOrders\Events\DeliveryOrderShipped::class,
-            \App\Infrastructure\Listeners\Sales\LogDeliveryOrderActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Sales\DeliveryOrders\Events\DeliveryOrderDelivered::class,
-            \App\Infrastructure\Listeners\Sales\LogDeliveryOrderActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Sales\DeliveryOrders\Events\DeliveryOrderCancelled::class,
-            \App\Infrastructure\Listeners\Sales\LogDeliveryOrderActivity::class
-        );
-
-        // Manufacturing Domain - Work Order Event Listeners
-        Event::listen(
-            \App\Domain\Manufacturing\WorkOrders\Events\WorkOrderStatusChanged::class,
-            \App\Infrastructure\Listeners\Manufacturing\LogWorkOrderActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Manufacturing\WorkOrders\Events\WorkOrderConfirmed::class,
-            \App\Infrastructure\Listeners\Manufacturing\LogWorkOrderActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Manufacturing\WorkOrders\Events\WorkOrderStarted::class,
-            \App\Infrastructure\Listeners\Manufacturing\LogWorkOrderActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Manufacturing\WorkOrders\Events\WorkOrderCompleted::class,
-            \App\Infrastructure\Listeners\Manufacturing\LogWorkOrderActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Manufacturing\WorkOrders\Events\WorkOrderCancelled::class,
-            \App\Infrastructure\Listeners\Manufacturing\LogWorkOrderActivity::class
-        );
-
-        // Manufacturing Domain - Material Requisition Event Listeners
-        Event::listen(
-            \App\Domain\Manufacturing\MaterialRequisitions\Events\MaterialRequisitionStatusChanged::class,
-            \App\Infrastructure\Listeners\Manufacturing\LogMaterialRequisitionActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Manufacturing\MaterialRequisitions\Events\MaterialRequisitionApproved::class,
-            \App\Infrastructure\Listeners\Manufacturing\LogMaterialRequisitionActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Manufacturing\MaterialRequisitions\Events\MaterialRequisitionIssued::class,
-            \App\Infrastructure\Listeners\Manufacturing\LogMaterialRequisitionActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Manufacturing\MaterialRequisitions\Events\MaterialRequisitionCancelled::class,
-            \App\Infrastructure\Listeners\Manufacturing\LogMaterialRequisitionActivity::class
-        );
-
-        // Sales Domain - Sales Return Event Listeners
-        Event::listen(
-            \App\Domain\Sales\SalesReturns\Events\SalesReturnStatusChanged::class,
-            \App\Infrastructure\Listeners\Sales\LogSalesReturnActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Sales\SalesReturns\Events\SalesReturnSubmitted::class,
-            \App\Infrastructure\Listeners\Sales\LogSalesReturnActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Sales\SalesReturns\Events\SalesReturnApproved::class,
-            \App\Infrastructure\Listeners\Sales\LogSalesReturnActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Sales\SalesReturns\Events\SalesReturnRejected::class,
-            \App\Infrastructure\Listeners\Sales\LogSalesReturnActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Sales\SalesReturns\Events\SalesReturnCompleted::class,
-            \App\Infrastructure\Listeners\Sales\LogSalesReturnActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Sales\SalesReturns\Events\SalesReturnCancelled::class,
-            \App\Infrastructure\Listeners\Sales\LogSalesReturnActivity::class
-        );
-
-        // Projects Domain - Project Event Listeners
-        Event::listen(
-            \App\Domain\Projects\Events\ProjectStatusChanged::class,
-            \App\Infrastructure\Listeners\Projects\LogProjectActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Projects\Events\ProjectStarted::class,
-            \App\Infrastructure\Listeners\Projects\LogProjectActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Projects\Events\ProjectOnHold::class,
-            \App\Infrastructure\Listeners\Projects\LogProjectActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Projects\Events\ProjectResumed::class,
-            \App\Infrastructure\Listeners\Projects\LogProjectActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Projects\Events\ProjectCompleted::class,
-            \App\Infrastructure\Listeners\Projects\LogProjectActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Projects\Events\ProjectCancelled::class,
-            \App\Infrastructure\Listeners\Projects\LogProjectActivity::class
-        );
-
-        // Manufacturing Domain - Subcontractor Work Order Event Listeners
-        Event::listen(
-            \App\Domain\Manufacturing\SubcontractorWorkOrders\Events\SubcontractorWorkOrderStatusChanged::class,
-            \App\Infrastructure\Listeners\Manufacturing\LogSubcontractorWorkOrderActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Manufacturing\SubcontractorWorkOrders\Events\SubcontractorWorkOrderAssigned::class,
-            \App\Infrastructure\Listeners\Manufacturing\LogSubcontractorWorkOrderActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Manufacturing\SubcontractorWorkOrders\Events\SubcontractorWorkOrderStarted::class,
-            \App\Infrastructure\Listeners\Manufacturing\LogSubcontractorWorkOrderActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Manufacturing\SubcontractorWorkOrders\Events\SubcontractorWorkOrderCompleted::class,
-            \App\Infrastructure\Listeners\Manufacturing\LogSubcontractorWorkOrderActivity::class
-        );
-
-        Event::listen(
-            \App\Domain\Manufacturing\SubcontractorWorkOrders\Events\SubcontractorWorkOrderCancelled::class,
-            \App\Infrastructure\Listeners\Manufacturing\LogSubcontractorWorkOrderActivity::class
-        );
+        // Export operations (PDF, Excel, CSV)
+        RateLimiter::for('exports', function (Request $request) {
+            return Limit::perMinute(5)->by($request->user()?->id ?: $request->ip());
+        });
     }
 
     /**

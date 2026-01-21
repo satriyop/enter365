@@ -22,20 +22,20 @@ class StockOpnameFactory extends Factory
     public function definition(): array
     {
         $date = now()->format('Ymd');
-        $unique = $this->faker->unique()->numberBetween(1, 9999);
+        $unique = fake()->unique()->numberBetween(1, 9999);
 
         return [
             'opname_number' => "SO-{$date}-".str_pad($unique, 4, '0', STR_PAD_LEFT),
             'warehouse_id' => Warehouse::factory(),
-            'opname_date' => $this->faker->dateTimeBetween('-1 month', 'now'),
+            'opname_date' => fake()->dateTimeBetween('-1 month', 'now'),
             'status' => StockOpname::STATUS_DRAFT,
-            'name' => $this->faker->randomElement([
+            'name' => fake()->randomElement([
                 'Stock Opname Bulanan',
                 'Stock Opname Tahunan',
                 'Cycle Count',
                 'Physical Inventory Count',
-            ]).' '.$this->faker->monthName(),
-            'notes' => $this->faker->optional()->sentence(),
+            ]).' '.fake()->monthName(),
+            'notes' => fake()->optional()->sentence(),
             'total_items' => 0,
             'total_counted' => 0,
             'total_variance_qty' => 0,

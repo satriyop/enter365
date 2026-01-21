@@ -295,16 +295,36 @@ class QuotationService implements QuotationServiceInterface
     }
 
     /**
-     * Mark expired quotations.
+     * Mark expired quotations using state machine for proper event dispatch.
+     *
+     * Uses chunked iteration to process quotations through the state machine,
+     * ensuring events are dispatched and status history is recorded.
      *
      * @return int Number of quotations marked as expired
      */
     public function markExpired(): int
     {
-        return Quotation::query()
+        $count = 0;
+
+        Quotation::query()
             ->whereIn('status', self::EXPIRABLE_STATUSES)
             ->where('valid_until', '<', now()->startOfDay())
-            ->update(['status' => DocumentStatus::Expired]);
+            ->chunkById(100, function ($quotations) use (&$count) {
+                foreach ($quotations as $quotation) {
+                    try {
+                        $stateMachine = $quotation->stateMachine();
+                        if ($stateMachine->canTransitionTo(DocumentStatus::Expired)) {
+                            $quotation->transitionTo(DocumentStatus::Expired);
+                            $count++;
+                        }
+                    } catch (\Exception $e) {
+                        // Log and continue - don't let one failure stop the batch
+                        report($e);
+                    }
+                }
+            });
+
+        return $count;
     }
 
     /**

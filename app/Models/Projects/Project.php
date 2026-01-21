@@ -11,6 +11,7 @@ use App\Models\Sales\Invoice;
 use App\Models\Sales\Quotation;
 use App\Models\User;
 use App\Traits\Filterable;
+use App\Traits\HasStatusHistory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,7 +20,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Project extends Model
 {
-    use Filterable, HasFactory, SoftDeletes;
+    use Filterable, HasFactory, HasStatusHistory, SoftDeletes;
 
     public const PRIORITY_LOW = 'low';
 

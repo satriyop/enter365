@@ -17,10 +17,16 @@ use InvalidArgumentException;
 
 class PurchaseReturnService extends AbstractDocumentService implements PurchaseReturnServiceInterface
 {
+    private PurchaseReturnApprovalPipeline $approvalPipeline;
+
     public function __construct(
-        private \App\Contracts\Shared\DocumentNumberGeneratorInterface $numberGenerator,
-        private PurchaseReturnApprovalPipeline $approvalPipeline
-    ) {}
+        \App\Contracts\Shared\DocumentNumberGeneratorInterface $numberGenerator,
+        PurchaseReturnApprovalPipeline $approvalPipeline
+    ) {
+        parent::__construct(numberGenerator: $numberGenerator);
+
+        $this->approvalPipeline = $approvalPipeline;
+    }
 
     protected function getModelClass(): string
     {
@@ -44,9 +50,19 @@ class PurchaseReturnService extends AbstractDocumentService implements PurchaseR
         return 'return_number';
     }
 
-    protected function getInitialStatus(): string
+    protected function getDocumentNumberPrefix(): string
     {
-        return DocumentStatus::Draft->value;
+        return 'PR-'.now()->format('Ym').'-';
+    }
+
+    protected function getDocumentNumberConfig(): array
+    {
+        return ['table' => 'purchase_returns', 'column' => 'return_number'];
+    }
+
+    protected function getInitialStatus(): DocumentStatus
+    {
+        return DocumentStatus::Draft;
     }
 
     protected function getEagerLoadRelations(): array
@@ -54,21 +70,38 @@ class PurchaseReturnService extends AbstractDocumentService implements PurchaseR
         return ['items', 'contact', 'bill', 'warehouse'];
     }
 
+    /**
+     * Create a new purchase return.
+     *
+     * @param  array<string, mixed>  $data
+     */
     public function create(array $data): PurchaseReturn
     {
-        /** @var PurchaseReturn $result */
-        $result = parent::create($data);
+        $result = $this->createDocument($data);
 
-        return $result;
+        return $result->getDataOrFail();
     }
 
-    public function update(Model $document, array $data): PurchaseReturn
+    /**
+     * Update an existing purchase return.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function update(PurchaseReturn $purchaseReturn, array $data): PurchaseReturn
     {
-        /** @var PurchaseReturn $document */
-        /** @var PurchaseReturn $result */
-        $result = parent::update($document, $data);
+        $result = $this->updateDocument($purchaseReturn, $data);
 
-        return $result;
+        return $result->getDataOrFail();
+    }
+
+    /**
+     * Delete a purchase return.
+     */
+    public function delete(PurchaseReturn $purchaseReturn): bool
+    {
+        $result = $this->deleteDocument($purchaseReturn);
+
+        return $result->isSuccess();
     }
 
     protected function validateEditable(Model $document): void

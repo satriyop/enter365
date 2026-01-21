@@ -4,14 +4,25 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Listeners\Sales;
 
-use App\Enums\DocumentStatus;
+use App\Contracts\Sales\InvoiceServiceInterface;
+use App\Domain\Sales\Events\PaymentReceived;
 use App\Models\Sales\Invoice;
 
+/**
+ * Listener that updates invoice payment status after a payment is received.
+ *
+ * Delegates to InvoiceService which uses the state machine for proper
+ * status transitions, event dispatching, and history recording.
+ */
 class UpdateInvoiceStatusOnPayment
 {
+    public function __construct(
+        private InvoiceServiceInterface $invoiceService
+    ) {}
+
     public function handle(object $event): void
     {
-        if (! $event instanceof \App\Domain\Sales\Events\PaymentReceived) {
+        if (! $event instanceof PaymentReceived) {
             return;
         }
 
@@ -21,17 +32,12 @@ class UpdateInvoiceStatusOnPayment
             return;
         }
 
-        $invoice->refresh();
-
-        if ($invoice->paid_amount >= $invoice->total_amount) {
-            $invoice->update(['status' => DocumentStatus::Paid]);
-        } elseif ($invoice->paid_amount > 0) {
-            $invoice->update(['status' => DocumentStatus::Partial]);
-        }
+        // Delegate to InvoiceService which uses state machine
+        $this->invoiceService->updatePaymentStatus($invoice);
     }
 
     public function shouldHandle(object $event): bool
     {
-        return $event instanceof \App\Domain\Sales\Events\PaymentReceived;
+        return $event instanceof PaymentReceived;
     }
 }

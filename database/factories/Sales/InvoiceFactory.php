@@ -43,6 +43,7 @@ class InvoiceFactory extends Factory
             'tax_rate' => $taxRate,
             'discount_amount' => $discountAmount,
             'total_amount' => $totalAmount,
+            'currency' => 'IDR',
             'paid_amount' => 0,
             'status' => DocumentStatus::Draft,
             'journal_entry_id' => null,

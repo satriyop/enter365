@@ -85,6 +85,16 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
         return \App\Domain\Sales\Quotations\Events\QuotationStatusChanged::class;
     }
 
+    protected function recordHistory(DocumentStatus $from, DocumentStatus $to): void
+    {
+        $this->quotation->recordStatusChange(
+            $from->value,
+            $to->value,
+            $this->getContextUserId(),
+            $this->transitionContext
+        );
+    }
+
     public function canSubmit(): bool
     {
         return $this->currentStatus === DocumentStatus::Draft

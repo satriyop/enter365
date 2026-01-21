@@ -607,6 +607,7 @@ class VahanaTransactionSeeder extends Seeder
             }
 
             $items[] = [
+                'product_id' => $product->id,
                 'description' => $productData['desc'] ?? $product->name,
                 'quantity' => $productData['qty'],
                 'unit' => $product->unit,

@@ -172,6 +172,6 @@ class ReminderService
             ->where('remindable_type', $document::class)
             ->where('remindable_id', $document->id)
             ->where('status', PaymentReminder::STATUS_PENDING)
-            ->update(['status' => DocumentStatus::Cancelled]);
+            ->update(['status' => PaymentReminder::STATUS_CANCELLED]);
     }
 }

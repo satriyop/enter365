@@ -17,10 +17,16 @@ use InvalidArgumentException;
 
 class DeliveryOrderService extends AbstractDocumentService implements DeliveryOrderServiceInterface
 {
+    private InventoryService $inventoryService;
+
     public function __construct(
-        private InventoryService $inventoryService,
-        private \App\Contracts\Shared\DocumentNumberGeneratorInterface $numberGenerator
-    ) {}
+        InventoryService $inventoryService,
+        \App\Contracts\Shared\DocumentNumberGeneratorInterface $numberGenerator
+    ) {
+        parent::__construct(numberGenerator: $numberGenerator);
+
+        $this->inventoryService = $inventoryService;
+    }
 
     protected function getModelClass(): string
     {
@@ -44,9 +50,19 @@ class DeliveryOrderService extends AbstractDocumentService implements DeliveryOr
         return 'do_number';
     }
 
-    protected function getInitialStatus(): string
+    protected function getDocumentNumberPrefix(): string
     {
-        return DocumentStatus::Draft->value;
+        return 'DO-'.now()->format('Ym').'-';
+    }
+
+    protected function getDocumentNumberConfig(): array
+    {
+        return ['table' => 'delivery_orders', 'column' => 'do_number'];
+    }
+
+    protected function getInitialStatus(): DocumentStatus
+    {
+        return DocumentStatus::Draft;
     }
 
     protected function getEagerLoadRelations(): array
@@ -54,21 +70,38 @@ class DeliveryOrderService extends AbstractDocumentService implements DeliveryOr
         return ['items', 'contact', 'invoice', 'warehouse'];
     }
 
+    /**
+     * Create a new delivery order.
+     *
+     * @param  array<string, mixed>  $data
+     */
     public function create(array $data): DeliveryOrder
     {
-        /** @var DeliveryOrder $result */
-        $result = parent::create($data);
+        $result = $this->createDocument($data);
 
-        return $result;
+        return $result->getDataOrFail();
     }
 
-    public function update(Model $document, array $data): DeliveryOrder
+    /**
+     * Update an existing delivery order.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function update(DeliveryOrder $deliveryOrder, array $data): DeliveryOrder
     {
-        /** @var DeliveryOrder $document */
-        /** @var DeliveryOrder $result */
-        $result = parent::update($document, $data);
+        $result = $this->updateDocument($deliveryOrder, $data);
 
-        return $result;
+        return $result->getDataOrFail();
+    }
+
+    /**
+     * Delete a delivery order.
+     */
+    public function delete(DeliveryOrder $deliveryOrder): bool
+    {
+        $result = $this->deleteDocument($deliveryOrder);
+
+        return $result->isSuccess();
     }
 
     protected function validateEditable(Model $document): void

@@ -15,12 +15,24 @@ use InvalidArgumentException;
 
 class PurchaseOrderService extends AbstractDocumentService implements PurchaseOrderServiceInterface
 {
+    private PurchaseOrderReceivingService $receivingService;
+
+    private \App\Domain\Purchasing\PurchaseOrderBillConverter $billConverter;
+
+    private \App\Domain\Purchasing\PurchaseOrderStatistics $statistics;
+
     public function __construct(
-        private PurchaseOrderReceivingService $receivingService,
-        private \App\Domain\Purchasing\PurchaseOrderBillConverter $billConverter,
-        private \App\Domain\Purchasing\PurchaseOrderStatistics $statistics,
-        private \App\Contracts\Shared\DocumentNumberGeneratorInterface $numberGenerator
-    ) {}
+        PurchaseOrderReceivingService $receivingService,
+        \App\Domain\Purchasing\PurchaseOrderBillConverter $billConverter,
+        \App\Domain\Purchasing\PurchaseOrderStatistics $statistics,
+        \App\Contracts\Shared\DocumentNumberGeneratorInterface $numberGenerator
+    ) {
+        parent::__construct(numberGenerator: $numberGenerator);
+
+        $this->receivingService = $receivingService;
+        $this->billConverter = $billConverter;
+        $this->statistics = $statistics;
+    }
 
     protected function getModelClass(): string
     {
@@ -44,9 +56,19 @@ class PurchaseOrderService extends AbstractDocumentService implements PurchaseOr
         return 'po_number';
     }
 
-    protected function getInitialStatus(): string
+    protected function getDocumentNumberPrefix(): string
     {
-        return DocumentStatus::Draft->value;
+        return 'PO-'.now()->format('Ym').'-';
+    }
+
+    protected function getDocumentNumberConfig(): array
+    {
+        return ['table' => 'purchase_orders', 'column' => 'po_number'];
+    }
+
+    protected function getInitialStatus(): DocumentStatus
+    {
+        return DocumentStatus::Draft;
     }
 
     protected function getDefaultData(): array
@@ -62,21 +84,28 @@ class PurchaseOrderService extends AbstractDocumentService implements PurchaseOr
         return ['items', 'contact'];
     }
 
+    /**
+     * Create a new purchase order.
+     *
+     * @param  array<string, mixed>  $data
+     */
     public function create(array $data): PurchaseOrder
     {
-        /** @var PurchaseOrder $result */
-        $result = parent::create($data);
+        $result = $this->createDocument($data);
 
-        return $result;
+        return $result->getDataOrFail();
     }
 
-    public function update(Model $document, array $data): PurchaseOrder
+    /**
+     * Update an existing purchase order.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function update(PurchaseOrder $purchaseOrder, array $data): PurchaseOrder
     {
-        /** @var PurchaseOrder $document */
-        /** @var PurchaseOrder $result */
-        $result = parent::update($document, $data);
+        $result = $this->updateDocument($purchaseOrder, $data);
 
-        return $result;
+        return $result->getDataOrFail();
     }
 
     protected function validateEditable(Model $document): void

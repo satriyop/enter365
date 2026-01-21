@@ -7,6 +7,7 @@ use App\Models\Contacts\Contact;
 use App\Models\Inventory\Warehouse;
 use App\Models\User;
 use App\Traits\Filterable;
+use App\Traits\HasStatusHistory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,7 +16,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class DeliveryOrder extends Model
 {
-    use Filterable, HasFactory, SoftDeletes;
+    use Filterable, HasFactory, HasStatusHistory, SoftDeletes;
 
     public const SHIPPING_METHODS = [
         'courier',

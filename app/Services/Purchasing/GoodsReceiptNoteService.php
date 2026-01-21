@@ -168,18 +168,17 @@ class GoodsReceiptNoteService implements GoodsReceiptNoteServiceInterface
      */
     public function startReceiving(GoodsReceiptNote $grn, int $userId): GoodsReceiptNote
     {
-        if ($grn->status !== DocumentStatus::Draft) {
-            throw new \InvalidArgumentException('GRN harus dalam status draft untuk memulai penerimaan.');
-        }
+        $stateMachine = $grn->stateMachine();
 
-        if ($grn->items()->count() === 0) {
+        if (! $stateMachine->canStartReceiving()) {
+            if ($grn->status !== DocumentStatus::Draft) {
+                throw new \InvalidArgumentException('GRN harus dalam status draft untuk memulai penerimaan.');
+            }
             throw new \InvalidArgumentException('GRN tidak memiliki item untuk diterima.');
         }
 
-        $grn->update([
-            'status' => DocumentStatus::Receiving,
-            'received_by' => $userId,
-        ]);
+        // Use state machine for status transition
+        $grn->transitionTo(DocumentStatus::Receiving, $userId);
 
         return $grn->fresh();
     }
@@ -189,7 +188,9 @@ class GoodsReceiptNoteService implements GoodsReceiptNoteServiceInterface
      */
     public function complete(GoodsReceiptNote $grn, int $userId): GoodsReceiptNote
     {
-        if (! $grn->canComplete()) {
+        $stateMachine = $grn->stateMachine();
+
+        if (! $stateMachine->canComplete()) {
             throw new \InvalidArgumentException('GRN tidak dapat diselesaikan. Pastikan ada item yang telah diterima.');
         }
 
@@ -224,11 +225,8 @@ class GoodsReceiptNoteService implements GoodsReceiptNoteServiceInterface
             // Update PO receiving status
             $this->receivingService->updateReceivingStatus($purchaseOrder);
 
-            $grn->update([
-                'status' => DocumentStatus::Completed,
-                'checked_by' => $userId,
-                'completed_at' => now(),
-            ]);
+            // Use state machine for status transition
+            $grn->transitionTo(DocumentStatus::Completed, $userId);
 
             return $grn->fresh();
         });
@@ -239,14 +237,14 @@ class GoodsReceiptNoteService implements GoodsReceiptNoteServiceInterface
      */
     public function cancel(GoodsReceiptNote $grn, int $userId): GoodsReceiptNote
     {
-        if (! $grn->canCancel()) {
+        $stateMachine = $grn->stateMachine();
+
+        if (! $stateMachine->canCancel()) {
             throw new \InvalidArgumentException('GRN tidak dapat dibatalkan pada status ini.');
         }
 
-        $grn->update([
-            'status' => DocumentStatus::Cancelled,
-            'cancelled_at' => now(),
-        ]);
+        // Use state machine for status transition
+        $grn->transitionTo(DocumentStatus::Cancelled, $userId);
 
         return $grn->fresh();
     }

@@ -8,6 +8,7 @@ use App\Models\Contacts\Contact;
 use App\Models\Shared\Attachment;
 use App\Models\User;
 use App\Traits\Filterable;
+use App\Traits\HasStatusHistory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -18,7 +19,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PurchaseOrder extends Model
 {
-    use Filterable, HasFactory, SoftDeletes;
+    use Filterable, HasFactory, HasStatusHistory, SoftDeletes;
 
     protected $fillable = [
         'po_number',
@@ -394,24 +395,28 @@ class PurchaseOrder extends Model
 
     /**
      * Update receiving status based on items.
+     *
+     * @deprecated Use PurchaseOrderReceivingService::updateReceivingStatus() instead for proper state machine handling.
      */
     public function updateReceivingStatus(): void
     {
-        if (! in_array($this->status, [DocumentStatus::Approved, DocumentStatus::Partial], true)) {
+        trigger_error(
+            'PurchaseOrder::updateReceivingStatus() is deprecated. Use PurchaseOrderReceivingService::updateReceivingStatus() instead.',
+            E_USER_DEPRECATED
+        );
+
+        if (! $this->stateMachine()->canReceive()) {
             return;
         }
 
         $isFullyReceived = $this->isFullyReceived();
         $hasReceivedItems = $this->hasReceivedItems();
 
-        if ($isFullyReceived) {
-            $this->status = DocumentStatus::Received;
-            $this->fully_received_at = now();
-        } elseif ($hasReceivedItems) {
-            $this->status = DocumentStatus::Partial;
-            if (! $this->first_received_at) {
-                $this->first_received_at = now();
-            }
+        // Use state machine for proper event dispatch
+        if ($isFullyReceived && $this->status !== DocumentStatus::Received) {
+            $this->transitionTo(DocumentStatus::Received, auth()->id());
+        } elseif ($hasReceivedItems && $this->status === DocumentStatus::Approved) {
+            $this->transitionTo(DocumentStatus::Partial, auth()->id());
         }
     }
 

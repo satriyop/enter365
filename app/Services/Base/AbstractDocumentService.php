@@ -4,31 +4,75 @@ declare(strict_types=1);
 
 namespace App\Services\Base;
 
-use App\Contracts\Shared\DocumentLifecycleInterface;
+use App\Contracts\Events\EventDispatcherInterface;
+use App\Contracts\Logging\ContextualLoggerInterface;
+use App\Contracts\Repositories\RepositoryInterface;
+use App\Contracts\Shared\DocumentNumberGeneratorInterface;
+use App\Enums\DocumentStatus;
+use App\Exceptions\Domain\DocumentLockedException;
+use App\Support\Results\CreateResult;
+use App\Support\Results\DeleteResult;
+use App\Support\Results\UpdateResult;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
-use InvalidArgumentException;
 
 /**
  * Abstract base class for document services.
  *
- * Provides common CRUD operations for documents with items:
- * Quotations, Invoices, Bills, PurchaseOrders, etc.
+ * Documents: Invoices, Bills, Quotations, PurchaseOrders, WorkOrders, etc.
  *
- * Subclasses must implement:
- * - getModelClass(): Model class name
- * - getItemRelation(): Relationship name for items
- * - generateDocumentNumber(): Generate unique document number
- * - getDefaultData(): Default values for new documents
+ * Provides common CRUD operations with:
+ * - Repository-based data access
+ * - Result objects for consistent returns
+ * - Transaction management
+ * - Logging and event dispatching
+ *
+ * @template TModel of Model
+ * @template TRepository of RepositoryInterface<TModel>
  */
-abstract class AbstractDocumentService implements DocumentLifecycleInterface
+abstract class AbstractDocumentService extends AbstractApplicationService
 {
+    protected ?RepositoryInterface $repository = null;
+
+    protected ?DocumentNumberGeneratorInterface $numberGenerator = null;
+
     /**
-     * Get the model class name.
+     * Constructor supporting both new (repository-based) and legacy patterns.
      *
-     * @return class-string<Model>
+     * New pattern: Pass repository, numberGenerator, eventDispatcher, logger
+     * Legacy pattern: Extend with custom constructor, call parent::__construct()
      */
-    abstract protected function getModelClass(): string;
+    public function __construct(
+        ?RepositoryInterface $repository = null,
+        ?DocumentNumberGeneratorInterface $numberGenerator = null,
+        ?EventDispatcherInterface $eventDispatcher = null,
+        ?ContextualLoggerInterface $logger = null
+    ) {
+        // Resolve from container if not provided (backward compatibility)
+        $eventDispatcher ??= app(EventDispatcherInterface::class);
+        $logger ??= app(ContextualLoggerInterface::class);
+
+        parent::__construct($eventDispatcher, $logger);
+
+        $this->repository = $repository;
+        $this->numberGenerator = $numberGenerator;
+    }
+
+    /**
+     * Get the document number field name.
+     */
+    abstract protected function getDocumentNumberField(): string;
+
+    /**
+     * Get document number prefix.
+     */
+    abstract protected function getDocumentNumberPrefix(): string;
+
+    /**
+     * Get document number table and column for generation.
+     *
+     * @return array{table: string, column: string}
+     */
+    abstract protected function getDocumentNumberConfig(): array;
 
     /**
      * Get the item relationship name.
@@ -36,9 +80,31 @@ abstract class AbstractDocumentService implements DocumentLifecycleInterface
     abstract protected function getItemRelation(): string;
 
     /**
+     * Get the model class name (for backward compatibility with legacy services).
+     *
+     * Override in services that don't use repository injection.
+     *
+     * @return class-string<TModel>
+     */
+    protected function getModelClass(): string
+    {
+        // Should be overridden by legacy services that don't inject repository
+        throw new \RuntimeException('getModelClass() must be overridden when not using repository injection.');
+    }
+
+    /**
      * Generate a unique document number.
      */
-    abstract protected function generateDocumentNumber(?Model $context = null): string;
+    protected function generateDocumentNumber(?Model $context = null): string
+    {
+        $config = $this->getDocumentNumberConfig();
+
+        return $this->numberGenerator->generate(
+            $this->getDocumentNumberPrefix(),
+            $config['table'],
+            $config['column']
+        );
+    }
 
     /**
      * Get default data for new documents.
@@ -54,9 +120,17 @@ abstract class AbstractDocumentService implements DocumentLifecycleInterface
             'subtotal' => 0,
             'discount_amount' => 0,
             'tax_amount' => 0,
-            'total' => 0,
+            'total_amount' => 0,
             'base_currency_total' => 0,
         ];
+    }
+
+    /**
+     * Get the initial status for new documents.
+     */
+    protected function getInitialStatus(): DocumentStatus
+    {
+        return DocumentStatus::Draft;
     }
 
     /**
@@ -70,90 +144,115 @@ abstract class AbstractDocumentService implements DocumentLifecycleInterface
     }
 
     /**
-     * Create a new document with items.
+     * Create a new document (Result pattern).
+     *
+     * Override in child class for public access with Result return type.
      *
      * @param  array<string, mixed>  $data
+     * @return CreateResult<TModel>
      */
-    public function create(array $data): Model
+    protected function createDocument(array $data): CreateResult
     {
-        return DB::transaction(function () use ($data) {
+        return $this->executeInTransaction('create', function () use ($data) {
             $items = $data['items'] ?? [];
             unset($data['items']);
 
             // Merge defaults
             $data = array_merge($this->getDefaultData(), $data);
-            $data['created_by'] = $data['created_by'] ?? auth()->id();
+            $data['created_by'] = $data['created_by'] ?? $this->getUserId();
+            $data['status'] = $this->getInitialStatus();
 
-            // Generate document number if not provided
-            if (empty($data[$this->getDocumentNumberField()])) {
-                $data[$this->getDocumentNumberField()] = $this->generateDocumentNumber();
+            // Generate document number
+            $numberField = $this->getDocumentNumberField();
+            if (empty($data[$numberField])) {
+                $data[$numberField] = $this->generateDocumentNumber();
             }
 
-            // Set initial status
-            $data['status'] = $data['status'] ?? $this->getInitialStatus();
-
-            // Create document
-            $modelClass = $this->getModelClass();
-            $document = $modelClass::create($data);
+            // Create document (repository or model fallback)
+            $document = $this->repository !== null
+                ? $this->repository->create($data)
+                : $this->getModelClass()::create($data);
 
             // Create items
             if (! empty($items)) {
                 $this->createItems($document, $items);
             }
 
-            // Calculate totals if document has financial data
+            // Calculate totals
             $this->recalculateTotals($document);
 
-            return $document->load($this->getEagerLoadRelations());
-        });
+            return CreateResult::created($this->loadRelations($document));
+        }, ['contact_id' => $data['contact_id'] ?? null]);
     }
 
     /**
-     * Update an existing document.
+     * Update a document (Result pattern).
      *
+     * Override in child class for public access with Result return type.
+     *
+     * @param  TModel  $document
      * @param  array<string, mixed>  $data
+     * @return UpdateResult<TModel>
+     *
+     * @throws DocumentLockedException
      */
-    public function update(Model $document, array $data): Model
+    protected function updateDocument(Model $document, array $data): UpdateResult
     {
         $this->validateEditable($document);
 
-        return DB::transaction(function () use ($document, $data) {
+        return $this->executeInTransaction('update', function () use ($document, $data) {
             $items = $data['items'] ?? null;
             unset($data['items']);
 
-            $document->update($data);
+            // Update document (repository or model fallback)
+            if ($this->repository !== null) {
+                $this->repository->update($document, $data);
+            } else {
+                $document->update($data);
+            }
 
             if ($items !== null) {
-                // Delete existing items and recreate
                 $document->{$this->getItemRelation()}()->delete();
                 $this->createItems($document, $items);
             }
 
-            // Recalculate totals
             $this->recalculateTotals($document);
 
-            return $document->load($this->getEagerLoadRelations());
-        });
+            return UpdateResult::updated($this->loadRelations($document));
+        }, ['document_id' => $document->id]);
     }
 
     /**
-     * Delete a document.
+     * Delete a document (Result pattern).
+     *
+     * Override in child class for public access with Result return type.
+     *
+     * @param  TModel  $document
+     *
+     * @throws DocumentLockedException
      */
-    public function delete(Model $document): bool
+    protected function deleteDocument(Model $document): DeleteResult
     {
         $this->validateDeletable($document);
 
-        return DB::transaction(function () use ($document) {
-            // Delete items first
+        return $this->executeInTransaction('delete', function () use ($document) {
             $document->{$this->getItemRelation()}()->delete();
 
-            return $document->delete();
-        });
+            // Delete document (repository or model fallback)
+            if ($this->repository !== null) {
+                $this->repository->delete($document);
+            } else {
+                $document->delete();
+            }
+
+            return DeleteResult::deleted();
+        }, ['document_id' => $document->id]);
     }
 
     /**
-     * Create items for a document.
+     * Create items for document.
      *
+     * @param  TModel  $document
      * @param  array<int, array<string, mixed>>  $items
      */
     protected function createItems(Model $document, array $items): void
@@ -165,6 +264,8 @@ abstract class AbstractDocumentService implements DocumentLifecycleInterface
 
     /**
      * Recalculate document totals.
+     *
+     * @param  TModel  $document
      */
     protected function recalculateTotals(Model $document): void
     {
@@ -177,42 +278,47 @@ abstract class AbstractDocumentService implements DocumentLifecycleInterface
     }
 
     /**
-     * Get the document number field name.
-     */
-    protected function getDocumentNumberField(): string
-    {
-        return 'document_number';
-    }
-
-    /**
-     * Get the initial status for new documents.
-     */
-    protected function getInitialStatus(): string
-    {
-        return 'draft';
-    }
-
-    /**
-     * Validate that document can be edited.
+     * Load standard relations on document.
      *
-     * @throws InvalidArgumentException
+     * @param  TModel  $document
+     * @return TModel
+     */
+    protected function loadRelations(Model $document): Model
+    {
+        return $document->fresh($this->getEagerLoadRelations());
+    }
+
+    /**
+     * Validate document is editable.
+     *
+     * @param  TModel  $document
+     *
+     * @throws DocumentLockedException
      */
     protected function validateEditable(Model $document): void
     {
-        if (method_exists($document, 'isEditable') && ! $document->isEditable()) {
-            throw new InvalidArgumentException('Dokumen tidak dapat diubah.');
+        if ($document->status !== DocumentStatus::Draft) {
+            throw DocumentLockedException::cannotEdit(
+                $document,
+                'Hanya dokumen draft yang dapat diubah.'
+            );
         }
     }
 
     /**
-     * Validate that document can be deleted.
+     * Validate document is deletable.
      *
-     * @throws InvalidArgumentException
+     * @param  TModel  $document
+     *
+     * @throws DocumentLockedException
      */
     protected function validateDeletable(Model $document): void
     {
-        if (method_exists($document, 'isDeletable') && ! $document->isDeletable()) {
-            throw new InvalidArgumentException('Dokumen tidak dapat dihapus.');
+        if ($document->status !== DocumentStatus::Draft) {
+            throw DocumentLockedException::cannotDelete(
+                $document,
+                'Hanya dokumen draft yang dapat dihapus.'
+            );
         }
     }
 }

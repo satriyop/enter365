@@ -235,4 +235,22 @@ class GoodsReceiptNote extends Model
     {
         return $query->where('purchase_order_id', $purchaseOrderId);
     }
+
+    /**
+     * Get the GRN state machine instance.
+     */
+    public function stateMachine(): \App\Domain\Purchasing\GoodsReceiptNotes\GoodsReceiptNoteStateMachine
+    {
+        return \App\Domain\Purchasing\GoodsReceiptNotes\GoodsReceiptNoteStateMachine::fromGoodsReceiptNote($this);
+    }
+
+    /**
+     * Transition the GRN to a new status.
+     */
+    public function transitionTo(DocumentStatus $status, ?int $userId = null): self
+    {
+        $this->stateMachine()->transitionTo($status, ['user_id' => $userId]);
+
+        return $this->refresh();
+    }
 }

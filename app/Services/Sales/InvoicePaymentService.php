@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Sales;
 
+use App\Contracts\Sales\InvoiceServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\Invoice;
 use Illuminate\Support\Facades\DB;
@@ -11,31 +12,25 @@ use Illuminate\Support\Facades\DB;
 /**
  * Service for invoice payment status management.
  *
- * Handles payment status transitions, overdue marking,
- * and early payment discount calculations.
+ * Handles payment recording and delegates status transitions
+ * to InvoiceService for proper state machine handling.
  */
 class InvoicePaymentService
 {
+    public function __construct(
+        private InvoiceServiceInterface $invoiceService
+    ) {}
+
     /**
      * Update payment status based on paid amount.
+     *
+     * Delegates to InvoiceService which uses the state machine.
      */
     public function updatePaymentStatus(Invoice $invoice): Invoice
     {
-        if ($invoice->status === DocumentStatus::Cancelled) {
-            return $invoice;
-        }
+        $result = $this->invoiceService->updatePaymentStatus($invoice);
 
-        if ($invoice->paid_amount >= $invoice->total_amount) {
-            $invoice->status = DocumentStatus::Paid;
-        } elseif ($invoice->paid_amount > 0) {
-            $invoice->status = DocumentStatus::Partial;
-        } elseif ($invoice->due_date < now() && $invoice->status !== DocumentStatus::Draft) {
-            $invoice->status = DocumentStatus::Overdue;
-        }
-
-        $invoice->save();
-
-        return $invoice->fresh();
+        return $result->getData() ?? $invoice->fresh();
     }
 
     /**
@@ -66,6 +61,8 @@ class InvoicePaymentService
 
     /**
      * Mark invoice as overdue if applicable.
+     *
+     * Delegates to InvoiceService which uses the state machine.
      */
     public function markAsOverdue(Invoice $invoice): bool
     {
@@ -77,10 +74,9 @@ class InvoicePaymentService
             return false;
         }
 
-        $invoice->status = DocumentStatus::Overdue;
-        $invoice->save();
+        $result = $this->invoiceService->markAsOverdue($invoice);
 
-        return true;
+        return $result->isSuccess();
     }
 
     /**
@@ -114,7 +110,7 @@ class InvoicePaymentService
     /**
      * Get payment summary for an invoice.
      *
-     * @return array{total: int, paid: int, outstanding: int, status: string, is_overdue: bool, days_overdue: int, early_discount_available: bool, early_discount_amount: int}
+     * @return array{total: int, paid: int, outstanding: int, status: DocumentStatus, is_overdue: bool, days_overdue: int, early_discount_available: bool, early_discount_amount: int}
      */
     public function getPaymentSummary(Invoice $invoice): array
     {

@@ -16,10 +16,16 @@ use Illuminate\Support\Facades\DB;
 
 class SalesReturnService extends AbstractDocumentService implements SalesReturnServiceInterface
 {
+    private SalesReturnApprovalPipeline $approvalPipeline;
+
     public function __construct(
-        private \App\Contracts\Shared\DocumentNumberGeneratorInterface $numberGenerator,
-        private SalesReturnApprovalPipeline $approvalPipeline
-    ) {}
+        \App\Contracts\Shared\DocumentNumberGeneratorInterface $numberGenerator,
+        SalesReturnApprovalPipeline $approvalPipeline
+    ) {
+        parent::__construct(numberGenerator: $numberGenerator);
+
+        $this->approvalPipeline = $approvalPipeline;
+    }
 
     protected function getModelClass(): string
     {
@@ -43,9 +49,19 @@ class SalesReturnService extends AbstractDocumentService implements SalesReturnS
         return 'return_number';
     }
 
-    protected function getInitialStatus(): string
+    protected function getDocumentNumberPrefix(): string
     {
-        return DocumentStatus::Draft->value;
+        return 'SR-'.now()->format('Ym').'-';
+    }
+
+    protected function getDocumentNumberConfig(): array
+    {
+        return ['table' => 'sales_returns', 'column' => 'return_number'];
+    }
+
+    protected function getInitialStatus(): DocumentStatus
+    {
+        return DocumentStatus::Draft;
     }
 
     protected function getDefaultData(): array
@@ -66,21 +82,38 @@ class SalesReturnService extends AbstractDocumentService implements SalesReturnS
         return ['items', 'contact', 'invoice', 'warehouse'];
     }
 
+    /**
+     * Create a new sales return.
+     *
+     * @param  array<string, mixed>  $data
+     */
     public function create(array $data): SalesReturn
     {
-        /** @var SalesReturn $result */
-        $result = parent::create($data);
+        $result = $this->createDocument($data);
 
-        return $result;
+        return $result->getDataOrFail();
     }
 
-    public function update(Model $document, array $data): SalesReturn
+    /**
+     * Update an existing sales return.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function update(SalesReturn $salesReturn, array $data): SalesReturn
     {
-        /** @var SalesReturn $document */
-        /** @var SalesReturn $result */
-        $result = parent::update($document, $data);
+        $result = $this->updateDocument($salesReturn, $data);
 
-        return $result;
+        return $result->getDataOrFail();
+    }
+
+    /**
+     * Delete a sales return.
+     */
+    public function delete(SalesReturn $salesReturn): bool
+    {
+        $result = $this->deleteDocument($salesReturn);
+
+        return $result->isSuccess();
     }
 
     protected function validateEditable(Model $document): void

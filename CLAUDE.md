@@ -579,6 +579,19 @@ $pages->assertNoJavascriptErrors()->assertNoConsoleLogs();
 
 <!-- Project-Specific Instructions (Not managed by Laravel Boost) -->
 
+## Project Structure
+
+This is a **full-stack application** with separate frontend and backend:
+
+| Component | Directory | Stack |
+|-----------|-----------|-------|
+| **Backend (API)** | `/Users/satriyo/dev/laravel-project/enter365` | Laravel 12, Livewire 3, Volt |
+| **Frontend (SPA)** | `/Users/satriyo/dev/laravel-project/front-end-enter365` | Vue.js, TypeScript |
+
+When working on frontend features or debugging API integration, reference the Vue SPA at the frontend directory.
+
+---
+
 ## API Documentation with Scramble
 
 This project uses [Scramble](https://scramble.dedoc.co/) for automatic OpenAPI documentation generation.

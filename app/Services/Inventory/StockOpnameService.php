@@ -4,7 +4,6 @@ namespace App\Services\Inventory;
 
 use App\Contracts\Accounting\Strategies\InventoryAccountingStrategy;
 use App\Contracts\Inventory\StockOpnameServiceInterface;
-use App\Enums\DocumentStatus;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\ProductStock;
 use App\Models\Inventory\StockOpname;
@@ -29,7 +28,7 @@ class StockOpnameService implements StockOpnameServiceInterface
                 'opname_number' => StockOpname::generateOpnameNumber(),
                 'warehouse_id' => $data['warehouse_id'],
                 'opname_date' => $data['opname_date'] ?? now()->toDateString(),
-                'status' => DocumentStatus::Draft,
+                'status' => StockOpname::STATUS_DRAFT,
                 'name' => $data['name'] ?? null,
                 'notes' => $data['notes'] ?? null,
                 'created_by' => $data['created_by'] ?? auth()->id(),
@@ -159,7 +158,7 @@ class StockOpnameService implements StockOpnameServiceInterface
     {
         $opname = $item->stockOpname;
 
-        if (! in_array($opname->status, [DocumentStatus::Draft, StockOpname::STATUS_COUNTING])) {
+        if (! in_array($opname->status, [StockOpname::STATUS_DRAFT, StockOpname::STATUS_COUNTING])) {
             throw new \InvalidArgumentException('Item tidak dapat diubah pada status ini.');
         }
 
@@ -197,7 +196,9 @@ class StockOpnameService implements StockOpnameServiceInterface
      */
     public function startCounting(StockOpname $opname, int $userId): StockOpname
     {
-        if (! $opname->canStartCounting()) {
+        $stateMachine = $opname->stateMachine();
+
+        if (! $stateMachine->canStartCounting()) {
             throw new \InvalidArgumentException('Stock opname tidak dapat memulai penghitungan. Pastikan ada item yang akan dihitung.');
         }
 
@@ -213,11 +214,8 @@ class StockOpnameService implements StockOpnameServiceInterface
                 }
             }
 
-            $opname->update([
-                'status' => StockOpname::STATUS_COUNTING,
-                'counted_by' => $userId,
-                'counting_started_at' => now(),
-            ]);
+            // Use state machine for status transition
+            $opname->transitionTo(StockOpname::STATUS_COUNTING, $userId);
 
             $opname->updateTotals();
 
@@ -230,7 +228,9 @@ class StockOpnameService implements StockOpnameServiceInterface
      */
     public function submitForReview(StockOpname $opname, int $userId): StockOpname
     {
-        if (! $opname->canSubmitForReview()) {
+        $stateMachine = $opname->stateMachine();
+
+        if (! $stateMachine->canSubmitForReview()) {
             $uncounted = $opname->items()->whereNull('counted_quantity')->count();
             if ($uncounted > 0) {
                 throw new \InvalidArgumentException("Masih ada {$uncounted} item yang belum dihitung.");
@@ -238,11 +238,8 @@ class StockOpnameService implements StockOpnameServiceInterface
             throw new \InvalidArgumentException('Stock opname tidak dapat disubmit untuk review.');
         }
 
-        $opname->update([
-            'status' => StockOpname::STATUS_REVIEWED,
-            'reviewed_by' => $userId,
-            'reviewed_at' => now(),
-        ]);
+        // Use state machine for status transition
+        $opname->transitionTo(StockOpname::STATUS_REVIEWED, $userId);
 
         return $opname->fresh();
     }
@@ -255,7 +252,9 @@ class StockOpnameService implements StockOpnameServiceInterface
      */
     public function approve(StockOpname $opname, int $userId): StockOpname
     {
-        if (! $opname->canApprove()) {
+        $stateMachine = $opname->stateMachine();
+
+        if (! $stateMachine->canApprove()) {
             throw new \InvalidArgumentException('Stock opname tidak dapat diapprove pada status ini.');
         }
 
@@ -282,12 +281,9 @@ class StockOpnameService implements StockOpnameServiceInterface
             // The journal entry links back to stock_opname via source_id
             $this->inventoryStrategy->onStockAdjustment($opname);
 
-            $opname->update([
-                'status' => DocumentStatus::Completed,
-                'approved_by' => $userId,
-                'approved_at' => now(),
-                'completed_at' => now(),
-            ]);
+            // Use state machine: REVIEWED -> APPROVED -> COMPLETED
+            $opname->transitionTo(StockOpname::STATUS_APPROVED, $userId);
+            $opname->transitionTo(StockOpname::STATUS_COMPLETED, $userId);
 
             return $opname->fresh();
         });
@@ -298,15 +294,27 @@ class StockOpnameService implements StockOpnameServiceInterface
      */
     public function reject(StockOpname $opname, int $userId, ?string $reason = null): StockOpname
     {
-        if (! $opname->canReject()) {
+        $stateMachine = $opname->stateMachine();
+
+        if (! $stateMachine->canReject()) {
             throw new \InvalidArgumentException('Stock opname tidak dapat direject pada status ini.');
         }
 
+        // Update notes with rejection reason before transition
+        if ($reason) {
+            $opname->update([
+                'notes' => $opname->notes ? $opname->notes."\n\nDitolak: ".$reason : 'Ditolak: '.$reason,
+            ]);
+        }
+
+        // Use state machine for status transition
+        // Note: reviewed_by and reviewed_at are cleared by state machine's updateTimestamps
+        $opname->transitionTo(StockOpname::STATUS_COUNTING, $userId);
+
+        // Clear review fields since we're going back to counting
         $opname->update([
-            'status' => StockOpname::STATUS_COUNTING,
             'reviewed_by' => null,
             'reviewed_at' => null,
-            'notes' => $reason ? ($opname->notes ? $opname->notes."\n\nDitolak: ".$reason : 'Ditolak: '.$reason) : $opname->notes,
         ]);
 
         return $opname->fresh();
@@ -317,14 +325,14 @@ class StockOpnameService implements StockOpnameServiceInterface
      */
     public function cancel(StockOpname $opname, int $userId): StockOpname
     {
-        if (! $opname->canCancel()) {
+        $stateMachine = $opname->stateMachine();
+
+        if (! $stateMachine->canCancel()) {
             throw new \InvalidArgumentException('Stock opname tidak dapat dibatalkan pada status ini.');
         }
 
-        $opname->update([
-            'status' => DocumentStatus::Cancelled,
-            'cancelled_at' => now(),
-        ]);
+        // Use state machine for status transition
+        $opname->transitionTo(StockOpname::STATUS_CANCELLED, $userId);
 
         return $opname->fresh();
     }

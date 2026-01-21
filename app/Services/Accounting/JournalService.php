@@ -4,7 +4,6 @@ namespace App\Services\Accounting;
 
 use App\Contracts\Accounting\AccountLookupServiceInterface;
 use App\Contracts\Accounting\JournalServiceInterface;
-use App\Enums\DocumentStatus;
 use App\Models\Accounting\FiscalPeriod;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Accounting\JournalEntryLine;
@@ -216,10 +215,10 @@ class JournalService implements JournalServiceInterface
             'lines' => $lines,
         ], autoPost: true);
 
+        // Only update journal reference - status transition is handled by InvoiceService state machine
         $invoice->update([
             'journal_entry_id' => $entry->id,
             'receivable_account_id' => $receivableAccount->id,
-            'status' => DocumentStatus::Sent,
         ]);
 
         return $entry;
@@ -290,10 +289,10 @@ class JournalService implements JournalServiceInterface
             'lines' => $lines,
         ], autoPost: true);
 
+        // Only update journal reference - status transition is handled by BillService state machine
         $bill->update([
             'journal_entry_id' => $entry->id,
             'payable_account_id' => $payableAccount->id,
-            'status' => DocumentStatus::Received,
         ]);
 
         return $entry;

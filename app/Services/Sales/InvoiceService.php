@@ -6,39 +6,51 @@ namespace App\Services\Sales;
 
 use App\Contracts\Accounting\JournalServiceInterface;
 use App\Contracts\Accounting\Strategies\COGSRecognitionStrategy;
+use App\Contracts\Events\EventDispatcherInterface;
+use App\Contracts\Logging\ContextualLoggerInterface;
+use App\Contracts\Repositories\Sales\InvoiceRepositoryInterface;
 use App\Contracts\Sales\InvoiceServiceInterface;
 use App\Contracts\Shared\DocumentNumberGeneratorInterface;
+use App\Domain\Sales\Invoices\Events\InvoiceFullyPaid;
+use App\Domain\Sales\Invoices\Events\InvoiceOverdue;
+use App\Domain\Sales\Invoices\Events\InvoicePartiallyPaid;
+use App\Domain\Sales\Invoices\Events\InvoiceSent;
+use App\Domain\Sales\Invoices\Events\InvoiceVoided;
 use App\Enums\DocumentStatus;
 use App\Exceptions\Domain\DocumentLockedException;
 use App\Exceptions\Domain\StateTransitionException;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\InvoiceItem;
 use App\Services\Base\AbstractDocumentService;
+use App\Support\Results\ServiceResult;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Service for invoice operations.
+ *
+ * Handles invoice CRUD, posting, and voiding with:
+ * - Journal entry creation for AR/Revenue
+ * - COGS recognition via configurable strategy
+ * - Event dispatching for audit trails
+ */
 class InvoiceService extends AbstractDocumentService implements InvoiceServiceInterface
 {
+    private JournalServiceInterface $journalService;
+
+    private COGSRecognitionStrategy $cogsStrategy;
+
     public function __construct(
-        private JournalServiceInterface $journalService,
-        private COGSRecognitionStrategy $cogsStrategy,
-        private DocumentNumberGeneratorInterface $numberGenerator
-    ) {}
+        InvoiceRepositoryInterface $repository,
+        DocumentNumberGeneratorInterface $numberGenerator,
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger,
+        JournalServiceInterface $journalService,
+        COGSRecognitionStrategy $cogsStrategy
+    ) {
+        parent::__construct($repository, $numberGenerator, $eventDispatcher, $logger);
 
-    protected function getModelClass(): string
-    {
-        return Invoice::class;
-    }
-
-    protected function getItemRelation(): string
-    {
-        return 'items';
-    }
-
-    protected function generateDocumentNumber(?Model $context = null): string
-    {
-        $prefix = 'INV-'.now()->format('Ym').'-';
-
-        return $this->numberGenerator->generate($prefix, 'invoices', 'invoice_number');
+        $this->journalService = $journalService;
+        $this->cogsStrategy = $cogsStrategy;
     }
 
     protected function getDocumentNumberField(): string
@@ -46,9 +58,19 @@ class InvoiceService extends AbstractDocumentService implements InvoiceServiceIn
         return 'invoice_number';
     }
 
-    protected function getInitialStatus(): string
+    protected function getDocumentNumberPrefix(): string
     {
-        return DocumentStatus::Draft->value;
+        return 'INV-'.now()->format('Ym').'-';
+    }
+
+    protected function getDocumentNumberConfig(): array
+    {
+        return ['table' => 'invoices', 'column' => 'invoice_number'];
+    }
+
+    protected function getItemRelation(): string
+    {
+        return 'items';
     }
 
     protected function getDefaultData(): array
@@ -72,25 +94,57 @@ class InvoiceService extends AbstractDocumentService implements InvoiceServiceIn
     }
 
     /**
-     * Create items with calculated amount.
+     * Create a new invoice.
      *
-     * @param  array<int, array<string, mixed>>  $items
+     * @param  array<string, mixed>  $data
+     */
+    public function create(array $data): Invoice
+    {
+        return $this->createDocument($data)->getDataOrFail();
+    }
+
+    /**
+     * Update an existing invoice.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function update(Model $document, array $data): Invoice
+    {
+        return $this->updateDocument($document, $data)->getDataOrFail();
+    }
+
+    /**
+     * Delete an invoice.
+     */
+    public function delete(Model $document): bool
+    {
+        return $this->deleteDocument($document)->isSuccess();
+    }
+
+    /**
+     * Create items with calculated line total.
      */
     protected function createItems(Model $document, array $items): void
     {
         foreach ($items as $item) {
-            $amount = (int) round($item['quantity'] * $item['unit_price']);
+            $lineTotal = (int) round($item['quantity'] * $item['unit_price']);
 
             InvoiceItem::create([
                 'invoice_id' => $document->id,
+                'product_id' => $item['product_id'] ?? null,
                 'description' => $item['description'],
                 'quantity' => $item['quantity'],
                 'unit' => $item['unit'] ?? 'unit',
                 'unit_price' => $item['unit_price'],
-                'line_total' => $amount,
+                'line_total' => $lineTotal,
                 'revenue_account_id' => $item['revenue_account_id'] ?? null,
             ]);
         }
+    }
+
+    protected function loadRelations(Model $document): Model
+    {
+        return $document->fresh(['items', 'contact', 'journalEntry.lines.account']);
     }
 
     /**
@@ -124,28 +178,208 @@ class InvoiceService extends AbstractDocumentService implements InvoiceServiceIn
     }
 
     /**
-     * Post an invoice (create journal entry and change status).
+     * Post invoice - create journal entries and transition to Sent.
      *
-     * Creates both the AR/Revenue journal entry via JournalService
-     * and COGS journal entry via configured strategy (if applicable).
+     * @return ServiceResult<Invoice>
      *
      * @throws StateTransitionException
      */
-    public function post(Invoice $invoice): Invoice
+    public function post(Invoice $invoice): ServiceResult
     {
-        if (! $invoice->stateMachine()->canPost()) {
-            throw StateTransitionException::actionNotAvailable('posting', $invoice->status->label());
+        return $this->executeInTransaction('post', function () use ($invoice) {
+            if (! $invoice->stateMachine()->canPost()) {
+                throw StateTransitionException::actionNotAvailable(
+                    'posting',
+                    $invoice->status->label()
+                );
+            }
+
+            // Create AR/Revenue journal entry
+            $this->journalService->postInvoice($invoice);
+
+            // Create COGS journal entry (if configured)
+            $this->cogsStrategy->onInvoicePost($invoice);
+
+            // Transition status
+            $invoice->transitionTo(DocumentStatus::Sent, $this->getUserId());
+
+            // Dispatch event
+            $this->dispatch(InvoiceSent::fromInvoice($invoice, $this->getUserId()));
+
+            return ServiceResult::success(
+                $this->loadRelations($invoice),
+                'Faktur berhasil diposting.'
+            );
+        }, ['invoice_id' => $invoice->id, 'total_amount' => $invoice->total_amount]);
+    }
+
+    /**
+     * Void/cancel posted invoice.
+     *
+     * @return ServiceResult<Invoice>
+     *
+     * @throws StateTransitionException
+     */
+    public function void(Invoice $invoice, string $reason): ServiceResult
+    {
+        return $this->executeInTransaction('void', function () use ($invoice, $reason) {
+            if (! $invoice->stateMachine()->canCancel()) {
+                throw StateTransitionException::actionNotAvailable(
+                    'void',
+                    $invoice->status->label()
+                );
+            }
+
+            // Reverse journal entry if exists
+            if ($invoice->journal_entry_id && $invoice->journalEntry) {
+                $this->journalService->reverseEntry($invoice->journalEntry);
+            }
+
+            // Transition status
+            $invoice->transitionTo(DocumentStatus::Cancelled, $this->getUserId());
+
+            // Dispatch event
+            $this->dispatch(InvoiceVoided::fromInvoice($invoice, $this->getUserId(), $reason));
+
+            return ServiceResult::success(
+                $this->loadRelations($invoice),
+                'Faktur berhasil dibatalkan.'
+            );
+        }, ['invoice_id' => $invoice->id, 'reason' => $reason]);
+    }
+
+    /**
+     * Mark invoice as fully paid.
+     *
+     * @return ServiceResult<Invoice>
+     *
+     * @throws StateTransitionException
+     */
+    public function markAsPaid(Invoice $invoice): ServiceResult
+    {
+        return $this->executeInTransaction('mark_paid', function () use ($invoice) {
+            if (! $invoice->stateMachine()->canMarkAsPaid()) {
+                throw StateTransitionException::actionNotAvailable(
+                    'mark_as_paid',
+                    $invoice->status->label()
+                );
+            }
+
+            $invoice->transitionTo(DocumentStatus::Paid, $this->getUserId());
+
+            $this->dispatch(InvoiceFullyPaid::fromInvoice($invoice, $this->getUserId() ?? 0));
+
+            return ServiceResult::success(
+                $this->loadRelations($invoice),
+                'Faktur ditandai sebagai lunas.'
+            );
+        }, ['invoice_id' => $invoice->id]);
+    }
+
+    /**
+     * Mark invoice as partially paid.
+     *
+     * @return ServiceResult<Invoice>
+     *
+     * @throws StateTransitionException
+     */
+    public function markAsPartial(Invoice $invoice): ServiceResult
+    {
+        return $this->executeInTransaction('mark_partial', function () use ($invoice) {
+            if (! $invoice->stateMachine()->canMarkAsPartial()) {
+                throw StateTransitionException::actionNotAvailable(
+                    'mark_as_partial',
+                    $invoice->status->label()
+                );
+            }
+
+            $invoice->transitionTo(DocumentStatus::Partial, $this->getUserId());
+
+            $this->dispatch(InvoicePartiallyPaid::fromInvoice($invoice, $this->getUserId() ?? 0));
+
+            return ServiceResult::success(
+                $this->loadRelations($invoice),
+                'Faktur ditandai sebagai dibayar sebagian.'
+            );
+        }, ['invoice_id' => $invoice->id]);
+    }
+
+    /**
+     * Mark invoice as overdue.
+     *
+     * @return ServiceResult<Invoice>
+     *
+     * @throws StateTransitionException
+     */
+    public function markAsOverdue(Invoice $invoice): ServiceResult
+    {
+        return $this->executeInTransaction('mark_overdue', function () use ($invoice) {
+            if (! $invoice->stateMachine()->canMarkAsOverdue()) {
+                throw StateTransitionException::actionNotAvailable(
+                    'mark_as_overdue',
+                    $invoice->status->label()
+                );
+            }
+
+            $invoice->transitionTo(DocumentStatus::Overdue, $this->getUserId());
+
+            $this->dispatch(InvoiceOverdue::fromInvoice($invoice));
+
+            return ServiceResult::success(
+                $this->loadRelations($invoice),
+                'Faktur ditandai sebagai jatuh tempo.'
+            );
+        }, ['invoice_id' => $invoice->id]);
+    }
+
+    /**
+     * Update invoice payment status based on current paid amount.
+     *
+     * Automatically determines the correct status:
+     * - Paid: if paid_amount >= total_amount
+     * - Partial: if paid_amount > 0 and < total_amount
+     * - Overdue: if past due date and not fully paid
+     *
+     * @return ServiceResult<Invoice>
+     */
+    public function updatePaymentStatus(Invoice $invoice): ServiceResult
+    {
+        $invoice->refresh();
+
+        // Skip if cancelled
+        if ($invoice->status === DocumentStatus::Cancelled) {
+            return ServiceResult::success($invoice, 'Faktur sudah dibatalkan.');
         }
 
-        // Create AR/Revenue journal entry
-        $this->journalService->postInvoice($invoice);
+        // Skip if still draft
+        if ($invoice->status === DocumentStatus::Draft) {
+            return ServiceResult::success($invoice, 'Faktur masih draft.');
+        }
 
-        // Create COGS journal entry (if strategy is configured for invoice post)
-        // The COGS journal links back to invoice via source_id
-        $this->cogsStrategy->onInvoicePost($invoice);
+        // Determine target status based on payment
+        if ($invoice->paid_amount >= $invoice->total_amount) {
+            // Already paid? No change needed
+            if ($invoice->status === DocumentStatus::Paid) {
+                return ServiceResult::success($invoice, 'Status tidak berubah.');
+            }
 
-        $invoice->transitionTo(DocumentStatus::Sent, auth()->id());
+            return $this->markAsPaid($invoice);
+        }
 
-        return $invoice->fresh(['contact', 'items', 'journalEntry.lines.account']);
+        if ($invoice->paid_amount > 0) {
+            // Already partial? No change needed
+            if ($invoice->status === DocumentStatus::Partial) {
+                return ServiceResult::success($invoice, 'Status tidak berubah.');
+            }
+
+            return $this->markAsPartial($invoice);
+        }
+
+        // No payment - check if overdue
+        if ($invoice->due_date->isPast() && ! in_array($invoice->status, [DocumentStatus::Overdue, DocumentStatus::Paid])) {
+            return $this->markAsOverdue($invoice);
+        }
+
+        return ServiceResult::success($invoice, 'Status tidak berubah.');
     }
 }

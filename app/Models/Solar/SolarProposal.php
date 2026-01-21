@@ -561,4 +561,24 @@ class SolarProposal extends Model
 
         return round(($monthlyProduction / (float) $this->monthly_consumption_kwh) * 100, 1);
     }
+
+    /**
+     * Get the solar proposal state machine instance.
+     */
+    public function stateMachine(): \App\Domain\Solar\Proposals\SolarProposalStateMachine
+    {
+        return \App\Domain\Solar\Proposals\SolarProposalStateMachine::fromSolarProposal($this);
+    }
+
+    /**
+     * Transition the proposal to a new status.
+     *
+     * @param  array<string, mixed>  $context
+     */
+    public function transitionTo(DocumentStatus $status, ?int $userId = null, array $context = []): self
+    {
+        $this->stateMachine()->transitionTo($status, array_merge(['user_id' => $userId], $context));
+
+        return $this->refresh();
+    }
 }

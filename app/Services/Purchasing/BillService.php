@@ -7,19 +7,30 @@ namespace App\Services\Purchasing;
 use App\Contracts\Accounting\JournalServiceInterface;
 use App\Contracts\Purchasing\BillServiceInterface;
 use App\Contracts\Shared\DocumentNumberGeneratorInterface;
+use App\Domain\Purchasing\Bills\Events\BillFullyPaid;
+use App\Domain\Purchasing\Bills\Events\BillOverdue;
+use App\Domain\Purchasing\Bills\Events\BillPartiallyPaid;
 use App\Enums\DocumentStatus;
+use App\Exceptions\Domain\StateTransitionException;
 use App\Models\Purchasing\Bill;
 use App\Models\Purchasing\BillItem;
 use App\Services\Base\AbstractDocumentService;
+use App\Support\Results\ServiceResult;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
 
 class BillService extends AbstractDocumentService implements BillServiceInterface
 {
+    private JournalServiceInterface $journalService;
+
     public function __construct(
-        private JournalServiceInterface $journalService,
-        private DocumentNumberGeneratorInterface $numberGenerator
-    ) {}
+        JournalServiceInterface $journalService,
+        DocumentNumberGeneratorInterface $numberGenerator
+    ) {
+        parent::__construct(numberGenerator: $numberGenerator);
+
+        $this->journalService = $journalService;
+    }
 
     protected function getModelClass(): string
     {
@@ -43,9 +54,19 @@ class BillService extends AbstractDocumentService implements BillServiceInterfac
         return 'bill_number';
     }
 
-    protected function getInitialStatus(): string
+    protected function getDocumentNumberPrefix(): string
     {
-        return DocumentStatus::Draft->value;
+        return 'BILL-'.now()->format('Ym').'-';
+    }
+
+    protected function getDocumentNumberConfig(): array
+    {
+        return ['table' => 'bills', 'column' => 'bill_number'];
+    }
+
+    protected function getInitialStatus(): DocumentStatus
+    {
+        return DocumentStatus::Draft;
     }
 
     protected function getDefaultData(): array
@@ -66,6 +87,34 @@ class BillService extends AbstractDocumentService implements BillServiceInterfac
     protected function getEagerLoadRelations(): array
     {
         return ['items', 'contact'];
+    }
+
+    /**
+     * Create a new bill.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function create(array $data): Bill
+    {
+        return $this->createDocument($data)->getDataOrFail();
+    }
+
+    /**
+     * Update an existing bill.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function update(Model $document, array $data): Bill
+    {
+        return $this->updateDocument($document, $data)->getDataOrFail();
+    }
+
+    /**
+     * Delete a bill.
+     */
+    public function delete(Model $document): bool
+    {
+        return $this->deleteDocument($document)->isSuccess();
     }
 
     /**
@@ -134,5 +183,132 @@ class BillService extends AbstractDocumentService implements BillServiceInterfac
         $bill->transitionTo(DocumentStatus::Received, auth()->id());
 
         return $bill->fresh(['contact', 'items', 'journalEntry.lines.account']);
+    }
+
+    /**
+     * Mark bill as fully paid.
+     *
+     * @return ServiceResult<Bill>
+     *
+     * @throws StateTransitionException
+     */
+    public function markAsPaid(Bill $bill): ServiceResult
+    {
+        if (! $bill->stateMachine()->canMarkAsPaid()) {
+            throw StateTransitionException::actionNotAvailable(
+                'mark_as_paid',
+                $bill->status->label()
+            );
+        }
+
+        $bill->transitionTo(DocumentStatus::Paid, auth()->id());
+
+        event(BillFullyPaid::fromBill($bill, auth()->id() ?? 0));
+
+        return ServiceResult::success(
+            $bill->fresh(['contact', 'items']),
+            'Tagihan ditandai sebagai lunas.'
+        );
+    }
+
+    /**
+     * Mark bill as partially paid.
+     *
+     * @return ServiceResult<Bill>
+     *
+     * @throws StateTransitionException
+     */
+    public function markAsPartial(Bill $bill): ServiceResult
+    {
+        if (! $bill->stateMachine()->canMarkAsPartial()) {
+            throw StateTransitionException::actionNotAvailable(
+                'mark_as_partial',
+                $bill->status->label()
+            );
+        }
+
+        $bill->transitionTo(DocumentStatus::Partial, auth()->id());
+
+        event(BillPartiallyPaid::fromBill($bill, auth()->id() ?? 0));
+
+        return ServiceResult::success(
+            $bill->fresh(['contact', 'items']),
+            'Tagihan ditandai sebagai dibayar sebagian.'
+        );
+    }
+
+    /**
+     * Mark bill as overdue.
+     *
+     * @return ServiceResult<Bill>
+     *
+     * @throws StateTransitionException
+     */
+    public function markAsOverdue(Bill $bill): ServiceResult
+    {
+        if (! $bill->stateMachine()->canMarkAsOverdue()) {
+            throw StateTransitionException::actionNotAvailable(
+                'mark_as_overdue',
+                $bill->status->label()
+            );
+        }
+
+        $bill->transitionTo(DocumentStatus::Overdue, auth()->id());
+
+        event(BillOverdue::fromBill($bill));
+
+        return ServiceResult::success(
+            $bill->fresh(['contact', 'items']),
+            'Tagihan ditandai sebagai jatuh tempo.'
+        );
+    }
+
+    /**
+     * Update bill payment status based on current paid amount.
+     *
+     * Automatically determines the correct status:
+     * - Paid: if paid_amount >= total_amount
+     * - Partial: if paid_amount > 0 and < total_amount
+     * - Overdue: if past due date and not fully paid
+     *
+     * @return ServiceResult<Bill>
+     */
+    public function updatePaymentStatus(Bill $bill): ServiceResult
+    {
+        $bill->refresh();
+
+        // Skip if cancelled
+        if ($bill->status === DocumentStatus::Cancelled) {
+            return ServiceResult::success($bill, 'Tagihan sudah dibatalkan.');
+        }
+
+        // Skip if still draft
+        if ($bill->status === DocumentStatus::Draft) {
+            return ServiceResult::success($bill, 'Tagihan masih draft.');
+        }
+
+        // Determine target status based on payment
+        if ($bill->paid_amount >= $bill->total_amount) {
+            if ($bill->status === DocumentStatus::Paid) {
+                return ServiceResult::success($bill, 'Status tidak berubah.');
+            }
+
+            return $this->markAsPaid($bill);
+        }
+
+        if ($bill->paid_amount > 0) {
+            if ($bill->status === DocumentStatus::Partial) {
+                return ServiceResult::success($bill, 'Status tidak berubah.');
+            }
+
+            return $this->markAsPartial($bill);
+        }
+
+        // No payment - check if overdue
+        if ($bill->due_date->isPast() && ! in_array($bill->status, [DocumentStatus::Overdue, DocumentStatus::Paid])) {
+            return $this->markAsOverdue($bill);
+        }
+
+        return ServiceResult::success($bill, 'Status tidak berubah.');
     }
 }

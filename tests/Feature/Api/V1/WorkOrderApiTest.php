@@ -125,7 +125,7 @@ describe('Work Order CRUD', function () {
         ]);
 
         $response->assertCreated()
-            ->assertJsonPath('data.status', 'draft')
+            ->assertJsonPath('data.status.value', 'draft')
             ->assertJsonPath('data.name', 'Assembly Panel MDP')
             ->assertJsonPath('data.type', 'production')
             ->assertJsonPath('data.priority', 'high')
@@ -345,7 +345,7 @@ describe('Work Order Workflow', function () {
         $response = $this->postJson("/api/v1/work-orders/{$workOrder->id}/confirm");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'confirmed');
+            ->assertJsonPath('data.status.value', 'confirmed');
 
         // Check stock reservation
         $stock = ProductStock::where('product_id', $product->id)
@@ -392,7 +392,7 @@ describe('Work Order Workflow', function () {
         $response = $this->postJson("/api/v1/work-orders/{$workOrder->id}/start");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'in_progress');
+            ->assertJsonPath('data.status.value', 'in_progress');
 
         $workOrder->refresh();
         expect($workOrder->actual_start_date)->not->toBeNull();
@@ -429,7 +429,7 @@ describe('Work Order Workflow', function () {
         $response = $this->postJson("/api/v1/work-orders/{$workOrder->id}/complete");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'completed');
+            ->assertJsonPath('data.status.value', 'completed');
 
         // Check stock was consumed
         $stock = ProductStock::where('product_id', $product->id)
@@ -468,7 +468,7 @@ describe('Work Order Workflow', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'cancelled')
+            ->assertJsonPath('data.status.value', 'cancelled')
             ->assertJsonPath('data.cancellation_reason', 'Pesanan dibatalkan klien');
     });
 
@@ -496,7 +496,7 @@ describe('Work Order Workflow', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'cancelled');
+            ->assertJsonPath('data.status.value', 'cancelled');
 
         // Check reservation was released
         $stock = ProductStock::where('product_id', $product->id)

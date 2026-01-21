@@ -17,6 +17,7 @@ use App\Models\Manufacturing\BomVariantGroup;
 use App\Models\Shared\Attachment;
 use App\Models\User;
 use App\Traits\Filterable;
+use App\Traits\HasStatusHistory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -27,7 +28,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Quotation extends Model
 {
-    use Filterable, HasFactory, SoftDeletes;
+    use Filterable, HasFactory, HasStatusHistory, SoftDeletes;
 
     protected $fillable = [
         'quotation_number',

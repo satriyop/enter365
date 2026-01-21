@@ -77,7 +77,7 @@ describe('Invoice API', function () {
         ]);
 
         $response->assertCreated()
-            ->assertJsonPath('data.status', 'draft')
+            ->assertJsonPath('data.status.value', 'draft')
             ->assertJsonCount(2, 'data.items');
 
         // Verify calculations: 5,000,000 + 250,000 = 5,250,000 subtotal
@@ -197,7 +197,7 @@ describe('Invoice API', function () {
         $response = $this->postJson("/api/v1/invoices/{$invoice->id}/post");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'sent')
+            ->assertJsonPath('data.status.value', 'sent')
             ->assertJsonStructure(['data' => ['journal_entry']]);
 
         // Verify journal entry was created
@@ -205,7 +205,11 @@ describe('Invoice API', function () {
     });
 
     it('cannot post already posted invoice', function () {
-        $invoice = Invoice::factory()->sent()->create();
+        // Create invoice with items (defense in depth - proper test data)
+        $invoice = Invoice::factory()
+            ->has(InvoiceItem::factory(), 'items')
+            ->sent()
+            ->create();
 
         $response = $this->postJson("/api/v1/invoices/{$invoice->id}/post");
 
