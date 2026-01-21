@@ -592,6 +592,39 @@ When working on frontend features or debugging API integration, reference the Vu
 
 ---
 
+## Architecture Reference (Skills)
+
+This project has detailed architecture documentation in `.claude/skills/enter365/`:
+
+| Skill File | Purpose |
+|------------|---------|
+| **SKILL.md** | Main entry with 14+ gotchas, architecture overview |
+| **STATE_MACHINES.md** | 7 state machines with transitions, events, templates |
+| **STRATEGIES.md** | COGS, Inventory, Manufacturing accounting strategies |
+| **EVENTS.md** | 74 domain events, event dispatcher pattern |
+| **MODELS.md** | 74 models with relationships, casts, scopes |
+| **SERVICE_BINDINGS.md** | All interface → implementation bindings |
+
+These skills are auto-loaded by Claude Code when working on this project.
+
+### Key Architecture Patterns
+
+- **Service Layer**: All business logic in `app/Services/{Domain}/`
+- **State Machines**: Document workflows via `app/Domain/{Domain}/{Entity}/`
+- **Contracts**: Always inject interfaces, not concrete classes
+- **Indonesian Messages**: User-facing errors in Indonesian
+
+### DB:: vs Eloquent Override
+
+Despite Boost guidelines, prefer `DB::table()` over Eloquent for:
+- Dashboard aggregations (SUM, AVG, COUNT)
+- Reports with 100+ rows (avoids hydration overhead)
+- Bulk read-only operations
+
+See `~/.claude/CLAUDE.md` for detailed performance patterns.
+
+---
+
 ## API Documentation with Scramble
 
 This project uses [Scramble](https://scramble.dedoc.co/) for automatic OpenAPI documentation generation.
