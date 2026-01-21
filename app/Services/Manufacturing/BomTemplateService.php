@@ -1,7 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Manufacturing;
 
+use App\Contracts\Events\EventDispatcherInterface;
+use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Manufacturing\BomTemplateServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Manufacturing\Bom;
@@ -9,13 +13,17 @@ use App\Models\Manufacturing\BomItem;
 use App\Models\Manufacturing\BomTemplate;
 use App\Models\Manufacturing\BomTemplateItem;
 use App\Models\Manufacturing\ComponentBrandMapping;
-use Illuminate\Support\Facades\DB;
+use App\Services\Base\AbstractApplicationService;
 
-class BomTemplateService implements BomTemplateServiceInterface
+class BomTemplateService extends AbstractApplicationService implements BomTemplateServiceInterface
 {
     public function __construct(
-        private BomService $bomService
-    ) {}
+        private BomService $bomService,
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger
+    ) {
+        parent::__construct($eventDispatcher, $logger);
+    }
 
     /**
      * Create a new BOM from a template.
@@ -75,7 +83,7 @@ class BomTemplateService implements BomTemplateServiceInterface
         }
 
         // Create the BOM
-        $bom = DB::transaction(function () use ($template, $options, $bomItems) {
+        $bom = $this->executeInTransaction('create_from_template', function () use ($template, $options, $bomItems) {
             $bom = new Bom([
                 'product_id' => $options['product_id'],
                 'name' => $options['name'] ?? "BOM dari Template: {$template->name}",
@@ -86,7 +94,7 @@ class BomTemplateService implements BomTemplateServiceInterface
                 'spec_rule_set_id' => $template->default_rule_set_id,
             ]);
             $bom->bom_number = Bom::generateBomNumber();
-            $bom->created_by = auth()->id();
+            $bom->created_by = $this->getUserId();
             $bom->save();
 
             // Create items
@@ -109,7 +117,7 @@ class BomTemplateService implements BomTemplateServiceInterface
             $template->incrementUsage();
 
             return $bom->fresh(['items.product', 'product']);
-        });
+        }, ['template_id' => $template->id, 'product_id' => $options['product_id']]);
 
         return [
             'bom' => $bom,

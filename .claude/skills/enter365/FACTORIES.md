@@ -470,10 +470,32 @@ $workOrder = WorkOrder::factory()
 
 ### Creating with Related Items
 
+**⚠️ GOTCHA: Always use `->has()` for relationships, not custom methods**
+
+Don't assume factories have custom `withItems()` methods. Use Laravel's standard `->has()`:
+
+```php
+// ❌ WRONG - withItems() may not exist on all factories
+$quotation = Quotation::factory()->withItems(3)->create();
+// Error: Call to undefined method QuotationFactory::withItems()
+
+// ✅ CORRECT - Standard Laravel pattern
+$quotation = Quotation::factory()
+    ->has(QuotationItem::factory()->count(3), 'items')
+    ->create();
+```
+
+**Standard pattern for all document factories:**
+
 ```php
 // Invoice with 3 items
 Invoice::factory()
     ->has(InvoiceItem::factory()->count(3), 'items')
+    ->create();
+
+// Quotation with items
+Quotation::factory()
+    ->has(QuotationItem::factory()->count(2), 'items')
     ->create();
 
 // BOM with items
@@ -485,6 +507,17 @@ Bom::factory()
 WorkOrder::factory()
     ->has(WorkOrderItem::factory()->count(3), 'items')
     ->create();
+```
+
+**When creating for state transition tests, always include items:**
+
+```php
+// State transitions often require items to exist
+$quotation = Quotation::factory()
+    ->has(QuotationItem::factory(), 'items')  // At least 1 item
+    ->create(['contact_id' => $contact->id]);
+
+$submitted = $service->submit($quotation);  // Works ✓
 ```
 
 ### Testing Status Transitions

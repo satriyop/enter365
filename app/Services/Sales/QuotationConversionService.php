@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace App\Services\Sales;
 
+use App\Contracts\Events\EventDispatcherInterface;
+use App\Contracts\Logging\ContextualLoggerInterface;
+use App\Contracts\Sales\QuotationConversionServiceInterface;
+use App\Domain\Sales\Quotations\QuotationDomainFactory;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\InvoiceItem;
 use App\Models\Sales\Quotation;
-use Illuminate\Support\Facades\DB;
+use App\Services\Base\AbstractApplicationService;
 use InvalidArgumentException;
 
 /**
@@ -16,20 +20,29 @@ use InvalidArgumentException;
  *
  * Handles converting approved quotations to invoices and other document types.
  */
-class QuotationConversionService
+class QuotationConversionService extends AbstractApplicationService implements QuotationConversionServiceInterface
 {
+    public function __construct(
+        private QuotationDomainFactory $domainFactory,
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger
+    ) {
+        parent::__construct($eventDispatcher, $logger);
+    }
+
     /**
      * Convert an approved quotation to an invoice.
      */
     public function convertToInvoice(Quotation $quotation): Invoice
     {
-        if (! $quotation->canConvert()) {
-            $reason = $quotation->stateMachine()->getConversionBlockReason()
+        $stateMachine = $this->domainFactory->stateMachine($quotation);
+        if (! $stateMachine->canConvert()) {
+            $reason = $stateMachine->getConversionBlockReason()
                 ?? 'Penawaran tidak dapat dikonversi.';
             throw new InvalidArgumentException($reason);
         }
 
-        return DB::transaction(function () use ($quotation) {
+        return $this->executeInTransaction('convert_to_invoice', function () use ($quotation) {
             // Create invoice
             $invoice = Invoice::create([
                 'invoice_number' => Invoice::generateInvoiceNumber(),
@@ -48,7 +61,7 @@ class QuotationConversionService
                 'base_currency_total' => $quotation->base_currency_total,
                 'paid_amount' => 0,
                 'status' => DocumentStatus::Draft,
-                'created_by' => auth()->id(),
+                'created_by' => $this->getUserId(),
             ]);
 
             // Copy items
@@ -83,10 +96,12 @@ class QuotationConversionService
                 'won_reason' => $quotation->won_reason,
                 'outcome_at' => $quotation->outcome_at,
             ]);
-            $quotation->transitionTo(DocumentStatus::Converted);
+
+            // Transition using state machine with proper event dispatch
+            $this->domainFactory->stateMachine($quotation)->transitionTo(DocumentStatus::Converted);
 
             return $invoice->load('items', 'contact');
-        });
+        }, ['quotation_id' => $quotation->id]);
     }
 
     /**
@@ -94,7 +109,7 @@ class QuotationConversionService
      */
     public function canConvertToInvoice(Quotation $quotation): bool
     {
-        return $quotation->canConvert();
+        return $this->domainFactory->stateMachine($quotation)->canConvert();
     }
 
     /**

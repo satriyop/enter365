@@ -269,6 +269,80 @@ $this->app->bind(YourStrategy::class, function ($app) {
 
 ---
 
+## Strategy Composition Pattern
+
+### Problem: Strategies Creating Other Strategies
+
+When strategies need shared behavior, **don't create strategies with `new`**:
+
+```php
+// ❌ BAD: Tight coupling via new
+class COGSOnDeliveryStrategy implements COGSRecognitionStrategy
+{
+    public function __construct(
+        private JournalServiceInterface $journalService
+    ) {}
+
+    public function calculateCOGS(Invoice $invoice): int
+    {
+        // Creates dependency internally - can't mock, can't swap
+        return (new COGSOnInvoiceStrategy($this->journalService))
+            ->calculateCOGS($invoice);
+    }
+}
+```
+
+### Solution: Inject Dependent Strategies
+
+Let Laravel's container resolve the dependency chain:
+
+```php
+// ✅ GOOD: Strategy composition via DI
+class COGSOnDeliveryStrategy implements COGSRecognitionStrategy
+{
+    public function __construct(
+        private COGSOnInvoiceStrategy $invoiceStrategy  // Injected!
+    ) {}
+
+    public function calculateCOGS(Invoice $invoice): int
+    {
+        return $this->invoiceStrategy->calculateCOGS($invoice);
+    }
+}
+```
+
+### Why This Works
+
+1. **Laravel auto-resolves** - Container builds dependency graph automatically
+2. **Testable** - Mock the injected strategy in tests
+3. **Explicit dependencies** - Visible in constructor
+4. **No unused properties** - Only inject what you actually use
+
+### Real Examples (Fixed Jan 2026)
+
+| Strategy | Injects | For Method |
+|----------|---------|------------|
+| `COGSOnDeliveryStrategy` | `COGSOnInvoiceStrategy` | `calculateCOGS()` |
+| `PeriodicInventoryStrategy` | `HybridInventoryStrategy` | `onStockAdjustment()` |
+| `PerpetualInventoryStrategy` | `HybridInventoryStrategy` | `onStockAdjustment()` |
+
+### Detection
+
+Run the CI script to catch violations:
+
+```bash
+./scripts/check-pattern-compliance.sh
+# Checks for: new ...Strategy() in strategy files
+```
+
+Or manually:
+
+```bash
+grep -rn "new [A-Za-z]*Strategy(" app/Services/Accounting/Strategies/
+```
+
+---
+
 ## Other Strategies (Non-Accounting)
 
 | Strategy | Interface | Purpose |

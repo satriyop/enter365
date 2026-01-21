@@ -1,32 +1,39 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Purchasing;
 
+use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Inventory\InventoryServiceInterface;
+use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Purchasing\GoodsReceiptNoteServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Inventory\Warehouse;
 use App\Models\Purchasing\GoodsReceiptNote;
 use App\Models\Purchasing\GoodsReceiptNoteItem;
 use App\Models\Purchasing\PurchaseOrder;
+use App\Services\Base\AbstractApplicationService;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
-class GoodsReceiptNoteService implements GoodsReceiptNoteServiceInterface
+class GoodsReceiptNoteService extends AbstractApplicationService implements GoodsReceiptNoteServiceInterface
 {
     public function __construct(
         private InventoryServiceInterface $inventoryService,
-        private PurchaseOrderService $purchaseOrderService,
         private PurchaseOrderReceivingService $receivingService,
-        private GoodsReceiptNoteNumberGenerator $numberGenerator
-    ) {}
+        private GoodsReceiptNoteNumberGenerator $numberGenerator,
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger
+    ) {
+        parent::__construct($eventDispatcher, $logger);
+    }
 
     /**
      * Create a new GRN.
      */
     public function create(array $data): GoodsReceiptNote
     {
-        return DB::transaction(function () use ($data) {
+        return $this->executeInTransaction('create', function () use ($data) {
             $grn = GoodsReceiptNote::create([
                 'grn_number' => $this->numberGenerator->generate(),
                 'purchase_order_id' => $data['purchase_order_id'],
@@ -38,11 +45,11 @@ class GoodsReceiptNoteService implements GoodsReceiptNoteServiceInterface
                 'vehicle_number' => $data['vehicle_number'] ?? null,
                 'driver_name' => $data['driver_name'] ?? null,
                 'notes' => $data['notes'] ?? null,
-                'created_by' => $data['created_by'] ?? auth()->id(),
+                'created_by' => $data['created_by'] ?? $this->getUserId(),
             ]);
 
             return $grn;
-        });
+        }, ['purchase_order_id' => $data['purchase_order_id'], 'warehouse_id' => $data['warehouse_id']]);
     }
 
     /**
@@ -54,7 +61,7 @@ class GoodsReceiptNoteService implements GoodsReceiptNoteServiceInterface
             throw new \InvalidArgumentException('PO tidak dapat menerima barang pada status ini.');
         }
 
-        return DB::transaction(function () use ($po, $data) {
+        return $this->executeInTransaction('create_from_purchase_order', function () use ($po, $data) {
             $grn = $this->create([
                 'purchase_order_id' => $po->id,
                 'warehouse_id' => $data['warehouse_id'],
@@ -64,7 +71,7 @@ class GoodsReceiptNoteService implements GoodsReceiptNoteServiceInterface
                 'vehicle_number' => $data['vehicle_number'] ?? null,
                 'driver_name' => $data['driver_name'] ?? null,
                 'notes' => $data['notes'] ?? null,
-                'created_by' => $data['created_by'] ?? auth()->id(),
+                'created_by' => $data['created_by'] ?? $this->getUserId(),
             ]);
 
             // Create GRN items from PO items with remaining quantities
@@ -87,7 +94,7 @@ class GoodsReceiptNoteService implements GoodsReceiptNoteServiceInterface
             $grn->updateTotals();
 
             return $grn->fresh(['items', 'purchaseOrder']);
-        });
+        }, ['purchase_order_id' => $po->id, 'warehouse_id' => $data['warehouse_id']]);
     }
 
     /**
@@ -194,7 +201,7 @@ class GoodsReceiptNoteService implements GoodsReceiptNoteServiceInterface
             throw new \InvalidArgumentException('GRN tidak dapat diselesaikan. Pastikan ada item yang telah diterima.');
         }
 
-        return DB::transaction(function () use ($grn, $userId) {
+        return $this->executeInTransaction('complete', function () use ($grn, $userId) {
             $warehouse = Warehouse::findOrFail($grn->warehouse_id);
             $purchaseOrder = $grn->purchaseOrder;
 
@@ -229,7 +236,7 @@ class GoodsReceiptNoteService implements GoodsReceiptNoteServiceInterface
             $grn->transitionTo(DocumentStatus::Completed, $userId);
 
             return $grn->fresh();
-        });
+        }, ['grn_id' => $grn->id]);
     }
 
     /**

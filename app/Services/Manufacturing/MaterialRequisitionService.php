@@ -4,34 +4,40 @@ declare(strict_types=1);
 
 namespace App\Services\Manufacturing;
 
+use App\Contracts\Events\EventDispatcherInterface;
+use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Manufacturing\MaterialRequisitionServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Inventory\ProductStock;
 use App\Models\Manufacturing\MaterialRequisition;
 use App\Models\Manufacturing\MaterialRequisitionItem;
 use App\Models\Manufacturing\WorkOrder;
-use Illuminate\Support\Facades\DB;
+use App\Services\Base\AbstractApplicationService;
 use InvalidArgumentException;
 
-class MaterialRequisitionService implements MaterialRequisitionServiceInterface
+class MaterialRequisitionService extends AbstractApplicationService implements MaterialRequisitionServiceInterface
 {
     public function __construct(
-        private MaterialRequisitionNumberGenerator $numberGenerator
-    ) {}
+        private MaterialRequisitionNumberGenerator $numberGenerator,
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger
+    ) {
+        parent::__construct($eventDispatcher, $logger);
+    }
 
     /**
      * Create a new material requisition.
      */
     public function create(WorkOrder $wo, array $data = []): MaterialRequisition
     {
-        return DB::transaction(function () use ($wo, $data) {
+        return $this->executeInTransaction('create', function () use ($wo, $data) {
             $mr = new MaterialRequisition([
                 'work_order_id' => $wo->id,
                 'warehouse_id' => $data['warehouse_id'] ?? $wo->warehouse_id,
                 'requested_date' => $data['requested_date'] ?? now()->toDateString(),
                 'required_date' => $data['required_date'] ?? null,
                 'notes' => $data['notes'] ?? null,
-                'requested_by' => $data['requested_by'] ?? auth()->id(),
+                'requested_by' => $data['requested_by'] ?? $this->getUserId(),
             ]);
             $mr->requisition_number = $this->numberGenerator->generate();
             $mr->save();
@@ -39,7 +45,7 @@ class MaterialRequisitionService implements MaterialRequisitionServiceInterface
             $this->populateFromWorkOrder($mr, $wo);
 
             return $mr->fresh(['items', 'workOrder']);
-        });
+        }, ['work_order_id' => $wo->id]);
     }
 
     /**
@@ -51,7 +57,7 @@ class MaterialRequisitionService implements MaterialRequisitionServiceInterface
             throw new InvalidArgumentException('Material requisition hanya dapat diedit dalam status draft.');
         }
 
-        return DB::transaction(function () use ($mr, $data) {
+        return $this->executeInTransaction('update', function () use ($mr, $data) {
             $mr->fill($data);
             $mr->save();
 
@@ -67,7 +73,7 @@ class MaterialRequisitionService implements MaterialRequisitionServiceInterface
             }
 
             return $mr->fresh(['items', 'workOrder']);
-        });
+        }, ['requisition_id' => $mr->id]);
     }
 
     /**
@@ -79,11 +85,11 @@ class MaterialRequisitionService implements MaterialRequisitionServiceInterface
             throw new InvalidArgumentException('Hanya material requisition draft yang dapat dihapus.');
         }
 
-        return DB::transaction(function () use ($mr) {
+        return $this->executeInTransaction('delete', function () use ($mr) {
             $mr->items()->delete();
 
             return $mr->delete();
-        });
+        }, ['requisition_id' => $mr->id]);
     }
 
     /**
@@ -95,7 +101,7 @@ class MaterialRequisitionService implements MaterialRequisitionServiceInterface
             throw new InvalidArgumentException('Material requisition tidak dapat disetujui.');
         }
 
-        return DB::transaction(function () use ($mr, $userId) {
+        return $this->executeInTransaction('approve', function () use ($mr, $userId) {
             foreach ($mr->items as $item) {
                 $item->quantity_approved = $item->quantity_requested;
                 $item->quantity_pending = $item->quantity_requested;
@@ -105,7 +111,7 @@ class MaterialRequisitionService implements MaterialRequisitionServiceInterface
             $mr->transitionTo(DocumentStatus::Approved, $userId);
 
             return $mr->fresh(['items']);
-        });
+        }, ['requisition_id' => $mr->id]);
     }
 
     /**
@@ -117,7 +123,7 @@ class MaterialRequisitionService implements MaterialRequisitionServiceInterface
             throw new InvalidArgumentException('Material requisition tidak dapat dikeluarkan. Pastikan sudah disetujui.');
         }
 
-        return DB::transaction(function () use ($mr, $items, $userId) {
+        return $this->executeInTransaction('issue', function () use ($mr, $items, $userId) {
             foreach ($items as $issueData) {
                 $mrItem = MaterialRequisitionItem::findOrFail($issueData['item_id']);
 
@@ -154,7 +160,7 @@ class MaterialRequisitionService implements MaterialRequisitionServiceInterface
                 $mrItem->save();
             }
 
-            $mr->issued_by = $userId ?? auth()->id();
+            $mr->issued_by = $userId ?? $this->getUserId();
             $mr->issued_at = now();
             $mr->save();
 
@@ -165,7 +171,7 @@ class MaterialRequisitionService implements MaterialRequisitionServiceInterface
             }
 
             return $mr->fresh(['items']);
-        });
+        }, ['requisition_id' => $mr->id]);
     }
 
     /**

@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\Sales;
 
+use App\Contracts\Events\EventDispatcherInterface;
+use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Sales\SalesReturnServiceInterface;
+use App\Contracts\Shared\DocumentNumberGeneratorInterface;
 use App\Domain\Sales\SalesReturns\Handlers\SalesReturnApprovalPipeline;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\Invoice;
@@ -12,17 +15,18 @@ use App\Models\Sales\SalesReturn;
 use App\Models\Sales\SalesReturnItem;
 use App\Services\Base\AbstractDocumentService;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 
 class SalesReturnService extends AbstractDocumentService implements SalesReturnServiceInterface
 {
     private SalesReturnApprovalPipeline $approvalPipeline;
 
     public function __construct(
-        \App\Contracts\Shared\DocumentNumberGeneratorInterface $numberGenerator,
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger,
+        DocumentNumberGeneratorInterface $numberGenerator,
         SalesReturnApprovalPipeline $approvalPipeline
     ) {
-        parent::__construct(numberGenerator: $numberGenerator);
+        parent::__construct($eventDispatcher, $logger, numberGenerator: $numberGenerator);
 
         $this->approvalPipeline = $approvalPipeline;
     }
@@ -147,7 +151,7 @@ class SalesReturnService extends AbstractDocumentService implements SalesReturnS
      */
     public function createFromInvoice(Invoice $invoice, array $data = []): SalesReturn
     {
-        return DB::transaction(function () use ($invoice, $data) {
+        return $this->executeInTransaction('create_from_invoice', function () use ($invoice, $data) {
             $defaults = [
                 'invoice_id' => $invoice->id,
                 'contact_id' => $invoice->contact_id,
@@ -156,7 +160,7 @@ class SalesReturnService extends AbstractDocumentService implements SalesReturnS
                 'reason' => $data['reason'] ?? null,
                 'notes' => $data['notes'] ?? null,
                 'tax_rate' => $invoice->tax_rate,
-                'created_by' => $data['created_by'] ?? auth()->id(),
+                'created_by' => $data['created_by'] ?? $this->getUserId(),
             ];
 
             $defaults['return_number'] = $this->generateDocumentNumber();
@@ -177,7 +181,7 @@ class SalesReturnService extends AbstractDocumentService implements SalesReturnS
             $salesReturn->save();
 
             return $salesReturn->fresh(['items', 'contact', 'invoice', 'warehouse']);
-        });
+        }, ['invoice_id' => $invoice->id]);
     }
 
     /**
@@ -207,14 +211,14 @@ class SalesReturnService extends AbstractDocumentService implements SalesReturnS
             throw new \InvalidArgumentException('Only submitted sales returns can be approved.');
         }
 
-        return DB::transaction(function () use ($salesReturn, $userId) {
+        return $this->executeInTransaction('approve', function () use ($salesReturn, $userId) {
             $salesReturn->transitionTo(DocumentStatus::Approved, $userId);
 
             // Process approval side effects via pipeline
             $this->approvalPipeline->process($salesReturn);
 
             return $salesReturn->fresh(['items', 'journalEntry']);
-        });
+        }, ['sales_return_id' => $salesReturn->id]);
     }
 
     /**

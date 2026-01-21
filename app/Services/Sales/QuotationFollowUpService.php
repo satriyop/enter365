@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services\Sales;
 
+use App\Contracts\Events\EventDispatcherInterface;
+use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\Quotation;
+use App\Services\Base\AbstractApplicationService;
 use DateTime;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Service for quotation follow-up management.
@@ -15,8 +17,15 @@ use Illuminate\Support\Facades\DB;
  * Handles scheduling follow-ups, recording contact activities,
  * and calculating auto follow-up dates.
  */
-class QuotationFollowUpService
+class QuotationFollowUpService extends AbstractApplicationService
 {
+    public function __construct(
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger
+    ) {
+        parent::__construct($eventDispatcher, $logger);
+    }
+
     /**
      * Schedule next follow-up for a quotation.
      */
@@ -55,13 +64,13 @@ class QuotationFollowUpService
      */
     public function recordContact(Quotation $quotation): Quotation
     {
-        return DB::transaction(function () use ($quotation) {
+        return $this->executeInTransaction('record_contact', function () use ($quotation) {
             $quotation->last_contacted_at = now();
             $quotation->follow_up_count = ($quotation->follow_up_count ?? 0) + 1;
             $quotation->save();
 
             return $quotation->fresh();
-        });
+        }, ['quotation_id' => $quotation->id]);
     }
 
     /**

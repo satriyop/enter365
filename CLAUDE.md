@@ -14,6 +14,7 @@ This application is a Laravel application and its main Laravel ecosystems packag
 - laravel/sanctum (SANCTUM) - v4
 - livewire/livewire (LIVEWIRE) - v3
 - livewire/volt (VOLT) - v1
+- larastan/larastan (LARASTAN) - v3
 - laravel/mcp (MCP) - v0
 - laravel/pint (PINT) - v1
 - laravel/sail (SAIL) - v1
@@ -579,6 +580,22 @@ $pages->assertNoJavascriptErrors()->assertNoConsoleLogs();
 
 <!-- Project-Specific Instructions (Not managed by Laravel Boost) -->
 
+## ⚠️ Application Status: PRE-PRODUCTION
+
+**This application is NOT in production yet.** This has important implications:
+
+| Aspect | Implication |
+|--------|-------------|
+| **Backward Compatibility** | Not required - breaking changes are acceptable |
+| **Deprecation Strategy** | Not needed - can remove/replace code directly |
+| **Data Migration** | No production data to worry about |
+| **Refactoring** | Can be aggressive - prioritize clean architecture over compatibility |
+| **API Versioning** | Can make breaking changes to existing endpoints |
+
+When refactoring or making architectural changes, prioritize **code quality and correctness** over backward compatibility concerns.
+
+---
+
 ## Project Structure
 
 This is a **full-stack application** with separate frontend and backend:
@@ -598,12 +615,16 @@ This project has detailed architecture documentation in `.claude/skills/enter365
 
 | Skill File | Purpose |
 |------------|---------|
-| **SKILL.md** | Main entry with 14+ gotchas, architecture overview |
+| **SKILL.md** | Main entry with 17+ gotchas, architecture overview |
 | **STATE_MACHINES.md** | 7 state machines with transitions, events, templates |
 | **STRATEGIES.md** | COGS, Inventory, Manufacturing accounting strategies |
 | **EVENTS.md** | 74 domain events, event dispatcher pattern |
 | **MODELS.md** | 74 models with relationships, casts, scopes |
+| **REPOSITORIES.md** | Repository pattern, domain queries, DB::table() for stats |
+| **ARCHITECTURE_PATTERNS.md** | OperationContext, Domain Factory, Coordinator pattern |
 | **SERVICE_BINDINGS.md** | All interface → implementation bindings |
+| **CODE_REVIEW_ANTIPATTERNS.md** | Top code smells, detection checklist, fixes applied |
+| **REFACTORING_HISTORY.md** | Changelog of architectural fixes with rationale |
 
 These skills are auto-loaded by Claude Code when working on this project.
 
@@ -628,10 +649,6 @@ See `~/.claude/CLAUDE.md` for detailed performance patterns.
 ## API Documentation with Scramble
 
 This project uses [Scramble](https://scramble.dedoc.co/) for automatic OpenAPI documentation generation.
-
-### On Planning for Refactor
-**This is a fresh development app** - no production data or backward compatibility concerns
-
 
 ### After Creating or Modifying API Endpoints
 
@@ -681,3 +698,96 @@ public function index(Request $request): AnonymousResourceCollection
 2. Run `php artisan test --filter=YourTest` to verify
 3. Run `php artisan scramble:export --path=api.json`
 4. Regenerate frontend types if needed: `npm run types:generate`
+
+---
+
+## Static Analysis with Larastan (PHPStan)
+
+This project uses [Larastan](https://github.com/larastan/larastan) for static analysis to catch bugs before runtime.
+
+### Running PHPStan
+
+```bash
+# Run full analysis
+vendor/bin/phpstan analyse
+
+# Analyze specific file or directory
+vendor/bin/phpstan analyse app/Services/Sales/
+
+# With more memory for large analysis
+vendor/bin/phpstan analyse --memory-limit=512M
+```
+
+### Configuration
+
+- **Config file**: `phpstan.neon`
+- **Baseline file**: `phpstan-baseline.neon` (tracks ~1844 existing errors)
+- **Level**: 5 (good balance of strictness vs noise)
+
+### When to Run PHPStan
+
+**IMPORTANT:** Run PHPStan after writing or modifying PHP code:
+
+```bash
+# After modifying files, check for new errors
+vendor/bin/phpstan analyse app/Services/YourModifiedService.php
+```
+
+### What PHPStan Catches
+
+| Error Type | Example |
+|------------|---------|
+| **Type mismatches** | Passing `string` where `int` expected |
+| **Missing methods** | Calling undefined method on model |
+| **Null safety** | Accessing property on possibly null object |
+| **Return types** | Function doesn't return declared type |
+| **Argument counts** | Wrong number of arguments to function |
+
+### Baseline Strategy
+
+The project uses a baseline file (`phpstan-baseline.neon`) to track existing errors:
+
+- **New code must pass** - PHPStan will fail if you introduce NEW errors
+- **Existing errors tracked** - ~1844 legacy errors are baselined
+- **Gradual improvement** - Fix baselined errors over time
+
+### Regenerating Baseline
+
+If you fix baselined errors, regenerate the baseline:
+
+```bash
+vendor/bin/phpstan analyse --generate-baseline=phpstan-baseline.neon
+```
+
+### Adding PHPDoc for Better Analysis
+
+When PHPStan can't infer types, add PHPDoc:
+
+```php
+/**
+ * @param array{
+ *     contact_id: int,
+ *     quotation_date: string,
+ *     items: list<array{product_id: int, quantity: float}>
+ * } $data
+ * @return Collection<int, Quotation>
+ */
+public function createBatch(array $data): Collection
+```
+
+### Ignored Errors
+
+These patterns are intentionally ignored in `phpstan.neon`:
+
+| Pattern | Reason |
+|---------|--------|
+| `Unsafe usage of new static` | Common Laravel pattern |
+| `Call to undefined method.*Builder` | Eloquent dynamic methods |
+| `Generic type.*does not specify all template types` | Too noisy, low value |
+| `Trait.*is used zero times` | Traits analyzed when used |
+
+### Excluded Files
+
+Files excluded from analysis (incomplete implementations):
+
+- `app/Services/Accounting/Strategies/Manufacturing/*.php` - TODO: Complete these strategies

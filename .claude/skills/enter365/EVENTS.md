@@ -392,3 +392,135 @@ protected $subscribe = [
 | Outcome | `{Entity}{Result}` |
 
 **Examples:** `InvoiceSent`, `QuotationApproved`, `ProjectStarted`, `QuotationWon`
+
+---
+
+## When NOT to Use Events ⚠️
+
+### Events Are for Side Effects, Not Core Operations
+
+Events are designed for **decoupled side effects** that can fail independently. They are NOT suitable for **core operations** that must succeed or fail atomically.
+
+### ❌ WRONG: Event-Driven Inventory
+
+```php
+// DON'T DO THIS - Breaks transactional consistency
+public function complete(GoodsReceiptNote $grn): GoodsReceiptNote
+{
+    return DB::transaction(function () use ($grn) {
+        $grn->transitionTo(DocumentStatus::Completed);
+
+        // ❌ WRONG - Event listener runs OUTSIDE transaction
+        $this->eventDispatcher->dispatch(new GoodsReceived($grn));
+
+        return $grn;
+    });
+}
+
+// Listener runs async or after transaction commits
+class InventoryListener
+{
+    public function handle(GoodsReceived $event): void
+    {
+        // If this fails, GRN is already "Completed" but stock not updated!
+        $this->inventoryService->stockIn(...);
+    }
+}
+```
+
+**Problems:**
+- If listener fails, GRN shows "Completed" but inventory not updated
+- No rollback possible - transaction already committed
+- Data inconsistency between documents and stock levels
+
+### ✅ CORRECT: Direct Call Within Transaction
+
+```php
+// DO THIS - Inventory within same transaction
+public function complete(GoodsReceiptNote $grn): GoodsReceiptNote
+{
+    return DB::transaction(function () use ($grn) {
+        // Stock update within transaction
+        foreach ($grn->items as $item) {
+            $this->inventoryService->stockIn(
+                $item->product,
+                $grn->warehouse,
+                $item->quantity_received,
+                $item->unit_price,
+                "GRN: {$grn->grn_number}"
+            );
+        }
+
+        // Status change after inventory succeeds
+        $grn->transitionTo(DocumentStatus::Completed);
+
+        // Event for side effects (audit, notifications) - OK to fail
+        $this->eventDispatcher->dispatch(new GoodsReceiptCompleted($grn));
+
+        return $grn;
+    });
+}
+```
+
+### Decision Matrix: Events vs Direct Calls
+
+| Operation Type | Use Events? | Why |
+|----------------|-------------|-----|
+| **Audit logging** | ✅ Yes | Failure shouldn't block business operation |
+| **Email notifications** | ✅ Yes | Can retry independently |
+| **Dashboard metrics** | ✅ Yes | Eventually consistent is acceptable |
+| **Inventory movements** | ❌ No | Must be atomic with document status |
+| **Journal entries** | ❌ No | Financial data requires consistency |
+| **Stock reservations** | ❌ No | Must match document state |
+
+### Core Operations That Need Transactions
+
+These operations must happen **within the same transaction** as the triggering action:
+
+| Trigger | Core Operation | Why |
+|---------|----------------|-----|
+| GRN Completed | Stock In | Stock level must match receipt status |
+| Delivery Order Shipped | Stock Out | Inventory must reflect shipment |
+| Work Order Completed | Finished Goods In | Production must match output |
+| Material Requisition Issued | Raw Materials Out | Consumption must be atomic |
+| Sales Return Approved | Stock In + Credit Note | Return must be complete |
+
+### Acceptable Event-Based Side Effects
+
+These can safely use events because eventual consistency is acceptable:
+
+| Event | Side Effect | Why OK to Use Events |
+|-------|-------------|---------------------|
+| `InvoiceSent` | Send email to customer | Email can be retried |
+| `QuotationApproved` | Notify sales manager | Notification not critical |
+| `WorkOrderCompleted` | Update dashboard stats | Dashboard can catch up |
+| `PaymentReceived` | Log audit trail | Audit can happen async |
+
+### Pattern: Synchronous Core + Async Side Effects
+
+```php
+public function ship(DeliveryOrder $do): DeliveryOrder
+{
+    return DB::transaction(function () use ($do) {
+        // SYNCHRONOUS: Core operation (must succeed together)
+        $this->inventoryService->stockOut(...);  // Direct call
+        $do->transitionTo(DocumentStatus::Shipped);
+
+        return $do;
+    });
+
+    // ASYNC: Side effects (outside transaction, OK to fail)
+    $this->eventDispatcher->dispatch(new DeliveryOrderShipped($do));
+}
+```
+
+### Lesson Learned (Jan 2026)
+
+Original architecture plan proposed event-driven inventory decoupling. Analysis revealed this would **break data consistency** for financial/inventory systems where:
+
+1. Failed inventory update should fail the entire operation
+2. Stock levels must match document status exactly
+3. Audit trail requires atomic operations
+4. Rollback must restore complete state
+
+**Result:** Inventory operations remain direct service calls within transactions. Events are used only for non-critical side effects.

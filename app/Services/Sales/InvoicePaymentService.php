@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services\Sales;
 
+use App\Contracts\Events\EventDispatcherInterface;
+use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Sales\InvoiceServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\Invoice;
-use Illuminate\Support\Facades\DB;
+use App\Services\Base\AbstractApplicationService;
 
 /**
  * Service for invoice payment status management.
@@ -15,11 +17,15 @@ use Illuminate\Support\Facades\DB;
  * Handles payment recording and delegates status transitions
  * to InvoiceService for proper state machine handling.
  */
-class InvoicePaymentService
+class InvoicePaymentService extends AbstractApplicationService
 {
     public function __construct(
-        private InvoiceServiceInterface $invoiceService
-    ) {}
+        private InvoiceServiceInterface $invoiceService,
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger
+    ) {
+        parent::__construct($eventDispatcher, $logger);
+    }
 
     /**
      * Update payment status based on paid amount.
@@ -38,12 +44,12 @@ class InvoicePaymentService
      */
     public function recordPayment(Invoice $invoice, int $amount): Invoice
     {
-        return DB::transaction(function () use ($invoice, $amount) {
+        return $this->executeInTransaction('record_payment', function () use ($invoice, $amount) {
             $invoice->paid_amount += $amount;
             $invoice->save();
 
             return $this->updatePaymentStatus($invoice);
-        });
+        }, ['invoice_id' => $invoice->id, 'amount' => $amount]);
     }
 
     /**
@@ -51,12 +57,12 @@ class InvoicePaymentService
      */
     public function reversePayment(Invoice $invoice, int $amount): Invoice
     {
-        return DB::transaction(function () use ($invoice, $amount) {
+        return $this->executeInTransaction('reverse_payment', function () use ($invoice, $amount) {
             $invoice->paid_amount = max(0, $invoice->paid_amount - $amount);
             $invoice->save();
 
             return $this->updatePaymentStatus($invoice);
-        });
+        }, ['invoice_id' => $invoice->id, 'amount' => $amount]);
     }
 
     /**

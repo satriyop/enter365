@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Accounting;
 
+use App\Contracts\Events\EventDispatcherInterface;
+use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Domain\Accounting\FiscalPeriods\Enums\ClosingStep;
 use App\Domain\Accounting\FiscalPeriods\Enums\FiscalPeriodStatus;
 use App\Domain\Accounting\FiscalPeriods\Exceptions\FiscalPeriodException;
@@ -14,7 +16,7 @@ use App\Models\Accounting\Account;
 use App\Models\Accounting\FiscalPeriod;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Accounting\JournalEntryLine;
-use Illuminate\Support\Facades\DB;
+use App\Services\Base\AbstractApplicationService;
 
 /**
  * Orchestrator service for year-end closing process.
@@ -28,13 +30,17 @@ use Illuminate\Support\Facades\DB;
  * 6. Create next period (optional)
  * 7. Populate opening balances (optional)
  */
-class YearEndCloseService
+class YearEndCloseService extends AbstractApplicationService
 {
     public function __construct(
         private AccountingPolicyManager $policyManager,
         private JournalService $journalService,
-        private AccountLookupService $accountLookup
-    ) {}
+        private AccountLookupService $accountLookup,
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger
+    ) {
+        parent::__construct($eventDispatcher, $logger);
+    }
 
     /**
      * Execute the full closing process.
@@ -58,7 +64,7 @@ class YearEndCloseService
         $stateMachine = new FiscalPeriodStateMachine($period);
         $progress = ClosingProgress::initial()->start();
 
-        return DB::transaction(function () use ($period, $options, $stateMachine, $progress) {
+        return $this->executeInTransaction('execute_close', function () use ($period, $options, $stateMachine, $progress) {
             $result = [
                 'success' => true,
                 'message' => '',
@@ -128,7 +134,7 @@ class YearEndCloseService
                     $e
                 );
             }
-        });
+        }, ['period_id' => $period->id]);
     }
 
     /**
@@ -245,7 +251,7 @@ class YearEndCloseService
      */
     public function rollbackClose(FiscalPeriod $period, ClosingProgress $progress): void
     {
-        DB::transaction(function () use ($period, $progress) {
+        $this->executeInTransaction('rollback_close', function () use ($period, $progress) {
             // Reverse journal entries in reverse order
             $journalIds = array_reverse($progress->getJournalEntryIds());
 
@@ -267,7 +273,7 @@ class YearEndCloseService
                 'closed_at' => null,
                 'closed_by' => null,
             ]);
-        });
+        }, ['period_id' => $period->id]);
     }
 
     /**

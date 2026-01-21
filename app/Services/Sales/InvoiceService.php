@@ -40,14 +40,14 @@ class InvoiceService extends AbstractDocumentService implements InvoiceServiceIn
     private COGSRecognitionStrategy $cogsStrategy;
 
     public function __construct(
-        InvoiceRepositoryInterface $repository,
-        DocumentNumberGeneratorInterface $numberGenerator,
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger,
+        InvoiceRepositoryInterface $repository,
+        DocumentNumberGeneratorInterface $numberGenerator,
         JournalServiceInterface $journalService,
         COGSRecognitionStrategy $cogsStrategy
     ) {
-        parent::__construct($repository, $numberGenerator, $eventDispatcher, $logger);
+        parent::__construct($eventDispatcher, $logger, $repository, $numberGenerator);
 
         $this->journalService = $journalService;
         $this->cogsStrategy = $cogsStrategy;

@@ -33,8 +33,9 @@ interface BomServiceInterface
 
     /**
      * Activate a BOM.
+     * User ID is obtained from OperationContext via $this->getUserId().
      */
-    public function activate(Bom $bom, ?int $userId = null): Bom;
+    public function activate(Bom $bom): Bom;
 
     /**
      * Deactivate a BOM.

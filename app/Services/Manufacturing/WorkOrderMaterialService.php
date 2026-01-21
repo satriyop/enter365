@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Manufacturing;
 
+use App\Contracts\Events\EventDispatcherInterface;
+use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Inventory\InventoryMovement;
 use App\Models\Inventory\Product;
@@ -11,7 +13,7 @@ use App\Models\Inventory\ProductStock;
 use App\Models\Manufacturing\MaterialConsumption;
 use App\Models\Manufacturing\WorkOrder;
 use App\Models\Manufacturing\WorkOrderItem;
-use Illuminate\Support\Facades\DB;
+use App\Services\Base\AbstractApplicationService;
 use InvalidArgumentException;
 
 /**
@@ -19,8 +21,15 @@ use InvalidArgumentException;
  *
  * Handles material reservation, consumption, and status tracking.
  */
-class WorkOrderMaterialService
+class WorkOrderMaterialService extends AbstractApplicationService
 {
+    public function __construct(
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger
+    ) {
+        parent::__construct($eventDispatcher, $logger);
+    }
+
     /**
      * Reserve materials from inventory.
      */
@@ -144,7 +153,7 @@ class WorkOrderMaterialService
             throw new InvalidArgumentException('Konsumsi material hanya dapat dicatat saat work order dalam proses.');
         }
 
-        DB::transaction(function () use ($wo, $consumptions) {
+        $this->executeInTransaction('record_consumption', function () use ($wo, $consumptions) {
             foreach ($consumptions as $consumptionData) {
                 $woItem = isset($consumptionData['work_order_item_id'])
                     ? WorkOrderItem::find($consumptionData['work_order_item_id'])
@@ -163,7 +172,7 @@ class WorkOrderMaterialService
                     'unit_cost' => $consumptionData['unit_cost'] ?? $product->purchase_price ?? 0,
                     'consumed_date' => $consumptionData['consumed_date'] ?? now(),
                     'batch_number' => $consumptionData['batch_number'] ?? null,
-                    'consumed_by' => auth()->id(),
+                    'consumed_by' => $this->getUserId(),
                     'notes' => $consumptionData['notes'] ?? null,
                 ]);
                 $consumption->calculateTotalCost();
@@ -182,7 +191,7 @@ class WorkOrderMaterialService
             // Recalculate WO actual costs
             $wo->calculateActualCosts();
             $wo->save();
-        });
+        }, ['work_order_id' => $wo->id, 'items_count' => count($consumptions)]);
     }
 
     /**

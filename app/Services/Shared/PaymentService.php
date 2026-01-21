@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Services\Shared;
 
 use App\Contracts\Accounting\JournalServiceInterface;
+use App\Contracts\Events\EventDispatcherInterface;
+use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Shared\PaymentServiceInterface;
 use App\Domain\Purchasing\Bills\Events\BillFullyPaid;
 use App\Domain\Sales\Events\PaymentReceived;
@@ -14,21 +16,25 @@ use App\Enums\DocumentStatus;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
 use App\Models\Shared\Payment;
+use App\Services\Base\AbstractApplicationService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use InvalidArgumentException;
 
-class PaymentService implements PaymentServiceInterface
+class PaymentService extends AbstractApplicationService implements PaymentServiceInterface
 {
     public function __construct(
-        private JournalServiceInterface $journalService
-    ) {}
+        private JournalServiceInterface $journalService,
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger
+    ) {
+        parent::__construct($eventDispatcher, $logger);
+    }
 
     public function create(array $data): Payment
     {
-        return DB::transaction(function () use ($data) {
+        return $this->executeInTransaction('create', function () use ($data) {
             $payableType = null;
             $payableId = null;
             $payable = null;
@@ -59,7 +65,7 @@ class PaymentService implements PaymentServiceInterface
                 'payment_number' => Payment::generatePaymentNumber($data['type']),
                 'payable_type' => $payableType,
                 'payable_id' => $payableId,
-                'created_by' => auth()->id(),
+                'created_by' => $this->getUserId(),
             ]);
 
             // Create journal entry (JournalService now only creates the journal)
@@ -72,7 +78,7 @@ class PaymentService implements PaymentServiceInterface
             }
 
             return $payment->load(['contact', 'cashAccount', 'journalEntry.lines.account']);
-        });
+        }, ['type' => $data['type'], 'amount' => $data['amount']]);
     }
 
     public function createForInvoice(Invoice $invoice, array $data): Payment
@@ -101,7 +107,7 @@ class PaymentService implements PaymentServiceInterface
             throw new InvalidArgumentException('Pembayaran sudah dibatalkan.');
         }
 
-        return DB::transaction(function () use ($payment, $reason) {
+        return $this->executeInTransaction('void', function () use ($payment, $reason) {
             $payable = $payment->payable;
             $previousPaidAmount = $payable?->paid_amount ?? 0;
 
@@ -117,7 +123,7 @@ class PaymentService implements PaymentServiceInterface
             $payment->update([
                 'is_voided' => true,
                 'voided_at' => now(),
-                'voided_by' => auth()->id(),
+                'voided_by' => $this->getUserId(),
                 'void_reason' => $reason,
             ]);
 
@@ -133,13 +139,13 @@ class PaymentService implements PaymentServiceInterface
                 amount: $payment->amount,
                 currency: 'IDR',
                 customerId: $payment->contact_id,
-                userId: auth()->id() ?? $payment->created_by,
+                userId: $this->getUserId() ?? $payment->created_by,
                 voidedAt: now(),
                 reason: $reason
             ));
 
             return $payment->fresh(['contact', 'cashAccount']);
-        });
+        }, ['payment_id' => $payment->id]);
     }
 
     public function getForInvoice(Invoice $invoice): Collection
@@ -237,7 +243,7 @@ class PaymentService implements PaymentServiceInterface
                 invoice: $payable,
                 paymentId: $payment->id,
                 amount: $payment->amount,
-                userId: auth()->id() ?? $payment->created_by
+                userId: $this->getUserId() ?? $payment->created_by
             ));
         }
 
@@ -267,16 +273,16 @@ class PaymentService implements PaymentServiceInterface
 
         if ($payable->stateMachine()->canTransitionTo($targetStatus)) {
             $payable->stateMachine()->transitionTo($targetStatus, [
-                'user_id' => auth()->id(),
+                'user_id' => $this->getUserId(),
             ]);
         }
 
         // Dispatch fully paid events
         if ($isFullyPaid && $previousPaidAmount < $payable->total_amount) {
             if ($payable instanceof Invoice) {
-                Event::dispatch(InvoiceFullyPaid::fromInvoice($payable, auth()->id()));
+                Event::dispatch(InvoiceFullyPaid::fromInvoice($payable, $this->getUserId()));
             } elseif ($payable instanceof Bill) {
-                Event::dispatch(BillFullyPaid::fromBill($payable, auth()->id()));
+                Event::dispatch(BillFullyPaid::fromBill($payable, $this->getUserId()));
             }
         }
     }
@@ -299,7 +305,7 @@ class PaymentService implements PaymentServiceInterface
 
         if ($payable->stateMachine()->canTransitionTo($targetStatus)) {
             $payable->stateMachine()->transitionTo($targetStatus, [
-                'user_id' => auth()->id(),
+                'user_id' => $this->getUserId(),
             ]);
         }
     }

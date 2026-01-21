@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\Accounting\Strategies\Inventory;
 
-use App\Contracts\Accounting\JournalServiceInterface;
 use App\Contracts\Accounting\Strategies\InventoryAccountingStrategy;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Inventory\StockOpname;
@@ -20,7 +19,7 @@ use App\Models\Sales\DeliveryOrder;
 class PeriodicInventoryStrategy implements InventoryAccountingStrategy
 {
     public function __construct(
-        private JournalServiceInterface $journalService
+        private HybridInventoryStrategy $hybridStrategy
     ) {}
 
     public function onGoodsReceived(GoodsReceiptNote $grn): ?JournalEntry
@@ -37,9 +36,8 @@ class PeriodicInventoryStrategy implements InventoryAccountingStrategy
 
     public function onStockAdjustment(StockOpname $stockOpname): ?JournalEntry
     {
-        // Stock adjustments always create journals
-        return (new HybridInventoryStrategy($this->journalService))
-            ->onStockAdjustment($stockOpname);
+        // Stock adjustments always create journals - delegate to hybrid strategy
+        return $this->hybridStrategy->onStockAdjustment($stockOpname);
     }
 
     public function getIdentifier(): string

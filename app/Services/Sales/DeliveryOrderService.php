@@ -4,26 +4,31 @@ declare(strict_types=1);
 
 namespace App\Services\Sales;
 
+use App\Contracts\Events\EventDispatcherInterface;
+use App\Contracts\Inventory\InventoryServiceInterface;
+use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Sales\DeliveryOrderServiceInterface;
+use App\Contracts\Shared\DocumentNumberGeneratorInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\DeliveryOrder;
 use App\Models\Sales\DeliveryOrderItem;
 use App\Models\Sales\Invoice;
 use App\Services\Base\AbstractDocumentService;
-use App\Services\Inventory\InventoryService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 class DeliveryOrderService extends AbstractDocumentService implements DeliveryOrderServiceInterface
 {
-    private InventoryService $inventoryService;
+    private InventoryServiceInterface $inventoryService;
 
     public function __construct(
-        InventoryService $inventoryService,
-        \App\Contracts\Shared\DocumentNumberGeneratorInterface $numberGenerator
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger,
+        InventoryServiceInterface $inventoryService,
+        DocumentNumberGeneratorInterface $numberGenerator
     ) {
-        parent::__construct(numberGenerator: $numberGenerator);
+        parent::__construct($eventDispatcher, $logger, numberGenerator: $numberGenerator);
 
         $this->inventoryService = $inventoryService;
     }
@@ -132,7 +137,7 @@ class DeliveryOrderService extends AbstractDocumentService implements DeliveryOr
      */
     public function createFromInvoice(Invoice $invoice, array $data = []): DeliveryOrder
     {
-        return DB::transaction(function () use ($invoice, $data) {
+        return $this->executeInTransaction('create_from_invoice', function () use ($invoice, $data) {
             $deliveryOrder = new DeliveryOrder([
                 'invoice_id' => $invoice->id,
                 'contact_id' => $invoice->contact_id,
@@ -154,7 +159,7 @@ class DeliveryOrderService extends AbstractDocumentService implements DeliveryOr
             }
 
             return $deliveryOrder->fresh(['items', 'contact', 'invoice', 'warehouse']);
-        });
+        }, ['invoice_id' => $invoice->id]);
     }
 
     /**
@@ -180,7 +185,7 @@ class DeliveryOrderService extends AbstractDocumentService implements DeliveryOr
             throw new InvalidArgumentException('Only confirmed delivery orders can be shipped.');
         }
 
-        return DB::transaction(function () use ($deliveryOrder, $data, $userId) {
+        return $this->executeInTransaction('ship', function () use ($deliveryOrder, $data, $userId) {
             $deliveryOrder->update([
                 'tracking_number' => $data['tracking_number'] ?? $deliveryOrder->tracking_number,
                 'driver_name' => $data['driver_name'] ?? $deliveryOrder->driver_name,
@@ -197,7 +202,7 @@ class DeliveryOrderService extends AbstractDocumentService implements DeliveryOr
             }
 
             return $deliveryOrder->fresh(['items', 'contact', 'invoice']);
-        });
+        }, ['delivery_order_id' => $deliveryOrder->id]);
     }
 
     /**
@@ -209,7 +214,7 @@ class DeliveryOrderService extends AbstractDocumentService implements DeliveryOr
             throw new InvalidArgumentException('Only shipped delivery orders can be marked as delivered.');
         }
 
-        return DB::transaction(function () use ($deliveryOrder, $data, $userId) {
+        return $this->executeInTransaction('deliver', function () use ($deliveryOrder, $data, $userId) {
             $deliveryOrder->update([
                 'received_by' => $data['received_by'] ?? null,
                 'delivery_notes' => $data['delivery_notes'] ?? null,
@@ -224,7 +229,7 @@ class DeliveryOrderService extends AbstractDocumentService implements DeliveryOr
             ]);
 
             return $deliveryOrder->fresh(['items']);
-        });
+        }, ['delivery_order_id' => $deliveryOrder->id]);
     }
 
     /**
@@ -252,7 +257,7 @@ class DeliveryOrderService extends AbstractDocumentService implements DeliveryOr
             throw new InvalidArgumentException('Only shipped delivery orders can have delivery progress updated.');
         }
 
-        return DB::transaction(function () use ($deliveryOrder, $itemsDelivered) {
+        return $this->executeInTransaction('update_delivery_progress', function () use ($deliveryOrder, $itemsDelivered) {
             foreach ($itemsDelivered as $itemData) {
                 $item = $deliveryOrder->items()->find($itemData['item_id']);
                 if ($item) {
@@ -276,7 +281,7 @@ class DeliveryOrderService extends AbstractDocumentService implements DeliveryOr
             }
 
             return $deliveryOrder->fresh(['items']);
-        });
+        }, ['delivery_order_id' => $deliveryOrder->id, 'items_count' => count($itemsDelivered)]);
     }
 
     /**
@@ -284,7 +289,7 @@ class DeliveryOrderService extends AbstractDocumentService implements DeliveryOr
      */
     public function duplicate(DeliveryOrder $deliveryOrder): DeliveryOrder
     {
-        return DB::transaction(function () use ($deliveryOrder) {
+        return $this->executeInTransaction('duplicate', function () use ($deliveryOrder) {
             $newDo = $deliveryOrder->replicate([
                 'do_number',
                 'status',
@@ -313,7 +318,7 @@ class DeliveryOrderService extends AbstractDocumentService implements DeliveryOr
             }
 
             return $newDo->fresh(['items', 'contact', 'invoice']);
-        });
+        }, ['source_delivery_order_id' => $deliveryOrder->id]);
     }
 
     /**

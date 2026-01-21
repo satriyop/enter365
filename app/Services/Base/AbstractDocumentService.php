@@ -36,21 +36,22 @@ abstract class AbstractDocumentService extends AbstractApplicationService
     protected ?DocumentNumberGeneratorInterface $numberGenerator = null;
 
     /**
-     * Constructor supporting both new (repository-based) and legacy patterns.
+     * Constructor with strict dependency injection.
      *
-     * New pattern: Pass repository, numberGenerator, eventDispatcher, logger
-     * Legacy pattern: Extend with custom constructor, call parent::__construct()
+     * EventDispatcher and Logger are REQUIRED (inherited from AbstractApplicationService).
+     * Repository and NumberGenerator are optional (some services use model directly).
+     *
+     * @param  EventDispatcherInterface  $eventDispatcher  Required - for domain events
+     * @param  ContextualLoggerInterface  $logger  Required - for operation logging
+     * @param  RepositoryInterface|null  $repository  Optional - for data access
+     * @param  DocumentNumberGeneratorInterface|null  $numberGenerator  Optional - for document numbering
      */
     public function __construct(
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger,
         ?RepositoryInterface $repository = null,
-        ?DocumentNumberGeneratorInterface $numberGenerator = null,
-        ?EventDispatcherInterface $eventDispatcher = null,
-        ?ContextualLoggerInterface $logger = null
+        ?DocumentNumberGeneratorInterface $numberGenerator = null
     ) {
-        // Resolve from container if not provided (backward compatibility)
-        $eventDispatcher ??= app(EventDispatcherInterface::class);
-        $logger ??= app(ContextualLoggerInterface::class);
-
         parent::__construct($eventDispatcher, $logger);
 
         $this->repository = $repository;

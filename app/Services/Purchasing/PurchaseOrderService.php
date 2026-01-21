@@ -4,30 +4,36 @@ declare(strict_types=1);
 
 namespace App\Services\Purchasing;
 
+use App\Contracts\Events\EventDispatcherInterface;
+use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Purchasing\PurchaseOrderServiceInterface;
+use App\Contracts\Shared\DocumentNumberGeneratorInterface;
+use App\Domain\Purchasing\PurchaseOrderBillConverter;
+use App\Domain\Purchasing\PurchaseOrderStatistics;
 use App\Enums\DocumentStatus;
 use App\Models\Purchasing\PurchaseOrder;
 use App\Models\Purchasing\PurchaseOrderItem;
 use App\Services\Base\AbstractDocumentService;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 class PurchaseOrderService extends AbstractDocumentService implements PurchaseOrderServiceInterface
 {
     private PurchaseOrderReceivingService $receivingService;
 
-    private \App\Domain\Purchasing\PurchaseOrderBillConverter $billConverter;
+    private PurchaseOrderBillConverter $billConverter;
 
-    private \App\Domain\Purchasing\PurchaseOrderStatistics $statistics;
+    private PurchaseOrderStatistics $statistics;
 
     public function __construct(
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger,
         PurchaseOrderReceivingService $receivingService,
-        \App\Domain\Purchasing\PurchaseOrderBillConverter $billConverter,
-        \App\Domain\Purchasing\PurchaseOrderStatistics $statistics,
-        \App\Contracts\Shared\DocumentNumberGeneratorInterface $numberGenerator
+        PurchaseOrderBillConverter $billConverter,
+        PurchaseOrderStatistics $statistics,
+        DocumentNumberGeneratorInterface $numberGenerator
     ) {
-        parent::__construct(numberGenerator: $numberGenerator);
+        parent::__construct($eventDispatcher, $logger, numberGenerator: $numberGenerator);
 
         $this->receivingService = $receivingService;
         $this->billConverter = $billConverter;
@@ -216,7 +222,7 @@ class PurchaseOrderService extends AbstractDocumentService implements PurchaseOr
             throw new InvalidArgumentException('PO tidak dapat menerima barang. Pastikan sudah disetujui.');
         }
 
-        return DB::transaction(function () use ($purchaseOrder, $receivedItems) {
+        return $this->executeInTransaction('receive', function () use ($purchaseOrder, $receivedItems) {
             foreach ($receivedItems as $received) {
                 $item = $purchaseOrder->items()->find($received['item_id']);
 
@@ -239,7 +245,7 @@ class PurchaseOrderService extends AbstractDocumentService implements PurchaseOr
             $this->receivingService->updateReceivingStatus($purchaseOrder);
 
             return $purchaseOrder->fresh(['items', 'contact']);
-        });
+        }, ['purchase_order_id' => $purchaseOrder->id, 'items_count' => count($receivedItems)]);
     }
 
     public function convertToBill(PurchaseOrder $purchaseOrder): \App\Models\Purchasing\Bill
@@ -249,18 +255,18 @@ class PurchaseOrderService extends AbstractDocumentService implements PurchaseOr
 
     public function duplicate(PurchaseOrder $purchaseOrder): PurchaseOrder
     {
-        return DB::transaction(function () use ($purchaseOrder) {
+        return $this->executeInTransaction('duplicate', function () use ($purchaseOrder) {
             $defaults = $this->getDefaultsForDuplication($purchaseOrder);
             $defaults['po_number'] = PurchaseOrder::generatePoNumber();
             $defaults['revision'] = 0;
-            $defaults['created_by'] = auth()->id();
+            $defaults['created_by'] = $this->getUserId();
 
             $newPo = PurchaseOrder::create($defaults);
 
             $this->copyItemsFromPurchaseOrder($purchaseOrder, $newPo);
 
             return $newPo->load('items', 'contact');
-        });
+        }, ['source_purchase_order_id' => $purchaseOrder->id]);
     }
 
     private function getDefaultsForDuplication(PurchaseOrder $source): array

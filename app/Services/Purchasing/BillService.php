@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Services\Purchasing;
 
 use App\Contracts\Accounting\JournalServiceInterface;
+use App\Contracts\Events\EventDispatcherInterface;
+use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Purchasing\BillServiceInterface;
 use App\Contracts\Shared\DocumentNumberGeneratorInterface;
 use App\Domain\Purchasing\Bills\Events\BillFullyPaid;
@@ -24,10 +26,12 @@ class BillService extends AbstractDocumentService implements BillServiceInterfac
     private JournalServiceInterface $journalService;
 
     public function __construct(
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger,
         JournalServiceInterface $journalService,
         DocumentNumberGeneratorInterface $numberGenerator
     ) {
-        parent::__construct(numberGenerator: $numberGenerator);
+        parent::__construct($eventDispatcher, $logger, numberGenerator: $numberGenerator);
 
         $this->journalService = $journalService;
     }
@@ -180,7 +184,7 @@ class BillService extends AbstractDocumentService implements BillServiceInterfac
 
         $this->journalService->postBill($bill);
 
-        $bill->transitionTo(DocumentStatus::Received, auth()->id());
+        $bill->transitionTo(DocumentStatus::Received, $this->getUserId());
 
         return $bill->fresh(['contact', 'items', 'journalEntry.lines.account']);
     }
@@ -201,9 +205,9 @@ class BillService extends AbstractDocumentService implements BillServiceInterfac
             );
         }
 
-        $bill->transitionTo(DocumentStatus::Paid, auth()->id());
+        $bill->transitionTo(DocumentStatus::Paid, $this->getUserId());
 
-        event(BillFullyPaid::fromBill($bill, auth()->id() ?? 0));
+        event(BillFullyPaid::fromBill($bill, $this->getUserId() ?? 0));
 
         return ServiceResult::success(
             $bill->fresh(['contact', 'items']),
@@ -227,9 +231,9 @@ class BillService extends AbstractDocumentService implements BillServiceInterfac
             );
         }
 
-        $bill->transitionTo(DocumentStatus::Partial, auth()->id());
+        $bill->transitionTo(DocumentStatus::Partial, $this->getUserId());
 
-        event(BillPartiallyPaid::fromBill($bill, auth()->id() ?? 0));
+        event(BillPartiallyPaid::fromBill($bill, $this->getUserId() ?? 0));
 
         return ServiceResult::success(
             $bill->fresh(['contact', 'items']),
@@ -253,7 +257,7 @@ class BillService extends AbstractDocumentService implements BillServiceInterfac
             );
         }
 
-        $bill->transitionTo(DocumentStatus::Overdue, auth()->id());
+        $bill->transitionTo(DocumentStatus::Overdue, $this->getUserId());
 
         event(BillOverdue::fromBill($bill));
 

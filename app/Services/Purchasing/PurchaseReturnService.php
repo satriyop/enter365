@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\Purchasing;
 
+use App\Contracts\Events\EventDispatcherInterface;
+use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Purchasing\PurchaseReturnServiceInterface;
+use App\Contracts\Shared\DocumentNumberGeneratorInterface;
 use App\Domain\Purchasing\PurchaseReturns\Handlers\PurchaseReturnApprovalPipeline;
 use App\Enums\DocumentStatus;
 use App\Models\Purchasing\Bill;
@@ -12,7 +15,6 @@ use App\Models\Purchasing\PurchaseReturn;
 use App\Models\Purchasing\PurchaseReturnItem;
 use App\Services\Base\AbstractDocumentService;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 class PurchaseReturnService extends AbstractDocumentService implements PurchaseReturnServiceInterface
@@ -20,10 +22,12 @@ class PurchaseReturnService extends AbstractDocumentService implements PurchaseR
     private PurchaseReturnApprovalPipeline $approvalPipeline;
 
     public function __construct(
-        \App\Contracts\Shared\DocumentNumberGeneratorInterface $numberGenerator,
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger,
+        DocumentNumberGeneratorInterface $numberGenerator,
         PurchaseReturnApprovalPipeline $approvalPipeline
     ) {
-        parent::__construct(numberGenerator: $numberGenerator);
+        parent::__construct($eventDispatcher, $logger, numberGenerator: $numberGenerator);
 
         $this->approvalPipeline = $approvalPipeline;
     }
@@ -135,7 +139,7 @@ class PurchaseReturnService extends AbstractDocumentService implements PurchaseR
      */
     public function createFromBill(Bill $bill, array $data = []): PurchaseReturn
     {
-        return DB::transaction(function () use ($bill, $data) {
+        return $this->executeInTransaction('create_from_bill', function () use ($bill, $data) {
             $purchaseReturn = new PurchaseReturn([
                 'bill_id' => $bill->id,
                 'contact_id' => $bill->contact_id,
@@ -144,7 +148,7 @@ class PurchaseReturnService extends AbstractDocumentService implements PurchaseR
                 'reason' => $data['reason'] ?? null,
                 'notes' => $data['notes'] ?? null,
                 'tax_rate' => $bill->tax_rate,
-                'created_by' => $data['created_by'] ?? auth()->id(),
+                'created_by' => $data['created_by'] ?? $this->getUserId(),
             ]);
             $purchaseReturn->return_number = $this->numberGenerator->generate('PR-'.now()->format('Ym').'-', 'purchase_returns', 'return_number');
             $purchaseReturn->save();
@@ -160,7 +164,7 @@ class PurchaseReturnService extends AbstractDocumentService implements PurchaseR
             $purchaseReturn->save();
 
             return $purchaseReturn->fresh(['items', 'contact', 'bill', 'warehouse']);
-        });
+        }, ['bill_id' => $bill->id]);
     }
 
     public function submit(PurchaseReturn $purchaseReturn, ?int $userId = null): PurchaseReturn
@@ -187,14 +191,14 @@ class PurchaseReturnService extends AbstractDocumentService implements PurchaseR
             throw new InvalidArgumentException('Only submitted purchase returns can be approved.');
         }
 
-        return DB::transaction(function () use ($purchaseReturn, $userId) {
+        return $this->executeInTransaction('approve', function () use ($purchaseReturn, $userId) {
             $purchaseReturn->transitionTo(DocumentStatus::Approved, $userId);
 
             // Process approval side effects via pipeline
             $this->approvalPipeline->process($purchaseReturn);
 
             return $purchaseReturn->fresh(['items', 'journalEntry']);
-        });
+        }, ['purchase_return_id' => $purchaseReturn->id]);
     }
 
     public function reject(PurchaseReturn $purchaseReturn, ?string $reason = null, ?int $userId = null): PurchaseReturn

@@ -376,6 +376,204 @@ Event::fake([InvoiceSent::class]);
 
 ---
 
+## Testing with OperationContext
+
+Services that extend `AbstractApplicationService` support explicit user context injection via `withContext()`. This enables unit testing without mocking Laravel's auth system.
+
+### Using TestsWithOperationContext Trait
+
+```php
+use Tests\Traits\TestsWithOperationContext;
+
+uses(TestsWithOperationContext::class);
+uses(RefreshDatabase::class);
+
+describe('QuotationService', function () {
+
+    it('creates quotation with specific user', function () {
+        $service = app(QuotationServiceInterface::class);
+
+        // Inject explicit user context
+        $quotation = $this->withUserContext($service, userId: 42)
+            ->create($data);
+
+        expect($quotation->created_by)->toBe(42);
+    });
+
+    it('runs as system context for jobs', function () {
+        $service = app(QuotationService::class);
+
+        // System context (no authenticated user)
+        $result = $this->withSystemContext($service)
+            ->markExpired();
+
+        expect($result)->toBeGreaterThanOrEqual(0);
+    });
+
+    it('simulates job with dispatcher user', function () {
+        $service = app(InvoiceServiceInterface::class);
+
+        // Job context with user who dispatched
+        $result = $this->withJobContext($service, dispatchedBy: 123, jobName: 'ProcessInvoice')
+            ->updatePaymentStatus($invoice);
+    });
+});
+```
+
+### Available Helper Methods
+
+| Method | Purpose |
+|--------|---------|
+| `withUserContext($service, $userId)` | Inject specific user context |
+| `withSystemContext($service)` | Inject system context (jobs, commands) |
+| `withJobContext($service, $dispatchedBy, $jobName)` | Inject job context |
+| `withContext($service, $context)` | Inject custom OperationContext |
+| `createUserContext($userId)` | Create context without injecting |
+| `createSystemContext()` | Create system context |
+
+### Direct OperationContext Usage
+
+```php
+use App\Support\OperationContext;
+
+it('uses operation context directly', function () {
+    $context = OperationContext::forUser(42)
+        ->withMetadata(['request_id' => 'test-123']);
+
+    $service = app(QuotationServiceInterface::class)
+        ->withContext($context);
+
+    $quotation = $service->create($data);
+
+    expect($quotation->created_by)->toBe(42);
+});
+```
+
+### When to Use OperationContext in Tests
+
+| Scenario | Use |
+|----------|-----|
+| Testing service logic with specific user | `withUserContext($service, $userId)` |
+| Testing job/command behavior | `withSystemContext($service)` |
+| Testing audit trail | `withUserContext()` + assert `created_by` |
+| Testing without auth mocking | Any `with*Context()` method |
+
+---
+
+## Unit Testing with In-Memory Repositories
+
+For true unit tests that don't hit the database, use in-memory repositories. This is particularly valuable for testing service logic in isolation.
+
+### When to Use In-Memory vs Feature Tests
+
+| Scenario | Test Type | Why |
+|----------|-----------|-----|
+| Service business logic | Unit + In-Memory Repository | Fast, isolated |
+| Database interactions | Feature + RefreshDatabase | Tests actual queries |
+| API endpoints | Feature + RefreshDatabase | Tests full stack |
+| State transitions | Both | Unit for logic, Feature for persistence |
+
+### Using InMemoryQuotationRepository
+
+```php
+<?php
+
+use App\Services\Sales\DocumentBasedQuotationService;
+use Tests\Support\InMemoryQuotationRepository;
+use App\Contracts\Events\EventDispatcherInterface;
+use App\Domain\Shared\Events\NullEventDispatcher;
+
+describe('QuotationService Unit Tests', function () {
+
+    beforeEach(function () {
+        $this->repository = new InMemoryQuotationRepository;
+        $this->eventDispatcher = new NullEventDispatcher;
+
+        $this->service = new DocumentBasedQuotationService(
+            $this->repository,
+            $this->eventDispatcher,
+            // ... other dependencies
+        );
+    });
+
+    afterEach(function () {
+        $this->repository->reset();  // Clean state between tests
+    });
+
+    it('finds quotations by status without database', function () {
+        // Arrange - seed repository with test data
+        $this->repository->create([
+            'contact_id' => 1,
+            'status' => DocumentStatus::Draft,
+        ]);
+        $this->repository->create([
+            'contact_id' => 2,
+            'status' => DocumentStatus::Submitted,
+        ]);
+
+        // Act
+        $drafts = $this->repository->findByStatus(DocumentStatus::Draft);
+
+        // Assert
+        expect($drafts)->toHaveCount(1);
+    });
+
+    it('can pre-seed specific scenarios', function () {
+        $existing = new Quotation(['contact_id' => 1]);
+        $existing->id = 100;
+        $existing->status = DocumentStatus::Approved;
+
+        $this->repository->seed([$existing]);
+
+        $found = $this->repository->find(100);
+        expect($found)->not->toBeNull();
+        expect($found->status)->toBe(DocumentStatus::Approved);
+    });
+});
+```
+
+### Helper Methods for Testing
+
+| Method | Purpose |
+|--------|---------|
+| `reset()` | Clear all data, reset ID counter |
+| `seed(array $entities)` | Pre-populate with specific entities |
+| `getCollection()` | Direct access for custom assertions |
+| `count(array $criteria)` | Count without database |
+
+### Binding In-Memory Repository in Tests
+
+```php
+beforeEach(function () {
+    $repository = new InMemoryQuotationRepository;
+
+    // Replace binding for this test
+    $this->app->instance(
+        QuotationRepositoryInterface::class,
+        $repository
+    );
+
+    $this->repository = $repository;
+    $this->service = app(QuotationServiceInterface::class);
+});
+```
+
+### Gotcha: Specifications Don't Work In-Memory
+
+Specifications use Eloquent Builder and won't work with in-memory repositories:
+
+```php
+// ❌ This will throw RuntimeException
+$this->repository->match(new ActiveQuotationsSpecification);
+
+// ✅ Use findBy() with explicit criteria instead
+$this->repository->findBy(['status' => DocumentStatus::Draft]);
+```
+
+See: [REPOSITORIES.md](REPOSITORIES.md#in-memory-repository-for-unit-tests) for full implementation details.
+
+---
+
 ## Test Organization
 
 ```

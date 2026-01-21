@@ -1,27 +1,27 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Accounting;
 
+use App\Contracts\Events\EventDispatcherInterface;
+use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Domain\Accounting\FiscalPeriods\ValueObjects\ClosingChecklist;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\FiscalPeriod;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Accounting\JournalEntryLine;
-use Illuminate\Support\Facades\DB;
+use App\Services\Base\AbstractApplicationService;
 
-class FiscalPeriodService
+class FiscalPeriodService extends AbstractApplicationService
 {
     public function __construct(
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger,
         private JournalService $journalService,
-        private ?YearEndCloseService $yearEndCloseService = null
-    ) {}
-
-    /**
-     * Get the YearEndCloseService instance.
-     */
-    protected function getYearEndCloseService(): YearEndCloseService
-    {
-        return $this->yearEndCloseService ??= app(YearEndCloseService::class);
+        private YearEndCloseService $yearEndCloseService
+    ) {
+        parent::__construct($eventDispatcher, $logger);
     }
 
     /**
@@ -34,7 +34,7 @@ class FiscalPeriodService
     public function closePeriod(FiscalPeriod $period, ?string $notes = null): array
     {
         try {
-            $result = $this->getYearEndCloseService()->executeClose($period, [
+            $result = $this->yearEndCloseService->executeClose($period, [
                 'notes' => $notes,
             ]);
 
@@ -82,7 +82,7 @@ class FiscalPeriodService
             ];
         }
 
-        return DB::transaction(function () use ($period, $notes) {
+        return $this->executeInTransaction('close_period_legacy', function () use ($period, $notes) {
             // Calculate income statement
             $incomeStatement = $period->getIncomeStatement();
             $netIncome = $incomeStatement['net_income'];
@@ -95,7 +95,7 @@ class FiscalPeriodService
                 'is_closed' => true,
                 'is_locked' => true,
                 'closed_at' => now(),
-                'closed_by' => auth()->id(),
+                'closed_by' => $this->getUserId(),
                 'closing_entry_id' => $closingEntry->id,
                 'retained_earnings_amount' => $netIncome,
                 'closing_notes' => $notes,
@@ -106,7 +106,7 @@ class FiscalPeriodService
                 'message' => 'Periode fiskal berhasil ditutup.',
                 'closing_entry' => $closingEntry,
             ];
-        });
+        }, ['period_id' => $period->id]);
     }
 
     /**
@@ -209,7 +209,7 @@ class FiscalPeriodService
             return false;
         }
 
-        return DB::transaction(function () use ($period) {
+        return $this->executeInTransaction('reopen_period', function () use ($period) {
             // Reverse the closing entry if exists
             if ($period->closingEntry) {
                 $this->journalService->reverseEntry(
@@ -230,7 +230,7 @@ class FiscalPeriodService
             ]);
 
             return true;
-        });
+        }, ['period_id' => $period->id]);
     }
 
     /**
@@ -240,7 +240,7 @@ class FiscalPeriodService
      */
     public function getClosingChecklist(FiscalPeriod $period): ClosingChecklist
     {
-        return $this->getYearEndCloseService()->getClosingChecklist($period);
+        return $this->yearEndCloseService->getClosingChecklist($period);
     }
 
     /**

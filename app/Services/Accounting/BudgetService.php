@@ -1,18 +1,29 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Accounting;
 
+use App\Contracts\Events\EventDispatcherInterface;
+use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\Budget;
 use App\Models\Accounting\BudgetLine;
 use App\Models\Accounting\FiscalPeriod;
 use App\Models\Accounting\JournalEntryLine;
+use App\Services\Base\AbstractApplicationService;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
-class BudgetService
+class BudgetService extends AbstractApplicationService
 {
+    public function __construct(
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger
+    ) {
+        parent::__construct($eventDispatcher, $logger);
+    }
+
     /**
      * Create a budget with lines.
      *
@@ -21,7 +32,7 @@ class BudgetService
      */
     public function createBudget(array $data, array $lines = []): Budget
     {
-        return DB::transaction(function () use ($data, $lines) {
+        return $this->executeInTransaction('create_budget', function () use ($data, $lines) {
             $budget = Budget::create($data);
 
             foreach ($lines as $lineData) {
@@ -31,7 +42,7 @@ class BudgetService
             $budget->recalculateTotals();
 
             return $budget->fresh(['lines.account', 'fiscalPeriod']);
-        });
+        }, ['fiscal_period_id' => $data['fiscal_period_id'] ?? null, 'lines_count' => count($lines)]);
     }
 
     /**
@@ -301,7 +312,7 @@ class BudgetService
      */
     public function copyBudget(Budget $budget, FiscalPeriod $newPeriod, ?string $newName = null): Budget
     {
-        return DB::transaction(function () use ($budget, $newPeriod, $newName) {
+        return $this->executeInTransaction('copy_budget', function () use ($budget, $newPeriod, $newName) {
             $newBudget = Budget::create([
                 'name' => $newName ?? 'Anggaran '.$newPeriod->name,
                 'description' => $budget->description,
@@ -335,7 +346,7 @@ class BudgetService
             }
 
             return $newBudget->fresh(['lines.account', 'fiscalPeriod']);
-        });
+        }, ['source_budget_id' => $budget->id, 'new_period_id' => $newPeriod->id]);
     }
 
     /**

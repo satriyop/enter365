@@ -4,19 +4,28 @@ declare(strict_types=1);
 
 namespace App\Services\Manufacturing;
 
+use App\Contracts\Events\EventDispatcherInterface;
+use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomItem;
 use App\Models\Manufacturing\ComponentBrandMapping;
-use Illuminate\Support\Facades\DB;
+use App\Services\Base\AbstractApplicationService;
 
 /**
  * Service for cost optimization operations on BOMs.
  *
  * Finds cheapest alternatives across brands and applies optimizations.
  */
-class CostOptimizationService
+class CostOptimizationService extends AbstractApplicationService
 {
+    public function __construct(
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger
+    ) {
+        parent::__construct($eventDispatcher, $logger);
+    }
+
     /**
      * Preview cost optimization by finding cheapest option per item across all brands.
      *
@@ -161,7 +170,7 @@ class CostOptimizationService
      */
     public function applyOptimization(Bom $bom, array $itemIds = []): array
     {
-        return DB::transaction(function () use ($bom, $itemIds) {
+        return $this->executeInTransaction('apply_optimization', function () use ($bom, $itemIds) {
             // Create new BOM variant
             $newBom = $bom->replicate(['bom_number', 'status', 'approved_by', 'approved_at']);
             $newBom->bom_number = Bom::generateBomNumber();
@@ -267,6 +276,6 @@ class CostOptimizationService
                 'bom' => $newBom->fresh(['items.product', 'product']),
                 'optimization_report' => $report,
             ];
-        });
+        }, ['source_bom_id' => $bom->id, 'items_count' => count($itemIds)]);
     }
 }

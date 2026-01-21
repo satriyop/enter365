@@ -1,17 +1,28 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Projects;
 
+use App\Contracts\Events\EventDispatcherInterface;
+use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Projects\ProjectServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Projects\Project;
 use App\Models\Projects\ProjectCost;
 use App\Models\Projects\ProjectRevenue;
 use App\Models\Sales\Quotation;
-use Illuminate\Support\Facades\DB;
+use App\Services\Base\AbstractApplicationService;
 
-class ProjectService implements ProjectServiceInterface
+class ProjectService extends AbstractApplicationService implements ProjectServiceInterface
 {
+    public function __construct(
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger
+    ) {
+        parent::__construct($eventDispatcher, $logger);
+    }
+
     /**
      * Create a new project.
      *
@@ -19,13 +30,13 @@ class ProjectService implements ProjectServiceInterface
      */
     public function create(array $data): Project
     {
-        return DB::transaction(function () use ($data) {
+        return $this->executeInTransaction('create', function () use ($data) {
             $project = new Project($data);
             $project->project_number = Project::generateProjectNumber();
             $project->save();
 
             return $project->fresh(['contact', 'manager']);
-        });
+        }, ['contact_id' => $data['contact_id'] ?? null]);
     }
 
     /**
@@ -33,7 +44,7 @@ class ProjectService implements ProjectServiceInterface
      */
     public function createFromQuotation(Quotation $quotation, array $data = []): Project
     {
-        return DB::transaction(function () use ($quotation, $data) {
+        return $this->executeInTransaction('create_from_quotation', function () use ($quotation, $data) {
             $project = new Project([
                 'name' => $data['name'] ?? 'Project: '.$quotation->quotation_number,
                 'description' => $data['description'] ?? $quotation->notes,
@@ -47,7 +58,7 @@ class ProjectService implements ProjectServiceInterface
                 'location' => $data['location'] ?? null,
                 'notes' => $data['notes'] ?? null,
                 'manager_id' => $data['manager_id'] ?? null,
-                'created_by' => $data['created_by'] ?? auth()->id(),
+                'created_by' => $data['created_by'] ?? $this->getUserId(),
             ]);
             $project->project_number = Project::generateProjectNumber();
             $project->status = DocumentStatus::Planning;
@@ -57,7 +68,7 @@ class ProjectService implements ProjectServiceInterface
             $quotation->update(['project_id' => $project->id]);
 
             return $project->fresh(['contact', 'quotation', 'manager']);
-        });
+        }, ['quotation_id' => $quotation->id]);
     }
 
     /**
@@ -82,12 +93,12 @@ class ProjectService implements ProjectServiceInterface
             throw new \InvalidArgumentException('Only draft or planning projects can be deleted.');
         }
 
-        return DB::transaction(function () use ($project) {
+        return $this->executeInTransaction('delete', function () use ($project) {
             $project->costs()->delete();
             $project->revenues()->delete();
 
             return $project->delete();
-        });
+        }, ['project_id' => $project->id]);
     }
 
     /**
@@ -169,7 +180,7 @@ class ProjectService implements ProjectServiceInterface
             throw new \InvalidArgumentException('Only in-progress projects can be completed.');
         }
 
-        return DB::transaction(function () use ($project, $userId) {
+        return $this->executeInTransaction('complete', function () use ($project, $userId) {
             $project->transitionTo(DocumentStatus::Completed, $userId);
 
             $project->refresh();
@@ -177,7 +188,7 @@ class ProjectService implements ProjectServiceInterface
             $project->save();
 
             return $project->fresh();
-        });
+        }, ['project_id' => $project->id]);
     }
 
     /**
@@ -202,7 +213,7 @@ class ProjectService implements ProjectServiceInterface
      */
     public function addCost(Project $project, array $data): ProjectCost
     {
-        return DB::transaction(function () use ($project, $data) {
+        return $this->executeInTransaction('add_cost', function () use ($project, $data) {
             $cost = new ProjectCost($data);
             $cost->project_id = $project->id;
             $cost->calculateTotalCost();
@@ -213,7 +224,7 @@ class ProjectService implements ProjectServiceInterface
             $project->save();
 
             return $cost;
-        });
+        }, ['project_id' => $project->id]);
     }
 
     /**
@@ -223,7 +234,7 @@ class ProjectService implements ProjectServiceInterface
      */
     public function updateCost(ProjectCost $cost, array $data): ProjectCost
     {
-        return DB::transaction(function () use ($cost, $data) {
+        return $this->executeInTransaction('update_cost', function () use ($cost, $data) {
             $cost->fill($data);
             $cost->calculateTotalCost();
             $cost->save();
@@ -233,7 +244,7 @@ class ProjectService implements ProjectServiceInterface
             $cost->project->save();
 
             return $cost;
-        });
+        }, ['cost_id' => $cost->id]);
     }
 
     /**
@@ -241,7 +252,7 @@ class ProjectService implements ProjectServiceInterface
      */
     public function deleteCost(ProjectCost $cost): bool
     {
-        return DB::transaction(function () use ($cost) {
+        return $this->executeInTransaction('delete_cost', function () use ($cost) {
             $project = $cost->project;
             $cost->delete();
 
@@ -250,7 +261,7 @@ class ProjectService implements ProjectServiceInterface
             $project->save();
 
             return true;
-        });
+        }, ['cost_id' => $cost->id]);
     }
 
     /**
@@ -260,7 +271,7 @@ class ProjectService implements ProjectServiceInterface
      */
     public function addRevenue(Project $project, array $data): ProjectRevenue
     {
-        return DB::transaction(function () use ($project, $data) {
+        return $this->executeInTransaction('add_revenue', function () use ($project, $data) {
             $revenue = new ProjectRevenue($data);
             $revenue->project_id = $project->id;
             $revenue->save();
@@ -270,7 +281,7 @@ class ProjectService implements ProjectServiceInterface
             $project->save();
 
             return $revenue;
-        });
+        }, ['project_id' => $project->id]);
     }
 
     /**
@@ -280,7 +291,7 @@ class ProjectService implements ProjectServiceInterface
      */
     public function updateRevenue(ProjectRevenue $revenue, array $data): ProjectRevenue
     {
-        return DB::transaction(function () use ($revenue, $data) {
+        return $this->executeInTransaction('update_revenue', function () use ($revenue, $data) {
             $revenue->fill($data);
             $revenue->save();
 
@@ -289,7 +300,7 @@ class ProjectService implements ProjectServiceInterface
             $revenue->project->save();
 
             return $revenue;
-        });
+        }, ['revenue_id' => $revenue->id]);
     }
 
     /**
@@ -297,7 +308,7 @@ class ProjectService implements ProjectServiceInterface
      */
     public function deleteRevenue(ProjectRevenue $revenue): bool
     {
-        return DB::transaction(function () use ($revenue) {
+        return $this->executeInTransaction('delete_revenue', function () use ($revenue) {
             $project = $revenue->project;
             $revenue->delete();
 
@@ -306,7 +317,7 @@ class ProjectService implements ProjectServiceInterface
             $project->save();
 
             return true;
-        });
+        }, ['revenue_id' => $revenue->id]);
     }
 
     /**

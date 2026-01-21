@@ -4,19 +4,25 @@ declare(strict_types=1);
 
 namespace App\Services\Inventory;
 
+use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Inventory\InventoryServiceInterface;
 use App\Contracts\Inventory\ProductServiceInterface;
+use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Exceptions\Domain\DocumentLockedException;
 use App\Exceptions\Domain\ValidationException;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\Warehouse;
-use Illuminate\Support\Facades\DB;
+use App\Services\Base\AbstractApplicationService;
 
-class ProductService implements ProductServiceInterface
+class ProductService extends AbstractApplicationService implements ProductServiceInterface
 {
     public function __construct(
-        private InventoryServiceInterface $inventoryService
-    ) {}
+        private InventoryServiceInterface $inventoryService,
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger
+    ) {
+        parent::__construct($eventDispatcher, $logger);
+    }
 
     /**
      * Create a new product with defaults.
@@ -25,7 +31,7 @@ class ProductService implements ProductServiceInterface
      */
     public function create(array $data): Product
     {
-        return DB::transaction(function () use ($data) {
+        return $this->executeInTransaction('create', function () use ($data) {
             // Generate SKU if not provided
             if (empty($data['sku'])) {
                 $prefix = ($data['type'] ?? Product::TYPE_PRODUCT) === Product::TYPE_SERVICE ? 'SVC' : 'PRD';
@@ -45,7 +51,7 @@ class ProductService implements ProductServiceInterface
             $product = Product::create($data);
 
             return $product->load('category');
-        });
+        }, ['type' => $data['type'] ?? Product::TYPE_PRODUCT]);
     }
 
     /**
@@ -89,7 +95,7 @@ class ProductService implements ProductServiceInterface
      */
     public function duplicate(Product $product): Product
     {
-        return DB::transaction(function () use ($product) {
+        return $this->executeInTransaction('duplicate', function () use ($product) {
             $newProduct = $product->replicate([
                 'sku',
                 'barcode',
@@ -104,7 +110,7 @@ class ProductService implements ProductServiceInterface
             $newProduct->save();
 
             return $newProduct->load('category');
-        });
+        }, ['source_product_id' => $product->id]);
     }
 
     /**

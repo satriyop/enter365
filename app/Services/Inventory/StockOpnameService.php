@@ -1,29 +1,38 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Inventory;
 
 use App\Contracts\Accounting\Strategies\InventoryAccountingStrategy;
+use App\Contracts\Events\EventDispatcherInterface;
+use App\Contracts\Inventory\InventoryServiceInterface;
 use App\Contracts\Inventory\StockOpnameServiceInterface;
+use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\ProductStock;
 use App\Models\Inventory\StockOpname;
 use App\Models\Inventory\StockOpnameItem;
 use App\Models\Inventory\Warehouse;
-use Illuminate\Support\Facades\DB;
+use App\Services\Base\AbstractApplicationService;
 
-class StockOpnameService implements StockOpnameServiceInterface
+class StockOpnameService extends AbstractApplicationService implements StockOpnameServiceInterface
 {
     public function __construct(
-        private InventoryService $inventoryService,
-        private InventoryAccountingStrategy $inventoryStrategy
-    ) {}
+        private InventoryServiceInterface $inventoryService,
+        private InventoryAccountingStrategy $inventoryStrategy,
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger
+    ) {
+        parent::__construct($eventDispatcher, $logger);
+    }
 
     /**
      * Create a new stock opname.
      */
     public function create(array $data): StockOpname
     {
-        return DB::transaction(function () use ($data) {
+        return $this->executeInTransaction('create', function () use ($data) {
             $opname = StockOpname::create([
                 'opname_number' => StockOpname::generateOpnameNumber(),
                 'warehouse_id' => $data['warehouse_id'],
@@ -31,11 +40,11 @@ class StockOpnameService implements StockOpnameServiceInterface
                 'status' => StockOpname::STATUS_DRAFT,
                 'name' => $data['name'] ?? null,
                 'notes' => $data['notes'] ?? null,
-                'created_by' => $data['created_by'] ?? auth()->id(),
+                'created_by' => $data['created_by'] ?? $this->getUserId(),
             ]);
 
             return $opname;
-        });
+        }, ['warehouse_id' => $data['warehouse_id']]);
     }
 
     /**
@@ -78,7 +87,7 @@ class StockOpnameService implements StockOpnameServiceInterface
             throw new \InvalidArgumentException('Item hanya dapat di-generate pada status draft.');
         }
 
-        return DB::transaction(function () use ($opname) {
+        return $this->executeInTransaction('generate_items', function () use ($opname) {
             // Clear existing items
             $opname->items()->delete();
 
@@ -106,7 +115,7 @@ class StockOpnameService implements StockOpnameServiceInterface
             $opname->updateTotals();
 
             return $opname->fresh(['items']);
-        });
+        }, ['opname_id' => $opname->id]);
     }
 
     /**
@@ -203,7 +212,7 @@ class StockOpnameService implements StockOpnameServiceInterface
         }
 
         // Refresh system quantities before starting
-        return DB::transaction(function () use ($opname, $userId) {
+        return $this->executeInTransaction('start_counting', function () use ($opname, $userId) {
             foreach ($opname->items as $item) {
                 $stock = ProductStock::where('warehouse_id', $opname->warehouse_id)
                     ->where('product_id', $item->product_id)
@@ -220,7 +229,7 @@ class StockOpnameService implements StockOpnameServiceInterface
             $opname->updateTotals();
 
             return $opname->fresh();
-        });
+        }, ['opname_id' => $opname->id]);
     }
 
     /**
@@ -258,7 +267,7 @@ class StockOpnameService implements StockOpnameServiceInterface
             throw new \InvalidArgumentException('Stock opname tidak dapat diapprove pada status ini.');
         }
 
-        return DB::transaction(function () use ($opname, $userId) {
+        return $this->executeInTransaction('approve', function () use ($opname, $userId) {
             $warehouse = Warehouse::findOrFail($opname->warehouse_id);
 
             // Apply adjustments for items with variance
@@ -286,7 +295,7 @@ class StockOpnameService implements StockOpnameServiceInterface
             $opname->transitionTo(StockOpname::STATUS_COMPLETED, $userId);
 
             return $opname->fresh();
-        });
+        }, ['opname_id' => $opname->id]);
     }
 
     /**

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Manufacturing;
 
+use App\Contracts\Events\EventDispatcherInterface;
+use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Inventory\Product;
 use App\Models\Manufacturing\Bom;
@@ -13,7 +15,7 @@ use App\Models\Manufacturing\SubcontractorWorkOrder;
 use App\Models\Manufacturing\WorkOrder;
 use App\Models\Purchasing\PurchaseOrder;
 use App\Models\Purchasing\PurchaseOrderItem;
-use Illuminate\Support\Facades\DB;
+use App\Services\Base\AbstractApplicationService;
 use InvalidArgumentException;
 
 /**
@@ -22,8 +24,15 @@ use InvalidArgumentException;
  * Handles generating suggestions from shortages, accepting/rejecting suggestions,
  * and converting suggestions to Purchase Orders, Work Orders, or Subcontractor Work Orders.
  */
-class MrpSuggestionService
+class MrpSuggestionService extends AbstractApplicationService
 {
+    public function __construct(
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger
+    ) {
+        parent::__construct($eventDispatcher, $logger);
+    }
+
     /**
      * Generate suggestions for shortages.
      */
@@ -132,7 +141,7 @@ class MrpSuggestionService
             throw new InvalidArgumentException('Hanya saran pembelian yang dapat dikonversi ke PO.');
         }
 
-        return DB::transaction(function () use ($suggestion, $userId) {
+        return $this->executeInTransaction('convert_to_purchase_order', function () use ($suggestion, $userId) {
             $product = $suggestion->product;
             $quantity = $suggestion->getEffectiveQuantity();
 
@@ -152,7 +161,7 @@ class MrpSuggestionService
                 'tax_amount' => 0,
                 'total' => $suggestion->estimated_total_cost,
                 'base_currency_total' => $suggestion->estimated_total_cost,
-                'created_by' => $userId ?? auth()->id(),
+                'created_by' => $userId ?? $this->getUserId(),
             ]);
 
             // Create PO item
@@ -174,7 +183,7 @@ class MrpSuggestionService
             $suggestion->markAsConverted(PurchaseOrder::class, $po->id, $userId);
 
             return $po->fresh(['items', 'contact']);
-        });
+        }, ['suggestion_id' => $suggestion->id, 'product_id' => $suggestion->product_id]);
     }
 
     /**
@@ -190,7 +199,7 @@ class MrpSuggestionService
             throw new InvalidArgumentException('Hanya saran work order yang dapat dikonversi ke WO.');
         }
 
-        return DB::transaction(function () use ($suggestion, $userId) {
+        return $this->executeInTransaction('convert_to_work_order', function () use ($suggestion, $userId) {
             $product = $suggestion->product;
             $quantity = $suggestion->getEffectiveQuantity();
 
@@ -208,7 +217,7 @@ class MrpSuggestionService
                     'planned_start_date' => $suggestion->suggested_order_date,
                     'planned_end_date' => $suggestion->suggested_due_date,
                     'notes' => 'Dibuat dari MRP: '.$suggestion->mrpRun->run_number,
-                    'created_by' => $userId ?? auth()->id(),
+                    'created_by' => $userId ?? $this->getUserId(),
                 ]);
             } else {
                 $wo = $woService->create([
@@ -220,7 +229,7 @@ class MrpSuggestionService
                     'planned_start_date' => $suggestion->suggested_order_date,
                     'planned_end_date' => $suggestion->suggested_due_date,
                     'notes' => 'Dibuat dari MRP: '.$suggestion->mrpRun->run_number,
-                    'created_by' => $userId ?? auth()->id(),
+                    'created_by' => $userId ?? $this->getUserId(),
                 ]);
             }
 
@@ -228,7 +237,7 @@ class MrpSuggestionService
             $suggestion->markAsConverted(WorkOrder::class, $wo->id, $userId);
 
             return $wo;
-        });
+        }, ['suggestion_id' => $suggestion->id, 'product_id' => $suggestion->product_id]);
     }
 
     /**
@@ -247,7 +256,7 @@ class MrpSuggestionService
             throw new InvalidArgumentException('Hanya saran subkontrak yang dapat dikonversi ke SC WO.');
         }
 
-        return DB::transaction(function () use ($suggestion, $subcontractorId, $userId) {
+        return $this->executeInTransaction('convert_to_subcontractor_wo', function () use ($suggestion, $subcontractorId, $userId) {
             $product = $suggestion->product;
             $quantity = $suggestion->getEffectiveQuantity();
 
@@ -261,14 +270,14 @@ class MrpSuggestionService
                 'agreed_amount' => $suggestion->estimated_total_cost ?? 0,
                 'scheduled_start_date' => $suggestion->suggested_order_date,
                 'scheduled_end_date' => $suggestion->suggested_due_date,
-                'created_by' => $userId ?? auth()->id(),
+                'created_by' => $userId ?? $this->getUserId(),
             ]);
 
             // Mark suggestion as converted
             $suggestion->markAsConverted(SubcontractorWorkOrder::class, $scWo->id, $userId);
 
             return $scWo->fresh(['subcontractor']);
-        });
+        }, ['suggestion_id' => $suggestion->id, 'subcontractor_id' => $subcontractorId]);
     }
 
     /**

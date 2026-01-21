@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace App\Services\Manufacturing;
 
+use App\Contracts\Events\EventDispatcherInterface;
+use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Manufacturing\MrpServiceInterface;
 use App\Domain\Manufacturing\MrpRuns\Events\MrpRunCompleted;
 use App\Domain\Manufacturing\MrpRuns\Events\MrpRunFailed;
 use App\Domain\Manufacturing\MrpRuns\Events\MrpRunStarted;
 use App\Enums\DocumentStatus;
 use App\Models\Manufacturing\MrpRun;
-use Illuminate\Support\Facades\DB;
+use App\Services\Base\AbstractApplicationService;
 use InvalidArgumentException;
 
 /**
@@ -19,12 +21,16 @@ use InvalidArgumentException;
  * Orchestrates MRP runs by coordinating demand collection (MrpDemandService)
  * and suggestion generation (MrpSuggestionService).
  */
-class MrpService implements MrpServiceInterface
+class MrpService extends AbstractApplicationService implements MrpServiceInterface
 {
     public function __construct(
         private MrpDemandService $demandService,
-        private MrpSuggestionService $suggestionService
-    ) {}
+        private MrpSuggestionService $suggestionService,
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger
+    ) {
+        parent::__construct($eventDispatcher, $logger);
+    }
 
     /**
      * Create a new MRP run.
@@ -33,29 +39,29 @@ class MrpService implements MrpServiceInterface
      */
     public function create(array $data): MrpRun
     {
-        return DB::transaction(function () use ($data) {
+        return $this->executeInTransaction('create', function () use ($data) {
             $run = new MrpRun($data);
             $run->run_number = MrpRun::generateRunNumber();
             $run->status = DocumentStatus::Draft;
-            $run->created_by = $data['created_by'] ?? auth()->id();
+            $run->created_by = $data['created_by'] ?? $this->getUserId();
             $run->save();
 
             return $run->fresh(['warehouse']);
-        });
+        }, ['warehouse_id' => $data['warehouse_id'] ?? null]);
     }
 
     /**
      * Execute MRP run - collect demands and generate suggestions.
      */
-    public function execute(MrpRun $run, ?int $userId = null): MrpRun
+    public function executeRun(MrpRun $run, ?int $userId = null): MrpRun
     {
         if ($run->status !== DocumentStatus::Draft) {
             throw new InvalidArgumentException('Hanya MRP run dalam status draft yang dapat dijalankan.');
         }
 
-        $userId ??= auth()->id();
+        $userId ??= $this->getUserId();
 
-        return DB::transaction(function () use ($run, $userId) {
+        return $this->executeInTransaction('execute_run', function () use ($run, $userId) {
             $run->status = DocumentStatus::Processing;
             $run->save();
 
@@ -95,7 +101,7 @@ class MrpService implements MrpServiceInterface
 
                 throw $e;
             }
-        });
+        }, ['run_id' => $run->id]);
     }
 
     /**
@@ -124,12 +130,12 @@ class MrpService implements MrpServiceInterface
             throw new InvalidArgumentException('MRP run tidak dapat dihapus.');
         }
 
-        return DB::transaction(function () use ($run) {
+        return $this->executeInTransaction('delete', function () use ($run) {
             $run->demands()->delete();
             $run->suggestions()->delete();
 
             return $run->delete();
-        });
+        }, ['run_id' => $run->id]);
     }
 
     /**

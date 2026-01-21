@@ -1,7 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Sales;
 
+use App\Contracts\Events\EventDispatcherInterface;
+use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Sales\RecurringServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Purchasing\Bill;
@@ -10,14 +14,18 @@ use App\Models\Sales\Invoice;
 use App\Models\Sales\InvoiceItem;
 use App\Models\Shared\RecurringTemplate;
 use App\Services\Accounting\JournalService;
+use App\Services\Base\AbstractApplicationService;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
-class RecurringService implements RecurringServiceInterface
+class RecurringService extends AbstractApplicationService implements RecurringServiceInterface
 {
     public function __construct(
-        private JournalService $journalService
-    ) {}
+        private JournalService $journalService,
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger
+    ) {
+        parent::__construct($eventDispatcher, $logger);
+    }
 
     /**
      * Generate documents for all due recurring templates.
@@ -63,7 +71,7 @@ class RecurringService implements RecurringServiceInterface
             return null;
         }
 
-        return DB::transaction(function () use ($template) {
+        return $this->executeInTransaction('generate_from_template', function () use ($template) {
             $document = match ($template->type) {
                 RecurringTemplate::TYPE_INVOICE => $this->generateInvoice($template),
                 RecurringTemplate::TYPE_BILL => $this->generateBill($template),
@@ -88,7 +96,7 @@ class RecurringService implements RecurringServiceInterface
             }
 
             return $document;
-        });
+        }, ['template_id' => $template->id, 'type' => $template->type]);
     }
 
     /**
@@ -242,7 +250,7 @@ class RecurringService implements RecurringServiceInterface
             'is_active' => true,
             'auto_post' => $scheduleData['auto_post'] ?? false,
             'auto_send' => $scheduleData['auto_send'] ?? false,
-            'created_by' => auth()->id(),
+            'created_by' => $this->getUserId(),
         ]);
     }
 
@@ -283,7 +291,7 @@ class RecurringService implements RecurringServiceInterface
             'is_active' => true,
             'auto_post' => $scheduleData['auto_post'] ?? false,
             'auto_send' => $scheduleData['auto_send'] ?? false,
-            'created_by' => auth()->id(),
+            'created_by' => $this->getUserId(),
         ]);
     }
 }

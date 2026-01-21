@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\Accounting\Strategies\COGS;
 
-use App\Contracts\Accounting\JournalServiceInterface;
 use App\Contracts\Accounting\Strategies\COGSRecognitionStrategy;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Sales\DeliveryOrder;
@@ -19,7 +18,7 @@ use App\Models\Sales\Invoice;
 class COGSOnDeliveryStrategy implements COGSRecognitionStrategy
 {
     public function __construct(
-        private JournalServiceInterface $journalService
+        private COGSOnInvoiceStrategy $invoiceStrategy
     ) {}
 
     public function onInvoicePost(Invoice $invoice): ?JournalEntry
@@ -38,7 +37,7 @@ class COGSOnDeliveryStrategy implements COGSRecognitionStrategy
 
     public function calculateCOGS(Invoice $invoice): int
     {
-        return (new COGSOnInvoiceStrategy($this->journalService))->calculateCOGS($invoice);
+        return $this->invoiceStrategy->calculateCOGS($invoice);
     }
 
     public function getIdentifier(): string

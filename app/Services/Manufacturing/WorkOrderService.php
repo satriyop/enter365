@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Manufacturing;
 
+use App\Contracts\Events\EventDispatcherInterface;
+use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Manufacturing\WorkOrderServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Manufacturing\Bom;
@@ -11,16 +13,20 @@ use App\Models\Manufacturing\BomItem;
 use App\Models\Manufacturing\WorkOrder;
 use App\Models\Manufacturing\WorkOrderItem;
 use App\Models\Projects\Project;
-use Illuminate\Support\Facades\DB;
+use App\Services\Base\AbstractApplicationService;
 use InvalidArgumentException;
 
-class WorkOrderService implements WorkOrderServiceInterface
+class WorkOrderService extends AbstractApplicationService implements WorkOrderServiceInterface
 {
     public function __construct(
         private WorkOrderMaterialService $materialService,
         private WorkOrderCostService $costService,
-        private WorkOrderNumberGenerator $numberGenerator
-    ) {}
+        private WorkOrderNumberGenerator $numberGenerator,
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger
+    ) {
+        parent::__construct($eventDispatcher, $logger);
+    }
 
     /**
      * Create a new work order.
@@ -29,7 +35,7 @@ class WorkOrderService implements WorkOrderServiceInterface
      */
     public function create(array $data): WorkOrder
     {
-        return DB::transaction(function () use ($data) {
+        return $this->executeInTransaction('create', function () use ($data) {
             $project = isset($data['project_id']) ? Project::find($data['project_id']) : null;
 
             $wo = new WorkOrder($data);
@@ -43,7 +49,7 @@ class WorkOrderService implements WorkOrderServiceInterface
             }
 
             return $wo->fresh(['items', 'project', 'product', 'bom']);
-        });
+        }, ['product_id' => $data['product_id'] ?? null, 'project_id' => $data['project_id'] ?? null]);
     }
 
     /**
@@ -69,7 +75,7 @@ class WorkOrderService implements WorkOrderServiceInterface
      */
     public function createFromBom(Bom $bom, array $data): WorkOrder
     {
-        return DB::transaction(function () use ($bom, $data) {
+        return $this->executeInTransaction('create_from_bom', function () use ($bom, $data) {
             $project = isset($data['project_id']) ? Project::find($data['project_id']) : null;
             $quantity = $data['quantity'] ?? 1;
 
@@ -86,7 +92,7 @@ class WorkOrderService implements WorkOrderServiceInterface
                 'planned_end_date' => $data['planned_end_date'] ?? null,
                 'warehouse_id' => $data['warehouse_id'] ?? null,
                 'notes' => $data['notes'] ?? null,
-                'created_by' => $data['created_by'] ?? auth()->id(),
+                'created_by' => $data['created_by'] ?? $this->getUserId(),
             ]);
             $wo->wo_number = $this->numberGenerator->generate($project);
             $wo->status = DocumentStatus::Draft;
@@ -100,7 +106,7 @@ class WorkOrderService implements WorkOrderServiceInterface
             $wo->save();
 
             return $wo->fresh(['items', 'project', 'product', 'bom']);
-        });
+        }, ['bom_id' => $bom->id, 'quantity' => $data['quantity'] ?? 1]);
     }
 
     /**
@@ -128,7 +134,7 @@ class WorkOrderService implements WorkOrderServiceInterface
             throw new InvalidArgumentException('Work order hanya dapat diedit dalam status draft.');
         }
 
-        return DB::transaction(function () use ($wo, $data) {
+        return $this->executeInTransaction('update', function () use ($wo, $data) {
             $wo->fill($data);
             $wo->save();
 
@@ -141,7 +147,7 @@ class WorkOrderService implements WorkOrderServiceInterface
             }
 
             return $wo->fresh(['items', 'project', 'product', 'bom']);
-        });
+        }, ['work_order_id' => $wo->id]);
     }
 
     /**
@@ -153,12 +159,12 @@ class WorkOrderService implements WorkOrderServiceInterface
             throw new InvalidArgumentException('Hanya work order draft yang dapat dihapus.');
         }
 
-        return DB::transaction(function () use ($wo) {
+        return $this->executeInTransaction('delete', function () use ($wo) {
             $wo->items()->delete();
             $wo->subWorkOrders()->delete();
 
             return $wo->delete();
-        });
+        }, ['work_order_id' => $wo->id]);
     }
 
     /**
@@ -170,13 +176,13 @@ class WorkOrderService implements WorkOrderServiceInterface
             throw new InvalidArgumentException('Work order tidak dapat dikonfirmasi. Pastikan memiliki item dan dalam status draft.');
         }
 
-        return DB::transaction(function () use ($wo, $userId) {
+        return $this->executeInTransaction('confirm', function () use ($wo, $userId) {
             $this->materialService->reserveMaterials($wo);
 
             $wo->transitionTo(DocumentStatus::Confirmed, $userId);
 
             return $wo->fresh();
-        });
+        }, ['work_order_id' => $wo->id]);
     }
 
     /**
@@ -202,7 +208,7 @@ class WorkOrderService implements WorkOrderServiceInterface
             throw new InvalidArgumentException('Work order hanya dapat diselesaikan saat dalam proses.');
         }
 
-        return DB::transaction(function () use ($wo, $userId) {
+        return $this->executeInTransaction('complete', function () use ($wo, $userId) {
             $this->materialService->consumeMaterials($wo);
 
             $wo->calculateActualCosts();
@@ -218,7 +224,7 @@ class WorkOrderService implements WorkOrderServiceInterface
             $this->costService->createDeliveryOrderIfNeeded($wo);
 
             return $wo->fresh();
-        });
+        }, ['work_order_id' => $wo->id]);
     }
 
     /**
@@ -230,7 +236,7 @@ class WorkOrderService implements WorkOrderServiceInterface
             throw new InvalidArgumentException('Work order tidak dapat dibatalkan.');
         }
 
-        return DB::transaction(function () use ($wo, $reason, $userId) {
+        return $this->executeInTransaction('cancel', function () use ($wo, $reason, $userId) {
             if (in_array($wo->status, [DocumentStatus::Confirmed, DocumentStatus::InProgress])) {
                 $this->materialService->releaseMaterials($wo);
             }
@@ -240,7 +246,7 @@ class WorkOrderService implements WorkOrderServiceInterface
             ]);
 
             return $wo->fresh();
-        });
+        }, ['work_order_id' => $wo->id]);
     }
 
     /**

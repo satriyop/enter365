@@ -1,7 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Manufacturing;
 
+use App\Contracts\Events\EventDispatcherInterface;
+use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Manufacturing\SubcontractorServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Contacts\Contact;
@@ -11,11 +15,18 @@ use App\Models\Projects\ProjectCost;
 use App\Models\Purchasing\Bill;
 use App\Models\Purchasing\BillItem;
 use App\Models\Shared\SubcontractorInvoice;
-use Illuminate\Support\Facades\DB;
+use App\Services\Base\AbstractApplicationService;
 use InvalidArgumentException;
 
-class SubcontractorService implements SubcontractorServiceInterface
+class SubcontractorService extends AbstractApplicationService implements SubcontractorServiceInterface
 {
+    public function __construct(
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger
+    ) {
+        parent::__construct($eventDispatcher, $logger);
+    }
+
     /**
      * Create a subcontractor work order.
      *
@@ -23,14 +34,14 @@ class SubcontractorService implements SubcontractorServiceInterface
      */
     public function create(array $data): SubcontractorWorkOrder
     {
-        return DB::transaction(function () use ($data) {
+        return $this->executeInTransaction('create', function () use ($data) {
             $project = isset($data['project_id']) ? Project::find($data['project_id']) : null;
 
             $scWo = new SubcontractorWorkOrder($data);
             $scWo->sc_wo_number = SubcontractorWorkOrder::generateScWoNumber($project);
             $scWo->status = DocumentStatus::Draft;
             $scWo->retention_percent = $data['retention_percent'] ?? SubcontractorWorkOrder::DEFAULT_RETENTION_PERCENT;
-            $scWo->created_by = $data['created_by'] ?? auth()->id();
+            $scWo->created_by = $data['created_by'] ?? $this->getUserId();
             $scWo->save();
 
             // Calculate financials
@@ -38,7 +49,7 @@ class SubcontractorService implements SubcontractorServiceInterface
             $scWo->save();
 
             return $scWo->fresh(['subcontractor', 'project', 'workOrder']);
-        });
+        }, ['subcontractor_id' => $data['subcontractor_id'] ?? null, 'project_id' => $data['project_id'] ?? null]);
     }
 
     /**
@@ -52,13 +63,13 @@ class SubcontractorService implements SubcontractorServiceInterface
             throw new InvalidArgumentException('SC WO hanya dapat diedit dalam status draft atau ditugaskan.');
         }
 
-        return DB::transaction(function () use ($scWo, $data) {
+        return $this->executeInTransaction('update', function () use ($scWo, $data) {
             $scWo->fill($data);
             $scWo->recalculateFinancials();
             $scWo->save();
 
             return $scWo->fresh(['subcontractor', 'project', 'workOrder']);
-        });
+        }, ['sc_wo_id' => $scWo->id]);
     }
 
     /**
@@ -70,11 +81,11 @@ class SubcontractorService implements SubcontractorServiceInterface
             throw new InvalidArgumentException('Hanya SC WO draft yang dapat dihapus.');
         }
 
-        return DB::transaction(function () use ($scWo) {
+        return $this->executeInTransaction('delete', function () use ($scWo) {
             $scWo->invoices()->delete();
 
             return $scWo->delete();
-        });
+        }, ['sc_wo_id' => $scWo->id]);
     }
 
     /**
@@ -136,7 +147,7 @@ class SubcontractorService implements SubcontractorServiceInterface
             throw new InvalidArgumentException('SC WO hanya dapat diselesaikan saat dalam proses.');
         }
 
-        return DB::transaction(function () use ($scWo, $actualAmount, $userId) {
+        return $this->executeInTransaction('complete', function () use ($scWo, $actualAmount, $userId) {
             $scWo->transitionTo(DocumentStatus::Completed, $userId);
 
             $scWo->refresh();
@@ -153,7 +164,7 @@ class SubcontractorService implements SubcontractorServiceInterface
             $this->createProjectCost($scWo);
 
             return $scWo->fresh();
-        });
+        }, ['sc_wo_id' => $scWo->id]);
     }
 
     /**
@@ -195,7 +206,7 @@ class SubcontractorService implements SubcontractorServiceInterface
             );
         }
 
-        return DB::transaction(function () use ($scWo, $data) {
+        return $this->executeInTransaction('create_invoice', function () use ($scWo, $data) {
             // Calculate retention from gross amount
             $grossAmount = $data['gross_amount'];
             $retentionHeld = (int) round($grossAmount * ((float) $scWo->retention_percent / 100));
@@ -214,7 +225,7 @@ class SubcontractorService implements SubcontractorServiceInterface
                 'net_amount' => $netAmount,
                 'description' => $data['description'] ?? null,
                 'status' => SubcontractorInvoice::STATUS_PENDING,
-                'submitted_by' => auth()->id(),
+                'submitted_by' => $this->getUserId(),
                 'notes' => $data['notes'] ?? null,
             ]);
 
@@ -223,7 +234,7 @@ class SubcontractorService implements SubcontractorServiceInterface
             $scWo->save();
 
             return $invoice->fresh(['subcontractorWorkOrder', 'subcontractor']);
-        });
+        }, ['sc_wo_id' => $scWo->id, 'gross_amount' => $data['gross_amount']]);
     }
 
     /**
@@ -237,7 +248,7 @@ class SubcontractorService implements SubcontractorServiceInterface
             throw new InvalidArgumentException('Hanya invoice pending yang dapat diubah.');
         }
 
-        return DB::transaction(function () use ($invoice, $data) {
+        return $this->executeInTransaction('update_invoice', function () use ($invoice, $data) {
             $invoice->fill($data);
             $invoice->recalculate();
             $invoice->save();
@@ -247,7 +258,7 @@ class SubcontractorService implements SubcontractorServiceInterface
             $invoice->subcontractorWorkOrder->save();
 
             return $invoice->fresh(['subcontractorWorkOrder', 'subcontractor']);
-        });
+        }, ['invoice_id' => $invoice->id]);
     }
 
     /**
@@ -260,7 +271,7 @@ class SubcontractorService implements SubcontractorServiceInterface
         }
 
         $invoice->status = DocumentStatus::Approved;
-        $invoice->approved_by = $userId ?? auth()->id();
+        $invoice->approved_by = $userId ?? $this->getUserId();
         $invoice->approved_at = now();
         $invoice->save();
 
@@ -284,7 +295,7 @@ class SubcontractorService implements SubcontractorServiceInterface
         }
 
         $invoice->status = DocumentStatus::Rejected;
-        $invoice->rejected_by = $userId ?? auth()->id();
+        $invoice->rejected_by = $userId ?? $this->getUserId();
         $invoice->rejected_at = now();
         $invoice->rejection_reason = $reason;
         $invoice->save();
@@ -301,7 +312,7 @@ class SubcontractorService implements SubcontractorServiceInterface
             throw new InvalidArgumentException('Invoice harus disetujui dan belum dikonversi ke bill.');
         }
 
-        return DB::transaction(function () use ($invoice) {
+        return $this->executeInTransaction('convert_to_bill', function () use ($invoice) {
             $scWo = $invoice->subcontractorWorkOrder;
 
             // Create bill
@@ -322,7 +333,7 @@ class SubcontractorService implements SubcontractorServiceInterface
                 'base_currency_total' => $invoice->net_amount,
                 'paid_amount' => 0,
                 'status' => DocumentStatus::Draft,
-                'created_by' => auth()->id(),
+                'created_by' => $this->getUserId(),
             ]);
 
             // Create bill item
@@ -341,7 +352,7 @@ class SubcontractorService implements SubcontractorServiceInterface
             $invoice->save();
 
             return $bill->fresh(['items', 'contact']);
-        });
+        }, ['invoice_id' => $invoice->id]);
     }
 
     /**
@@ -443,7 +454,7 @@ class SubcontractorService implements SubcontractorServiceInterface
             'reference_id' => $scWo->id,
             'amount' => $amount,
             'cost_date' => now(),
-            'created_by' => auth()->id(),
+            'created_by' => $this->getUserId(),
         ]);
 
         // Recalculate project financials

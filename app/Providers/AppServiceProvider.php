@@ -58,10 +58,9 @@ use App\Services\Purchasing\GoodsReceiptNoteService;
 use App\Services\Purchasing\PurchaseOrderService;
 use App\Services\Purchasing\PurchaseReturnService;
 use App\Services\Sales\DeliveryOrderService;
-// Inventory Domain Services
 use App\Services\Sales\DownPaymentService;
-use App\Services\Sales\InvoiceService;
 // Projects Domain Services
+use App\Services\Sales\InvoiceService;
 use App\Services\Sales\QuotationService;
 // Solar Domain Services
 use App\Services\Sales\RecurringService;
@@ -170,6 +169,10 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->bind(RecurringServiceInterface::class, RecurringService::class);
         $this->app->bind(\App\Contracts\Sales\QuotationCalculatorInterface::class, \App\Domain\Sales\Quotations\QuotationCalculator::class);
+        $this->app->bind(\App\Contracts\Sales\QuotationConversionServiceInterface::class, \App\Services\Sales\QuotationConversionService::class);
+
+        // QuotationDomainFactory - singleton since it caches managers
+        $this->app->singleton(\App\Domain\Sales\Quotations\QuotationDomainFactory::class);
 
         // Purchasing Domain (4 services)
         $this->app->bind(BillServiceInterface::class, BillService::class);

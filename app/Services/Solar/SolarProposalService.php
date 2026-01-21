@@ -1,7 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Solar;
 
+use App\Contracts\Events\EventDispatcherInterface;
+use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Solar\SolarProposalServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Manufacturing\Bom;
@@ -9,16 +13,20 @@ use App\Models\Manufacturing\BomVariantGroup;
 use App\Models\Sales\Quotation;
 use App\Models\Solar\IndonesiaSolarData;
 use App\Models\Solar\SolarProposal;
+use App\Services\Base\AbstractApplicationService;
 use App\Services\Sales\QuotationService;
-use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
-class SolarProposalService implements SolarProposalServiceInterface
+class SolarProposalService extends AbstractApplicationService implements SolarProposalServiceInterface
 {
     public function __construct(
         protected SolarCalculationService $calculator,
-        protected QuotationService $quotationService
-    ) {}
+        protected QuotationService $quotationService,
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger
+    ) {
+        parent::__construct($eventDispatcher, $logger);
+    }
 
     /**
      * Create a new solar proposal.
@@ -34,11 +42,11 @@ class SolarProposalService implements SolarProposalServiceInterface
 
         while ($attempt < $maxRetries) {
             try {
-                return DB::transaction(function () use ($data) {
+                return $this->executeInTransaction('create', function () use ($data) {
                     // Set defaults - number generated inside transaction with lock
                     $data['proposal_number'] = SolarProposal::generateProposalNumber();
                     $data['status'] = DocumentStatus::Draft;
-                    $data['created_by'] = auth()->id();
+                    $data['created_by'] = $this->getUserId();
                     $data['performance_ratio'] = $data['performance_ratio'] ?? 0.80;
 
                     // Set default validity (30 days)
@@ -59,7 +67,7 @@ class SolarProposalService implements SolarProposalServiceInterface
                     $proposal = SolarProposal::create($data);
 
                     return $proposal->load(['contact', 'creator']);
-                });
+                }, ['contact_id' => $data['contact_id'] ?? null]);
             } catch (\Illuminate\Database\QueryException $e) {
                 // Check if it's a duplicate key violation (PostgreSQL: 23505)
                 if ($e->getCode() === '23505' && str_contains($e->getMessage(), 'proposal_number')) {
@@ -90,7 +98,7 @@ class SolarProposalService implements SolarProposalServiceInterface
             throw new InvalidArgumentException('Proposal hanya dapat diedit dalam status draft.');
         }
 
-        return DB::transaction(function () use ($proposal, $data) {
+        return $this->executeInTransaction('update', function () use ($proposal, $data) {
             // Update solar data if location changed
             if (
                 (isset($data['province']) || isset($data['city'])) &&
@@ -133,7 +141,7 @@ class SolarProposalService implements SolarProposalServiceInterface
             $proposal->save();
 
             return $proposal->fresh(['contact', 'creator', 'variantGroup', 'selectedBom']);
-        });
+        }, ['proposal_id' => $proposal->id]);
     }
 
     /**
@@ -159,7 +167,7 @@ class SolarProposalService implements SolarProposalServiceInterface
             throw new InvalidArgumentException('Proposal hanya dapat dihitung ulang dalam status draft.');
         }
 
-        return DB::transaction(function () use ($proposal) {
+        return $this->executeInTransaction('calculate_proposal', function () use ($proposal) {
             // Get system capacity from selected BOM or calculate recommended size
             $capacityKwp = $proposal->system_capacity_kwp;
 
@@ -230,7 +238,7 @@ class SolarProposalService implements SolarProposalServiceInterface
             $proposal->save();
 
             return $proposal->fresh(['contact', 'variantGroup', 'selectedBom']);
-        });
+        }, ['proposal_id' => $proposal->id]);
     }
 
     /**
@@ -249,7 +257,7 @@ class SolarProposalService implements SolarProposalServiceInterface
             throw new InvalidArgumentException('Variant group tidak ditemukan.');
         }
 
-        return DB::transaction(function () use ($proposal, $variantGroup) {
+        return $this->executeInTransaction('attach_variant_group', function () use ($proposal, $variantGroup) {
             $proposal->variant_group_id = $variantGroup->id;
 
             // Auto-select the primary (recommended) BOM if available
@@ -263,7 +271,7 @@ class SolarProposalService implements SolarProposalServiceInterface
 
             // Recalculate with new system
             return $this->calculateProposal($proposal);
-        });
+        }, ['proposal_id' => $proposal->id, 'variant_group_id' => $variantGroup->id]);
     }
 
     /**
@@ -285,7 +293,7 @@ class SolarProposalService implements SolarProposalServiceInterface
             throw new InvalidArgumentException('BOM tidak termasuk dalam variant group yang dipilih.');
         }
 
-        return DB::transaction(function () use ($proposal, $bom) {
+        return $this->executeInTransaction('select_bom', function () use ($proposal, $bom) {
             $proposal->selected_bom_id = $bom->id;
             $proposal->system_capacity_kwp = $this->extractCapacityFromBom($bom);
 
@@ -297,7 +305,7 @@ class SolarProposalService implements SolarProposalServiceInterface
             $proposal->save();
 
             return $this->calculateProposal($proposal);
-        });
+        }, ['proposal_id' => $proposal->id, 'bom_id' => $bom->id]);
     }
 
     /**
@@ -313,13 +321,13 @@ class SolarProposalService implements SolarProposalServiceInterface
             );
         }
 
-        return DB::transaction(function () use ($proposal) {
+        return $this->executeInTransaction('send', function () use ($proposal) {
             // Use state machine for status transition
             // State machine handles sent_at, public_token, public_token_expires_at
-            $proposal->transitionTo(DocumentStatus::Sent, auth()->id());
+            $proposal->transitionTo(DocumentStatus::Sent, $this->getUserId());
 
             return $proposal->fresh();
-        });
+        }, ['proposal_id' => $proposal->id]);
     }
 
     /**
@@ -335,7 +343,7 @@ class SolarProposalService implements SolarProposalServiceInterface
             throw new InvalidArgumentException('Proposal tidak dapat diterima dalam status saat ini.');
         }
 
-        return DB::transaction(function () use ($proposal, $selectedBomId) {
+        return $this->executeInTransaction('accept', function () use ($proposal, $selectedBomId) {
             // Update selected BOM if customer chose a different variant
             if ($selectedBomId && $selectedBomId !== $proposal->selected_bom_id) {
                 $bom = Bom::find($selectedBomId);
@@ -350,7 +358,7 @@ class SolarProposalService implements SolarProposalServiceInterface
             $proposal->transitionTo(DocumentStatus::Accepted);
 
             return $proposal->fresh(['contact', 'selectedBom']);
-        });
+        }, ['proposal_id' => $proposal->id]);
     }
 
     /**
@@ -364,13 +372,13 @@ class SolarProposalService implements SolarProposalServiceInterface
             throw new InvalidArgumentException('Proposal tidak dapat ditolak dalam status saat ini.');
         }
 
-        return DB::transaction(function () use ($proposal, $reason) {
+        return $this->executeInTransaction('reject', function () use ($proposal, $reason) {
             // Use state machine for status transition
             // State machine handles rejected_at and rejection_reason via context
             $proposal->transitionTo(DocumentStatus::Rejected, null, ['rejection_reason' => $reason]);
 
             return $proposal->fresh();
-        });
+        }, ['proposal_id' => $proposal->id]);
     }
 
     /**
@@ -386,7 +394,7 @@ class SolarProposalService implements SolarProposalServiceInterface
             );
         }
 
-        return DB::transaction(function () use ($proposal) {
+        return $this->executeInTransaction('convert_to_quotation', function () use ($proposal) {
             $bom = $proposal->selectedBom;
 
             // Create quotation from the selected BOM
@@ -404,7 +412,7 @@ class SolarProposalService implements SolarProposalServiceInterface
             $proposal->save();
 
             return $quotation;
-        });
+        }, ['proposal_id' => $proposal->id]);
     }
 
     /**

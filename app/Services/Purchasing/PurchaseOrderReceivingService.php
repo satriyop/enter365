@@ -4,17 +4,26 @@ declare(strict_types=1);
 
 namespace App\Services\Purchasing;
 
+use App\Contracts\Events\EventDispatcherInterface;
+use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Purchasing\PurchaseOrder;
-use Illuminate\Support\Facades\DB;
+use App\Services\Base\AbstractApplicationService;
 
 /**
  * Service for purchase order receiving status management.
  *
  * Handles receiving status transitions and progress tracking.
  */
-class PurchaseOrderReceivingService
+class PurchaseOrderReceivingService extends AbstractApplicationService
 {
+    public function __construct(
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger
+    ) {
+        parent::__construct($eventDispatcher, $logger);
+    }
+
     /**
      * Update receiving status based on items.
      *
@@ -29,7 +38,7 @@ class PurchaseOrderReceivingService
             return $po;
         }
 
-        return DB::transaction(function () use ($po) {
+        return $this->executeInTransaction('update_receiving_status', function () use ($po) {
             $isFullyReceived = $po->isFullyReceived();
             $hasReceivedItems = $po->hasReceivedItems();
 
@@ -37,15 +46,15 @@ class PurchaseOrderReceivingService
             if ($isFullyReceived && $po->status !== DocumentStatus::Received) {
                 // Fully received - transition to Received
                 // State machine handles fully_received_at timestamp
-                $po->transitionTo(DocumentStatus::Received, auth()->id());
+                $po->transitionTo(DocumentStatus::Received, $this->getUserId());
             } elseif ($hasReceivedItems && $po->status === DocumentStatus::Approved) {
                 // Partial receive - transition to Partial
                 // State machine handles first_received_at timestamp
-                $po->transitionTo(DocumentStatus::Partial, auth()->id());
+                $po->transitionTo(DocumentStatus::Partial, $this->getUserId());
             }
 
             return $po->fresh();
-        });
+        }, ['purchase_order_id' => $po->id]);
     }
 
     /**

@@ -21,7 +21,7 @@ interface MrpServiceInterface
     /**
      * Execute an MRP run to generate demands and suggestions.
      */
-    public function execute(MrpRun $run, ?int $userId = null): MrpRun;
+    public function executeRun(MrpRun $run, ?int $userId = null): MrpRun;
 
     /**
      * Update an MRP run.

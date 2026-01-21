@@ -187,6 +187,70 @@ class WIPAccountingStrategy implements ManufacturingCostStrategy
 }
 ```
 
+### Common DIP Violations ⚠️
+
+**Problem:** Injecting concrete classes instead of interfaces.
+
+```php
+// ❌ WRONG - Concrete injection (violates DIP)
+class DeliveryOrderService
+{
+    public function __construct(
+        private InventoryService $inventoryService  // Concrete class!
+    ) {}
+}
+
+// ✓ CORRECT - Interface injection
+class DeliveryOrderService
+{
+    public function __construct(
+        private InventoryServiceInterface $inventoryService  // Interface!
+    ) {}
+}
+```
+
+**Why this matters:**
+- Can't mock in unit tests without container manipulation
+- Tight coupling to implementation details
+- Breaks if you ever need alternative implementations
+
+**Fixed violations (Jan 2026):**
+
+| Service | Change |
+|---------|--------|
+| `DeliveryOrderService` | ✅ Now uses `InventoryServiceInterface` |
+| `StockOpnameService` | ✅ Now uses `InventoryServiceInterface` |
+
+### Unused Injections (Code Smell)
+
+Injecting services that are never used wastes resources and confuses readers:
+
+```php
+// ❌ WRONG - Injected but never used
+class GoodsReceiptNoteService
+{
+    public function __construct(
+        private PurchaseOrderService $purchaseOrderService,  // Never used!
+        private InventoryServiceInterface $inventoryService
+    ) {}
+}
+
+// ✓ CORRECT - Only inject what you use
+class GoodsReceiptNoteService
+{
+    public function __construct(
+        private InventoryServiceInterface $inventoryService
+    ) {}
+}
+```
+
+**How to find unused injections:**
+```bash
+# Search for constructor parameter that's never referenced
+grep -n "purchaseOrderService" app/Services/Purchasing/GoodsReceiptNoteService.php
+# If only found in constructor, it's unused
+```
+
 ---
 
 ## Key Patterns Supporting SOLID

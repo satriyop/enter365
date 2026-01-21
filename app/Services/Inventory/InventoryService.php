@@ -1,8 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Inventory;
 
+use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Inventory\InventoryServiceInterface;
+use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Exceptions\Domain\InsufficientStockException;
 use App\Models\Inventory\InventoryMovement;
 use App\Models\Inventory\Product;
@@ -10,11 +14,18 @@ use App\Models\Inventory\ProductStock;
 use App\Models\Inventory\Warehouse;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
+use App\Services\Base\AbstractApplicationService;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
-class InventoryService implements InventoryServiceInterface
+class InventoryService extends AbstractApplicationService implements InventoryServiceInterface
 {
+    public function __construct(
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger
+    ) {
+        parent::__construct($eventDispatcher, $logger);
+    }
+
     /**
      * Record stock in (purchase/receiving).
      */
@@ -27,7 +38,7 @@ class InventoryService implements InventoryServiceInterface
         ?string $referenceType = null,
         ?int $referenceId = null
     ): InventoryMovement {
-        return DB::transaction(function () use ($product, $warehouse, $quantity, $unitCost, $notes, $referenceType, $referenceId) {
+        return $this->executeInTransaction('stock_in', function () use ($product, $warehouse, $quantity, $unitCost, $notes, $referenceType, $referenceId) {
             $stock = ProductStock::getOrCreate($product, $warehouse);
             $quantityBefore = $stock->quantity;
 
@@ -49,14 +60,14 @@ class InventoryService implements InventoryServiceInterface
                 'reference_id' => $referenceId,
                 'movement_date' => now(),
                 'notes' => $notes,
-                'created_by' => auth()->id(),
+                'created_by' => $this->getUserId(),
             ]);
 
             // Sync product's current_stock
             $product->syncCurrentStock();
 
             return $movement;
-        });
+        }, ['product_id' => $product->id, 'warehouse_id' => $warehouse->id, 'quantity' => $quantity]);
     }
 
     /**
@@ -70,7 +81,7 @@ class InventoryService implements InventoryServiceInterface
         ?string $referenceType = null,
         ?int $referenceId = null
     ): InventoryMovement {
-        return DB::transaction(function () use ($product, $warehouse, $quantity, $notes, $referenceType, $referenceId) {
+        return $this->executeInTransaction('stock_out', function () use ($product, $warehouse, $quantity, $notes, $referenceType, $referenceId) {
             $stock = ProductStock::getOrCreate($product, $warehouse);
             $quantityBefore = $stock->quantity;
 
@@ -95,14 +106,14 @@ class InventoryService implements InventoryServiceInterface
                 'reference_id' => $referenceId,
                 'movement_date' => now(),
                 'notes' => $notes,
-                'created_by' => auth()->id(),
+                'created_by' => $this->getUserId(),
             ]);
 
             // Sync product's current_stock
             $product->syncCurrentStock();
 
             return $movement;
-        });
+        }, ['product_id' => $product->id, 'warehouse_id' => $warehouse->id, 'quantity' => $quantity]);
     }
 
     /**
@@ -117,7 +128,7 @@ class InventoryService implements InventoryServiceInterface
         ?string $referenceType = null,
         ?int $referenceId = null
     ): InventoryMovement {
-        return DB::transaction(function () use ($product, $warehouse, $newQuantity, $newUnitCost, $notes, $referenceType, $referenceId) {
+        return $this->executeInTransaction('adjust', function () use ($product, $warehouse, $newQuantity, $newUnitCost, $notes, $referenceType, $referenceId) {
             $stock = ProductStock::getOrCreate($product, $warehouse);
             $quantityBefore = $stock->quantity;
             $quantityDiff = $newQuantity - $quantityBefore;
@@ -145,14 +156,14 @@ class InventoryService implements InventoryServiceInterface
                 'reference_id' => $referenceId,
                 'movement_date' => now(),
                 'notes' => $notes ?? 'Penyesuaian stok',
-                'created_by' => auth()->id(),
+                'created_by' => $this->getUserId(),
             ]);
 
             // Sync product's current_stock
             $product->syncCurrentStock();
 
             return $movement;
-        });
+        }, ['product_id' => $product->id, 'warehouse_id' => $warehouse->id, 'new_quantity' => $newQuantity]);
     }
 
     /**
@@ -167,7 +178,7 @@ class InventoryService implements InventoryServiceInterface
         int $quantity,
         ?string $notes = null
     ): array {
-        return DB::transaction(function () use ($product, $fromWarehouse, $toWarehouse, $quantity, $notes) {
+        return $this->executeInTransaction('transfer', function () use ($product, $fromWarehouse, $toWarehouse, $quantity, $notes) {
             $fromStock = ProductStock::getOrCreate($product, $fromWarehouse);
 
             if ($fromStock->quantity < $quantity) {
@@ -206,7 +217,7 @@ class InventoryService implements InventoryServiceInterface
                 'transfer_warehouse_id' => $toWarehouse->id,
                 'movement_date' => now(),
                 'notes' => $notes ?? "Transfer ke {$toWarehouse->name}",
-                'created_by' => auth()->id(),
+                'created_by' => $this->getUserId(),
             ]);
 
             // Create incoming movement
@@ -223,14 +234,14 @@ class InventoryService implements InventoryServiceInterface
                 'transfer_warehouse_id' => $fromWarehouse->id,
                 'movement_date' => now(),
                 'notes' => $notes ?? "Transfer dari {$fromWarehouse->name}",
-                'created_by' => auth()->id(),
+                'created_by' => $this->getUserId(),
             ]);
 
             // Sync product's current_stock
             $product->syncCurrentStock();
 
             return ['out' => $outMovement, 'in' => $inMovement];
-        });
+        }, ['product_id' => $product->id, 'from_warehouse_id' => $fromWarehouse->id, 'to_warehouse_id' => $toWarehouse->id]);
     }
 
     /**

@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services\Sales;
 
+use App\Contracts\Events\EventDispatcherInterface;
+use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Domain\Sales\Quotations\Enums\QuotationOutcome;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\Quotation;
-use Illuminate\Support\Facades\DB;
+use App\Services\Base\AbstractApplicationService;
 use InvalidArgumentException;
 
 /**
@@ -15,9 +17,19 @@ use InvalidArgumentException;
  *
  * Handles marking quotations as won or lost with proper validation
  * and activity tracking.
+ *
+ * Note: Renamed from QuotationWorkflowService to avoid collision with
+ * Quotation\QuotationWorkflowService which handles state transitions.
  */
-class QuotationWorkflowService
+class QuotationOutcomeService extends AbstractApplicationService
 {
+    public function __construct(
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger
+    ) {
+        parent::__construct($eventDispatcher, $logger);
+    }
+
     /**
      * Mark quotation as won.
      *
@@ -35,7 +47,7 @@ class QuotationWorkflowService
             throw new InvalidArgumentException('Penawaran sudah memiliki hasil.');
         }
 
-        return DB::transaction(function () use ($quotation, $data) {
+        return $this->executeInTransaction('mark_as_won', function () use ($quotation, $data) {
             $quotation->outcome = QuotationOutcome::Won->value;
             $quotation->won_reason = $data['won_reason'] ?? null;
             $quotation->outcome_notes = $data['outcome_notes'] ?? null;
@@ -44,7 +56,7 @@ class QuotationWorkflowService
             $quotation->save();
 
             return $quotation->fresh();
-        });
+        }, ['quotation_id' => $quotation->id]);
     }
 
     /**
@@ -64,7 +76,7 @@ class QuotationWorkflowService
             throw new InvalidArgumentException('Penawaran sudah memiliki hasil.');
         }
 
-        return DB::transaction(function () use ($quotation, $data) {
+        return $this->executeInTransaction('mark_as_lost', function () use ($quotation, $data) {
             $quotation->outcome = QuotationOutcome::Lost->value;
             $quotation->lost_reason = $data['lost_reason'] ?? null;
             $quotation->lost_to_competitor = $data['lost_to_competitor'] ?? null;
@@ -74,7 +86,7 @@ class QuotationWorkflowService
             $quotation->save();
 
             return $quotation->fresh();
-        });
+        }, ['quotation_id' => $quotation->id]);
     }
 
     /**

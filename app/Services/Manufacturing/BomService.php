@@ -1,20 +1,28 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Manufacturing;
 
+use App\Contracts\Events\EventDispatcherInterface;
+use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Manufacturing\BomServiceInterface;
 use App\Contracts\Shared\DocumentNumberGeneratorInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Inventory\Product;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomItem;
-use Illuminate\Support\Facades\DB;
+use App\Services\Base\AbstractApplicationService;
 
-class BomService implements BomServiceInterface
+class BomService extends AbstractApplicationService implements BomServiceInterface
 {
     public function __construct(
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger,
         private DocumentNumberGeneratorInterface $numberGenerator
-    ) {}
+    ) {
+        parent::__construct($eventDispatcher, $logger);
+    }
 
     /**
      * Create a new BOM.
@@ -23,9 +31,10 @@ class BomService implements BomServiceInterface
      */
     public function create(array $data): Bom
     {
-        return DB::transaction(function () use ($data) {
+        return $this->executeInTransaction('create', function () use ($data) {
             $bom = new Bom($data);
             $bom->bom_number = $this->numberGenerator->generate('BOM-'.now()->format('Ym').'-', 'boms', 'bom_number');
+            $bom->created_by = $this->getUserId();
             $bom->save();
 
             // Create items
@@ -42,7 +51,7 @@ class BomService implements BomServiceInterface
             }
 
             return $bom->fresh(['items', 'product']);
-        });
+        }, ['product_id' => $data['product_id'] ?? null]);
     }
 
     /**
@@ -56,7 +65,7 @@ class BomService implements BomServiceInterface
             throw new \InvalidArgumentException('BOM can only be edited in draft status.');
         }
 
-        return DB::transaction(function () use ($bom, $data) {
+        return $this->executeInTransaction('update', function () use ($bom, $data) {
             $bom->fill($data);
             $bom->save();
 
@@ -77,7 +86,7 @@ class BomService implements BomServiceInterface
             }
 
             return $bom->fresh(['items', 'product']);
-        });
+        }, ['bom_id' => $bom->id]);
     }
 
     /**
@@ -89,35 +98,37 @@ class BomService implements BomServiceInterface
             throw new \InvalidArgumentException('Only draft BOMs can be deleted.');
         }
 
-        return DB::transaction(function () use ($bom) {
+        return $this->executeInTransaction('delete', function () use ($bom) {
             $bom->items()->delete();
 
             return $bom->delete();
-        });
+        }, ['bom_id' => $bom->id]);
     }
 
     /**
      * Activate a BOM.
      */
-    public function activate(Bom $bom, ?int $userId = null): Bom
+    public function activate(Bom $bom): Bom
     {
         if (! $bom->canBeActivated()) {
             throw new \InvalidArgumentException('BOM cannot be activated. Ensure it has items and is in draft status.');
         }
 
-        // Deactivate any existing active BOM for this product
-        Bom::query()
-            ->where('product_id', $bom->product_id)
-            ->where('status', DocumentStatus::Active)
-            ->where('id', '!=', $bom->id)
-            ->update(['status' => DocumentStatus::Inactive]);
+        return $this->executeInTransaction('activate', function () use ($bom) {
+            // Deactivate any existing active BOM for this product
+            Bom::query()
+                ->where('product_id', $bom->product_id)
+                ->where('status', DocumentStatus::Active)
+                ->where('id', '!=', $bom->id)
+                ->update(['status' => DocumentStatus::Inactive]);
 
-        $bom->status = DocumentStatus::Active;
-        $bom->approved_by = $userId;
-        $bom->approved_at = now();
-        $bom->save();
+            $bom->status = DocumentStatus::Active;
+            $bom->approved_by = $this->getUserId();
+            $bom->approved_at = now()->toDateTimeString();
+            $bom->save();
 
-        return $bom->fresh();
+            return $bom->fresh();
+        }, ['bom_id' => $bom->id]);
     }
 
     /**
@@ -129,10 +140,12 @@ class BomService implements BomServiceInterface
             throw new \InvalidArgumentException('Only active BOMs can be deactivated.');
         }
 
-        $bom->status = DocumentStatus::Inactive;
-        $bom->save();
+        return $this->executeInTransaction('deactivate', function () use ($bom) {
+            $bom->status = DocumentStatus::Inactive;
+            $bom->save();
 
-        return $bom->fresh();
+            return $bom->fresh();
+        }, ['bom_id' => $bom->id]);
     }
 
     /**
@@ -140,12 +153,13 @@ class BomService implements BomServiceInterface
      */
     public function duplicate(Bom $bom): Bom
     {
-        return DB::transaction(function () use ($bom) {
+        return $this->executeInTransaction('duplicate', function () use ($bom) {
             $newBom = $bom->replicate(['bom_number', 'status', 'approved_by', 'approved_at']);
-            $newBom->bom_number = Bom::generateBomNumber();
+            $newBom->bom_number = $this->numberGenerator->generate('BOM-'.now()->format('Ym').'-', 'boms', 'bom_number');
             $newBom->status = DocumentStatus::Draft;
             $newBom->version = $this->getNextVersion($bom->version);
             $newBom->parent_bom_id = $bom->id;
+            $newBom->created_by = $this->getUserId();
             $newBom->save();
 
             // Duplicate items
@@ -156,7 +170,7 @@ class BomService implements BomServiceInterface
             }
 
             return $newBom->fresh(['items', 'product']);
-        });
+        }, ['source_bom_id' => $bom->id]);
     }
 
     /**

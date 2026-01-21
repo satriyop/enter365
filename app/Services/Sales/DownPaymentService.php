@@ -1,8 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Sales;
 
 use App\Contracts\Accounting\JournalServiceInterface;
+use App\Contracts\Events\EventDispatcherInterface;
+use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Sales\DownPaymentServiceInterface;
 use App\Models\Accounting\Account;
 use App\Models\Purchasing\Bill;
@@ -10,15 +14,19 @@ use App\Models\Sales\DownPayment;
 use App\Models\Sales\DownPaymentApplication;
 use App\Models\Sales\Invoice;
 use App\Models\Shared\Payment;
-use Illuminate\Support\Facades\DB;
+use App\Services\Base\AbstractApplicationService;
 
-class DownPaymentService implements DownPaymentServiceInterface
+class DownPaymentService extends AbstractApplicationService implements DownPaymentServiceInterface
 {
     public function __construct(
         private JournalServiceInterface $journalService,
         private DownPaymentNumberGenerator $dpNumberGenerator,
-        private PaymentNumberGenerator $paymentNumberGenerator
-    ) {}
+        private PaymentNumberGenerator $paymentNumberGenerator,
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger
+    ) {
+        parent::__construct($eventDispatcher, $logger);
+    }
 
     /**
      * Create a new down payment.
@@ -27,7 +35,7 @@ class DownPaymentService implements DownPaymentServiceInterface
      */
     public function create(array $data): DownPayment
     {
-        return DB::transaction(function () use ($data) {
+        return $this->executeInTransaction('create', function () use ($data) {
             $downPayment = new DownPayment($data);
             $downPayment->dp_number = $this->dpNumberGenerator->generate($data['type']);
             $downPayment->save();
@@ -36,7 +44,7 @@ class DownPaymentService implements DownPaymentServiceInterface
             $this->createDownPaymentJournalEntry($downPayment);
 
             return $downPayment->fresh(['contact', 'cashAccount', 'journalEntry']);
-        });
+        }, ['type' => $data['type'], 'amount' => $data['amount'] ?? 0]);
     }
 
     /**
@@ -54,7 +62,7 @@ class DownPaymentService implements DownPaymentServiceInterface
             throw new \InvalidArgumentException('Can only update active down payments.');
         }
 
-        return DB::transaction(function () use ($downPayment, $data) {
+        return $this->executeInTransaction('update', function () use ($downPayment, $data) {
             // If amount or account changed, reverse old journal and create new
             $needsJournalUpdate = isset($data['amount']) && $data['amount'] !== $downPayment->amount
                 || isset($data['cash_account_id']) && $data['cash_account_id'] !== $downPayment->cash_account_id;
@@ -73,7 +81,7 @@ class DownPaymentService implements DownPaymentServiceInterface
             }
 
             return $downPayment->fresh(['contact', 'cashAccount', 'journalEntry']);
-        });
+        }, ['down_payment_id' => $downPayment->id]);
     }
 
     /**
@@ -85,14 +93,14 @@ class DownPaymentService implements DownPaymentServiceInterface
             throw new \InvalidArgumentException('Cannot delete down payment with existing applications.');
         }
 
-        return DB::transaction(function () use ($downPayment) {
+        return $this->executeInTransaction('delete', function () use ($downPayment) {
             // Reverse journal entry if exists
             if ($downPayment->journalEntry) {
                 $this->journalService->reverseEntry($downPayment->journalEntry);
             }
 
             return $downPayment->delete();
-        });
+        }, ['down_payment_id' => $downPayment->id]);
     }
 
     /**
@@ -125,7 +133,7 @@ class DownPaymentService implements DownPaymentServiceInterface
             throw new \InvalidArgumentException('Amount exceeds invoice outstanding balance.');
         }
 
-        return DB::transaction(function () use ($downPayment, $invoice, $data, $amount) {
+        return $this->executeInTransaction('apply_to_invoice', function () use ($downPayment, $invoice, $data, $amount) {
             $application = new DownPaymentApplication([
                 'down_payment_id' => $downPayment->id,
                 'applicable_type' => Invoice::class,
@@ -151,7 +159,7 @@ class DownPaymentService implements DownPaymentServiceInterface
             $invoice->save();
 
             return $application->fresh(['downPayment', 'applicable', 'journalEntry']);
-        });
+        }, ['down_payment_id' => $downPayment->id, 'invoice_id' => $invoice->id, 'amount' => $amount]);
     }
 
     /**
@@ -184,7 +192,7 @@ class DownPaymentService implements DownPaymentServiceInterface
             throw new \InvalidArgumentException('Amount exceeds bill outstanding balance.');
         }
 
-        return DB::transaction(function () use ($downPayment, $bill, $data, $amount) {
+        return $this->executeInTransaction('apply_to_bill', function () use ($downPayment, $bill, $data, $amount) {
             $application = new DownPaymentApplication([
                 'down_payment_id' => $downPayment->id,
                 'applicable_type' => Bill::class,
@@ -210,7 +218,7 @@ class DownPaymentService implements DownPaymentServiceInterface
             $bill->save();
 
             return $application->fresh(['downPayment', 'applicable', 'journalEntry']);
-        });
+        }, ['down_payment_id' => $downPayment->id, 'bill_id' => $bill->id, 'amount' => $amount]);
     }
 
     /**
@@ -218,7 +226,7 @@ class DownPaymentService implements DownPaymentServiceInterface
      */
     public function unapply(DownPaymentApplication $application): bool
     {
-        return DB::transaction(function () use ($application) {
+        return $this->executeInTransaction('unapply', function () use ($application) {
             $downPayment = $application->downPayment;
             $applicable = $application->applicable;
 
@@ -240,7 +248,7 @@ class DownPaymentService implements DownPaymentServiceInterface
             }
 
             return $application->delete();
-        });
+        }, ['application_id' => $application->id, 'down_payment_id' => $application->down_payment_id]);
     }
 
     /**
@@ -260,7 +268,7 @@ class DownPaymentService implements DownPaymentServiceInterface
             throw new \InvalidArgumentException('Refund amount exceeds remaining balance.');
         }
 
-        return DB::transaction(function () use ($downPayment, $data, $refundAmount) {
+        return $this->executeInTransaction('refund', function () use ($downPayment, $data, $refundAmount) {
             // Create refund payment
             // Receivable DP: we refund TO customer (outgoing for us)
             // Payable DP: vendor refunds TO us (incoming for us)
@@ -290,7 +298,7 @@ class DownPaymentService implements DownPaymentServiceInterface
             $this->createRefundJournalEntry($downPayment, $payment, $refundAmount);
 
             return $payment;
-        });
+        }, ['down_payment_id' => $downPayment->id, 'refund_amount' => $refundAmount]);
     }
 
     /**
@@ -306,7 +314,7 @@ class DownPaymentService implements DownPaymentServiceInterface
             throw new \InvalidArgumentException('Can only cancel active down payments.');
         }
 
-        return DB::transaction(function () use ($downPayment, $reason) {
+        return $this->executeInTransaction('cancel', function () use ($downPayment, $reason) {
             // Reverse journal entry
             if ($downPayment->journalEntry) {
                 $this->journalService->reverseEntry($downPayment->journalEntry);
@@ -319,7 +327,7 @@ class DownPaymentService implements DownPaymentServiceInterface
             $downPayment->save();
 
             return $downPayment;
-        });
+        }, ['down_payment_id' => $downPayment->id]);
     }
 
     /**

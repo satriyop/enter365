@@ -1,22 +1,30 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Accounting;
 
 use App\Contracts\Accounting\AccountLookupServiceInterface;
 use App\Contracts\Accounting\JournalServiceInterface;
+use App\Contracts\Events\EventDispatcherInterface;
+use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Models\Accounting\FiscalPeriod;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Accounting\JournalEntryLine;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
 use App\Models\Shared\Payment;
-use Illuminate\Support\Facades\DB;
+use App\Services\Base\AbstractApplicationService;
 
-class JournalService implements JournalServiceInterface
+class JournalService extends AbstractApplicationService implements JournalServiceInterface
 {
     public function __construct(
-        private AccountLookupServiceInterface $accountLookup
-    ) {}
+        private AccountLookupServiceInterface $accountLookup,
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger
+    ) {
+        parent::__construct($eventDispatcher, $logger);
+    }
 
     /**
      * Create a journal entry with lines.
@@ -32,7 +40,7 @@ class JournalService implements JournalServiceInterface
      */
     public function createEntry(array $data, bool $autoPost = false): JournalEntry
     {
-        return DB::transaction(function () use ($data, $autoPost) {
+        return $this->executeInTransaction('create_entry', function () use ($data, $autoPost) {
             // Find or create fiscal period
             $fiscalPeriod = FiscalPeriod::current();
 
@@ -45,7 +53,7 @@ class JournalService implements JournalServiceInterface
                 'source_id' => $data['source_id'] ?? null,
                 'fiscal_period_id' => $fiscalPeriod?->id,
                 'is_posted' => false,
-                'created_by' => auth()->id(),
+                'created_by' => $this->getUserId(),
             ]);
 
             foreach ($data['lines'] as $lineData) {
@@ -73,7 +81,7 @@ class JournalService implements JournalServiceInterface
             }
 
             return $entry->fresh(['lines', 'lines.account']);
-        });
+        }, ['source_type' => $data['source_type'] ?? 'manual', 'source_id' => $data['source_id'] ?? null]);
     }
 
     /**
@@ -118,7 +126,7 @@ class JournalService implements JournalServiceInterface
             throw new \InvalidArgumentException('Journal entry is already reversed.');
         }
 
-        return DB::transaction(function () use ($entry, $description) {
+        return $this->executeInTransaction('reverse_entry', function () use ($entry, $description) {
             // Create reversal entry with swapped debits/credits
             $reversalLines = [];
             foreach ($entry->lines as $line) {
@@ -147,7 +155,7 @@ class JournalService implements JournalServiceInterface
             ]);
 
             return $reversalEntry->fresh(['lines', 'lines.account']);
-        });
+        }, ['entry_id' => $entry->id]);
     }
 
     /**
