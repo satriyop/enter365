@@ -1,0 +1,39 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+    - phpstan-baseline.neon
+
+parameters:
+    paths:
+        - app/
+        - config/
+        - routes/
+
+    # Level 5 - good balance of strictness vs noise
+    # Levels: 0 (loose) to 10 (strictest)
+    # Current baseline has ~1800 errors to fix gradually
+    level: 5
+
+    # Ignore errors that are common in Laravel but not real issues
+    ignoreErrors:
+        # Common Laravel patterns
+        - '#Unsafe usage of new static#'
+        - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Builder#'
+
+        # Generic type warnings (too noisy, low value)
+        - '#Generic type .* does not specify all template types#'
+        - '#is not subtype of template type#'
+
+        # Unused traits (analyzed when used)
+        - '#Trait .* is used zero times#'
+
+    # Exclude paths that don't need analysis (use (?) for optional paths)
+    excludePaths:
+        analyseAndScan:
+            - app/Console/Commands/Playground.php (?)
+            # Incomplete strategy implementations (TODO: complete these)
+            - app/Services/Accounting/Strategies/Manufacturing/JobCostingStrategy.php
+            - app/Services/Accounting/Strategies/Manufacturing/ProjectBasedCostingStrategy.php
+            - app/Services/Accounting/Strategies/Manufacturing/WIPAccountingStrategy.php
+
+    # Laravel-specific settings
+    treatPhpDocTypesAsCertain: false
