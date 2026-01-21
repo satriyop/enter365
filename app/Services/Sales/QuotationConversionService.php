@@ -24,7 +24,9 @@ class QuotationConversionService
     public function convertToInvoice(Quotation $quotation): Invoice
     {
         if (! $quotation->canConvert()) {
-            throw new InvalidArgumentException('Penawaran tidak dapat dikonversi. Pastikan sudah disetujui dan belum dikonversi.');
+            $reason = $quotation->stateMachine()->getConversionBlockReason()
+                ?? 'Penawaran tidak dapat dikonversi.';
+            throw new InvalidArgumentException($reason);
         }
 
         return DB::transaction(function () use ($quotation) {
@@ -62,10 +64,24 @@ class QuotationConversionService
                 ]);
             }
 
+            // Clear follow-up data (quotation is now closed)
+            $quotation->next_follow_up_at = null;
+
+            // Auto-mark as Won if outcome not already set
+            if ($quotation->outcome === null) {
+                $quotation->outcome = 'won';
+                $quotation->won_reason = 'converted_to_invoice';
+                $quotation->outcome_at = now();
+            }
+
             // Update quotation using state machine (dispatches events)
             $quotation->update([
                 'converted_to_invoice_id' => $invoice->id,
                 'converted_at' => now(),
+                'next_follow_up_at' => null,
+                'outcome' => $quotation->outcome,
+                'won_reason' => $quotation->won_reason,
+                'outcome_at' => $quotation->outcome_at,
             ]);
             $quotation->transitionTo(DocumentStatus::Converted);
 

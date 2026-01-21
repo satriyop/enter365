@@ -6,6 +6,7 @@ namespace App\Listeners\Sales;
 
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Domain\Sales\Quotations\Events\QuotationApproved;
+use App\Domain\Sales\Quotations\Events\QuotationCancelled;
 use App\Domain\Sales\Quotations\Events\QuotationConverted;
 use App\Domain\Sales\Quotations\Events\QuotationExpired;
 use App\Domain\Sales\Quotations\Events\QuotationLost;
@@ -67,6 +68,18 @@ class QuotationEventSubscriber
         ]);
     }
 
+    public function handleCancelled(QuotationCancelled $event): void
+    {
+        $this->logger->logOperation('quotation.cancelled', [
+            'quotation_id' => $event->quotationId,
+            'quotation_number' => $event->quotationNumber,
+            'previous_status' => $event->previousStatus->value,
+            'reason' => $event->reason,
+            'cancelled_at' => $event->cancelledAt->toIso8601String(),
+            'user_id' => $event->userId,
+        ]);
+    }
+
     public function handleConverted(QuotationConverted $event): void
     {
         $this->logger->logOperation('quotation.converted', [
@@ -120,6 +133,7 @@ class QuotationEventSubscriber
             QuotationSubmitted::class => 'handleSubmitted',
             QuotationApproved::class => 'handleApproved',
             QuotationRejected::class => 'handleRejected',
+            QuotationCancelled::class => 'handleCancelled',
             QuotationConverted::class => 'handleConverted',
             QuotationExpired::class => 'handleExpired',
             QuotationWon::class => 'handleWon',

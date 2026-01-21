@@ -27,6 +27,7 @@ enum QuotationOutcome: string
         'hubungan_baik' => 'Hubungan Baik dengan Pelanggan',
         'spesifikasi_sesuai' => 'Spesifikasi Sesuai Kebutuhan',
         'rekomendasi' => 'Rekomendasi dari Pelanggan Lain',
+        'converted_to_invoice' => 'Dikonversi ke Faktur',
         'lainnya' => 'Lainnya',
     ];
 

@@ -33,15 +33,18 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
         return [
             DocumentStatus::Draft->value => [
                 DocumentStatus::Submitted->value,
+                DocumentStatus::Cancelled->value,
                 DocumentStatus::Expired->value,
             ],
             DocumentStatus::Submitted->value => [
                 DocumentStatus::Approved->value,
                 DocumentStatus::Rejected->value,
+                DocumentStatus::Cancelled->value,
                 DocumentStatus::Expired->value,
             ],
             DocumentStatus::Approved->value => [
                 DocumentStatus::Converted->value,
+                DocumentStatus::Cancelled->value,
                 DocumentStatus::Expired->value,
             ],
             DocumentStatus::Rejected->value => [
@@ -49,6 +52,9 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
             ],
             DocumentStatus::Expired->value => [
                 DocumentStatus::Draft->value,
+            ],
+            DocumentStatus::Cancelled->value => [
+                DocumentStatus::Draft->value, // Allow revision of cancelled quotations
             ],
         ];
     }
@@ -114,8 +120,44 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
 
     public function canConvert(): bool
     {
-        return $this->currentStatus === DocumentStatus::Approved
-            && $this->quotation->converted_to_invoice_id === null;
+        // Must be Approved
+        if ($this->currentStatus !== DocumentStatus::Approved) {
+            return false;
+        }
+
+        // Must not already be converted
+        if ($this->quotation->converted_to_invoice_id !== null) {
+            return false;
+        }
+
+        // Multi-option quotations require variant selection
+        if ($this->quotation->isMultiOption() && ! $this->quotation->hasSelectedVariant()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Get reason why conversion is blocked.
+     *
+     * Returns null if conversion is allowed.
+     */
+    public function getConversionBlockReason(): ?string
+    {
+        if ($this->currentStatus !== DocumentStatus::Approved) {
+            return 'Penawaran harus disetujui sebelum dikonversi ke faktur.';
+        }
+
+        if ($this->quotation->converted_to_invoice_id !== null) {
+            return 'Penawaran sudah dikonversi ke faktur.';
+        }
+
+        if ($this->quotation->isMultiOption() && ! $this->quotation->hasSelectedVariant()) {
+            return 'Pilih opsi varian terlebih dahulu sebelum mengkonversi ke faktur.';
+        }
+
+        return null;
     }
 
     public function canRevise(): bool
@@ -124,6 +166,16 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
             DocumentStatus::Approved,
             DocumentStatus::Rejected,
             DocumentStatus::Expired,
+            DocumentStatus::Cancelled,
+        ], true);
+    }
+
+    public function canCancel(): bool
+    {
+        return in_array($this->currentStatus, [
+            DocumentStatus::Draft,
+            DocumentStatus::Submitted,
+            DocumentStatus::Approved,
         ], true);
     }
 
@@ -193,6 +245,11 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
                 $updates['rejected_at'] = now();
                 $updates['rejected_by'] = $userId;
                 $updates['rejection_reason'] = $this->context['rejection_reason'] ?? '';
+                break;
+            case DocumentStatus::Cancelled:
+                $updates['cancelled_at'] = now();
+                $updates['cancelled_by'] = $userId;
+                $updates['cancellation_reason'] = $this->context['cancellation_reason'] ?? null;
                 break;
         }
 
@@ -311,6 +368,27 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
     }
 
     protected function afterExpired(DocumentStatus $from, DocumentStatus $to): void
+    {
+        $this->eventDispatcher->dispatch(new Events\QuotationStatusChanged(
+            $this->quotation->id,
+            $from,
+            $to,
+            $this->getContextUserId()
+        ));
+    }
+
+    protected function beforeCancelled(DocumentStatus $from, DocumentStatus $to): void
+    {
+        $reason = $this->context['cancellation_reason'] ?? null;
+        $this->eventDispatcher->dispatch(Events\QuotationCancelled::fromQuotation(
+            $this->quotation,
+            $from,
+            $this->getContextUserId(),
+            $reason
+        ));
+    }
+
+    protected function afterCancelled(DocumentStatus $from, DocumentStatus $to): void
     {
         $this->eventDispatcher->dispatch(new Events\QuotationStatusChanged(
             $this->quotation->id,

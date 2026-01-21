@@ -67,6 +67,11 @@ class Quotation extends Model
         'submitted_by',
         'approved_at',
         'approved_by',
+        // Sent tracking fields
+        'sent_at',
+        'sent_by',
+        'sent_to_email',
+        'sent_via',
         'rejected_at',
         'rejected_by',
         'rejection_reason',
@@ -81,6 +86,10 @@ class Quotation extends Model
         'converted_at',
         'original_quotation_id',
         'created_by',
+        // Cancellation fields
+        'cancelled_at',
+        'cancelled_by',
+        'cancellation_reason',
     ];
 
     protected function casts(): array
@@ -99,6 +108,7 @@ class Quotation extends Model
             'base_currency_total' => 'integer',
             'submitted_at' => 'datetime',
             'approved_at' => 'datetime',
+            'sent_at' => 'datetime',
             'rejected_at' => 'datetime',
             'converted_at' => 'datetime',
             // Follow-up casts
@@ -107,6 +117,8 @@ class Quotation extends Model
             'follow_up_count' => 'integer',
             // Outcome casts
             'outcome_at' => 'datetime',
+            // Cancellation casts
+            'cancelled_at' => 'datetime',
             'status' => DocumentStatus::class,
         ];
     }
@@ -154,9 +166,33 @@ class Quotation extends Model
     /**
      * @return BelongsTo<User, $this>
      */
+    public function sender(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'sent_by');
+    }
+
+    /**
+     * Check if quotation has been sent to customer.
+     */
+    public function isSent(): bool
+    {
+        return $this->sent_at !== null;
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function rejecter(): BelongsTo
     {
         return $this->belongsTo(User::class, 'rejected_by');
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function canceller(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'cancelled_by');
     }
 
     /**
@@ -345,7 +381,7 @@ class Quotation extends Model
     }
 
     /**
-     * Scope for active quotations (not expired/converted/rejected).
+     * Scope for active quotations (not expired/converted/rejected/cancelled).
      *
      * @param  Builder<Quotation>  $query
      * @return Builder<Quotation>
@@ -356,6 +392,7 @@ class Quotation extends Model
             DocumentStatus::Expired,
             DocumentStatus::Converted,
             DocumentStatus::Rejected,
+            DocumentStatus::Cancelled,
         ]);
     }
 
@@ -450,6 +487,14 @@ class Quotation extends Model
     public function canRevise(): bool
     {
         return $this->stateMachine()->canRevise();
+    }
+
+    /**
+     * Check if quotation can be cancelled.
+     */
+    public function canCancel(): bool
+    {
+        return $this->stateMachine()->canCancel();
     }
 
     /**

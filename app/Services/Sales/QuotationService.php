@@ -242,6 +242,38 @@ class QuotationService implements QuotationServiceInterface
     }
 
     /**
+     * Cancel a quotation.
+     *
+     * Cancels a Draft, Submitted, or Approved quotation.
+     * Cancelled quotations can be revised to create a new draft.
+     */
+    public function cancel(Quotation $quotation, ?string $reason = null, ?int $userId = null): Quotation
+    {
+        if (! $quotation->stateMachine()->canCancel()) {
+            throw new InvalidArgumentException(
+                'Penawaran tidak dapat dibatalkan. Hanya penawaran dengan status Draft, Submitted, atau Approved yang dapat dibatalkan.'
+            );
+        }
+
+        $userId ??= auth()->id();
+
+        return DB::transaction(function () use ($quotation, $reason, $userId) {
+            // Clear any scheduled follow-ups
+            $quotation->next_follow_up_at = null;
+            $quotation->save();
+
+            // Transition to Cancelled status
+            $quotation->transitionTo(
+                DocumentStatus::Cancelled,
+                $userId,
+                ['cancellation_reason' => $reason]
+            );
+
+            return $quotation->fresh(['items', 'contact']);
+        });
+    }
+
+    /**
      * Create a revision of a quotation.
      */
     public function revise(Quotation $quotation): Quotation
@@ -297,8 +329,13 @@ class QuotationService implements QuotationServiceInterface
     /**
      * Mark expired quotations using state machine for proper event dispatch.
      *
-     * Uses chunked iteration to process quotations through the state machine,
-     * ensuring events are dispatched and status history is recorded.
+     * Expiration behavior:
+     * - Draft: Always expires when past valid_until
+     * - Submitted: Always expires when past valid_until
+     * - Approved: Expires ONLY if NOT sent to customer (sent_at is null)
+     *
+     * This protects quotations that have been sent to customers from
+     * auto-expiring, while still allowing internal drafts to expire.
      *
      * @return int Number of quotations marked as expired
      */
@@ -307,8 +344,16 @@ class QuotationService implements QuotationServiceInterface
         $count = 0;
 
         Quotation::query()
-            ->whereIn('status', self::EXPIRABLE_STATUSES)
             ->where('valid_until', '<', now()->startOfDay())
+            ->where(function ($query) {
+                // Draft and Submitted always expire
+                $query->whereIn('status', self::EXPIRABLE_STATUSES)
+                    // Approved expires ONLY if not sent to customer
+                    ->orWhere(function ($q) {
+                        $q->where('status', DocumentStatus::Approved)
+                            ->whereNull('sent_at');
+                    });
+            })
             ->chunkById(100, function ($quotations) use (&$count) {
                 foreach ($quotations as $quotation) {
                     try {
@@ -325,6 +370,42 @@ class QuotationService implements QuotationServiceInterface
             });
 
         return $count;
+    }
+
+    /**
+     * Mark quotation as sent to customer.
+     *
+     * Only Approved quotations can be marked as sent.
+     * Sent quotations will NOT auto-expire when past valid_until date.
+     *
+     * @param  string|null  $email  Customer email to send to (defaults to contact's email)
+     * @param  string|null  $via  How it was sent: 'email', 'print', 'portal'
+     */
+    public function markAsSent(
+        Quotation $quotation,
+        ?string $email = null,
+        ?string $via = 'email'
+    ): Quotation {
+        if ($quotation->status !== DocumentStatus::Approved) {
+            throw new InvalidArgumentException(
+                'Hanya penawaran yang sudah disetujui yang dapat ditandai sebagai terkirim.'
+            );
+        }
+
+        if ($quotation->isSent()) {
+            throw new InvalidArgumentException(
+                'Penawaran sudah ditandai sebagai terkirim pada '.$quotation->sent_at->format('d/m/Y H:i').'.'
+            );
+        }
+
+        $quotation->update([
+            'sent_at' => now(),
+            'sent_by' => auth()->id(),
+            'sent_to_email' => $email ?? $quotation->contact?->email,
+            'sent_via' => $via,
+        ]);
+
+        return $quotation->fresh(['items', 'contact']);
     }
 
     /**
