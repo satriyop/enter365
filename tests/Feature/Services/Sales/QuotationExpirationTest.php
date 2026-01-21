@@ -66,17 +66,38 @@ describe('markExpired', function () {
         expect($quotation->fresh()->status)->toBe(DocumentStatus::Draft);
     });
 
-    it('does not mark approved quotations', function () {
+    it('marks unsent approved quotations as expired', function () {
+        // With Option C (sent_at tracking): unsent approved quotations DO expire
         $quotation = Quotation::factory()
             ->has(\App\Models\Sales\QuotationItem::factory(), 'items')
             ->create([
                 'status' => DocumentStatus::Approved,
                 'valid_until' => now()->subDay(),
+                'sent_at' => null, // Not sent to customer
             ]);
 
         $count = $this->service->markExpired();
 
-        // Approved is not in EXPIRABLE_STATUSES, so it won't be selected
+        // Unsent approved quotations expire (customer hasn't seen them)
+        expect($count)->toBe(1);
+        expect($quotation->fresh()->status)->toBe(DocumentStatus::Expired);
+    });
+
+    it('does not mark sent approved quotations', function () {
+        // Sent approved quotations are protected from expiration
+        $user = \App\Models\User::factory()->create();
+        $quotation = Quotation::factory()
+            ->has(\App\Models\Sales\QuotationItem::factory(), 'items')
+            ->create([
+                'status' => DocumentStatus::Approved,
+                'valid_until' => now()->subDay(),
+                'sent_at' => now()->subWeek(), // Was sent to customer
+                'sent_by' => $user->id,
+            ]);
+
+        $count = $this->service->markExpired();
+
+        // Sent approved quotations do NOT expire
         expect($count)->toBe(0);
         expect($quotation->fresh()->status)->toBe(DocumentStatus::Approved);
     });
