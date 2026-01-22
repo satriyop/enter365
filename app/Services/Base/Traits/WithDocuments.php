@@ -8,10 +8,19 @@ use App\Contracts\Repositories\RepositoryInterface;
 use App\Contracts\Shared\DocumentNumberGeneratorInterface;
 use App\Enums\DocumentStatus;
 use App\Exceptions\Domain\DocumentLockedException;
-use App\Support\Results\CreateResult;
-use App\Support\Results\DeleteResult;
-use App\Support\Results\UpdateResult;
 use Illuminate\Database\Eloquent\Model;
+
+/**
+ * @deprecated Use Model/bool returns instead. Will be removed in Phase 2.3.
+ */
+
+/**
+ * @deprecated Use Model/bool returns instead. Will be removed in Phase 2.3.
+ */
+
+/**
+ * @deprecated Use Model/bool returns instead. Will be removed in Phase 2.3.
+ */
 
 /**
  * Document management for services.
@@ -71,7 +80,7 @@ trait WithDocuments
     abstract protected function getDocumentNumberConfig(): array;
 
     /**
-     * Get the item relationship name.
+     * Get item relationship name.
      */
     abstract protected function getItemRelation(): string;
 
@@ -109,7 +118,7 @@ trait WithDocuments
     }
 
     /**
-     * Get the initial status for new documents.
+     * Get initial status for new documents.
      */
     protected function getInitialStatus(): DocumentStatus
     {
@@ -127,14 +136,13 @@ trait WithDocuments
     }
 
     /**
-     * Create a new document (Result pattern).
+     * Create a new document.
      *
-     * Override in child class for public access with Result return type.
+     * Override in child class for public access.
      *
      * @param  array<string, mixed>  $data
-     * @return CreateResult<Model>
      */
-    protected function createDocument(array $data): CreateResult
+    protected function createDocument(array $data): Model
     {
         return $this->executeInTransaction('create', function () use ($data) {
             $items = $data['items'] ?? [];
@@ -164,21 +172,20 @@ trait WithDocuments
             // Calculate totals
             $this->recalculateTotals($document);
 
-            return CreateResult::created($this->loadRelations($document));
+            return $this->loadRelations($document);
         }, ['contact_id' => $data['contact_id'] ?? null]);
     }
 
     /**
-     * Update a document (Result pattern).
+     * Update a document.
      *
-     * Override in child class for public access with Result return type.
+     * Override in child class for public access.
      *
      * @param  array<string, mixed>  $data
-     * @return UpdateResult<Model>
      *
      * @throws DocumentLockedException
      */
-    protected function updateDocument(Model $document, array $data): UpdateResult
+    protected function updateDocument(Model $document, array $data): Model
     {
         $this->validateEditable($document);
 
@@ -200,19 +207,19 @@ trait WithDocuments
 
             $this->recalculateTotals($document);
 
-            return UpdateResult::updated($this->loadRelations($document));
+            return $this->loadRelations($document);
         }, ['document_id' => $document->id]);
     }
 
     /**
-     * Delete a document (Result pattern).
+     * Delete a document.
      *
-     * Override in child class for public access with Result return type.
+     * Override in child class for public access.
      *
      *
      * @throws DocumentLockedException
      */
-    protected function deleteDocument(Model $document): DeleteResult
+    protected function deleteDocument(Model $document): bool
     {
         $this->validateDeletable($document);
 
@@ -226,7 +233,7 @@ trait WithDocuments
                 $document->delete();
             }
 
-            return DeleteResult::deleted();
+            return true;
         }, ['document_id' => $document->id]);
     }
 

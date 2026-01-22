@@ -23,6 +23,9 @@ use App\Exceptions\Domain\StateTransitionException;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\InvoiceItem;
 use App\Services\Base\AbstractDocumentService;
+/**
+ * @deprecated Use Model/bool returns instead. Will be removed in Phase 2.3.
+ */
 use App\Support\Results\ServiceResult;
 use Illuminate\Database\Eloquent\Model;
 
@@ -105,7 +108,7 @@ class InvoiceService extends AbstractDocumentService implements InvoiceServiceIn
      */
     public function create(array $data): Invoice
     {
-        return $this->createDocument($data)->getDataOrFail();
+        return $this->createDocument($data);
     }
 
     /**
@@ -115,7 +118,7 @@ class InvoiceService extends AbstractDocumentService implements InvoiceServiceIn
      */
     public function update(Model $document, array $data): Invoice
     {
-        return $this->updateDocument($document, $data)->getDataOrFail();
+        return $this->updateDocument($document, $data);
     }
 
     /**
@@ -123,7 +126,7 @@ class InvoiceService extends AbstractDocumentService implements InvoiceServiceIn
      */
     public function delete(Model $document): bool
     {
-        return $this->deleteDocument($document)->isSuccess();
+        return $this->deleteDocument($document);
     }
 
     /**

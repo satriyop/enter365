@@ -17,6 +17,9 @@ use App\Exceptions\Domain\StateTransitionException;
 use App\Models\Purchasing\Bill;
 use App\Models\Purchasing\BillItem;
 use App\Services\Base\AbstractDocumentService;
+/**
+ * @deprecated Use Model/bool returns instead. Will be removed in Phase 2.3.
+ */
 use App\Support\Results\ServiceResult;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
@@ -100,7 +103,7 @@ class BillService extends AbstractDocumentService implements BillServiceInterfac
      */
     public function create(array $data): Bill
     {
-        return $this->createDocument($data)->getDataOrFail();
+        return $this->createDocument($data);
     }
 
     /**
@@ -110,7 +113,7 @@ class BillService extends AbstractDocumentService implements BillServiceInterfac
      */
     public function update(Model $document, array $data): Bill
     {
-        return $this->updateDocument($document, $data)->getDataOrFail();
+        return $this->updateDocument($document, $data);
     }
 
     /**
@@ -118,7 +121,7 @@ class BillService extends AbstractDocumentService implements BillServiceInterfac
      */
     public function delete(Model $document): bool
     {
-        return $this->deleteDocument($document)->isSuccess();
+        return $this->deleteDocument($document);
     }
 
     /**
