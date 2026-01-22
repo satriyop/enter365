@@ -34,9 +34,7 @@ class InvoicePaymentService extends BaseService
      */
     public function updatePaymentStatus(Invoice $invoice): Invoice
     {
-        $result = $this->invoiceService->updatePaymentStatus($invoice);
-
-        return $result->getData() ?? $invoice->fresh();
+        return $this->invoiceService->updatePaymentStatus($invoice);
     }
 
     /**
@@ -80,9 +78,9 @@ class InvoicePaymentService extends BaseService
             return false;
         }
 
-        $result = $this->invoiceService->markAsOverdue($invoice);
+        $this->invoiceService->markAsOverdue($invoice);
 
-        return $result->isSuccess();
+        return true;
     }
 
     /**
@@ -103,14 +101,6 @@ class InvoicePaymentService extends BaseService
     public function getEarlyPaymentTotal(Invoice $invoice): int
     {
         return $invoice->total_amount - $this->calculateEarlyDiscount($invoice);
-    }
-
-    /**
-     * Check if invoice qualifies for early payment discount.
-     */
-    public function qualifiesForEarlyDiscount(Invoice $invoice): bool
-    {
-        return $invoice->hasEarlyPaymentDiscount();
     }
 
     /**

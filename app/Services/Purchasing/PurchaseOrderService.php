@@ -102,9 +102,7 @@ class PurchaseOrderService extends AbstractDocumentService implements PurchaseOr
      */
     public function create(array $data): PurchaseOrder
     {
-        $result = $this->createDocument($data);
-
-        return $result->getDataOrFail();
+        return $this->createDocument($data);
     }
 
     /**
@@ -114,9 +112,7 @@ class PurchaseOrderService extends AbstractDocumentService implements PurchaseOr
      */
     public function update(PurchaseOrder $purchaseOrder, array $data): PurchaseOrder
     {
-        $result = $this->updateDocument($purchaseOrder, $data);
-
-        return $result->getDataOrFail();
+        return $this->updateDocument($purchaseOrder, $data);
     }
 
     protected function validateEditable(Model $document): void

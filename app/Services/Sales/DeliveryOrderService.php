@@ -82,9 +82,7 @@ class DeliveryOrderService extends AbstractDocumentService implements DeliveryOr
      */
     public function create(array $data): DeliveryOrder
     {
-        $result = $this->createDocument($data);
-
-        return $result->getDataOrFail();
+        return $this->createDocument($data);
     }
 
     /**
@@ -94,9 +92,7 @@ class DeliveryOrderService extends AbstractDocumentService implements DeliveryOr
      */
     public function update(DeliveryOrder $deliveryOrder, array $data): DeliveryOrder
     {
-        $result = $this->updateDocument($deliveryOrder, $data);
-
-        return $result->getDataOrFail();
+        return $this->updateDocument($deliveryOrder, $data);
     }
 
     /**
@@ -104,9 +100,7 @@ class DeliveryOrderService extends AbstractDocumentService implements DeliveryOr
      */
     public function delete(DeliveryOrder $deliveryOrder): bool
     {
-        $result = $this->deleteDocument($deliveryOrder);
-
-        return $result->isSuccess();
+        return $this->deleteDocument($deliveryOrder);
     }
 
     protected function validateEditable(Model $document): void

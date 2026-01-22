@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller as BaseController;
-use App\Support\Results\ServiceResult;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -16,7 +15,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * - success(): Standard success response
  * - created(): Resource creation response (201)
  * - error(): Standard error response
- * - fromResult(): Convert ServiceResult to response
  * - deleted(): Resource deletion response
  */
 abstract class Controller extends BaseController
@@ -77,40 +75,6 @@ abstract class Controller extends BaseController
         }
 
         return response()->json($response, $status);
-    }
-
-    /**
-     * Return response from ServiceResult.
-     *
-     * Automatically handles success/failure states and converts
-     * data to the specified resource class.
-     *
-     * @param  ServiceResult<object>  $result  Service operation result
-     * @param  class-string<JsonResource>  $resourceClass  Resource class for success data
-     * @param  int  $successStatus  HTTP status for success (default 200)
-     */
-    protected function fromResult(
-        ServiceResult $result,
-        string $resourceClass,
-        int $successStatus = 200
-    ): JsonResponse {
-        if ($result->isFailure()) {
-            return $this->error(
-                $result->getMessage() ?? 'Operasi gagal.',
-                422,
-                $result->getErrors()
-            );
-        }
-
-        $data = $result->getData();
-
-        if ($data === null) {
-            return $this->success(null, $result->getMessage() ?? 'Operasi berhasil.');
-        }
-
-        return (new $resourceClass($data))
-            ->response()
-            ->setStatusCode($successStatus);
     }
 
     /**

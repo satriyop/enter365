@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace App\Contracts\Shared;
 
-use App\Support\Results\CreateResult;
-use App\Support\Results\DeleteResult;
-use App\Support\Results\UpdateResult;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -15,7 +12,7 @@ use Illuminate\Database\Eloquent\Model;
  * Documents include: Quotations, Invoices, Bills, PurchaseOrders, WorkOrders, etc.
  * This interface defines common CRUD operations shared across document services.
  *
- * Returns result objects for consistent error handling and response patterns.
+ * @deprecated Result objects removed. Services return Model/bool directly.
  */
 interface DocumentLifecycleInterface
 {
@@ -23,20 +20,18 @@ interface DocumentLifecycleInterface
      * Create a new document with items.
      *
      * @param  array<string, mixed>  $data
-     * @return CreateResult<Model>
      */
-    public function create(array $data): CreateResult;
+    public function create(array $data): Model;
 
     /**
      * Update an existing document.
      *
      * @param  array<string, mixed>  $data
-     * @return UpdateResult<Model>
      */
-    public function update(Model $document, array $data): UpdateResult;
+    public function update(Model $document, array $data): Model;
 
     /**
      * Delete a document (soft delete if applicable).
      */
-    public function delete(Model $document): DeleteResult;
+    public function delete(Model $document): bool;
 }

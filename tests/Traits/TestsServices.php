@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Tests\Traits;
 
 use App\Models\User;
-use App\Services\Base\ServiceResult;
 
 /**
  * Trait for testing application services.
  *
- * Provides common setup and assertion methods for
- * testing service layer operations.
+ * Provides common setup methods for testing service layer operations.
+ *
+ * @deprecated ServiceResult removed. Remove this trait if no longer needed.
  *
  * Usage in Pest:
  * ```php
@@ -22,8 +22,8 @@ use App\Services\Base\ServiceResult;
  * });
  *
  * it('creates invoice successfully', function () {
- *     $result = $this->service->create([...]);
- *     $this->assertServiceSuccess($result);
+ *     $invoice = $this->service->create([...]);
+ *     expect($invoice)->toBeInstanceOf(Invoice::class);
  * });
  * ```
  */
@@ -39,43 +39,6 @@ trait TestsServices
     {
         $this->testUser = User::factory()->create();
         $this->actingAs($this->testUser);
-    }
-
-    /**
-     * Assert that a service result is successful.
-     */
-    protected function assertServiceSuccess(ServiceResult $result): void
-    {
-        expect($result->isSuccess())->toBeTrue(
-            'Expected service success but got failure: '.($result->getMessage() ?? 'No message')
-        );
-    }
-
-    /**
-     * Assert that a service result is a failure.
-     */
-    protected function assertServiceFailure(ServiceResult $result, ?string $expectedMessage = null): void
-    {
-        expect($result->isFailure())->toBeTrue('Expected service failure but got success');
-
-        if ($expectedMessage !== null) {
-            expect($result->getMessage())->toContain($expectedMessage);
-        }
-    }
-
-    /**
-     * Assert service result and get data or fail.
-     *
-     * @template T
-     *
-     * @param  ServiceResult<T>  $result
-     * @return T
-     */
-    protected function assertAndGetData(ServiceResult $result): mixed
-    {
-        $this->assertServiceSuccess($result);
-
-        return $result->getDataOrFail();
     }
 
     /**

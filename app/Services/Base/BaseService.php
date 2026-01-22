@@ -9,7 +9,6 @@ use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Services\Base\Traits\WithEventDispatching;
 use App\Services\Base\Traits\WithOperationContext;
 use App\Services\Base\Traits\WithTransaction;
-use App\Support\Results\ServiceResult;
 
 /**
  * Base class for all application services.
@@ -58,21 +57,5 @@ abstract class BaseService
     ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->logger = $logger;
-    }
-
-    /**
-     * Create a failure result with logging.
-     *
-     * @param  array<string, mixed>  $context
-     * @return ServiceResult<null>
-     */
-    protected function fail(string $message, array $context = []): ServiceResult
-    {
-        $this->logger->logOperation('operation_failed', [
-            'message' => $message,
-            ...$context,
-        ]);
-
-        return ServiceResult::failure($message);
     }
 }

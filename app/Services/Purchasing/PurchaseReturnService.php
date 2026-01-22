@@ -81,9 +81,7 @@ class PurchaseReturnService extends AbstractDocumentService implements PurchaseR
      */
     public function create(array $data): PurchaseReturn
     {
-        $result = $this->createDocument($data);
-
-        return $result->getDataOrFail();
+        return $this->createDocument($data);
     }
 
     /**
@@ -93,9 +91,7 @@ class PurchaseReturnService extends AbstractDocumentService implements PurchaseR
      */
     public function update(PurchaseReturn $purchaseReturn, array $data): PurchaseReturn
     {
-        $result = $this->updateDocument($purchaseReturn, $data);
-
-        return $result->getDataOrFail();
+        return $this->updateDocument($purchaseReturn, $data);
     }
 
     /**
@@ -103,9 +99,7 @@ class PurchaseReturnService extends AbstractDocumentService implements PurchaseR
      */
     public function delete(PurchaseReturn $purchaseReturn): bool
     {
-        $result = $this->deleteDocument($purchaseReturn);
-
-        return $result->isSuccess();
+        return $this->deleteDocument($purchaseReturn);
     }
 
     protected function validateEditable(Model $document): void

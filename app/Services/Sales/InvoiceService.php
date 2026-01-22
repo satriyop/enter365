@@ -23,10 +23,6 @@ use App\Exceptions\Domain\StateTransitionException;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\InvoiceItem;
 use App\Services\Base\AbstractDocumentService;
-/**
- * @deprecated Use Model/bool returns instead. Will be removed in Phase 2.3.
- */
-use App\Support\Results\ServiceResult;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -188,8 +184,6 @@ class InvoiceService extends AbstractDocumentService implements InvoiceServiceIn
     /**
      * Post invoice - create journal entries and transition to Sent.
      *
-     * @return ServiceResult<Invoice>
-     *
      * @throws StateTransitionException
      */
     public function post(Invoice $invoice): Invoice
@@ -221,8 +215,6 @@ class InvoiceService extends AbstractDocumentService implements InvoiceServiceIn
     /**
      * Void/cancel posted invoice.
      *
-     * @return ServiceResult<Invoice>
-     *
      * @throws StateTransitionException
      */
     public function void(Invoice $invoice, string $reason): Invoice
@@ -253,8 +245,6 @@ class InvoiceService extends AbstractDocumentService implements InvoiceServiceIn
     /**
      * Mark invoice as fully paid.
      *
-     * @return ServiceResult<Invoice>
-     *
      * @throws StateTransitionException
      */
     public function markAsPaid(Invoice $invoice): Invoice
@@ -278,8 +268,6 @@ class InvoiceService extends AbstractDocumentService implements InvoiceServiceIn
     /**
      * Mark invoice as partially paid.
      *
-     * @return ServiceResult<Invoice>
-     *
      * @throws StateTransitionException
      */
     public function markAsPartial(Invoice $invoice): Invoice
@@ -302,8 +290,6 @@ class InvoiceService extends AbstractDocumentService implements InvoiceServiceIn
 
     /**
      * Mark invoice as overdue.
-     *
-     * @return ServiceResult<Invoice>
      *
      * @throws StateTransitionException
      */
@@ -332,8 +318,6 @@ class InvoiceService extends AbstractDocumentService implements InvoiceServiceIn
      * - Paid: if paid_amount >= total_amount
      * - Partial: if paid_amount > 0 and < total_amount
      * - Overdue: if past due date and not fully paid
-     *
-     * @return ServiceResult<Invoice>
      */
     public function updatePaymentStatus(Invoice $invoice): Invoice
     {

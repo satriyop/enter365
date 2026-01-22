@@ -17,10 +17,6 @@ use App\Exceptions\Domain\StateTransitionException;
 use App\Models\Purchasing\Bill;
 use App\Models\Purchasing\BillItem;
 use App\Services\Base\AbstractDocumentService;
-/**
- * @deprecated Use Model/bool returns instead. Will be removed in Phase 2.3.
- */
-use App\Support\Results\ServiceResult;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
 
@@ -195,11 +191,9 @@ class BillService extends AbstractDocumentService implements BillServiceInterfac
     /**
      * Mark bill as fully paid.
      *
-     * @return ServiceResult<Bill>
-     *
      * @throws StateTransitionException
      */
-    public function markAsPaid(Bill $bill): ServiceResult
+    public function markAsPaid(Bill $bill): Bill
     {
         if (! $bill->stateMachine()->canMarkAsPaid()) {
             throw StateTransitionException::actionNotAvailable(
@@ -212,20 +206,15 @@ class BillService extends AbstractDocumentService implements BillServiceInterfac
 
         event(BillFullyPaid::fromBill($bill, $this->getUserId() ?? 0));
 
-        return ServiceResult::success(
-            $bill->fresh(['contact', 'items']),
-            'Tagihan ditandai sebagai lunas.'
-        );
+        return $bill->fresh(['contact', 'items']);
     }
 
     /**
      * Mark bill as partially paid.
      *
-     * @return ServiceResult<Bill>
-     *
      * @throws StateTransitionException
      */
-    public function markAsPartial(Bill $bill): ServiceResult
+    public function markAsPartial(Bill $bill): Bill
     {
         if (! $bill->stateMachine()->canMarkAsPartial()) {
             throw StateTransitionException::actionNotAvailable(
@@ -238,20 +227,15 @@ class BillService extends AbstractDocumentService implements BillServiceInterfac
 
         event(BillPartiallyPaid::fromBill($bill, $this->getUserId() ?? 0));
 
-        return ServiceResult::success(
-            $bill->fresh(['contact', 'items']),
-            'Tagihan ditandai sebagai dibayar sebagian.'
-        );
+        return $bill->fresh(['contact', 'items']);
     }
 
     /**
      * Mark bill as overdue.
      *
-     * @return ServiceResult<Bill>
-     *
      * @throws StateTransitionException
      */
-    public function markAsOverdue(Bill $bill): ServiceResult
+    public function markAsOverdue(Bill $bill): Bill
     {
         if (! $bill->stateMachine()->canMarkAsOverdue()) {
             throw StateTransitionException::actionNotAvailable(
@@ -264,10 +248,7 @@ class BillService extends AbstractDocumentService implements BillServiceInterfac
 
         event(BillOverdue::fromBill($bill));
 
-        return ServiceResult::success(
-            $bill->fresh(['contact', 'items']),
-            'Tagihan ditandai sebagai jatuh tempo.'
-        );
+        return $bill->fresh(['contact', 'items']);
     }
 
     /**
@@ -277,27 +258,25 @@ class BillService extends AbstractDocumentService implements BillServiceInterfac
      * - Paid: if paid_amount >= total_amount
      * - Partial: if paid_amount > 0 and < total_amount
      * - Overdue: if past due date and not fully paid
-     *
-     * @return ServiceResult<Bill>
      */
-    public function updatePaymentStatus(Bill $bill): ServiceResult
+    public function updatePaymentStatus(Bill $bill): Bill
     {
         $bill->refresh();
 
         // Skip if cancelled
         if ($bill->status === DocumentStatus::Cancelled) {
-            return ServiceResult::success($bill, 'Tagihan sudah dibatalkan.');
+            return $bill;
         }
 
         // Skip if still draft
         if ($bill->status === DocumentStatus::Draft) {
-            return ServiceResult::success($bill, 'Tagihan masih draft.');
+            return $bill;
         }
 
         // Determine target status based on payment
         if ($bill->paid_amount >= $bill->total_amount) {
             if ($bill->status === DocumentStatus::Paid) {
-                return ServiceResult::success($bill, 'Status tidak berubah.');
+                return $bill;
             }
 
             return $this->markAsPaid($bill);
@@ -305,7 +284,7 @@ class BillService extends AbstractDocumentService implements BillServiceInterfac
 
         if ($bill->paid_amount > 0) {
             if ($bill->status === DocumentStatus::Partial) {
-                return ServiceResult::success($bill, 'Status tidak berubah.');
+                return $bill;
             }
 
             return $this->markAsPartial($bill);
@@ -316,6 +295,25 @@ class BillService extends AbstractDocumentService implements BillServiceInterfac
             return $this->markAsOverdue($bill);
         }
 
-        return ServiceResult::success($bill, 'Status tidak berubah.');
+        return $bill;
+    }
+
+    /**
+     * Void/cancel a posted bill.
+     *
+     * @throws StateTransitionException
+     */
+    public function void(Bill $bill, string $reason): Bill
+    {
+        if (! $bill->stateMachine()->canCancel()) {
+            throw StateTransitionException::actionNotAvailable(
+                'void',
+                $bill->status->label()
+            );
+        }
+
+        $bill->transitionTo(DocumentStatus::Cancelled, $this->getUserId());
+
+        return $bill->fresh(['contact', 'items']);
     }
 }

@@ -115,9 +115,7 @@ class SalesReturnService extends AbstractDocumentService implements SalesReturnS
      */
     public function delete(SalesReturn $salesReturn): bool
     {
-        $result = $this->deleteDocument($salesReturn);
-
-        return $result->isSuccess();
+        return $this->deleteDocument($salesReturn);
     }
 
     protected function validateEditable(Model $document): void
