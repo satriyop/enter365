@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Contracts\Sales;
 
 use App\Models\Sales\Invoice;
-use App\Support\Results\ServiceResult;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -38,54 +37,47 @@ interface InvoiceServiceInterface
     /**
      * Post an invoice to the journal (create accounting entry).
      *
-     * @return ServiceResult<Invoice>
      *
      * @throws \App\Exceptions\Domain\StateTransitionException If invoice cannot be posted
      */
-    public function post(Invoice $invoice): ServiceResult;
+    public function post(Invoice $invoice): Invoice;
 
     /**
      * Void/cancel a posted invoice.
      *
-     * @return ServiceResult<Invoice>
      *
      * @throws \App\Exceptions\Domain\StateTransitionException If invoice cannot be voided
      */
-    public function void(Invoice $invoice, string $reason): ServiceResult;
+    public function void(Invoice $invoice, string $reason): Invoice;
 
     /**
      * Mark invoice as fully paid.
      *
-     * @return ServiceResult<Invoice>
      *
      * @throws \App\Exceptions\Domain\StateTransitionException If invoice cannot be marked as paid
      */
-    public function markAsPaid(Invoice $invoice): ServiceResult;
+    public function markAsPaid(Invoice $invoice): Invoice;
 
     /**
      * Mark invoice as partially paid.
      *
-     * @return ServiceResult<Invoice>
      *
      * @throws \App\Exceptions\Domain\StateTransitionException If invoice cannot be marked as partial
      */
-    public function markAsPartial(Invoice $invoice): ServiceResult;
+    public function markAsPartial(Invoice $invoice): Invoice;
 
     /**
      * Mark invoice as overdue.
      *
-     * @return ServiceResult<Invoice>
      *
      * @throws \App\Exceptions\Domain\StateTransitionException If invoice cannot be marked as overdue
      */
-    public function markAsOverdue(Invoice $invoice): ServiceResult;
+    public function markAsOverdue(Invoice $invoice): Invoice;
 
     /**
      * Update invoice payment status based on current paid amount.
      *
      * Automatically determines the correct status based on payment state.
-     *
-     * @return ServiceResult<Invoice>
      */
-    public function updatePaymentStatus(Invoice $invoice): ServiceResult;
+    public function updatePaymentStatus(Invoice $invoice): Invoice;
 }
