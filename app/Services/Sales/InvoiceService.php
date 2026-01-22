@@ -8,7 +8,6 @@ use App\Contracts\Accounting\JournalServiceInterface;
 use App\Contracts\Accounting\Strategies\COGSRecognitionStrategy;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
-use App\Contracts\Repositories\Sales\InvoiceRepositoryInterface;
 use App\Contracts\Sales\InvoiceServiceInterface;
 use App\Contracts\Shared\DocumentNumberGeneratorInterface;
 use App\Domain\Sales\Invoices\Events\InvoiceFullyPaid;
@@ -22,7 +21,10 @@ use App\Exceptions\Domain\DocumentLockedException;
 use App\Exceptions\Domain\StateTransitionException;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\InvoiceItem;
-use App\Services\Base\AbstractDocumentService;
+use App\Services\Base\Traits\WithDocuments;
+use App\Services\Base\Traits\WithEventDispatching;
+use App\Services\Base\Traits\WithOperationContext;
+use App\Services\Base\Traits\WithTransaction;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -33,8 +35,17 @@ use Illuminate\Database\Eloquent\Model;
  * - COGS recognition via configurable strategy
  * - Event dispatching for audit trails
  */
-class InvoiceService extends AbstractDocumentService implements InvoiceServiceInterface
+class InvoiceService implements InvoiceServiceInterface
 {
+    use WithDocuments;
+    use WithEventDispatching;
+    use WithOperationContext;
+    use WithTransaction;
+
+    protected EventDispatcherInterface $eventDispatcher;
+
+    protected ContextualLoggerInterface $logger;
+
     private JournalServiceInterface $journalService;
 
     private COGSRecognitionStrategy $cogsStrategy;
@@ -44,17 +55,24 @@ class InvoiceService extends AbstractDocumentService implements InvoiceServiceIn
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger,
-        InvoiceRepositoryInterface $repository,
         DocumentNumberGeneratorInterface $numberGenerator,
         JournalServiceInterface $journalService,
         COGSRecognitionStrategy $cogsStrategy,
         InvoiceDomainFactory $domainFactory
     ) {
-        parent::__construct($eventDispatcher, $logger, $repository, $numberGenerator);
+        $this->eventDispatcher = $eventDispatcher;
+        $this->logger = $logger;
+        $this->repository = null;
+        $this->numberGenerator = $numberGenerator;
 
         $this->journalService = $journalService;
         $this->cogsStrategy = $cogsStrategy;
         $this->domainFactory = $domainFactory;
+    }
+
+    protected function getModelClass(): string
+    {
+        return Invoice::class;
     }
 
     protected function getDocumentNumberField(): string

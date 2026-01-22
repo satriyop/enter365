@@ -13,11 +13,23 @@ use App\Enums\DocumentStatus;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\SalesReturn;
 use App\Models\Sales\SalesReturnItem;
-use App\Services\Base\AbstractDocumentService;
+use App\Services\Base\Traits\WithDocuments;
+use App\Services\Base\Traits\WithEventDispatching;
+use App\Services\Base\Traits\WithOperationContext;
+use App\Services\Base\Traits\WithTransaction;
 use Illuminate\Database\Eloquent\Model;
 
-class SalesReturnService extends AbstractDocumentService implements SalesReturnServiceInterface
+class SalesReturnService implements SalesReturnServiceInterface
 {
+    use WithDocuments;
+    use WithEventDispatching;
+    use WithOperationContext;
+    use WithTransaction;
+
+    protected EventDispatcherInterface $eventDispatcher;
+
+    protected ContextualLoggerInterface $logger;
+
     private SalesReturnApprovalPipeline $approvalPipeline;
 
     public function __construct(
@@ -26,7 +38,10 @@ class SalesReturnService extends AbstractDocumentService implements SalesReturnS
         DocumentNumberGeneratorInterface $numberGenerator,
         SalesReturnApprovalPipeline $approvalPipeline
     ) {
-        parent::__construct($eventDispatcher, $logger, numberGenerator: $numberGenerator);
+        $this->eventDispatcher = $eventDispatcher;
+        $this->logger = $logger;
+        $this->repository = null;
+        $this->numberGenerator = $numberGenerator;
 
         $this->approvalPipeline = $approvalPipeline;
     }

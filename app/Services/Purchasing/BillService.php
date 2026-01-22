@@ -16,12 +16,24 @@ use App\Enums\DocumentStatus;
 use App\Exceptions\Domain\StateTransitionException;
 use App\Models\Purchasing\Bill;
 use App\Models\Purchasing\BillItem;
-use App\Services\Base\AbstractDocumentService;
+use App\Services\Base\Traits\WithDocuments;
+use App\Services\Base\Traits\WithEventDispatching;
+use App\Services\Base\Traits\WithOperationContext;
+use App\Services\Base\Traits\WithTransaction;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
 
-class BillService extends AbstractDocumentService implements BillServiceInterface
+class BillService implements BillServiceInterface
 {
+    use WithDocuments;
+    use WithEventDispatching;
+    use WithOperationContext;
+    use WithTransaction;
+
+    protected EventDispatcherInterface $eventDispatcher;
+
+    protected ContextualLoggerInterface $logger;
+
     private JournalServiceInterface $journalService;
 
     public function __construct(
@@ -30,7 +42,10 @@ class BillService extends AbstractDocumentService implements BillServiceInterfac
         JournalServiceInterface $journalService,
         DocumentNumberGeneratorInterface $numberGenerator
     ) {
-        parent::__construct($eventDispatcher, $logger, numberGenerator: $numberGenerator);
+        $this->eventDispatcher = $eventDispatcher;
+        $this->logger = $logger;
+        $this->repository = null;
+        $this->numberGenerator = $numberGenerator;
 
         $this->journalService = $journalService;
     }

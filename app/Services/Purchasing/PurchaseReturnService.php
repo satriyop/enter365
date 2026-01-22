@@ -13,12 +13,24 @@ use App\Enums\DocumentStatus;
 use App\Models\Purchasing\Bill;
 use App\Models\Purchasing\PurchaseReturn;
 use App\Models\Purchasing\PurchaseReturnItem;
-use App\Services\Base\AbstractDocumentService;
+use App\Services\Base\Traits\WithDocuments;
+use App\Services\Base\Traits\WithEventDispatching;
+use App\Services\Base\Traits\WithOperationContext;
+use App\Services\Base\Traits\WithTransaction;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
 
-class PurchaseReturnService extends AbstractDocumentService implements PurchaseReturnServiceInterface
+class PurchaseReturnService implements PurchaseReturnServiceInterface
 {
+    use WithDocuments;
+    use WithEventDispatching;
+    use WithOperationContext;
+    use WithTransaction;
+
+    protected EventDispatcherInterface $eventDispatcher;
+
+    protected ContextualLoggerInterface $logger;
+
     private PurchaseReturnApprovalPipeline $approvalPipeline;
 
     public function __construct(
@@ -27,7 +39,10 @@ class PurchaseReturnService extends AbstractDocumentService implements PurchaseR
         DocumentNumberGeneratorInterface $numberGenerator,
         PurchaseReturnApprovalPipeline $approvalPipeline
     ) {
-        parent::__construct($eventDispatcher, $logger, numberGenerator: $numberGenerator);
+        $this->eventDispatcher = $eventDispatcher;
+        $this->logger = $logger;
+        $this->repository = null;
+        $this->numberGenerator = $numberGenerator;
 
         $this->approvalPipeline = $approvalPipeline;
     }

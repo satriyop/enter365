@@ -13,13 +13,25 @@ use App\Enums\DocumentStatus;
 use App\Models\Sales\DeliveryOrder;
 use App\Models\Sales\DeliveryOrderItem;
 use App\Models\Sales\Invoice;
-use App\Services\Base\AbstractDocumentService;
+use App\Services\Base\Traits\WithDocuments;
+use App\Services\Base\Traits\WithEventDispatching;
+use App\Services\Base\Traits\WithOperationContext;
+use App\Services\Base\Traits\WithTransaction;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
-class DeliveryOrderService extends AbstractDocumentService implements DeliveryOrderServiceInterface
+class DeliveryOrderService implements DeliveryOrderServiceInterface
 {
+    use WithDocuments;
+    use WithEventDispatching;
+    use WithOperationContext;
+    use WithTransaction;
+
+    protected EventDispatcherInterface $eventDispatcher;
+
+    protected ContextualLoggerInterface $logger;
+
     private InventoryServiceInterface $inventoryService;
 
     public function __construct(
@@ -28,7 +40,10 @@ class DeliveryOrderService extends AbstractDocumentService implements DeliveryOr
         InventoryServiceInterface $inventoryService,
         DocumentNumberGeneratorInterface $numberGenerator
     ) {
-        parent::__construct($eventDispatcher, $logger, numberGenerator: $numberGenerator);
+        $this->eventDispatcher = $eventDispatcher;
+        $this->logger = $logger;
+        $this->repository = null;
+        $this->numberGenerator = $numberGenerator;
 
         $this->inventoryService = $inventoryService;
     }

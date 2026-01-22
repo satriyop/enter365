@@ -11,18 +11,6 @@ use App\Exceptions\Domain\DocumentLockedException;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * @deprecated Use Model/bool returns instead. Will be removed in Phase 2.3.
- */
-
-/**
- * @deprecated Use Model/bool returns instead. Will be removed in Phase 2.3.
- */
-
-/**
- * @deprecated Use Model/bool returns instead. Will be removed in Phase 2.3.
- */
-
-/**
  * Document management for services.
  *
  * Provides CRUD operations, document numbering, items management,

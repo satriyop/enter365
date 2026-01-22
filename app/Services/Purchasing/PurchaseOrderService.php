@@ -14,12 +14,24 @@ use App\Domain\Purchasing\PurchaseOrderStatistics;
 use App\Enums\DocumentStatus;
 use App\Models\Purchasing\PurchaseOrder;
 use App\Models\Purchasing\PurchaseOrderItem;
-use App\Services\Base\AbstractDocumentService;
+use App\Services\Base\Traits\WithDocuments;
+use App\Services\Base\Traits\WithEventDispatching;
+use App\Services\Base\Traits\WithOperationContext;
+use App\Services\Base\Traits\WithTransaction;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
 
-class PurchaseOrderService extends AbstractDocumentService implements PurchaseOrderServiceInterface
+class PurchaseOrderService implements PurchaseOrderServiceInterface
 {
+    use WithDocuments;
+    use WithEventDispatching;
+    use WithOperationContext;
+    use WithTransaction;
+
+    protected EventDispatcherInterface $eventDispatcher;
+
+    protected ContextualLoggerInterface $logger;
+
     private PurchaseOrderReceivingService $receivingService;
 
     private PurchaseOrderBillConverter $billConverter;
@@ -37,7 +49,10 @@ class PurchaseOrderService extends AbstractDocumentService implements PurchaseOr
         DocumentNumberGeneratorInterface $numberGenerator,
         PurchaseOrderDomainFactory $domainFactory
     ) {
-        parent::__construct($eventDispatcher, $logger, numberGenerator: $numberGenerator);
+        $this->eventDispatcher = $eventDispatcher;
+        $this->logger = $logger;
+        $this->repository = null;
+        $this->numberGenerator = $numberGenerator;
 
         $this->receivingService = $receivingService;
         $this->billConverter = $billConverter;
@@ -85,7 +100,14 @@ class PurchaseOrderService extends AbstractDocumentService implements PurchaseOr
     protected function getDefaultData(): array
     {
         return [
-            ...parent::getDefaultData(),
+            'currency' => 'IDR',
+            'exchange_rate' => 1,
+            'tax_rate' => config('accounting.tax.default_rate', 11.00),
+            'subtotal' => 0,
+            'discount_amount' => 0,
+            'tax_amount' => 0,
+            'total_amount' => 0,
+            'base_currency_total' => 0,
             'revision' => 0,
         ];
     }
