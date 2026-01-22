@@ -113,9 +113,9 @@ class InvoiceController extends Controller
      */
     public function post(Invoice $invoice): JsonResponse
     {
-        $result = $this->invoiceService->post($invoice);
+        $invoice = $this->invoiceService->post($invoice);
 
-        return $this->fromResult($result, InvoiceResource::class);
+        return $this->success(new InvoiceResource($invoice));
     }
 
     /**
@@ -128,9 +128,9 @@ class InvoiceController extends Controller
      */
     public function void(VoidInvoiceRequest $request, Invoice $invoice): JsonResponse
     {
-        $result = $this->invoiceService->void($invoice, $request->validated('reason'));
+        $invoice = $this->invoiceService->void($invoice, $request->validated('reason'));
 
-        return $this->fromResult($result, InvoiceResource::class);
+        return $this->success(new InvoiceResource($invoice));
     }
 
     /**
