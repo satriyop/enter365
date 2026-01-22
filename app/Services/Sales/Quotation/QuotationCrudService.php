@@ -6,7 +6,6 @@ namespace App\Services\Sales\Quotation;
 
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
-use App\Contracts\Repositories\Sales\QuotationRepositoryInterface;
 use App\Contracts\Sales\QuotationNumberGeneratorInterface;
 use App\Domain\Sales\Quotations\Enums\QuotationType;
 use App\Domain\Sales\Quotations\QuotationDefaults;
@@ -17,7 +16,9 @@ use App\Models\Manufacturing\Bom;
 use App\Models\Sales\Quotation;
 use App\Models\Sales\QuotationVariantOption;
 use App\Models\User;
-use App\Services\Base\BaseService;
+use App\Services\Base\Traits\WithEventDispatching;
+use App\Services\Base\Traits\WithOperationContext;
+use App\Services\Base\Traits\WithTransaction;
 use Illuminate\Support\Collection;
 use InvalidArgumentException;
 
@@ -29,20 +30,28 @@ use InvalidArgumentException;
  *
  * @see \App\Services\Sales\QuotationService The coordinator service
  */
-class QuotationCrudService extends BaseService
+class QuotationCrudService
 {
+    use WithEventDispatching;
+    use WithOperationContext;
+    use WithTransaction;
+
+    protected EventDispatcherInterface $eventDispatcher;
+
+    protected ContextualLoggerInterface $logger;
+
     private const DEFAULT_MARGIN_PERCENT = 20;
 
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger,
-        private QuotationRepositoryInterface $repository,
         private QuotationNumberGeneratorInterface $quotationNumberGenerator,
         private QuotationDefaults $defaults,
         private QuotationItemCreator $itemCreator,
         private QuotationDomainFactory $domainFactory,
     ) {
-        parent::__construct($eventDispatcher, $logger);
+        $this->eventDispatcher = $eventDispatcher;
+        $this->logger = $logger;
     }
 
     /**
@@ -63,8 +72,8 @@ class QuotationCrudService extends BaseService
             $defaults = $this->defaults->getForCreate($data, $userId);
             $defaults['quotation_number'] = $this->quotationNumberGenerator->generateQuotationNumber();
 
-            // Create via repository
-            $quotation = $this->repository->create($defaults);
+            // Create via Eloquent
+            $quotation = Quotation::create($defaults);
 
             // Create items using specialized creator
             $this->itemCreator->createItems($quotation, $items);
@@ -93,7 +102,7 @@ class QuotationCrudService extends BaseService
             $items = $data['items'] ?? null;
             unset($data['items']);
 
-            $this->repository->update($quotation, $data);
+            $quotation->update($data);
 
             if ($items !== null) {
                 $quotation->items()->delete();
@@ -146,7 +155,7 @@ class QuotationCrudService extends BaseService
             $defaults = $this->defaults->forBom($data, $bom, $this->getUserId() ?? 0);
             $defaults['quotation_number'] = $this->quotationNumberGenerator->generateQuotationNumber();
 
-            $quotation = $this->repository->create($defaults);
+            $quotation = Quotation::create($defaults);
 
             // Create items
             if ($expandItems) {
@@ -218,7 +227,7 @@ class QuotationCrudService extends BaseService
 
     private function createQuotationCopy(Quotation $source, array $defaults): Quotation
     {
-        $newQuotation = $this->repository->create($defaults);
+        $newQuotation = Quotation::create($defaults);
         $this->itemCreator->copyFromQuotation($source, $newQuotation);
 
         return $this->loadRelations($newQuotation);

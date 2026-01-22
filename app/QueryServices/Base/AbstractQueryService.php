@@ -5,32 +5,28 @@ declare(strict_types=1);
 namespace App\QueryServices\Base;
 
 use App\Contracts\Logging\ContextualLoggerInterface;
-use App\Contracts\Repositories\RepositoryInterface;
 use App\Domain\Shared\ValueObjects\DateRange;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
 /**
  * Base class for read-only query services.
  *
  * Query services are optimized for reads and do not modify data.
- * They can use repositories or direct DB queries for performance.
+ * They use direct Eloquent queries for performance.
  * Following CQRS-lite: separate query path from command path.
  *
  * @template TModel of \Illuminate\Database\Eloquent\Model
  */
 abstract class AbstractQueryService
 {
-    protected RepositoryInterface $repository;
-
     protected ContextualLoggerInterface $logger;
 
     public function __construct(
-        RepositoryInterface $repository,
         ContextualLoggerInterface $logger
     ) {
-        $this->repository = $repository;
         $this->logger = $logger;
     }
 
@@ -39,9 +35,9 @@ abstract class AbstractQueryService
      *
      * @return TModel|null
      */
-    public function find(int $id): ?object
+    public function find(int $id): ?Model
     {
-        return $this->repository->find($id);
+        return $this->buildFilteredQuery([])->find($id);
     }
 
     /**
@@ -51,9 +47,17 @@ abstract class AbstractQueryService
      *
      * @throws \App\Exceptions\Domain\EntityNotFoundException
      */
-    public function findOrFail(int $id): object
+    public function findOrFail(int $id): Model
     {
-        return $this->repository->findOrFail($id);
+        $result = $this->buildFilteredQuery([])->find($id);
+
+        if ($result === null) {
+            throw new \App\Exceptions\Domain\EntityNotFoundException(
+                'Entity not found with ID: '.$id
+            );
+        }
+
+        return $result;
     }
 
     /**
@@ -113,7 +117,7 @@ abstract class AbstractQueryService
      */
     public function all(): Collection
     {
-        return $this->repository->all();
+        return $this->buildFilteredQuery([])->get();
     }
 
     /**

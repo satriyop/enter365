@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\QueryServices\Sales;
 
 use App\Contracts\Logging\ContextualLoggerInterface;
-use App\Contracts\Repositories\Sales\InvoiceRepositoryInterface;
 use App\Domain\Shared\ValueObjects\DateRange;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\Invoice;
@@ -27,10 +26,9 @@ use Illuminate\Support\Facades\DB;
 class InvoiceQueryService extends AbstractQueryService
 {
     public function __construct(
-        InvoiceRepositoryInterface $repository,
         ContextualLoggerInterface $logger
     ) {
-        parent::__construct($repository, $logger);
+        parent::__construct($logger);
     }
 
     /**
@@ -38,10 +36,8 @@ class InvoiceQueryService extends AbstractQueryService
      */
     public function findWithDetails(int $id): ?Invoice
     {
-        /** @var InvoiceRepositoryInterface $repository */
-        $repository = $this->repository;
-
-        return $repository->findWithRelations($id);
+        return Invoice::with(['contact', 'items', 'journalEntry.lines.account', 'payments'])
+            ->find($id);
     }
 
     /**
@@ -51,10 +47,15 @@ class InvoiceQueryService extends AbstractQueryService
      */
     public function getOverdue(): Collection
     {
-        /** @var InvoiceRepositoryInterface $repository */
-        $repository = $this->repository;
-
-        return $repository->findOverdue();
+        return Invoice::query()
+            ->where('due_date', '<', now())
+            ->whereNotIn('status', [
+                DocumentStatus::Paid,
+                DocumentStatus::Cancelled,
+                DocumentStatus::Draft,
+            ])
+            ->orderBy('due_date', 'asc')
+            ->get();
     }
 
     /**
@@ -64,10 +65,10 @@ class InvoiceQueryService extends AbstractQueryService
      */
     public function getByStatus(DocumentStatus $status): Collection
     {
-        /** @var InvoiceRepositoryInterface $repository */
-        $repository = $this->repository;
-
-        return $repository->findByStatus($status);
+        return Invoice::query()
+            ->where('status', $status)
+            ->orderBy('invoice_date', 'desc')
+            ->get();
     }
 
     /**
@@ -77,10 +78,10 @@ class InvoiceQueryService extends AbstractQueryService
      */
     public function getByContact(int $contactId): Collection
     {
-        /** @var InvoiceRepositoryInterface $repository */
-        $repository = $this->repository;
-
-        return $repository->findByContact($contactId);
+        return Invoice::query()
+            ->where('contact_id', $contactId)
+            ->orderBy('invoice_date', 'desc')
+            ->get();
     }
 
     /**
@@ -88,10 +89,11 @@ class InvoiceQueryService extends AbstractQueryService
      */
     public function getOutstandingForContact(int $contactId): int
     {
-        /** @var InvoiceRepositoryInterface $repository */
-        $repository = $this->repository;
-
-        return $repository->getOutstandingForContact($contactId);
+        return (int) Invoice::query()
+            ->where('contact_id', $contactId)
+            ->whereNotIn('status', [DocumentStatus::Paid, DocumentStatus::Cancelled, DocumentStatus::Draft])
+            ->selectRaw('COALESCE(SUM(total_amount - paid_amount), 0) as outstanding')
+            ->value('outstanding');
     }
 
     /**
@@ -101,10 +103,13 @@ class InvoiceQueryService extends AbstractQueryService
      */
     public function getByDateRange(DateRange $range): Collection
     {
-        /** @var InvoiceRepositoryInterface $repository */
-        $repository = $this->repository;
-
-        return $repository->findByDateRange($range);
+        return Invoice::query()
+            ->whereBetween('invoice_date', [
+                $range->start->toDateString(),
+                $range->end->toDateString(),
+            ])
+            ->orderBy('invoice_date', 'desc')
+            ->get();
     }
 
     /**

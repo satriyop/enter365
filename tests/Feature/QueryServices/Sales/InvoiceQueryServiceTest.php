@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Contracts\Logging\ContextualLoggerInterface;
-use App\Contracts\Repositories\Sales\InvoiceRepositoryInterface;
 use App\Domain\Shared\ValueObjects\DateRange;
 use App\Enums\DocumentStatus;
 use App\Models\Contacts\Contact;
@@ -14,9 +13,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->repository = app(InvoiceRepositoryInterface::class);
     $this->logger = app(ContextualLoggerInterface::class);
-    $this->queryService = new InvoiceQueryService($this->repository, $this->logger);
+    $this->queryService = new InvoiceQueryService($this->logger);
 });
 
 describe('InvoiceQueryService', function () {

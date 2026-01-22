@@ -6,11 +6,12 @@ namespace App\Services\Sales\Quotation;
 
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
-use App\Contracts\Repositories\Sales\QuotationRepositoryInterface;
 use App\Domain\Sales\Quotations\QuotationDomainFactory;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\Quotation;
-use App\Services\Base\BaseService;
+use App\Services\Base\Traits\WithEventDispatching;
+use App\Services\Base\Traits\WithOperationContext;
+use App\Services\Base\Traits\WithTransaction;
 use InvalidArgumentException;
 
 /**
@@ -21,8 +22,16 @@ use InvalidArgumentException;
  *
  * @see \App\Services\Sales\QuotationService The coordinator service
  */
-class QuotationWorkflowService extends BaseService
+class QuotationWorkflowService
 {
+    use WithEventDispatching;
+    use WithOperationContext;
+    use WithTransaction;
+
+    protected EventDispatcherInterface $eventDispatcher;
+
+    protected ContextualLoggerInterface $logger;
+
     private const EXPIRABLE_STATUSES = [
         DocumentStatus::Draft,
         DocumentStatus::Submitted,
@@ -31,10 +40,10 @@ class QuotationWorkflowService extends BaseService
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger,
-        private QuotationRepositoryInterface $repository,
         private QuotationDomainFactory $domainFactory,
     ) {
-        parent::__construct($eventDispatcher, $logger);
+        $this->eventDispatcher = $eventDispatcher;
+        $this->logger = $logger;
     }
 
     /**
@@ -152,7 +161,7 @@ class QuotationWorkflowService extends BaseService
         }
 
         return $this->executeInTransaction('mark_as_sent', function () use ($quotation, $email, $via) {
-            $this->repository->update($quotation, [
+            $quotation->update([
                 'sent_at' => now(),
                 'sent_by' => $this->getUserId(),
                 'sent_to_email' => $email ?? $quotation->contact?->email,
