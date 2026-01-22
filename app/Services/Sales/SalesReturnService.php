@@ -95,7 +95,7 @@ class SalesReturnService extends AbstractDocumentService implements SalesReturnS
     {
         $result = $this->createDocument($data);
 
-        return $result->getDataOrFail();
+        return $result;
     }
 
     /**
@@ -107,7 +107,7 @@ class SalesReturnService extends AbstractDocumentService implements SalesReturnS
     {
         $result = $this->updateDocument($salesReturn, $data);
 
-        return $result->getDataOrFail();
+        return $result;
     }
 
     /**

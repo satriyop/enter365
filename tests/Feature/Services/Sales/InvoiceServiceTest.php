@@ -191,7 +191,7 @@ describe('InvoiceService post operations', function () {
 
         $result = $service->post($invoice);
 
-        expect($result->isSuccess())->toBeTrue();
+        expect($result)->toBeInstanceOf(Invoice::class);
         expect($invoice->fresh()->status)->toBe(DocumentStatus::Sent);
     });
 
@@ -259,7 +259,7 @@ describe('InvoiceService void operations', function () {
         $service = app(InvoiceService::class);
         $result = $service->void($invoice, 'Test cancellation');
 
-        expect($result->isSuccess())->toBeTrue();
+        expect($result)->toBeInstanceOf(Invoice::class);
         expect($invoice->fresh()->status)->toBe(DocumentStatus::Cancelled);
     });
 
@@ -341,12 +341,12 @@ describe('InvoiceService integration', function () {
 
         // 3. Post invoice
         $result = $service->post($invoice);
-        expect($result->isSuccess())->toBeTrue();
+        expect($result)->toBeInstanceOf(Invoice::class);
         expect($invoice->fresh()->status)->toBe(DocumentStatus::Sent);
 
         // 4. Void invoice
         $result = $service->void($invoice->fresh(), 'Customer requested cancellation');
-        expect($result->isSuccess())->toBeTrue();
+        expect($result)->toBeInstanceOf(Invoice::class);
         expect($invoice->fresh()->status)->toBe(DocumentStatus::Cancelled);
     });
 });
