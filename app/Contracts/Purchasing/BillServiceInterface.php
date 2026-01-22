@@ -52,13 +52,36 @@ interface BillServiceInterface
     public function markAsPaid(Bill $bill): ServiceResult;
 
     /**
+     * Post a bill to journal.
+     *
+     *
+     * @throws \App\Exceptions\Domain\StateTransitionException If bill cannot be posted
+     */
+    public function post(Bill $bill): Bill;
+
+    /**
+     * Void/cancel a posted bill.
+     *
+     *
+     * @throws \App\Exceptions\Domain\StateTransitionException If bill cannot be voided
+     */
+    public function void(Bill $bill, string $reason): Bill;
+     *
+     *
+     * @throws \App\Exceptions\Domain\StateTransitionException If bill cannot be marked as paid
+     */
+    public function markAsPaid(Bill $bill): Bill;
+
+    /**
      * Mark bill as partially paid.
      *
-     * @return ServiceResult<Bill>
+     * * @return Bill
+     *
+     * ✅ Phase 2.2: Updated to return Bill instead of ServiceResult<Bill>
      *
      * @throws \App\Exceptions\Domain\StateTransitionException If bill cannot be marked as partial
      */
-    public function markAsPartial(Bill $bill): ServiceResult;
+    public function markAsPartial(Bill $bill): Bill;
 
     /**
      * Mark bill as overdue.
