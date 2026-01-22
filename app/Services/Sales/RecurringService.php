@@ -14,10 +14,10 @@ use App\Models\Sales\Invoice;
 use App\Models\Sales\InvoiceItem;
 use App\Models\Shared\RecurringTemplate;
 use App\Services\Accounting\JournalService;
-use App\Services\Base\AbstractApplicationService;
+use App\Services\Base\BaseService;
 use Illuminate\Support\Collection;
 
-class RecurringService extends AbstractApplicationService implements RecurringServiceInterface
+class RecurringService extends BaseService implements RecurringServiceInterface
 {
     public function __construct(
         private JournalService $journalService,

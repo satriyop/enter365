@@ -15,7 +15,7 @@ use App\Models\Manufacturing\SubcontractorWorkOrder;
 use App\Models\Manufacturing\WorkOrder;
 use App\Models\Purchasing\PurchaseOrder;
 use App\Models\Purchasing\PurchaseOrderItem;
-use App\Services\Base\AbstractApplicationService;
+use App\Services\Base\BaseService;
 use InvalidArgumentException;
 
 /**
@@ -24,7 +24,7 @@ use InvalidArgumentException;
  * Handles generating suggestions from shortages, accepting/rejecting suggestions,
  * and converting suggestions to Purchase Orders, Work Orders, or Subcontractor Work Orders.
  */
-class MrpSuggestionService extends AbstractApplicationService
+class MrpSuggestionService extends BaseService
 {
     public function __construct(
         EventDispatcherInterface $eventDispatcher,

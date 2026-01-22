@@ -14,9 +14,9 @@ use App\Models\Inventory\ProductStock;
 use App\Models\Inventory\StockOpname;
 use App\Models\Inventory\StockOpnameItem;
 use App\Models\Inventory\Warehouse;
-use App\Services\Base\AbstractApplicationService;
+use App\Services\Base\BaseService;
 
-class StockOpnameService extends AbstractApplicationService implements StockOpnameServiceInterface
+class StockOpnameService extends BaseService implements StockOpnameServiceInterface
 {
     public function __construct(
         private InventoryServiceInterface $inventoryService,

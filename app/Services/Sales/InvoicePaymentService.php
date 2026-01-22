@@ -9,7 +9,7 @@ use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Sales\InvoiceServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\Invoice;
-use App\Services\Base\AbstractApplicationService;
+use App\Services\Base\BaseService;
 
 /**
  * Service for invoice payment status management.
@@ -17,7 +17,7 @@ use App\Services\Base\AbstractApplicationService;
  * Handles payment recording and delegates status transitions
  * to InvoiceService for proper state machine handling.
  */
-class InvoicePaymentService extends AbstractApplicationService
+class InvoicePaymentService extends BaseService
 {
     public function __construct(
         private InvoiceServiceInterface $invoiceService,

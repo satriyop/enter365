@@ -8,14 +8,14 @@ use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Purchasing\PurchaseOrder;
-use App\Services\Base\AbstractApplicationService;
+use App\Services\Base\BaseService;
 
 /**
  * Service for purchase order receiving status management.
  *
  * Handles receiving status transitions and progress tracking.
  */
-class PurchaseOrderReceivingService extends AbstractApplicationService
+class PurchaseOrderReceivingService extends BaseService
 {
     public function __construct(
         EventDispatcherInterface $eventDispatcher,

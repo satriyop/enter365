@@ -12,9 +12,9 @@ use App\Exceptions\Domain\DocumentLockedException;
 use App\Exceptions\Domain\ValidationException;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\Warehouse;
-use App\Services\Base\AbstractApplicationService;
+use App\Services\Base\BaseService;
 
-class ProductService extends AbstractApplicationService implements ProductServiceInterface
+class ProductService extends BaseService implements ProductServiceInterface
 {
     public function __construct(
         private InventoryServiceInterface $inventoryService,

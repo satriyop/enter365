@@ -12,10 +12,10 @@ use App\Models\Inventory\ProductStock;
 use App\Models\Manufacturing\MaterialRequisition;
 use App\Models\Manufacturing\MaterialRequisitionItem;
 use App\Models\Manufacturing\WorkOrder;
-use App\Services\Base\AbstractApplicationService;
+use App\Services\Base\BaseService;
 use InvalidArgumentException;
 
-class MaterialRequisitionService extends AbstractApplicationService implements MaterialRequisitionServiceInterface
+class MaterialRequisitionService extends BaseService implements MaterialRequisitionServiceInterface
 {
     public function __construct(
         private MaterialRequisitionNumberGenerator $numberGenerator,

@@ -12,9 +12,9 @@ use App\Enums\DocumentStatus;
 use App\Models\Inventory\Product;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomItem;
-use App\Services\Base\AbstractApplicationService;
+use App\Services\Base\BaseService;
 
-class BomService extends AbstractApplicationService implements BomServiceInterface
+class BomService extends BaseService implements BomServiceInterface
 {
     public function __construct(
         EventDispatcherInterface $eventDispatcher,

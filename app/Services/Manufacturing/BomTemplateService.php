@@ -13,9 +13,9 @@ use App\Models\Manufacturing\BomItem;
 use App\Models\Manufacturing\BomTemplate;
 use App\Models\Manufacturing\BomTemplateItem;
 use App\Models\Manufacturing\ComponentBrandMapping;
-use App\Services\Base\AbstractApplicationService;
+use App\Services\Base\BaseService;
 
-class BomTemplateService extends AbstractApplicationService implements BomTemplateServiceInterface
+class BomTemplateService extends BaseService implements BomTemplateServiceInterface
 {
     public function __construct(
         private BomService $bomService,

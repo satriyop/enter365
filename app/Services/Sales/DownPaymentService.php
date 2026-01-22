@@ -14,9 +14,9 @@ use App\Models\Sales\DownPayment;
 use App\Models\Sales\DownPaymentApplication;
 use App\Models\Sales\Invoice;
 use App\Models\Shared\Payment;
-use App\Services\Base\AbstractApplicationService;
+use App\Services\Base\BaseService;
 
-class DownPaymentService extends AbstractApplicationService implements DownPaymentServiceInterface
+class DownPaymentService extends BaseService implements DownPaymentServiceInterface
 {
     public function __construct(
         private JournalServiceInterface $journalService,

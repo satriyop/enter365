@@ -12,10 +12,10 @@ use App\Models\Accounting\Budget;
 use App\Models\Accounting\BudgetLine;
 use App\Models\Accounting\FiscalPeriod;
 use App\Models\Accounting\JournalEntryLine;
-use App\Services\Base\AbstractApplicationService;
+use App\Services\Base\BaseService;
 use Illuminate\Support\Collection;
 
-class BudgetService extends AbstractApplicationService
+class BudgetService extends BaseService
 {
     public function __construct(
         EventDispatcherInterface $eventDispatcher,

@@ -9,7 +9,7 @@ use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Domain\Sales\Quotations\Enums\QuotationOutcome;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\Quotation;
-use App\Services\Base\AbstractApplicationService;
+use App\Services\Base\BaseService;
 use InvalidArgumentException;
 
 /**
@@ -21,7 +21,7 @@ use InvalidArgumentException;
  * Note: Renamed from QuotationWorkflowService to avoid collision with
  * Quotation\QuotationWorkflowService which handles state transitions.
  */
-class QuotationOutcomeService extends AbstractApplicationService
+class QuotationOutcomeService extends BaseService
 {
     public function __construct(
         EventDispatcherInterface $eventDispatcher,

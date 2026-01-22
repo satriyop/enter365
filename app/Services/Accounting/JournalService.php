@@ -14,9 +14,9 @@ use App\Models\Accounting\JournalEntryLine;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
 use App\Models\Shared\Payment;
-use App\Services\Base\AbstractApplicationService;
+use App\Services\Base\BaseService;
 
-class JournalService extends AbstractApplicationService implements JournalServiceInterface
+class JournalService extends BaseService implements JournalServiceInterface
 {
     public function __construct(
         private AccountLookupServiceInterface $accountLookup,

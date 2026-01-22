@@ -17,7 +17,7 @@ use App\Models\Manufacturing\Bom;
 use App\Models\Sales\Quotation;
 use App\Models\Sales\QuotationVariantOption;
 use App\Models\User;
-use App\Services\Base\AbstractApplicationService;
+use App\Services\Base\BaseService;
 use Illuminate\Support\Collection;
 use InvalidArgumentException;
 
@@ -29,7 +29,7 @@ use InvalidArgumentException;
  *
  * @see \App\Services\Sales\QuotationService The coordinator service
  */
-class QuotationCrudService extends AbstractApplicationService
+class QuotationCrudService extends BaseService
 {
     private const DEFAULT_MARGIN_PERCENT = 20;
 

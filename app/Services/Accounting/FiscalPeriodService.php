@@ -11,9 +11,9 @@ use App\Models\Accounting\Account;
 use App\Models\Accounting\FiscalPeriod;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Accounting\JournalEntryLine;
-use App\Services\Base\AbstractApplicationService;
+use App\Services\Base\BaseService;
 
-class FiscalPeriodService extends AbstractApplicationService
+class FiscalPeriodService extends BaseService
 {
     public function __construct(
         EventDispatcherInterface $eventDispatcher,

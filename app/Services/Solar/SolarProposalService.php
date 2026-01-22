@@ -13,11 +13,11 @@ use App\Models\Manufacturing\BomVariantGroup;
 use App\Models\Sales\Quotation;
 use App\Models\Solar\IndonesiaSolarData;
 use App\Models\Solar\SolarProposal;
-use App\Services\Base\AbstractApplicationService;
+use App\Services\Base\BaseService;
 use App\Services\Sales\QuotationService;
 use InvalidArgumentException;
 
-class SolarProposalService extends AbstractApplicationService implements SolarProposalServiceInterface
+class SolarProposalService extends BaseService implements SolarProposalServiceInterface
 {
     public function __construct(
         protected SolarCalculationService $calculator,

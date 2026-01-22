@@ -12,7 +12,7 @@ use App\Domain\Manufacturing\MrpRuns\Events\MrpRunFailed;
 use App\Domain\Manufacturing\MrpRuns\Events\MrpRunStarted;
 use App\Enums\DocumentStatus;
 use App\Models\Manufacturing\MrpRun;
-use App\Services\Base\AbstractApplicationService;
+use App\Services\Base\BaseService;
 use InvalidArgumentException;
 
 /**
@@ -21,7 +21,7 @@ use InvalidArgumentException;
  * Orchestrates MRP runs by coordinating demand collection (MrpDemandService)
  * and suggestion generation (MrpSuggestionService).
  */
-class MrpService extends AbstractApplicationService implements MrpServiceInterface
+class MrpService extends BaseService implements MrpServiceInterface
 {
     public function __construct(
         private MrpDemandService $demandService,

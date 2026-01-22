@@ -10,7 +10,7 @@ use App\Contracts\Repositories\Sales\QuotationRepositoryInterface;
 use App\Domain\Sales\Quotations\QuotationDomainFactory;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\Quotation;
-use App\Services\Base\AbstractApplicationService;
+use App\Services\Base\BaseService;
 use InvalidArgumentException;
 
 /**
@@ -21,7 +21,7 @@ use InvalidArgumentException;
  *
  * @see \App\Services\Sales\QuotationService The coordinator service
  */
-class QuotationWorkflowService extends AbstractApplicationService
+class QuotationWorkflowService extends BaseService
 {
     private const EXPIRABLE_STATUSES = [
         DocumentStatus::Draft,

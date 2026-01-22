@@ -10,14 +10,14 @@ use App\Enums\DocumentStatus;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomItem;
 use App\Models\Manufacturing\ComponentBrandMapping;
-use App\Services\Base\AbstractApplicationService;
+use App\Services\Base\BaseService;
 
 /**
  * Service for cost optimization operations on BOMs.
  *
  * Finds cheapest alternatives across brands and applies optimizations.
  */
-class CostOptimizationService extends AbstractApplicationService
+class CostOptimizationService extends BaseService
 {
     public function __construct(
         EventDispatcherInterface $eventDispatcher,

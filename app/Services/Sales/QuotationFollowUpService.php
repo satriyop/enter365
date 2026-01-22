@@ -8,7 +8,7 @@ use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\Quotation;
-use App\Services\Base\AbstractApplicationService;
+use App\Services\Base\BaseService;
 use DateTime;
 
 /**
@@ -17,7 +17,7 @@ use DateTime;
  * Handles scheduling follow-ups, recording contact activities,
  * and calculating auto follow-up dates.
  */
-class QuotationFollowUpService extends AbstractApplicationService
+class QuotationFollowUpService extends BaseService
 {
     public function __construct(
         EventDispatcherInterface $eventDispatcher,

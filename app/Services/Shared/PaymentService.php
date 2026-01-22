@@ -16,13 +16,13 @@ use App\Enums\DocumentStatus;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
 use App\Models\Shared\Payment;
-use App\Services\Base\AbstractApplicationService;
+use App\Services\Base\BaseService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Event;
 use InvalidArgumentException;
 
-class PaymentService extends AbstractApplicationService implements PaymentServiceInterface
+class PaymentService extends BaseService implements PaymentServiceInterface
 {
     public function __construct(
         private JournalServiceInterface $journalService,

@@ -12,9 +12,9 @@ use App\Models\Projects\Project;
 use App\Models\Projects\ProjectCost;
 use App\Models\Projects\ProjectRevenue;
 use App\Models\Sales\Quotation;
-use App\Services\Base\AbstractApplicationService;
+use App\Services\Base\BaseService;
 
-class ProjectService extends AbstractApplicationService implements ProjectServiceInterface
+class ProjectService extends BaseService implements ProjectServiceInterface
 {
     public function __construct(
         EventDispatcherInterface $eventDispatcher,

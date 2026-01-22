@@ -14,10 +14,10 @@ use App\Models\Manufacturing\BomItem;
 use App\Models\Manufacturing\WorkOrder;
 use App\Models\Manufacturing\WorkOrderItem;
 use App\Models\Projects\Project;
-use App\Services\Base\AbstractApplicationService;
+use App\Services\Base\BaseService;
 use InvalidArgumentException;
 
-class WorkOrderService extends AbstractApplicationService implements WorkOrderServiceInterface
+class WorkOrderService extends BaseService implements WorkOrderServiceInterface
 {
     public function __construct(
         private WorkOrderMaterialService $materialService,

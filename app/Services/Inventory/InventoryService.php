@@ -14,10 +14,10 @@ use App\Models\Inventory\ProductStock;
 use App\Models\Inventory\Warehouse;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
-use App\Services\Base\AbstractApplicationService;
+use App\Services\Base\BaseService;
 use Illuminate\Support\Collection;
 
-class InventoryService extends AbstractApplicationService implements InventoryServiceInterface
+class InventoryService extends BaseService implements InventoryServiceInterface
 {
     public function __construct(
         EventDispatcherInterface $eventDispatcher,

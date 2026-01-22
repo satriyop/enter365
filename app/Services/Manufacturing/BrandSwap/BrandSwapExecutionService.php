@@ -12,7 +12,7 @@ use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomItem;
 use App\Models\Manufacturing\BomVariantGroup;
 use App\Models\Manufacturing\ComponentBrandMapping;
-use App\Services\Base\AbstractApplicationService;
+use App\Services\Base\BaseService;
 use App\Services\Manufacturing\BomVariantGroupService;
 use App\Services\Manufacturing\ProductEquivalenceService;
 use Illuminate\Support\Collection;
@@ -23,7 +23,7 @@ use Illuminate\Support\Collection;
  * Handles write operations: executing swaps, generating variants,
  * and quick-swapping individual items.
  */
-class BrandSwapExecutionService extends AbstractApplicationService
+class BrandSwapExecutionService extends BaseService
 {
     public function __construct(
         private ProductEquivalenceService $equivalenceService,

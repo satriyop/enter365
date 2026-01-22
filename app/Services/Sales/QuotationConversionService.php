@@ -12,7 +12,7 @@ use App\Enums\DocumentStatus;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\InvoiceItem;
 use App\Models\Sales\Quotation;
-use App\Services\Base\AbstractApplicationService;
+use App\Services\Base\BaseService;
 use InvalidArgumentException;
 
 /**
@@ -20,7 +20,7 @@ use InvalidArgumentException;
  *
  * Handles converting approved quotations to invoices and other document types.
  */
-class QuotationConversionService extends AbstractApplicationService implements QuotationConversionServiceInterface
+class QuotationConversionService extends BaseService implements QuotationConversionServiceInterface
 {
     public function __construct(
         private QuotationDomainFactory $domainFactory,

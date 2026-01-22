@@ -11,9 +11,9 @@ use App\Contracts\Shared\DocumentNumberGeneratorInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomVariantGroup;
-use App\Services\Base\AbstractApplicationService;
+use App\Services\Base\BaseService;
 
-class BomVariantGroupService extends AbstractApplicationService implements BomVariantGroupServiceInterface
+class BomVariantGroupService extends BaseService implements BomVariantGroupServiceInterface
 {
     public function __construct(
         EventDispatcherInterface $eventDispatcher,

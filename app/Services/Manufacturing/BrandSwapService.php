@@ -11,7 +11,7 @@ use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomItem;
 use App\Models\Manufacturing\BomVariantGroup;
 use App\Models\Manufacturing\SpecValidationRuleSet;
-use App\Services\Base\AbstractApplicationService;
+use App\Services\Base\BaseService;
 use App\Services\Manufacturing\BrandSwap\BrandSwapExecutionService;
 use App\Services\Manufacturing\BrandSwap\BrandSwapPreviewService;
 use Illuminate\Support\Collection;
@@ -25,7 +25,7 @@ use Illuminate\Support\Collection;
  *
  * This facade maintains backward compatibility while keeping responsibilities focused.
  */
-class BrandSwapService extends AbstractApplicationService
+class BrandSwapService extends BaseService
 {
     public function __construct(
         private BrandSwapPreviewService $previewService,

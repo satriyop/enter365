@@ -15,10 +15,10 @@ use App\Models\Projects\ProjectCost;
 use App\Models\Purchasing\Bill;
 use App\Models\Purchasing\BillItem;
 use App\Models\Shared\SubcontractorInvoice;
-use App\Services\Base\AbstractApplicationService;
+use App\Services\Base\BaseService;
 use InvalidArgumentException;
 
-class SubcontractorService extends AbstractApplicationService implements SubcontractorServiceInterface
+class SubcontractorService extends BaseService implements SubcontractorServiceInterface
 {
     public function __construct(
         EventDispatcherInterface $eventDispatcher,

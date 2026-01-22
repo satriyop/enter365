@@ -16,7 +16,7 @@ use App\Models\Accounting\Account;
 use App\Models\Accounting\FiscalPeriod;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Accounting\JournalEntryLine;
-use App\Services\Base\AbstractApplicationService;
+use App\Services\Base\BaseService;
 
 /**
  * Orchestrator service for year-end closing process.
@@ -30,7 +30,7 @@ use App\Services\Base\AbstractApplicationService;
  * 6. Create next period (optional)
  * 7. Populate opening balances (optional)
  */
-class YearEndCloseService extends AbstractApplicationService
+class YearEndCloseService extends BaseService
 {
     public function __construct(
         private AccountingPolicyManager $policyManager,

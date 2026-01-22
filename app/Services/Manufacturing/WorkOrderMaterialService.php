@@ -13,7 +13,7 @@ use App\Models\Inventory\ProductStock;
 use App\Models\Manufacturing\MaterialConsumption;
 use App\Models\Manufacturing\WorkOrder;
 use App\Models\Manufacturing\WorkOrderItem;
-use App\Services\Base\AbstractApplicationService;
+use App\Services\Base\BaseService;
 use InvalidArgumentException;
 
 /**
@@ -21,7 +21,7 @@ use InvalidArgumentException;
  *
  * Handles material reservation, consumption, and status tracking.
  */
-class WorkOrderMaterialService extends AbstractApplicationService
+class WorkOrderMaterialService extends BaseService
 {
     public function __construct(
         EventDispatcherInterface $eventDispatcher,

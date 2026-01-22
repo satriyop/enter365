@@ -13,10 +13,10 @@ use App\Models\Inventory\Warehouse;
 use App\Models\Purchasing\GoodsReceiptNote;
 use App\Models\Purchasing\GoodsReceiptNoteItem;
 use App\Models\Purchasing\PurchaseOrder;
-use App\Services\Base\AbstractApplicationService;
+use App\Services\Base\BaseService;
 use Illuminate\Support\Collection;
 
-class GoodsReceiptNoteService extends AbstractApplicationService implements GoodsReceiptNoteServiceInterface
+class GoodsReceiptNoteService extends BaseService implements GoodsReceiptNoteServiceInterface
 {
     public function __construct(
         private InventoryServiceInterface $inventoryService,
