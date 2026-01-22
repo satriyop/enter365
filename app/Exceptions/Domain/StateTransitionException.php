@@ -39,10 +39,12 @@ class StateTransitionException extends DomainException
     /**
      * Create exception when action is not available for current state.
      */
-    public static function actionNotAvailable(string $action, string $currentState): self
+    public static function actionNotAvailable(string $action, string $currentState, ?string $reason = null): self
     {
+        $message = $reason ?? "Aksi '{$action}' tidak tersedia untuk status '{$currentState}'.";
+
         return new self(
-            "Aksi '{$action}' tidak tersedia untuk status '{$currentState}'.",
+            $message,
             [
                 'action' => $action,
                 'current_state' => $currentState,

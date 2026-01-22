@@ -6,12 +6,42 @@ use App\Models\Contacts\Contact;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property string $type
+ * @property int $contact_id
+ * @property string $frequency
+ * @property int $interval
+ * @property Carbon $start_date
+ * @property Carbon|null $end_date
+ * @property Carbon|null $next_generate_date
+ * @property int|null $occurrences_limit
+ * @property int $occurrences_count
+ * @property string|null $description
+ * @property string|null $reference
+ * @property string $tax_rate
+ * @property int $discount_amount
+ * @property string|null $early_discount_percent
+ * @property int|null $early_discount_days
+ * @property int|null $payment_term_days
+ * @property string $currency
+ * @property array<mixed>|null $items
+ * @property bool $is_active
+ * @property bool $auto_post
+ * @property bool $auto_send
+ * @property int|null $created_by
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
+ */
 class RecurringTemplate extends Model
 {
     use HasFactory, SoftDeletes;

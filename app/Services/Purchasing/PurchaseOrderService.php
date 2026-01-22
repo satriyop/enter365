@@ -9,6 +9,7 @@ use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Purchasing\PurchaseOrderServiceInterface;
 use App\Contracts\Shared\DocumentNumberGeneratorInterface;
 use App\Domain\Purchasing\PurchaseOrderBillConverter;
+use App\Domain\Purchasing\PurchaseOrders\PurchaseOrderDomainFactory;
 use App\Domain\Purchasing\PurchaseOrderStatistics;
 use App\Enums\DocumentStatus;
 use App\Models\Purchasing\PurchaseOrder;
@@ -25,19 +26,23 @@ class PurchaseOrderService extends AbstractDocumentService implements PurchaseOr
 
     private PurchaseOrderStatistics $statistics;
 
+    private PurchaseOrderDomainFactory $domainFactory;
+
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger,
         PurchaseOrderReceivingService $receivingService,
         PurchaseOrderBillConverter $billConverter,
         PurchaseOrderStatistics $statistics,
-        DocumentNumberGeneratorInterface $numberGenerator
+        DocumentNumberGeneratorInterface $numberGenerator,
+        PurchaseOrderDomainFactory $domainFactory
     ) {
         parent::__construct($eventDispatcher, $logger, numberGenerator: $numberGenerator);
 
         $this->receivingService = $receivingService;
         $this->billConverter = $billConverter;
         $this->statistics = $statistics;
+        $this->domainFactory = $domainFactory;
     }
 
     protected function getModelClass(): string
@@ -166,7 +171,7 @@ class PurchaseOrderService extends AbstractDocumentService implements PurchaseOr
 
     public function submit(PurchaseOrder $purchaseOrder, ?int $userId = null): PurchaseOrder
     {
-        if (! $purchaseOrder->stateMachine()->canSubmit()) {
+        if (! $this->domainFactory->stateMachine($purchaseOrder)->canSubmit()) {
             throw new InvalidArgumentException('PO tidak dapat diajukan. Pastikan status draft dan memiliki item.');
         }
 
@@ -177,7 +182,7 @@ class PurchaseOrderService extends AbstractDocumentService implements PurchaseOr
 
     public function approve(PurchaseOrder $purchaseOrder, ?int $userId = null): PurchaseOrder
     {
-        if (! $purchaseOrder->stateMachine()->canApprove()) {
+        if (! $this->domainFactory->stateMachine($purchaseOrder)->canApprove()) {
             throw new InvalidArgumentException('PO tidak dapat disetujui. Pastikan sudah diajukan.');
         }
 
@@ -188,7 +193,7 @@ class PurchaseOrderService extends AbstractDocumentService implements PurchaseOr
 
     public function reject(PurchaseOrder $purchaseOrder, string $reason, ?int $userId = null): PurchaseOrder
     {
-        if (! $purchaseOrder->stateMachine()->canReject()) {
+        if (! $this->domainFactory->stateMachine($purchaseOrder)->canReject()) {
             throw new InvalidArgumentException('PO tidak dapat ditolak. Pastikan sudah diajukan.');
         }
 
@@ -203,7 +208,7 @@ class PurchaseOrderService extends AbstractDocumentService implements PurchaseOr
 
     public function cancel(PurchaseOrder $purchaseOrder, string $reason, ?int $userId = null): PurchaseOrder
     {
-        if (! $purchaseOrder->stateMachine()->canCancel()) {
+        if (! $this->domainFactory->stateMachine($purchaseOrder)->canCancel()) {
             throw new InvalidArgumentException('PO tidak dapat dibatalkan.');
         }
 

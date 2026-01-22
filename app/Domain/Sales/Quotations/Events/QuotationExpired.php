@@ -24,7 +24,7 @@ class QuotationExpired
             quotationId: $quotation->id,
             quotationNumber: $quotation->quotation_number,
             customerId: $quotation->contact_id,
-            totalAmount: $quotation->total_amount,
+            totalAmount: $quotation->total,
             currency: $quotation->currency,
             validUntil: $quotation->valid_until,
             expiredAt: now()

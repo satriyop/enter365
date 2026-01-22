@@ -8,12 +8,52 @@ use App\Models\Projects\Project;
 use App\Models\Sales\Invoice;
 use App\Models\Shared\SubcontractorInvoice;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property string $sc_wo_number
+ * @property int $subcontractor_id
+ * @property int|null $work_order_id
+ * @property int|null $project_id
+ * @property string $name
+ * @property string|null $description
+ * @property string|null $scope_of_work
+ * @property DocumentStatus $status
+ * @property int $agreed_amount
+ * @property int $actual_amount
+ * @property string $retention_percent
+ * @property int $retention_amount
+ * @property int $amount_invoiced
+ * @property int $amount_paid
+ * @property int $amount_due
+ * @property Carbon|null $scheduled_start_date
+ * @property Carbon|null $scheduled_end_date
+ * @property Carbon|null $actual_start_date
+ * @property Carbon|null $actual_end_date
+ * @property int|null $completion_percentage
+ * @property string|null $work_location
+ * @property string|null $location_address
+ * @property string|null $notes
+ * @property int|null $created_by
+ * @property int|null $assigned_by
+ * @property Carbon|null $assigned_at
+ * @property int|null $started_by
+ * @property Carbon|null $started_at
+ * @property int|null $completed_by
+ * @property Carbon|null $completed_at
+ * @property int|null $cancelled_by
+ * @property Carbon|null $cancelled_at
+ * @property string|null $cancellation_reason
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
+ */
 class SubcontractorWorkOrder extends Model
 {
     use HasFactory, SoftDeletes;

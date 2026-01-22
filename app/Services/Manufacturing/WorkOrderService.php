@@ -7,6 +7,7 @@ namespace App\Services\Manufacturing;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Manufacturing\WorkOrderServiceInterface;
+use App\Domain\Manufacturing\WorkOrders\WorkOrderDomainFactory;
 use App\Enums\DocumentStatus;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomItem;
@@ -22,6 +23,7 @@ class WorkOrderService extends AbstractApplicationService implements WorkOrderSe
         private WorkOrderMaterialService $materialService,
         private WorkOrderCostService $costService,
         private WorkOrderNumberGenerator $numberGenerator,
+        private WorkOrderDomainFactory $domainFactory,
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger
     ) {
@@ -172,7 +174,7 @@ class WorkOrderService extends AbstractApplicationService implements WorkOrderSe
      */
     public function confirm(WorkOrder $wo, ?int $userId = null): WorkOrder
     {
-        if (! $wo->stateMachine()->canConfirm()) {
+        if (! $this->domainFactory->stateMachine($wo)->canConfirm()) {
             throw new InvalidArgumentException('Work order tidak dapat dikonfirmasi. Pastikan memiliki item dan dalam status draft.');
         }
 
@@ -190,7 +192,7 @@ class WorkOrderService extends AbstractApplicationService implements WorkOrderSe
      */
     public function start(WorkOrder $wo, ?int $userId = null): WorkOrder
     {
-        if (! $wo->stateMachine()->canStart()) {
+        if (! $this->domainFactory->stateMachine($wo)->canStart()) {
             throw new InvalidArgumentException('Work order hanya dapat dimulai setelah dikonfirmasi.');
         }
 
@@ -204,7 +206,7 @@ class WorkOrderService extends AbstractApplicationService implements WorkOrderSe
      */
     public function complete(WorkOrder $wo, ?int $userId = null): WorkOrder
     {
-        if (! $wo->stateMachine()->canComplete()) {
+        if (! $this->domainFactory->stateMachine($wo)->canComplete()) {
             throw new InvalidArgumentException('Work order hanya dapat diselesaikan saat dalam proses.');
         }
 
@@ -232,7 +234,7 @@ class WorkOrderService extends AbstractApplicationService implements WorkOrderSe
      */
     public function cancel(WorkOrder $wo, ?string $reason = null, ?int $userId = null): WorkOrder
     {
-        if (! $wo->stateMachine()->canCancel()) {
+        if (! $this->domainFactory->stateMachine($wo)->canCancel()) {
             throw new InvalidArgumentException('Work order tidak dapat dibatalkan.');
         }
 

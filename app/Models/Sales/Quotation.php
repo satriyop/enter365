@@ -14,6 +14,7 @@ use App\Models\Shared\Attachment;
 use App\Models\User;
 use App\Traits\Filterable;
 use App\Traits\HasStatusHistory;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -22,6 +23,66 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property string $quotation_number
+ * @property int $revision
+ * @property int $contact_id
+ * @property int|null $project_id
+ * @property Carbon $quotation_date
+ * @property Carbon $valid_until
+ * @property string|null $reference
+ * @property string|null $subject
+ * @property string|null $quotation_type
+ * @property int|null $variant_group_id
+ * @property int|null $selected_variant_id
+ * @property int|null $source_bom_id
+ * @property DocumentStatus $status
+ * @property Carbon|null $next_follow_up_at
+ * @property Carbon|null $last_contacted_at
+ * @property int|null $assigned_to
+ * @property int $follow_up_count
+ * @property string|null $priority
+ * @property string $currency
+ * @property string $exchange_rate
+ * @property int $subtotal
+ * @property string|null $discount_type
+ * @property string|null $discount_value
+ * @property int $discount_amount
+ * @property string $tax_rate
+ * @property int $tax_amount
+ * @property int $total
+ * @property int $base_currency_total
+ * @property string|null $notes
+ * @property string|null $terms_conditions
+ * @property Carbon|null $submitted_at
+ * @property int|null $submitted_by
+ * @property Carbon|null $approved_at
+ * @property int|null $approved_by
+ * @property Carbon|null $sent_at
+ * @property int|null $sent_by
+ * @property string|null $sent_to_email
+ * @property string|null $sent_via
+ * @property Carbon|null $rejected_at
+ * @property int|null $rejected_by
+ * @property string|null $rejection_reason
+ * @property string|null $outcome
+ * @property string|null $won_reason
+ * @property string|null $lost_reason
+ * @property string|null $lost_to_competitor
+ * @property string|null $outcome_notes
+ * @property Carbon|null $outcome_at
+ * @property int|null $converted_to_invoice_id
+ * @property Carbon|null $converted_at
+ * @property int|null $original_quotation_id
+ * @property int|null $created_by
+ * @property Carbon|null $cancelled_at
+ * @property int|null $cancelled_by
+ * @property string|null $cancellation_reason
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
+ */
 class Quotation extends Model
 {
     use Filterable, HasFactory, HasStatusHistory, SoftDeletes;

@@ -14,6 +14,7 @@ use App\Models\Shared\RecurringTemplate;
 use App\Models\User;
 use App\Traits\Filterable;
 use App\Traits\HasStatusHistory;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -21,6 +22,39 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property string $bill_number
+ * @property string|null $vendor_invoice_number
+ * @property int $contact_id
+ * @property Carbon $bill_date
+ * @property Carbon $due_date
+ * @property Carbon|null $early_discount_deadline
+ * @property string|null $description
+ * @property string|null $reference
+ * @property int $subtotal
+ * @property int $tax_amount
+ * @property string $tax_rate
+ * @property int $discount_amount
+ * @property string|null $early_discount_percent
+ * @property int|null $early_discount_days
+ * @property int|null $early_discount_amount
+ * @property int $total_amount
+ * @property string $currency
+ * @property string $exchange_rate
+ * @property int $base_currency_total
+ * @property int $paid_amount
+ * @property DocumentStatus $status
+ * @property int $reminder_count
+ * @property Carbon|null $last_reminder_at
+ * @property int|null $journal_entry_id
+ * @property int|null $payable_account_id
+ * @property int|null $recurring_template_id
+ * @property int|null $created_by
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
+ */
 class Bill extends Model
 {
     use Filterable, HasFactory, HasStatusHistory, SoftDeletes;

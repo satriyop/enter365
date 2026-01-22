@@ -24,7 +24,7 @@ class QuotationApproved
             quotationId: $quotation->id,
             quotationNumber: $quotation->quotation_number,
             customerId: $quotation->contact_id,
-            totalAmount: $quotation->total_amount,
+            totalAmount: $quotation->total,
             currency: $quotation->currency,
             userId: $userId,
             approvedAt: now()

@@ -174,12 +174,17 @@ class AppServiceProvider extends ServiceProvider
         // QuotationDomainFactory - singleton since it caches managers
         $this->app->singleton(\App\Domain\Sales\Quotations\QuotationDomainFactory::class);
 
+        // InvoiceCalculator and InvoiceDomainFactory
+        $this->app->bind(\App\Contracts\Sales\InvoiceCalculatorInterface::class, \App\Domain\Sales\Invoices\InvoiceCalculator::class);
+        $this->app->singleton(\App\Domain\Sales\Invoices\InvoiceDomainFactory::class);
+
         // Purchasing Domain (4 services)
         $this->app->bind(BillServiceInterface::class, BillService::class);
         $this->app->bind(PurchaseOrderServiceInterface::class, PurchaseOrderService::class);
         $this->app->bind(GoodsReceiptNoteServiceInterface::class, GoodsReceiptNoteService::class);
         $this->app->bind(PurchaseReturnServiceInterface::class, PurchaseReturnService::class);
         $this->app->bind(\App\Contracts\Purchasing\PurchaseOrderCalculatorInterface::class, \App\Domain\Purchasing\PurchaseOrders\PurchaseOrderCalculator::class);
+        $this->app->singleton(\App\Domain\Purchasing\PurchaseOrders\PurchaseOrderDomainFactory::class);
 
         // Register PurchaseReturnApprovalPipeline with handlers
         $this->app->bind(
@@ -201,6 +206,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(MaterialRequisitionServiceInterface::class, MaterialRequisitionService::class);
         $this->app->bind(MrpServiceInterface::class, MrpService::class);
         $this->app->bind(SubcontractorServiceInterface::class, SubcontractorService::class);
+
+        // WorkOrderDomainFactory
+        $this->app->singleton(\App\Domain\Manufacturing\WorkOrders\WorkOrderDomainFactory::class);
 
         // Register WorkOrderCompletionPipeline with handlers
         $this->app->bind(

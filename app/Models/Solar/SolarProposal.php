@@ -7,7 +7,9 @@ use App\Models\Contacts\Contact;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomVariantGroup;
 use App\Models\Sales\Quotation;
+use App\Models\Shared\Attachment;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -15,6 +17,52 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property string $proposal_number
+ * @property int $contact_id
+ * @property DocumentStatus $status
+ * @property string|null $public_token
+ * @property Carbon|null $public_token_expires_at
+ * @property string|null $site_name
+ * @property string|null $site_address
+ * @property string|null $province
+ * @property string|null $city
+ * @property string|null $latitude
+ * @property string|null $longitude
+ * @property string|null $roof_area_m2
+ * @property array<mixed>|null $roof_polygon
+ * @property string|null $roof_type
+ * @property string|null $roof_orientation
+ * @property string|null $roof_tilt_degrees
+ * @property string|null $shading_percentage
+ * @property string|null $monthly_consumption_kwh
+ * @property string|null $pln_tariff_category
+ * @property int|null $electricity_rate
+ * @property string|null $tariff_escalation_percent
+ * @property string|null $peak_sun_hours
+ * @property string|null $solar_irradiance
+ * @property string|null $performance_ratio
+ * @property int|null $variant_group_id
+ * @property int|null $selected_bom_id
+ * @property string|null $system_capacity_kwp
+ * @property string|null $annual_production_kwh
+ * @property array<mixed>|null $financial_analysis
+ * @property array<mixed>|null $environmental_impact
+ * @property array<mixed>|null $sections_config
+ * @property array<mixed>|null $custom_content
+ * @property Carbon|null $valid_until
+ * @property string|null $notes
+ * @property int|null $created_by
+ * @property Carbon|null $sent_at
+ * @property Carbon|null $accepted_at
+ * @property Carbon|null $rejected_at
+ * @property string|null $rejection_reason
+ * @property int|null $converted_quotation_id
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
+ */
 class SolarProposal extends Model
 {
     use HasFactory, SoftDeletes;

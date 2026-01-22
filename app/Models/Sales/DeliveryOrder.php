@@ -8,12 +8,42 @@ use App\Models\Inventory\Warehouse;
 use App\Models\User;
 use App\Traits\Filterable;
 use App\Traits\HasStatusHistory;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property string $do_number
+ * @property int|null $invoice_id
+ * @property int $contact_id
+ * @property int $warehouse_id
+ * @property Carbon $do_date
+ * @property Carbon|null $shipping_date
+ * @property Carbon|null $received_date
+ * @property string|null $shipping_address
+ * @property string|null $shipping_method
+ * @property string|null $tracking_number
+ * @property string|null $driver_name
+ * @property string|null $vehicle_number
+ * @property string|null $notes
+ * @property DocumentStatus $status
+ * @property string|null $received_by
+ * @property string|null $delivery_notes
+ * @property int|null $created_by
+ * @property int|null $confirmed_by
+ * @property Carbon|null $confirmed_at
+ * @property int|null $shipped_by
+ * @property Carbon|null $shipped_at
+ * @property int|null $delivered_by
+ * @property Carbon|null $delivered_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
+ */
 class DeliveryOrder extends Model
 {
     use Filterable, HasFactory, HasStatusHistory, SoftDeletes;

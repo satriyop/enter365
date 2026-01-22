@@ -5,11 +5,36 @@ namespace App\Models\Purchasing;
 use App\Enums\DocumentStatus;
 use App\Models\Inventory\Warehouse;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $id
+ * @property string $grn_number
+ * @property int $purchase_order_id
+ * @property int $warehouse_id
+ * @property Carbon $receipt_date
+ * @property DocumentStatus $status
+ * @property string|null $supplier_do_number
+ * @property string|null $supplier_invoice_number
+ * @property string|null $vehicle_number
+ * @property string|null $driver_name
+ * @property int|null $received_by
+ * @property int|null $checked_by
+ * @property string|null $notes
+ * @property int $total_items
+ * @property int $total_quantity_ordered
+ * @property int $total_quantity_received
+ * @property int $total_quantity_rejected
+ * @property Carbon|null $completed_at
+ * @property Carbon|null $cancelled_at
+ * @property int|null $created_by
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ */
 class GoodsReceiptNote extends Model
 {
     use HasFactory;

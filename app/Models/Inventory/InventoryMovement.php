@@ -22,6 +22,8 @@ class InventoryMovement extends Model
 
     public const TYPE_TRANSFER_OUT = 'transfer_out';
 
+    public const TYPE_PRODUCTION = 'production';
+
     protected $fillable = [
         'movement_number',
         'product_id',

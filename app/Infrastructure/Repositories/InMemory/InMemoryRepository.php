@@ -55,11 +55,23 @@ abstract class InMemoryRepository implements RepositoryInterface
         });
     }
 
-    public function findBy(array $criteria): Collection
+    /**
+     * @param  array<string, string>  $orderBy  Field => direction pairs for sorting
+     */
+    public function findBy(array $criteria, array $orderBy = []): Collection
     {
-        return $this->items->filter(function ($item) use ($criteria) {
+        $result = $this->items->filter(function ($item) use ($criteria) {
             return $this->matchesCriteria($item, $criteria);
-        })->values();
+        });
+
+        // Apply sorting if specified
+        foreach (array_reverse($orderBy) as $field => $direction) {
+            $result = $direction === 'desc'
+                ? $result->sortByDesc(fn ($item) => $this->getFieldValue($item, $field))
+                : $result->sortBy(fn ($item) => $this->getFieldValue($item, $field));
+        }
+
+        return $result->values();
     }
 
     public function all(): Collection

@@ -10,12 +10,43 @@ use App\Models\Inventory\Warehouse;
 use App\Models\User;
 use App\Traits\Filterable;
 use App\Traits\HasStatusHistory;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property string $return_number
+ * @property int|null $bill_id
+ * @property int $contact_id
+ * @property int $warehouse_id
+ * @property Carbon $return_date
+ * @property string|null $reason
+ * @property string|null $notes
+ * @property int $subtotal
+ * @property string $tax_rate
+ * @property int $tax_amount
+ * @property int $total_amount
+ * @property DocumentStatus $status
+ * @property int|null $journal_entry_id
+ * @property int|null $debit_note_id
+ * @property int|null $created_by
+ * @property int|null $submitted_by
+ * @property Carbon|null $submitted_at
+ * @property int|null $approved_by
+ * @property Carbon|null $approved_at
+ * @property int|null $rejected_by
+ * @property Carbon|null $rejected_at
+ * @property string|null $rejection_reason
+ * @property int|null $completed_by
+ * @property Carbon|null $completed_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
+ */
 class PurchaseReturn extends Model
 {
     use Filterable, HasFactory, HasStatusHistory, SoftDeletes;

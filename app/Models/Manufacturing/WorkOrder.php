@@ -9,12 +9,58 @@ use App\Models\Projects\Project;
 use App\Models\User;
 use App\Traits\Filterable;
 use App\Traits\HasStatusHistory;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property string $wo_number
+ * @property int|null $project_id
+ * @property int|null $bom_id
+ * @property int|null $product_id
+ * @property int|null $parent_work_order_id
+ * @property string $type
+ * @property string $name
+ * @property string|null $description
+ * @property string $quantity_ordered
+ * @property string $quantity_completed
+ * @property string $quantity_scrapped
+ * @property DocumentStatus $status
+ * @property string $priority
+ * @property int $progress_percentage
+ * @property Carbon|null $planned_start_date
+ * @property Carbon|null $planned_end_date
+ * @property Carbon|null $actual_start_date
+ * @property Carbon|null $actual_end_date
+ * @property int $estimated_material_cost
+ * @property int $estimated_labor_cost
+ * @property int $estimated_overhead_cost
+ * @property int $estimated_total_cost
+ * @property int $actual_material_cost
+ * @property int $actual_labor_cost
+ * @property int $actual_overhead_cost
+ * @property int $actual_total_cost
+ * @property int $cost_variance
+ * @property int|null $warehouse_id
+ * @property string|null $notes
+ * @property int|null $created_by
+ * @property int|null $confirmed_by
+ * @property Carbon|null $confirmed_at
+ * @property int|null $started_by
+ * @property Carbon|null $started_at
+ * @property int|null $completed_by
+ * @property Carbon|null $completed_at
+ * @property int|null $cancelled_by
+ * @property Carbon|null $cancelled_at
+ * @property string|null $cancellation_reason
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
+ */
 class WorkOrder extends Model
 {
     use Filterable, HasFactory, HasStatusHistory, SoftDeletes;

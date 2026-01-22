@@ -5,12 +5,33 @@ namespace App\Models\Manufacturing;
 use App\Enums\DocumentStatus;
 use App\Models\Inventory\Warehouse;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property string $requisition_number
+ * @property int $work_order_id
+ * @property int $warehouse_id
+ * @property DocumentStatus $status
+ * @property Carbon $requested_date
+ * @property Carbon|null $required_date
+ * @property int $total_items
+ * @property string $total_quantity
+ * @property string|null $notes
+ * @property int|null $requested_by
+ * @property int|null $approved_by
+ * @property Carbon|null $approved_at
+ * @property int|null $issued_by
+ * @property Carbon|null $issued_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
+ */
 class MaterialRequisition extends Model
 {
     use HasFactory, SoftDeletes;

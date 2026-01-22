@@ -1,22 +1,10 @@
 parameters:
 	ignoreErrors:
 		-
-			message: '#^Cannot call method diffInDays\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Console/Commands/MarkOverdueDocuments.php
-
-		-
 			message: '#^Using nullsafe property access "\?\-\>quantity" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Domain/Inventory/Movements/MovementValidator.php
-
-		-
-			message: '#^Static method App\\Exceptions\\Domain\\StateTransitionException\:\:actionNotAvailable\(\) invoked with 3 parameters, 2 required\.$#'
-			identifier: arguments.count
-			count: 4
-			path: app/Domain/Inventory/StockOpname/StockOpnameStateMachine.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
@@ -25,292 +13,22 @@ parameters:
 			path: app/Domain/Manufacturing/Boms/BomExploder.php
 
 		-
-			message: '#^Parameter \#1 \$initialStatus of class App\\Domain\\Manufacturing\\MaterialRequisitions\\MaterialRequisitionStateMachine constructor expects App\\Enums\\DocumentStatus, string given\.$#'
-			identifier: argument.type
+			message: '#^Binary operation "\*" between int and string results in an error\.$#'
+			identifier: binaryOp.invalid
 			count: 1
-			path: app/Domain/Manufacturing/MaterialRequisitions/MaterialRequisitionStateMachine.php
+			path: app/Domain/Sales/Invoices/InvoiceDomainFactory.php
 
 		-
-			message: '#^Property App\\Models\\Manufacturing\\MaterialRequisition\:\:\$status \(string\) does not accept App\\Enums\\DocumentStatus\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Domain/Manufacturing/MaterialRequisitions/MaterialRequisitionStateMachine.php
-
-		-
-			message: '#^Parameter \$planningEnd of class App\\Domain\\Manufacturing\\MrpRuns\\Events\\MrpRunStarted constructor expects DateTimeInterface, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/Manufacturing/MrpRuns/Events/MrpRunStarted.php
-
-		-
-			message: '#^Parameter \$planningStart of class App\\Domain\\Manufacturing\\MrpRuns\\Events\\MrpRunStarted constructor expects DateTimeInterface, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/Manufacturing/MrpRuns/Events/MrpRunStarted.php
-
-		-
-			message: '#^Parameter \#1 \$initialStatus of class App\\Domain\\Manufacturing\\SubcontractorWorkOrders\\SubcontractorWorkOrderStateMachine constructor expects App\\Enums\\DocumentStatus, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/Manufacturing/SubcontractorWorkOrders/SubcontractorWorkOrderStateMachine.php
-
-		-
-			message: '#^Property App\\Models\\Manufacturing\\SubcontractorWorkOrder\:\:\$status \(string\) does not accept App\\Enums\\DocumentStatus\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Domain/Manufacturing/SubcontractorWorkOrders/SubcontractorWorkOrderStateMachine.php
-
-		-
-			message: '#^Access to undefined constant App\\Models\\Inventory\\InventoryMovement\:\:TYPE_PRODUCTION\.$#'
-			identifier: classConstant.notFound
-			count: 1
-			path: app/Domain/Manufacturing/WorkOrders/Handlers/FinishedGoodsHandler.php
-
-		-
-			message: '#^Access to undefined constant App\\Models\\Inventory\\InventoryMovement\:\:TYPE_PRODUCTION\.$#'
-			identifier: classConstant.notFound
-			count: 1
-			path: app/Domain/Manufacturing/WorkOrders/Handlers/MaterialConsumptionHandler.php
-
-		-
-			message: '#^Parameter \#1 \$initialStatus of class App\\Domain\\Manufacturing\\WorkOrders\\WorkOrderStateMachine constructor expects App\\Enums\\DocumentStatus, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/Manufacturing/WorkOrders/WorkOrderStateMachine.php
-
-		-
-			message: '#^Property App\\Models\\Manufacturing\\WorkOrder\:\:\$status \(string\) does not accept App\\Enums\\DocumentStatus\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Domain/Manufacturing/WorkOrders/WorkOrderStateMachine.php
-
-		-
-			message: '#^Parameter \#1 \$initialStatus of class App\\Domain\\Projects\\ProjectStateMachine constructor expects App\\Enums\\DocumentStatus, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/Projects/ProjectStateMachine.php
-
-		-
-			message: '#^Property App\\Models\\Projects\\Project\:\:\$status \(string\) does not accept App\\Enums\\DocumentStatus\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Domain/Projects/ProjectStateMachine.php
-
-		-
-			message: '#^Cannot call method isPast\(\) on string\.$#'
-			identifier: method.nonObject
+			message: '#^Binary operation "/" between string and 100 results in an error\.$#'
+			identifier: binaryOp.invalid
 			count: 2
-			path: app/Domain/Purchasing/Bills/BillStateMachine.php
-
-		-
-			message: '#^Parameter \#1 \$initialStatus of method App\\Domain\\Core\\AbstractStateMachine\:\:__construct\(\) expects App\\Enums\\DocumentStatus, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/Purchasing/Bills/BillStateMachine.php
-
-		-
-			message: '#^Property App\\Models\\Purchasing\\Bill\:\:\$status \(string\) does not accept App\\Enums\\DocumentStatus\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Domain/Purchasing/Bills/BillStateMachine.php
-
-		-
-			message: '#^Parameter \$dueDate of class App\\Domain\\Purchasing\\Bills\\Events\\BillOverdue constructor expects Carbon\\Carbon, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/Purchasing/Bills/Events/BillOverdue.php
-
-		-
-			message: '#^Parameter \#1 \$initialStatus of class App\\Domain\\Purchasing\\GoodsReceiptNotes\\GoodsReceiptNoteStateMachine constructor expects App\\Enums\\DocumentStatus, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/Purchasing/GoodsReceiptNotes/GoodsReceiptNoteStateMachine.php
-
-		-
-			message: '#^Property App\\Models\\Purchasing\\GoodsReceiptNote\:\:\$status \(string\) does not accept App\\Enums\\DocumentStatus\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Domain/Purchasing/GoodsReceiptNotes/GoodsReceiptNoteStateMachine.php
-
-		-
-			message: '#^Parameter \#1 \$initialStatus of class App\\Domain\\Purchasing\\PurchaseOrders\\PurchaseOrderStateMachine constructor expects App\\Enums\\DocumentStatus, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/Purchasing/PurchaseOrders/PurchaseOrderStateMachine.php
-
-		-
-			message: '#^Property App\\Models\\Purchasing\\PurchaseOrder\:\:\$status \(string\) does not accept App\\Enums\\DocumentStatus\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Domain/Purchasing/PurchaseOrders/PurchaseOrderStateMachine.php
-
-		-
-			message: '#^Cannot call method toDateString\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Domain/Purchasing/PurchaseReturns/Handlers/JournalEntryHandler.php
-
-		-
-			message: '#^Parameter \#1 \$initialStatus of class App\\Domain\\Purchasing\\PurchaseReturns\\PurchaseReturnStateMachine constructor expects App\\Enums\\DocumentStatus, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/Purchasing/PurchaseReturns/PurchaseReturnStateMachine.php
-
-		-
-			message: '#^Property App\\Models\\Purchasing\\PurchaseReturn\:\:\$status \(string\) does not accept App\\Enums\\DocumentStatus\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Domain/Purchasing/PurchaseReturns/PurchaseReturnStateMachine.php
-
-		-
-			message: '#^Parameter \#1 \$initialStatus of class App\\Domain\\Sales\\DeliveryOrders\\DeliveryOrderStateMachine constructor expects App\\Enums\\DocumentStatus, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/Sales/DeliveryOrders/DeliveryOrderStateMachine.php
-
-		-
-			message: '#^Property App\\Models\\Sales\\DeliveryOrder\:\:\$status \(string\) does not accept App\\Enums\\DocumentStatus\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Domain/Sales/DeliveryOrders/DeliveryOrderStateMachine.php
-
-		-
-			message: '#^Parameter \$dueDate of class App\\Domain\\Sales\\Invoices\\Events\\InvoiceOverdue constructor expects Carbon\\Carbon, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/Sales/Invoices/Events/InvoiceOverdue.php
-
-		-
-			message: '#^Cannot call method isPast\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 2
-			path: app/Domain/Sales/Invoices/InvoiceStateMachine.php
-
-		-
-			message: '#^Parameter \#1 \$initialStatus of method App\\Domain\\Core\\AbstractStateMachine\:\:__construct\(\) expects App\\Enums\\DocumentStatus, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/Sales/Invoices/InvoiceStateMachine.php
-
-		-
-			message: '#^Property App\\Models\\Sales\\Invoice\:\:\$status \(string\) does not accept App\\Enums\\DocumentStatus\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Domain/Sales/Invoices/InvoiceStateMachine.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Sales\\Quotation\:\:\$total_amount\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domain/Sales/Quotations/Events/QuotationApproved.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Sales\\Quotation\:\:\$total_amount\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domain/Sales/Quotations/Events/QuotationConverted.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Sales\\Quotation\:\:\$total_amount\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domain/Sales/Quotations/Events/QuotationExpired.php
-
-		-
-			message: '#^Parameter \$validUntil of class App\\Domain\\Sales\\Quotations\\Events\\QuotationExpired constructor expects Carbon\\Carbon, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/Sales/Quotations/Events/QuotationExpired.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Sales\\Quotation\:\:\$total_amount\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domain/Sales/Quotations/Events/QuotationLost.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Sales\\Quotation\:\:\$total_amount\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domain/Sales/Quotations/Events/QuotationRejected.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Sales\\Quotation\:\:\$total_amount\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domain/Sales/Quotations/Events/QuotationSubmitted.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Sales\\Quotation\:\:\$total_amount\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domain/Sales/Quotations/Events/QuotationWon.php
-
-		-
-			message: '#^Cannot call method diffInDays\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Domain/Sales/Quotations/FollowUpManager.php
-
-		-
-			message: '#^Cannot call method isPast\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 2
-			path: app/Domain/Sales/Quotations/FollowUpManager.php
-
-		-
-			message: '#^Property App\\Models\\Sales\\Quotation\:\:\$last_contacted_at \(string\|null\) does not accept Illuminate\\Support\\Carbon\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Domain/Sales/Quotations/FollowUpManager.php
-
-		-
-			message: '#^Property App\\Models\\Sales\\Quotation\:\:\$next_follow_up_at \(string\|null\) does not accept Illuminate\\Support\\Carbon\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Domain/Sales/Quotations/FollowUpManager.php
-
-		-
-			message: '#^Cannot access property \$value on string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Domain/Sales/Quotations/OutcomeManager.php
-
-		-
-			message: '#^Property App\\Models\\Sales\\Quotation\:\:\$outcome_at \(string\|null\) does not accept Illuminate\\Support\\Carbon\.$#'
-			identifier: assign.propertyType
-			count: 2
-			path: app/Domain/Sales/Quotations/OutcomeManager.php
+			path: app/Domain/Sales/Quotations/QuotationItemCreator.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Domain/Sales/Quotations/QuotationItemCreator.php
-
-		-
-			message: '#^Cannot call method isPast\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 3
-			path: app/Domain/Sales/Quotations/QuotationStateMachine.php
-
-		-
-			message: '#^Parameter \#1 \$initialStatus of class App\\Domain\\Sales\\Quotations\\QuotationStateMachine constructor expects App\\Enums\\DocumentStatus, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/Sales/Quotations/QuotationStateMachine.php
-
-		-
-			message: '#^Parameter \#6 \$validUntil of class App\\Domain\\Sales\\Quotations\\Events\\QuotationExpired constructor expects Carbon\\Carbon, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/Sales/Quotations/QuotationStateMachine.php
-
-		-
-			message: '#^Property App\\Models\\Sales\\Quotation\:\:\$status \(string\) does not accept App\\Enums\\DocumentStatus\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Domain/Sales/Quotations/QuotationStateMachine.php
 
 		-
 			message: '#^Cannot call method count\(\) on bool\.$#'
@@ -349,18 +67,6 @@ parameters:
 			path: app/Domain/Shared/Approval/AmountBasedApprovalStrategy.php
 
 		-
-			message: '#^Parameter \#1 \$initialStatus of class App\\Domain\\Solar\\Proposals\\SolarProposalStateMachine constructor expects App\\Enums\\DocumentStatus, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/Solar/Proposals/SolarProposalStateMachine.php
-
-		-
-			message: '#^Property App\\Models\\Solar\\SolarProposal\:\:\$status \(''accepted''\|''draft''\|''expired''\|''rejected''\|''sent''\) does not accept App\\Enums\\DocumentStatus\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Domain/Solar/Proposals/SolarProposalStateMachine.php
-
-		-
 			message: '#^Using nullsafe property access "\?\-\>value" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 2
@@ -385,6 +91,18 @@ parameters:
 			path: app/Exports/Sheets/SolarProposalDetailsSheet.php
 
 		-
+			message: '#^Binary operation "\*" between non\-falsy\-string and 100 results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: app/Exports/Sheets/SolarProposalDetailsSheet.php
+
+		-
+			message: '#^Parameter \#1 \$num of function number_format expects float, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Exports/Sheets/SolarProposalDetailsSheet.php
+
+		-
 			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
@@ -395,12 +113,6 @@ parameters:
 			identifier: array.duplicateKey
 			count: 1
 			path: app/Exports/Sheets/SolarProposalProjectionsSheet.php
-
-		-
-			message: '#^Cannot call method format\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Exports/Sheets/SolarProposalSummarySheet.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
@@ -481,24 +193,6 @@ parameters:
 			path: app/Http/Controllers/Api/V1/DashboardController.php
 
 		-
-			message: '#^Cannot call method toDateString\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 4
-			path: app/Http/Controllers/Api/V1/ExportController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Purchasing\\Bill\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Http/Controllers/Api/V1/ExportController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Sales\\Invoice\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Http/Controllers/Api/V1/ExportController.php
-
-		-
 			message: '''
 				#^PHPDoc tag @return has invalid value \(JsonResponse\{
 				    modules\: array\<string, bool\>,
@@ -515,12 +209,6 @@ parameters:
 			identifier: argument.type
 			count: 2
 			path: app/Http/Controllers/Api/V1/InvoiceController.php
-
-		-
-			message: '#^Cannot call method isPast\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Http/Controllers/Api/V1/RecurringTemplateController.php
 
 		-
 			message: '#^Access to an undefined property App\\Models\\Contacts\\Contact\:\:\$active_work_orders_count\.$#'
@@ -1321,12 +1009,6 @@ parameters:
 			path: app/Http/Resources/Api/V1/BomVariantGroupResource.php
 
 		-
-			message: '#^Cannot call method toDateString\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 2
-			path: app/Http/Resources/Api/V1/BudgetResource.php
-
-		-
 			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
 			identifier: method.nonObject
 			count: 1
@@ -1951,19 +1633,7 @@ parameters:
 			path: app/Http/Resources/Api/V1/DownPaymentResource.php
 
 		-
-			message: '#^Cannot call method toDateString\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 2
-			path: app/Http/Resources/Api/V1/FiscalPeriodResource.php
-
-		-
-			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Http/Resources/Api/V1/FiscalPeriodResource.php
-
-		-
-			message: '#^Using nullsafe method call on non\-nullable type string\. Use \-\> instead\.$#'
+			message: '#^Using nullsafe method call on non\-nullable type Carbon\\Carbon\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 2
 			path: app/Http/Resources/Api/V1/FiscalPeriodResource.php
@@ -2593,49 +2263,7 @@ parameters:
 			path: app/Http/Resources/Api/V1/InvoiceItemResource.php
 
 		-
-			message: '#^Cannot access property \$value on string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Http/Resources/Api/V1/InvoiceResource.php
-
-		-
-			message: '#^Cannot call method color\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Http/Resources/Api/V1/InvoiceResource.php
-
-		-
-			message: '#^Cannot call method isEditable\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Http/Resources/Api/V1/InvoiceResource.php
-
-		-
-			message: '#^Cannot call method isTerminal\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Http/Resources/Api/V1/InvoiceResource.php
-
-		-
-			message: '#^Cannot call method label\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Http/Resources/Api/V1/InvoiceResource.php
-
-		-
-			message: '#^Cannot call method toDateString\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 2
-			path: app/Http/Resources/Api/V1/InvoiceResource.php
-
-		-
-			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Http/Resources/Api/V1/InvoiceResource.php
-
-		-
-			message: '#^Using nullsafe method call on non\-nullable type string\. Use \-\> instead\.$#'
+			message: '#^Using nullsafe method call on non\-nullable type Carbon\\Carbon\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 2
 			path: app/Http/Resources/Api/V1/InvoiceResource.php
@@ -8017,36 +7645,6 @@ parameters:
 			path: app/Http/Resources/Api/V1/WorkOrderItemResource.php
 
 		-
-			message: '#^Cannot access property \$value on string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Http/Resources/Api/V1/WorkOrderResource.php
-
-		-
-			message: '#^Cannot call method color\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Http/Resources/Api/V1/WorkOrderResource.php
-
-		-
-			message: '#^Cannot call method label\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Http/Resources/Api/V1/WorkOrderResource.php
-
-		-
-			message: '#^Cannot call method toDateString\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 4
-			path: app/Http/Resources/Api/V1/WorkOrderResource.php
-
-		-
-			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 4
-			path: app/Http/Resources/Api/V1/WorkOrderResource.php
-
-		-
 			message: '#^Instanceof between App\\Domain\\Manufacturing\\SubcontractorWorkOrders\\Events\\SubcontractorWorkOrderCancelled and App\\Domain\\Manufacturing\\SubcontractorWorkOrders\\Events\\SubcontractorWorkOrderCancelled will always evaluate to true\.$#'
 			identifier: instanceof.alwaysTrue
 			count: 1
@@ -8069,12 +7667,6 @@ parameters:
 			identifier: instanceof.alwaysTrue
 			count: 1
 			path: app/Infrastructure/Listeners/Sales/LogDeliveryOrderActivity.php
-
-		-
-			message: '#^Cannot call method format\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Infrastructure/Listeners/Sales/SendInvoicePaidNotification.php
 
 		-
 			message: '#^Method App\\Infrastructure\\Repositories\\EloquentRepository\:\:all\(\) should return Illuminate\\Support\\Collection\<int, TModel of Illuminate\\Database\\Eloquent\\Model\> but returns Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
@@ -8105,12 +7697,6 @@ parameters:
 			identifier: return.type
 			count: 1
 			path: app/Infrastructure/Repositories/EloquentRepository.php
-
-		-
-			message: '#^Method App\\Infrastructure\\Repositories\\InMemory\\InMemoryRepository\<App\\Models\\Sales\\Invoice\>\:\:findBy\(\) invoked with 2 parameters, 1 required\.$#'
-			identifier: arguments.count
-			count: 1
-			path: app/Infrastructure/Repositories/InMemory/InMemoryInvoiceRepository.php
 
 		-
 			message: '#^Call to an undefined method App\\Contracts\\Repositories\\SpecificationInterface\:\:isSatisfiedBy\(\)\.$#'
@@ -8147,24 +7733,6 @@ parameters:
 			identifier: return.type
 			count: 1
 			path: app/Models/Accounting/ExchangeRate.php
-
-		-
-			message: '#^Cannot access property \$month on string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Models/Accounting/FiscalPeriod.php
-
-		-
-			message: '#^Cannot call method copy\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Models/Accounting/FiscalPeriod.php
-
-		-
-			message: '#^Method App\\Models\\Accounting\\FiscalPeriod\:\:getStatus\(\) should return App\\Domain\\Accounting\\FiscalPeriods\\Enums\\FiscalPeriodStatus but returns string\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Models/Accounting/FiscalPeriod.php
 
 		-
 			message: '#^Class App\\Models\\Contacts\\RecurringTemplate not found\.$#'
@@ -8365,14 +7933,14 @@ parameters:
 			path: app/Models/Inventory/Warehouse.php
 
 		-
-			message: '#^Cannot call method diffInDays\(\) on string\.$#'
-			identifier: method.nonObject
+			message: '#^Property App\\Models\\Manufacturing\\MaterialRequisition\:\:\$total_quantity \(string\) does not accept float\.$#'
+			identifier: assign.propertyType
 			count: 1
-			path: app/Models/Projects/Project.php
+			path: app/Models/Manufacturing/MaterialRequisition.php
 
 		-
-			message: '#^Cannot call method isPast\(\) on string\.$#'
-			identifier: method.nonObject
+			message: '#^Property App\\Models\\Projects\\Project\:\:\$profit_margin \(string\) does not accept float\|int\.$#'
+			identifier: assign.propertyType
 			count: 1
 			path: app/Models/Projects/Project.php
 
@@ -8401,21 +7969,21 @@ parameters:
 			path: app/Models/Projects/ProjectRevenue.php
 
 		-
-			message: '#^Cannot call method diffInDays\(\) on string\.$#'
-			identifier: method.nonObject
+			message: '#^Binary operation "\*" between int and string results in an error\.$#'
+			identifier: binaryOp.invalid
 			count: 1
 			path: app/Models/Purchasing/Bill.php
 
 		-
-			message: '#^Cannot call method isFuture\(\) on string\.$#'
-			identifier: method.nonObject
+			message: '#^Parameter \#2 \$taxRate of method App\\Contracts\\Sales\\InvoiceCalculatorInterface\:\:calculate\(\) expects float, string given\.$#'
+			identifier: argument.type
 			count: 1
 			path: app/Models/Purchasing/Bill.php
 
 		-
-			message: '#^Cannot call method isPast\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 2
+			message: '#^Parameter \#5 \$exchangeRate of method App\\Contracts\\Sales\\InvoiceCalculatorInterface\:\:calculate\(\) expects float, string given\.$#'
+			identifier: argument.type
+			count: 1
 			path: app/Models/Purchasing/Bill.php
 
 		-
@@ -8431,112 +7999,52 @@ parameters:
 			path: app/Models/Purchasing/GoodsReceiptNote.php
 
 		-
-			message: '#^Cannot call method label\(\) on string\.$#'
-			identifier: method.nonObject
+			message: '#^Parameter \#2 \$taxRate of method App\\Contracts\\Purchasing\\PurchaseOrderCalculatorInterface\:\:calculate\(\) expects float, string given\.$#'
+			identifier: argument.type
 			count: 1
 			path: app/Models/Purchasing/PurchaseOrder.php
 
 		-
-			message: '#^Cannot call method copy\(\) on string\.$#'
-			identifier: method.nonObject
+			message: '#^Parameter \#4 \$discountValue of method App\\Contracts\\Purchasing\\PurchaseOrderCalculatorInterface\:\:calculate\(\) expects float\|null, string\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Models/Purchasing/PurchaseOrder.php
+
+		-
+			message: '#^Parameter \#6 \$exchangeRate of method App\\Contracts\\Purchasing\\PurchaseOrderCalculatorInterface\:\:calculate\(\) expects float, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Models/Purchasing/PurchaseOrder.php
+
+		-
+			message: '#^Binary operation "\*" between int and string results in an error\.$#'
+			identifier: binaryOp.invalid
 			count: 1
 			path: app/Models/Sales/Invoice.php
 
 		-
-			message: '#^Cannot call method diffInDays\(\) on string\.$#'
-			identifier: method.nonObject
+			message: '#^Parameter \#2 \$taxRate of method App\\Contracts\\Sales\\InvoiceCalculatorInterface\:\:calculate\(\) expects float, string given\.$#'
+			identifier: argument.type
 			count: 1
 			path: app/Models/Sales/Invoice.php
 
 		-
-			message: '#^Cannot call method isFuture\(\) on string\.$#'
-			identifier: method.nonObject
+			message: '#^Parameter \#5 \$exchangeRate of method App\\Contracts\\Sales\\InvoiceCalculatorInterface\:\:calculate\(\) expects float, string given\.$#'
+			identifier: argument.type
 			count: 1
 			path: app/Models/Sales/Invoice.php
 
 		-
-			message: '#^Cannot call method isPast\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 2
+			message: '#^Property App\\Models\\Sales\\Invoice\:\:\$early_discount_percent \(string\|null\) does not accept float\.$#'
+			identifier: assign.propertyType
+			count: 1
 			path: app/Models/Sales/Invoice.php
-
-		-
-			message: '#^Cannot call method diffInDays\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Models/Sales/Quotation.php
-
-		-
-			message: '#^Cannot call method isPast\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Models/Sales/Quotation.php
-
-		-
-			message: '#^Cannot call method label\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Models/Sales/Quotation.php
-
-		-
-			message: '#^Cannot call method copy\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 5
-			path: app/Models/Shared/RecurringTemplate.php
-
-		-
-			message: '#^Cannot call method isFuture\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Models/Shared/RecurringTemplate.php
-
-		-
-			message: '#^Cannot call method isPast\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Models/Shared/RecurringTemplate.php
 
 		-
 			message: '#^Method App\\Models\\Solar\\PlnTariff\:\:getGroupedByType\(\) should return Illuminate\\Support\\Collection\<string, Illuminate\\Support\\Collection\<int, App\\Models\\Solar\\PlnTariff\>\> but returns Illuminate\\Database\\Eloquent\\Collection\<\(int\|string\), Illuminate\\Database\\Eloquent\\Collection\<int, static\(App\\Models\\Solar\\PlnTariff\)\>\>\.$#'
 			identifier: return.type
 			count: 1
 			path: app/Models/Solar/PlnTariff.php
-
-		-
-			message: '#^Cannot call method isPast\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 3
-			path: app/Models/Solar/SolarProposal.php
-
-		-
-			message: '#^Cannot call method label\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Models/Solar/SolarProposal.php
-
-		-
-			message: '#^Class App\\Models\\Solar\\Attachment not found\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Models/Solar/SolarProposal.php
-
-		-
-			message: '#^Method App\\Models\\Solar\\SolarProposal\:\:attachments\(\) has invalid return type App\\Models\\Solar\\Attachment\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Models/Solar/SolarProposal.php
-
-		-
-			message: '#^Method App\\Models\\Solar\\SolarProposal\:\:attachments\(\) should return Illuminate\\Database\\Eloquent\\Relations\\MorphMany\<App\\Models\\Solar\\Attachment, \$this\(App\\Models\\Solar\\SolarProposal\)\> but returns Illuminate\\Database\\Eloquent\\Relations\\MorphMany\<Illuminate\\Database\\Eloquent\\Model, \$this\(App\\Models\\Solar\\SolarProposal\)\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Models/Solar/SolarProposal.php
-
-		-
-			message: '#^Parameter \#1 \$related of method Illuminate\\Database\\Eloquent\\Model\:\:morphMany\(\) expects class\-string\<Illuminate\\Database\\Eloquent\\Model\>, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Models/Solar/SolarProposal.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$bill_number\.$#'
@@ -8569,12 +8077,6 @@ parameters:
 			path: app/Notifications/OverdueNotice.php
 
 		-
-			message: '#^Cannot call method format\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Notifications/OverdueNotice.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$bill_number\.$#'
 			identifier: property.notFound
 			count: 2
@@ -8596,12 +8098,6 @@ parameters:
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:getOutstandingAmount\(\)\.$#'
 			identifier: method.notFound
 			count: 2
-			path: app/Notifications/PaymentReminderNotification.php
-
-		-
-			message: '#^Cannot call method format\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
 			path: app/Notifications/PaymentReminderNotification.php
 
 		-
@@ -8641,18 +8137,6 @@ parameters:
 			path: app/Services/Accounting/AccountBalanceService.php
 
 		-
-			message: '#^Cannot access property \$month on string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Services/Accounting/BudgetService.php
-
-		-
-			message: '#^Cannot access property \$year on string\.$#'
-			identifier: property.nonObject
-			count: 3
-			path: app/Services/Accounting/BudgetService.php
-
-		-
 			message: '#^Method App\\Services\\Accounting\\BudgetService\:\:getBudgetVsActual\(\) should return Illuminate\\Support\\Collection\<int, object\> but returns Illuminate\\Support\\Collection\<int, object\{account_id\: int, account_code\: string, account_name\: string, account_type\: string, budget_amount\: int, actual_amount\: int, variance\: int, variance_percent\: 0\|float, is_over_budget\: bool\}&stdClass\>\.$#'
 			identifier: return.type
 			count: 1
@@ -8668,19 +8152,7 @@ parameters:
 			message: '#^Cannot call method toDateString\(\) on string\.$#'
 			identifier: method.nonObject
 			count: 1
-			path: app/Services/Accounting/FiscalPeriodService.php
-
-		-
-			message: '#^Cannot call method toDateString\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 3
 			path: app/Services/Accounting/JournalService.php
-
-		-
-			message: '#^Parameter \#1 \$dueDate of method App\\Services\\Accounting\\Reports\\AgingReportService\:\:calculateDaysOverdue\(\) expects DateTimeInterface, string given\.$#'
-			identifier: argument.type
-			count: 4
-			path: app/Services/Accounting/Reports/AgingReportService.php
 
 		-
 			message: '#^Access to an undefined property App\\Models\\Accounting\\BankTransaction\:\:\$count\.$#'
@@ -8749,58 +8221,22 @@ parameters:
 			path: app/Services/Accounting/Reports/FinancialReportService.php
 
 		-
-			message: '#^Cannot call method format\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 6
-			path: app/Services/Accounting/Reports/TaxReportService.php
-
-		-
-			message: '#^Method App\\Services\\Accounting\\Reports\\TaxReportService\:\:getInputTaxList\(\) should return Illuminate\\Support\\Collection\<int, array\> but returns Illuminate\\Support\\Collection\<int, array\{tanggal\: mixed, nomor_faktur_vendor\: string, nomor_internal\: string, nama_penjual\: string, npwp_penjual\: string, dpp\: int, ppn\: int, total\: int\}\>\.$#'
+			message: '#^Method App\\Services\\Accounting\\Reports\\TaxReportService\:\:getInputTaxList\(\) should return Illuminate\\Support\\Collection\<int, array\> but returns Illuminate\\Support\\Collection\<int, array\{tanggal\: string, nomor_faktur_vendor\: string, nomor_internal\: string, nama_penjual\: string, npwp_penjual\: string, dpp\: int, ppn\: int, total\: int\}\>\.$#'
 			identifier: return.type
 			count: 1
 			path: app/Services/Accounting/Reports/TaxReportService.php
 
 		-
-			message: '#^Method App\\Services\\Accounting\\Reports\\TaxReportService\:\:getTaxInvoiceList\(\) should return Illuminate\\Support\\Collection\<int, array\> but returns Illuminate\\Support\\Collection\<int, array\{tanggal\: mixed, nomor_faktur\: string, nama_pembeli\: string, npwp_pembeli\: string, alamat\: string, dpp\: int, ppn\: int, total\: int\}\>\.$#'
+			message: '#^Method App\\Services\\Accounting\\Reports\\TaxReportService\:\:getTaxInvoiceList\(\) should return Illuminate\\Support\\Collection\<int, array\> but returns Illuminate\\Support\\Collection\<int, array\{tanggal\: string, nomor_faktur\: string, nama_pembeli\: string, npwp_pembeli\: string, alamat\: string, dpp\: int, ppn\: int, total\: int\}\>\.$#'
 			identifier: return.type
 			count: 1
 			path: app/Services/Accounting/Reports/TaxReportService.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Purchasing\\Bill\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 3
-			path: app/Services/Accounting/Reports/TaxReportService.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Sales\\Invoice\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 3
-			path: app/Services/Accounting/Reports/TaxReportService.php
-
-		-
-			message: '#^Cannot call method toDateString\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Services/Accounting/Strategies/COGS/COGSOnInvoiceStrategy.php
-
-		-
-			message: '#^Cannot call method toDateString\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 3
-			path: app/Services/Accounting/Strategies/Closing/DirectClosingStrategy.php
 
 		-
 			message: '#^Method App\\Services\\Accounting\\Strategies\\Closing\\DirectClosingStrategy\:\:getAccountBalances\(\) should return Illuminate\\Support\\Collection\<int, object\{account_id\: int, balance\: int\}\> but returns Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Accounting\\JournalEntryLine\>\.$#'
 			identifier: return.type
 			count: 1
 			path: app/Services/Accounting/Strategies/Closing/DirectClosingStrategy.php
-
-		-
-			message: '#^Cannot call method toDateString\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 4
-			path: app/Services/Accounting/Strategies/Closing/IncomeSummaryStrategy.php
 
 		-
 			message: '#^Method App\\Services\\Accounting\\Strategies\\Closing\\IncomeSummaryStrategy\:\:getAccountBalances\(\) should return Illuminate\\Support\\Collection\<int, object\{account_id\: int, balance\: int\}\> but returns Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Accounting\\JournalEntryLine\>\.$#'
@@ -8811,7 +8247,7 @@ parameters:
 		-
 			message: '#^Cannot call method toDateString\(\) on string\.$#'
 			identifier: method.nonObject
-			count: 2
+			count: 1
 			path: app/Services/Accounting/Strategies/Returns/FullReturnJournalStrategy.php
 
 		-
@@ -8823,12 +8259,6 @@ parameters:
 		-
 			message: '#^Access to an undefined property App\\Models\\Accounting\\JournalEntryLine\:\:\$total_debit\.$#'
 			identifier: property.notFound
-			count: 1
-			path: app/Services/Accounting/YearEndCloseService.php
-
-		-
-			message: '#^Cannot call method toDateString\(\) on string\.$#'
-			identifier: method.nonObject
 			count: 1
 			path: app/Services/Accounting/YearEndCloseService.php
 
@@ -8995,12 +8425,6 @@ parameters:
 			path: app/Services/Manufacturing/CostOptimizationService.php
 
 		-
-			message: '#^Property App\\Models\\Manufacturing\\MaterialRequisition\:\:\$issued_at \(string\|null\) does not accept Illuminate\\Support\\Carbon\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Services/Manufacturing/MaterialRequisitionService.php
-
-		-
 			message: '#^Access to an undefined property App\\Models\\Inventory\\Product\:\:\$code\.$#'
 			identifier: property.notFound
 			count: 1
@@ -9025,30 +8449,6 @@ parameters:
 			path: app/Services/Manufacturing/MrpDemandService.php
 
 		-
-			message: '#^Property App\\Models\\Manufacturing\\MrpRun\:\:\$completed_at \(string\|null\) does not accept Illuminate\\Support\\Carbon\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Services/Manufacturing/MrpService.php
-
-		-
-			message: '#^Property App\\Models\\Manufacturing\\MrpRun\:\:\$status \(string\) does not accept App\\Enums\\DocumentStatus\:\:Completed\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Services/Manufacturing/MrpService.php
-
-		-
-			message: '#^Property App\\Models\\Manufacturing\\MrpRun\:\:\$status \(string\) does not accept App\\Enums\\DocumentStatus\:\:Draft\.$#'
-			identifier: assign.propertyType
-			count: 2
-			path: app/Services/Manufacturing/MrpService.php
-
-		-
-			message: '#^Property App\\Models\\Manufacturing\\MrpRun\:\:\$status \(string\) does not accept App\\Enums\\DocumentStatus\:\:Processing\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Services/Manufacturing/MrpService.php
-
-		-
 			message: '#^Comparison operation "\>" between int\<3, max\> and 0 is always true\.$#'
 			identifier: greater.alwaysTrue
 			count: 1
@@ -9061,21 +8461,9 @@ parameters:
 			path: app/Services/Manufacturing/Reports/SubcontractorReportService.php
 
 		-
-			message: '#^Cannot call method diffInDays\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Services/Manufacturing/Reports/SubcontractorReportService.php
-
-		-
 			message: '#^Cannot call method format\(\) on string\.$#'
 			identifier: method.nonObject
-			count: 7
-			path: app/Services/Manufacturing/Reports/SubcontractorReportService.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Manufacturing\\SubcontractorWorkOrder\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 2
+			count: 1
 			path: app/Services/Manufacturing/Reports/SubcontractorReportService.php
 
 		-
@@ -9091,13 +8479,7 @@ parameters:
 			path: app/Services/Manufacturing/Reports/SubcontractorReportService.php
 
 		-
-			message: '#^Cannot call method format\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 7
-			path: app/Services/Manufacturing/Reports/WorkOrderReportService.php
-
-		-
-			message: '#^Method App\\Services\\Manufacturing\\Reports\\WorkOrderReportService\:\:getWorkOrderCostDetail\(\) should return array\{report_name\: string, work_order\: array, cost_breakdown\: array, material_details\: Illuminate\\Support\\Collection, timeline\: array\} but returns array\{report_name\: ''Laporan Detail…'', work_order\: array\{id\: int, wo_number\: string, name\: string, type\: string, status\: string, project\: array\{id\: int, project_number\: string, name\: string\}\|null, product\: array\{id\: int, sku\: string, name\: string\}\|null, quantity_ordered\: float, \.\.\.\}, cost_summary\: array\{estimated\: array\{material\: int, labor\: int, overhead\: int, total\: int\}, actual\: array\{material\: int, labor\: int, overhead\: int, total\: int\}, variance\: array\{material\: int, labor\: int, overhead\: int, total\: int\}, cost_per_unit\: int\}, item_breakdown\: Illuminate\\Support\\Collection\<int, array\{id\: int, type\: string, product_name\: string, quantity_required\: float, quantity_consumed\: float, unit\: string\|null, estimated_cost\: int, actual_cost\: int, \.\.\.\}\>, timeline\: array\{planned_start\: mixed, planned_end\: mixed, actual_start\: mixed, actual_end\: mixed, confirmed_at\: mixed, started_at\: mixed, completed_at\: mixed\}\}\.$#'
+			message: '#^Method App\\Services\\Manufacturing\\Reports\\WorkOrderReportService\:\:getWorkOrderCostDetail\(\) should return array\{report_name\: string, work_order\: array, cost_breakdown\: array, material_details\: Illuminate\\Support\\Collection, timeline\: array\} but returns array\{report_name\: ''Laporan Detail…'', work_order\: array\{id\: int, wo_number\: string, name\: string, type\: string, status\: App\\Enums\\DocumentStatus, project\: array\{id\: int, project_number\: string, name\: string\}\|null, product\: array\{id\: int, sku\: string, name\: string\}\|null, quantity_ordered\: float, \.\.\.\}, cost_summary\: array\{estimated\: array\{material\: int, labor\: int, overhead\: int, total\: int\}, actual\: array\{material\: int, labor\: int, overhead\: int, total\: int\}, variance\: array\{material\: int, labor\: int, overhead\: int, total\: int\}, cost_per_unit\: int\}, item_breakdown\: Illuminate\\Support\\Collection\<int, array\{id\: int, type\: string, product_name\: string, quantity_required\: float, quantity_consumed\: float, unit\: string\|null, estimated_cost\: int, actual_cost\: int, \.\.\.\}\>, timeline\: array\{planned_start\: non\-falsy\-string\|null, planned_end\: non\-falsy\-string\|null, actual_start\: non\-falsy\-string\|null, actual_end\: non\-falsy\-string\|null, confirmed_at\: non\-falsy\-string\|null, started_at\: non\-falsy\-string\|null, completed_at\: non\-falsy\-string\|null\}\}\.$#'
 			identifier: return.type
 			count: 1
 			path: app/Services/Manufacturing/Reports/WorkOrderReportService.php
@@ -9107,12 +8489,6 @@ parameters:
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Services/Manufacturing/Reports/WorkOrderReportService.php
-
-		-
-			message: '#^Property App\\Models\\Manufacturing\\SubcontractorWorkOrder\:\:\$status \(string\) does not accept App\\Enums\\DocumentStatus\:\:Draft\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Services/Manufacturing/SubcontractorService.php
 
 		-
 			message: '#^Property App\\Models\\Shared\\SubcontractorInvoice\:\:\$approved_at \(string\|null\) does not accept Illuminate\\Support\\Carbon\.$#'
@@ -9157,9 +8533,15 @@ parameters:
 			path: app/Services/Manufacturing/WorkOrderMaterialService.php
 
 		-
-			message: '#^Property App\\Models\\Manufacturing\\WorkOrder\:\:\$status \(string\) does not accept App\\Enums\\DocumentStatus\:\:Draft\.$#'
+			message: '#^Property App\\Models\\Manufacturing\\WorkOrder\:\:\$quantity_completed \(string\) does not accept float\.$#'
 			identifier: assign.propertyType
-			count: 2
+			count: 1
+			path: app/Services/Manufacturing/WorkOrderService.php
+
+		-
+			message: '#^Property App\\Models\\Manufacturing\\WorkOrder\:\:\$quantity_scrapped \(string\) does not accept float\.$#'
+			identifier: assign.propertyType
+			count: 1
 			path: app/Services/Manufacturing/WorkOrderService.php
 
 		-
@@ -9187,26 +8569,20 @@ parameters:
 			path: app/Services/Projects/ProjectReportService.php
 
 		-
-			message: '#^Cannot call method diffInMonths\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
+			message: '#^Binary operation "/" between int and string results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 2
 			path: app/Services/Projects/ProjectReportService.php
 
 		-
 			message: '#^Cannot call method format\(\) on string\.$#'
 			identifier: method.nonObject
-			count: 7
+			count: 1
 			path: app/Services/Projects/ProjectReportService.php
 
 		-
 			message: '#^Method App\\Services\\Projects\\ProjectReportService\:\:getProjectCostAnalysis\(\) should return array\{report_name\: string, period\: array\{start\: string\|null, end\: string\|null\}, by_type\: array, by_project\: Illuminate\\Support\\Collection, totals\: array\} but returns array\{report_name\: ''Laporan Analisis…'', period\: array\{start\: string\|null, end\: string\|null\}, by_type\: Illuminate\\Support\\Collection\<string, array\{total\: int, count\: int, label\: string\}\>, by_project\: Illuminate\\Support\\Collection\<int, array\{project_id\: int, project_number\: string\|null, project_name\: string\|null, total_cost\: int\}\>, totals\: array\{grand_total\: int, cost_types_count\: int\<0, max\>, projects_count\: int\<0, max\>\}\}\.$#'
 			identifier: return.type
-			count: 1
-			path: app/Services/Projects/ProjectReportService.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Projects\\Project\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
 			count: 1
 			path: app/Services/Projects/ProjectReportService.php
 
@@ -9217,13 +8593,7 @@ parameters:
 			path: app/Services/Projects/ProjectReportService.php
 
 		-
-			message: '#^Cannot call method format\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 4
-			path: app/Services/Projects/ProjectService.php
-
-		-
-			message: '#^Property App\\Models\\Projects\\Project\:\:\$status \(string\) does not accept App\\Enums\\DocumentStatus\:\:Planning\.$#'
+			message: '#^Property App\\Models\\Projects\\Project\:\:\$progress_percentage \(string\) does not accept float\|int\.$#'
 			identifier: assign.propertyType
 			count: 1
 			path: app/Services/Projects/ProjectService.php
@@ -9235,21 +8605,9 @@ parameters:
 			path: app/Services/Purchasing/BillService.php
 
 		-
-			message: '#^Cannot call method isPast\(\) on string\.$#'
-			identifier: method.nonObject
+			message: '#^Method App\\Services\\Purchasing\\PurchaseOrderReceivingService\:\:getReceivingSummary\(\) should return array\{status\: string, progress\: float, is_fully_received\: bool, has_received_items\: bool, first_received_at\: string\|null, fully_received_at\: string\|null\} but returns array\{status\: App\\Enums\\DocumentStatus, progress\: float, is_fully_received\: bool, has_received_items\: bool, first_received_at\: string\|null, fully_received_at\: string\|null\}\.$#'
+			identifier: return.type
 			count: 1
-			path: app/Services/Purchasing/BillService.php
-
-		-
-			message: '#^Cannot call method label\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 3
-			path: app/Services/Purchasing/BillService.php
-
-		-
-			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 2
 			path: app/Services/Purchasing/PurchaseOrderReceivingService.php
 
 		-
@@ -9289,7 +8647,7 @@ parameters:
 			path: app/Services/Sales/DeliveryOrderService.php
 
 		-
-			message: '#^Property App\\Models\\Sales\\DeliveryOrder\:\:\$status \(string\) does not accept App\\Enums\\DocumentStatus\:\:Draft\.$#'
+			message: '#^Property App\\Models\\Sales\\DeliveryOrder\:\:\$do_date \(Carbon\\Carbon\) does not accept string\.$#'
 			identifier: assign.propertyType
 			count: 1
 			path: app/Services/Sales/DeliveryOrderService.php
@@ -9307,27 +8665,15 @@ parameters:
 			path: app/Services/Sales/DownPaymentService.php
 
 		-
-			message: '#^Method App\\Services\\Sales\\InvoicePaymentService\:\:getPaymentSummary\(\) should return array\{total\: int, paid\: int, outstanding\: int, status\: App\\Enums\\DocumentStatus, is_overdue\: bool, days_overdue\: int, early_discount_available\: bool, early_discount_amount\: int\} but returns array\{total\: int, paid\: int, outstanding\: int, status\: string, is_overdue\: bool, days_overdue\: int, early_discount_available\: bool, early_discount_amount\: int\}\.$#'
-			identifier: return.type
+			message: '#^Property App\\Models\\Sales\\DownPayment\:\:\$refunded_at \(string\|null\) does not accept Illuminate\\Support\\Carbon\.$#'
+			identifier: assign.propertyType
 			count: 1
-			path: app/Services/Sales/InvoicePaymentService.php
+			path: app/Services/Sales/DownPaymentService.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 1
-			path: app/Services/Sales/InvoiceService.php
-
-		-
-			message: '#^Cannot call method isPast\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Services/Sales/InvoiceService.php
-
-		-
-			message: '#^Cannot call method label\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 5
 			path: app/Services/Sales/InvoiceService.php
 
 		-
@@ -9355,64 +8701,22 @@ parameters:
 			path: app/Services/Sales/OverdueService.php
 
 		-
-			message: '#^Cannot call method format\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Services/Sales/Quotation/QuotationWorkflowService.php
-
-		-
-			message: '#^Property App\\Models\\Sales\\Quotation\:\:\$outcome_at \(string\|null\) does not accept Illuminate\\Support\\Carbon\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Services/Sales/QuotationConversionService.php
-
-		-
-			message: '#^Cannot call method diffInDays\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Services/Sales/QuotationFollowUpService.php
-
-		-
-			message: '#^Cannot call method isPast\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Services/Sales/QuotationFollowUpService.php
-
-		-
-			message: '#^Property App\\Models\\Sales\\Quotation\:\:\$last_contacted_at \(string\|null\) does not accept Illuminate\\Support\\Carbon\.$#'
+			message: '#^Property App\\Models\\Sales\\Quotation\:\:\$next_follow_up_at \(Carbon\\Carbon\|null\) does not accept DateTime\.$#'
 			identifier: assign.propertyType
 			count: 1
 			path: app/Services/Sales/QuotationFollowUpService.php
 
 		-
-			message: '#^Property App\\Models\\Sales\\Quotation\:\:\$next_follow_up_at \(string\|null\) does not accept DateTime\.$#'
+			message: '#^Property App\\Models\\Sales\\Quotation\:\:\$next_follow_up_at \(Carbon\\Carbon\|null\) does not accept DateTime\|string\.$#'
 			identifier: assign.propertyType
 			count: 1
 			path: app/Services/Sales/QuotationFollowUpService.php
 
 		-
-			message: '#^Property App\\Models\\Sales\\Quotation\:\:\$next_follow_up_at \(string\|null\) does not accept Illuminate\\Support\\Carbon\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Services/Sales/QuotationFollowUpService.php
-
-		-
-			message: '#^Property App\\Models\\Sales\\Quotation\:\:\$outcome_at \(string\|null\) does not accept Illuminate\\Support\\Carbon\.$#'
-			identifier: assign.propertyType
+			message: '#^Binary operation "/" between string and 100 results in an error\.$#'
+			identifier: binaryOp.invalid
 			count: 2
-			path: app/Services/Sales/QuotationOutcomeService.php
-
-		-
-			message: '#^Argument of an invalid type string supplied for foreach, only iterables are supported\.$#'
-			identifier: foreach.nonIterable
-			count: 4
 			path: app/Services/Sales/RecurringService.php
-
-		-
-			message: '#^Cannot call method copy\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 3
-			path: app/Services/Sales/ReminderService.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
@@ -9457,15 +8761,21 @@ parameters:
 			path: app/Services/Shared/PaymentService.php
 
 		-
-			message: '#^Property App\\Models\\Solar\\SolarProposal\:\:\$environmental_impact \(string\|null\) does not accept array\<string, float\|int\>\.$#'
+			message: '#^Property App\\Models\\Solar\\SolarProposal\:\:\$annual_production_kwh \(string\|null\) does not accept float\.$#'
 			identifier: assign.propertyType
 			count: 1
 			path: app/Services/Solar/SolarProposalService.php
 
 		-
-			message: '#^Property App\\Models\\Solar\\SolarProposal\:\:\$financial_analysis \(string\|null\) does not accept array\<string, array\<int, array\<string, float\|int\>\>\|float\|int\|null\>\.$#'
+			message: '#^Property App\\Models\\Solar\\SolarProposal\:\:\$system_capacity_kwp \(string\|null\) does not accept float\.$#'
 			identifier: assign.propertyType
 			count: 1
+			path: app/Services/Solar/SolarProposalService.php
+
+		-
+			message: '#^Property App\\Models\\Solar\\SolarProposal\:\:\$system_capacity_kwp \(string\|null\) does not accept float\|null\.$#'
+			identifier: assign.propertyType
+			count: 2
 			path: app/Services/Solar/SolarProposalService.php
 
 		-

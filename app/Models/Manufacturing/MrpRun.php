@@ -5,12 +5,37 @@ namespace App\Models\Manufacturing;
 use App\Enums\DocumentStatus;
 use App\Models\Inventory\Warehouse;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property string $run_number
+ * @property string|null $name
+ * @property Carbon $planning_horizon_start
+ * @property Carbon $planning_horizon_end
+ * @property DocumentStatus $status
+ * @property array<mixed>|null $parameters
+ * @property int|null $warehouse_id
+ * @property int $total_products_analyzed
+ * @property int $total_demands
+ * @property int $total_shortages
+ * @property int $total_purchase_suggestions
+ * @property int $total_work_order_suggestions
+ * @property int $total_subcontract_suggestions
+ * @property int|null $created_by
+ * @property Carbon|null $completed_at
+ * @property Carbon|null $applied_at
+ * @property int|null $applied_by
+ * @property string|null $notes
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
+ */
 class MrpRun extends Model
 {
     use HasFactory, SoftDeletes;

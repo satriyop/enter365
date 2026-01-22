@@ -16,6 +16,7 @@ use App\Domain\Sales\Invoices\Events\InvoiceOverdue;
 use App\Domain\Sales\Invoices\Events\InvoicePartiallyPaid;
 use App\Domain\Sales\Invoices\Events\InvoiceSent;
 use App\Domain\Sales\Invoices\Events\InvoiceVoided;
+use App\Domain\Sales\Invoices\InvoiceDomainFactory;
 use App\Enums\DocumentStatus;
 use App\Exceptions\Domain\DocumentLockedException;
 use App\Exceptions\Domain\StateTransitionException;
@@ -39,18 +40,22 @@ class InvoiceService extends AbstractDocumentService implements InvoiceServiceIn
 
     private COGSRecognitionStrategy $cogsStrategy;
 
+    private InvoiceDomainFactory $domainFactory;
+
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger,
         InvoiceRepositoryInterface $repository,
         DocumentNumberGeneratorInterface $numberGenerator,
         JournalServiceInterface $journalService,
-        COGSRecognitionStrategy $cogsStrategy
+        COGSRecognitionStrategy $cogsStrategy,
+        InvoiceDomainFactory $domainFactory
     ) {
         parent::__construct($eventDispatcher, $logger, $repository, $numberGenerator);
 
         $this->journalService = $journalService;
         $this->cogsStrategy = $cogsStrategy;
+        $this->domainFactory = $domainFactory;
     }
 
     protected function getDocumentNumberField(): string
@@ -187,7 +192,7 @@ class InvoiceService extends AbstractDocumentService implements InvoiceServiceIn
     public function post(Invoice $invoice): ServiceResult
     {
         return $this->executeInTransaction('post', function () use ($invoice) {
-            if (! $invoice->stateMachine()->canPost()) {
+            if (! $this->domainFactory->stateMachine($invoice)->canPost()) {
                 throw StateTransitionException::actionNotAvailable(
                     'posting',
                     $invoice->status->label()
@@ -223,7 +228,7 @@ class InvoiceService extends AbstractDocumentService implements InvoiceServiceIn
     public function void(Invoice $invoice, string $reason): ServiceResult
     {
         return $this->executeInTransaction('void', function () use ($invoice, $reason) {
-            if (! $invoice->stateMachine()->canCancel()) {
+            if (! $this->domainFactory->stateMachine($invoice)->canCancel()) {
                 throw StateTransitionException::actionNotAvailable(
                     'void',
                     $invoice->status->label()
@@ -258,7 +263,7 @@ class InvoiceService extends AbstractDocumentService implements InvoiceServiceIn
     public function markAsPaid(Invoice $invoice): ServiceResult
     {
         return $this->executeInTransaction('mark_paid', function () use ($invoice) {
-            if (! $invoice->stateMachine()->canMarkAsPaid()) {
+            if (! $this->domainFactory->stateMachine($invoice)->canMarkAsPaid()) {
                 throw StateTransitionException::actionNotAvailable(
                     'mark_as_paid',
                     $invoice->status->label()
@@ -286,7 +291,7 @@ class InvoiceService extends AbstractDocumentService implements InvoiceServiceIn
     public function markAsPartial(Invoice $invoice): ServiceResult
     {
         return $this->executeInTransaction('mark_partial', function () use ($invoice) {
-            if (! $invoice->stateMachine()->canMarkAsPartial()) {
+            if (! $this->domainFactory->stateMachine($invoice)->canMarkAsPartial()) {
                 throw StateTransitionException::actionNotAvailable(
                     'mark_as_partial',
                     $invoice->status->label()
@@ -314,7 +319,7 @@ class InvoiceService extends AbstractDocumentService implements InvoiceServiceIn
     public function markAsOverdue(Invoice $invoice): ServiceResult
     {
         return $this->executeInTransaction('mark_overdue', function () use ($invoice) {
-            if (! $invoice->stateMachine()->canMarkAsOverdue()) {
+            if (! $this->domainFactory->stateMachine($invoice)->canMarkAsOverdue()) {
                 throw StateTransitionException::actionNotAvailable(
                     'mark_as_overdue',
                     $invoice->status->label()

@@ -12,12 +12,41 @@ use App\Models\Sales\Quotation;
 use App\Models\User;
 use App\Traits\Filterable;
 use App\Traits\HasStatusHistory;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property string $project_number
+ * @property string $name
+ * @property string|null $description
+ * @property int|null $contact_id
+ * @property int|null $quotation_id
+ * @property Carbon|null $start_date
+ * @property Carbon|null $end_date
+ * @property Carbon|null $actual_start_date
+ * @property Carbon|null $actual_end_date
+ * @property DocumentStatus $status
+ * @property int $budget_amount
+ * @property int $contract_amount
+ * @property int $total_cost
+ * @property int $total_revenue
+ * @property int $gross_profit
+ * @property string $profit_margin
+ * @property string $progress_percentage
+ * @property string $priority
+ * @property string|null $location
+ * @property string|null $notes
+ * @property int|null $manager_id
+ * @property int|null $created_by
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
+ */
 class Project extends Model
 {
     use Filterable, HasFactory, HasStatusHistory, SoftDeletes;

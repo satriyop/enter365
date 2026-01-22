@@ -9,6 +9,7 @@ use App\Models\Shared\Attachment;
 use App\Models\User;
 use App\Traits\Filterable;
 use App\Traits\HasStatusHistory;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,6 +18,49 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property string $po_number
+ * @property int $revision
+ * @property int $contact_id
+ * @property Carbon $po_date
+ * @property Carbon|null $expected_date
+ * @property string|null $reference
+ * @property string|null $subject
+ * @property DocumentStatus $status
+ * @property string $currency
+ * @property string $exchange_rate
+ * @property int $subtotal
+ * @property string|null $discount_type
+ * @property string|null $discount_value
+ * @property int $discount_amount
+ * @property string $tax_rate
+ * @property int $tax_amount
+ * @property int $total
+ * @property int $base_currency_total
+ * @property string|null $notes
+ * @property string|null $terms_conditions
+ * @property string|null $shipping_address
+ * @property Carbon|null $submitted_at
+ * @property int|null $submitted_by
+ * @property Carbon|null $approved_at
+ * @property int|null $approved_by
+ * @property Carbon|null $rejected_at
+ * @property int|null $rejected_by
+ * @property string|null $rejection_reason
+ * @property Carbon|null $cancelled_at
+ * @property int|null $cancelled_by
+ * @property string|null $cancellation_reason
+ * @property Carbon|null $first_received_at
+ * @property Carbon|null $fully_received_at
+ * @property int|null $converted_to_bill_id
+ * @property Carbon|null $converted_at
+ * @property int|null $original_po_id
+ * @property int|null $created_by
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
+ */
 class PurchaseOrder extends Model
 {
     use Filterable, HasFactory, HasStatusHistory, SoftDeletes;

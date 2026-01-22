@@ -8,12 +8,30 @@ use App\Enums\DocumentStatus;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property Carbon $start_date
+ * @property Carbon $end_date
+ * @property FiscalPeriodStatus|null $status
+ * @property bool $is_closed
+ * @property bool $is_locked
+ * @property Carbon|null $closed_at
+ * @property int|null $closed_by
+ * @property int|null $closing_entry_id
+ * @property int|null $retained_earnings_amount
+ * @property string|null $closing_notes
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
+ */
 class FiscalPeriod extends Model
 {
     use HasFactory, SoftDeletes;
