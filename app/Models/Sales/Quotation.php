@@ -13,6 +13,7 @@ use App\Models\Manufacturing\BomVariantGroup;
 use App\Models\Shared\Attachment;
 use App\Models\User;
 use App\Traits\Filterable;
+use App\Traits\HasDocumentDiscount;
 use App\Traits\HasStatusHistory;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -85,7 +86,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class Quotation extends Model
 {
-    use Filterable, HasFactory, HasStatusHistory, SoftDeletes;
+    use Filterable, HasDocumentDiscount, HasFactory, HasStatusHistory, SoftDeletes;
 
     protected $fillable = [
         'quotation_number',
@@ -178,6 +179,23 @@ class Quotation extends Model
             'cancelled_at' => 'datetime',
             'status' => DocumentStatus::class,
         ];
+    }
+
+    /**
+     * Get the discount amount column name for HasDocumentDiscount trait.
+     */
+    protected function getDiscountAmountColumn(): string
+    {
+        return 'discount_amount';
+    }
+
+    /**
+     * Get the total amount column name for HasDocumentDiscount trait.
+     * Note: Quotation uses 'total' instead of 'total_amount'.
+     */
+    protected function getTotalAmountColumn(): string
+    {
+        return 'total';
     }
 
     /**

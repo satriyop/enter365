@@ -13,6 +13,7 @@ use App\Models\Shared\PaymentReminder;
 use App\Models\Shared\RecurringTemplate;
 use App\Models\User;
 use App\Traits\Filterable;
+use App\Traits\HasDocumentDiscount;
 use App\Traits\HasStatusHistory;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -56,7 +57,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class Invoice extends Model
 {
-    use Filterable, HasFactory, HasStatusHistory, SoftDeletes;
+    use Filterable, HasDocumentDiscount, HasFactory, HasStatusHistory, SoftDeletes;
 
     protected $fillable = [
         'invoice_number',
@@ -106,6 +107,22 @@ class Invoice extends Model
             'last_reminder_at' => 'datetime',
             'status' => DocumentStatus::class,
         ];
+    }
+
+    /**
+     * Get the discount amount column name for HasDocumentDiscount trait.
+     */
+    protected function getDiscountAmountColumn(): string
+    {
+        return 'discount_amount';
+    }
+
+    /**
+     * Get the total amount column name for HasDocumentDiscount trait.
+     */
+    protected function getTotalAmountColumn(): string
+    {
+        return 'total_amount';
     }
 
     /**
@@ -194,36 +211,6 @@ class Invoice extends Model
     public function isFullyPaid(): bool
     {
         return $this->paid_amount >= $this->total_amount;
-    }
-
-    /**
-     * Check if early payment discount is available.
-     */
-    public function hasEarlyPaymentDiscount(): bool
-    {
-        return $this->early_discount_percent > 0
-            && $this->early_discount_deadline
-            && $this->early_discount_deadline->isFuture();
-    }
-
-    /**
-     * Calculate early payment discount amount.
-     */
-    public function calculateEarlyDiscountAmount(): int
-    {
-        if (! $this->hasEarlyPaymentDiscount()) {
-            return 0;
-        }
-
-        return (int) round($this->total_amount * ($this->early_discount_percent / 100));
-    }
-
-    /**
-     * Get the discounted total if paid early.
-     */
-    public function getEarlyPaymentTotal(): int
-    {
-        return $this->total_amount - $this->calculateEarlyDiscountAmount();
     }
 
     /**

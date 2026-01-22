@@ -6,6 +6,7 @@ use App\Models\Contacts\Contact;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
 use App\Models\User;
+use App\Traits\HasDocumentDiscount;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -44,7 +45,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class RecurringTemplate extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasDocumentDiscount, HasFactory, SoftDeletes;
 
     public const TYPE_INVOICE = 'invoice';
 
@@ -100,6 +101,23 @@ class RecurringTemplate extends Model
             'auto_post' => 'boolean',
             'auto_send' => 'boolean',
         ];
+    }
+
+    /**
+     * Get the discount amount column name for HasDocumentDiscount trait.
+     */
+    protected function getDiscountAmountColumn(): string
+    {
+        return 'discount_amount';
+    }
+
+    /**
+     * Get the total amount column name for HasDocumentDiscount trait.
+     * Note: RecurringTemplate uses 'amount' not 'total' or 'total_amount'.
+     */
+    protected function getTotalAmountColumn(): string
+    {
+        return 'amount';
     }
 
     /**
