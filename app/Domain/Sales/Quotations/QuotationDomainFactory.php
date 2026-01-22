@@ -111,7 +111,7 @@ class QuotationDomainFactory
         $quotation->subtotal = $totals->subtotal;
         $quotation->discount_amount = $totals->discountAmount;
         $quotation->tax_amount = $totals->taxAmount;
-        $quotation->total = $totals->totalAmount;
+        $quotation->total_amount = $totals->totalAmount;
         $quotation->base_currency_total = $totals->baseCurrencyTotal;
 
         return $quotation;

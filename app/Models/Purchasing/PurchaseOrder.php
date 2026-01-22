@@ -118,7 +118,7 @@ class PurchaseOrder extends Model
             'discount_amount' => 'integer',
             'tax_rate' => 'decimal:2',
             'tax_amount' => 'integer',
-            'total' => 'integer',
+            'total_amount' => 'integer',
             'base_currency_total' => 'integer',
             'submitted_at' => 'datetime',
             'approved_at' => 'datetime',
@@ -129,23 +129,6 @@ class PurchaseOrder extends Model
             'converted_at' => 'datetime',
             'status' => DocumentStatus::class,
         ];
-    }
-
-    /**
-     * Get the discount amount column name for HasDocumentDiscount trait.
-     */
-    protected function getDiscountAmountColumn(): string
-    {
-        return 'discount_amount';
-    }
-
-    /**
-     * Get the total amount column name for HasDocumentDiscount trait.
-     * Note: PurchaseOrder uses 'total' instead of 'total_amount'.
-     */
-    protected function getTotalAmountColumn(): string
-    {
-        return 'total';
     }
 
     /**
@@ -451,7 +434,7 @@ class PurchaseOrder extends Model
         $this->subtotal = $totals->subtotal;
         $this->discount_amount = $totals->discountAmount;
         $this->tax_amount = $totals->taxAmount;
-        $this->total = $totals->totalAmount;
+        $this->total_amount = $totals->totalAmount;
         $this->base_currency_total = $totals->baseCurrencyTotal;
     }
 

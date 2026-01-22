@@ -204,7 +204,7 @@ describe('Quotation CRUD', function () {
         $quotation = Quotation::factory()->draft()->create([
             'subtotal' => 1000000,
             'tax_amount' => 110000,
-            'total' => 1110000,
+            'total_amount' => 1110000,
         ]);
         QuotationItem::factory()->forQuotation($quotation)->create();
 
@@ -384,7 +384,7 @@ describe('Quotation Conversion', function () {
             'subject' => 'Panel Listrik 100A',
             'subtotal' => 5000000,
             'tax_amount' => 550000,
-            'total' => 5550000,
+            'total_amount' => 5550000,
         ]);
         QuotationItem::factory()->forQuotation($quotation)->count(2)->create();
 
@@ -405,7 +405,7 @@ describe('Quotation Conversion', function () {
             'subtotal' => 5000000,
             'tax_rate' => 11,
             'tax_amount' => 550000,
-            'total' => 5550000,
+            'total_amount' => 5550000,
         ]);
         QuotationItem::factory()->forQuotation($quotation)->create([
             'description' => 'MCB 100A',

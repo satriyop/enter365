@@ -337,7 +337,7 @@ describe('Project from Quotation', function () {
     it('can create project from approved quotation', function () {
         $quotation = Quotation::factory()->approved()->create([
             'subject' => 'Solar Panel Installation',
-            'total' => 100000000,
+            'total_amount' => 100000000,
         ]);
         QuotationItem::factory()->forQuotation($quotation)->create();
 
@@ -369,7 +369,7 @@ describe('Project from Quotation', function () {
 
     it('can create project from converted quotation', function () {
         $quotation = Quotation::factory()->converted()->create([
-            'total' => 150000000,
+            'total_amount' => 150000000,
         ]);
         QuotationItem::factory()->forQuotation($quotation)->create();
 

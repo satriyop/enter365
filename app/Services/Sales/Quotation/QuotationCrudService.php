@@ -318,7 +318,7 @@ class QuotationCrudService
         return $this->executeInTransaction('select_variant', function () use ($quotation, $variantOption) {
             $quotation->update([
                 'selected_variant_id' => $variantOption->bom_id,
-                'total' => $variantOption->selling_price,
+                'total_amount' => $variantOption->selling_price,
             ]);
 
             return $this->loadRelations($quotation);

@@ -104,23 +104,6 @@ class RecurringTemplate extends Model
     }
 
     /**
-     * Get the discount amount column name for HasDocumentDiscount trait.
-     */
-    protected function getDiscountAmountColumn(): string
-    {
-        return 'discount_amount';
-    }
-
-    /**
-     * Get the total amount column name for HasDocumentDiscount trait.
-     * Note: RecurringTemplate uses 'amount' not 'total' or 'total_amount'.
-     */
-    protected function getTotalAmountColumn(): string
-    {
-        return 'amount';
-    }
-
-    /**
      * @return BelongsTo<Contact, $this>
      */
     public function contact(): BelongsTo

@@ -27,7 +27,7 @@ class PurchaseOrderDefaults
             'subtotal' => 0,
             'discount_amount' => 0,
             'tax_amount' => 0,
-            'total' => 0,
+            'total_amount' => 0,
             'base_currency_total' => 0,
             'created_by' => $userId,
         ];
@@ -50,7 +50,7 @@ class PurchaseOrderDefaults
             'discount_amount' => $source->discount_amount,
             'tax_rate' => $source->tax_rate,
             'tax_amount' => $source->tax_amount,
-            'total' => $source->total,
+            'total_amount' => $source->total_amount,
             'base_currency_total' => $source->base_currency_total,
             'notes' => $source->notes,
             'terms_conditions' => $source->terms_conditions,

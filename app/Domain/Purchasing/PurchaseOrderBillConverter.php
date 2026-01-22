@@ -40,7 +40,7 @@ class PurchaseOrderBillConverter
             'tax_amount' => $purchaseOrder->tax_amount,
             'tax_rate' => $purchaseOrder->tax_rate,
             'discount_amount' => $purchaseOrder->discount_amount,
-            'total_amount' => $purchaseOrder->total,
+            'total_amount' => $purchaseOrder->total_amount,
             'currency' => $purchaseOrder->currency,
             'exchange_rate' => $purchaseOrder->exchange_rate,
             'base_currency_total' => $purchaseOrder->base_currency_total,

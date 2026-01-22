@@ -309,7 +309,7 @@ class PurchaseOrderService implements PurchaseOrderServiceInterface
             'discount_amount' => $source->discount_amount,
             'tax_rate' => $source->tax_rate,
             'tax_amount' => $source->tax_amount,
-            'total' => $source->total,
+            'total_amount' => $source->total_amount,
             'base_currency_total' => $source->base_currency_total,
             'notes' => $source->notes,
             'terms_conditions' => $source->terms_conditions,

@@ -16,27 +16,31 @@ namespace App\Traits;
  * Usage:
  *   use HasDocumentDiscount;
  *
+ * Override column methods only if using non-standard column names:
  *   protected function getDiscountAmountColumn(): string
  *   {
  *       return 'discount_amount';
- *   }
- *
- *   protected function getTotalAmountColumn(): string
- *   {
- *       return 'total_amount';
  *   }
  */
 trait HasDocumentDiscount
 {
     /**
      * Get the discount amount column name.
+     * Override in model if using non-standard column name.
      */
-    abstract protected function getDiscountAmountColumn(): string;
+    protected function getDiscountAmountColumn(): string
+    {
+        return 'discount_amount';
+    }
 
     /**
      * Get the total amount column name.
+     * Override in model if using non-standard column name.
      */
-    abstract protected function getTotalAmountColumn(): string;
+    protected function getTotalAmountColumn(): string
+    {
+        return 'total_amount';
+    }
 
     /**
      * Get early discount percent column name.

@@ -112,22 +112,6 @@ class Bill extends Model
     }
 
     /**
-     * Get the discount amount column name for HasDocumentDiscount trait.
-     */
-    protected function getDiscountAmountColumn(): string
-    {
-        return 'discount_amount';
-    }
-
-    /**
-     * Get the total amount column name for HasDocumentDiscount trait.
-     */
-    protected function getTotalAmountColumn(): string
-    {
-        return 'total_amount';
-    }
-
-    /**
      * @return BelongsTo<Contact, $this>
      */
     public function contact(): BelongsTo

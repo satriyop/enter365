@@ -65,7 +65,7 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
             'quotation_id' => $this->quotation->id,
             'quotation_number' => $this->quotation->quotation_number,
             'contact_id' => $this->quotation->contact_id,
-            'total_amount' => $this->quotation->total,
+            'total_amount' => $this->quotation->total_amount,
             'currency' => $this->quotation->currency,
         ];
     }
@@ -264,7 +264,7 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
             $this->quotation->id,
             $this->quotation->quotation_number,
             $this->quotation->contact_id,
-            $this->quotation->total,
+            $this->quotation->total_amount,
             $this->quotation->currency,
             $this->getContextUserId(),
             now()
@@ -287,7 +287,7 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
             $this->quotation->id,
             $this->quotation->quotation_number,
             $this->quotation->contact_id,
-            $this->quotation->total,
+            $this->quotation->total_amount,
             $this->quotation->currency,
             $this->getContextUserId(),
             now()
@@ -311,7 +311,7 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
             $this->quotation->id,
             $this->quotation->quotation_number,
             $this->quotation->contact_id,
-            $this->quotation->total,
+            $this->quotation->total_amount,
             $this->quotation->currency,
             $this->getContextUserId(),
             now(),
@@ -336,7 +336,7 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
             $this->quotation->id,
             $this->quotation->quotation_number,
             $this->quotation->contact_id,
-            $this->quotation->total,
+            $this->quotation->total_amount,
             $this->quotation->currency,
             $invoiceId,
             $this->getContextUserId(),
@@ -360,7 +360,7 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
             $this->quotation->id,
             $this->quotation->quotation_number,
             $this->quotation->contact_id,
-            $this->quotation->total,
+            $this->quotation->total_amount,
             $this->quotation->currency,
             $this->quotation->valid_until,
             now()

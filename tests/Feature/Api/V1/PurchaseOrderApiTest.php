@@ -376,7 +376,7 @@ describe('Purchase Order Conversion', function () {
             'subject' => 'MCB Components',
             'subtotal' => 5000000,
             'tax_amount' => 550000,
-            'total' => 5550000,
+            'total_amount' => 5550000,
         ]);
         PurchaseOrderItem::factory()->forPurchaseOrder($purchaseOrder)->fullyReceived()->count(2)->create();
 

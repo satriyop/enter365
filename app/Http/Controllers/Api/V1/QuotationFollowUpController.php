@@ -286,9 +286,9 @@ class QuotationFollowUpController extends Controller
                 DB::raw('COUNT(CASE WHEN outcome = \'won\' THEN 1 END) as won_count'),
                 DB::raw('COUNT(CASE WHEN outcome = \'lost\' THEN 1 END) as lost_count'),
                 DB::raw('COUNT(CASE WHEN outcome IS NULL AND status NOT IN (\'draft\', \'expired\', \'converted\') THEN 1 END) as pending_count'),
-                DB::raw('SUM(CASE WHEN outcome = \'won\' THEN total ELSE 0 END) as won_value'),
-                DB::raw('SUM(CASE WHEN outcome = \'lost\' THEN total ELSE 0 END) as lost_value'),
-                DB::raw('SUM(CASE WHEN outcome IS NULL AND status NOT IN (\'draft\', \'expired\', \'converted\') THEN total ELSE 0 END) as pending_value'),
+                DB::raw('SUM(CASE WHEN outcome = \'won\' THEN total_amount ELSE 0 END) as won_value'),
+                DB::raw('SUM(CASE WHEN outcome = \'lost\' THEN total_amount ELSE 0 END) as lost_value'),
+                DB::raw('SUM(CASE WHEN outcome IS NULL AND status NOT IN (\'draft\', \'expired\', \'converted\') THEN total_amount ELSE 0 END) as pending_value'),
             ])
             ->first();
 
@@ -371,7 +371,7 @@ class QuotationFollowUpController extends Controller
             ->select([
                 'lost_reason',
                 DB::raw('COUNT(*) as count'),
-                DB::raw('SUM(total) as value'),
+                DB::raw('SUM(total_amount) as value'),
             ])
             ->get();
 
@@ -399,7 +399,7 @@ class QuotationFollowUpController extends Controller
             ->select([
                 'won_reason',
                 DB::raw('COUNT(*) as count'),
-                DB::raw('SUM(total) as value'),
+                DB::raw('SUM(total_amount) as value'),
             ])
             ->get();
 

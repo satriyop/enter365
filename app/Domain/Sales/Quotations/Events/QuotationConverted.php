@@ -25,7 +25,7 @@ class QuotationConverted
             quotationId: $quotation->id,
             quotationNumber: $quotation->quotation_number,
             customerId: $quotation->contact_id,
-            totalAmount: $quotation->total,
+            totalAmount: $quotation->total_amount,
             currency: $quotation->currency,
             invoiceId: $invoiceId,
             userId: $userId,

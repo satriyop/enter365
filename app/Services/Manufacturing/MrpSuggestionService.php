@@ -159,7 +159,7 @@ class MrpSuggestionService extends BaseService
                 'tax_rate' => config('accounting.tax.default_rate', 11.00),
                 'subtotal' => $suggestion->estimated_total_cost,
                 'tax_amount' => 0,
-                'total' => $suggestion->estimated_total_cost,
+                'total_amount' => $suggestion->estimated_total_cost,
                 'base_currency_total' => $suggestion->estimated_total_cost,
                 'created_by' => $userId ?? $this->getUserId(),
             ]);

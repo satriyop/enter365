@@ -99,7 +99,7 @@ describe('CRUD Operations', function () {
         expect($quotation)
             ->subtotal->toBe(500000)
             ->tax_amount->toBe(55000) // 500000 * 0.11
-            ->total->toBe(555000);    // 500000 + 55000
+            ->total_amount->toBe(555000);    // 500000 + 55000
     });
 
     test('updates draft quotation', function () {
@@ -383,7 +383,7 @@ describe('Domain Factory Usage', function () {
             ->create([
                 'contact_id' => $this->contact->id,
                 'subtotal' => 0,
-                'total' => 0,
+                'total_amount' => 0,
             ]);
 
         $domainFactory = app(QuotationDomainFactory::class);

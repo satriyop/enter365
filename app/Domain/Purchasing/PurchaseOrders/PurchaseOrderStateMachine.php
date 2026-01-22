@@ -61,7 +61,7 @@ class PurchaseOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
             'purchase_order_id' => $this->purchaseOrder->id,
             'po_number' => $this->purchaseOrder->po_number,
             'vendor_id' => $this->purchaseOrder->contact_id,
-            'total_amount' => $this->purchaseOrder->total,
+            'total_amount' => $this->purchaseOrder->total_amount,
             'currency' => $this->purchaseOrder->currency,
         ];
     }
@@ -196,7 +196,7 @@ class PurchaseOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
             $this->purchaseOrder->id,
             $this->purchaseOrder->po_number,
             $this->purchaseOrder->contact_id,
-            $this->purchaseOrder->total,
+            $this->purchaseOrder->total_amount,
             $this->purchaseOrder->currency,
             $this->getContextUserId(),
             now()
@@ -219,7 +219,7 @@ class PurchaseOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
             $this->purchaseOrder->id,
             $this->purchaseOrder->po_number,
             $this->purchaseOrder->contact_id,
-            $this->purchaseOrder->total,
+            $this->purchaseOrder->total_amount,
             $this->purchaseOrder->currency,
             $this->getContextUserId(),
             now()
@@ -243,7 +243,7 @@ class PurchaseOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
             $this->purchaseOrder->id,
             $this->purchaseOrder->po_number,
             $this->purchaseOrder->contact_id,
-            $this->purchaseOrder->total,
+            $this->purchaseOrder->total_amount,
             $this->purchaseOrder->currency,
             $this->getContextUserId(),
             now(),
@@ -268,7 +268,7 @@ class PurchaseOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
             $this->purchaseOrder->id,
             $this->purchaseOrder->po_number,
             $this->purchaseOrder->contact_id,
-            $this->purchaseOrder->total,
+            $this->purchaseOrder->total_amount,
             $this->purchaseOrder->currency,
             $this->getContextUserId(),
             now(),
@@ -292,7 +292,7 @@ class PurchaseOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
             $this->purchaseOrder->id,
             $this->purchaseOrder->po_number,
             $this->purchaseOrder->contact_id,
-            $this->purchaseOrder->total,
+            $this->purchaseOrder->total_amount,
             $this->purchaseOrder->currency,
             $this->purchaseOrder->getReceivingProgress(),
             $this->getContextUserId(),
@@ -316,7 +316,7 @@ class PurchaseOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
             $this->purchaseOrder->id,
             $this->purchaseOrder->po_number,
             $this->purchaseOrder->contact_id,
-            $this->purchaseOrder->total,
+            $this->purchaseOrder->total_amount,
             $this->purchaseOrder->currency,
             $this->getContextUserId(),
             now()

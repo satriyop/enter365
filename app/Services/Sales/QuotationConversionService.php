@@ -55,7 +55,7 @@ class QuotationConversionService extends BaseService implements QuotationConvers
                 'tax_amount' => $quotation->tax_amount,
                 'tax_rate' => $quotation->tax_rate,
                 'discount_amount' => $quotation->discount_amount,
-                'total_amount' => $quotation->total,
+                'total_amount' => $quotation->total_amount,
                 'currency' => $quotation->currency,
                 'exchange_rate' => $quotation->exchange_rate,
                 'base_currency_total' => $quotation->base_currency_total,

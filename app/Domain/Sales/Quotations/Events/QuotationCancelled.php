@@ -31,7 +31,7 @@ class QuotationCancelled
             quotationId: $quotation->id,
             quotationNumber: $quotation->quotation_number,
             customerId: $quotation->contact_id,
-            totalAmount: $quotation->total ?? 0,
+            totalAmount: $quotation->total_amount ?? 0,
             currency: $quotation->currency ?? 'IDR',
             previousStatus: $previousStatus,
             userId: $userId,

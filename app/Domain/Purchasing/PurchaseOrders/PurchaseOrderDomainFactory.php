@@ -76,7 +76,7 @@ class PurchaseOrderDomainFactory
         $purchaseOrder->subtotal = $totals->subtotal;
         $purchaseOrder->discount_amount = $totals->discountAmount;
         $purchaseOrder->tax_amount = $totals->taxAmount;
-        $purchaseOrder->total = $totals->totalAmount;
+        $purchaseOrder->total_amount = $totals->totalAmount;
         $purchaseOrder->base_currency_total = $totals->baseCurrencyTotal;
 
         return $purchaseOrder;

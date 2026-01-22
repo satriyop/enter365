@@ -117,7 +117,7 @@ class Quotation extends Model
         'discount_amount',
         'tax_rate',
         'tax_amount',
-        'total',
+        'total_amount',
         'base_currency_total',
         'notes',
         'terms_conditions',
@@ -162,7 +162,7 @@ class Quotation extends Model
             'discount_amount' => 'integer',
             'tax_rate' => 'decimal:2',
             'tax_amount' => 'integer',
-            'total' => 'integer',
+            'total_amount' => 'integer',
             'base_currency_total' => 'integer',
             'submitted_at' => 'datetime',
             'approved_at' => 'datetime',
@@ -179,23 +179,6 @@ class Quotation extends Model
             'cancelled_at' => 'datetime',
             'status' => DocumentStatus::class,
         ];
-    }
-
-    /**
-     * Get the discount amount column name for HasDocumentDiscount trait.
-     */
-    protected function getDiscountAmountColumn(): string
-    {
-        return 'discount_amount';
-    }
-
-    /**
-     * Get the total amount column name for HasDocumentDiscount trait.
-     * Note: Quotation uses 'total' instead of 'total_amount'.
-     */
-    protected function getTotalAmountColumn(): string
-    {
-        return 'total';
     }
 
     /**

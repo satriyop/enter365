@@ -49,7 +49,7 @@ class PurchaseOrderFactory extends Factory
             'discount_amount' => 0,
             'tax_rate' => $taxRate,
             'tax_amount' => $taxAmount,
-            'total' => $total,
+            'total_amount' => $total,
             'base_currency_total' => $total,
             'notes' => $this->faker->optional()->paragraph(),
             'terms_conditions' => null,
@@ -189,7 +189,7 @@ class PurchaseOrderFactory extends Factory
                 'discount_value' => $percent,
                 'discount_amount' => $discountAmount,
                 'tax_amount' => $taxAmount,
-                'total' => $total,
+                'total_amount' => $total,
                 'base_currency_total' => $total,
             ];
         });
@@ -207,7 +207,7 @@ class PurchaseOrderFactory extends Factory
                 'discount_value' => $amount,
                 'discount_amount' => $amount,
                 'tax_amount' => $taxAmount,
-                'total' => $total,
+                'total_amount' => $total,
                 'base_currency_total' => $total,
             ];
         });
@@ -227,7 +227,7 @@ class PurchaseOrderFactory extends Factory
             return [
                 'tax_rate' => 0,
                 'tax_amount' => 0,
-                'total' => $attributes['subtotal'] - $attributes['discount_amount'],
+                'total_amount' => $attributes['subtotal'] - $attributes['discount_amount'],
                 'base_currency_total' => $attributes['subtotal'] - $attributes['discount_amount'],
             ];
         });
