@@ -2,9 +2,7 @@
 
 namespace App\Http\Requests\Api\V1;
 
-use Illuminate\Foundation\Http\FormRequest;
-
-class UpdatePurchaseOrderRequest extends FormRequest
+class UpdatePurchaseOrderRequest extends BaseTransactionalRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -21,31 +19,34 @@ class UpdatePurchaseOrderRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            'contact_id' => ['sometimes', 'exists:contacts,id'],
-            'po_date' => ['sometimes', 'date'],
-            'expected_date' => ['sometimes', 'date', 'after_or_equal:po_date'],
-            'reference' => ['nullable', 'string', 'max:100'],
-            'subject' => ['nullable', 'string', 'max:255'],
-            'currency' => ['nullable', 'string', 'size:3'],
-            'exchange_rate' => ['nullable', 'numeric', 'min:0'],
-            'discount_type' => ['nullable', 'in:percentage,fixed'],
-            'discount_value' => ['nullable', 'numeric', 'min:0'],
-            'tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'notes' => ['nullable', 'string', 'max:2000'],
-            'terms_conditions' => ['nullable', 'string', 'max:5000'],
-            'shipping_address' => ['nullable', 'string', 'max:500'],
-            'items' => ['sometimes', 'array', 'min:1'],
-            'items.*.product_id' => ['nullable', 'exists:products,id'],
-            'items.*.description' => ['required_with:items', 'string', 'max:500'],
-            'items.*.quantity' => ['required_with:items', 'numeric', 'min:0.0001'],
-            'items.*.unit' => ['nullable', 'string', 'max:20'],
-            'items.*.unit_price' => ['required_with:items', 'integer', 'min:0'],
-            'items.*.discount_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'items.*.tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'items.*.sort_order' => ['nullable', 'integer', 'min:0'],
-            'items.*.notes' => ['nullable', 'string', 'max:500'],
-        ];
+        return array_merge(
+            // Make transactional rules optional for updates
+            collect($this->commonTransactionalRules())->map(function ($rules, $field) {
+                return collect($rules)->map(function ($rule) {
+                    return $rule === 'required' ? 'sometimes' : $rule;
+                })->toArray();
+            })->toArray(),
+
+            // Make item rules optional for updates
+            collect($this->commonItemRules())->map(function ($rules, $field) {
+                if (str_contains($field, 'items.*.')) {
+                    return collect($rules)->map(function ($rule) {
+                        return $rule === 'required' ? 'required_with:items' : $rule;
+                    })->toArray();
+                }
+
+                return collect($rules)->map(function ($rule) {
+                    return $rule === 'required' ? 'sometimes' : $rule;
+                })->toArray();
+            })->toArray(),
+
+            [
+                'po_date' => ['sometimes', 'date'],
+                'expected_date' => ['sometimes', 'date', 'after_or_equal:po_date'],
+                'shipping_address' => ['nullable', 'string', 'max:500'],
+                'items.*.unit' => ['nullable', 'string', 'max:20'], // Override to make nullable
+            ]
+        );
     }
 
     /**
