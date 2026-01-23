@@ -3,6 +3,7 @@
 namespace App\Models\Manufacturing;
 
 use App\Models\User;
+use App\Traits\HasActiveStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ComponentStandard extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasActiveStatus, HasFactory, SoftDeletes;
 
     // Component Categories
     public const CATEGORY_CIRCUIT_BREAKER = 'circuit_breaker';

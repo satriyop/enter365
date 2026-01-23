@@ -12,6 +12,7 @@ use App\Models\Purchasing\BillItem;
 use App\Models\Purchasing\PurchaseOrderItem;
 use App\Models\Sales\InvoiceItem;
 use App\Traits\Filterable;
+use App\Traits\HasActiveStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,7 +21,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Product extends Model
 {
-    use Filterable, HasFactory, SoftDeletes;
+    use Filterable, HasActiveStatus, HasFactory, SoftDeletes;
 
     public const TYPE_PRODUCT = 'product';
 
@@ -397,20 +398,9 @@ class Product extends Model
     }
 
     /**
-     * Scope for active products.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder<Product>  $query
-     * @return \Illuminate\Database\Eloquent\Builder<Product>
-     */
-    public function scopeActive($query)
-    {
-        return $query->where('is_active', true);
-    }
-
-    /**
      * Scope for sellable products.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<Product>  $query
+     * @param  \Illuminate\Database\Eloquent.Builder<Product>  $query
      * @return \Illuminate\Database\Eloquent\Builder<Product>
      */
     public function scopeSellable($query)

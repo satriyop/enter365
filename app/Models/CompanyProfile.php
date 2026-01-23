@@ -2,50 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\HasActiveStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 
 class CompanyProfile extends Model
 {
-    protected $fillable = [
-        'name',
-        'slug',
-        'tagline',
-        'description',
-        'founded_year',
-        'employees_count',
-        'logo_path',
-        'cover_image_path',
-        'primary_color',
-        'secondary_color',
-        'services',
-        'portfolio',
-        'team',
-        'certifications',
-        'social_links',
-        'email',
-        'phone',
-        'address',
-        'website',
-        'custom_domain',
-        'is_active',
-    ];
-
-    /**
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'services' => 'array',
-            'portfolio' => 'array',
-            'team' => 'array',
-            'certifications' => 'array',
-            'social_links' => 'array',
-            'founded_year' => 'integer',
-            'is_active' => 'boolean',
-        ];
-    }
+    use HasActiveStatus;
 
     /**
      * Get the public URL for the profile.

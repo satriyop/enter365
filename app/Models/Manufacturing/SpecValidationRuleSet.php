@@ -3,6 +3,7 @@
 namespace App\Models\Manufacturing;
 
 use App\Models\User;
+use App\Traits\HasActiveStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SpecValidationRuleSet extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasActiveStatus, HasFactory, SoftDeletes;
 
     protected $fillable = [
         'code',
@@ -70,17 +71,6 @@ class SpecValidationRuleSet extends Model
     public function hasRulesForCategory(string $category): bool
     {
         return $this->rules()->where('category', $category)->exists();
-    }
-
-    /**
-     * Scope for active rule sets.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder<SpecValidationRuleSet>  $query
-     * @return \Illuminate\Database\Eloquent\Builder<SpecValidationRuleSet>
-     */
-    public function scopeActive($query)
-    {
-        return $query->where('is_active', true);
     }
 
     /**

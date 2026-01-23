@@ -2,6 +2,7 @@
 
 namespace App\Models\Inventory;
 
+use App\Traits\HasActiveStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ProductCategory extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasActiveStatus, HasFactory, SoftDeletes;
 
     protected $fillable = [
         'code',
@@ -134,17 +135,6 @@ class ProductCategory extends Model
         }
 
         return 'CAT-001';
-    }
-
-    /**
-     * Scope for active categories.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder<ProductCategory>  $query
-     * @return \Illuminate\Database\Eloquent\Builder<ProductCategory>
-     */
-    public function scopeActive($query)
-    {
-        return $query->where('is_active', true);
     }
 
     /**

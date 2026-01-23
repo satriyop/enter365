@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Traits\HasActiveStatus;
 use App\Traits\HasRolesAndPermissions;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -12,7 +13,7 @@ use Laravel\Sanctum\HasApiTokens;
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, HasRolesAndPermissions, Notifiable;
+    use HasActiveStatus, HasApiTokens, HasFactory, HasRolesAndPermissions, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -56,13 +57,15 @@ class User extends Authenticatable
      * @param  \Illuminate\Database\Eloquent\Builder<User>  $query
      * @return \Illuminate\Database\Eloquent\Builder<User>
      */
-    public function scopeActive($query)
+    public function getAuthPassword(): string
     {
-        return $query->where('is_active', true);
+        return $this->password;
     }
 
     /**
-     * Check if user is active.
+     * The attributes that should be cast.
+     *
+     * @return array<string, string>
      */
     public function isActive(): bool
     {
