@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\Base\Traits;
 
-use App\Contracts\Repositories\RepositoryInterface;
 use App\Contracts\Shared\DocumentNumberGeneratorInterface;
 use App\Enums\DocumentStatus;
 use App\Exceptions\Domain\DocumentLockedException;
@@ -17,6 +16,7 @@ use Illuminate\Database\Eloquent\Model;
  * status validation, and totals calculation.
  *
  * Services using this trait must implement:
+ * - getModelClass()
  * - getDocumentNumberField()
  * - getDocumentNumberPrefix()
  * - getDocumentNumberConfig()
@@ -24,20 +24,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 trait WithDocuments
 {
-    protected ?RepositoryInterface $repository = null;
-
     protected ?DocumentNumberGeneratorInterface $numberGenerator = null;
-
-    /**
-     * Set repository for document operations.
-     */
-    public function withRepository(RepositoryInterface $repository): static
-    {
-        $clone = clone $this;
-        $clone->repository = $repository;
-
-        return $clone;
-    }
 
     /**
      * Set number generator for document operations.
@@ -49,6 +36,13 @@ trait WithDocuments
 
         return $clone;
     }
+
+    /**
+     * Get model class name.
+     *
+     * @return class-string<Model>
+     */
+    abstract protected function getModelClass(): string;
 
     /**
      * Get document number field name.
@@ -147,10 +141,8 @@ trait WithDocuments
                 $data[$numberField] = $this->generateDocumentNumber();
             }
 
-            // Create document (repository or model fallback)
-            $document = $this->repository !== null
-                ? $this->repository->create($data)
-                : $this->getModelClass()::create($data);
+            // Create document
+            $document = $this->getModelClass()::create($data);
 
             // Create items
             if (! empty($items)) {
@@ -181,12 +173,8 @@ trait WithDocuments
             $items = $data['items'] ?? null;
             unset($data['items']);
 
-            // Update document (repository or model fallback)
-            if ($this->repository !== null) {
-                $this->repository->update($document, $data);
-            } else {
-                $document->update($data);
-            }
+            // Update document
+            $document->update($data);
 
             if ($items !== null) {
                 $document->{$this->getItemRelation()}()->delete();
@@ -214,12 +202,7 @@ trait WithDocuments
         return $this->executeInTransaction('delete', function () use ($document) {
             $document->{$this->getItemRelation()}()->delete();
 
-            // Delete document (repository or model fallback)
-            if ($this->repository !== null) {
-                $this->repository->delete($document);
-            } else {
-                $document->delete();
-            }
+            $document->delete();
 
             return true;
         }, ['document_id' => $document->id]);
@@ -288,18 +271,5 @@ trait WithDocuments
                 'Hanya dokumen draft yang dapat dihapus.'
             );
         }
-    }
-
-    /**
-     * Get model class name (for backward compatibility with services not using repository).
-     *
-     * Override in services that don't use repository injection.
-     *
-     * @return class-string<Model>
-     */
-    protected function getModelClass(): string
-    {
-        // Should be overridden by services that don't inject repository
-        throw new \RuntimeException('getModelClass() must be overridden when not using repository injection.');
     }
 }

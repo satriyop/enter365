@@ -62,7 +62,6 @@ class InvoiceService implements InvoiceServiceInterface
     ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->logger = $logger;
-        $this->repository = null;
         $this->numberGenerator = $numberGenerator;
 
         $this->journalService = $journalService;

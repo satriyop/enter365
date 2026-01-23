@@ -51,7 +51,6 @@ class PurchaseOrderService implements PurchaseOrderServiceInterface
     ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->logger = $logger;
-        $this->repository = null;
         $this->numberGenerator = $numberGenerator;
 
         $this->receivingService = $receivingService;
