@@ -173,7 +173,6 @@ class CostOptimizationService extends BaseService
         return $this->executeInTransaction('apply_optimization', function () use ($bom, $itemIds) {
             // Create new BOM variant
             $newBom = $bom->replicate(['bom_number', 'status', 'approved_by', 'approved_at']);
-            $newBom->bom_number = Bom::generateBomNumber();
             $newBom->status = DocumentStatus::Draft;
             $newBom->name = $bom->name.' (Budget Optimized)';
             $newBom->variant_name = 'Budget Optimized';

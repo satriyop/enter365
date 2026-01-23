@@ -93,7 +93,6 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
                 'version' => '1.0',
                 'spec_rule_set_id' => $template->default_rule_set_id,
             ]);
-            $bom->bom_number = Bom::generateBomNumber();
             $bom->created_by = $this->getUserId();
             $bom->save();
 

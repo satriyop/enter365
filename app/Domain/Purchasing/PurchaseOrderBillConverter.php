@@ -30,7 +30,6 @@ class PurchaseOrderBillConverter
     private function createBill(PurchaseOrder $purchaseOrder): Bill
     {
         return Bill::create([
-            'bill_number' => Bill::generateBillNumber(),
             'contact_id' => $purchaseOrder->contact_id,
             'bill_date' => now(),
             'due_date' => now()->addDays(config('accounting.payment.default_term_days', 30)),

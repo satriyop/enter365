@@ -287,7 +287,6 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
                 'delivered_by',
                 'delivered_at',
             ]);
-            $newDo->do_number = DeliveryOrder::generateDoNumber();
             $newDo->status = DocumentStatus::Draft;
             $newDo->do_date = now()->toDateString();
             $newDo->save();

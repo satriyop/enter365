@@ -254,7 +254,6 @@ class PurchaseOrderService implements PurchaseOrderServiceInterface
     {
         return $this->executeInTransaction('duplicate', function () use ($purchaseOrder) {
             $defaults = $this->getDefaultsForDuplication($purchaseOrder);
-            $defaults['po_number'] = PurchaseOrder::generatePoNumber();
             $defaults['revision'] = 0;
             $defaults['created_by'] = $this->getUserId();
 

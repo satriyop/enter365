@@ -45,7 +45,6 @@ class QuotationConversionService extends BaseService implements QuotationConvers
         return $this->executeInTransaction('convert_to_invoice', function () use ($quotation) {
             // Create invoice
             $invoice = Invoice::create([
-                'invoice_number' => Invoice::generateInvoiceNumber(),
                 'contact_id' => $quotation->contact_id,
                 'invoice_date' => now(),
                 'due_date' => now()->addDays(config('accounting.payment.default_term_days', 30)),

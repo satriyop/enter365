@@ -147,7 +147,6 @@ class MrpSuggestionService extends BaseService
 
             // Create PO
             $po = PurchaseOrder::create([
-                'po_number' => PurchaseOrder::generatePoNumber(),
                 'contact_id' => $suggestion->suggested_supplier_id,
                 'po_date' => now(),
                 'expected_date' => $suggestion->suggested_due_date,
@@ -261,7 +260,6 @@ class MrpSuggestionService extends BaseService
             $quantity = $suggestion->getEffectiveQuantity();
 
             $scWo = SubcontractorWorkOrder::create([
-                'sc_wo_number' => SubcontractorWorkOrder::generateScWoNumber(),
                 'subcontractor_id' => $subcontractorId,
                 'name' => 'Subkontrak '.$product->name,
                 'description' => "Produksi {$quantity} {$product->unit} {$product->name}",

@@ -150,7 +150,7 @@ class SolarProposal extends Model
         static::creating(function (SolarProposal $proposal) {
             if (empty($proposal->proposal_number)) {
                 $proposal->proposal_number = \App\Domain\Shared\DocumentNumbers::generate(
-                    'PROP-'.now()->format('Ym').'-',
+                    'SPR-'.now()->format('Ym').'-',
                     'solar_proposals',
                     'proposal_number'
                 );

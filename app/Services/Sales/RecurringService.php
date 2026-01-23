@@ -116,7 +116,6 @@ class RecurringService extends BaseService implements RecurringServiceInterface
         $totalAmount = $subtotal + $taxAmount - $template->discount_amount;
 
         $invoice = Invoice::create([
-            'invoice_number' => Invoice::generateInvoiceNumber(),
             'contact_id' => $template->contact_id,
             'invoice_date' => $invoiceDate,
             'due_date' => $dueDate,

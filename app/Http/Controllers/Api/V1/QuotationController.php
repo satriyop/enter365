@@ -26,6 +26,17 @@ class QuotationController extends Controller
 
     /**
      * Display a listing of quotations.
+     *
+     * @queryParam page int Page number. Example: 1
+     * @queryParam per_page int Items per page. Example: 25
+     * @queryParam search string Search by number, subject, reference, or contact name.
+     * @queryParam status string Filter by status (draft, sent, approved, rejected, converted).
+     * @queryParam contact_id int Filter by contact ID.
+     * @queryParam start_date string Filter by date from (YYYY-MM-DD).
+     * @queryParam end_date string Filter by date to (YYYY-MM-DD).
+     * @queryParam quotation_type string Filter by type (single_option, multi_option).
+     * @queryParam active_only boolean Filter active quotations only.
+     * @queryParam expired_only boolean Filter expired quotations only.
      */
     public function index(QuotationFilter $filter): AnonymousResourceCollection
     {

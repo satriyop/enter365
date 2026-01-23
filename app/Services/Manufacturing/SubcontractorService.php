@@ -214,7 +214,6 @@ class SubcontractorService extends BaseService implements SubcontractorServiceIn
             $netAmount = $grossAmount - $retentionHeld - $otherDeductions;
 
             $invoice = SubcontractorInvoice::create([
-                'invoice_number' => SubcontractorInvoice::generateInvoiceNumber(),
                 'subcontractor_work_order_id' => $scWo->id,
                 'subcontractor_id' => $scWo->subcontractor_id,
                 'invoice_date' => $data['invoice_date'] ?? now(),
@@ -317,7 +316,6 @@ class SubcontractorService extends BaseService implements SubcontractorServiceIn
 
             // Create bill
             $bill = Bill::create([
-                'bill_number' => Bill::generateBillNumber(),
                 'contact_id' => $invoice->subcontractor_id,
                 'bill_date' => $invoice->invoice_date,
                 'due_date' => $invoice->due_date,

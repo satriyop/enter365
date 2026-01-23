@@ -458,7 +458,7 @@
                                     "type": "object",
                                     "properties": {
                                         "account_id": {
-                                            "type": "integer"
+                                            "type": "string"
                                         },
                                         "code": {
                                             "type": "string"
@@ -542,7 +542,7 @@
                                     "type": "object",
                                     "properties": {
                                         "account_id": {
-                                            "type": "integer"
+                                            "type": "string"
                                         },
                                         "code": {
                                             "type": "string"
@@ -556,7 +556,7 @@
                                         "start_date": {},
                                         "end_date": {},
                                         "opening_balance": {
-                                            "type": "integer"
+                                            "type": "string"
                                         },
                                         "entries": {
                                             "type": "array",
@@ -2175,13 +2175,13 @@
                                                                 ]
                                                             },
                                                             "id": {
-                                                                "type": "integer"
+                                                                "type": "string"
                                                             },
                                                             "number": {
                                                                 "type": "string"
                                                             },
                                                             "amount": {
-                                                                "type": "integer"
+                                                                "type": "string"
                                                             },
                                                             "date": {
                                                                 "type": "string"
@@ -3394,13 +3394,13 @@
                                             "type": "object",
                                             "properties": {
                                                 "bom_id": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 },
                                                 "bom_number": {
                                                     "type": "string"
                                                 },
                                                 "product_id": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 },
                                                 "quantity_to_produce": {},
                                                 "materials": {
@@ -4538,7 +4538,7 @@
                                             "type": "object",
                                             "properties": {
                                                 "template_id": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 },
                                                 "template_code": {
                                                     "type": "string"
@@ -4726,7 +4726,7 @@
                                             "type": "object",
                                             "properties": {
                                                 "template_id": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 },
                                                 "template_code": {
                                                     "type": "string"
@@ -4835,7 +4835,7 @@
                                             "type": "object",
                                             "properties": {
                                                 "template_id": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 },
                                                 "template_code": {
                                                     "type": "string"
@@ -4930,10 +4930,7 @@
                                                                                     ]
                                                                                 },
                                                                                 "notes": {
-                                                                                    "type": [
-                                                                                        "string",
-                                                                                        "null"
-                                                                                    ]
+                                                                                    "type": "string"
                                                                                 }
                                                                             },
                                                                             "required": [
@@ -4983,10 +4980,7 @@
                                                                                     "type": "null"
                                                                                 },
                                                                                 "component_standard_id": {
-                                                                                    "type": [
-                                                                                        "integer",
-                                                                                        "null"
-                                                                                    ]
+                                                                                    "type": "string"
                                                                                 },
                                                                                 "description": {
                                                                                     "type": "string"
@@ -5024,10 +5018,7 @@
                                                                                     ]
                                                                                 },
                                                                                 "notes": {
-                                                                                    "type": [
-                                                                                        "string",
-                                                                                        "null"
-                                                                                    ]
+                                                                                    "type": "string"
                                                                                 }
                                                                             },
                                                                             "required": [
@@ -5077,10 +5068,7 @@
                                                                                     "type": "string"
                                                                                 },
                                                                                 "component_standard_id": {
-                                                                                    "type": [
-                                                                                        "integer",
-                                                                                        "null"
-                                                                                    ]
+                                                                                    "type": "string"
                                                                                 },
                                                                                 "description": {
                                                                                     "type": "string"
@@ -5132,10 +5120,7 @@
                                                                                     ]
                                                                                 },
                                                                                 "notes": {
-                                                                                    "type": [
-                                                                                        "string",
-                                                                                        "null"
-                                                                                    ]
+                                                                                    "type": "string"
                                                                                 }
                                                                             },
                                                                             "required": [
@@ -5210,10 +5195,7 @@
                                                                                     "type": "null"
                                                                                 },
                                                                                 "component_standard_id": {
-                                                                                    "type": [
-                                                                                        "integer",
-                                                                                        "null"
-                                                                                    ]
+                                                                                    "type": "string"
                                                                                 },
                                                                                 "description": {
                                                                                     "type": "string"
@@ -5251,10 +5233,7 @@
                                                                                     ]
                                                                                 },
                                                                                 "notes": {
-                                                                                    "type": [
-                                                                                        "string",
-                                                                                        "null"
-                                                                                    ]
+                                                                                    "type": "string"
                                                                                 }
                                                                             },
                                                                             "required": [
@@ -5301,10 +5280,7 @@
                                                                                     "type": "string"
                                                                                 },
                                                                                 "component_standard_id": {
-                                                                                    "type": [
-                                                                                        "integer",
-                                                                                        "null"
-                                                                                    ]
+                                                                                    "type": "string"
                                                                                 },
                                                                                 "description": {
                                                                                     "type": "string"
@@ -5356,10 +5332,7 @@
                                                                                     ]
                                                                                 },
                                                                                 "notes": {
-                                                                                    "type": [
-                                                                                        "string",
-                                                                                        "null"
-                                                                                    ]
+                                                                                    "type": "string"
                                                                                 }
                                                                             },
                                                                             "required": [
@@ -5431,13 +5404,10 @@
                                                                                     "type": "string"
                                                                                 },
                                                                                 "product_id": {
-                                                                                    "type": "integer"
+                                                                                    "type": "string"
                                                                                 },
                                                                                 "component_standard_id": {
-                                                                                    "type": [
-                                                                                        "integer",
-                                                                                        "null"
-                                                                                    ]
+                                                                                    "type": "string"
                                                                                 },
                                                                                 "description": {
                                                                                     "type": "string"
@@ -5478,7 +5448,7 @@
                                                                                 "unit_cost": {
                                                                                     "anyOf": [
                                                                                         {
-                                                                                            "type": "integer"
+                                                                                            "type": "string"
                                                                                         },
                                                                                         {
                                                                                             "type": "integer",
@@ -5489,10 +5459,7 @@
                                                                                     ]
                                                                                 },
                                                                                 "notes": {
-                                                                                    "type": [
-                                                                                        "string",
-                                                                                        "null"
-                                                                                    ]
+                                                                                    "type": "string"
                                                                                 }
                                                                             },
                                                                             "required": [
@@ -5510,7 +5477,7 @@
                                                                             "type": "object",
                                                                             "properties": {
                                                                                 "id": {
-                                                                                    "type": "integer"
+                                                                                    "type": "string"
                                                                                 },
                                                                                 "name": {
                                                                                     "type": "string"
@@ -5519,13 +5486,10 @@
                                                                                     "type": "string"
                                                                                 },
                                                                                 "brand": {
-                                                                                    "type": [
-                                                                                        "string",
-                                                                                        "null"
-                                                                                    ]
+                                                                                    "type": "string"
                                                                                 },
                                                                                 "purchase_price": {
-                                                                                    "type": "integer"
+                                                                                    "type": "string"
                                                                                 }
                                                                             },
                                                                             "required": [
@@ -6007,7 +5971,7 @@
                                                                 "type": "object",
                                                                 "properties": {
                                                                     "id": {
-                                                                        "type": "integer"
+                                                                        "type": "string"
                                                                     },
                                                                     "bom_number": {
                                                                         "type": "string"
@@ -6016,22 +5980,16 @@
                                                                         "type": "string"
                                                                     },
                                                                     "variant_name": {
-                                                                        "type": [
-                                                                            "string",
-                                                                            "null"
-                                                                        ]
+                                                                        "type": "string"
                                                                     },
                                                                     "variant_label": {
-                                                                        "type": [
-                                                                            "string",
-                                                                            "null"
-                                                                        ]
+                                                                        "type": "string"
                                                                     },
                                                                     "is_primary": {
-                                                                        "type": "boolean"
+                                                                        "type": "string"
                                                                     },
                                                                     "status": {
-                                                                        "$ref": "#/components/schemas/DocumentStatus"
+                                                                        "type": "string"
                                                                     },
                                                                     "cost_breakdown": {
                                                                         "type": "object",
@@ -6040,7 +5998,7 @@
                                                                                 "type": "object",
                                                                                 "properties": {
                                                                                     "amount": {
-                                                                                        "type": "integer"
+                                                                                        "type": "string"
                                                                                     },
                                                                                     "percentage": {
                                                                                         "type": "number"
@@ -6055,7 +6013,7 @@
                                                                                 "type": "object",
                                                                                 "properties": {
                                                                                     "amount": {
-                                                                                        "type": "integer"
+                                                                                        "type": "string"
                                                                                     },
                                                                                     "percentage": {
                                                                                         "type": "number"
@@ -6070,7 +6028,7 @@
                                                                                 "type": "object",
                                                                                 "properties": {
                                                                                     "amount": {
-                                                                                        "type": "integer"
+                                                                                        "type": "string"
                                                                                     },
                                                                                     "percentage": {
                                                                                         "type": "number"
@@ -6082,10 +6040,10 @@
                                                                                 ]
                                                                             },
                                                                             "total": {
-                                                                                "type": "integer"
+                                                                                "type": "string"
                                                                             },
                                                                             "unit_cost": {
-                                                                                "type": "integer"
+                                                                                "type": "string"
                                                                             }
                                                                         },
                                                                         "required": [
@@ -6301,28 +6259,22 @@
                                                                 "type": "object",
                                                                 "properties": {
                                                                     "id": {
-                                                                        "type": "integer"
+                                                                        "type": "string"
                                                                     },
                                                                     "variant_name": {
-                                                                        "type": [
-                                                                            "string",
-                                                                            "null"
-                                                                        ]
+                                                                        "type": "string"
                                                                     },
                                                                     "variant_label": {
-                                                                        "type": [
-                                                                            "string",
-                                                                            "null"
-                                                                        ]
+                                                                        "type": "string"
                                                                     },
                                                                     "is_primary": {
-                                                                        "type": "boolean"
+                                                                        "type": "string"
                                                                     },
                                                                     "total_cost": {
-                                                                        "type": "integer"
+                                                                        "type": "string"
                                                                     },
                                                                     "unit_cost": {
-                                                                        "type": "integer"
+                                                                        "type": "string"
                                                                     }
                                                                 },
                                                                 "required": [
@@ -7900,7 +7852,7 @@
                                             "type": "object",
                                             "properties": {
                                                 "id": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 },
                                                 "name": {
                                                     "type": "string"
@@ -7976,7 +7928,7 @@
                                             "type": "object",
                                             "properties": {
                                                 "id": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 },
                                                 "name": {
                                                     "type": "string"
@@ -8154,13 +8106,13 @@
                                             "type": "object",
                                             "properties": {
                                                 "budget_revenue": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 },
                                                 "budget_expense": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 },
                                                 "budget_net": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 }
                                             },
                                             "required": [
@@ -8275,7 +8227,7 @@
                                             "type": "object",
                                             "properties": {
                                                 "id": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 },
                                                 "name": {
                                                     "type": "string"
@@ -9128,7 +9080,7 @@
                                             "type": "object",
                                             "properties": {
                                                 "id": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 },
                                                 "name": {
                                                     "type": "string"
@@ -9137,10 +9089,7 @@
                                                     "type": "string"
                                                 },
                                                 "brand": {
-                                                    "type": [
-                                                        "string",
-                                                        "null"
-                                                    ]
+                                                    "type": "string"
                                                 }
                                             },
                                             "required": [
@@ -10274,10 +10223,7 @@
                                                             "type": "object",
                                                             "properties": {
                                                                 "product_id": {
-                                                                    "type": [
-                                                                        "integer",
-                                                                        "null"
-                                                                    ]
+                                                                    "type": "string"
                                                                 },
                                                                 "product_name": {
                                                                     "type": "string"
@@ -10286,16 +10232,13 @@
                                                                     "type": "string"
                                                                 },
                                                                 "unit_cost": {
-                                                                    "type": "integer"
+                                                                    "type": "string"
                                                                 },
                                                                 "brand": {
                                                                     "type": "string"
                                                                 },
                                                                 "component_standard_id": {
-                                                                    "type": [
-                                                                        "integer",
-                                                                        "null"
-                                                                    ]
+                                                                    "type": "string"
                                                                 },
                                                                 "brand_label": {
                                                                     "type": [
@@ -10334,10 +10277,7 @@
                                                             "type": "object",
                                                             "properties": {
                                                                 "product_id": {
-                                                                    "type": [
-                                                                        "integer",
-                                                                        "null"
-                                                                    ]
+                                                                    "type": "string"
                                                                 },
                                                                 "product_name": {
                                                                     "type": "string"
@@ -10346,16 +10286,13 @@
                                                                     "type": "string"
                                                                 },
                                                                 "unit_cost": {
-                                                                    "type": "integer"
+                                                                    "type": "string"
                                                                 },
                                                                 "brand": {
                                                                     "type": "null"
                                                                 },
                                                                 "component_standard_id": {
-                                                                    "type": [
-                                                                        "integer",
-                                                                        "null"
-                                                                    ]
+                                                                    "type": "string"
                                                                 }
                                                             },
                                                             "required": [
@@ -10554,7 +10491,7 @@
                                                 "type": "object",
                                                 "properties": {
                                                     "id": {
-                                                        "type": "integer"
+                                                        "type": "string"
                                                     },
                                                     "name": {
                                                         "type": "string"
@@ -10563,13 +10500,10 @@
                                                         "type": "string"
                                                     },
                                                     "brand": {
-                                                        "type": [
-                                                            "string",
-                                                            "null"
-                                                        ]
+                                                        "type": "string"
                                                     },
                                                     "purchase_price": {
-                                                        "type": "integer"
+                                                        "type": "string"
                                                     }
                                                 },
                                                 "required": [
@@ -10647,7 +10581,7 @@
                                             "type": "object",
                                             "properties": {
                                                 "product_id": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 },
                                                 "product_name": {
                                                     "type": "string"
@@ -10656,10 +10590,7 @@
                                                     "type": "string"
                                                 },
                                                 "product_brand": {
-                                                    "type": [
-                                                        "string",
-                                                        "null"
-                                                    ]
+                                                    "type": "string"
                                                 },
                                                 "parsed_specs": {
                                                     "type": "object",
@@ -12294,7 +12225,7 @@
                                     "type": "object",
                                     "properties": {
                                         "contact_id": {
-                                            "type": "integer"
+                                            "type": "string"
                                         },
                                         "name": {
                                             "type": "string"
@@ -12361,13 +12292,13 @@
                                     "type": "object",
                                     "properties": {
                                         "contact_id": {
-                                            "type": "integer"
+                                            "type": "string"
                                         },
                                         "name": {
                                             "type": "string"
                                         },
                                         "credit_limit": {
-                                            "type": "integer"
+                                            "type": "string"
                                         },
                                         "receivable_balance": {
                                             "type": "integer"
@@ -14587,13 +14518,13 @@
                                             "type": "object",
                                             "properties": {
                                                 "id": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 },
                                                 "payment_number": {
                                                     "type": "string"
                                                 },
                                                 "amount": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 }
                                             },
                                             "required": [
@@ -18615,7 +18546,7 @@
                                             "type": "object",
                                             "properties": {
                                                 "id": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 },
                                                 "sku": {
                                                     "type": "string"
@@ -18627,7 +18558,7 @@
                                                     "type": "string"
                                                 },
                                                 "current_stock": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 }
                                             },
                                             "required": [
@@ -19599,7 +19530,26 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object"
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Operasi berhasil."
+                                            ]
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/InvoiceResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data"
+                                    ]
                                 }
                             }
                         }
@@ -21312,7 +21262,7 @@
                                             "type": "object",
                                             "properties": {
                                                 "id": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 },
                                                 "po_number": {
                                                     "type": "string"
@@ -21377,7 +21327,7 @@
                                             "type": "object",
                                             "properties": {
                                                 "id": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 },
                                                 "wo_number": {
                                                     "type": "string"
@@ -21460,7 +21410,7 @@
                                             "type": "object",
                                             "properties": {
                                                 "id": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 },
                                                 "sc_wo_number": {
                                                     "type": "string"
@@ -23162,7 +23112,7 @@
                                                 "type": "object",
                                                 "properties": {
                                                     "id": {
-                                                        "type": "integer"
+                                                        "type": "string"
                                                     },
                                                     "sku": {
                                                         "type": "string"
@@ -23174,10 +23124,10 @@
                                                         "type": "string"
                                                     },
                                                     "purchase_price": {
-                                                        "type": "integer"
+                                                        "type": "string"
                                                     },
                                                     "selling_price": {
-                                                        "type": "integer"
+                                                        "type": "string"
                                                     },
                                                     "selling_price_with_tax": {
                                                         "type": "string"
@@ -23186,7 +23136,7 @@
                                                         "type": "string"
                                                     },
                                                     "is_taxable": {
-                                                        "type": "boolean"
+                                                        "type": "string"
                                                     }
                                                 },
                                                 "required": [
@@ -25279,13 +25229,13 @@
                                             "type": "object",
                                             "properties": {
                                                 "project_id": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 },
                                                 "project_number": {
                                                     "type": "string"
                                                 },
                                                 "status": {
-                                                    "$ref": "#/components/schemas/DocumentStatus"
+                                                    "type": "string"
                                                 },
                                                 "progress": {
                                                     "type": "string"
@@ -25294,7 +25244,7 @@
                                                     "type": "object",
                                                     "properties": {
                                                         "amount": {
-                                                            "type": "integer"
+                                                            "type": "string"
                                                         },
                                                         "utilization": {
                                                             "type": "number"
@@ -25317,16 +25267,16 @@
                                                     "type": "object",
                                                     "properties": {
                                                         "contract_amount": {
-                                                            "type": "integer"
+                                                            "type": "string"
                                                         },
                                                         "total_cost": {
-                                                            "type": "integer"
+                                                            "type": "string"
                                                         },
                                                         "total_revenue": {
-                                                            "type": "integer"
+                                                            "type": "string"
                                                         },
                                                         "gross_profit": {
-                                                            "type": "integer"
+                                                            "type": "string"
                                                         },
                                                         "profit_margin": {
                                                             "type": "string"
@@ -25605,7 +25555,7 @@
                                                 "type": "object",
                                                 "properties": {
                                                     "id": {
-                                                        "type": "integer"
+                                                        "type": "string"
                                                     },
                                                     "name": {
                                                         "type": "string"
@@ -25614,10 +25564,7 @@
                                                         "type": "string"
                                                     },
                                                     "tagline": {
-                                                        "type": [
-                                                            "string",
-                                                            "null"
-                                                        ]
+                                                        "type": "string"
                                                     },
                                                     "logo_url": {
                                                         "type": "string"
@@ -29414,22 +29361,16 @@
                                             "type": "object",
                                             "properties": {
                                                 "quotation_id": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 },
                                                 "quotation_number": {
                                                     "type": "string"
                                                 },
                                                 "variant_group_id": {
-                                                    "type": [
-                                                        "integer",
-                                                        "null"
-                                                    ]
+                                                    "type": "string"
                                                 },
                                                 "selected_variant_id": {
-                                                    "type": [
-                                                        "integer",
-                                                        "null"
-                                                    ]
+                                                    "type": "string"
                                                 },
                                                 "has_selected_variant": {
                                                     "type": "boolean"
@@ -29574,6 +29515,9 @@
                     }
                 },
                 "responses": {
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
                     "200": {
                         "description": "",
                         "content": {
@@ -29601,9 +29545,6 @@
                                 }
                             }
                         }
-                    },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
@@ -29651,6 +29592,9 @@
                     }
                 },
                 "responses": {
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
                     "200": {
                         "description": "`QuotationResource`",
                         "content": {
@@ -29668,9 +29612,6 @@
                                 }
                             }
                         }
-                    },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
@@ -29714,16 +29655,13 @@
                                                     "type": "object",
                                                     "properties": {
                                                         "id": {
-                                                            "type": "integer"
+                                                            "type": "string"
                                                         },
                                                         "quotation_number": {
                                                             "type": "string"
                                                         },
                                                         "subject": {
-                                                            "type": [
-                                                                "string",
-                                                                "null"
-                                                            ]
+                                                            "type": "string"
                                                         },
                                                         "contact": {
                                                             "type": [
@@ -29732,7 +29670,7 @@
                                                             ],
                                                             "properties": {
                                                                 "id": {
-                                                                    "type": "integer"
+                                                                    "type": "string"
                                                                 },
                                                                 "name": {
                                                                     "type": "string"
@@ -29744,10 +29682,7 @@
                                                             ]
                                                         },
                                                         "selected_variant_id": {
-                                                            "type": [
-                                                                "integer",
-                                                                "null"
-                                                            ]
+                                                            "type": "string"
                                                         }
                                                     },
                                                     "required": [
@@ -31990,7 +31925,7 @@
                                             "type": "object",
                                             "properties": {
                                                 "id": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 },
                                                 "code": {
                                                     "type": "string"
@@ -32965,7 +32900,7 @@
                                             "type": "object",
                                             "properties": {
                                                 "id": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 },
                                                 "code": {
                                                     "type": "string"
@@ -33330,7 +33265,7 @@
                                             "type": "object",
                                             "properties": {
                                                 "id": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 },
                                                 "sku": {
                                                     "type": "string"
@@ -33924,7 +33859,7 @@
                                             "type": "object",
                                             "properties": {
                                                 "id": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 },
                                                 "name": {
                                                     "type": "string"
@@ -38409,7 +38344,7 @@
                                                     "type": "object",
                                                     "properties": {
                                                         "id": {
-                                                            "type": "integer"
+                                                            "type": "string"
                                                         },
                                                         "opname_number": {
                                                             "type": "string"
@@ -38794,7 +38729,7 @@
                                             "type": "object",
                                             "properties": {
                                                 "id": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 },
                                                 "bill_number": {
                                                     "type": "string"
@@ -39472,41 +39407,25 @@
                                                 "type": "object",
                                                 "properties": {
                                                     "id": {
-                                                        "type": "integer"
+                                                        "type": "string"
                                                     },
                                                     "name": {
                                                         "type": "string"
                                                     },
                                                     "phone": {
-                                                        "type": [
-                                                            "string",
-                                                            "null"
-                                                        ]
+                                                        "type": "string"
                                                     },
                                                     "email": {
-                                                        "type": [
-                                                            "string",
-                                                            "null"
-                                                        ]
+                                                        "type": "string"
                                                     },
                                                     "subcontractor_services": {
-                                                        "type": [
-                                                            "array",
-                                                            "null"
-                                                        ],
-                                                        "items": {}
+                                                        "type": "string"
                                                     },
                                                     "hourly_rate": {
-                                                        "type": [
-                                                            "integer",
-                                                            "null"
-                                                        ]
+                                                        "type": "string"
                                                     },
                                                     "daily_rate": {
-                                                        "type": [
-                                                            "integer",
-                                                            "null"
-                                                        ]
+                                                        "type": "string"
                                                     },
                                                     "active_work_orders_count": {
                                                         "type": "string"
@@ -40808,7 +40727,7 @@
                                             "type": "object",
                                             "properties": {
                                                 "id": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 },
                                                 "code": {
                                                     "type": "string"
@@ -40849,7 +40768,7 @@
                                                 "type": "object",
                                                 "properties": {
                                                     "product_id": {
-                                                        "type": "integer"
+                                                        "type": "string"
                                                     },
                                                     "product_sku": {
                                                         "type": "string"
@@ -40861,13 +40780,13 @@
                                                         "type": "string"
                                                     },
                                                     "quantity": {
-                                                        "type": "integer"
+                                                        "type": "string"
                                                     },
                                                     "average_cost": {
-                                                        "type": "integer"
+                                                        "type": "string"
                                                     },
                                                     "total_value": {
-                                                        "type": "integer"
+                                                        "type": "string"
                                                     }
                                                 },
                                                 "required": [
@@ -42066,7 +41985,7 @@
                                             "type": "object",
                                             "properties": {
                                                 "work_order_id": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 },
                                                 "wo_number": {
                                                     "type": "string"
@@ -42075,16 +41994,16 @@
                                                     "type": "object",
                                                     "properties": {
                                                         "material": {
-                                                            "type": "integer"
+                                                            "type": "string"
                                                         },
                                                         "labor": {
-                                                            "type": "integer"
+                                                            "type": "string"
                                                         },
                                                         "overhead": {
-                                                            "type": "integer"
+                                                            "type": "string"
                                                         },
                                                         "total": {
-                                                            "type": "integer"
+                                                            "type": "string"
                                                         }
                                                     },
                                                     "required": [
@@ -42098,16 +42017,16 @@
                                                     "type": "object",
                                                     "properties": {
                                                         "material": {
-                                                            "type": "integer"
+                                                            "type": "string"
                                                         },
                                                         "labor": {
-                                                            "type": "integer"
+                                                            "type": "string"
                                                         },
                                                         "overhead": {
-                                                            "type": "integer"
+                                                            "type": "string"
                                                         },
                                                         "total": {
-                                                            "type": "integer"
+                                                            "type": "string"
                                                         }
                                                     },
                                                     "required": [
@@ -42130,7 +42049,7 @@
                                                             "type": "string"
                                                         },
                                                         "total": {
-                                                            "type": "integer"
+                                                            "type": "string"
                                                         }
                                                     },
                                                     "required": [
@@ -42210,7 +42129,7 @@
                                             "type": "object",
                                             "properties": {
                                                 "work_order_id": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 },
                                                 "wo_number": {
                                                     "type": "string"
@@ -42426,7 +42345,7 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "code": {
                         "type": "string"
@@ -42438,31 +42357,22 @@
                         "type": "string"
                     },
                     "subtype": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "description": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "parent_id": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "is_active": {
-                        "type": "boolean"
+                        "type": "string"
                     },
                     "is_system": {
-                        "type": "boolean"
+                        "type": "string"
                     },
                     "opening_balance": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "current_balance": {
                         "type": "string"
@@ -42626,10 +42536,10 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "account_id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "account": {
                         "$ref": "#/components/schemas/AccountResource"
@@ -42641,22 +42551,19 @@
                         "type": "string"
                     },
                     "reference": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "debit": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "credit": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "net_amount": {
                         "type": "integer"
                     },
                     "balance": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "status": {
                         "type": "string"
@@ -42668,40 +42575,25 @@
                         "type": "boolean"
                     },
                     "matched_payment_id": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "matched_payment": {
                         "$ref": "#/components/schemas/PaymentResource"
                     },
                     "matched_journal_line_id": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "reconciled_at": {
                         "type": "string"
                     },
                     "reconciled_by": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "import_batch": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "external_id": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "created_at": {
                         "type": "string"
@@ -42920,91 +42812,13 @@
                 "title": "BillResource"
             },
             "BomItem": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "integer"
-                    },
-                    "bom_id": {
-                        "type": "integer"
-                    },
-                    "type": {
-                        "type": "string"
-                    },
-                    "product_id": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
-                    },
-                    "description": {
-                        "type": "string"
-                    },
-                    "quantity": {
-                        "type": "string"
-                    },
-                    "unit": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "unit_cost": {
-                        "type": "integer"
-                    },
-                    "total_cost": {
-                        "type": "integer"
-                    },
-                    "waste_percentage": {
-                        "type": "string"
-                    },
-                    "sort_order": {
-                        "type": "integer"
-                    },
-                    "notes": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "created_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    },
-                    "updated_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    },
-                    "component_standard_id": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
-                    }
+                "type": "array",
+                "items": {
+                    "type": "string"
                 },
-                "required": [
-                    "id",
-                    "bom_id",
-                    "type",
-                    "product_id",
-                    "description",
-                    "quantity",
-                    "unit",
-                    "unit_cost",
-                    "total_cost",
-                    "waste_percentage",
-                    "sort_order",
-                    "notes",
-                    "created_at",
-                    "updated_at",
-                    "component_standard_id"
-                ],
+                "minItems": 0,
+                "maxItems": 0,
+                "additionalItems": false,
                 "title": "BomItem"
             },
             "BomItemResource": {
@@ -43260,10 +43074,10 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "template_id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "type": {
                         "type": "string"
@@ -43272,16 +43086,13 @@
                         "type": "string"
                     },
                     "component_standard_id": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "component_standard": {
                         "type": "object",
                         "properties": {
                             "id": {
-                                "type": "integer"
+                                "type": "string"
                             },
                             "code": {
                                 "type": "string"
@@ -43301,16 +43112,13 @@
                         ]
                     },
                     "product_id": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "product": {
                         "type": "object",
                         "properties": {
                             "id": {
-                                "type": "integer"
+                                "type": "string"
                             },
                             "name": {
                                 "type": "string"
@@ -43319,7 +43127,7 @@
                                 "type": "string"
                             },
                             "purchase_price": {
-                                "type": "integer"
+                                "type": "string"
                             }
                         },
                         "required": [
@@ -43339,19 +43147,16 @@
                         "type": "string"
                     },
                     "is_required": {
-                        "type": "boolean"
+                        "type": "string"
                     },
                     "is_quantity_variable": {
-                        "type": "boolean"
+                        "type": "string"
                     },
                     "sort_order": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "notes": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "has_component_standard": {
                         "type": "boolean"
@@ -43391,7 +43196,7 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "code": {
                         "type": "string"
@@ -43400,32 +43205,16 @@
                         "type": "string"
                     },
                     "description": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "category": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "category_label": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ]
+                        "type": "string"
                     },
                     "thumbnail_path": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "thumbnail_url": {
                         "type": [
@@ -43434,16 +43223,16 @@
                         ]
                     },
                     "is_active": {
-                        "type": "boolean"
+                        "type": "string"
                     },
                     "usage_count": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "default_rule_set": {
                         "type": "object",
                         "properties": {
                             "id": {
-                                "type": "integer"
+                                "type": "string"
                             },
                             "name": {
                                 "type": "string"
@@ -43494,7 +43283,7 @@
                         "type": "object",
                         "properties": {
                             "id": {
-                                "type": "integer"
+                                "type": "string"
                             },
                             "name": {
                                 "type": "string"
@@ -43641,19 +43430,19 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "budget_id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "account_id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "account": {
                         "type": "object",
                         "properties": {
                             "id": {
-                                "type": "integer"
+                                "type": "string"
                             },
                             "code": {
                                 "type": "string"
@@ -43673,44 +43462,44 @@
                         ]
                     },
                     "jan_amount": {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Monthly amounts"
                     },
                     "feb_amount": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "mar_amount": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "apr_amount": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "may_amount": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "jun_amount": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "jul_amount": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "aug_amount": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "sep_amount": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "oct_amount": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "nov_amount": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "dec_amount": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "annual_amount": {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Summary"
                     },
                     "monthly_amounts": {
@@ -43733,10 +43522,7 @@
                         "type": "integer"
                     },
                     "notes": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "created_at": {
                         "type": "string"
@@ -43777,25 +43563,22 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "name": {
                         "type": "string"
                     },
                     "description": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "fiscal_period_id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "fiscal_period": {
                         "type": "object",
                         "properties": {
                             "id": {
-                                "type": "integer"
+                                "type": "string"
                             },
                             "name": {
                                 "type": "string"
@@ -43830,27 +43613,24 @@
                         "type": "boolean"
                     },
                     "total_revenue": {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Totals"
                     },
                     "total_expense": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "net_budget": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "approved_by": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ],
+                        "type": "string",
                         "description": "Approval info"
                     },
                     "approved_by_user": {
                         "type": "object",
                         "properties": {
                             "id": {
-                                "type": "integer"
+                                "type": "string"
                             },
                             "name": {
                                 "type": "string"
@@ -43865,10 +43645,7 @@
                         "type": "string"
                     },
                     "notes": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "lines": {
                         "type": "array",
@@ -43925,7 +43702,7 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "name": {
                         "type": "string"
@@ -43934,44 +43711,26 @@
                         "type": "string"
                     },
                     "tagline": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "description": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "founded_year": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "employees_count": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "logo_path": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
+                        "type": "string",
                         "description": "Branding"
                     },
                     "logo_url": {
                         "type": "string"
                     },
                     "cover_image_path": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "cover_image_url": {
                         "type": "string"
@@ -43980,20 +43739,13 @@
                         "type": "string"
                     },
                     "secondary_color": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "services": {
                         "description": "Content arrays",
                         "anyOf": [
                             {
-                                "type": "array",
-                                "items": {}
-                            },
-                            {
-                                "type": "null"
+                                "type": "string"
                             },
                             {
                                 "type": "array",
@@ -44009,11 +43761,7 @@
                     "portfolio": {
                         "anyOf": [
                             {
-                                "type": "array",
-                                "items": {}
-                            },
-                            {
-                                "type": "null"
+                                "type": "string"
                             },
                             {
                                 "type": "array",
@@ -44029,11 +43777,7 @@
                     "team": {
                         "anyOf": [
                             {
-                                "type": "array",
-                                "items": {}
-                            },
-                            {
-                                "type": "null"
+                                "type": "string"
                             },
                             {
                                 "type": "array",
@@ -44049,11 +43793,7 @@
                     "certifications": {
                         "anyOf": [
                             {
-                                "type": "array",
-                                "items": {}
-                            },
-                            {
-                                "type": "null"
+                                "type": "string"
                             },
                             {
                                 "type": "array",
@@ -44069,11 +43809,7 @@
                     "social_links": {
                         "anyOf": [
                             {
-                                "type": "array",
-                                "items": {}
-                            },
-                            {
-                                "type": "null"
+                                "type": "string"
                             },
                             {
                                 "type": "array",
@@ -44087,42 +43823,27 @@
                         ]
                     },
                     "email": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
+                        "type": "string",
                         "description": "Contact"
                     },
                     "phone": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "address": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "website": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "custom_domain": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
+                        "type": "string",
                         "description": "Custom domain"
                     },
                     "public_url": {
                         "type": "string"
                     },
                     "is_active": {
-                        "type": "boolean",
+                        "type": "string",
                         "description": "Status"
                     },
                     "created_at": {
@@ -44168,10 +43889,10 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "component_standard_id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "brand": {
                         "type": "string"
@@ -44180,13 +43901,13 @@
                         "type": "string"
                     },
                     "product_id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "product": {
                         "type": "object",
                         "properties": {
                             "id": {
-                                "type": "integer"
+                                "type": "string"
                             },
                             "name": {
                                 "type": "string"
@@ -44195,13 +43916,13 @@
                                 "type": "string"
                             },
                             "purchase_price": {
-                                "type": "integer"
+                                "type": "string"
                             },
                             "selling_price": {
-                                "type": "integer"
+                                "type": "string"
                             },
                             "current_stock": {
-                                "type": "integer"
+                                "type": "string"
                             }
                         },
                         "required": [
@@ -44217,32 +43938,22 @@
                         "type": "string"
                     },
                     "is_preferred": {
-                        "type": "boolean"
+                        "type": "string"
                     },
                     "is_verified": {
-                        "type": "boolean"
+                        "type": "string"
                     },
                     "price_factor": {
                         "type": "number"
                     },
                     "variant_specs": {
-                        "type": [
-                            "array",
-                            "null"
-                        ],
-                        "items": {}
+                        "type": "string"
                     },
                     "notes": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "verified_by": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "verified_at": {
                         "type": "string"
@@ -44277,7 +43988,7 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "code": {
                         "type": "string"
@@ -44292,32 +44003,22 @@
                         "type": "string"
                     },
                     "subcategory": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "specifications": {
-                        "type": "array",
-                        "items": {}
+                        "type": "string"
                     },
                     "standard": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "description": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "unit": {
                         "type": "string"
                     },
                     "is_active": {
-                        "type": "boolean"
+                        "type": "string"
                     },
                     "brand_mappings": {
                         "type": "array",
@@ -44337,7 +44038,7 @@
                         "type": "object",
                         "properties": {
                             "id": {
-                                "type": "integer"
+                                "type": "string"
                             },
                             "name": {
                                 "type": "string"
@@ -44795,41 +44496,6 @@
                 ],
                 "title": "DeliveryOrderResource"
             },
-            "DocumentStatus": {
-                "type": "string",
-                "description": "Centralized document status enum for all document types. Replaces scattered STATUS_* constants across models for type safety, centralized labels, and workflow validation.\n",
-                "enum": [
-                    "draft",
-                    "cancelled",
-                    "submitted",
-                    "approved",
-                    "rejected",
-                    "completed",
-                    "converted",
-                    "expired",
-                    "sent",
-                    "partial",
-                    "paid",
-                    "overdue",
-                    "received",
-                    "active",
-                    "inactive",
-                    "confirmed",
-                    "in_progress",
-                    "processing",
-                    "applied",
-                    "issued",
-                    "assigned",
-                    "shipped",
-                    "delivered",
-                    "receiving",
-                    "planning",
-                    "on_hold",
-                    "accepted",
-                    "archived"
-                ],
-                "title": "DocumentStatus"
-            },
             "DownPaymentApplicationResource": {
                 "type": "object",
                 "properties": {
@@ -45090,7 +44756,7 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "name": {
                         "type": "string"
@@ -45102,10 +44768,10 @@
                         "type": "string"
                     },
                     "is_closed": {
-                        "type": "boolean"
+                        "type": "string"
                     },
                     "is_locked": {
-                        "type": "boolean"
+                        "type": "string"
                     },
                     "is_open": {
                         "type": "boolean"
@@ -45114,28 +44780,16 @@
                         "type": "string"
                     },
                     "closed_by": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "closing_entry_id": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "retained_earnings_amount": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "closing_notes": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "closing_entry": {
                         "$ref": "#/components/schemas/JournalEntryResource"
@@ -45755,25 +45409,19 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "invoice_number": {
                         "type": "string"
                     },
                     "reference": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "description": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "contact_id": {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Contact"
                     },
                     "contact": {
@@ -45803,29 +45451,29 @@
                         "type": "number"
                     },
                     "subtotal": {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Amounts (raw integers for calculations)"
                     },
                     "discount_amount": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "tax_rate": {
                         "type": "number"
                     },
                     "tax_amount": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "total_amount": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "paid_amount": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "outstanding_amount": {
                         "type": "integer"
                     },
                     "base_currency_total": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "formatted": {
                         "type": "object",
@@ -45867,57 +45515,16 @@
                                 "type": "string"
                             },
                             "label": {
-                                "type": "string",
-                                "enum": [
-                                    "Draft",
-                                    "Dibatalkan",
-                                    "Diajukan",
-                                    "Disetujui",
-                                    "Ditolak",
-                                    "Selesai",
-                                    "Dikonversi",
-                                    "Kedaluwarsa",
-                                    "Terkirim",
-                                    "Sebagian",
-                                    "Lunas",
-                                    "Jatuh Tempo",
-                                    "Diterima",
-                                    "Aktif",
-                                    "Tidak Aktif",
-                                    "Dikonfirmasi",
-                                    "Dalam Proses",
-                                    "Memproses",
-                                    "Diterapkan",
-                                    "Dikeluarkan",
-                                    "Ditugaskan",
-                                    "Dikirim",
-                                    "Menerima",
-                                    "Perencanaan",
-                                    "Ditunda",
-                                    "Diarsipkan"
-                                ]
+                                "type": "string"
                             },
                             "color": {
-                                "type": "string",
-                                "enum": [
-                                    "zinc",
-                                    "red",
-                                    "yellow",
-                                    "green",
-                                    "blue",
-                                    "orange",
-                                    "indigo",
-                                    "cyan",
-                                    "emerald",
-                                    "gray",
-                                    "purple"
-                                ]
+                                "type": "string"
                             },
                             "is_terminal": {
-                                "type": "boolean"
+                                "type": "string"
                             },
                             "is_editable": {
-                                "type": "boolean"
+                                "type": "string"
                             }
                         },
                         "required": [
@@ -45929,10 +45536,7 @@
                         ]
                     },
                     "journal_entry_id": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ],
+                        "type": "string",
                         "description": "Journal entry"
                     },
                     "has_journal_entry": {
@@ -45942,10 +45546,7 @@
                         "$ref": "#/components/schemas/JournalEntryResource"
                     },
                     "receivable_account_id": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ],
+                        "type": "string",
                         "description": "Receivable account"
                     },
                     "items": {
@@ -46146,17 +45747,14 @@
                         ]
                     },
                     "reminder_count": {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Metadata"
                     },
                     "last_reminder_at": {
                         "type": "string"
                     },
                     "created_by": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "created_at": {
                         "type": "string"
@@ -46215,25 +45813,22 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "journal_entry_id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "account_id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "description": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "debit": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "credit": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "account": {
                         "$ref": "#/components/schemas/AccountResource"
@@ -46261,7 +45856,7 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "entry_number": {
                         "type": "string"
@@ -46273,34 +45868,22 @@
                         "type": "string"
                     },
                     "reference": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "source_type": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "source_id": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "fiscal_period_id": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "is_posted": {
-                        "type": "boolean"
+                        "type": "string"
                     },
                     "is_reversed": {
-                        "type": "boolean"
+                        "type": "string"
                     },
                     "total_debit": {
                         "type": "integer"
@@ -46327,10 +45910,7 @@
                         "$ref": "#/components/schemas/JournalEntryResource"
                     },
                     "created_by": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "created_at": {
                         "type": "string"
@@ -47355,120 +46935,13 @@
                 "title": "PermissionResource"
             },
             "PlnTariff": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "integer"
-                    },
-                    "category_code": {
-                        "type": "string"
-                    },
-                    "category_name": {
-                        "type": "string"
-                    },
-                    "customer_type": {
-                        "type": "string"
-                    },
-                    "power_va_min": {
-                        "type": "integer"
-                    },
-                    "power_va_max": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
-                    },
-                    "rate_per_kwh": {
-                        "type": "integer"
-                    },
-                    "capacity_charge": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
-                    },
-                    "minimum_charge": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
-                    },
-                    "peak_rate_per_kwh": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
-                    },
-                    "off_peak_rate_per_kwh": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
-                    },
-                    "peak_hours": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "is_active": {
-                        "type": "boolean"
-                    },
-                    "effective_from": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    },
-                    "effective_until": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    },
-                    "notes": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "created_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    },
-                    "updated_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    }
+                "type": "array",
+                "items": {
+                    "type": "string"
                 },
-                "required": [
-                    "id",
-                    "category_code",
-                    "category_name",
-                    "customer_type",
-                    "power_va_min",
-                    "power_va_max",
-                    "rate_per_kwh",
-                    "capacity_charge",
-                    "minimum_charge",
-                    "peak_rate_per_kwh",
-                    "off_peak_rate_per_kwh",
-                    "peak_hours",
-                    "is_active",
-                    "effective_from",
-                    "effective_until",
-                    "notes",
-                    "created_at",
-                    "updated_at"
-                ],
+                "minItems": 0,
+                "maxItems": 0,
+                "additionalItems": false,
                 "title": "PlnTariff"
             },
             "PlnTariffResource": {
@@ -47561,201 +47034,13 @@
                 "title": "PlnTariffResource"
             },
             "Product": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "integer"
-                    },
-                    "sku": {
-                        "type": "string"
-                    },
-                    "name": {
-                        "type": "string"
-                    },
-                    "description": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "type": {
-                        "type": "string"
-                    },
-                    "category_id": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
-                    },
-                    "unit": {
-                        "type": "string"
-                    },
-                    "purchase_price": {
-                        "type": "integer"
-                    },
-                    "selling_price": {
-                        "type": "integer"
-                    },
-                    "tax_rate": {
-                        "type": "string"
-                    },
-                    "is_taxable": {
-                        "type": "boolean"
-                    },
-                    "track_inventory": {
-                        "type": "boolean"
-                    },
-                    "min_stock": {
-                        "type": "integer"
-                    },
-                    "current_stock": {
-                        "type": "integer"
-                    },
-                    "inventory_account_id": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
-                    },
-                    "cogs_account_id": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
-                    },
-                    "sales_account_id": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
-                    },
-                    "purchase_account_id": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
-                    },
-                    "is_active": {
-                        "type": "boolean"
-                    },
-                    "is_purchasable": {
-                        "type": "boolean"
-                    },
-                    "is_sellable": {
-                        "type": "boolean"
-                    },
-                    "barcode": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "brand": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "custom_fields": {
-                        "type": [
-                            "array",
-                            "null"
-                        ],
-                        "items": {}
-                    },
-                    "created_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    },
-                    "updated_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    },
-                    "deleted_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    },
-                    "reorder_point": {
-                        "type": "integer"
-                    },
-                    "safety_stock": {
-                        "type": "integer"
-                    },
-                    "lead_time_days": {
-                        "type": "integer"
-                    },
-                    "min_order_qty": {
-                        "type": "string"
-                    },
-                    "order_multiple": {
-                        "type": "string"
-                    },
-                    "max_stock": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
-                    },
-                    "default_supplier_id": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
-                    },
-                    "abc_class": {
-                        "type": "string"
-                    },
-                    "procurement_type": {
-                        "type": "string"
-                    }
+                "type": "array",
+                "items": {
+                    "type": "string"
                 },
-                "required": [
-                    "id",
-                    "sku",
-                    "name",
-                    "description",
-                    "type",
-                    "category_id",
-                    "unit",
-                    "purchase_price",
-                    "selling_price",
-                    "tax_rate",
-                    "is_taxable",
-                    "track_inventory",
-                    "min_stock",
-                    "current_stock",
-                    "inventory_account_id",
-                    "cogs_account_id",
-                    "sales_account_id",
-                    "purchase_account_id",
-                    "is_active",
-                    "is_purchasable",
-                    "is_sellable",
-                    "barcode",
-                    "brand",
-                    "custom_fields",
-                    "created_at",
-                    "updated_at",
-                    "deleted_at",
-                    "reorder_point",
-                    "safety_stock",
-                    "lead_time_days",
-                    "min_order_qty",
-                    "order_multiple",
-                    "max_stock",
-                    "default_supplier_id",
-                    "abc_class",
-                    "procurement_type"
-                ],
+                "minItems": 0,
+                "maxItems": 0,
+                "additionalItems": false,
                 "title": "Product"
             },
             "ProductCategoryResource": {
@@ -49638,85 +48923,13 @@
                 "title": "QuotationResource"
             },
             "QuotationVariantOption": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "integer"
-                    },
-                    "quotation_id": {
-                        "type": "integer"
-                    },
-                    "bom_id": {
-                        "type": "integer"
-                    },
-                    "display_name": {
-                        "type": "string"
-                    },
-                    "tagline": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "is_recommended": {
-                        "type": "boolean"
-                    },
-                    "selling_price": {
-                        "type": "integer"
-                    },
-                    "features": {
-                        "type": [
-                            "array",
-                            "null"
-                        ],
-                        "items": {}
-                    },
-                    "specifications": {
-                        "type": [
-                            "array",
-                            "null"
-                        ],
-                        "items": {}
-                    },
-                    "warranty_terms": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "sort_order": {
-                        "type": "integer"
-                    },
-                    "created_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    },
-                    "updated_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    }
+                "type": "array",
+                "items": {
+                    "type": "string"
                 },
-                "required": [
-                    "id",
-                    "quotation_id",
-                    "bom_id",
-                    "display_name",
-                    "tagline",
-                    "is_recommended",
-                    "selling_price",
-                    "features",
-                    "specifications",
-                    "warranty_terms",
-                    "sort_order",
-                    "created_at",
-                    "updated_at"
-                ],
+                "minItems": 0,
+                "maxItems": 0,
+                "additionalItems": false,
                 "title": "QuotationVariantOption"
             },
             "QuotationVariantOptionResource": {
@@ -50775,10 +49988,10 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "rule_set_id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "category": {
                         "type": "string"
@@ -50796,10 +50009,7 @@
                         "type": "string"
                     },
                     "threshold_value": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "severity": {
                         "type": "string"
@@ -50808,13 +50018,10 @@
                         "type": "string"
                     },
                     "message": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "sort_order": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "description": {
                         "type": "string"
@@ -50857,7 +50064,7 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "code": {
                         "type": "string"
@@ -50866,16 +50073,13 @@
                         "type": "string"
                     },
                     "description": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "is_default": {
-                        "type": "boolean"
+                        "type": "string"
                     },
                     "is_active": {
-                        "type": "boolean"
+                        "type": "string"
                     },
                     "rules": {
                         "type": "array",
@@ -50895,7 +50099,7 @@
                         "type": "object",
                         "properties": {
                             "id": {
-                                "type": "integer"
+                                "type": "string"
                             },
                             "name": {
                                 "type": "string"
@@ -58741,7 +57945,7 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "name": {
                         "type": "string"
@@ -58753,7 +57957,7 @@
                         "type": "string"
                     },
                     "is_active": {
-                        "type": "boolean"
+                        "type": "string"
                     },
                     "roles": {
                         "type": "array",
@@ -58761,7 +57965,7 @@
                             "type": "object",
                             "properties": {
                                 "id": {
-                                    "type": "integer"
+                                    "type": "string"
                                 },
                                 "name": {
                                     "type": "string"
@@ -58996,7 +58200,7 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "wo_number": {
                         "type": "string"
@@ -59008,10 +58212,7 @@
                         "type": "string"
                     },
                     "description": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "status": {
                         "type": "object",
@@ -59020,51 +58221,10 @@
                                 "type": "string"
                             },
                             "label": {
-                                "type": "string",
-                                "enum": [
-                                    "Draft",
-                                    "Dibatalkan",
-                                    "Diajukan",
-                                    "Disetujui",
-                                    "Ditolak",
-                                    "Selesai",
-                                    "Dikonversi",
-                                    "Kedaluwarsa",
-                                    "Terkirim",
-                                    "Sebagian",
-                                    "Lunas",
-                                    "Jatuh Tempo",
-                                    "Diterima",
-                                    "Aktif",
-                                    "Tidak Aktif",
-                                    "Dikonfirmasi",
-                                    "Dalam Proses",
-                                    "Memproses",
-                                    "Diterapkan",
-                                    "Dikeluarkan",
-                                    "Ditugaskan",
-                                    "Dikirim",
-                                    "Menerima",
-                                    "Perencanaan",
-                                    "Ditunda",
-                                    "Diarsipkan"
-                                ]
+                                "type": "string"
                             },
                             "color": {
-                                "type": "string",
-                                "enum": [
-                                    "zinc",
-                                    "red",
-                                    "yellow",
-                                    "green",
-                                    "blue",
-                                    "orange",
-                                    "indigo",
-                                    "cyan",
-                                    "emerald",
-                                    "gray",
-                                    "purple"
-                                ]
+                                "type": "string"
                             }
                         },
                         "required": [
@@ -59103,44 +58263,38 @@
                         "type": "string"
                     },
                     "estimated_material_cost": {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Costs"
                     },
                     "estimated_labor_cost": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "estimated_overhead_cost": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "estimated_total_cost": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "actual_material_cost": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "actual_labor_cost": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "actual_overhead_cost": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "actual_total_cost": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "cost_variance": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "notes": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "project_id": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ],
+                        "type": "string",
                         "description": "Relationships"
                     },
                     "project": {
@@ -59150,7 +58304,7 @@
                         ],
                         "properties": {
                             "id": {
-                                "type": "integer"
+                                "type": "string"
                             },
                             "project_number": {
                                 "type": "string"
@@ -59166,10 +58320,7 @@
                         ]
                     },
                     "bom_id": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "bom": {
                         "type": [
@@ -59178,7 +58329,7 @@
                         ],
                         "properties": {
                             "id": {
-                                "type": "integer"
+                                "type": "string"
                             },
                             "bom_number": {
                                 "type": "string"
@@ -59194,10 +58345,7 @@
                         ]
                     },
                     "product_id": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "product": {
                         "type": [
@@ -59206,7 +58354,7 @@
                         ],
                         "properties": {
                             "id": {
-                                "type": "integer"
+                                "type": "string"
                             },
                             "sku": {
                                 "type": "string"
@@ -59222,10 +58370,7 @@
                         ]
                     },
                     "warehouse_id": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "warehouse": {
                         "type": [
@@ -59234,7 +58379,7 @@
                         ],
                         "properties": {
                             "id": {
-                                "type": "integer"
+                                "type": "string"
                             },
                             "name": {
                                 "type": "string"
@@ -59246,10 +58391,7 @@
                         ]
                     },
                     "parent_work_order_id": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "parent_work_order": {
                         "type": [
@@ -59258,7 +58400,7 @@
                         ],
                         "properties": {
                             "id": {
-                                "type": "integer"
+                                "type": "string"
                             },
                             "wo_number": {
                                 "type": "string"
@@ -59482,10 +58624,7 @@
                         "type": "string"
                     },
                     "cancellation_reason": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "created_at": {
                         "type": "string"

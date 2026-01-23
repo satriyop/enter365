@@ -32,7 +32,6 @@ class ProjectService extends BaseService implements ProjectServiceInterface
     {
         return $this->executeInTransaction('create', function () use ($data) {
             $project = new Project($data);
-            $project->project_number = Project::generateProjectNumber();
             $project->save();
 
             return $project->fresh(['contact', 'manager']);
@@ -60,7 +59,6 @@ class ProjectService extends BaseService implements ProjectServiceInterface
                 'manager_id' => $data['manager_id'] ?? null,
                 'created_by' => $data['created_by'] ?? $this->getUserId(),
             ]);
-            $project->project_number = Project::generateProjectNumber();
             $project->status = DocumentStatus::Planning;
             $project->save();
 

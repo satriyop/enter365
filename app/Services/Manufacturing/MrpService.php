@@ -41,7 +41,6 @@ class MrpService extends BaseService implements MrpServiceInterface
     {
         return $this->executeInTransaction('create', function () use ($data) {
             $run = new MrpRun($data);
-            $run->run_number = MrpRun::generateRunNumber();
             $run->status = DocumentStatus::Draft;
             $run->created_by = $data['created_by'] ?? $this->getUserId();
             $run->save();

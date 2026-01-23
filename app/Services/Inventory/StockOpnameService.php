@@ -34,7 +34,6 @@ class StockOpnameService extends BaseService implements StockOpnameServiceInterf
     {
         return $this->executeInTransaction('create', function () use ($data) {
             $opname = StockOpname::create([
-                'opname_number' => StockOpname::generateOpnameNumber(),
                 'warehouse_id' => $data['warehouse_id'],
                 'opname_date' => $data['opname_date'] ?? now()->toDateString(),
                 'status' => StockOpname::STATUS_DRAFT,

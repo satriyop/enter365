@@ -58,7 +58,6 @@ class BrandSwapExecutionService extends BaseService
             // Duplicate the BOM if creating variant
             if ($createVariant) {
                 $newBom = $bom->replicate(['bom_number', 'status', 'approved_by', 'approved_at']);
-                $newBom->bom_number = Bom::generateBomNumber();
                 $newBom->status = DocumentStatus::Draft;
                 $newBom->name = $bom->name.' ('.ucfirst($targetBrand).')';
                 $newBom->variant_name = ucfirst($targetBrand);
