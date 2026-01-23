@@ -2,9 +2,7 @@
 
 namespace App\Http\Requests\Api\V1;
 
-use Illuminate\Foundation\Http\FormRequest;
-
-class StoreQuotationRequest extends FormRequest
+class StoreQuotationRequest extends BaseTransactionalRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -21,30 +19,15 @@ class StoreQuotationRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            'contact_id' => ['required', 'exists:contacts,id'],
-            'quotation_date' => ['required', 'date'],
-            'valid_until' => ['nullable', 'date', 'after_or_equal:quotation_date'],
-            'reference' => ['nullable', 'string', 'max:100'],
-            'subject' => ['nullable', 'string', 'max:255'],
-            'currency' => ['nullable', 'string', 'size:3'],
-            'exchange_rate' => ['nullable', 'numeric', 'min:0'],
-            'discount_type' => ['nullable', 'in:percentage,fixed'],
-            'discount_value' => ['nullable', 'numeric', 'min:0'],
-            'tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'notes' => ['nullable', 'string', 'max:2000'],
-            'terms_conditions' => ['nullable', 'string', 'max:5000'],
-            'items' => ['required', 'array', 'min:1'],
-            'items.*.product_id' => ['nullable', 'exists:products,id'],
-            'items.*.description' => ['required', 'string', 'max:500'],
-            'items.*.quantity' => ['required', 'numeric', 'min:0.0001'],
-            'items.*.unit' => ['nullable', 'string', 'max:20'],
-            'items.*.unit_price' => ['required', 'integer', 'min:0'],
-            'items.*.discount_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'items.*.tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'items.*.sort_order' => ['nullable', 'integer', 'min:0'],
-            'items.*.notes' => ['nullable', 'string', 'max:500'],
-        ];
+        return array_merge(
+            $this->commonTransactionalRules(),
+            $this->commonItemRules(),
+            [
+                'quotation_date' => ['required', 'date'],
+                'valid_until' => ['nullable', 'date', 'after_or_equal:quotation_date'],
+                'items.*.unit' => ['nullable', 'string', 'max:20'], // Override to make nullable
+            ]
+        );
     }
 
     /**

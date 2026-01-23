@@ -2,9 +2,7 @@
 
 namespace App\Http\Requests\Api\V1;
 
-use Illuminate\Foundation\Http\FormRequest;
-
-class StoreBillRequest extends FormRequest
+class StoreBillRequest extends BaseTransactionalRequest
 {
     public function authorize(): bool
     {
@@ -13,23 +11,19 @@ class StoreBillRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
-            'contact_id' => ['required', 'integer', 'exists:contacts,id'],
-            'vendor_invoice_number' => ['nullable', 'string', 'max:100'],
-            'bill_date' => ['required', 'date'],
-            'due_date' => ['required', 'date', 'after_or_equal:bill_date'],
-            'description' => ['nullable', 'string', 'max:1000'],
-            'reference' => ['nullable', 'string', 'max:100'],
-            'tax_rate' => ['numeric', 'min:0', 'max:100'],
-            'discount_amount' => ['integer', 'min:0'],
-            'payable_account_id' => ['nullable', 'integer', 'exists:accounts,id'],
-            'items' => ['required', 'array', 'min:1'],
-            'items.*.description' => ['required', 'string', 'max:500'],
-            'items.*.quantity' => ['required', 'numeric', 'min:0.0001'],
-            'items.*.unit' => ['string', 'max:20'],
-            'items.*.unit_price' => ['required', 'integer', 'min:0'],
-            'items.*.expense_account_id' => ['nullable', 'integer', 'exists:accounts,id'],
-        ];
+        return array_merge(
+            $this->commonTransactionalRules(),
+            $this->commonItemRules(),
+            [
+                'vendor_invoice_number' => ['nullable', 'string', 'max:100'],
+                'bill_date' => ['required', 'date'],
+                'due_date' => ['required', 'date', 'after_or_equal:bill_date'],
+                'description' => ['nullable', 'string', 'max:1000'], // Override common description
+                'discount_amount' => ['nullable', 'integer', 'min:0'], // Override common discount_value
+                'payable_account_id' => ['nullable', 'integer', 'exists:accounts,id'],
+                'items.*.expense_account_id' => ['nullable', 'integer', 'exists:accounts,id'],
+            ]
+        );
     }
 
     public function messages(): array
