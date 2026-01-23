@@ -41,6 +41,21 @@ class JournalEntry extends Model
         'created_by',
     ];
 
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (JournalEntry $entry) {
+            if (empty($entry->entry_number)) {
+                $entry->entry_number = \App\Domain\Shared\DocumentNumbers::generate(
+                    'JE-'.now()->format('Ym').'-',
+                    'journal_entries',
+                    'entry_number'
+                );
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [

@@ -61,6 +61,21 @@ class MrpRun extends Model
         'notes',
     ];
 
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (MrpRun $run) {
+            if (empty($run->run_number)) {
+                $run->run_number = \App\Domain\Shared\DocumentNumbers::generate(
+                    'MRP-'.now()->format('Ym').'-',
+                    'mrp_runs',
+                    'run_number'
+                );
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [

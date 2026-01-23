@@ -143,6 +143,21 @@ class SolarProposal extends Model
         'converted_quotation_id',
     ];
 
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (SolarProposal $proposal) {
+            if (empty($proposal->proposal_number)) {
+                $proposal->proposal_number = \App\Domain\Shared\DocumentNumbers::generate(
+                    'PROP-'.now()->format('Ym').'-',
+                    'solar_proposals',
+                    'proposal_number'
+                );
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [

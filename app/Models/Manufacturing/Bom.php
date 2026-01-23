@@ -42,6 +42,21 @@ class Bom extends Model
         'approved_at',
     ];
 
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (Bom $bom) {
+            if (empty($bom->bom_number)) {
+                $bom->bom_number = \App\Domain\Shared\DocumentNumbers::generate(
+                    'BOM-'.now()->format('Ym').'-',
+                    'boms',
+                    'bom_number'
+                );
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [

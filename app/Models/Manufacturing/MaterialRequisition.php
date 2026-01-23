@@ -53,6 +53,21 @@ class MaterialRequisition extends Model
         'issued_at',
     ];
 
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (MaterialRequisition $requisition) {
+            if (empty($requisition->requisition_number)) {
+                $requisition->requisition_number = \App\Domain\Shared\DocumentNumbers::generate(
+                    'REQ-'.now()->format('Ym').'-',
+                    'material_requisitions',
+                    'requisition_number'
+                );
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [

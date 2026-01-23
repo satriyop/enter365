@@ -84,6 +84,21 @@ class Project extends Model
         'created_by',
     ];
 
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (Project $project) {
+            if (empty($project->project_number)) {
+                $project->project_number = \App\Domain\Shared\DocumentNumbers::generate(
+                    'PRJ-'.now()->format('Ym').'-',
+                    'projects',
+                    'project_number'
+                );
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [

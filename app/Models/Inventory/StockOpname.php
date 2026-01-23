@@ -47,6 +47,21 @@ class StockOpname extends Model
         'created_by',
     ];
 
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (StockOpname $opname) {
+            if (empty($opname->opname_number)) {
+                $opname->opname_number = \App\Domain\Shared\DocumentNumbers::generate(
+                    'OPN-'.now()->format('Ym').'-',
+                    'stock_opnames',
+                    'opname_number'
+                );
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [

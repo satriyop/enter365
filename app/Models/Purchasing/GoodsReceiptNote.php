@@ -61,6 +61,21 @@ class GoodsReceiptNote extends Model
         'created_by',
     ];
 
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (GoodsReceiptNote $grn) {
+            if (empty($grn->grn_number)) {
+                $grn->grn_number = \App\Domain\Shared\DocumentNumbers::generate(
+                    'GRN-'.now()->format('Ym').'-',
+                    'goods_receipt_notes',
+                    'grn_number'
+                );
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [

@@ -46,6 +46,21 @@ class SubcontractorInvoice extends Model
         'notes',
     ];
 
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (SubcontractorInvoice $invoice) {
+            if (empty($invoice->invoice_number)) {
+                $invoice->invoice_number = \App\Domain\Shared\DocumentNumbers::generate(
+                    'SCINV-'.now()->format('Ym').'-',
+                    'subcontractor_invoices',
+                    'invoice_number'
+                );
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [
