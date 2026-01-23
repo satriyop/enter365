@@ -45,6 +45,11 @@ class JournalService extends BaseService implements JournalServiceInterface
             $fiscalPeriod = FiscalPeriod::current();
 
             $entry = JournalEntry::create([
+                'entry_number' => $data['entry_number'] ?? \App\Domain\Shared\DocumentNumbers::generate(
+                    'JE-'.now()->format('Ym').'-',
+                    'journal_entries',
+                    'entry_number'
+                ),
                 'entry_date' => $data['entry_date'],
                 'description' => $data['description'],
                 'reference' => $data['reference'] ?? null,

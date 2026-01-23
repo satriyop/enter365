@@ -46,7 +46,8 @@ class JournalEntry extends Model
         parent::boot();
 
         static::creating(function (JournalEntry $entry) {
-            if (empty($entry->entry_number)) {
+            // Always generate entry_number if not set (override empty check for safety)
+            if (! isset($entry->entry_number) || $entry->entry_number === null || $entry->entry_number === '') {
                 $entry->entry_number = \App\Domain\Shared\DocumentNumbers::generate(
                     'JE-'.now()->format('Ym').'-',
                     'journal_entries',
