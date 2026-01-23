@@ -379,27 +379,6 @@ class Project extends Model
         ];
     }
 
-    /**
-     * Generate the next project number.
-     */
-    public static function generateProjectNumber(): string
-    {
-        $prefix = 'PRJ-'.now()->format('Ym').'-';
-        $lastProject = static::query()
-            ->where('project_number', 'like', $prefix.'%')
-            ->orderBy('project_number', 'desc')
-            ->first();
-
-        if ($lastProject) {
-            $lastNumber = (int) substr($lastProject->project_number, -4);
-            $nextNumber = $lastNumber + 1;
-        } else {
-            $nextNumber = 1;
-        }
-
-        return $prefix.str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
-    }
-
     public function stateMachine(): \App\Domain\Projects\ProjectStateMachine
     {
         return \App\Domain\Projects\ProjectStateMachine::fromProject($this);

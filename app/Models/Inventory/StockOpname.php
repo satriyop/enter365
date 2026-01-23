@@ -127,27 +127,6 @@ class StockOpname extends Model
     }
 
     /**
-     * Generate the next opname number.
-     */
-    public static function generateOpnameNumber(): string
-    {
-        $date = now()->format('Ymd');
-        $prefix = "SO-{$date}-";
-
-        $lastOpname = static::where('opname_number', 'like', "{$prefix}%")
-            ->orderByDesc('opname_number')
-            ->first();
-
-        if ($lastOpname && preg_match('/(\d{4})$/', $lastOpname->opname_number, $matches)) {
-            $nextNum = (int) $matches[1] + 1;
-        } else {
-            $nextNum = 1;
-        }
-
-        return $prefix.str_pad($nextNum, 4, '0', STR_PAD_LEFT);
-    }
-
-    /**
      * Check if opname is in draft status.
      */
     public function isDraft(): bool

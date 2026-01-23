@@ -220,27 +220,6 @@ class SubcontractorInvoice extends Model
     }
 
     /**
-     * Generate invoice number.
-     */
-    public static function generateInvoiceNumber(): string
-    {
-        $prefix = 'SCI-'.now()->format('Ym').'-';
-        $lastInvoice = static::query()
-            ->where('invoice_number', 'like', $prefix.'%')
-            ->orderByDesc('invoice_number')
-            ->first();
-
-        if ($lastInvoice) {
-            $lastNumber = (int) substr($lastInvoice->invoice_number, -4);
-            $nextNumber = $lastNumber + 1;
-        } else {
-            $nextNumber = 1;
-        }
-
-        return $prefix.str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
-    }
-
-    /**
      * Scope by status.
      *
      * @param  \Illuminate\Database\Eloquent\Builder<SubcontractorInvoice>  $query

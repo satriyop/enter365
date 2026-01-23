@@ -341,27 +341,6 @@ class Bill extends Model
     }
 
     /**
-     * Generate the next bill number.
-     */
-    public static function generateBillNumber(): string
-    {
-        $prefix = 'BILL-'.now()->format('Ym').'-';
-        $lastBill = static::query()
-            ->where('bill_number', 'like', $prefix.'%')
-            ->orderBy('bill_number', 'desc')
-            ->first();
-
-        if ($lastBill) {
-            $lastNumber = (int) substr($lastBill->bill_number, -4);
-            $nextNumber = $lastNumber + 1;
-        } else {
-            $nextNumber = 1;
-        }
-
-        return $prefix.str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
-    }
-
-    /**
      * Get the bill state machine instance.
      */
     public function stateMachine(): \App\Domain\Purchasing\Bills\BillStateMachine

@@ -302,27 +302,6 @@ class DeliveryOrder extends Model
     }
 
     /**
-     * Generate the next DO number.
-     */
-    public static function generateDoNumber(): string
-    {
-        $prefix = 'DO-'.now()->format('Ym').'-';
-        $lastDo = static::query()
-            ->where('do_number', 'like', $prefix.'%')
-            ->orderBy('do_number', 'desc')
-            ->first();
-
-        if ($lastDo) {
-            $lastNumber = (int) substr($lastDo->do_number, -4);
-            $nextNumber = $lastNumber + 1;
-        } else {
-            $nextNumber = 1;
-        }
-
-        return $prefix.str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
-    }
-
-    /**
      * Get the state machine instance for this delivery order.
      */
     public function stateMachine(): \App\Domain\Sales\DeliveryOrders\DeliveryOrderStateMachine

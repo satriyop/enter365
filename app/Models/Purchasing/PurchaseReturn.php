@@ -310,24 +310,6 @@ class PurchaseReturn extends Model
     /**
      * Generate the next return number.
      */
-    public static function generateReturnNumber(): string
-    {
-        $prefix = 'PR-'.now()->format('Ym').'-';
-        $lastReturn = static::query()
-            ->where('return_number', 'like', $prefix.'%')
-            ->orderBy('return_number', 'desc')
-            ->first();
-
-        if ($lastReturn) {
-            $lastNumber = (int) substr($lastReturn->return_number, -4);
-            $nextNumber = $lastNumber + 1;
-        } else {
-            $nextNumber = 1;
-        }
-
-        return $prefix.str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
-    }
-
     public function stateMachine(): \App\Domain\Purchasing\PurchaseReturns\PurchaseReturnStateMachine
     {
         return \App\Domain\Purchasing\PurchaseReturns\PurchaseReturnStateMachine::fromPurchaseReturn($this);

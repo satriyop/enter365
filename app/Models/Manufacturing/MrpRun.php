@@ -250,27 +250,6 @@ class MrpRun extends Model
     }
 
     /**
-     * Generate run number.
-     */
-    public static function generateRunNumber(): string
-    {
-        $prefix = 'MRP-'.now()->format('Ym').'-';
-        $lastRun = static::query()
-            ->where('run_number', 'like', $prefix.'%')
-            ->orderByDesc('run_number')
-            ->first();
-
-        if ($lastRun) {
-            $lastNumber = (int) substr($lastRun->run_number, -4);
-            $nextNumber = $lastNumber + 1;
-        } else {
-            $nextNumber = 1;
-        }
-
-        return $prefix.str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
-    }
-
-    /**
      * Get available statuses.
      *
      * @return array<string, string>

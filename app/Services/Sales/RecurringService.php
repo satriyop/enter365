@@ -172,7 +172,6 @@ class RecurringService extends BaseService implements RecurringServiceInterface
         $totalAmount = $subtotal + $taxAmount - $template->discount_amount;
 
         $bill = Bill::create([
-            'bill_number' => Bill::generateBillNumber(),
             'contact_id' => $template->contact_id,
             'bill_date' => $billDate,
             'due_date' => $dueDate,

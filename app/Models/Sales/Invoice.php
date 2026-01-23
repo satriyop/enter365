@@ -354,27 +354,6 @@ class Invoice extends Model
     }
 
     /**
-     * Generate the next invoice number.
-     */
-    public static function generateInvoiceNumber(): string
-    {
-        $prefix = 'INV-'.now()->format('Ym').'-';
-        $lastInvoice = static::query()
-            ->where('invoice_number', 'like', $prefix.'%')
-            ->orderBy('invoice_number', 'desc')
-            ->first();
-
-        if ($lastInvoice) {
-            $lastNumber = (int) substr($lastInvoice->invoice_number, -4);
-            $nextNumber = $lastNumber + 1;
-        } else {
-            $nextNumber = 1;
-        }
-
-        return $prefix.str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
-    }
-
-    /**
      * Get the invoice state machine instance.
      */
     public function stateMachine(): \App\Domain\Sales\Invoices\InvoiceStateMachine

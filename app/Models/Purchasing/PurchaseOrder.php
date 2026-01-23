@@ -500,27 +500,6 @@ class PurchaseOrder extends Model
     }
 
     /**
-     * Generate the next PO number.
-     */
-    public static function generatePoNumber(): string
-    {
-        $prefix = 'PO-'.now()->format('Ym').'-';
-        $lastPo = static::query()
-            ->where('po_number', 'like', $prefix.'%')
-            ->orderBy('po_number', 'desc')
-            ->first();
-
-        if ($lastPo) {
-            $lastNumber = (int) substr($lastPo->po_number, -4);
-            $nextNumber = $lastNumber + 1;
-        } else {
-            $nextNumber = 1;
-        }
-
-        return $prefix.str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
-    }
-
-    /**
      * Get the next revision number for this PO.
      */
     public function getNextRevisionNumber(): int

@@ -203,27 +203,6 @@ class MaterialRequisition extends Model
             ->toArray();
     }
 
-    /**
-     * Generate requisition number.
-     */
-    public static function generateRequisitionNumber(): string
-    {
-        $prefix = 'MR-'.now()->format('Ym').'-';
-        $lastMr = static::query()
-            ->where('requisition_number', 'like', $prefix.'%')
-            ->orderByDesc('requisition_number')
-            ->first();
-
-        if ($lastMr) {
-            $lastNumber = (int) substr($lastMr->requisition_number, -4);
-            $nextNumber = $lastNumber + 1;
-        } else {
-            $nextNumber = 1;
-        }
-
-        return $prefix.str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
-    }
-
     public function stateMachine(): \App\Domain\Manufacturing\MaterialRequisitions\MaterialRequisitionStateMachine
     {
         return \App\Domain\Manufacturing\MaterialRequisitions\MaterialRequisitionStateMachine::fromMaterialRequisition($this);

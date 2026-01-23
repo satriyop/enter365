@@ -139,27 +139,6 @@ class GoodsReceiptNote extends Model
     }
 
     /**
-     * Generate the next GRN number.
-     */
-    public static function generateGrnNumber(): string
-    {
-        $date = now()->format('Ymd');
-        $prefix = "GRN-{$date}-";
-
-        $lastGrn = static::where('grn_number', 'like', "{$prefix}%")
-            ->orderByDesc('grn_number')
-            ->first();
-
-        if ($lastGrn && preg_match('/(\d{4})$/', $lastGrn->grn_number, $matches)) {
-            $nextNum = (int) $matches[1] + 1;
-        } else {
-            $nextNum = 1;
-        }
-
-        return $prefix.str_pad($nextNum, 4, '0', STR_PAD_LEFT);
-    }
-
-    /**
      * Check if GRN is in draft status.
      */
     public function isDraft(): bool

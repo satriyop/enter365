@@ -263,32 +263,4 @@ class Bom extends Model
             'unit_cost' => $this->unit_cost,
         ];
     }
-
-    /**
-     * Generate the next BOM number.
-     * Uses lockForUpdate to prevent race conditions in concurrent transactions.
-     * Includes soft-deleted records to avoid duplicate key violations.
-     */
-    public static function generateBomNumber(): string
-    {
-        $prefix = 'BOM-'.now()->format('Ym').'-';
-
-        // Include soft-deleted records to avoid duplicate key violations
-        // Get all BOMs with this prefix and find the max number in PHP
-        // This approach is database-agnostic (works with MySQL, PostgreSQL, SQLite)
-        $lastBom = static::withTrashed()
-            ->where('bom_number', 'like', $prefix.'%')
-            ->orderBy('bom_number', 'desc')
-            ->first();
-
-        if ($lastBom) {
-            // Extract the numeric suffix from the bom_number
-            $lastNumber = (int) substr($lastBom->bom_number, -4);
-            $nextNumber = $lastNumber + 1;
-        } else {
-            $nextNumber = 1;
-        }
-
-        return $prefix.str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
-    }
 }

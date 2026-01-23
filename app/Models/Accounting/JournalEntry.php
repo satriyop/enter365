@@ -139,25 +139,4 @@ class JournalEntry extends Model
     {
         return $this->getTotalDebit() === $this->getTotalCredit();
     }
-
-    /**
-     * Generate the next entry number.
-     */
-    public static function generateEntryNumber(): string
-    {
-        $prefix = 'JE-'.now()->format('Ym').'-';
-        $lastEntry = static::query()
-            ->where('entry_number', 'like', $prefix.'%')
-            ->orderBy('entry_number', 'desc')
-            ->first();
-
-        if ($lastEntry) {
-            $lastNumber = (int) substr($lastEntry->entry_number, -4);
-            $nextNumber = $lastNumber + 1;
-        } else {
-            $nextNumber = 1;
-        }
-
-        return $prefix.str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
-    }
 }
