@@ -96,6 +96,21 @@ class SubcontractorWorkOrder extends Model
         'cancellation_reason',
     ];
 
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (SubcontractorWorkOrder $scWo) {
+            if (empty($scWo->sc_wo_number)) {
+                $scWo->sc_wo_number = \App\Domain\Shared\DocumentNumbers::generate(
+                    'SCWO-'.now()->format('Ym').'-',
+                    'subcontractor_work_orders',
+                    'sc_wo_number'
+                );
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [

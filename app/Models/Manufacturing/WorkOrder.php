@@ -119,6 +119,21 @@ class WorkOrder extends Model
         'cancellation_reason',
     ];
 
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (WorkOrder $wo) {
+            if (empty($wo->wo_number)) {
+                $wo->wo_number = \App\Domain\Shared\DocumentNumbers::generate(
+                    'WO-'.now()->format('Ym').'-',
+                    'work_orders',
+                    'wo_number'
+                );
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [
