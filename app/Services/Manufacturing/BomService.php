@@ -7,7 +7,6 @@ namespace App\Services\Manufacturing;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Manufacturing\BomServiceInterface;
-use App\Contracts\Shared\DocumentNumberGeneratorInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Inventory\Product;
 use App\Models\Manufacturing\Bom;
@@ -18,8 +17,7 @@ class BomService extends BaseService implements BomServiceInterface
 {
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
-        ContextualLoggerInterface $logger,
-        private DocumentNumberGeneratorInterface $numberGenerator
+        ContextualLoggerInterface $logger
     ) {
         parent::__construct($eventDispatcher, $logger);
     }
@@ -33,7 +31,7 @@ class BomService extends BaseService implements BomServiceInterface
     {
         return $this->executeInTransaction('create', function () use ($data) {
             $bom = new Bom($data);
-            $bom->bom_number = $this->numberGenerator->generate('BOM-'.now()->format('Ym').'-', 'boms', 'bom_number');
+            $bom->bom_number = \App\Domain\Shared\DocumentNumbers::generate('BOM-'.now()->format('Ym').'-', 'boms', 'bom_number');
             $bom->created_by = $this->getUserId();
             $bom->save();
 
@@ -155,7 +153,7 @@ class BomService extends BaseService implements BomServiceInterface
     {
         return $this->executeInTransaction('duplicate', function () use ($bom) {
             $newBom = $bom->replicate(['bom_number', 'status', 'approved_by', 'approved_at']);
-            $newBom->bom_number = $this->numberGenerator->generate('BOM-'.now()->format('Ym').'-', 'boms', 'bom_number');
+            $newBom->bom_number = \App\Domain\Shared\DocumentNumbers::generate('BOM-'.now()->format('Ym').'-', 'boms', 'bom_number');
             $newBom->status = DocumentStatus::Draft;
             $newBom->version = $this->getNextVersion($bom->version);
             $newBom->parent_bom_id = $bom->id;

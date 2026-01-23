@@ -60,6 +60,22 @@ class Bill extends Model
 {
     use Filterable, HasDocumentDiscount, HasFactory, HasStatusHistory, SoftDeletes;
 
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (Bill $bill) {
+            if (empty($bill->bill_number)) {
+                $prefix = 'BL-'.now()->format('Ym').'-';
+                $bill->bill_number = \App\Domain\Shared\DocumentNumbers::generate(
+                    $prefix,
+                    'bills',
+                    'bill_number'
+                );
+            }
+        });
+    }
+
     protected $fillable = [
         'bill_number',
         'vendor_invoice_number',

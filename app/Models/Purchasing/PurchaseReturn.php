@@ -61,6 +61,22 @@ class PurchaseReturn extends Model
 
     public const REASON_OTHER = 'other';
 
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (PurchaseReturn $return) {
+            if (empty($return->return_number)) {
+                $prefix = 'PR-'.now()->format('Ym').'-';
+                $return->return_number = \App\Domain\Shared\DocumentNumbers::generate(
+                    $prefix,
+                    'purchase_returns',
+                    'return_number'
+                );
+            }
+        });
+    }
+
     protected $fillable = [
         'return_number',
         'bill_id',

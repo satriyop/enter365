@@ -66,6 +66,22 @@ class PurchaseOrder extends Model
 {
     use Filterable, HasDocumentDiscount, HasFactory, HasStatusHistory, SoftDeletes;
 
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (PurchaseOrder $po) {
+            if (empty($po->po_number)) {
+                $prefix = 'PO-'.now()->format('Ym').'-';
+                $po->po_number = \App\Domain\Shared\DocumentNumbers::generate(
+                    $prefix,
+                    'purchase_orders',
+                    'po_number'
+                );
+            }
+        });
+    }
+
     protected $fillable = [
         'po_number',
         'revision',

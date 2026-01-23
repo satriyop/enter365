@@ -7,7 +7,6 @@ namespace App\Services\Purchasing;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Purchasing\PurchaseReturnServiceInterface;
-use App\Contracts\Shared\DocumentNumberGeneratorInterface;
 use App\Domain\Purchasing\PurchaseReturns\Handlers\PurchaseReturnApprovalPipeline;
 use App\Enums\DocumentStatus;
 use App\Models\Purchasing\Bill;
@@ -36,12 +35,10 @@ class PurchaseReturnService implements PurchaseReturnServiceInterface
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger,
-        DocumentNumberGeneratorInterface $numberGenerator,
         PurchaseReturnApprovalPipeline $approvalPipeline
     ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->logger = $logger;
-        $this->numberGenerator = $numberGenerator;
 
         $this->approvalPipeline = $approvalPipeline;
     }
@@ -54,28 +51,6 @@ class PurchaseReturnService implements PurchaseReturnServiceInterface
     protected function getItemRelation(): string
     {
         return 'items';
-    }
-
-    protected function generateDocumentNumber(?Model $context = null): string
-    {
-        $prefix = 'PR-'.now()->format('Ym').'-';
-
-        return $this->numberGenerator->generate($prefix, 'purchase_returns', 'return_number');
-    }
-
-    protected function getDocumentNumberField(): string
-    {
-        return 'return_number';
-    }
-
-    protected function getDocumentNumberPrefix(): string
-    {
-        return 'PR-'.now()->format('Ym').'-';
-    }
-
-    protected function getDocumentNumberConfig(): array
-    {
-        return ['table' => 'purchase_returns', 'column' => 'return_number'];
     }
 
     protected function getInitialStatus(): DocumentStatus
@@ -158,7 +133,6 @@ class PurchaseReturnService implements PurchaseReturnServiceInterface
                 'tax_rate' => $bill->tax_rate,
                 'created_by' => $data['created_by'] ?? $this->getUserId(),
             ]);
-            $purchaseReturn->return_number = $this->numberGenerator->generate('PR-'.now()->format('Ym').'-', 'purchase_returns', 'return_number');
             $purchaseReturn->save();
 
             foreach ($bill->items as $billItem) {

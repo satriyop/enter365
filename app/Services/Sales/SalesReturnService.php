@@ -7,7 +7,6 @@ namespace App\Services\Sales;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Sales\SalesReturnServiceInterface;
-use App\Contracts\Shared\DocumentNumberGeneratorInterface;
 use App\Domain\Sales\SalesReturns\Handlers\SalesReturnApprovalPipeline;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\Invoice;
@@ -35,12 +34,10 @@ class SalesReturnService implements SalesReturnServiceInterface
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger,
-        DocumentNumberGeneratorInterface $numberGenerator,
         SalesReturnApprovalPipeline $approvalPipeline
     ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->logger = $logger;
-        $this->numberGenerator = $numberGenerator;
 
         $this->approvalPipeline = $approvalPipeline;
     }
@@ -53,28 +50,6 @@ class SalesReturnService implements SalesReturnServiceInterface
     protected function getItemRelation(): string
     {
         return 'items';
-    }
-
-    protected function generateDocumentNumber(?Model $context = null): string
-    {
-        $prefix = 'SR-'.now()->format('Ym').'-';
-
-        return $this->numberGenerator->generate($prefix, 'sales_returns', 'return_number');
-    }
-
-    protected function getDocumentNumberField(): string
-    {
-        return 'return_number';
-    }
-
-    protected function getDocumentNumberPrefix(): string
-    {
-        return 'SR-'.now()->format('Ym').'-';
-    }
-
-    protected function getDocumentNumberConfig(): array
-    {
-        return ['table' => 'sales_returns', 'column' => 'return_number'];
     }
 
     protected function getInitialStatus(): DocumentStatus
@@ -174,8 +149,6 @@ class SalesReturnService implements SalesReturnServiceInterface
                 'tax_rate' => $invoice->tax_rate,
                 'created_by' => $data['created_by'] ?? $this->getUserId(),
             ];
-
-            $defaults['return_number'] = $this->generateDocumentNumber();
 
             /** @var SalesReturn $salesReturn */
             $salesReturn = SalesReturn::create($defaults);

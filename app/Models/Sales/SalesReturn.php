@@ -30,6 +30,22 @@ class SalesReturn extends Model
 
     public const REASON_OTHER = 'other';
 
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (SalesReturn $return) {
+            if (empty($return->return_number)) {
+                $prefix = 'SR-'.now()->format('Ym').'-';
+                $return->return_number = \App\Domain\Shared\DocumentNumbers::generate(
+                    $prefix,
+                    'sales_returns',
+                    'return_number'
+                );
+            }
+        });
+    }
+
     protected $fillable = [
         'return_number',
         'invoice_id',

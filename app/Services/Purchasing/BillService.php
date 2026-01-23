@@ -8,7 +8,6 @@ use App\Contracts\Accounting\JournalServiceInterface;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Purchasing\BillServiceInterface;
-use App\Contracts\Shared\DocumentNumberGeneratorInterface;
 use App\Domain\Purchasing\Bills\Events\BillFullyPaid;
 use App\Domain\Purchasing\Bills\Events\BillOverdue;
 use App\Domain\Purchasing\Bills\Events\BillPartiallyPaid;
@@ -39,12 +38,10 @@ class BillService implements BillServiceInterface
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger,
-        JournalServiceInterface $journalService,
-        DocumentNumberGeneratorInterface $numberGenerator
+        JournalServiceInterface $journalService
     ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->logger = $logger;
-        $this->numberGenerator = $numberGenerator;
 
         $this->journalService = $journalService;
     }
@@ -57,28 +54,6 @@ class BillService implements BillServiceInterface
     protected function getItemRelation(): string
     {
         return 'items';
-    }
-
-    protected function generateDocumentNumber(?Model $context = null): string
-    {
-        $prefix = 'BILL-'.now()->format('Ym').'-';
-
-        return $this->numberGenerator->generate($prefix, 'bills', 'bill_number');
-    }
-
-    protected function getDocumentNumberField(): string
-    {
-        return 'bill_number';
-    }
-
-    protected function getDocumentNumberPrefix(): string
-    {
-        return 'BILL-'.now()->format('Ym').'-';
-    }
-
-    protected function getDocumentNumberConfig(): array
-    {
-        return ['table' => 'bills', 'column' => 'bill_number'];
     }
 
     protected function getInitialStatus(): DocumentStatus

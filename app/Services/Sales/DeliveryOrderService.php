@@ -8,7 +8,6 @@ use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Inventory\InventoryServiceInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Sales\DeliveryOrderServiceInterface;
-use App\Contracts\Shared\DocumentNumberGeneratorInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\DeliveryOrder;
 use App\Models\Sales\DeliveryOrderItem;
@@ -37,12 +36,10 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger,
-        InventoryServiceInterface $inventoryService,
-        DocumentNumberGeneratorInterface $numberGenerator
+        InventoryServiceInterface $inventoryService
     ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->logger = $logger;
-        $this->numberGenerator = $numberGenerator;
 
         $this->inventoryService = $inventoryService;
     }
@@ -55,28 +52,6 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
     protected function getItemRelation(): string
     {
         return 'items';
-    }
-
-    protected function generateDocumentNumber(?Model $context = null): string
-    {
-        $prefix = 'DO-'.now()->format('Ym').'-';
-
-        return $this->numberGenerator->generate($prefix, 'delivery_orders', 'do_number');
-    }
-
-    protected function getDocumentNumberField(): string
-    {
-        return 'do_number';
-    }
-
-    protected function getDocumentNumberPrefix(): string
-    {
-        return 'DO-'.now()->format('Ym').'-';
-    }
-
-    protected function getDocumentNumberConfig(): array
-    {
-        return ['table' => 'delivery_orders', 'column' => 'do_number'];
     }
 
     protected function getInitialStatus(): DocumentStatus
@@ -156,7 +131,6 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
                 'notes' => $data['notes'] ?? null,
                 'created_by' => $data['created_by'] ?? null,
             ]);
-            $deliveryOrder->do_number = $this->numberGenerator->generate('DO-'.now()->format('Ym').'-', 'delivery_orders', 'do_number');
             $deliveryOrder->save();
 
             foreach ($invoice->items as $invoiceItem) {

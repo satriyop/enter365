@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\Manufacturing;
 
-use App\Contracts\Shared\DocumentNumberGeneratorInterface;
 use App\Models\Projects\Project;
 
 /**
@@ -12,9 +11,7 @@ use App\Models\Projects\Project;
  */
 class WorkOrderNumberGenerator
 {
-    public function __construct(
-        private DocumentNumberGeneratorInterface $generator
-    ) {}
+    public function __construct() {}
 
     /**
      * Generate WO number with optional project prefix.
@@ -40,6 +37,6 @@ class WorkOrderNumberGenerator
         }
 
         // Fallback to standard generator without project
-        return $this->generator->generate('WO-'.now()->format('Ym').'-', 'work_orders', 'wo_number');
+        return \App\Domain\Shared\DocumentNumbers::generate('WO-'.now()->format('Ym').'-', 'work_orders', 'wo_number');
     }
 }

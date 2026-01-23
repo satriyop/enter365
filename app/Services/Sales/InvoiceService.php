@@ -9,7 +9,6 @@ use App\Contracts\Accounting\Strategies\COGSRecognitionStrategy;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Sales\InvoiceServiceInterface;
-use App\Contracts\Shared\DocumentNumberGeneratorInterface;
 use App\Domain\Sales\Invoices\Events\InvoiceFullyPaid;
 use App\Domain\Sales\Invoices\Events\InvoiceOverdue;
 use App\Domain\Sales\Invoices\Events\InvoicePartiallyPaid;
@@ -55,14 +54,12 @@ class InvoiceService implements InvoiceServiceInterface
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger,
-        DocumentNumberGeneratorInterface $numberGenerator,
         JournalServiceInterface $journalService,
         COGSRecognitionStrategy $cogsStrategy,
         InvoiceDomainFactory $domainFactory
     ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->logger = $logger;
-        $this->numberGenerator = $numberGenerator;
 
         $this->journalService = $journalService;
         $this->cogsStrategy = $cogsStrategy;
@@ -72,21 +69,6 @@ class InvoiceService implements InvoiceServiceInterface
     protected function getModelClass(): string
     {
         return Invoice::class;
-    }
-
-    protected function getDocumentNumberField(): string
-    {
-        return 'invoice_number';
-    }
-
-    protected function getDocumentNumberPrefix(): string
-    {
-        return 'INV-'.now()->format('Ym').'-';
-    }
-
-    protected function getDocumentNumberConfig(): array
-    {
-        return ['table' => 'invoices', 'column' => 'invoice_number'];
     }
 
     protected function getItemRelation(): string

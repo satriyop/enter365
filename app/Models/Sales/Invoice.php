@@ -59,6 +59,22 @@ class Invoice extends Model
 {
     use Filterable, HasDocumentDiscount, HasFactory, HasStatusHistory, SoftDeletes;
 
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (Invoice $invoice) {
+            if (empty($invoice->invoice_number)) {
+                $prefix = 'INV-'.now()->format('Ym').'-';
+                $invoice->invoice_number = \App\Domain\Shared\DocumentNumbers::generate(
+                    $prefix,
+                    'invoices',
+                    'invoice_number'
+                );
+            }
+        });
+    }
+
     protected $fillable = [
         'invoice_number',
         'contact_id',

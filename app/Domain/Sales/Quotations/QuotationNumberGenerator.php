@@ -5,18 +5,15 @@ declare(strict_types=1);
 namespace App\Domain\Sales\Quotations;
 
 use App\Contracts\Sales\QuotationNumberGeneratorInterface;
-use App\Contracts\Shared\DocumentNumberGeneratorInterface;
 use App\Models\Sales\Quotation;
 
 class QuotationNumberGenerator implements QuotationNumberGeneratorInterface
 {
-    public function __construct(
-        private DocumentNumberGeneratorInterface $documentNumberGenerator
-    ) {}
+    public function __construct() {}
 
     public function generateQuotationNumber(): string
     {
-        return $this->documentNumberGenerator->generate(
+        return \App\Domain\Shared\DocumentNumbers::generate(
             'QUO-'.now()->format('Ym').'-',
             'quotations',
             'quotation_number'

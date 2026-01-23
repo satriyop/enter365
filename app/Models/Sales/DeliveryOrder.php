@@ -55,6 +55,22 @@ class DeliveryOrder extends Model
         'freight',
     ];
 
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (DeliveryOrder $do) {
+            if (empty($do->do_number)) {
+                $prefix = 'DO-'.now()->format('Ym').'-';
+                $do->do_number = \App\Domain\Shared\DocumentNumbers::generate(
+                    $prefix,
+                    'delivery_orders',
+                    'do_number'
+                );
+            }
+        });
+    }
+
     protected $fillable = [
         'do_number',
         'invoice_id',

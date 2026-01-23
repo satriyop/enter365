@@ -7,7 +7,6 @@ namespace App\Services\Purchasing;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Purchasing\PurchaseOrderServiceInterface;
-use App\Contracts\Shared\DocumentNumberGeneratorInterface;
 use App\Domain\Purchasing\PurchaseOrderBillConverter;
 use App\Domain\Purchasing\PurchaseOrders\PurchaseOrderDomainFactory;
 use App\Domain\Purchasing\PurchaseOrderStatistics;
@@ -46,12 +45,10 @@ class PurchaseOrderService implements PurchaseOrderServiceInterface
         PurchaseOrderReceivingService $receivingService,
         PurchaseOrderBillConverter $billConverter,
         PurchaseOrderStatistics $statistics,
-        DocumentNumberGeneratorInterface $numberGenerator,
         PurchaseOrderDomainFactory $domainFactory
     ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->logger = $logger;
-        $this->numberGenerator = $numberGenerator;
 
         $this->receivingService = $receivingService;
         $this->billConverter = $billConverter;
@@ -67,28 +64,6 @@ class PurchaseOrderService implements PurchaseOrderServiceInterface
     protected function getItemRelation(): string
     {
         return 'items';
-    }
-
-    protected function generateDocumentNumber(?Model $context = null): string
-    {
-        $prefix = 'PO-'.now()->format('Ym').'-';
-
-        return $this->numberGenerator->generate($prefix, 'purchase_orders', 'po_number');
-    }
-
-    protected function getDocumentNumberField(): string
-    {
-        return 'po_number';
-    }
-
-    protected function getDocumentNumberPrefix(): string
-    {
-        return 'PO-'.now()->format('Ym').'-';
-    }
-
-    protected function getDocumentNumberConfig(): array
-    {
-        return ['table' => 'purchase_orders', 'column' => 'po_number'];
     }
 
     protected function getInitialStatus(): DocumentStatus

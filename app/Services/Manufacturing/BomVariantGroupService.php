@@ -7,7 +7,6 @@ namespace App\Services\Manufacturing;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Manufacturing\BomVariantGroupServiceInterface;
-use App\Contracts\Shared\DocumentNumberGeneratorInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomVariantGroup;
@@ -17,8 +16,7 @@ class BomVariantGroupService extends BaseService implements BomVariantGroupServi
 {
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
-        ContextualLoggerInterface $logger,
-        private DocumentNumberGeneratorInterface $numberGenerator
+        ContextualLoggerInterface $logger
     ) {
         parent::__construct($eventDispatcher, $logger);
     }
@@ -257,7 +255,7 @@ class BomVariantGroupService extends BaseService implements BomVariantGroupServi
         return $this->executeInTransaction('create_variant_from_bom', function () use ($group, $sourceBom, $variantData) {
             // Duplicate the BOM
             $newBom = $sourceBom->replicate(['bom_number', 'status', 'approved_by', 'approved_at']);
-            $newBom->bom_number = $this->numberGenerator->generate('BOM-'.now()->format('Ym').'-', 'boms', 'bom_number');
+            $newBom->bom_number = \App\Domain\Shared\DocumentNumbers::generate('BOM-'.now()->format('Ym').'-', 'boms', 'bom_number');
             $newBom->status = DocumentStatus::Draft;
             $newBom->variant_group_id = $group->id;
             $newBom->variant_name = $variantData['variant_name'] ?? 'Variant';

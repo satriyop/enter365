@@ -7,11 +7,9 @@ namespace App\Providers;
 use App\Contracts\Accounting\JournalServiceInterface;
 use App\Contracts\Sales\InvoiceCalculatorInterface;
 use App\Contracts\Sales\QuotationNumberGeneratorInterface;
-use App\Contracts\Shared\DocumentNumberGeneratorInterface;
 use App\Domain\Sales\Events\InvoicePosted;
 use App\Domain\Sales\Invoices\InvoiceCalculator;
 use App\Domain\Sales\Quotations\QuotationNumberGenerator;
-use App\Domain\Shared\DatabaseBackedNumberGenerator;
 use App\Listeners\Sales\PostInvoiceToJournal;
 use App\Services\Accounting\JournalService;
 use Illuminate\Support\Facades\Event;
@@ -25,7 +23,6 @@ class AccountingServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(JournalServiceInterface::class, JournalService::class);
-        $this->app->bind(DocumentNumberGeneratorInterface::class, DatabaseBackedNumberGenerator::class);
         $this->app->bind(InvoiceCalculatorInterface::class, InvoiceCalculator::class);
         $this->app->bind(QuotationNumberGeneratorInterface::class, QuotationNumberGenerator::class);
     }
