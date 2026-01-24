@@ -27,7 +27,8 @@ describe('Multi-Option Quotation Filtering', function () {
         $response = $this->getJson('/api/v1/quotations?quotation_type=multi_option');
 
         $response->assertOk()
-            ->assertJsonCount(2, 'data');
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('data.0.quotation_type.value', 'multi_option');
     });
 
     it('can filter only multi-option quotations using multi_option_only flag', function () {
@@ -271,7 +272,7 @@ describe('Quotation Show with Variants', function () {
         $response = $this->getJson("/api/v1/quotations/{$quotation->id}");
 
         $response->assertOk()
-            ->assertJsonPath('data.quotation_type', 'multi_option')
+            ->assertJsonPath('data.quotation_type.value', 'multi_option')
             ->assertJsonPath('data.is_multi_option', true)
             ->assertJsonStructure([
                 'data' => [
@@ -288,7 +289,7 @@ describe('Quotation Show with Variants', function () {
         $response = $this->getJson("/api/v1/quotations/{$quotation->id}");
 
         $response->assertOk()
-            ->assertJsonPath('data.quotation_type', 'single')
+            ->assertJsonPath('data.quotation_type.value', 'single')
             ->assertJsonPath('data.is_multi_option', false)
             ->assertJsonMissing(['variant_comparison']);
     });

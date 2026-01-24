@@ -16,14 +16,19 @@ beforeEach(function () {
 describe('Role CRUD', function () {
 
     it('can list all roles', function () {
-        // Create 5 unique roles
-        Role::factory()->count(5)->create();
+        // Create 10 unique roles
+        Role::factory()->count(10)->create();
+
+        $this->assertMaxQueries(15, function () {
+            $response = $this->getJson('/api/v1/roles');
+            $response->assertOk();
+        });
 
         $response = $this->getJson('/api/v1/roles');
 
         $response->assertOk();
-        // Assert that we have AT LEAST the 5 we just created (plus seeded ones)
-        expect($response->json('meta.total'))->toBeGreaterThanOrEqual(5);
+        // Assert that we have AT LEAST the 10 we just created (plus seeded ones)
+        expect($response->json('meta.total'))->toBeGreaterThanOrEqual(10);
     });
 
     it('can filter roles by is_system', function () {

@@ -572,6 +572,11 @@ describe('Cross-Reference Query Endpoints', function () {
             'product_id' => $siemensProduct->id,
         ]);
 
+        $this->assertMaxQueries(15, function () use ($schneiderProduct) {
+            $response = $this->getJson("/api/v1/products/{$schneiderProduct->id}/equivalents");
+            $response->assertOk();
+        });
+
         $response = $this->getJson("/api/v1/products/{$schneiderProduct->id}/equivalents");
 
         $response->assertOk()

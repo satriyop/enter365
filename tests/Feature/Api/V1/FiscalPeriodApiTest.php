@@ -19,12 +19,17 @@ beforeEach(function () {
 describe('Fiscal Period API', function () {
 
     it('can list all fiscal periods', function () {
-        FiscalPeriod::factory()->count(3)->create();
+        FiscalPeriod::factory()->count(10)->create();
+
+        $this->assertMaxQueries(15, function () {
+            $response = $this->getJson('/api/v1/fiscal-periods');
+            $response->assertOk();
+        });
 
         $response = $this->getJson('/api/v1/fiscal-periods');
 
         $response->assertOk()
-            ->assertJsonCount(3, 'data');
+            ->assertJsonCount(10, 'data');
     });
 
     it('can filter fiscal periods by is_closed', function () {

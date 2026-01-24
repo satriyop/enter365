@@ -31,7 +31,7 @@ describe('Create Quotation from BOM', function () {
         ]);
 
         $response->assertCreated()
-            ->assertJsonPath('data.quotation_type', 'single')
+            ->assertJsonPath('data.quotation_type.value', 'single')
             ->assertJsonPath('data.status.value', 'draft');
 
         // Default margin is 20%

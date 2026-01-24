@@ -343,7 +343,7 @@ class Quotation extends Model
      */
     public function isMultiOption(): bool
     {
-        return $this->quotation_type === QuotationType::MultiOption->value;
+        return $this->quotation_type === QuotationType::MultiOption;
     }
 
     /**

@@ -15,9 +15,14 @@ describe('List Users', function () {
 
     it('admin can list all users', function () {
         $admin = User::factory()->admin()->create();
-        User::factory()->count(5)->create();
+        User::factory()->count(10)->create();
 
         Sanctum::actingAs($admin);
+
+        $this->assertMaxQueries(15, function () {
+            $response = $this->getJson('/api/v1/users');
+            $response->assertOk();
+        });
 
         $response = $this->getJson('/api/v1/users');
 
@@ -36,8 +41,8 @@ describe('List Users', function () {
                 'links',
             ]);
 
-        // 5 + 1 admin = 6 users total
-        expect($response->json('meta.total'))->toBe(6);
+        // 10 + 1 admin = 11 users total
+        expect($response->json('meta.total'))->toBe(11);
     });
 
     it('non-admin cannot list users', function () {

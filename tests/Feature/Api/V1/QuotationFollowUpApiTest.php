@@ -28,19 +28,25 @@ describe('Quotation Follow-Up List', function () {
             ->forContact($customer)
             ->submitted()
             ->overdueFollowUp()
-            ->count(2)
+            ->count(5)
             ->create();
 
-        // Quotation without follow-up
-        Quotation::factory()
-            ->forContact($customer)
-            ->submitted()
-            ->create();
+        $this->assertMaxQueries(15, function () {
+            $response = $this->getJson('/api/v1/quotation-follow-up?needs_follow_up=1');
+            $response->assertOk();
+        });
 
         $response = $this->getJson('/api/v1/quotation-follow-up?needs_follow_up=1');
-
-        $response->assertOk()
-            ->assertJsonCount(2, 'data');
+        $response->assertJsonCount(5, 'data')
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => [
+                        'status' => ['value', 'label', 'color'],
+                        'priority' => ['value', 'label'],
+                        'needs_follow_up',
+                    ]
+                ]
+            ]);
     });
 
     it('can filter by assigned user', function () {
@@ -250,7 +256,7 @@ describe('Update Priority', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.priority', 'high');
+            ->assertJsonPath('data.priority.value', 'high');
     });
 
     it('validates priority value', function () {
@@ -279,11 +285,11 @@ describe('Win/Loss Tracking', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.outcome', 'won')
+            ->assertJsonPath('data.outcome.value', 'won')
             ->assertJsonPath('data.won_reason', 'harga_kompetitif');
 
         $quotation->refresh();
-        expect($quotation->outcome)->toBe(QuotationOutcome::Won->value);
+        expect($quotation->outcome)->toBe(QuotationOutcome::Won);
         expect($quotation->outcome_at)->not->toBeNull();
     });
 
@@ -309,12 +315,12 @@ describe('Win/Loss Tracking', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.outcome', 'lost')
+            ->assertJsonPath('data.outcome.value', 'lost')
             ->assertJsonPath('data.lost_reason', 'harga_tinggi')
             ->assertJsonPath('data.lost_to_competitor', 'PT Competitor');
 
         $quotation->refresh();
-        expect($quotation->outcome)->toBe(QuotationOutcome::Lost->value);
+        expect($quotation->outcome)->toBe(QuotationOutcome::Lost);
     });
 
     it('cannot mark already decided quotation', function () {

@@ -26,12 +26,27 @@ beforeEach(function () {
 describe('BOM Template CRUD', function () {
 
     it('can list all templates', function () {
-        BomTemplate::factory()->count(5)->create();
+        BomTemplate::factory()->count(10)->create();
+
+        $this->assertMaxQueries(15, function () {
+            $response = $this->getJson('/api/v1/bom-templates');
+            $response->assertOk();
+        });
 
         $response = $this->getJson('/api/v1/bom-templates');
-
         $response->assertOk()
-            ->assertJsonCount(5, 'data');
+            ->assertJsonCount(10, 'data')
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => [
+                        'id',
+                        'code',
+                        'name',
+                        'category',
+                        'is_active',
+                    ]
+                ]
+            ]);
     });
 
     it('can paginate templates', function () {
@@ -572,6 +587,13 @@ describe('Create BOM from Template', function () {
             'brand' => 'schneider',
             'product_id' => $product->id,
         ]);
+
+        $this->assertMaxQueries(15, function () use ($template) {
+            $response = $this->postJson("/api/v1/bom-templates/{$template->id}/preview-bom", [
+                'target_brand' => 'schneider',
+            ]);
+            $response->assertOk();
+        });
 
         $response = $this->postJson("/api/v1/bom-templates/{$template->id}/preview-bom", [
             'target_brand' => 'schneider',
