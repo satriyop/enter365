@@ -24,12 +24,25 @@ beforeEach(function () {
 describe('Material Requisition CRUD', function () {
 
     it('can list all material requisitions', function () {
-        MaterialRequisition::factory()->count(3)->create();
+        MaterialRequisition::factory()->count(10)->create();
+
+        $this->assertMaxQueries(15, function () {
+            $response = $this->getJson('/api/v1/material-requisitions');
+            $response->assertOk();
+        });
 
         $response = $this->getJson('/api/v1/material-requisitions');
-
-        $response->assertOk()
-            ->assertJsonCount(3, 'data');
+        $response->assertJsonCount(10, 'data')
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => [
+                        'id',
+                        'requisition_number',
+                        'status' => ['value', 'label', 'color', 'is_terminal', 'is_editable'],
+                        'requested_date',
+                    ],
+                ],
+            ]);
     });
 
     it('can filter material requisitions by status', function () {

@@ -23,12 +23,25 @@ beforeEach(function () {
 describe('Stock Opname CRUD', function () {
 
     it('can list all stock opnames', function () {
-        StockOpname::factory()->count(3)->create();
+        StockOpname::factory()->count(10)->create();
+
+        $this->assertMaxQueries(15, function () {
+            $response = $this->getJson('/api/v1/stock-opnames');
+            $response->assertOk();
+        });
 
         $response = $this->getJson('/api/v1/stock-opnames');
-
-        $response->assertOk()
-            ->assertJsonCount(3, 'data');
+        $response->assertJsonCount(10, 'data')
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => [
+                        'id',
+                        'opname_number',
+                        'status' => ['value', 'label', 'color'],
+                        'opname_date',
+                    ],
+                ],
+            ]);
     });
 
     it('can filter stock opnames by status', function () {

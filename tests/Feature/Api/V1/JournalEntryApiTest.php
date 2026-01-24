@@ -21,12 +21,28 @@ beforeEach(function () {
 describe('Journal Entry API', function () {
 
     it('can list all journal entries', function () {
-        JournalEntry::factory()->count(3)->create();
+        JournalEntry::factory()->count(10)->create();
+
+        $this->assertMaxQueries(15, function () {
+            $response = $this->getJson('/api/v1/journal-entries');
+            $response->assertOk();
+        });
 
         $response = $this->getJson('/api/v1/journal-entries');
-
-        $response->assertOk()
-            ->assertJsonCount(3, 'data');
+        $response->assertJsonCount(10, 'data')
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => [
+                        'id',
+                        'entry_number',
+                        'entry_date',
+                        'description',
+                        'is_posted',
+                        'total_debit',
+                        'total_credit',
+                    ],
+                ],
+            ]);
     });
 
     it('can filter journal entries by posted status', function () {

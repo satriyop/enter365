@@ -17,12 +17,28 @@ beforeEach(function () {
 describe('Contact API', function () {
 
     it('can list all contacts', function () {
-        Contact::factory()->count(5)->create();
+        Contact::factory()->count(10)->create();
+
+        $this->assertMaxQueries(15, function () {
+            $response = $this->getJson('/api/v1/contacts');
+            $response->assertOk();
+        });
 
         $response = $this->getJson('/api/v1/contacts');
-
-        $response->assertOk()
-            ->assertJsonCount(5, 'data');
+        $response->assertJsonCount(10, 'data')
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => [
+                        'id',
+                        'code',
+                        'name',
+                        'type',
+                        'email',
+                        'phone',
+                        'is_active',
+                    ],
+                ],
+            ]);
     });
 
     it('can filter contacts by type customer', function () {

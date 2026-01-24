@@ -32,12 +32,26 @@ describe('Payment API', function () {
 
     it('can list all payments', function () {
         $account = Account::where('code', '1-1010')->first(); // Bank BCA
-        Payment::factory()->withCashAccount($account)->count(3)->create();
+        Payment::factory()->withCashAccount($account)->count(10)->create();
+
+        $this->assertMaxQueries(15, function () {
+            $response = $this->getJson('/api/v1/payments');
+            $response->assertOk();
+        });
 
         $response = $this->getJson('/api/v1/payments');
-
-        $response->assertOk()
-            ->assertJsonCount(3, 'data');
+        $response->assertJsonCount(10, 'data')
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => [
+                        'id',
+                        'payment_number',
+                        'type',
+                        'amount',
+                        'payment_date',
+                    ],
+                ],
+            ]);
     });
 
     it('can filter payments by type', function () {

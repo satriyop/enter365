@@ -22,6 +22,9 @@ class JournalEntryController extends Controller
     public function index(JournalEntryFilter $filter): AnonymousResourceCollection
     {
         $entries = JournalEntry::query()
+            ->withCount(['lines'])
+            ->withSum('lines as total_debit', 'debit')
+            ->withSum('lines as total_credit', 'credit')
             ->filter($filter)
             ->orderByDesc('entry_date')
             ->orderByDesc('id')

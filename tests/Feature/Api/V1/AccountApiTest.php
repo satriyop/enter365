@@ -21,12 +21,16 @@ beforeEach(function () {
 describe('Account API', function () {
 
     it('can list all accounts', function () {
-        $response = $this->getJson('/api/v1/accounts');
+        $this->assertMaxQueries(15, function () {
+            $response = $this->getJson('/api/v1/accounts');
+            $response->assertOk();
+        });
 
+        $response = $this->getJson('/api/v1/accounts');
         $response->assertOk()
             ->assertJsonStructure([
                 'data' => [
-                    '*' => ['id', 'code', 'name', 'type', 'is_active'],
+                    '*' => ['id', 'code', 'name', 'type', 'is_active', 'opening_balance'],
                 ],
                 'links',
                 'meta',
@@ -149,7 +153,16 @@ describe('Account API', function () {
         $response = $this->getJson("/api/v1/accounts/{$account->id}/balance");
 
         $response->assertOk()
-            ->assertJsonStructure(['account_id', 'code', 'name', 'type', 'as_of_date', 'balance']);
+            ->assertJsonStructure([
+                'account_id', 
+                'code', 
+                'name', 
+                'type', 
+                'as_of_date', 
+                'balance',
+                'total_debit',
+                'total_credit'
+            ]);
     });
 
     it('can get account ledger', function () {
@@ -158,6 +171,25 @@ describe('Account API', function () {
         $response = $this->getJson("/api/v1/accounts/{$account->id}/ledger");
 
         $response->assertOk()
-            ->assertJsonStructure(['account_id', 'code', 'name', 'type', 'opening_balance', 'entries']);
+            ->assertJsonStructure([
+                'account_id', 
+                'code', 
+                'name', 
+                'type', 
+                'opening_balance', 
+                'entries' => [
+                    '*' => [
+                        'id',
+                        'journal_entry_id',
+                        'date',
+                        'entry_number',
+                        'description',
+                        'reference',
+                        'debit',
+                        'credit',
+                        'running_balance'
+                    ]
+                ]
+            ]);
     });
 });

@@ -21,12 +21,26 @@ beforeEach(function () {
 describe('Sales Return CRUD', function () {
 
     it('can list all sales returns', function () {
-        SalesReturn::factory()->count(5)->create();
+        SalesReturn::factory()->count(10)->create();
+
+        $this->assertMaxQueries(15, function () {
+            $response = $this->getJson('/api/v1/sales-returns');
+            $response->assertOk();
+        });
 
         $response = $this->getJson('/api/v1/sales-returns');
-
-        $response->assertOk()
-            ->assertJsonCount(5, 'data');
+        $response->assertJsonCount(10, 'data')
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => [
+                        'id',
+                        'return_number',
+                        'status' => ['value', 'label', 'color'],
+                        'return_date',
+                        'total_amount',
+                    ],
+                ],
+            ]);
     });
 
     it('can filter sales returns by status', function () {

@@ -21,12 +21,26 @@ beforeEach(function () {
 describe('Purchase Return CRUD', function () {
 
     it('can list all purchase returns', function () {
-        PurchaseReturn::factory()->count(5)->create();
+        PurchaseReturn::factory()->count(10)->create();
+
+        $this->assertMaxQueries(15, function () {
+            $response = $this->getJson('/api/v1/purchase-returns');
+            $response->assertOk();
+        });
 
         $response = $this->getJson('/api/v1/purchase-returns');
-
-        $response->assertOk()
-            ->assertJsonCount(5, 'data');
+        $response->assertJsonCount(10, 'data')
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => [
+                        'id',
+                        'return_number',
+                        'status' => ['value', 'label', 'color'],
+                        'return_date',
+                        'total_amount',
+                    ],
+                ],
+            ]);
     });
 
     it('can filter purchase returns by status', function () {

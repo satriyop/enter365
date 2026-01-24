@@ -139,8 +139,8 @@ describe('Work Order CRUD', function () {
         $response->assertCreated()
             ->assertJsonPath('data.status.value', 'draft')
             ->assertJsonPath('data.name', 'Assembly Panel MDP')
-            ->assertJsonPath('data.type', 'production')
-            ->assertJsonPath('data.priority', 'high')
+            ->assertJsonPath('data.type.value', 'production')
+            ->assertJsonPath('data.priority.value', 'high')
             ->assertJsonPath('data.quantity_ordered', 5);
     });
 
@@ -216,7 +216,7 @@ describe('Work Order CRUD', function () {
 
         $response->assertOk()
             ->assertJsonPath('data.name', 'Updated Work Order Name')
-            ->assertJsonPath('data.priority', 'urgent')
+            ->assertJsonPath('data.priority.value', 'urgent')
             ->assertJsonPath('data.notes', 'Updated notes');
     });
 
@@ -261,7 +261,7 @@ describe('Work Order from Project', function () {
 
         $response->assertCreated()
             ->assertJsonPath('data.project_id', $project->id)
-            ->assertJsonPath('data.type', 'installation');
+            ->assertJsonPath('data.type.value', 'installation');
 
         // Verify WO number format
         $woNumber = $response->json('data.wo_number');

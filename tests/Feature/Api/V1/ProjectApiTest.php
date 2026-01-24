@@ -23,12 +23,27 @@ beforeEach(function () {
 describe('Project CRUD', function () {
 
     it('can list all projects', function () {
-        Project::factory()->count(3)->create();
+        Project::factory()->count(10)->create();
+
+        $this->assertMaxQueries(15, function () {
+            $response = $this->getJson('/api/v1/projects');
+            $response->assertOk();
+        });
 
         $response = $this->getJson('/api/v1/projects');
-
-        $response->assertOk()
-            ->assertJsonCount(3, 'data');
+        $response->assertJsonCount(10, 'data')
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => [
+                        'id',
+                        'project_number',
+                        'name',
+                        'status' => ['value', 'label', 'color', 'is_terminal', 'is_editable'],
+                        'priority',
+                        'progress_percentage',
+                    ],
+                ],
+            ]);
     });
 
     it('can filter projects by status', function () {

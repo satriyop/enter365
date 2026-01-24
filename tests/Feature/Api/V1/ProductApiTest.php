@@ -21,12 +21,29 @@ beforeEach(function () {
 describe('Product API', function () {
 
     it('can list all products', function () {
-        Product::factory()->count(5)->create();
+        Product::factory()->count(10)->create();
+
+        $this->assertMaxQueries(15, function () {
+            $response = $this->getJson('/api/v1/products');
+            $response->assertOk();
+        });
 
         $response = $this->getJson('/api/v1/products');
-
-        $response->assertOk()
-            ->assertJsonCount(5, 'data');
+        $response->assertJsonCount(10, 'data')
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => [
+                        'id',
+                        'sku',
+                        'name',
+                        'type',
+                        'type_label',
+                        'unit',
+                        'selling_price',
+                        'is_active',
+                    ],
+                ],
+            ]);
     });
 
     it('can filter products by type', function () {

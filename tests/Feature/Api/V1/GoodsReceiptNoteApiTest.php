@@ -26,12 +26,25 @@ beforeEach(function () {
 describe('GRN CRUD', function () {
 
     it('can list all goods receipt notes', function () {
-        GoodsReceiptNote::factory()->count(3)->create();
+        GoodsReceiptNote::factory()->count(10)->create();
+
+        $this->assertMaxQueries(15, function () {
+            $response = $this->getJson('/api/v1/goods-receipt-notes');
+            $response->assertOk();
+        });
 
         $response = $this->getJson('/api/v1/goods-receipt-notes');
-
-        $response->assertOk()
-            ->assertJsonCount(3, 'data');
+        $response->assertJsonCount(10, 'data')
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => [
+                        'id',
+                        'grn_number',
+                        'status' => ['value', 'label', 'color'],
+                        'receipt_date',
+                    ],
+                ],
+            ]);
     });
 
     it('can filter goods receipt notes by status', function () {

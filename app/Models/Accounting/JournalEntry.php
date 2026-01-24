@@ -122,6 +122,10 @@ class JournalEntry extends Model
      */
     public function getTotalDebit(): int
     {
+        if (array_key_exists('total_debit', $this->attributes)) {
+            return (int) $this->attributes['total_debit'];
+        }
+
         return (int) $this->lines()->sum('debit');
     }
 
@@ -130,6 +134,10 @@ class JournalEntry extends Model
      */
     public function getTotalCredit(): int
     {
+        if (array_key_exists('total_credit', $this->attributes)) {
+            return (int) $this->attributes['total_credit'];
+        }
+
         return (int) $this->lines()->sum('credit');
     }
 
@@ -138,6 +146,10 @@ class JournalEntry extends Model
      */
     public function isBalanced(): bool
     {
+        if (array_key_exists('total_debit', $this->attributes) && array_key_exists('total_credit', $this->attributes)) {
+            return (int) $this->attributes['total_debit'] === (int) $this->attributes['total_credit'];
+        }
+
         return $this->getTotalDebit() === $this->getTotalCredit();
     }
 }

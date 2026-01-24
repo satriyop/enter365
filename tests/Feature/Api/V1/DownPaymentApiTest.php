@@ -38,13 +38,28 @@ beforeEach(function () {
 describe('Down Payment CRUD', function () {
 
     it('can list all down payments', function () {
-        DownPayment::factory()->receivable()->count(3)->create();
-        DownPayment::factory()->payable()->count(2)->create();
+        DownPayment::factory()->receivable()->count(5)->create();
+        DownPayment::factory()->payable()->count(5)->create();
+
+        $this->assertMaxQueries(15, function () {
+            $response = $this->getJson('/api/v1/down-payments');
+            $response->assertOk();
+        });
 
         $response = $this->getJson('/api/v1/down-payments');
-
-        $response->assertOk()
-            ->assertJsonCount(5, 'data');
+        $response->assertJsonCount(10, 'data')
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => [
+                        'id',
+                        'dp_number',
+                        'type',
+                        'amount',
+                        'remaining_amount',
+                        'status' => ['value', 'label', 'color'],
+                    ],
+                ],
+            ]);
     });
 
     it('can filter down payments by type', function () {
