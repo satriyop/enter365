@@ -208,12 +208,6 @@ parameters:
 			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
-			path: app/Http/Requests/Api/V1/UpdateBomTemplateRequest.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
 			path: app/Http/Requests/Api/V1/UpdateCompanyProfileRequest.php
 
 		-
@@ -232,13 +226,13 @@ parameters:
 			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
-			path: app/Http/Requests/Api/V1/UpdateSpecValidationRuleRequest.php
+			path: app/Http/Requests/Api/V1/UpdateProductCategoryRequest.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
-			path: app/Http/Requests/Api/V1/UpdateSpecValidationRuleSetRequest.php
+			path: app/Http/Requests/Api/V1/UpdateSpecValidationRuleRequest.php
 
 		-
 			message: '#^Method App\\Http\\Resources\\Api\\V1\\AccountResource\:\:toArray\(\) should return array\{id\: int, code\: string, name\: string, type\: string, subtype\: string\|null, description\: string\|null, parent_id\: int\|null, is_active\: bool, \.\.\.\} but returns array\{id\: int, code\: string, name\: string, type\: string, subtype\: string\|null, description\: string\|null, parent_id\: int\<0, max\>\|null, is_active\: bool, \.\.\.\}\.$#'
@@ -2191,34 +2185,10 @@ parameters:
 			path: app/Traits/LogsPerformance.php
 
 		-
-			message: '#^Parameter \#1 \$string of function str_pad expects string, int given\.$#'
-			identifier: argument.type
-			count: 1
-			path: database/factories/Inventory/InventoryMovementFactory.php
-
-		-
-			message: '#^Parameter \#1 \$string of function str_pad expects string, int given\.$#'
-			identifier: argument.type
-			count: 2
-			path: database/factories/Inventory/ProductCategoryFactory.php
-
-		-
-			message: '#^Parameter \#1 \$string of function str_pad expects string, int given\.$#'
-			identifier: argument.type
-			count: 2
-			path: database/factories/Inventory/ProductFactory.php
-
-		-
 			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
 			path: database/factories/Inventory/ProductFactory.php
-
-		-
-			message: '#^Parameter \#1 \$string of function str_pad expects string, int given\.$#'
-			identifier: argument.type
-			count: 1
-			path: database/factories/Inventory/StockOpnameFactory.php
 
 		-
 			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Inventory\\StockOpnameFactory\:\:definition\(\) should be compatible with return type \(array\<model property of App\\Models\\Inventory\\StockOpname, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Inventory\\StockOpname\>\:\:definition\(\)$#'
@@ -2231,12 +2201,6 @@ parameters:
 			identifier: method.childReturnType
 			count: 1
 			path: database/factories/Inventory/StockOpnameItemFactory.php
-
-		-
-			message: '#^Parameter \#1 \$string of function str_pad expects string, int given\.$#'
-			identifier: argument.type
-			count: 1
-			path: database/factories/Inventory/WarehouseFactory.php
 
 		-
 			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\BomFactory\:\:definition\(\) should be compatible with return type \(array\<model property of App\\Models\\Manufacturing\\Bom, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\Bom\>\:\:definition\(\)$#'
@@ -2327,12 +2291,6 @@ parameters:
 			identifier: method.childReturnType
 			count: 1
 			path: database/factories/Projects/ProjectRevenueFactory.php
-
-		-
-			message: '#^Parameter \#1 \$string of function str_pad expects string, int given\.$#'
-			identifier: argument.type
-			count: 1
-			path: database/factories/Purchasing/GoodsReceiptNoteFactory.php
 
 		-
 			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Purchasing\\GoodsReceiptNoteFactory\:\:definition\(\) should be compatible with return type \(array\<model property of App\\Models\\Purchasing\\GoodsReceiptNote, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Purchasing\\GoodsReceiptNote\>\:\:definition\(\)$#'
