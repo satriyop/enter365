@@ -12,7 +12,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 
-uses(RefreshDatabase::class);
+uses(Tests\TestCase::class, RefreshDatabase::class);
 
 beforeEach(function () {
     $user = User::factory()->create();

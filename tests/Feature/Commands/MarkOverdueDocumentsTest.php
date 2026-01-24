@@ -6,7 +6,7 @@ use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(RefreshDatabase::class);
+uses(Tests\TestCase::class, RefreshDatabase::class);
 
 beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\ChartOfAccountsSeeder']);

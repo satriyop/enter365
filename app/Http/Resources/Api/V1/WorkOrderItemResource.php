@@ -5,12 +5,39 @@ namespace App\Http\Resources\Api\V1;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin \App\Models\Manufacturing\WorkOrderItem
+ */
 class WorkOrderItemResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   work_order_id: int,
+     *   bom_item_id: int|null,
+     *   parent_item_id: int|null,
+     *   type: string,
+     *   description: string,
+     *   level: int,
+     *   sort_order: int,
+     *   quantity_required: float,
+     *   quantity_reserved: float,
+     *   quantity_consumed: float,
+     *   quantity_scrapped: float,
+     *   quantity_remaining: float,
+     *   unit: string,
+     *   unit_cost: int,
+     *   actual_unit_cost: int,
+     *   total_estimated_cost: int,
+     *   total_actual_cost: int,
+     *   notes: string|null,
+     *   product_id: int|null,
+     *   product?: array{id: int, sku: string, name: string, unit: string}|null,
+     *   child_items?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
+     *   created_at: string|null,
+     *   updated_at: string|null
+     * }
      */
     public function toArray(Request $request): array
     {

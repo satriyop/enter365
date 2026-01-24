@@ -6,10 +6,32 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Models\Accounting\BillItem
+ * @mixin \App\Models\Purchasing\BillItem
  */
 class BillItemResource extends JsonResource
 {
+    /**
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   bill_id: int,
+     *   description: string,
+     *   quantity: float,
+     *   unit: string,
+     *   unit_price: int,
+     *   discount_percent: float,
+     *   discount_amount: int,
+     *   tax_rate: float,
+     *   tax_amount: int,
+     *   line_total: int,
+     *   sort_order: int,
+     *   notes: string|null,
+     *   expense_account_id: int|null,
+     *   expense_account?: AccountResource,
+     *   created_at: string|null,
+     *   updated_at: string|null
+     * }
+     */
     public function toArray(Request $request): array
     {
         return [

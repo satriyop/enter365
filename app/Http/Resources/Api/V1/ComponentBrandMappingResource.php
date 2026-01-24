@@ -7,12 +7,30 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin ComponentBrandMapping
+ * @mixin \App\Models\Manufacturing\ComponentBrandMapping
  */
 class ComponentBrandMappingResource extends JsonResource
 {
     /**
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   component_standard_id: int,
+     *   brand: string,
+     *   brand_label: string,
+     *   product_id: int|null,
+     *   product?: array{id: int, name: string, sku: string, purchase_price: int, selling_price: int, current_stock: float},
+     *   brand_sku: string|null,
+     *   is_preferred: bool,
+     *   is_verified: bool,
+     *   price_factor: float,
+     *   variant_specs: array<string, mixed>|null,
+     *   notes: string|null,
+     *   verified_by: int|null,
+     *   verified_at: string|null,
+     *   created_at: string|null,
+     *   updated_at: string|null
+     * }
      */
     public function toArray(Request $request): array
     {

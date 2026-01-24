@@ -6,14 +6,31 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Models\Accounting\QuotationVariantOption
+ * @mixin \App\Models\Sales\QuotationVariantOption
  */
 class QuotationVariantOptionResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   quotation_id: int,
+     *   bom_id: int,
+     *   bom?: array{id: int, bom_number: string, name: string, variant_name: string|null, variant_label: string|null, total_cost: int, unit_cost: int},
+     *   display_name: string,
+     *   tagline: string|null,
+     *   is_recommended: bool,
+     *   selling_price: int,
+     *   features: array<mixed>|null,
+     *   specifications: array<mixed>|null,
+     *   warranty_terms: string|null,
+     *   sort_order: int,
+     *   profit_margin?: float,
+     *   profit_amount?: int,
+     *   cost_breakdown?: array<string, mixed>,
+     *   created_at: string,
+     *   updated_at: string
+     * }
      */
     public function toArray(Request $request): array
     {

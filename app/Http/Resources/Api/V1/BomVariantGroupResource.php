@@ -6,10 +6,30 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Models\Accounting\BomVariantGroup
+ * @mixin \App\Models\Manufacturing\BomVariantGroup
  */
 class BomVariantGroupResource extends JsonResource
 {
+    /**
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   product_id: int,
+     *   product?: array{id: int, name: string, sku: string},
+     *   name: string,
+     *   description: string|null,
+     *   comparison_notes: string|null,
+     *   status: string,
+     *   created_by: int|null,
+     *   creator?: array{id: int, name: string},
+     *   boms?: array<array{id: int, bom_number: string, name: string, variant_name: string|null, variant_label: string|null, is_primary_variant: bool, variant_sort_order: int, status: string, total_cost: int, unit_cost: int, cost_breakdown: array<string, mixed>}>,
+     *   active_boms?: array<array{id: int, bom_number: string, name: string, variant_name: string|null, variant_label: string|null, is_primary_variant: bool, total_cost: int}>,
+     *   variants_count?: int,
+     *   cost_summary?: array{min: int, max: int, difference: int}|null,
+     *   created_at: string|null,
+     *   updated_at: string|null
+     * }
+     */
     public function toArray(Request $request): array
     {
         return [

@@ -5,12 +5,35 @@ namespace App\Http\Resources\Api\V1;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin \App\Models\Purchasing\GoodsReceiptNoteItem
+ */
 class GoodsReceiptNoteItemResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   goods_receipt_note_id: int,
+     *   purchase_order_item_id: int|null,
+     *   product_id: int,
+     *   product?: array{id: int, sku: string, name: string, unit: string},
+     *   quantity_ordered: float,
+     *   quantity_received: float,
+     *   quantity_rejected: float,
+     *   quantity_remaining: float,
+     *   is_received: bool,
+     *   is_fully_received: bool,
+     *   has_rejections: bool,
+     *   unit_price: int,
+     *   total_value_received: int,
+     *   rejection_reason: string|null,
+     *   quality_notes: string|null,
+     *   lot_number: string|null,
+     *   expiry_date: string|null,
+     *   created_at: string,
+     *   updated_at: string
+     * }
      */
     public function toArray(Request $request): array
     {

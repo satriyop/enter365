@@ -5,12 +5,34 @@ namespace App\Http\Resources\Api\V1;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin \App\Models\Manufacturing\MaterialConsumption
+ */
 class MaterialConsumptionResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   work_order_id: int,
+     *   work_order_item_id: int,
+     *   quantity_consumed: float,
+     *   quantity_scrapped: float,
+     *   total_quantity: float,
+     *   scrap_reason: string|null,
+     *   unit: string,
+     *   unit_cost: int,
+     *   total_cost: int,
+     *   consumed_date: string|null,
+     *   batch_number: string|null,
+     *   notes: string|null,
+     *   product_id: int,
+     *   product?: array{id: int, sku: string, name: string, unit: string}|null,
+     *   consumed_by: int|null,
+     *   consumer?: array{id: int, name: string}|null,
+     *   created_at: string|null,
+     *   updated_at: string|null
+     * }
      */
     public function toArray(Request $request): array
     {

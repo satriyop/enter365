@@ -6,7 +6,7 @@ use App\Domain\Shared\Approval\AutoApproveStrategy;
 use App\Models\Sales\Invoice;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(RefreshDatabase::class);
+uses(Tests\TestCase::class, RefreshDatabase::class);
 
 describe('AutoApproveStrategy', function () {
     beforeEach(function () {

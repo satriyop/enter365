@@ -5,12 +5,47 @@ namespace App\Http\Resources\Api\V1;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin \App\Models\Purchasing\GoodsReceiptNote
+ */
 class GoodsReceiptNoteResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   grn_number: string,
+     *   purchase_order_id: int,
+     *   purchase_order?: array{id: int, po_number: string, contact: array{id: int, name: string}|null},
+     *   warehouse_id: int,
+     *   warehouse?: array{id: int, code: string, name: string},
+     *   receipt_date: string,
+     *   status: array{value: string, label: string, color: string},
+     *   supplier_do_number: string|null,
+     *   supplier_invoice_number: string|null,
+     *   vehicle_number: string|null,
+     *   driver_name: string|null,
+     *   received_by: int|null,
+     *   received_by_user?: array{id: int, name: string},
+     *   checked_by: int|null,
+     *   checked_by_user?: array{id: int, name: string},
+     *   notes: string|null,
+     *   total_items: int,
+     *   total_quantity_ordered: float,
+     *   total_quantity_received: float,
+     *   total_quantity_rejected: float,
+     *   receiving_progress: float,
+     *   items?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
+     *   can_edit: bool,
+     *   can_delete: bool,
+     *   can_complete: bool,
+     *   can_cancel: bool,
+     *   completed_at: string|null,
+     *   cancelled_at: string|null,
+     *   created_by: int|null,
+     *   created_at: string,
+     *   updated_at: string
+     * }
      */
     public function toArray(Request $request): array
     {

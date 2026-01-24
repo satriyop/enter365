@@ -10,7 +10,7 @@ use App\Models\Sales\SalesReturnItem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(RefreshDatabase::class);
+uses(Tests\TestCase::class, RefreshDatabase::class);
 
 beforeEach(function () {
     $this->user = User::factory()->create();

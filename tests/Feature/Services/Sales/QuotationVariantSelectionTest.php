@@ -13,7 +13,7 @@ use App\Models\User;
 use App\Services\Sales\QuotationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(RefreshDatabase::class);
+uses(Tests\TestCase::class, RefreshDatabase::class);
 
 beforeEach(function () {
     $this->user = User::factory()->create();

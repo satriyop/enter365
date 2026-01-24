@@ -5,12 +5,42 @@ namespace App\Http\Resources\Api\V1;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin \App\Models\Shared\SubcontractorInvoice
+ */
 class SubcontractorInvoiceResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   invoice_number: string,
+     *   status: string,
+     *   subcontractor_work_order_id: int,
+     *   subcontractor_work_order?: array{id: int, sc_wo_number: string, name: string}|null,
+     *   subcontractor_id: int,
+     *   subcontractor?: array{id: int, name: string}|null,
+     *   invoice_date: string|null,
+     *   due_date: string|null,
+     *   gross_amount: int,
+     *   retention_held: int,
+     *   other_deductions: int,
+     *   net_amount: int,
+     *   description: string|null,
+     *   notes: string|null,
+     *   bill_id: int|null,
+     *   bill?: array{id: int, bill_number: string}|null,
+     *   is_converted_to_bill: bool,
+     *   converted_to_bill_at: string|null,
+     *   can_be_approved: bool,
+     *   can_be_rejected: bool,
+     *   can_be_converted_to_bill: bool,
+     *   approved_at: string|null,
+     *   rejected_at: string|null,
+     *   rejection_reason: string|null,
+     *   created_at: string|null,
+     *   updated_at: string|null
+     * }
      */
     public function toArray(Request $request): array
     {

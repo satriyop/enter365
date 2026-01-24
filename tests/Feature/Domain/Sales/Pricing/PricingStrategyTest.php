@@ -8,7 +8,7 @@ use App\Models\Contacts\Contact;
 use App\Models\Inventory\Product;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(RefreshDatabase::class);
+uses(Tests\TestCase::class, RefreshDatabase::class);
 
 describe('StandardPricingStrategy', function () {
     beforeEach(function () {

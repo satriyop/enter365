@@ -6,14 +6,34 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Models\Accounting\PlnTariff
+ * @mixin \App\Models\Solar\PlnTariff
  */
 class PlnTariffResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   category_code: string,
+     *   category_name: string,
+     *   customer_type: string,
+     *   customer_type_label: string,
+     *   power_va_min: int,
+     *   power_va_max: int|null,
+     *   power_range_label: string,
+     *   rate_per_kwh: int,
+     *   formatted_rate: string,
+     *   capacity_charge: int|null,
+     *   minimum_charge: int|null,
+     *   is_tou_tariff: bool,
+     *   peak_rate_per_kwh: int|null,
+     *   off_peak_rate_per_kwh: int|null,
+     *   peak_hours: string|null,
+     *   is_active: bool,
+     *   effective_from: string|null,
+     *   effective_until: string|null,
+     *   notes: string|null
+     * }
      */
     public function toArray(Request $request): array
     {

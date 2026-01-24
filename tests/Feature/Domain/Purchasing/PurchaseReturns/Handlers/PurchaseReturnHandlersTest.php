@@ -14,7 +14,7 @@ use App\Models\Purchasing\PurchaseReturnItem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(RefreshDatabase::class);
+uses(Tests\TestCase::class, RefreshDatabase::class);
 
 describe('InventoryReturnHandler', function () {
 

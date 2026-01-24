@@ -10,6 +10,26 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class FiscalPeriodResource extends JsonResource
 {
+    /**
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   name: string,
+     *   start_date: string|null,
+     *   end_date: string|null,
+     *   is_closed: bool,
+     *   is_locked: bool,
+     *   is_open: bool,
+     *   closed_at: string|null,
+     *   closed_by: int|null,
+     *   closing_entry_id: int|null,
+     *   retained_earnings_amount: int,
+     *   closing_notes: string|null,
+     *   closing_entry?: JournalEntryResource,
+     *   created_at: string|null,
+     *   updated_at: string|null
+     * }
+     */
     public function toArray(Request $request): array
     {
         return [

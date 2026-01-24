@@ -6,10 +6,32 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Models\Accounting\Attachment
+ * @mixin \App\Models\Shared\Attachment
  */
 class AttachmentResource extends JsonResource
 {
+    /**
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   attachable_type: string,
+     *   attachable_id: int,
+     *   filename: string,
+     *   mime_type: string,
+     *   size: int,
+     *   size_human: string,
+     *   description: string|null,
+     *   category: string,
+     *   category_label: string,
+     *   is_image: bool,
+     *   is_pdf: bool,
+     *   download_url: string,
+     *   uploaded_by: int|null,
+     *   uploader?: array{id: int, name: string}|null,
+     *   created_at: string|null,
+     *   updated_at: string|null
+     * }
+     */
     public function toArray(Request $request): array
     {
         return [

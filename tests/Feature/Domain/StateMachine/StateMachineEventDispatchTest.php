@@ -12,7 +12,7 @@ use App\Models\Sales\SalesReturnItem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(RefreshDatabase::class);
+uses(Tests\TestCase::class, RefreshDatabase::class);
 
 describe('State machine with injectable event dispatcher', function () {
 

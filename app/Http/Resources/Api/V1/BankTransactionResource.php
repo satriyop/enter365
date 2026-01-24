@@ -10,6 +10,33 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class BankTransactionResource extends JsonResource
 {
+    /**
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   account_id: int,
+     *   account?: AccountResource,
+     *   transaction_date: string|null,
+     *   description: string|null,
+     *   reference: string|null,
+     *   debit: int,
+     *   credit: int,
+     *   net_amount: int,
+     *   balance: int,
+     *   status: string,
+     *   status_label: string,
+     *   is_reconciled: bool,
+     *   matched_payment_id: int|null,
+     *   matched_payment?: PaymentResource,
+     *   matched_journal_line_id: int|null,
+     *   reconciled_at: string|null,
+     *   reconciled_by: int|null,
+     *   import_batch: string|null,
+     *   external_id: string|null,
+     *   created_at: string|null,
+     *   updated_at: string|null
+     * }
+     */
     public function toArray(Request $request): array
     {
         return [

@@ -6,14 +6,34 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Models\Accounting\QuotationActivity
+ * @mixin \App\Models\Sales\QuotationActivity
  */
 class QuotationActivityResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   quotation_id: int,
+     *   user_id: int,
+     *   user?: UserResource,
+     *   type: string,
+     *   type_label: string,
+     *   contact_method: string,
+     *   subject: string,
+     *   description: string|null,
+     *   activity_at: string,
+     *   duration_minutes: int|null,
+     *   formatted_duration: string,
+     *   contact_person: string|null,
+     *   contact_phone: string|null,
+     *   next_follow_up_at: string|null,
+     *   follow_up_type: string|null,
+     *   outcome: string|null,
+     *   outcome_label: string|null,
+     *   created_at: string,
+     *   updated_at: string
+     * }
      */
     public function toArray(Request $request): array
     {

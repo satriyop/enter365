@@ -8,12 +8,30 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin SpecValidationRule
+ * @mixin \App\Models\Manufacturing\SpecValidationRule
  */
 class SpecValidationRuleResource extends JsonResource
 {
     /**
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   rule_set_id: int,
+     *   category: string,
+     *   category_label: string,
+     *   spec_key: string,
+     *   validation_type: string,
+     *   validation_type_label: string,
+     *   threshold_value: string|null,
+     *   severity: string,
+     *   severity_label: string,
+     *   message: string,
+     *   sort_order: int,
+     *   description: string,
+     *   requires_threshold: bool,
+     *   created_at: string|null,
+     *   updated_at: string|null
+     * }
      */
     public function toArray(Request $request): array
     {

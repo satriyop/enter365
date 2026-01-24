@@ -5,12 +5,29 @@ namespace App\Http\Resources\Api\V1;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin \App\Models\Sales\DeliveryOrderItem
+ */
 class DeliveryOrderItemResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   delivery_order_id: int,
+     *   invoice_item_id: int|null,
+     *   product_id: int,
+     *   product?: array{id: int, name: string, sku: string},
+     *   description: string,
+     *   quantity: float,
+     *   quantity_delivered: float,
+     *   remaining_quantity: float,
+     *   unit: string,
+     *   notes: string|null,
+     *   is_fully_delivered: bool,
+     *   created_at: string,
+     *   updated_at: string
+     * }
      */
     public function toArray(Request $request): array
     {

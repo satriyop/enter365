@@ -10,6 +10,36 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class BudgetLineResource extends JsonResource
 {
+    /**
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   budget_id: int,
+     *   account_id: int,
+     *   account?: array{id: int, code: string, name: string, type: string},
+     *   jan_amount: int,
+     *   feb_amount: int,
+     *   mar_amount: int,
+     *   apr_amount: int,
+     *   may_amount: int,
+     *   jun_amount: int,
+     *   jul_amount: int,
+     *   aug_amount: int,
+     *   sep_amount: int,
+     *   oct_amount: int,
+     *   nov_amount: int,
+     *   dec_amount: int,
+     *   annual_amount: int,
+     *   monthly_amounts: array<int, int>,
+     *   q1_amount: int,
+     *   q2_amount: int,
+     *   q3_amount: int,
+     *   q4_amount: int,
+     *   notes: string|null,
+     *   created_at: string|null,
+     *   updated_at: string|null
+     * }
+     */
     public function toArray(Request $request): array
     {
         return [

@@ -5,12 +5,45 @@ namespace App\Http\Resources\Api\V1;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin \App\Models\Manufacturing\MrpSuggestion
+ */
 class MrpSuggestionResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   mrp_run_id: int,
+     *   suggestion_type: string,
+     *   action: string,
+     *   status: string,
+     *   priority: string,
+     *   product_id: int,
+     *   product?: array{id: int, sku: string, name: string, unit: string, procurement_type: string}|null,
+     *   suggested_order_date: string|null,
+     *   suggested_due_date: string|null,
+     *   quantity_required: float,
+     *   suggested_quantity: float,
+     *   adjusted_quantity: float|null,
+     *   effective_quantity: float,
+     *   estimated_unit_cost: int,
+     *   estimated_total_cost: int,
+     *   suggested_supplier_id: int|null,
+     *   suggested_supplier?: array{id: int, name: string}|null,
+     *   suggested_warehouse_id: int|null,
+     *   suggested_warehouse?: array{id: int, name: string}|null,
+     *   reason: string|null,
+     *   notes: string|null,
+     *   converted_to_type: string|null,
+     *   converted_to_id: int|null,
+     *   converted_at: string|null,
+     *   can_be_accepted: bool,
+     *   can_be_rejected: bool,
+     *   can_be_converted: bool,
+     *   created_at: string|null,
+     *   updated_at: string|null
+     * }
      */
     public function toArray(Request $request): array
     {

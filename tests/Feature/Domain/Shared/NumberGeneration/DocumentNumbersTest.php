@@ -6,7 +6,7 @@ use App\Domain\Shared\DocumentNumbers;
 use App\Models\Sales\Invoice;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(RefreshDatabase::class);
+uses(Tests\TestCase::class, RefreshDatabase::class);
 
 describe('DocumentNumbers', function () {
     it('generates first number when no records exist', function () {

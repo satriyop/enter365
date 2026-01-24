@@ -5,12 +5,37 @@ namespace App\Http\Resources\Api\V1;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin \App\Models\Manufacturing\MrpDemand
+ */
 class MrpDemandResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   mrp_run_id: int,
+     *   product_id: int,
+     *   product?: array{id: int, sku: string, name: string, unit: string, procurement_type: string}|null,
+     *   demand_source_type: string,
+     *   demand_source_id: int|null,
+     *   demand_source_number: string|null,
+     *   required_date: string|null,
+     *   week_bucket: int|null,
+     *   quantity_required: float,
+     *   quantity_on_hand: float,
+     *   quantity_on_order: float,
+     *   quantity_reserved: float,
+     *   quantity_available: float,
+     *   quantity_short: float,
+     *   has_shortage: bool,
+     *   bom_level: int,
+     *   is_exploded: bool,
+     *   warehouse_id: int|null,
+     *   warehouse?: array{id: int, name: string}|null,
+     *   created_at: string|null,
+     *   updated_at: string|null
+     * }
      */
     public function toArray(Request $request): array
     {

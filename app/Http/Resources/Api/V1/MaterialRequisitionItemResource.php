@@ -5,12 +5,30 @@ namespace App\Http\Resources\Api\V1;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin \App\Models\Manufacturing\MaterialRequisitionItem
+ */
 class MaterialRequisitionItemResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   material_requisition_id: int,
+     *   work_order_item_id: int|null,
+     *   quantity_requested: float,
+     *   quantity_approved: float,
+     *   quantity_issued: float,
+     *   quantity_pending: float,
+     *   unit: string,
+     *   warehouse_location: string|null,
+     *   notes: string|null,
+     *   is_fully_issued: bool,
+     *   product_id: int|null,
+     *   product?: array{id: int, sku: string, name: string, unit: string}|null,
+     *   created_at: string|null,
+     *   updated_at: string|null
+     * }
      */
     public function toArray(Request $request): array
     {

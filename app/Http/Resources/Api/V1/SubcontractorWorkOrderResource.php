@@ -5,12 +5,59 @@ namespace App\Http\Resources\Api\V1;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin \App\Models\Manufacturing\SubcontractorWorkOrder
+ */
 class SubcontractorWorkOrderResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   sc_wo_number: string,
+     *   name: string,
+     *   description: string|null,
+     *   scope_of_work: string|null,
+     *   status: string,
+     *   subcontractor_id: int,
+     *   subcontractor?: array{id: int, name: string, phone: string|null, email: string|null}|null,
+     *   work_order_id: int|null,
+     *   work_order?: array{id: int, wo_number: string, name: string}|null,
+     *   project_id: int|null,
+     *   project?: array{id: int, project_number: string, name: string}|null,
+     *   agreed_amount: int,
+     *   actual_amount: int,
+     *   retention_percent: float,
+     *   retention_amount: int,
+     *   amount_invoiced: int,
+     *   amount_paid: int,
+     *   amount_due: int,
+     *   remaining_invoiceable: int,
+     *   scheduled_start_date: string|null,
+     *   scheduled_end_date: string|null,
+     *   actual_start_date: string|null,
+     *   actual_end_date: string|null,
+     *   completion_percentage: float,
+     *   work_location: string|null,
+     *   location_address: string|null,
+     *   notes: string|null,
+     *   invoices?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
+     *   can_be_edited: bool,
+     *   can_be_assigned: bool,
+     *   can_be_started: bool,
+     *   can_update_progress: bool,
+     *   can_be_completed: bool,
+     *   can_be_cancelled: bool,
+     *   can_create_invoice: bool,
+     *   is_fully_invoiced: bool,
+     *   assigned_at: string|null,
+     *   started_at: string|null,
+     *   completed_at: string|null,
+     *   cancelled_at: string|null,
+     *   cancellation_reason: string|null,
+     *   created_at: string|null,
+     *   updated_at: string|null
+     * }
      */
     public function toArray(Request $request): array
     {

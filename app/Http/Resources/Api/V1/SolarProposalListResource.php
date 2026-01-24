@@ -8,14 +8,33 @@ use Illuminate\Http\Resources\Json\JsonResource;
 /**
  * Lightweight resource for solar proposal lists.
  *
- * @mixin \App\Models\Accounting\SolarProposal
+ * @mixin \App\Models\Solar\SolarProposal
  */
 class SolarProposalListResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   proposal_number: string,
+     *   status: string,
+     *   status_label: string,
+     *   contact_id: int,
+     *   contact?: ContactResource,
+     *   site_name: string|null,
+     *   province: string|null,
+     *   city: string|null,
+     *   system_capacity_kwp: float|null,
+     *   system_cost: int,
+     *   payback_years: float,
+     *   roi_percent: float,
+     *   valid_until: string|null,
+     *   is_expired: bool,
+     *   created_by: int|null,
+     *   creator?: UserResource,
+     *   created_at: string,
+     *   updated_at: string
+     * }
      */
     public function toArray(Request $request): array
     {

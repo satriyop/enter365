@@ -5,12 +5,39 @@ namespace App\Http\Resources\Api\V1;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin \App\Models\Manufacturing\MrpRun
+ */
 class MrpRunResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   run_number: string,
+     *   name: string,
+     *   status: string,
+     *   planning_horizon_start: string|null,
+     *   planning_horizon_end: string|null,
+     *   parameters: array<string, mixed>|null,
+     *   total_products_analyzed: int,
+     *   total_demands: int,
+     *   total_shortages: int,
+     *   total_purchase_suggestions: int,
+     *   total_work_order_suggestions: int,
+     *   total_subcontract_suggestions: int,
+     *   is_outdated?: bool,
+     *   outdated_reason?: string|null,
+     *   notes: string|null,
+     *   warehouse_id: int|null,
+     *   warehouse?: array{id: int, name: string}|null,
+     *   demands?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
+     *   suggestions?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
+     *   completed_at: string|null,
+     *   applied_at: string|null,
+     *   created_at: string|null,
+     *   updated_at: string|null
+     * }
      */
     public function toArray(Request $request): array
     {

@@ -18,7 +18,7 @@ use App\Models\User;
 use App\Services\Sales\InvoiceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(RefreshDatabase::class);
+uses(Tests\TestCase::class, RefreshDatabase::class);
 
 beforeEach(function () {
     // Create authenticated user
