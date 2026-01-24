@@ -25,6 +25,8 @@ class JournalEntry extends Model
 
     public const SOURCE_OPENING = 'opening';
 
+    public const SOURCE_REVERSAL = 'reversal';
+
     protected $fillable = [
         'entry_number',
         'entry_date',

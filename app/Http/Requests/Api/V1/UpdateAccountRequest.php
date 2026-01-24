@@ -15,7 +15,8 @@ class UpdateAccountRequest extends FormRequest
 
     public function rules(): array
     {
-        $accountId = $this->route('account')?->id ?? $this->route('account');
+        $account = $this->route('account');
+        $accountId = $account?->id ?? $account;
 
         return [
             'code' => ['sometimes', 'string', 'max:20', Rule::unique('accounts', 'code')->ignore($accountId)],

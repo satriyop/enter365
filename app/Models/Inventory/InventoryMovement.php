@@ -149,7 +149,7 @@ class InventoryMovement extends Model
         if ($last && preg_match('/-(\d+)$/', $last->movement_number, $matches)) {
             $nextNum = (int) $matches[1] + 1;
 
-            return "{$prefix}-{$date}-".str_pad($nextNum, 4, '0', STR_PAD_LEFT);
+            return "{$prefix}-{$date}-".str_pad((string) $nextNum, 4, '0', STR_PAD_LEFT);
         }
 
         return "{$prefix}-{$date}-0001";

@@ -90,7 +90,7 @@ class Warehouse extends Model
         if ($last && preg_match('/WH-(\d+)/', $last->code, $matches)) {
             $nextNum = (int) $matches[1] + 1;
 
-            return 'WH-'.str_pad($nextNum, 3, '0', STR_PAD_LEFT);
+            return 'WH-'.str_pad((string) $nextNum, 3, '0', STR_PAD_LEFT);
         }
 
         return 'WH-001';

@@ -74,12 +74,12 @@ class AccountController extends Controller
     /**
      * Get account balance.
      * 
-     * @response array{account_id: int, code: string, name: string, type: string, as_of_date: string, balance: int}
+     * @response array{account_id: int, code: string, name: string, type: string, as_of_date: string, balance: int, total_debit: int, total_credit: int}
      */
     public function balance(Account $account, Request $request): JsonResponse
     {
         $asOfDate = $request->input('as_of_date');
-        $balance = $this->balanceService->getBalance($account, $asOfDate);
+        $details = $account->getBalanceDetails($asOfDate);
 
         return response()->json([
             'account_id' => $account->id,
@@ -87,14 +87,16 @@ class AccountController extends Controller
             'name' => $account->name,
             'type' => $account->type,
             'as_of_date' => $asOfDate ?? now()->toDateString(),
-            'balance' => $balance,
+            'balance' => $details['balance'],
+            'total_debit' => $details['total_debit'],
+            'total_credit' => $details['total_credit'],
         ]);
     }
 
     /**
      * Get account ledger.
      * 
-     * @response array{account_id: int, code: string, name: string, type: string, start_date: string|null, end_date: string|null, opening_balance: int, entries: array<mixed>}
+     * @response array{account_id: int, code: string, name: string, type: string, start_date: string|null, end_date: string|null, opening_balance: int, entries: array<array{id: int, journal_entry_id: int, date: string, entry_number: string, description: string, reference: string|null, debit: int, credit: int, running_balance: int}>}
      */
     public function ledger(Account $account, Request $request): JsonResponse
     {

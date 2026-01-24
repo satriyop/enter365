@@ -18,7 +18,8 @@ class UpdateComponentStandardRequest extends FormRequest
      */
     public function rules(): array
     {
-        $standardId = $this->route('componentStandard')?->id ?? $this->route('component_standard');
+        $standard = $this->route('componentStandard') ?? $this->route('component_standard');
+        $standardId = $standard?->id ?? $standard;
 
         return [
             'code' => ['sometimes', 'string', 'max:100', Rule::unique('component_standards', 'code')->ignore($standardId)],

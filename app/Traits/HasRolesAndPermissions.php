@@ -17,6 +17,18 @@ trait HasRolesAndPermissions
     }
 
     /**
+     * Scope query to users with a specific role.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder<$this>  $query
+     */
+    public function scopeRole(\Illuminate\Database\Eloquent\Builder $query, string $roleName): \Illuminate\Database\Eloquent\Builder
+    {
+        return $query->whereHas('roles', function ($q) use ($roleName) {
+            $q->where('name', $roleName);
+        });
+    }
+
+    /**
      * Check if user has a specific role.
      */
     public function hasRole(string $roleName): bool

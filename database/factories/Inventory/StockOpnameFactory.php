@@ -26,7 +26,7 @@ class StockOpnameFactory extends Factory
         $unique = fake()->unique()->numberBetween(1, 9999);
 
         return [
-            'opname_number' => "SO-{$date}-".str_pad($unique, 4, '0', STR_PAD_LEFT),
+            'opname_number' => "SO-{$date}-".str_pad((string) $unique, 4, '0', STR_PAD_LEFT),
             'warehouse_id' => Warehouse::factory(),
             'opname_date' => fake()->dateTimeBetween('-1 month', 'now'),
             'status' => DocumentStatus::Draft,

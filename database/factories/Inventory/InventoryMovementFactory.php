@@ -60,7 +60,7 @@ class InventoryMovementFactory extends Factory
 
         $date = now()->format('Ymd');
 
-        return "{$prefix}-{$date}-".str_pad($this->faker->unique()->numberBetween(1, 9999), 4, '0', STR_PAD_LEFT);
+        return "{$prefix}-{$date}-".str_pad((string) $this->faker->unique()->numberBetween(1, 9999), 4, '0', STR_PAD_LEFT);
     }
 
     public function stockIn(): static

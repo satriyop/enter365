@@ -392,7 +392,7 @@ class Product extends Model
         if ($last) {
             $lastNum = (int) substr($last->sku, strlen($prefix) + 1);
 
-            return $prefix.'-'.str_pad($lastNum + 1, 5, '0', STR_PAD_LEFT);
+            return $prefix.'-'.str_pad((string) ($lastNum + 1), 5, '0', STR_PAD_LEFT);
         }
 
         return $prefix.'-00001';

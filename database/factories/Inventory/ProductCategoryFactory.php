@@ -15,7 +15,7 @@ class ProductCategoryFactory extends Factory
     public function definition(): array
     {
         return [
-            'code' => 'CAT-'.str_pad($this->faker->unique()->numberBetween(1, 999), 3, '0', STR_PAD_LEFT),
+            'code' => 'CAT-'.str_pad((string) $this->faker->unique()->numberBetween(1, 999), 3, '0', STR_PAD_LEFT),
             'name' => $this->faker->words(2, true),
             'description' => $this->faker->optional()->sentence(),
             'parent_id' => null,
@@ -35,7 +35,7 @@ class ProductCategoryFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'parent_id' => $parent->id,
-            'code' => $parent->code.'-'.str_pad($this->faker->unique()->numberBetween(1, 99), 2, '0', STR_PAD_LEFT),
+            'code' => $parent->code.'-'.str_pad((string) $this->faker->unique()->numberBetween(1, 99), 2, '0', STR_PAD_LEFT),
         ]);
     }
 }

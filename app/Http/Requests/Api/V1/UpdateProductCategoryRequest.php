@@ -14,12 +14,15 @@ class UpdateProductCategoryRequest extends FormRequest
 
     public function rules(): array
     {
+        $category = $this->route('product_category');
+        $categoryId = $category?->id ?? $category;
+
         return [
             'code' => [
                 'sometimes',
                 'string',
                 'max:20',
-                Rule::unique('product_categories', 'code')->ignore($this->route('product_category')),
+                Rule::unique('product_categories', 'code')->ignore($categoryId),
             ],
             'name' => ['sometimes', 'string', 'max:100'],
             'description' => ['nullable', 'string'],
@@ -27,7 +30,7 @@ class UpdateProductCategoryRequest extends FormRequest
                 'nullable',
                 'exists:product_categories,id',
                 // Prevent circular reference
-                Rule::notIn([$this->route('product_category')?->id]),
+                Rule::notIn([$categoryId]),
             ],
             'is_active' => ['boolean'],
             'sort_order' => ['integer', 'min:0'],

@@ -95,7 +95,7 @@ Route::prefix('v1')->group(function () {
         Route::get('{token}', [PublicSolarProposalController::class, 'show']);
         Route::post('{token}/accept', [PublicSolarProposalController::class, 'accept']);
         Route::post('{token}/reject', [PublicSolarProposalController::class, 'reject']);
-    })->where('token', '[0-9a-f\-]{32,36}');
+    })->where(['token' => '[0-9a-f\-]{32,36}']);
 
     // Public Solar Calculator (Marketing Tool)
     Route::prefix('public/solar-calculator')->group(function () {

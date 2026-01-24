@@ -6,6 +6,17 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property int $journal_entry_id
+ * @property int $account_id
+ * @property string $description
+ * @property int $debit
+ * @property int $credit
+ * @property int|null $balance
+ * @property-read \App\Models\Accounting\JournalEntry $journalEntry
+ * @property-read \App\Models\Accounting\Account $account
+ */
 class JournalEntryLine extends Model
 {
     use HasFactory;

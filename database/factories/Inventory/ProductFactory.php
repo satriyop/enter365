@@ -20,7 +20,7 @@ class ProductFactory extends Factory
         $sellingPrice = (int) ($purchasePrice * (1 + $markup / 100));
 
         return [
-            'sku' => 'PRD-'.str_pad($this->faker->unique()->numberBetween(1, 99999), 5, '0', STR_PAD_LEFT),
+            'sku' => 'PRD-'.str_pad((string) $this->faker->unique()->numberBetween(1, 99999), 5, '0', STR_PAD_LEFT),
             'name' => $this->faker->words(3, true),
             'description' => $this->faker->optional()->sentence(),
             'type' => Product::TYPE_PRODUCT,
@@ -49,7 +49,7 @@ class ProductFactory extends Factory
     public function service(): static
     {
         return $this->state(fn (array $attributes) => [
-            'sku' => 'SVC-'.str_pad($this->faker->unique()->numberBetween(1, 99999), 5, '0', STR_PAD_LEFT),
+            'sku' => 'SVC-'.str_pad((string) $this->faker->unique()->numberBetween(1, 99999), 5, '0', STR_PAD_LEFT),
             'type' => Product::TYPE_SERVICE,
             'unit' => $this->faker->randomElement(['jam', 'hari', 'bulan', 'proyek']),
             'track_inventory' => false,

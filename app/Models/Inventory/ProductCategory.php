@@ -118,7 +118,7 @@ class ProductCategory extends Model
             if ($lastChild) {
                 $lastNum = (int) substr($lastChild->code, strrpos($lastChild->code, '-') + 1);
 
-                return $prefix.str_pad($lastNum + 1, 2, '0', STR_PAD_LEFT);
+                return $prefix.str_pad((string) ($lastNum + 1), 2, '0', STR_PAD_LEFT);
             }
 
             return $prefix.'01';
@@ -132,7 +132,7 @@ class ProductCategory extends Model
         if ($last) {
             $lastNum = (int) substr($last->code, 4);
 
-            return 'CAT-'.str_pad($lastNum + 1, 3, '0', STR_PAD_LEFT);
+            return 'CAT-'.str_pad((string) ($lastNum + 1), 3, '0', STR_PAD_LEFT);
         }
 
         return 'CAT-001';

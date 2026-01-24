@@ -176,7 +176,7 @@ class SolarProposalService extends BaseService implements SolarProposalServiceIn
                     1.0, // 100% offset target
                     (float) $proposal->performance_ratio
                 );
-                $proposal->system_capacity_kwp = $capacityKwp;
+                $proposal->system_capacity_kwp = (string) $capacityKwp;
             }
 
             // Calculate annual production
@@ -203,7 +203,7 @@ class SolarProposalService extends BaseService implements SolarProposalServiceIn
                     );
                 }
 
-                $proposal->annual_production_kwh = $baseProduction;
+                $proposal->annual_production_kwh = (string) $baseProduction;
             }
 
             // Calculate financial analysis if we have all required data
@@ -262,7 +262,7 @@ class SolarProposalService extends BaseService implements SolarProposalServiceIn
             $primaryBom = $variantGroup->primaryBom();
             if ($primaryBom) {
                 $proposal->selected_bom_id = $primaryBom->id;
-                $proposal->system_capacity_kwp = $this->extractCapacityFromBom($primaryBom);
+                $proposal->system_capacity_kwp = (string) $this->extractCapacityFromBom($primaryBom);
             }
 
             $proposal->save();
@@ -296,7 +296,7 @@ class SolarProposalService extends BaseService implements SolarProposalServiceIn
 
         return $this->executeInTransaction('select_bom', function () use ($proposal, $bom) {
             $proposal->selected_bom_id = $bom->id;
-            $proposal->system_capacity_kwp = $this->extractCapacityFromBom($bom);
+            $proposal->system_capacity_kwp = (string) $this->extractCapacityFromBom($bom);
 
             // If no variant group attached, attach it now
             if (! $proposal->variant_group_id && $bom->variant_group_id) {

@@ -157,14 +157,19 @@ class BankReconciliationReportService
             ->where('status', BankTransaction::STATUS_UNMATCHED)
             ->orderBy('transaction_date')
             ->get()
-            ->map(fn (BankTransaction $txn) => [
-                'id' => $txn->id,
-                'date' => $txn->transaction_date->format('Y-m-d'),
-                'description' => $txn->description,
-                'reference' => $txn->reference,
-                'amount' => $txn->debit - $txn->credit,
-                'type' => $txn->debit > 0 ? 'deposit' : 'withdrawal',
-            ]);
+            ->map(function (BankTransaction $txn) {
+                /** @var \Carbon\Carbon $txnDate */
+                $txnDate = $txn->transaction_date;
+
+                return [
+                    'id' => $txn->id,
+                    'date' => $txnDate->format('Y-m-d'),
+                    'description' => $txn->description,
+                    'reference' => $txn->reference,
+                    'amount' => $txn->debit - $txn->credit,
+                    'type' => $txn->debit > 0 ? 'deposit' : 'withdrawal',
+                ];
+            });
 
         return [
             'items' => $items,
@@ -190,16 +195,21 @@ class BankReconciliationReportService
             ->whereDoesntHave('bankTransaction')
             ->orderBy('payment_date')
             ->get()
-            ->map(fn (Payment $payment) => [
-                'id' => $payment->id,
-                'type' => 'payment',
-                'date' => $payment->payment_date->format('Y-m-d'),
-                'number' => $payment->payment_number,
-                'description' => $payment->description,
-                'amount' => $payment->type === Payment::TYPE_RECEIVE
-                    ? $payment->amount
-                    : -$payment->amount,
-            ]);
+            ->map(function (Payment $payment) {
+                /** @var \Carbon\Carbon $payDate */
+                $payDate = $payment->payment_date;
+
+                return [
+                    'id' => $payment->id,
+                    'type' => 'payment',
+                    'date' => $payDate->format('Y-m-d'),
+                    'number' => $payment->payment_number,
+                    'description' => $payment->notes,
+                    'amount' => $payment->type === Payment::TYPE_RECEIVE
+                        ? $payment->amount
+                        : -$payment->amount,
+                ];
+            });
         $items = $items->merge($outstandingPayments);
 
         // Negative total because these are in books but NOT in bank yet
@@ -248,7 +258,7 @@ class BankReconciliationReportService
                 'id' => $payment->id,
                 'date' => $payment->payment_date->format('Y-m-d'),
                 'number' => $payment->payment_number,
-                'description' => $payment->description,
+                'description' => $payment->notes,
                 'amount' => $payment->amount,
             ]);
     }
@@ -270,7 +280,7 @@ class BankReconciliationReportService
                 'id' => $payment->id,
                 'date' => $payment->payment_date->format('Y-m-d'),
                 'number' => $payment->payment_number,
-                'description' => $payment->description,
+                'description' => $payment->notes,
                 'amount' => $payment->amount,
             ]);
     }
@@ -319,15 +329,20 @@ class BankReconciliationReportService
             ->orderBy('created_at', 'desc')
             ->limit(100) // Limit to recent entries
             ->get()
-            ->map(fn (JournalEntryLine $line) => [
-                'id' => $line->id,
-                'journal_entry_id' => $line->journal_entry_id,
-                'date' => $line->journalEntry->entry_date->format('Y-m-d'),
-                'journal_number' => $line->journalEntry->entry_number,
-                'description' => $line->description ?? $line->journalEntry->description,
-                'debit' => $line->debit,
-                'credit' => $line->credit,
-            ]);
+            ->map(function (JournalEntryLine $line) {
+                /** @var \Carbon\Carbon $entryDate */
+                $entryDate = $line->journalEntry->entry_date;
+
+                return [
+                    'id' => $line->id,
+                    'journal_entry_id' => $line->journal_entry_id,
+                    'date' => $entryDate->format('Y-m-d'),
+                    'journal_number' => $line->journalEntry->entry_number,
+                    'description' => $line->description ?? $line->journalEntry->description,
+                    'debit' => $line->debit,
+                    'credit' => $line->credit,
+                ];
+            });
     }
 
     /**

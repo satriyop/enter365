@@ -17,7 +17,8 @@ class UpdateSpecValidationRuleSetRequest extends FormRequest
      */
     public function rules(): array
     {
-        $ruleSetId = $this->route('spec_rule_set')?->id ?? $this->route('specRuleSet')?->id;
+        $ruleSet = $this->route('spec_rule_set') ?? $this->route('specRuleSet');
+        $ruleSetId = $ruleSet?->id;
 
         return [
             'code' => [

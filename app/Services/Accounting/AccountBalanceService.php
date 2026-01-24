@@ -35,13 +35,16 @@ class AccountBalanceService
     /**
      * Get ledger entries for an account.
      *
-     * @return Collection<int, object{
+     * @return Collection<int, array{
+     *     id: int,
+     *     journal_entry_id: int,
      *     date: string,
      *     entry_number: string,
      *     description: string,
+     *     reference: string|null,
      *     debit: int,
      *     credit: int,
-     *     balance: int
+     *     running_balance: int
      * }>
      */
     public function getLedger(Account $account, ?string $startDate = null, ?string $endDate = null): Collection
@@ -103,16 +106,16 @@ class AccountBalanceService
 
             $runningBalance += $movement;
 
-            return (object) [
-                'id' => $entry->id,
-                'journal_entry_id' => $entry->journal_entry_id,
-                'date' => $entry->date,
-                'entry_number' => $entry->entry_number,
-                'description' => $entry->line_description ?? $entry->entry_description,
-                'reference' => $entry->reference,
+            return [
+                'id' => (int) $entry->id,
+                'journal_entry_id' => (int) $entry->journal_entry_id,
+                'date' => (string) $entry->date,
+                'entry_number' => (string) $entry->entry_number,
+                'description' => (string) ($entry->line_description ?? $entry->entry_description),
+                'reference' => $entry->reference ? (string) $entry->reference : null,
                 'debit' => (int) $entry->debit,
                 'credit' => (int) $entry->credit,
-                'running_balance' => $runningBalance,
+                'running_balance' => (int) $runningBalance,
             ];
         });
     }
@@ -120,7 +123,7 @@ class AccountBalanceService
     /**
      * Get trial balance (Neraca Saldo).
      *
-     * @return Collection<int, object{
+     * @return Collection<int, array{
      *     account_id: int,
      *     code: string,
      *     name: string,
@@ -139,14 +142,14 @@ class AccountBalanceService
         return $accounts->map(function ($account) use ($asOfDate) {
             $balance = $account->getBalance($asOfDate);
 
-            return (object) [
-                'account_id' => $account->id,
-                'code' => $account->code,
-                'name' => $account->name,
-                'type' => $account->type,
-                'debit_balance' => $account->isDebitNormal() ? max(0, $balance) : max(0, -$balance),
-                'credit_balance' => $account->isCreditNormal() ? max(0, $balance) : max(0, -$balance),
+            return [
+                'account_id' => (int) $account->id,
+                'code' => (string) $account->code,
+                'name' => (string) $account->name,
+                'type' => (string) $account->type,
+                'debit_balance' => (int) ($account->isDebitNormal() ? max(0, $balance) : max(0, -$balance)),
+                'credit_balance' => (int) ($account->isCreditNormal() ? max(0, $balance) : max(0, -$balance)),
             ];
-        })->filter(fn ($row) => $row->debit_balance > 0 || $row->credit_balance > 0);
+        })->filter(fn ($row) => $row['debit_balance'] > 0 || $row['credit_balance'] > 0);
     }
 }

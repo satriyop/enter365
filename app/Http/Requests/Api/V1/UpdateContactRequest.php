@@ -15,7 +15,8 @@ class UpdateContactRequest extends FormRequest
 
     public function rules(): array
     {
-        $contactId = $this->route('contact')?->id ?? $this->route('contact');
+        $contact = $this->route('contact');
+        $contactId = $contact?->id ?? $contact;
 
         return [
             'code' => ['sometimes', 'string', 'max:20', Rule::unique('contacts', 'code')->ignore($contactId)],

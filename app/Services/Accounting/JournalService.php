@@ -155,14 +155,17 @@ class JournalService extends BaseService implements JournalServiceInterface
                 ];
             }
 
-            $reversalEntry = $this->createEntry([
-                'entry_date' => now()->toDateString(),
-                'description' => $description ?? 'Reversal of '.$entry->entry_number,
-                'reference' => $entry->entry_number,
-                'source_type' => $entry->source_type,
-                'source_id' => $entry->source_id,
-                'lines' => $reversalLines,
-            ], autoPost: true);
+        $entryDate = $entry->entry_date;
+        $description = 'Reversal of '.$entry->entry_number.': '.$entry->description;
+
+        $reversalEntry = $this->createEntry([
+            'entry_date' => $entryDate instanceof \Carbon\Carbon ? $entryDate->toDateString() : (string) $entryDate,
+            'description' => $description,
+            'reference' => $entry->entry_number,
+            'source_type' => JournalEntry::SOURCE_REVERSAL,
+            'source_id' => $entry->id,
+            'lines' => $reversalLines,
+        ], autoPost: true);
 
             // Update reversal relationships
             $reversalEntry->update(['reversal_of_id' => $entry->id]);
@@ -234,8 +237,9 @@ class JournalService extends BaseService implements JournalServiceInterface
             ];
         }
 
+        $entryDate = $invoice->invoice_date;
         $entry = $this->createEntry([
-            'entry_date' => $invoice->invoice_date->toDateString(),
+            'entry_date' => $entryDate instanceof \Carbon\Carbon ? $entryDate->toDateString() : (string) $entryDate,
             'description' => 'Faktur penjualan: '.$invoice->invoice_number,
             'reference' => $invoice->invoice_number,
             'source_type' => JournalEntry::SOURCE_INVOICE,
@@ -311,8 +315,9 @@ class JournalService extends BaseService implements JournalServiceInterface
             'credit' => $bill->total_amount,
         ];
 
+        $entryDate = $bill->bill_date;
         $entry = $this->createEntry([
-            'entry_date' => $bill->bill_date->toDateString(),
+            'entry_date' => $entryDate instanceof \Carbon\Carbon ? $entryDate->toDateString() : (string) $entryDate,
             'description' => 'Faktur pembelian: '.$bill->bill_number,
             'reference' => $bill->bill_number,
             'source_type' => JournalEntry::SOURCE_BILL,
@@ -395,8 +400,9 @@ class JournalService extends BaseService implements JournalServiceInterface
             ];
         }
 
+        $entryDate = $payment->payment_date;
         return $this->createEntry([
-            'entry_date' => $payment->payment_date->toDateString(),
+            'entry_date' => $entryDate instanceof \Carbon\Carbon ? $entryDate->toDateString() : (string) $entryDate,
             'description' => ($payment->type === Payment::TYPE_RECEIVE ? 'Penerimaan: ' : 'Pembayaran: ').$payment->payment_number,
             'reference' => $payment->payment_number,
             'source_type' => JournalEntry::SOURCE_PAYMENT,

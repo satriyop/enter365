@@ -95,6 +95,7 @@ class MarkOverdueDocuments extends Command
 
         $count = 0;
 
+        /** @var Invoice $invoice */
         foreach ($overdueInvoices as $invoice) {
             $daysOverdue = $invoice->getDaysOverdue();
             $contactName = $invoice->contact->name ?? 'Unknown';
@@ -109,12 +110,7 @@ class MarkOverdueDocuments extends Command
 
             if (! $dryRun) {
                 try {
-                    $result = $this->invoiceService->markAsOverdue($invoice);
-                    if ($result->isFailure()) {
-                        $this->warn("    Failed to mark invoice {$invoice->invoice_number}: {$result->getMessage()}");
-
-                        continue;
-                    }
+                    $this->invoiceService->markAsOverdue($invoice);
                 } catch (\Throwable $e) {
                     $this->error("    Error marking invoice {$invoice->invoice_number}: {$e->getMessage()}");
                     Log::warning('MarkOverdueDocuments: Failed to mark invoice as overdue', [
@@ -153,6 +149,7 @@ class MarkOverdueDocuments extends Command
 
         $count = 0;
 
+        /** @var Bill $bill */
         foreach ($overdueBills as $bill) {
             $daysOverdue = (int) $bill->due_date->diffInDays(now());
             $contactName = $bill->contact->name ?? 'Unknown';
@@ -168,12 +165,7 @@ class MarkOverdueDocuments extends Command
 
             if (! $dryRun) {
                 try {
-                    $result = $this->billService->markAsOverdue($bill);
-                    if ($result->isFailure()) {
-                        $this->warn("    Failed to mark bill {$bill->bill_number}: {$result->getMessage()}");
-
-                        continue;
-                    }
+                    $this->billService->markAsOverdue($bill);
                 } catch (\Throwable $e) {
                     $this->error("    Error marking bill {$bill->bill_number}: {$e->getMessage()}");
                     Log::warning('MarkOverdueDocuments: Failed to mark bill as overdue', [

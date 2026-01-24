@@ -27,7 +27,7 @@ class GoodsReceiptNoteFactory extends Factory
         $unique = $this->faker->unique()->numberBetween(1, 9999);
 
         return [
-            'grn_number' => "GRN-{$date}-".str_pad($unique, 4, '0', STR_PAD_LEFT),
+            'grn_number' => "GRN-{$date}-".str_pad((string) $unique, 4, '0', STR_PAD_LEFT),
             'purchase_order_id' => PurchaseOrder::factory()->approved(),
             'warehouse_id' => Warehouse::factory(),
             'receipt_date' => $this->faker->dateTimeBetween('-1 month', 'now'),
