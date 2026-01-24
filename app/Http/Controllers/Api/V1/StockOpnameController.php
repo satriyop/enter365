@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\DocumentStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreStockOpnameRequest;
 use App\Http\Requests\Api\V1\UpdateStockOpnameRequest;
@@ -30,7 +31,11 @@ class StockOpnameController extends Controller
 
         // Filter by status
         if ($request->has('status')) {
-            $query->where('status', $request->status);
+            $status = $request->status;
+            if ($status instanceof DocumentStatus) {
+                $status = $status->value;
+            }
+            $query->where('status', $status);
         }
 
         // Filter by warehouse
