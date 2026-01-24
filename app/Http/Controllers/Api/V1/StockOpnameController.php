@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\DocumentStatus;
+use App\Filters\StockOpnameFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreStockOpnameRequest;
 use App\Http\Requests\Api\V1\UpdateStockOpnameRequest;
@@ -24,44 +25,12 @@ class StockOpnameController extends Controller
     /**
      * Display a listing of stock opnames.
      */
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(StockOpnameFilter $filter): AnonymousResourceCollection
     {
-        $query = StockOpname::query()
-            ->with(['warehouse', 'createdByUser']);
-
-        // Filter by status
-        if ($request->has('status')) {
-            $status = $request->status;
-            if ($status instanceof DocumentStatus) {
-                $status = $status->value;
-            }
-            $query->where('status', $status);
-        }
-
-        // Filter by warehouse
-        if ($request->has('warehouse_id')) {
-            $query->where('warehouse_id', $request->warehouse_id);
-        }
-
-        // Filter by date range
-        if ($request->has('start_date')) {
-            $query->where('opname_date', '>=', $request->start_date);
-        }
-        if ($request->has('end_date')) {
-            $query->where('opname_date', '<=', $request->end_date);
-        }
-
-        // Search
-        if ($request->has('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('opname_number', 'ilike', "%{$search}%")
-                    ->orWhere('name', 'ilike', "%{$search}%");
-            });
-        }
-
-        $opnames = $query->orderByDesc('created_at')
-            ->paginate($request->input('per_page', 15));
+        $opnames = StockOpname::query()
+            ->with(['warehouse', 'createdByUser'])
+            ->filter($filter)
+            ->paginate($filter->getRequest()->input('per_page', 15));
 
         return StockOpnameResource::collection($opnames);
     }
@@ -82,11 +51,13 @@ class StockOpnameController extends Controller
     /**
      * Display the specified stock opname.
      */
-    public function show(StockOpname $stockOpname): StockOpnameResource
+    public function show(StockOpname $stockOpname, StockOpnameFilter $filter): StockOpnameResource
     {
-        return new StockOpnameResource(
-            $stockOpname->load(['warehouse', 'items.product', 'countedByUser', 'reviewedByUser', 'approvedByUser', 'createdByUser'])
-        );
+        $filter->apply($stockOpname->newQuery());
+
+        $stockOpname->loadMissing(['warehouse', 'items.product', 'countedByUser', 'reviewedByUser', 'approvedByUser', 'createdByUser']);
+
+        return new StockOpnameResource($stockOpname);
     }
 
     /**

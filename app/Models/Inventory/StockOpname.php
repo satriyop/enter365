@@ -4,6 +4,7 @@ namespace App\Models\Inventory;
 
 use App\Enums\DocumentStatus;
 use App\Models\User;
+use App\Traits\Filterable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class StockOpname extends Model
 {
-    use HasFactory, SoftDeletes;
+    use Filterable, HasFactory, SoftDeletes;
 
     // Status constants mapped to DocumentStatus
     public const STATUS_DRAFT = 'draft';

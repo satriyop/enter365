@@ -5,12 +5,53 @@ namespace App\Http\Resources\Api\V1;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin \App\Models\Inventory\StockOpname
+ */
 class StockOpnameResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
      *
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   opname_number: string,
+     *   warehouse_id: int,
+     *   warehouse?: array{id: int, code: string, name: string},
+     *   opname_date: string,
+     *   status: array{value: string, label: string, color: string},
+     *   name: string|null,
+     *   notes: string|null,
+     *   counted_by: int|null,
+     *   counted_by_user?: array{id: int, name: string},
+     *   counting_started_at: string|null,
+     *   reviewed_by: int|null,
+     *   reviewed_by_user?: array{id: int, name: string},
+     *   reviewed_at: string|null,
+     *   approved_by: int|null,
+     *   approved_by_user?: array{id: int, name: string},
+     *   approved_at: string|null,
+     *   completed_at: string|null,
+     *   cancelled_at: string|null,
+     *   total_items: int,
+     *   total_counted: int,
+     *   counting_progress: float,
+     *   total_variance_qty: int,
+     *   total_variance_value: int,
+     *   items?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
+     *   items_count?: int,
+     *   can_edit: bool,
+     *   can_delete: bool,
+     *   can_start_counting: bool,
+     *   can_submit_for_review: bool,
+     *   can_approve: bool,
+     *   can_reject: bool,
+     *   can_cancel: bool,
+     *   created_by: int|null,
+     *   created_at: string,
+     *   updated_at: string
+     * }
      */
     public function toArray(Request $request): array
     {
