@@ -92,6 +92,8 @@ class DownPaymentController extends Controller
 
     /**
      * Apply down payment to an invoice.
+     * 
+     * @response array{message: string, application: DownPaymentApplicationResource, down_payment: DownPaymentResource}
      */
     public function applyToInvoice(ApplyDownPaymentRequest $request, DownPayment $downPayment, Invoice $invoice): JsonResponse
     {
@@ -109,6 +111,8 @@ class DownPaymentController extends Controller
 
     /**
      * Apply down payment to a bill.
+     * 
+     * @response array{message: string, application: DownPaymentApplicationResource, down_payment: DownPaymentResource}
      */
     public function applyToBill(ApplyDownPaymentRequest $request, DownPayment $downPayment, Bill $bill): JsonResponse
     {
@@ -126,6 +130,8 @@ class DownPaymentController extends Controller
 
     /**
      * Unapply (reverse) a down payment application.
+     * 
+     * @response array{message: string, down_payment: DownPaymentResource}
      */
     public function unapply(DownPayment $downPayment, DownPaymentApplication $application): JsonResponse
     {
@@ -143,6 +149,8 @@ class DownPaymentController extends Controller
 
     /**
      * Refund remaining down payment balance.
+     * 
+     * @response array{message: string, refund_payment: array{id: int, payment_number: string, amount: int}, down_payment: DownPaymentResource}
      */
     public function refund(RefundDownPaymentRequest $request, DownPayment $downPayment): JsonResponse
     {
@@ -178,6 +186,8 @@ class DownPaymentController extends Controller
 
     /**
      * Get available down payments for a contact.
+     * 
+     * @response \Illuminate\Http\Resources\Json\AnonymousResourceCollection<DownPaymentResource>
      */
     public function available(Request $request): AnonymousResourceCollection
     {
@@ -196,6 +206,8 @@ class DownPaymentController extends Controller
 
     /**
      * Get down payment statistics.
+     * 
+     * @response array{total_count: int, total_amount: int, total_applied: int, total_remaining: int, by_status: array{active: int, fully_applied: int, refunded: int, cancelled: int}, by_type: array{receivable: array{count: int, amount: int, remaining: int}, payable: array{count: int, amount: int, remaining: int}}}
      */
     public function statistics(Request $request): JsonResponse
     {
