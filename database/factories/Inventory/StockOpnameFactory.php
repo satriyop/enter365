@@ -2,6 +2,7 @@
 
 namespace Database\Factories\Inventory;
 
+use App\Enums\DocumentStatus;
 use App\Models\Inventory\StockOpname;
 use App\Models\Inventory\Warehouse;
 use App\Models\User;
@@ -28,7 +29,7 @@ class StockOpnameFactory extends Factory
             'opname_number' => "SO-{$date}-".str_pad($unique, 4, '0', STR_PAD_LEFT),
             'warehouse_id' => Warehouse::factory(),
             'opname_date' => fake()->dateTimeBetween('-1 month', 'now'),
-            'status' => StockOpname::STATUS_DRAFT,
+            'status' => DocumentStatus::Draft,
             'name' => fake()->randomElement([
                 'Stock Opname Bulanan',
                 'Stock Opname Tahunan',
@@ -50,7 +51,7 @@ class StockOpnameFactory extends Factory
     public function draft(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => StockOpname::STATUS_DRAFT,
+            'status' => DocumentStatus::Draft,
         ]);
     }
 
@@ -60,7 +61,7 @@ class StockOpnameFactory extends Factory
     public function counting(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => StockOpname::STATUS_COUNTING,
+            'status' => DocumentStatus::Counting,
             'counted_by' => User::factory(),
             'counting_started_at' => now(),
         ]);
@@ -72,7 +73,7 @@ class StockOpnameFactory extends Factory
     public function reviewed(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => StockOpname::STATUS_REVIEWED,
+            'status' => DocumentStatus::Reviewed,
             'counted_by' => User::factory(),
             'counting_started_at' => now()->subHours(2),
             'reviewed_by' => User::factory(),
@@ -86,7 +87,7 @@ class StockOpnameFactory extends Factory
     public function approved(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => StockOpname::STATUS_APPROVED,
+            'status' => DocumentStatus::Approved,
             'counted_by' => User::factory(),
             'counting_started_at' => now()->subHours(3),
             'reviewed_by' => User::factory(),
@@ -102,7 +103,7 @@ class StockOpnameFactory extends Factory
     public function completed(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => StockOpname::STATUS_COMPLETED,
+            'status' => DocumentStatus::Completed,
             'counted_by' => User::factory(),
             'counting_started_at' => now()->subHours(4),
             'reviewed_by' => User::factory(),
@@ -119,7 +120,7 @@ class StockOpnameFactory extends Factory
     public function cancelled(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => StockOpname::STATUS_CANCELLED,
+            'status' => DocumentStatus::Cancelled,
             'cancelled_at' => now(),
         ]);
     }

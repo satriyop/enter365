@@ -32,6 +32,8 @@ enum DocumentStatus: string
     case Paid = 'paid';
     case Overdue = 'overdue';
     case Received = 'received';
+    case FullyApplied = 'fully_applied';
+    case Refunded = 'refunded';
 
     // Manufacturing
     case Active = 'active';
@@ -42,6 +44,8 @@ enum DocumentStatus: string
     case Applied = 'applied';
     case Issued = 'issued';
     case Assigned = 'assigned';
+    case Counting = 'counting';
+    case Reviewed = 'reviewed';
 
     // Delivery
     case Shipped = 'shipped';
@@ -77,6 +81,8 @@ enum DocumentStatus: string
             self::Paid => 'Lunas',
             self::Overdue => 'Jatuh Tempo',
             self::Received => 'Diterima',
+            self::FullyApplied => 'Selesai Digunakan',
+            self::Refunded => 'Direfund',
             self::Active => 'Aktif',
             self::Inactive => 'Tidak Aktif',
             self::Confirmed => 'Dikonfirmasi',
@@ -85,6 +91,8 @@ enum DocumentStatus: string
             self::Applied => 'Diterapkan',
             self::Issued => 'Dikeluarkan',
             self::Assigned => 'Ditugaskan',
+            self::Counting => 'Penghitungan',
+            self::Reviewed => 'Direview',
             self::Shipped => 'Dikirim',
             self::Delivered => 'Terkirim',
             self::Receiving => 'Menerima',
@@ -103,9 +111,9 @@ enum DocumentStatus: string
         return match ($this) {
             self::Draft => 'zinc',
             self::Cancelled, self::Rejected => 'red',
-            self::Submitted, self::Processing, self::Receiving => 'yellow',
-            self::Approved, self::Completed, self::Paid, self::Delivered, self::Accepted => 'green',
-            self::Converted, self::Active, self::Applied => 'blue',
+            self::Submitted, self::Processing, self::Receiving, self::Reviewed => 'yellow',
+            self::Approved, self::Completed, self::Paid, self::Delivered, self::Accepted, self::FullyApplied => 'green',
+            self::Converted, self::Active, self::Applied, self::Refunded, self::Counting => 'blue',
             self::Expired, self::Overdue => 'orange',
             self::Partial, self::InProgress, self::Assigned => 'indigo',
             self::Sent, self::Shipped, self::Issued => 'cyan',
@@ -391,6 +399,38 @@ enum DocumentStatus: string
             self::Draft,
             self::Assigned,
             self::InProgress,
+            self::Completed,
+            self::Cancelled,
+        ];
+    }
+
+    /**
+     * Get statuses valid for DownPayment documents.
+     *
+     * @return array<self>
+     */
+    public static function forDownPayment(): array
+    {
+        return [
+            self::Active,
+            self::FullyApplied,
+            self::Refunded,
+            self::Cancelled,
+        ];
+    }
+
+    /**
+     * Get statuses valid for StockOpname documents.
+     *
+     * @return array<self>
+     */
+    public static function forStockOpname(): array
+    {
+        return [
+            self::Draft,
+            self::Counting,
+            self::Reviewed,
+            self::Approved,
             self::Completed,
             self::Cancelled,
         ];

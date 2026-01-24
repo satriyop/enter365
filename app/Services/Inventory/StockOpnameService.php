@@ -9,6 +9,7 @@ use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Inventory\InventoryServiceInterface;
 use App\Contracts\Inventory\StockOpnameServiceInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
+use App\Enums\DocumentStatus;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\ProductStock;
 use App\Models\Inventory\StockOpname;
@@ -36,7 +37,7 @@ class StockOpnameService extends BaseService implements StockOpnameServiceInterf
             $opname = StockOpname::create([
                 'warehouse_id' => $data['warehouse_id'],
                 'opname_date' => $data['opname_date'] ?? now()->toDateString(),
-                'status' => StockOpname::STATUS_DRAFT,
+                'status' => DocumentStatus::Draft,
                 'name' => $data['name'] ?? null,
                 'notes' => $data['notes'] ?? null,
                 'created_by' => $data['created_by'] ?? $this->getUserId(),
@@ -178,7 +179,7 @@ class StockOpnameService extends BaseService implements StockOpnameServiceInterf
     {
         $opname = $item->stockOpname;
 
-        if (! in_array($opname->status, [StockOpname::STATUS_DRAFT, StockOpname::STATUS_COUNTING])) {
+        if (! in_array($opname->status, [DocumentStatus::Draft, DocumentStatus::Counting], true)) {
             throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
                 'Stock Opname',
                 'ubah item',
@@ -227,7 +228,7 @@ class StockOpnameService extends BaseService implements StockOpnameServiceInterf
             throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
                 'Stock Opname',
                 'mulai penghitungan',
-                $opname->status,
+                $opname->status->value,
                 'draft dengan item'
             );
         }
@@ -245,7 +246,7 @@ class StockOpnameService extends BaseService implements StockOpnameServiceInterf
             }
 
             // Use state machine for status transition
-            $opname->transitionTo(StockOpname::STATUS_COUNTING, $userId);
+            $opname->transitionTo(DocumentStatus::Counting, $userId);
 
             $opname->updateTotals();
 
@@ -277,7 +278,7 @@ class StockOpnameService extends BaseService implements StockOpnameServiceInterf
         }
 
         // Use state machine for status transition
-        $opname->transitionTo(StockOpname::STATUS_REVIEWED, $userId);
+        $opname->transitionTo(DocumentStatus::Reviewed, $userId);
 
         return $opname->fresh();
     }
@@ -325,8 +326,8 @@ class StockOpnameService extends BaseService implements StockOpnameServiceInterf
             $this->inventoryStrategy->onStockAdjustment($opname);
 
             // Use state machine: REVIEWED -> APPROVED -> COMPLETED
-            $opname->transitionTo(StockOpname::STATUS_APPROVED, $userId);
-            $opname->transitionTo(StockOpname::STATUS_COMPLETED, $userId);
+            $opname->transitionTo(DocumentStatus::Approved, $userId);
+            $opname->transitionTo(DocumentStatus::Completed, $userId);
 
             return $opname->fresh();
         }, ['opname_id' => $opname->id]);
@@ -356,8 +357,7 @@ class StockOpnameService extends BaseService implements StockOpnameServiceInterf
         }
 
         // Use state machine for status transition
-        // Note: reviewed_by and reviewed_at are cleared by state machine's updateTimestamps
-        $opname->transitionTo(StockOpname::STATUS_COUNTING, $userId);
+        $opname->transitionTo(DocumentStatus::Counting, $userId);
 
         // Clear review fields since we're going back to counting
         $opname->update([
@@ -378,12 +378,12 @@ class StockOpnameService extends BaseService implements StockOpnameServiceInterf
         if (! $stateMachine->canCancel()) {
             throw \App\Exceptions\Domain\StateTransitionException::actionNotAvailable(
                 'dibatalkan',
-                $opname->status
+                $opname->status->value
             );
         }
 
         // Use state machine for status transition
-        $opname->transitionTo(StockOpname::STATUS_CANCELLED, $userId);
+        $opname->transitionTo(DocumentStatus::Cancelled, $userId);
 
         return $opname->fresh();
     }

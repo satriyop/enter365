@@ -6,6 +6,7 @@ namespace App\Domain\Inventory\StockOpname;
 
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Domain\Inventory\StockOpname\Events\StockOpnameStatusChanged;
+use App\Enums\DocumentStatus;
 use App\Exceptions\Domain\StateTransitionException;
 use App\Models\Inventory\StockOpname;
 
@@ -20,7 +21,7 @@ use App\Models\Inventory\StockOpname;
  */
 class StockOpnameStateMachine
 {
-    private string $currentStatus;
+    private DocumentStatus $currentStatus;
 
     private array $context = [];
 
@@ -47,42 +48,55 @@ class StockOpnameStateMachine
     protected function getTransitions(): array
     {
         return [
-            StockOpname::STATUS_DRAFT => [
-                StockOpname::STATUS_COUNTING,
-                StockOpname::STATUS_CANCELLED,
+            DocumentStatus::Draft->value => [
+                DocumentStatus::Counting->value,
+                DocumentStatus::Cancelled->value,
             ],
-            StockOpname::STATUS_COUNTING => [
-                StockOpname::STATUS_REVIEWED,
-                StockOpname::STATUS_CANCELLED,
+            DocumentStatus::Counting->value => [
+                DocumentStatus::Reviewed->value,
+                DocumentStatus::Cancelled->value,
             ],
-            StockOpname::STATUS_REVIEWED => [
-                StockOpname::STATUS_APPROVED,
-                StockOpname::STATUS_COUNTING, // Reject goes back to counting
-                StockOpname::STATUS_CANCELLED,
+            DocumentStatus::Reviewed->value => [
+                DocumentStatus::Approved->value,
+                DocumentStatus::Counting->value, // Reject goes back to counting
+                DocumentStatus::Cancelled->value,
             ],
-            StockOpname::STATUS_APPROVED => [
-                StockOpname::STATUS_COMPLETED,
+            DocumentStatus::Approved->value => [
+                DocumentStatus::Completed->value,
             ],
-            StockOpname::STATUS_COMPLETED => [], // Terminal
-            StockOpname::STATUS_CANCELLED => [], // Terminal
+            DocumentStatus::Completed->value => [], // Terminal
+            DocumentStatus::Cancelled->value => [], // Terminal
         ];
     }
 
-    public function getCurrentStatus(): string
+    public function getCurrentStatus(): DocumentStatus
     {
         return $this->currentStatus;
     }
 
-    public function canTransitionTo(string $target): bool
+    public function canTransitionTo(DocumentStatus|string $target): bool
     {
-        // Same status is not a transition - cannot "transition" to current state
-        if ($this->currentStatus === $target) {
+        $targetEnum = $target instanceof DocumentStatus ? $target : DocumentStatus::from($target);
+
+        // Same status is not a transition
+        if ($this->currentStatus === $targetEnum) {
             return false;
         }
 
-        $validTransitions = $this->getTransitions()[$this->currentStatus] ?? [];
+        $validTransitions = $this->getTransitions()[$this->currentStatus->value] ?? [];
 
-        return in_array($target, $validTransitions, true);
+        if (! in_array($targetEnum->value, $validTransitions, true)) {
+            return false;
+        }
+
+        // Check business rules
+        try {
+            $this->validateTransition($this->currentStatus, $targetEnum);
+
+            return true;
+        } catch (StateTransitionException) {
+            return false;
+        }
     }
 
     /**
@@ -90,7 +104,11 @@ class StockOpnameStateMachine
      */
     public function getNextValidStatuses(): array
     {
-        return $this->getTransitions()[$this->currentStatus] ?? [];
+        $statuses = $this->getTransitions()[$this->currentStatus->value] ?? [];
+
+        return array_values(array_filter($statuses, function ($status) {
+            return $this->canTransitionTo(DocumentStatus::from($status));
+        }));
     }
 
     /**
@@ -98,36 +116,39 @@ class StockOpnameStateMachine
      *
      * @param  array<string, mixed>  $context
      */
-    public function transitionTo(string $target, array $context = []): void
+    public function transitionTo(DocumentStatus|string $target, array $context = []): void
     {
         $from = $this->currentStatus;
 
-        if (! $this->canTransitionTo($target)) {
+        // Ensure target is a DocumentStatus enum
+        $targetEnum = $target instanceof DocumentStatus ? $target : DocumentStatus::from($target);
+
+        if (! $this->canTransitionTo($targetEnum)) {
             throw StateTransitionException::invalidTransition(
                 'Stock Opname',
-                $this->getStatusLabel($from),
-                $this->getStatusLabel($target)
+                $from->label(),
+                $targetEnum->label()
             );
         }
 
         $this->context = array_merge($this->getContextData(), $context);
 
-        $this->validateTransition($from, $target);
+        $this->validateTransition($from, $targetEnum);
 
-        // Update status
-        $this->stockOpname->status = $target;
-        $this->updateTimestamps($target);
+        // Update status - Eloquent handles the Enum casting
+        $this->stockOpname->status = $targetEnum;
+        $this->updateTimestamps($targetEnum);
         $this->stockOpname->save();
 
-        $this->currentStatus = $target;
+        $this->currentStatus = $targetEnum;
 
-        // Dispatch event
+        // Dispatch event - explicitly pass the value strings for stability
         $this->eventDispatcher->dispatch(
             new StockOpnameStatusChanged(
                 stockOpnameId: $this->stockOpname->id,
                 opnameNumber: $this->stockOpname->opname_number,
-                fromStatus: $from,
-                toStatus: $target,
+                fromStatus: $from->value,
+                toStatus: $targetEnum->value,
                 userId: $this->context['user_id'] ?? null
             )
         );
@@ -140,12 +161,12 @@ class StockOpnameStateMachine
         if (! $this->stockOpname->items()->exists()) {
             throw StateTransitionException::actionNotAvailable(
                 'start counting',
-                $this->currentStatus,
+                $this->currentStatus->value,
                 'Stock opname harus memiliki minimal satu item.'
             );
         }
 
-        $this->transitionTo(StockOpname::STATUS_COUNTING, ['user_id' => $userId]);
+        $this->transitionTo(DocumentStatus::Counting, ['user_id' => $userId]);
     }
 
     public function submitForReview(?int $userId = null): void
@@ -154,22 +175,22 @@ class StockOpnameStateMachine
         if ($uncounted > 0) {
             throw StateTransitionException::actionNotAvailable(
                 'submit for review',
-                $this->currentStatus,
+                $this->currentStatus->value,
                 "Masih ada {$uncounted} item yang belum dihitung."
             );
         }
 
-        $this->transitionTo(StockOpname::STATUS_REVIEWED, ['user_id' => $userId]);
+        $this->transitionTo(DocumentStatus::Reviewed, ['user_id' => $userId]);
     }
 
     public function approve(?int $userId = null): void
     {
-        $this->transitionTo(StockOpname::STATUS_APPROVED, ['user_id' => $userId]);
+        $this->transitionTo(DocumentStatus::Approved, ['user_id' => $userId]);
     }
 
     public function reject(?int $userId = null, ?string $reason = null): void
     {
-        $this->transitionTo(StockOpname::STATUS_COUNTING, [
+        $this->transitionTo(DocumentStatus::Counting, [
             'user_id' => $userId,
             'rejection_reason' => $reason,
         ]);
@@ -177,12 +198,12 @@ class StockOpnameStateMachine
 
     public function complete(?int $userId = null): void
     {
-        $this->transitionTo(StockOpname::STATUS_COMPLETED, ['user_id' => $userId]);
+        $this->transitionTo(DocumentStatus::Completed, ['user_id' => $userId]);
     }
 
     public function cancel(?int $userId = null, ?string $reason = null): void
     {
-        $this->transitionTo(StockOpname::STATUS_CANCELLED, [
+        $this->transitionTo(DocumentStatus::Cancelled, [
             'user_id' => $userId,
             'cancellation_reason' => $reason,
         ]);
@@ -192,46 +213,46 @@ class StockOpnameStateMachine
 
     public function canStartCounting(): bool
     {
-        return $this->currentStatus === StockOpname::STATUS_DRAFT
+        return $this->currentStatus === DocumentStatus::Draft
             && $this->stockOpname->items()->exists();
     }
 
     public function canSubmitForReview(): bool
     {
-        return $this->currentStatus === StockOpname::STATUS_COUNTING
+        return $this->currentStatus === DocumentStatus::Counting
             && $this->stockOpname->items()->whereNull('counted_quantity')->doesntExist();
     }
 
     public function canApprove(): bool
     {
-        return $this->currentStatus === StockOpname::STATUS_REVIEWED;
+        return $this->currentStatus === DocumentStatus::Reviewed;
     }
 
     public function canReject(): bool
     {
-        return $this->currentStatus === StockOpname::STATUS_REVIEWED;
+        return $this->currentStatus === DocumentStatus::Reviewed;
     }
 
     public function canComplete(): bool
     {
-        return $this->currentStatus === StockOpname::STATUS_APPROVED;
+        return $this->currentStatus === DocumentStatus::Approved;
     }
 
     public function canCancel(): bool
     {
         return in_array($this->currentStatus, [
-            StockOpname::STATUS_DRAFT,
-            StockOpname::STATUS_COUNTING,
-            StockOpname::STATUS_REVIEWED,
-        ]);
+            DocumentStatus::Draft,
+            DocumentStatus::Counting,
+            DocumentStatus::Reviewed,
+        ], true);
     }
 
     public function canEdit(): bool
     {
         return in_array($this->currentStatus, [
-            StockOpname::STATUS_DRAFT,
-            StockOpname::STATUS_COUNTING,
-        ]);
+            DocumentStatus::Draft,
+            DocumentStatus::Counting,
+        ], true);
     }
 
     /**
@@ -246,67 +267,71 @@ class StockOpnameStateMachine
         ];
     }
 
-    private function validateTransition(string $from, string $to): void
+    private function validateTransition(DocumentStatus $from, DocumentStatus $to): void
     {
-        if ($to === StockOpname::STATUS_COUNTING && $from === StockOpname::STATUS_DRAFT) {
+        if ($to === DocumentStatus::Counting && $from === DocumentStatus::Draft) {
             if (! $this->stockOpname->items()->exists()) {
                 throw StateTransitionException::actionNotAvailable(
                     'start counting',
-                    $from,
+                    $from->value,
                     'Stock opname harus memiliki minimal satu item.'
                 );
             }
         }
 
-        if ($to === StockOpname::STATUS_REVIEWED) {
+        if ($to === DocumentStatus::Reviewed) {
+            if (! $this->stockOpname->items()->exists()) {
+                throw StateTransitionException::actionNotAvailable(
+                    'submit for review',
+                    $from->value,
+                    'Stock opname harus memiliki minimal satu item.'
+                );
+            }
+
             $uncounted = $this->stockOpname->items()->whereNull('counted_quantity')->count();
             if ($uncounted > 0) {
                 throw StateTransitionException::actionNotAvailable(
                     'submit for review',
-                    $from,
+                    $from->value,
                     "Masih ada {$uncounted} item yang belum dihitung."
                 );
             }
         }
     }
 
-    private function updateTimestamps(string $status): void
+    private function updateTimestamps(DocumentStatus $status): void
     {
         $userId = $this->context['user_id'] ?? auth()->id();
 
         match ($status) {
-            StockOpname::STATUS_COUNTING => $this->stockOpname->fill([
+            DocumentStatus::Counting => $this->stockOpname->fill([
                 'counting_started_at' => now(),
                 'counted_by' => $userId,
             ]),
-            StockOpname::STATUS_REVIEWED => $this->stockOpname->fill([
+            DocumentStatus::Reviewed => $this->stockOpname->fill([
                 'reviewed_at' => now(),
                 'reviewed_by' => $userId,
             ]),
-            StockOpname::STATUS_APPROVED => $this->stockOpname->fill([
+            DocumentStatus::Approved => $this->stockOpname->fill([
                 'approved_at' => now(),
                 'approved_by' => $userId,
             ]),
-            StockOpname::STATUS_COMPLETED => $this->stockOpname->fill([
+            DocumentStatus::Completed => $this->stockOpname->fill([
                 'completed_at' => now(),
             ]),
-            StockOpname::STATUS_CANCELLED => $this->stockOpname->fill([
+            DocumentStatus::Cancelled => $this->stockOpname->fill([
                 'cancelled_at' => now(),
             ]),
             default => null,
         };
     }
 
-    private function getStatusLabel(string $status): string
+    private function getStatusLabel(DocumentStatus|string $status): string
     {
-        return match ($status) {
-            StockOpname::STATUS_DRAFT => 'Draft',
-            StockOpname::STATUS_COUNTING => 'Counting',
-            StockOpname::STATUS_REVIEWED => 'Reviewed',
-            StockOpname::STATUS_APPROVED => 'Approved',
-            StockOpname::STATUS_COMPLETED => 'Completed',
-            StockOpname::STATUS_CANCELLED => 'Cancelled',
-            default => $status,
-        };
+        if ($status instanceof DocumentStatus) {
+            return $status->label();
+        }
+
+        return $status;
     }
 }

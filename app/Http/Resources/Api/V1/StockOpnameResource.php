@@ -24,7 +24,11 @@ class StockOpnameResource extends JsonResource
                 'name' => $this->warehouse->name,
             ]),
             'opname_date' => $this->opname_date->toDateString(),
-            'status' => $this->status,
+            'status' => [
+                'value' => $this->status->value,
+                'label' => $this->status->label(),
+                'color' => $this->status->color(),
+            ],
             'name' => $this->name,
             'notes' => $this->notes,
 

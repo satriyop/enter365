@@ -2,17 +2,19 @@
 
 namespace App\Models\Inventory;
 
+use App\Enums\DocumentStatus;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class StockOpname extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
-    // Status constants
+    // Status constants mapped to DocumentStatus
     public const STATUS_DRAFT = 'draft';
 
     public const STATUS_COUNTING = 'counting';
@@ -75,6 +77,7 @@ class StockOpname extends Model
             'total_counted' => 'integer',
             'total_variance_qty' => 'integer',
             'total_variance_value' => 'integer',
+            'status' => DocumentStatus::class,
         ];
     }
 
@@ -131,7 +134,7 @@ class StockOpname extends Model
      */
     public function isDraft(): bool
     {
-        return $this->status === self::STATUS_DRAFT;
+        return $this->status === DocumentStatus::Draft;
     }
 
     /**
@@ -139,7 +142,7 @@ class StockOpname extends Model
      */
     public function isCounting(): bool
     {
-        return $this->status === self::STATUS_COUNTING;
+        return $this->status === DocumentStatus::Counting;
     }
 
     /**
@@ -147,7 +150,7 @@ class StockOpname extends Model
      */
     public function isReviewed(): bool
     {
-        return $this->status === self::STATUS_REVIEWED;
+        return $this->status === DocumentStatus::Reviewed;
     }
 
     /**
@@ -155,7 +158,7 @@ class StockOpname extends Model
      */
     public function isApproved(): bool
     {
-        return $this->status === self::STATUS_APPROVED;
+        return $this->status === DocumentStatus::Approved;
     }
 
     /**
@@ -163,7 +166,7 @@ class StockOpname extends Model
      */
     public function isCompleted(): bool
     {
-        return $this->status === self::STATUS_COMPLETED;
+        return $this->status === DocumentStatus::Completed;
     }
 
     /**
@@ -171,7 +174,7 @@ class StockOpname extends Model
      */
     public function isCancelled(): bool
     {
-        return $this->status === self::STATUS_CANCELLED;
+        return $this->status === DocumentStatus::Cancelled;
     }
 
     /**
@@ -179,7 +182,7 @@ class StockOpname extends Model
      */
     public function canEdit(): bool
     {
-        return in_array($this->status, [self::STATUS_DRAFT, self::STATUS_COUNTING]);
+        return in_array($this->status, [DocumentStatus::Draft, DocumentStatus::Counting], true);
     }
 
     /**
@@ -187,7 +190,7 @@ class StockOpname extends Model
      */
     public function canDelete(): bool
     {
-        return $this->status === self::STATUS_DRAFT;
+        return $this->status === DocumentStatus::Draft;
     }
 
     /**
@@ -195,7 +198,7 @@ class StockOpname extends Model
      */
     public function canStartCounting(): bool
     {
-        return $this->status === self::STATUS_DRAFT && $this->items()->count() > 0;
+        return $this->status === DocumentStatus::Draft && $this->items()->exists();
     }
 
     /**
@@ -203,12 +206,12 @@ class StockOpname extends Model
      */
     public function canSubmitForReview(): bool
     {
-        if ($this->status !== self::STATUS_COUNTING) {
+        if ($this->status !== DocumentStatus::Counting) {
             return false;
         }
 
         // All items must be counted
-        return $this->items()->whereNull('counted_quantity')->count() === 0;
+        return $this->items()->whereNull('counted_quantity')->doesntExist();
     }
 
     /**
@@ -216,7 +219,7 @@ class StockOpname extends Model
      */
     public function canApprove(): bool
     {
-        return $this->status === self::STATUS_REVIEWED;
+        return $this->status === DocumentStatus::Reviewed;
     }
 
     /**
@@ -224,7 +227,7 @@ class StockOpname extends Model
      */
     public function canReject(): bool
     {
-        return $this->status === self::STATUS_REVIEWED;
+        return $this->status === DocumentStatus::Reviewed;
     }
 
     /**
@@ -232,7 +235,7 @@ class StockOpname extends Model
      */
     public function canCancel(): bool
     {
-        return in_array($this->status, [self::STATUS_DRAFT, self::STATUS_COUNTING, self::STATUS_REVIEWED]);
+        return in_array($this->status, [DocumentStatus::Draft, DocumentStatus::Counting, DocumentStatus::Reviewed], true);
     }
 
     /**
@@ -294,7 +297,7 @@ class StockOpname extends Model
     /**
      * Transition the stock opname to a new status.
      */
-    public function transitionTo(string $status, ?int $userId = null): self
+    public function transitionTo(DocumentStatus|string $status, ?int $userId = null): self
     {
         $this->stateMachine()->transitionTo($status, ['user_id' => $userId]);
 

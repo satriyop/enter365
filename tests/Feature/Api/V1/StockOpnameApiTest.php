@@ -32,8 +32,8 @@ describe('Stock Opname CRUD', function () {
     });
 
     it('can filter stock opnames by status', function () {
-        StockOpname::factory()->draft()->count(2)->create();
         StockOpname::factory()->counting()->count(3)->create();
+        StockOpname::factory()->draft()->count(2)->create();
 
         $response = $this->getJson('/api/v1/stock-opnames?status=counting');
 
@@ -65,7 +65,7 @@ describe('Stock Opname CRUD', function () {
         $response->assertCreated()
             ->assertJsonPath('data.warehouse_id', $warehouse->id)
             ->assertJsonPath('data.name', 'Year End Stock Count')
-            ->assertJsonPath('data.status', 'draft');
+            ->assertJsonPath('data.status.value', 'draft');
     });
 
     it('can show a stock opname', function () {
@@ -98,7 +98,7 @@ describe('Stock Opname CRUD', function () {
             'name' => 'Updated Name',
         ]);
 
-        $response->assertStatus(409); // Business rule violation
+        $response->assertStatus(422);
     });
 
     it('can delete a stock opname in draft status', function () {
@@ -107,7 +107,7 @@ describe('Stock Opname CRUD', function () {
         $response = $this->deleteJson("/api/v1/stock-opnames/{$opname->id}");
 
         $response->assertOk();
-        $this->assertDatabaseMissing('stock_opnames', ['id' => $opname->id]);
+        $this->assertSoftDeleted('stock_opnames', ['id' => $opname->id]);
     });
 
     it('cannot delete a stock opname in counting status', function () {
@@ -115,7 +115,7 @@ describe('Stock Opname CRUD', function () {
 
         $response = $this->deleteJson("/api/v1/stock-opnames/{$opname->id}");
 
-        $response->assertStatus(409); // Business rule violation
+        $response->assertStatus(422);
         $this->assertDatabaseHas('stock_opnames', ['id' => $opname->id]);
     });
 
@@ -208,7 +208,7 @@ describe('Stock Opname Workflow', function () {
         $response = $this->postJson("/api/v1/stock-opnames/{$opname->id}/start-counting");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'counting');
+            ->assertJsonPath('data.status.value', 'counting');
     });
 
     it('cannot start counting without items', function () {
@@ -216,7 +216,7 @@ describe('Stock Opname Workflow', function () {
 
         $response = $this->postJson("/api/v1/stock-opnames/{$opname->id}/start-counting");
 
-        $response->assertStatus(409); // Business rule violation
+        $response->assertStatus(422);
     });
 
     it('can submit for review when all items counted', function () {
@@ -227,7 +227,7 @@ describe('Stock Opname Workflow', function () {
         $response = $this->postJson("/api/v1/stock-opnames/{$opname->id}/submit-review");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'reviewed');
+            ->assertJsonPath('data.status.value', 'reviewed');
     });
 
     it('cannot submit for review with uncounted items', function () {
@@ -238,7 +238,7 @@ describe('Stock Opname Workflow', function () {
 
         $response = $this->postJson("/api/v1/stock-opnames/{$opname->id}/submit-review");
 
-        $response->assertStatus(409); // Business rule violation
+        $response->assertStatus(409); // Business rule violation (items missing counts)
     });
 
     it('can approve and apply adjustments', function () {
@@ -267,7 +267,7 @@ describe('Stock Opname Workflow', function () {
         $response = $this->postJson("/api/v1/stock-opnames/{$opname->id}/approve");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'completed');
+            ->assertJsonPath('data.status.value', 'completed');
 
         // Verify stock was adjusted
         $stock = ProductStock::where('product_id', $product->id)
@@ -285,7 +285,7 @@ describe('Stock Opname Workflow', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'counting');
+            ->assertJsonPath('data.status.value', 'counting');
     });
 
     it('can cancel a stock opname', function () {
@@ -294,7 +294,7 @@ describe('Stock Opname Workflow', function () {
         $response = $this->postJson("/api/v1/stock-opnames/{$opname->id}/cancel");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'cancelled');
+            ->assertJsonPath('data.status.value', 'cancelled');
     });
 
     it('cannot cancel a completed stock opname', function () {
@@ -302,9 +302,8 @@ describe('Stock Opname Workflow', function () {
 
         $response = $this->postJson("/api/v1/stock-opnames/{$opname->id}/cancel");
 
-        $response->assertStatus(409); // Business rule violation
+        $response->assertStatus(422);
     });
-
 });
 
 describe('Stock Opname Reports', function () {
