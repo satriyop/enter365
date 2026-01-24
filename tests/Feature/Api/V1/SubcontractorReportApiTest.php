@@ -25,11 +25,15 @@ describe('Subcontractor Summary Report', function () {
         SubcontractorWorkOrder::factory()
             ->forSubcontractor($subcontractor)
             ->withAgreedAmount(50000000)
-            ->count(3)
+            ->count(10)
             ->create();
 
-        $response = $this->getJson('/api/v1/reports/subcontractor-summary');
+        $this->assertMaxQueries(15, function () {
+            $response = $this->getJson('/api/v1/reports/subcontractor-summary');
+            $response->assertOk();
+        });
 
+        $response = $this->getJson('/api/v1/reports/subcontractor-summary');
         $response->assertOk()
             ->assertJsonStructure([
                 'report_name',

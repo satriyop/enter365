@@ -23,11 +23,15 @@ describe('Work Order Cost Summary Report', function () {
         WorkOrder::factory()
             ->withEstimatedCosts(1000000, 500000, 200000)
             ->withActualCosts(1100000, 550000, 220000)
-            ->count(3)
+            ->count(10)
             ->create();
 
-        $response = $this->getJson('/api/v1/reports/work-order-costs');
+        $this->assertMaxQueries(15, function () {
+            $response = $this->getJson('/api/v1/reports/work-order-costs');
+            $response->assertOk();
+        });
 
+        $response = $this->getJson('/api/v1/reports/work-order-costs');
         $response->assertOk()
             ->assertJsonStructure([
                 'report_name',
@@ -44,7 +48,7 @@ describe('Work Order Cost Summary Report', function () {
                 ],
             ])
             ->assertJsonPath('report_name', 'Laporan Biaya Work Order')
-            ->assertJsonPath('totals.work_orders_count', 3);
+            ->assertJsonPath('totals.work_orders_count', 10);
     });
 
     it('can filter by status', function () {

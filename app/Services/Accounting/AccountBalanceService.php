@@ -121,26 +121,135 @@ class AccountBalanceService
     }
 
     /**
-     * Get trial balance (Neraca Saldo).
-     *
-     * @return Collection<int, array{
-     *     account_id: int,
-     *     code: string,
-     *     name: string,
-     *     type: string,
-     *     debit_balance: int,
-     *     credit_balance: int
-     * }>
+     * Get ledger entries for multiple accounts.
+     * 
+     * @param Collection<int, Account> $accounts
      */
+    public function getLedgers(Collection $accounts, ?string $startDate = null, ?string $endDate = null): Collection
+    {
+        $accountIds = $accounts->pluck('id')->toArray();
+
+        $query = DB::table('journal_entry_lines as jel')
+            ->join('journal_entries as je', 'je.id', '=', 'jel.journal_entry_id')
+            ->whereIn('jel.account_id', $accountIds)
+            ->where('je.is_posted', true)
+            ->whereNull('je.deleted_at')
+            ->select([
+                'jel.id',
+                'jel.account_id',
+                'je.id as journal_entry_id',
+                'je.entry_date as date',
+                'je.entry_number',
+                'je.description as entry_description',
+                'je.reference',
+                'jel.description as line_description',
+                'jel.debit',
+                'jel.credit',
+            ])
+            ->orderBy('je.entry_date')
+            ->orderBy('je.id');
+
+        if ($startDate) {
+            $query->where('je.entry_date', '>=', $startDate);
+        }
+
+        if ($endDate) {
+            $query->where('je.entry_date', '<=', $endDate);
+        }
+
+        $allEntries = $query->get()->groupBy('account_id');
+
+        // Calculate opening balances for all accounts
+        $openingBalances = [];
+        if ($startDate) {
+            $priorMovements = DB::table('journal_entry_lines as jel')
+                ->join('journal_entries as je', 'je.id', '=', 'jel.journal_entry_id')
+                ->whereIn('jel.account_id', $accountIds)
+                ->where('je.is_posted', true)
+                ->where('je.entry_date', '<', $startDate)
+                ->whereNull('je.deleted_at')
+                ->selectRaw('jel.account_id, SUM(jel.debit) as total_debit, SUM(jel.credit) as total_credit')
+                ->groupBy('jel.account_id')
+                ->get()
+                ->keyBy('account_id');
+
+            foreach ($accounts as $account) {
+                $movement = $priorMovements->get($account->id);
+                $priorBalance = $account->isDebitNormal()
+                    ? ((int) ($movement->total_debit ?? 0) - (int) ($movement->total_credit ?? 0))
+                    : ((int) ($movement->total_credit ?? 0) - (int) ($movement->total_debit ?? 0));
+                
+                $openingBalances[$account->id] = (int) $account->opening_balance + $priorBalance;
+            }
+        } else {
+            foreach ($accounts as $account) {
+                $openingBalances[$account->id] = (int) $account->opening_balance;
+            }
+        }
+
+        return $accounts->map(function ($account) use ($allEntries, $openingBalances) {
+            $entries = $allEntries->get($account->id, collect());
+            $runningBalance = $openingBalances[$account->id];
+
+            $transformedEntries = $entries->map(function ($entry) use ($account, &$runningBalance) {
+                $movement = $account->isDebitNormal()
+                    ? (int) $entry->debit - (int) $entry->credit
+                    : (int) $entry->credit - (int) $entry->debit;
+
+                $runningBalance += $movement;
+
+                return [
+                    'id' => (int) $entry->id,
+                    'journal_entry_id' => (int) $entry->journal_entry_id,
+                    'date' => (string) $entry->date,
+                    'entry_number' => (string) $entry->entry_number,
+                    'description' => (string) ($entry->line_description ?? $entry->entry_description),
+                    'reference' => $entry->reference ? (string) $entry->reference : null,
+                    'debit' => (int) $entry->debit,
+                    'credit' => (int) $entry->credit,
+                    'running_balance' => (int) $runningBalance,
+                ];
+            });
+
+            return (object) [
+                'account_id' => $account->id,
+                'code' => $account->code,
+                'name' => $account->name,
+                'type' => $account->type,
+                'opening_balance' => $openingBalances[$account->id],
+                'entries' => $transformedEntries,
+                'closing_balance' => $runningBalance,
+            ];
+        });
+    }
     public function getTrialBalance(?string $asOfDate = null): Collection
     {
+        $asOfDate = $asOfDate ?? now()->toDateString();
+
         $accounts = Account::query()
             ->where('is_active', true)
             ->orderBy('code')
             ->get();
 
-        return $accounts->map(function ($account) use ($asOfDate) {
-            $balance = $account->getBalance($asOfDate);
+        // Get all balances in one query
+        $balances = DB::table('journal_entry_lines as jel')
+            ->join('journal_entries as je', 'je.id', '=', 'jel.journal_entry_id')
+            ->where('je.is_posted', true)
+            ->where('je.entry_date', '<=', $asOfDate)
+            ->whereNull('je.deleted_at')
+            ->selectRaw('jel.account_id, SUM(jel.debit) as total_debit, SUM(jel.credit) as total_credit')
+            ->groupBy('jel.account_id')
+            ->get()
+            ->keyBy('account_id');
+
+        return $accounts->map(function ($account) use ($balances) {
+            $movement = $balances->get($account->id);
+            $totalDebit = (int) ($movement->total_debit ?? 0);
+            $totalCredit = (int) ($movement->total_credit ?? 0);
+
+            $balance = (int) $account->opening_balance + ($account->isDebitNormal() 
+                ? $totalDebit - $totalCredit 
+                : $totalCredit - $totalDebit);
 
             return [
                 'account_id' => (int) $account->id,
@@ -150,6 +259,6 @@ class AccountBalanceService
                 'debit_balance' => (int) ($account->isDebitNormal() ? max(0, $balance) : max(0, -$balance)),
                 'credit_balance' => (int) ($account->isCreditNormal() ? max(0, $balance) : max(0, -$balance)),
             ];
-        })->filter(fn ($row) => $row['debit_balance'] > 0 || $row['credit_balance'] > 0);
+        })->filter(fn ($row) => $row['debit_balance'] > 0 || $row['credit_balance'] > 0 || (isset($balances[$row['account_id']]) && ($balances[$row['account_id']]->total_debit > 0 || $balances[$row['account_id']]->total_credit > 0)));
     }
 }

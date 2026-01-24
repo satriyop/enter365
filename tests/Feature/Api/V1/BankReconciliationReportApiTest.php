@@ -27,8 +27,12 @@ describe('Bank Reconciliation Report', function () {
     it('can generate bank reconciliation report', function () {
         $bankAccount = Account::where('code', '1-1001')->first();
 
-        $response = $this->getJson("/api/v1/reports/accounts/{$bankAccount->id}/bank-reconciliation");
+        $this->assertMaxQueries(15, function () use ($bankAccount) {
+            $response = $this->getJson("/api/v1/reports/accounts/{$bankAccount->id}/bank-reconciliation");
+            $response->assertOk();
+        });
 
+        $response = $this->getJson("/api/v1/reports/accounts/{$bankAccount->id}/bank-reconciliation");
         $response->assertOk()
             ->assertJsonStructure([
                 'report_name',

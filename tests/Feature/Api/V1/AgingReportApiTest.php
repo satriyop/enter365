@@ -24,20 +24,26 @@ describe('Aging Report API', function () {
     it('can get receivable aging report', function () {
         $customer = Contact::factory()->customer()->create();
 
-        Invoice::factory()->forContact($customer)->sent()->create([
-            'due_date' => now()->addDays(15), // current
+        Invoice::factory()->forContact($customer)->sent()->count(5)->create([
+            'due_date' => now()->addDays(15),
             'total_amount' => 1000000,
             'paid_amount' => 0,
         ]);
 
-        $response = $this->getJson('/api/v1/reports/receivable-aging');
+        $this->assertMaxQueries(15, function () {
+            $response = $this->getJson('/api/v1/reports/receivable-aging');
+            $response->assertOk();
+        });
 
+        $response = $this->getJson('/api/v1/reports/receivable-aging');
         $response->assertOk()
             ->assertJsonStructure([
                 'report_name',
                 'as_of_date',
                 'buckets',
-                'contacts',
+                'contacts' => [
+                    '*' => ['contact_id', 'contact_name', 'buckets' => ['total']],
+                ],
                 'totals',
             ]);
     });
@@ -45,21 +51,27 @@ describe('Aging Report API', function () {
     it('can get payable aging report', function () {
         $supplier = Contact::factory()->supplier()->create();
 
-        Bill::factory()->forContact($supplier)->create([
+        Bill::factory()->forContact($supplier)->count(5)->create([
             'status' => DocumentStatus::Received,
-            'due_date' => now()->addDays(15), // current
+            'due_date' => now()->addDays(15),
             'total_amount' => 1000000,
             'paid_amount' => 0,
         ]);
 
-        $response = $this->getJson('/api/v1/reports/payable-aging');
+        $this->assertMaxQueries(15, function () {
+            $response = $this->getJson('/api/v1/reports/payable-aging');
+            $response->assertOk();
+        });
 
+        $response = $this->getJson('/api/v1/reports/payable-aging');
         $response->assertOk()
             ->assertJsonStructure([
                 'report_name',
                 'as_of_date',
                 'buckets',
-                'contacts',
+                'contacts' => [
+                    '*' => ['contact_id', 'contact_name', 'buckets' => ['total']],
+                ],
                 'totals',
             ]);
     });

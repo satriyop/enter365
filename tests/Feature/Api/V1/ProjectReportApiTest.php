@@ -25,11 +25,15 @@ describe('Project Profitability Report', function () {
 
         Project::factory()
             ->forContact($customer)
-            ->count(3)
+            ->count(10)
             ->create();
 
-        $response = $this->getJson('/api/v1/reports/project-profitability');
+        $this->assertMaxQueries(15, function () {
+            $response = $this->getJson('/api/v1/reports/project-profitability');
+            $response->assertOk();
+        });
 
+        $response = $this->getJson('/api/v1/reports/project-profitability');
         $response->assertOk()
             ->assertJsonStructure([
                 'report_name',
@@ -47,7 +51,7 @@ describe('Project Profitability Report', function () {
                 ],
             ])
             ->assertJsonPath('report_name', 'Laporan Profitabilitas Proyek')
-            ->assertJsonPath('totals.projects_count', 3);
+            ->assertJsonPath('totals.projects_count', 10);
     });
 
     it('can filter by status', function () {

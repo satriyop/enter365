@@ -23,8 +23,12 @@ beforeEach(function () {
 describe('COGS Summary Report', function () {
 
     it('can generate COGS summary', function () {
-        $response = $this->getJson('/api/v1/reports/cogs-summary');
+        $this->assertMaxQueries(15, function () {
+            $response = $this->getJson('/api/v1/reports/cogs-summary');
+            $response->assertOk();
+        });
 
+        $response = $this->getJson('/api/v1/reports/cogs-summary');
         $response->assertOk()
             ->assertJsonStructure([
                 'report_name',

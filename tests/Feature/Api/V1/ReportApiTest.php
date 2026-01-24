@@ -30,8 +30,12 @@ describe('Report API', function () {
         JournalEntryLine::factory()->forEntry($entry)->forAccount($cashAccount)->debit(1000000)->create();
         JournalEntryLine::factory()->forEntry($entry)->forAccount($revenueAccount)->credit(1000000)->create();
 
-        $response = $this->getJson('/api/v1/reports/trial-balance');
+        $this->assertMaxQueries(15, function () {
+            $response = $this->getJson('/api/v1/reports/trial-balance');
+            $response->assertOk();
+        });
 
+        $response = $this->getJson('/api/v1/reports/trial-balance');
         $response->assertOk()
             ->assertJsonStructure([
                 'report_name',
@@ -55,8 +59,12 @@ describe('Report API', function () {
     });
 
     it('can generate balance sheet', function () {
-        $response = $this->getJson('/api/v1/reports/balance-sheet');
+        $this->assertMaxQueries(15, function () {
+            $response = $this->getJson('/api/v1/reports/balance-sheet');
+            $response->assertOk();
+        });
 
+        $response = $this->getJson('/api/v1/reports/balance-sheet');
         $response->assertOk()
             ->assertJsonStructure([
                 'report_name',
@@ -85,8 +93,12 @@ describe('Report API', function () {
         JournalEntryLine::factory()->forEntry($entry2)->forAccount($expenseAccount)->debit(2000000)->create();
         JournalEntryLine::factory()->forEntry($entry2)->forAccount($cashAccount)->credit(2000000)->create();
 
-        $response = $this->getJson('/api/v1/reports/income-statement');
+        $this->assertMaxQueries(15, function () {
+            $response = $this->getJson('/api/v1/reports/income-statement');
+            $response->assertOk();
+        });
 
+        $response = $this->getJson('/api/v1/reports/income-statement');
         $response->assertOk()
             ->assertJsonStructure([
                 'report_name',
@@ -122,8 +134,12 @@ describe('Report API', function () {
         JournalEntryLine::factory()->forEntry($entry)->forAccount($cashAccount)->debit(1000000)->create();
         JournalEntryLine::factory()->forEntry($entry)->forAccount($revenueAccount)->credit(1000000)->create();
 
-        $response = $this->getJson('/api/v1/reports/general-ledger');
+        $this->assertMaxQueries(50, function () {
+            $response = $this->getJson('/api/v1/reports/general-ledger');
+            $response->assertOk();
+        });
 
+        $response = $this->getJson('/api/v1/reports/general-ledger');
         $response->assertOk()
             ->assertJsonStructure([
                 'report_name',

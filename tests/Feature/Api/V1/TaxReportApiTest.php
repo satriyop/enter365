@@ -39,8 +39,12 @@ describe('Tax Report API (PPN)', function () {
             'tax_rate' => 11,
         ]);
 
-        $response = $this->getJson('/api/v1/reports/ppn-summary');
+        $this->assertMaxQueries(15, function () {
+            $response = $this->getJson('/api/v1/reports/ppn-summary');
+            $response->assertOk();
+        });
 
+        $response = $this->getJson('/api/v1/reports/ppn-summary');
         $response->assertOk()
             ->assertJsonStructure([
                 'period',

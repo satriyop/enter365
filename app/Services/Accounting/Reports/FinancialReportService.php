@@ -45,8 +45,25 @@ class FinancialReportService
             ->orderBy('code')
             ->get();
 
-        $balanceItems = $accounts->map(function ($account) use ($asOfDate) {
-            $balance = $account->getBalance($asOfDate);
+        // Bulk get balances
+        $movements = DB::table('journal_entry_lines as jel')
+            ->join('journal_entries as je', 'je.id', '=', 'jel.journal_entry_id')
+            ->where('je.is_posted', true)
+            ->where('je.entry_date', '<=', $asOfDate)
+            ->whereNull('je.deleted_at')
+            ->selectRaw('jel.account_id, SUM(jel.debit) as total_debit, SUM(jel.credit) as total_credit')
+            ->groupBy('jel.account_id')
+            ->get()
+            ->keyBy('account_id');
+
+        $balanceItems = $accounts->map(function ($account) use ($movements) {
+            $movement = $movements->get($account->id);
+            $totalDebit = (int) ($movement->total_debit ?? 0);
+            $totalCredit = (int) ($movement->total_credit ?? 0);
+
+            $balance = (int) $account->opening_balance + ($account->isDebitNormal() 
+                ? $totalDebit - $totalCredit 
+                : $totalCredit - $totalDebit);
 
             return (object) [
                 'account_id' => $account->id,
@@ -135,8 +152,25 @@ class FinancialReportService
             ->orderBy('code')
             ->get();
 
-        $items = $accounts->map(function ($account) use ($startDate, $endDate) {
-            $balance = $this->getAccountBalanceForPeriod($account, $startDate, $endDate);
+        // Bulk get movements for period
+        $movements = DB::table('journal_entry_lines as jel')
+            ->join('journal_entries as je', 'je.id', '=', 'jel.journal_entry_id')
+            ->where('je.is_posted', true)
+            ->whereBetween('je.entry_date', [$startDate, $endDate])
+            ->whereNull('je.deleted_at')
+            ->selectRaw('jel.account_id, SUM(jel.debit) as total_debit, SUM(jel.credit) as total_credit')
+            ->groupBy('jel.account_id')
+            ->get()
+            ->keyBy('account_id');
+
+        $items = $accounts->map(function ($account) use ($movements) {
+            $movement = $movements->get($account->id);
+            $totalDebit = (int) ($movement->total_debit ?? 0);
+            $totalCredit = (int) ($movement->total_credit ?? 0);
+
+            $balance = $account->isDebitNormal()
+                ? $totalDebit - $totalCredit
+                : $totalCredit - $totalDebit;
 
             return (object) [
                 'account_id' => $account->id,
@@ -193,20 +227,8 @@ class FinancialReportService
             ->orderBy('code')
             ->get();
 
-        return $accounts->map(function ($account) use ($startDate, $endDate) {
-            $ledger = $this->balanceService->getLedger($account, $startDate, $endDate);
-            $closingBalance = $ledger->isNotEmpty() ? $ledger->last()['running_balance'] : $account->opening_balance;
-
-            return (object) [
-                'account_id' => $account->id,
-                'code' => $account->code,
-                'name' => $account->name,
-                'type' => $account->type,
-                'opening_balance' => $account->opening_balance,
-                'entries' => $ledger,
-                'closing_balance' => $closingBalance,
-            ];
-        })->filter(fn ($item) => $item->entries->isNotEmpty());
+        return $this->balanceService->getLedgers($accounts, $startDate, $endDate)
+            ->filter(fn ($item) => $item->entries->isNotEmpty());
     }
 
     /**
