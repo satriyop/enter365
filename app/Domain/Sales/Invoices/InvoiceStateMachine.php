@@ -36,7 +36,9 @@ class InvoiceStateMachine extends AbstractStateMachine
             DocumentStatus::Draft->value,
             DocumentStatus::Sent->value,
             fn () => [
-                'passes' => $this->invoice->items()->exists(),
+                'passes' => isset($this->invoice->items_count) 
+                    ? $this->invoice->items_count > 0 
+                    : $this->invoice->items()->exists(),
                 'message' => 'Faktur tidak memiliki item.',
             ]
         );
@@ -259,8 +261,12 @@ class InvoiceStateMachine extends AbstractStateMachine
 
     public function canDelete(): bool
     {
+        $hasPayments = isset($this->invoice->payments_count)
+            ? $this->invoice->payments_count > 0
+            : $this->invoice->payments()->exists();
+
         return $this->currentStatus === DocumentStatus::Draft
-            && ! $this->invoice->payments()->exists();
+            && ! $hasPayments;
     }
 
     /**

@@ -89,8 +89,12 @@ class PurchaseOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
 
     public function canSubmit(): bool
     {
+        $hasItems = isset($this->purchaseOrder->items_count)
+            ? $this->purchaseOrder->items_count > 0
+            : $this->purchaseOrder->items()->exists();
+
         return $this->currentStatus === DocumentStatus::Draft
-            && $this->purchaseOrder->items()->exists();
+            && $hasItems;
     }
 
     public function canApprove(): bool

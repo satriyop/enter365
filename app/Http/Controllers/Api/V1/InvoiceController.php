@@ -45,7 +45,8 @@ class InvoiceController extends Controller
     public function index(InvoiceFilter $filter): AnonymousResourceCollection
     {
         $invoices = Invoice::query()
-            ->with(['contact']) // Default eager loads
+            ->with(['contact'])
+            ->withCount(['items', 'payments'])
             ->filter($filter)
             ->paginate($filter->getRequest()->input('per_page', 25));
 

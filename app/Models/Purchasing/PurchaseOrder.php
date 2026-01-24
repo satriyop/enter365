@@ -303,8 +303,12 @@ class PurchaseOrder extends Model
      */
     public function canSubmit(): bool
     {
+        $hasItems = isset($this->items_count)
+            ? $this->items_count > 0
+            : $this->items()->exists();
+
         return $this->status === DocumentStatus::Draft
-            && $this->items()->exists();
+            && $hasItems;
     }
 
     /**
@@ -367,13 +371,16 @@ class PurchaseOrder extends Model
         ], true);
     }
 
-    /**
-     * Check if PO is fully received.
-     */
     public function isFullyReceived(): bool
     {
         if ($this->status === DocumentStatus::Received) {
             return true;
+        }
+
+        if (array_key_exists('total_quantity', $this->attributes) && array_key_exists('total_received', $this->attributes)) {
+            $totalQty = (float) $this->attributes['total_quantity'];
+            $receivedQty = (float) $this->attributes['total_received'];
+            return $receivedQty >= $totalQty && $totalQty > 0;
         }
 
         foreach ($this->items as $item) {
@@ -382,24 +389,27 @@ class PurchaseOrder extends Model
             }
         }
 
-        return true;
+        return $this->items->count() > 0;
     }
 
-    /**
-     * Check if PO has any received items.
-     */
     public function hasReceivedItems(): bool
     {
+        if (array_key_exists('total_received', $this->attributes)) {
+            return (float) $this->attributes['total_received'] > 0;
+        }
+
         return $this->items()->where('quantity_received', '>', 0)->exists();
     }
 
-    /**
-     * Get receiving progress percentage.
-     */
     public function getReceivingProgress(): float
     {
-        $totalQty = $this->items()->sum('quantity');
-        $receivedQty = $this->items()->sum('quantity_received');
+        $totalQty = array_key_exists('total_quantity', $this->attributes)
+            ? (float) $this->attributes['total_quantity']
+            : (float) $this->items()->sum('quantity');
+            
+        $receivedQty = array_key_exists('total_received', $this->attributes)
+            ? (float) $this->attributes['total_received']
+            : (float) $this->items()->sum('quantity_received');
 
         if ($totalQty == 0) {
             return 0;

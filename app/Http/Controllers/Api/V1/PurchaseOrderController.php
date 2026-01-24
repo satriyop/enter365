@@ -26,7 +26,10 @@ class PurchaseOrderController extends Controller
     public function index(PurchaseOrderFilter $filter): AnonymousResourceCollection
     {
         $purchaseOrders = PurchaseOrder::query()
-            ->with(['contact', 'items'])
+            ->with(['contact'])
+            ->withCount(['items'])
+            ->withSum('items as total_quantity', 'quantity')
+            ->withSum('items as total_received', 'quantity_received')
             ->filter($filter)
             ->paginate($filter->getRequest()->input('per_page', 25));
 

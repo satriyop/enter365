@@ -699,11 +699,7 @@ class Quotation extends Model
             return null;
         }
 
-        try {
-            return QuotationOutcome::from($this->outcome)->label();
-        } catch (\ValueError) {
-            return null;
-        }
+        return $this->outcome->label();
     }
 
     /**
@@ -715,6 +711,6 @@ class Quotation extends Model
             return 'Normal';
         }
 
-        return QuotationPriority::from($this->priority)->label();
+        return $this->priority->label();
     }
 }

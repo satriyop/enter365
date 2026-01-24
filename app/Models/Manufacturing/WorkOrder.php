@@ -2,6 +2,8 @@
 
 namespace App\Models\Manufacturing;
 
+use App\Domain\Manufacturing\WorkOrders\Enums\WorkOrderPriority;
+use App\Domain\Manufacturing\WorkOrders\Enums\WorkOrderType;
 use App\Enums\DocumentStatus;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\Warehouse;
@@ -158,8 +160,8 @@ class WorkOrder extends Model
             'completed_at' => 'datetime',
             'cancelled_at' => 'datetime',
             'status' => DocumentStatus::class,
-            'type' => \App\Domain\Manufacturing\WorkOrders\Enums\WorkOrderType::class,
-            'priority' => \App\Domain\Manufacturing\WorkOrders\Enums\WorkOrderPriority::class,
+            'type' => WorkOrderType::class,
+            'priority' => WorkOrderPriority::class,
         ];
     }
 
