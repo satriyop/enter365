@@ -27,18 +27,25 @@ class LabelValueResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        if ($this->resource === null) {
+            return [
+                'value' => '',
+                'label' => '',
+            ];
+        }
+
         // Handle BackedEnums with label() method
-        if ($this->resource instanceof \BackedEnum && method_exists($this->resource, 'label')) {
+        if ($this->resource instanceof \BackedEnum) {
             return [
                 'value' => (string) $this->resource->value,
-                'label' => $this->resource->label(),
+                'label' => method_exists($this->resource, 'label') ? $this->resource->label() : (string) $this->resource->value,
             ];
         }
 
         // Fallback for raw strings or other objects
         return [
             'value' => (string) ($this->resource->value ?? $this->resource),
-            'label' => method_exists($this->resource, 'label') ? $this->resource->label() : (string) ($this->resource->label ?? $this->resource),
+            'label' => method_exists($this->resource, 'label') ? $this->resource->label() : (string) ($this->resource->label ?? ($this->resource->value ?? $this->resource)),
         ];
     }
 }
