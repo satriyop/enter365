@@ -16,6 +16,9 @@ beforeEach(function () {
     Sanctum::actingAs($user);
     $this->user = $user;
 
+    // Clear existing proposals to avoid cross-test contamination
+    SolarProposal::query()->delete();
+
     // Seed required data
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\ChartOfAccountsSeeder']);
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\FiscalPeriodSeeder']);

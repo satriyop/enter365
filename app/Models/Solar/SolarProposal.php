@@ -9,6 +9,7 @@ use App\Models\Manufacturing\BomVariantGroup;
 use App\Models\Sales\Quotation;
 use App\Models\Shared\Attachment;
 use App\Models\User;
+use App\Traits\Filterable;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -65,7 +66,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class SolarProposal extends Model
 {
-    use HasFactory, SoftDeletes;
+    use Filterable, HasFactory, SoftDeletes;
 
     // Roof type constants
     public const ROOF_TYPE_FLAT = 'flat';

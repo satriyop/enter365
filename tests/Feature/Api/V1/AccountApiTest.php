@@ -122,7 +122,7 @@ describe('Account API', function () {
         $response = $this->deleteJson("/api/v1/accounts/{$account->id}");
 
         $response->assertOk();
-        $this->assertSoftDeleted('accounts', ['id' => $account->id]);
+        $this->assertDatabaseMissing('accounts', ['id' => $account->id]);
     });
 
     it('cannot delete system account', function () {
