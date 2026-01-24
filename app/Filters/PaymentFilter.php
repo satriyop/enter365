@@ -64,6 +64,19 @@ class PaymentFilter extends QueryFilter
     }
 
     /**
+     * {@inheritdoc}
+     */
+    protected function getAllowedIncludes(): array
+    {
+        return [
+            'contact',
+            'cashAccount',
+            'journalEntry',
+            'payable',
+        ];
+    }
+
+    /**
      * Filter by payment type (receive, send).
      */
     public function type(string $value): void

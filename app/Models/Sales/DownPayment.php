@@ -2,11 +2,12 @@
 
 namespace App\Models\Sales;
 
+use App\Enums\DocumentStatus;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Contacts\Contact;
-use App\Models\Shared\Payment;
 use App\Models\User;
+use App\Traits\Filterable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,7 +16,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class DownPayment extends Model
 {
-    use HasFactory, SoftDeletes;
+    use Filterable, HasFactory, SoftDeletes;
 
     public const TYPE_RECEIVABLE = 'receivable'; // From customer (uang muka penjualan)
 
@@ -63,6 +64,7 @@ class DownPayment extends Model
             'amount' => 'integer',
             'applied_amount' => 'integer',
             'refunded_at' => 'datetime',
+            'status' => DocumentStatus::class,
         ];
     }
 
@@ -135,7 +137,7 @@ class DownPayment extends Model
      */
     public function canBeApplied(): bool
     {
-        return $this->status === self::STATUS_ACTIVE && $this->getRemainingAmount() > 0;
+        return $this->status === DocumentStatus::Active && $this->getRemainingAmount() > 0;
     }
 
     /**
@@ -143,7 +145,7 @@ class DownPayment extends Model
      */
     public function canBeRefunded(): bool
     {
-        return $this->status === self::STATUS_ACTIVE && $this->getRemainingAmount() > 0;
+        return $this->status === DocumentStatus::Active && $this->getRemainingAmount() > 0;
     }
 
     /**
@@ -167,14 +169,14 @@ class DownPayment extends Model
      */
     public function updateStatus(): void
     {
-        if ($this->status === self::STATUS_REFUNDED || $this->status === self::STATUS_CANCELLED) {
+        if ($this->status === DocumentStatus::Refunded || $this->status === DocumentStatus::Cancelled) {
             return;
         }
 
         if ($this->isFullyApplied()) {
-            $this->status = self::STATUS_FULLY_APPLIED;
+            $this->status = DocumentStatus::FullyApplied;
         } else {
-            $this->status = self::STATUS_ACTIVE;
+            $this->status = DocumentStatus::Active;
         }
     }
 

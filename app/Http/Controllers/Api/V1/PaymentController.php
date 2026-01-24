@@ -24,8 +24,10 @@ class PaymentController extends Controller
     public function index(PaymentFilter $filter): AnonymousResourceCollection
     {
         $payments = Payment::query()
-            ->with(['contact', 'cashAccount'])
+            ->with(['contact', 'cashAccount']) // Default eager loads
             ->filter($filter)
+            ->orderByDesc('payment_date')
+            ->orderByDesc('id')
             ->paginate($filter->getRequest()->input('per_page', 25));
 
         return PaymentResource::collection($payments);
@@ -44,11 +46,13 @@ class PaymentController extends Controller
         }
     }
 
-    public function show(Payment $payment): PaymentResource
+    public function show(Payment $payment, PaymentFilter $filter): PaymentResource
     {
-        return new PaymentResource(
-            $payment->load(['contact', 'cashAccount', 'journalEntry.lines.account'])
-        );
+        $filter->apply($payment->newQuery());
+
+        $payment->loadMissing(['contact', 'cashAccount', 'journalEntry.lines.account']);
+
+        return new PaymentResource($payment);
     }
 
     public function void(Payment $payment): JsonResponse

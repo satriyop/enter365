@@ -5,12 +5,46 @@ namespace App\Http\Resources\Api\V1;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin \App\Models\Sales\DownPayment
+ */
+/**
+ * @mixin \App\Models\Sales\DownPayment
+ */
 class DownPaymentResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
      *
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   dp_number: string,
+     *   type: string,
+     *   type_label: string,
+     *   contact_id: int,
+     *   contact?: array{id: int, name: string, email: string|null},
+     *   dp_date: string,
+     *   amount: int,
+     *   applied_amount: int,
+     *   remaining_amount: int,
+     *   payment_method: string,
+     *   cash_account_id: int,
+     *   cash_account?: array{id: int, code: string, name: string},
+     *   reference: string|null,
+     *   description: string|null,
+     *   notes: string|null,
+     *   status: array{value: string, label: string, color: string},
+     *   journal_entry_id: int|null,
+     *   refund_payment_id: int|null,
+     *   refunded_at: string|null,
+     *   applications?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
+     *   applications_count?: int,
+     *   created_by: int|null,
+     *   creator?: array{id: int, name: string},
+     *   created_at: string,
+     *   updated_at: string
+     * }
      */
     public function toArray(Request $request): array
     {
@@ -39,7 +73,11 @@ class DownPaymentResource extends JsonResource
             'reference' => $this->reference,
             'description' => $this->description,
             'notes' => $this->notes,
-            'status' => $this->status,
+            'status' => [
+                'value' => $this->status->value,
+                'label' => $this->status->label(),
+                'color' => $this->status->color(),
+            ],
             'journal_entry_id' => $this->journal_entry_id,
             'refund_payment_id' => $this->refund_payment_id,
             'refunded_at' => $this->refunded_at?->format('Y-m-d H:i:s'),

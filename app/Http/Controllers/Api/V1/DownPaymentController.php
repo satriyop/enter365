@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\DocumentStatus;
+use App\Filters\DownPaymentFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\ApplyDownPaymentRequest;
 use App\Http\Requests\Api\V1\RefundDownPaymentRequest;
@@ -27,62 +29,12 @@ class DownPaymentController extends Controller
     /**
      * Display a listing of down payments.
      */
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(DownPaymentFilter $filter): AnonymousResourceCollection
     {
-        $query = DownPayment::query()
-            ->with(['contact', 'cashAccount', 'creator'])
-            ->withCount('applications');
-
-        // Filter by type
-        if ($request->has('type')) {
-            $query->where('type', $request->type);
-        }
-
-        // Filter by status
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
-        }
-
-        // Filter by contact
-        if ($request->has('contact_id')) {
-            $query->where('contact_id', $request->contact_id);
-        }
-
-        // Filter by date range
-        if ($request->has('start_date')) {
-            $query->where('dp_date', '>=', $request->start_date);
-        }
-        if ($request->has('end_date')) {
-            $query->where('dp_date', '<=', $request->end_date);
-        }
-
-        // Filter available only (has remaining balance)
-        if ($request->boolean('available_only')) {
-            $query->where('status', DownPayment::STATUS_ACTIVE)
-                ->whereRaw('applied_amount < amount');
-        }
-
-        // Search
-        if ($request->has('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('dp_number', 'like', "%{$search}%")
-                    ->orWhere('reference', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%")
-                    ->orWhereHas('contact', function ($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%");
-                    });
-            });
-        }
-
-        // Sorting
-        $sortField = $request->get('sort', 'dp_date');
-        $sortDirection = $request->get('direction', 'desc');
-        $query->orderBy($sortField, $sortDirection);
-
-        $downPayments = $request->has('per_page')
-            ? $query->paginate($request->per_page)
-            : $query->get();
+        $downPayments = DownPayment::query()
+            ->with(['contact', 'cashAccount']) // Default eager loads
+            ->filter($filter)
+            ->paginate($filter->getRequest()->input('per_page', 25));
 
         return DownPaymentResource::collection($downPayments);
     }
@@ -106,9 +58,11 @@ class DownPaymentController extends Controller
     /**
      * Display the specified down payment.
      */
-    public function show(DownPayment $downPayment): DownPaymentResource
+    public function show(DownPayment $downPayment, DownPaymentFilter $filter): DownPaymentResource
     {
-        $downPayment->load(['contact', 'cashAccount', 'creator', 'applications.applicable', 'journalEntry']);
+        $filter->apply($downPayment->newQuery());
+
+        $downPayment->loadMissing(['contact', 'cashAccount', 'creator', 'applications.applicable', 'journalEntry']);
 
         return new DownPaymentResource($downPayment);
     }
@@ -266,24 +220,24 @@ class DownPaymentController extends Controller
             'total_applied' => (clone $query)->sum('applied_amount'),
             'total_remaining' => (clone $query)->selectRaw('SUM(amount - applied_amount) as remaining')->value('remaining') ?? 0,
             'by_status' => [
-                'active' => (clone $query)->where('status', DownPayment::STATUS_ACTIVE)->count(),
-                'fully_applied' => (clone $query)->where('status', DownPayment::STATUS_FULLY_APPLIED)->count(),
-                'refunded' => (clone $query)->where('status', DownPayment::STATUS_REFUNDED)->count(),
-                'cancelled' => (clone $query)->where('status', DownPayment::STATUS_CANCELLED)->count(),
+                'active' => (clone $query)->where('status', DocumentStatus::Active)->count(),
+                'fully_applied' => (clone $query)->where('status', DocumentStatus::FullyApplied)->count(),
+                'refunded' => (clone $query)->where('status', DocumentStatus::Refunded)->count(),
+                'cancelled' => (clone $query)->where('status', DocumentStatus::Cancelled)->count(),
             ],
             'by_type' => [
                 'receivable' => [
                     'count' => DownPayment::where('type', DownPayment::TYPE_RECEIVABLE)->count(),
                     'amount' => DownPayment::where('type', DownPayment::TYPE_RECEIVABLE)->sum('amount'),
                     'remaining' => DownPayment::where('type', DownPayment::TYPE_RECEIVABLE)
-                        ->where('status', DownPayment::STATUS_ACTIVE)
+                        ->where('status', DocumentStatus::Active)
                         ->selectRaw('SUM(amount - applied_amount) as remaining')->value('remaining') ?? 0,
                 ],
                 'payable' => [
                     'count' => DownPayment::where('type', DownPayment::TYPE_PAYABLE)->count(),
                     'amount' => DownPayment::where('type', DownPayment::TYPE_PAYABLE)->sum('amount'),
                     'remaining' => DownPayment::where('type', DownPayment::TYPE_PAYABLE)
-                        ->where('status', DownPayment::STATUS_ACTIVE)
+                        ->where('status', DocumentStatus::Active)
                         ->selectRaw('SUM(amount - applied_amount) as remaining')->value('remaining') ?? 0,
                 ],
             ],
