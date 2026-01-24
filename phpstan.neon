@@ -8,7 +8,7 @@ parameters:
         - config/
         - database/
         - routes/
-        - tests/
+        # - tests/
 
     # Level 5 - A solid baseline for professional projects. 
     # Aim to increase this to 8 or 9 incrementally.
@@ -28,6 +28,7 @@ parameters:
             - app/Services/Accounting/Strategies/Manufacturing/JobCostingStrategy.php
             - app/Services/Accounting/Strategies/Manufacturing/ProjectBasedCostingStrategy.php
             - app/Services/Accounting/Strategies/Manufacturing/WIPAccountingStrategy.php
+            - tests/*
 
     # Laravel-specific settings
     treatPhpDocTypesAsCertain: false

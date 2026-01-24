@@ -2,6 +2,13 @@
 
 namespace App\Models\Core;
 
+use App\Models\Accounting\Account;
+use App\Models\Accounting\FiscalPeriod;
+use App\Models\Accounting\JournalEntry;
+use App\Models\Contacts\Contact;
+use App\Models\Purchasing\Bill;
+use App\Models\Sales\Invoice;
+use App\Models\Sales\Payment;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
