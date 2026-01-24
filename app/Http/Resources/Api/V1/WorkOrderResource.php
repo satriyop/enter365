@@ -18,11 +18,11 @@ class WorkOrderResource extends JsonResource
      * @return array{
      *   id: int,
      *   wo_number: string,
-     *   type: string,
+     *   type: LabelValueResource,
      *   name: string,
      *   description: string|null,
      *   status: StatusResource,
-     *   priority: string,
+     *   priority: LabelValueResource,
      *   quantity_ordered: float,
      *   quantity_completed: float,
      *   quantity_scrapped: float,
@@ -80,11 +80,11 @@ class WorkOrderResource extends JsonResource
         return [
             'id' => $this->id,
             'wo_number' => $this->wo_number,
-            'type' => $this->type,
+            'type' => new LabelValueResource($this->type),
             'name' => $this->name,
             'description' => $this->description,
             'status' => new StatusResource($this->status),
-            'priority' => $this->priority,
+            'priority' => new LabelValueResource($this->priority),
 
             // Quantities
             'quantity_ordered' => (float) $this->quantity_ordered,

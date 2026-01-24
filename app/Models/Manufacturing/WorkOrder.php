@@ -140,7 +140,6 @@ class WorkOrder extends Model
             'quantity_ordered' => 'decimal:4',
             'quantity_completed' => 'decimal:4',
             'quantity_scrapped' => 'decimal:4',
-            'progress_percentage' => 'integer',
             'planned_start_date' => 'date',
             'planned_end_date' => 'date',
             'actual_start_date' => 'date',
@@ -159,6 +158,8 @@ class WorkOrder extends Model
             'completed_at' => 'datetime',
             'cancelled_at' => 'datetime',
             'status' => DocumentStatus::class,
+            'type' => \App\Domain\Manufacturing\WorkOrders\Enums\WorkOrderType::class,
+            'priority' => \App\Domain\Manufacturing\WorkOrders\Enums\WorkOrderPriority::class,
         ];
     }
 

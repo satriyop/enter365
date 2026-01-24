@@ -44513,6 +44513,22 @@
                 "type": "string",
                 "title": "JsonResource"
             },
+            "LabelValueResource": {
+                "type": "object",
+                "properties": {
+                    "value": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "value",
+                    "label"
+                ],
+                "title": "LabelValueResource"
+            },
             "LoginRequest": {
                 "type": "object",
                 "properties": {
@@ -47846,7 +47862,7 @@
                         ]
                     },
                     "quotation_type": {
-                        "type": "string"
+                        "$ref": "#/components/schemas/LabelValueResource"
                     },
                     "is_multi_option": {
                         "type": "boolean"
@@ -47977,7 +47993,7 @@
                         "type": "integer"
                     },
                     "priority": {
-                        "type": "string"
+                        "$ref": "#/components/schemas/LabelValueResource"
                     },
                     "priority_label": {
                         "type": "string"
@@ -47992,11 +48008,8 @@
                         ]
                     },
                     "outcome": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "description": "Win/Loss outcome"
+                        "description": "Win/Loss outcome",
+                        "$ref": "#/components/schemas/LabelValueResource"
                     },
                     "outcome_label": {
                         "type": [

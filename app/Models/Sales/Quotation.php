@@ -178,6 +178,9 @@ class Quotation extends Model
             // Cancellation casts
             'cancelled_at' => 'datetime',
             'status' => DocumentStatus::class,
+            'priority' => QuotationPriority::class,
+            'quotation_type' => QuotationType::class,
+            'outcome' => QuotationOutcome::class,
         ];
     }
 
