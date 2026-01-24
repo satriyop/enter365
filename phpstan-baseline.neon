@@ -1819,8 +1819,8 @@ parameters:
 			path: app/Services/Manufacturing/Reports/WorkOrderReportService.php
 
 		-
-			message: '#^Cannot access property \$value on string\.$#'
-			identifier: property.nonObject
+			message: '#^Cannot call method label\(\) on string\.$#'
+			identifier: method.nonObject
 			count: 3
 			path: app/Services/Manufacturing/SubcontractorService.php
 
