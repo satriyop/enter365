@@ -54,20 +54,6 @@ class DemoSeeder extends Seeder
         $this->command->info('╚═══════════════════════════════════════════════════════════════════╝');
         $this->command->info('');
 
-        // Ensure foundation data exists
-        $this->command->info('📅 Ensuring Fiscal Periods...');
-        $this->call(FiscalPeriodSeeder::class);
-        $this->command->info('');
-
-        $this->command->info('📊 Ensuring Chart of Accounts...');
-        $this->call(ChartOfAccountsSeeder::class);
-        $this->command->info('');
-
-        // Ensure roles and permissions exist (required for user role assignment)
-        $this->command->info('🔐 Ensuring Roles & Permissions...');
-        $this->call(RolesAndPermissionsSeeder::class);
-        $this->command->info('');
-
         // Seed master data first (shared between both customers)
         $this->command->info('📦 Seeding Master Data...');
         $this->call(MasterDataSeeder::class);
