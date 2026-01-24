@@ -61,7 +61,7 @@ class MrpDemandResource extends JsonResource
             'demand_source_number' => $this->demand_source_number,
 
             // Timing
-            'required_date' => $this->required_date?->toDateString(),
+            'required_date' => $this->required_date instanceof \Carbon\Carbon ? $this->required_date->toDateString() : null,
             'week_bucket' => $this->week_bucket,
 
             // Quantities

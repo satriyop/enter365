@@ -22,7 +22,7 @@ class SpecValidationRuleResource extends JsonResource
      *   spec_key: string,
      *   validation_type: string,
      *   validation_type_label: string,
-     *   threshold_value: string|null,
+     *   threshold_value: float|null,
      *   severity: string,
      *   severity_label: string,
      *   message: string,

@@ -20,7 +20,7 @@ class MaterialConsumptionResource extends JsonResource
      *   quantity_scrapped: float,
      *   total_quantity: float,
      *   scrap_reason: string|null,
-     *   unit: string,
+     *   unit: string|null,
      *   unit_cost: int,
      *   total_cost: int,
      *   consumed_date: string|null,
@@ -47,13 +47,11 @@ class MaterialConsumptionResource extends JsonResource
             'total_quantity' => $this->getTotalQuantity(),
             'scrap_reason' => $this->scrap_reason,
             'unit' => $this->unit,
-
-            // Costs
             'unit_cost' => $this->unit_cost,
             'total_cost' => $this->total_cost,
 
             // Details
-            'consumed_date' => $this->consumed_date?->toDateString(),
+            'consumed_date' => $this->consumed_date instanceof \Carbon\Carbon ? $this->consumed_date->toDateString() : null,
             'batch_number' => $this->batch_number,
             'notes' => $this->notes,
 

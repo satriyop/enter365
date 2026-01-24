@@ -61,7 +61,7 @@ class BomVariantGroupResource extends JsonResource
                 'total_cost' => $bom->total_cost,
                 'unit_cost' => $bom->unit_cost,
                 'cost_breakdown' => $bom->getCostBreakdown(),
-            ])),
+            ])->all()),
             'active_boms' => $this->whenLoaded('activeBoms', fn () => $this->activeBoms->map(fn ($bom) => [
                 'id' => $bom->id,
                 'bom_number' => $bom->bom_number,
@@ -70,7 +70,7 @@ class BomVariantGroupResource extends JsonResource
                 'variant_label' => $bom->variant_label,
                 'is_primary_variant' => $bom->is_primary_variant,
                 'total_cost' => $bom->total_cost,
-            ])),
+            ])->all()),
             'variants_count' => $this->whenLoaded('boms', fn () => $this->boms->count()),
             'cost_summary' => $this->whenLoaded('boms', function () {
                 if ($this->boms->isEmpty()) {

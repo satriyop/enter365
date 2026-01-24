@@ -59,7 +59,7 @@ class DownPaymentResource extends JsonResource
                 'name' => $this->contact->name,
                 'email' => $this->contact->email,
             ]),
-            'dp_date' => $this->dp_date->format('Y-m-d'),
+            'dp_date' => $this->dp_date instanceof \Carbon\Carbon ? $this->dp_date->toDateString() : $this->dp_date,
             'amount' => $this->amount,
             'applied_amount' => $this->applied_amount,
             'remaining_amount' => $this->getRemainingAmount(),
@@ -80,7 +80,7 @@ class DownPaymentResource extends JsonResource
             ],
             'journal_entry_id' => $this->journal_entry_id,
             'refund_payment_id' => $this->refund_payment_id,
-            'refunded_at' => $this->refunded_at?->format('Y-m-d H:i:s'),
+            'refunded_at' => $this->refunded_at instanceof \Carbon\Carbon ? $this->refunded_at->toIso8601String() : null,
             'applications' => DownPaymentApplicationResource::collection($this->whenLoaded('applications')),
             'applications_count' => $this->whenCounted('applications'),
             'created_by' => $this->created_by,
@@ -88,8 +88,8 @@ class DownPaymentResource extends JsonResource
                 'id' => $this->creator->id,
                 'name' => $this->creator->name,
             ]),
-            'created_at' => $this->created_at->format('Y-m-d H:i:s'),
-            'updated_at' => $this->updated_at->format('Y-m-d H:i:s'),
+            'created_at' => $this->created_at instanceof \Carbon\Carbon ? $this->created_at->toIso8601String() : $this->created_at,
+            'updated_at' => $this->updated_at instanceof \Carbon\Carbon ? $this->updated_at->toIso8601String() : $this->updated_at,
         ];
     }
 }

@@ -60,8 +60,8 @@ class PlnTariffResource extends JsonResource
             'peak_hours' => $this->peak_hours,
 
             'is_active' => $this->is_active,
-            'effective_from' => $this->effective_from?->toDateString(),
-            'effective_until' => $this->effective_until?->toDateString(),
+            'effective_from' => $this->effective_from instanceof \Carbon\Carbon ? $this->effective_from->toDateString() : null,
+            'effective_until' => $this->effective_until instanceof \Carbon\Carbon ? $this->effective_until->toDateString() : null,
             'notes' => $this->notes,
         ];
     }

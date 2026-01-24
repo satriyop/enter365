@@ -56,9 +56,9 @@ class RecurringTemplateResource extends JsonResource
             'frequency' => $this->frequency,
             'frequency_label' => $this->getFrequencyLabel(),
             'interval' => $this->interval,
-            'start_date' => $this->start_date?->toDateString(),
-            'end_date' => $this->end_date?->toDateString(),
-            'next_generate_date' => $this->next_generate_date?->toDateString(),
+            'start_date' => $this->start_date instanceof \Carbon\Carbon ? $this->start_date->toDateString() : null,
+            'end_date' => $this->end_date instanceof \Carbon\Carbon ? $this->end_date->toDateString() : null,
+            'next_generate_date' => $this->next_generate_date instanceof \Carbon\Carbon ? $this->next_generate_date->toDateString() : null,
             'occurrences_limit' => $this->occurrences_limit,
             'occurrences_count' => $this->occurrences_count,
             'description' => $this->description,
@@ -76,8 +76,8 @@ class RecurringTemplateResource extends JsonResource
             'can_generate' => $this->shouldGenerate(),
             'invoices_count' => $this->whenLoaded('invoices', fn () => $this->invoices->count()),
             'bills_count' => $this->whenLoaded('bills', fn () => $this->bills->count()),
-            'created_at' => $this->created_at?->toIso8601String(),
-            'updated_at' => $this->updated_at?->toIso8601String(),
+            'created_at' => $this->created_at instanceof \Carbon\Carbon ? $this->created_at->toIso8601String() : null,
+            'updated_at' => $this->updated_at instanceof \Carbon\Carbon ? $this->updated_at->toIso8601String() : null,
         ];
     }
 

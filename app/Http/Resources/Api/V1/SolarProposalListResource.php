@@ -17,7 +17,7 @@ class SolarProposalListResource extends JsonResource
      * @return array{
      *   id: int,
      *   proposal_number: string,
-     *   status: string,
+     *   status: array{value: string, label: string, color: string},
      *   status_label: string,
      *   contact_id: int,
      *   contact?: ContactResource,
@@ -41,7 +41,11 @@ class SolarProposalListResource extends JsonResource
         return [
             'id' => $this->id,
             'proposal_number' => $this->proposal_number,
-            'status' => $this->status,
+            'status' => [
+                'value' => $this->status->value,
+                'label' => $this->status->label(),
+                'color' => $this->status->color(),
+            ],
             'status_label' => $this->getStatusLabel(),
 
             'contact_id' => $this->contact_id,

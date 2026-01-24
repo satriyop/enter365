@@ -47,6 +47,11 @@ class MrpSuggestionResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        /** @var \Carbon\Carbon|null $suggestedOrderDate */
+        $suggestedOrderDate = $this->suggested_order_date;
+        /** @var \Carbon\Carbon|null $suggestedDueDate */
+        $suggestedDueDate = $this->suggested_due_date;
+
         return [
             'id' => $this->id,
             'mrp_run_id' => $this->mrp_run_id,
@@ -70,8 +75,8 @@ class MrpSuggestionResource extends JsonResource
             }),
 
             // Dates
-            'suggested_order_date' => $this->suggested_order_date?->toDateString(),
-            'suggested_due_date' => $this->suggested_due_date?->toDateString(),
+            'suggested_order_date' => $this->suggested_order_date instanceof \Carbon\Carbon ? $this->suggested_order_date->toDateString() : null,
+            'suggested_due_date' => $this->suggested_due_date instanceof \Carbon\Carbon ? $this->suggested_due_date->toDateString() : null,
 
             // Quantities
             'quantity_required' => (float) $this->quantity_required,
@@ -108,7 +113,7 @@ class MrpSuggestionResource extends JsonResource
             // Conversion info
             'converted_to_type' => $this->converted_to_type ? class_basename($this->converted_to_type) : null,
             'converted_to_id' => $this->converted_to_id,
-            'converted_at' => $this->converted_at?->toIso8601String(),
+            'converted_at' => $this->converted_at instanceof \Carbon\Carbon ? $this->converted_at->toIso8601String() : null,
 
             // Flags
             'can_be_accepted' => $this->canBeAccepted(),

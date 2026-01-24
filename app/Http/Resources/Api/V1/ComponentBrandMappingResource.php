@@ -52,7 +52,7 @@ class ComponentBrandMappingResource extends JsonResource
             'is_preferred' => $this->is_preferred,
             'is_verified' => $this->is_verified,
             'price_factor' => (float) $this->price_factor,
-            'variant_specs' => $this->variant_specs,
+            'variant_specs' => (array) ($this->variant_specs ?? []),
             'notes' => $this->notes,
             'verified_by' => $this->verified_by,
             'verified_at' => $this->verified_at?->toIso8601String(),

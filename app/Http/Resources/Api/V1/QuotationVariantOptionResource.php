@@ -21,8 +21,8 @@ class QuotationVariantOptionResource extends JsonResource
      *   tagline: string|null,
      *   is_recommended: bool,
      *   selling_price: int,
-     *   features: array<mixed>|null,
-     *   specifications: array<mixed>|null,
+     *   features: array<string>|null,
+     *   specifications: array<string, mixed>|null,
      *   warranty_terms: string|null,
      *   sort_order: int,
      *   profit_margin?: float,
@@ -51,8 +51,8 @@ class QuotationVariantOptionResource extends JsonResource
             'tagline' => $this->tagline,
             'is_recommended' => $this->is_recommended,
             'selling_price' => $this->selling_price,
-            'features' => $this->features,
-            'specifications' => $this->specifications,
+            'features' => (array) ($this->features ?? []),
+            'specifications' => (array) ($this->specifications ?? []),
             'warranty_terms' => $this->warranty_terms,
             'sort_order' => $this->sort_order,
 
@@ -61,8 +61,8 @@ class QuotationVariantOptionResource extends JsonResource
             'profit_amount' => $this->whenLoaded('bom', fn () => $this->getProfitAmount()),
             'cost_breakdown' => $this->whenLoaded('bom', fn () => $this->getCostBreakdown()),
 
-            'created_at' => $this->created_at->toIso8601String(),
-            'updated_at' => $this->updated_at->toIso8601String(),
+            'created_at' => $this->created_at instanceof \Carbon\Carbon ? $this->created_at->toIso8601String() : '',
+            'updated_at' => $this->updated_at instanceof \Carbon\Carbon ? $this->updated_at->toIso8601String() : '',
         ];
     }
 }

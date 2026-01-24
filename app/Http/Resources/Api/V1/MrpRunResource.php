@@ -15,8 +15,8 @@ class MrpRunResource extends JsonResource
      * @return array{
      *   id: int,
      *   run_number: string,
-     *   name: string,
-     *   status: string,
+     *   name: string|null,
+     *   status: array{value: string, label: string, color: string},
      *   planning_horizon_start: string|null,
      *   planning_horizon_end: string|null,
      *   parameters: array<string, mixed>|null,
@@ -45,11 +45,13 @@ class MrpRunResource extends JsonResource
             'id' => $this->id,
             'run_number' => $this->run_number,
             'name' => $this->name,
-            'status' => $this->status,
-
-            // Planning horizon
-            'planning_horizon_start' => $this->planning_horizon_start?->toDateString(),
-            'planning_horizon_end' => $this->planning_horizon_end?->toDateString(),
+            'status' => [
+                'value' => $this->status->value,
+                'label' => $this->status->label(),
+                'color' => $this->status->color(),
+            ],
+            'planning_horizon_start' => $this->planning_horizon_start instanceof \Carbon\Carbon ? $this->planning_horizon_start->toDateString() : null,
+            'planning_horizon_end' => $this->planning_horizon_end instanceof \Carbon\Carbon ? $this->planning_horizon_end->toDateString() : null,
 
             // Parameters
             'parameters' => $this->parameters,

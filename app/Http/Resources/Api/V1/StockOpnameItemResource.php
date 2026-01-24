@@ -18,24 +18,19 @@ class StockOpnameItemResource extends JsonResource
      *   product_id: int,
      *   product?: array{id: int, sku: string, name: string, unit: string},
      *   system_quantity: float,
-     *   system_cost: int,
-     *   system_value: int,
-     *   counted_quantity: float|null,
-     *   is_counted: bool,
-     *   counted_at: string|null,
-     *   variance_quantity: float,
-     *   variance_value: int,
-     *   variance_percentage: float|null,
-     *   has_variance: bool,
-     *   has_positive_variance: bool,
-     *   has_negative_variance: bool,
+     *   actual_quantity: float,
+     *   difference_quantity: float,
+     *   unit_cost: int,
+     *   difference_value: int,
      *   notes: string|null,
-     *   created_at: string,
-     *   updated_at: string
+     *   created_at: string
      * }
      */
     public function toArray(Request $request): array
     {
+        /** @var \Carbon\Carbon|null $createdAt */
+        $createdAt = $this->created_at;
+
         return [
             'id' => $this->id,
             'stock_opname_id' => $this->stock_opname_id,
@@ -46,29 +41,13 @@ class StockOpnameItemResource extends JsonResource
                 'name' => $this->product->name,
                 'unit' => $this->product->unit,
             ]),
-
-            // System quantities (snapshot)
-            'system_quantity' => $this->system_quantity,
-            'system_cost' => $this->system_cost,
-            'system_value' => $this->system_value,
-
-            // Counted quantities
-            'counted_quantity' => $this->counted_quantity,
-            'is_counted' => $this->isCounted(),
-            'counted_at' => $this->counted_at?->toIso8601String(),
-
-            // Variance
-            'variance_quantity' => $this->variance_quantity,
-            'variance_value' => $this->variance_value,
-            'variance_percentage' => $this->isCounted() ? $this->getVariancePercentage() : null,
-            'has_variance' => $this->hasVariance(),
-            'has_positive_variance' => $this->hasPositiveVariance(),
-            'has_negative_variance' => $this->hasNegativeVariance(),
-
+            'system_quantity' => (float) $this->system_quantity,
+            'actual_quantity' => (float) $this->counted_quantity,
+            'difference_quantity' => (float) ($this->counted_quantity - $this->system_quantity),
+            'unit_cost' => $this->system_cost,
+            'difference_value' => (int) round(($this->counted_quantity - $this->system_quantity) * $this->system_cost),
             'notes' => $this->notes,
-
-            'created_at' => $this->created_at->toIso8601String(),
-            'updated_at' => $this->updated_at->toIso8601String(),
+            'created_at' => $createdAt?->toIso8601String(),
         ];
     }
 }

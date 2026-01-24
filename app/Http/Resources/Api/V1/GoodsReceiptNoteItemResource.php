@@ -70,10 +70,10 @@ class GoodsReceiptNoteItemResource extends JsonResource
 
             // Lot tracking
             'lot_number' => $this->lot_number,
-            'expiry_date' => $this->expiry_date?->toDateString(),
+            'expiry_date' => $this->expiry_date instanceof \Carbon\Carbon ? $this->expiry_date->toDateString() : null,
 
-            'created_at' => $this->created_at->toIso8601String(),
-            'updated_at' => $this->updated_at->toIso8601String(),
+            'created_at' => $this->created_at instanceof \Carbon\Carbon ? $this->created_at->toIso8601String() : '',
+            'updated_at' => $this->updated_at?->toIso8601String(),
         ];
     }
 }
