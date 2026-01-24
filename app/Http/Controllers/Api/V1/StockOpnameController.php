@@ -89,16 +89,12 @@ class StockOpnameController extends Controller
      */
     public function update(UpdateStockOpnameRequest $request, StockOpname $stockOpname): JsonResponse
     {
-        try {
-            $opname = $this->stockOpnameService->update($stockOpname, $request->validated());
+        $opname = $this->stockOpnameService->update($stockOpname, $request->validated());
 
-            return response()->json([
-                'message' => 'Stock opname berhasil diperbarui.',
-                'data' => new StockOpnameResource($opname->load(['warehouse', 'items'])),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Stock opname berhasil diperbarui.',
+            'data' => new StockOpnameResource($opname->load(['warehouse', 'items'])),
+        ]);
     }
 
     /**
@@ -106,15 +102,11 @@ class StockOpnameController extends Controller
      */
     public function destroy(StockOpname $stockOpname): JsonResponse
     {
-        try {
-            $this->stockOpnameService->delete($stockOpname);
+        $this->stockOpnameService->delete($stockOpname);
 
-            return response()->json([
-                'message' => 'Stock opname berhasil dihapus.',
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Stock opname berhasil dihapus.',
+        ]);
     }
 
     /**
@@ -122,16 +114,12 @@ class StockOpnameController extends Controller
      */
     public function generateItems(StockOpname $stockOpname): JsonResponse
     {
-        try {
-            $opname = $this->stockOpnameService->generateItems($stockOpname);
+        $opname = $this->stockOpnameService->generateItems($stockOpname);
 
-            return response()->json([
-                'message' => 'Item berhasil di-generate dari stok gudang.',
-                'data' => new StockOpnameResource($opname->load(['warehouse', 'items.product'])),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Item berhasil di-generate dari stok gudang.',
+            'data' => new StockOpnameResource($opname->load(['warehouse', 'items.product'])),
+        ]);
     }
 
     /**
@@ -146,16 +134,12 @@ class StockOpnameController extends Controller
             'product_id.exists' => 'Produk tidak ditemukan.',
         ]);
 
-        try {
-            $item = $this->stockOpnameService->addItem($stockOpname, $request->all());
+        $item = $this->stockOpnameService->addItem($stockOpname, $request->all());
 
-            return response()->json([
-                'message' => 'Item berhasil ditambahkan.',
-                'data' => new StockOpnameItemResource($item->load('product')),
-            ], 201);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Item berhasil ditambahkan.',
+            'data' => new StockOpnameItemResource($item->load('product')),
+        ], 201);
     }
 
     /**
@@ -177,16 +161,12 @@ class StockOpnameController extends Controller
             'notes.max' => 'Catatan maksimal 500 karakter.',
         ]);
 
-        try {
-            $item = $this->stockOpnameService->updateItem($item, $request->all());
+        $item = $this->stockOpnameService->updateItem($item, $request->all());
 
-            return response()->json([
-                'message' => 'Item berhasil diperbarui.',
-                'data' => new StockOpnameItemResource($item->load('product')),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Item berhasil diperbarui.',
+            'data' => new StockOpnameItemResource($item->load('product')),
+        ]);
     }
 
     /**
@@ -199,15 +179,11 @@ class StockOpnameController extends Controller
             return response()->json(['message' => 'Item tidak ditemukan dalam stock opname ini.'], 404);
         }
 
-        try {
-            $this->stockOpnameService->removeItem($item);
+        $this->stockOpnameService->removeItem($item);
 
-            return response()->json([
-                'message' => 'Item berhasil dihapus.',
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Item berhasil dihapus.',
+        ]);
     }
 
     /**
@@ -215,16 +191,12 @@ class StockOpnameController extends Controller
      */
     public function startCounting(StockOpname $stockOpname): JsonResponse
     {
-        try {
-            $opname = $this->stockOpnameService->startCounting($stockOpname, auth()->id());
+        $opname = $this->stockOpnameService->startCounting($stockOpname, auth()->id());
 
-            return response()->json([
-                'message' => 'Penghitungan stock opname dimulai.',
-                'data' => new StockOpnameResource($opname->load(['warehouse', 'items.product'])),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Penghitungan stock opname dimulai.',
+            'data' => new StockOpnameResource($opname->load(['warehouse', 'items.product'])),
+        ]);
     }
 
     /**
@@ -232,16 +204,12 @@ class StockOpnameController extends Controller
      */
     public function submitForReview(StockOpname $stockOpname): JsonResponse
     {
-        try {
-            $opname = $this->stockOpnameService->submitForReview($stockOpname, auth()->id());
+        $opname = $this->stockOpnameService->submitForReview($stockOpname, auth()->id());
 
-            return response()->json([
-                'message' => 'Stock opname berhasil disubmit untuk review.',
-                'data' => new StockOpnameResource($opname->load(['warehouse', 'items.product'])),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Stock opname berhasil disubmit untuk review.',
+            'data' => new StockOpnameResource($opname->load(['warehouse', 'items.product'])),
+        ]);
     }
 
     /**
@@ -249,16 +217,12 @@ class StockOpnameController extends Controller
      */
     public function approve(StockOpname $stockOpname): JsonResponse
     {
-        try {
-            $opname = $this->stockOpnameService->approve($stockOpname, auth()->id());
+        $opname = $this->stockOpnameService->approve($stockOpname, auth()->id());
 
-            return response()->json([
-                'message' => 'Stock opname berhasil diapprove dan penyesuaian stok telah diterapkan.',
-                'data' => new StockOpnameResource($opname->load(['warehouse', 'items.product'])),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Stock opname berhasil diapprove dan penyesuaian stok telah diterapkan.',
+            'data' => new StockOpnameResource($opname->load(['warehouse', 'items.product'])),
+        ]);
     }
 
     /**
@@ -270,20 +234,16 @@ class StockOpnameController extends Controller
             'reason' => ['sometimes', 'string', 'max:500'],
         ]);
 
-        try {
-            $opname = $this->stockOpnameService->reject(
-                $stockOpname,
-                auth()->id(),
-                $request->input('reason')
-            );
+        $opname = $this->stockOpnameService->reject(
+            $stockOpname,
+            auth()->id(),
+            $request->input('reason')
+        );
 
-            return response()->json([
-                'message' => 'Stock opname ditolak dan dikembalikan ke status counting.',
-                'data' => new StockOpnameResource($opname->load(['warehouse', 'items.product'])),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Stock opname ditolak dan dikembalikan ke status counting.',
+            'data' => new StockOpnameResource($opname->load(['warehouse', 'items.product'])),
+        ]);
     }
 
     /**
@@ -291,16 +251,12 @@ class StockOpnameController extends Controller
      */
     public function cancel(StockOpname $stockOpname): JsonResponse
     {
-        try {
-            $opname = $this->stockOpnameService->cancel($stockOpname, auth()->id());
+        $opname = $this->stockOpnameService->cancel($stockOpname, auth()->id());
 
-            return response()->json([
-                'message' => 'Stock opname berhasil dibatalkan.',
-                'data' => new StockOpnameResource($opname),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Stock opname berhasil dibatalkan.',
+            'data' => new StockOpnameResource($opname),
+        ]);
     }
 
     /**

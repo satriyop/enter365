@@ -13,7 +13,6 @@ use App\Models\Manufacturing\MaterialRequisition;
 use App\Models\Manufacturing\MaterialRequisitionItem;
 use App\Models\Manufacturing\WorkOrder;
 use App\Services\Base\BaseService;
-use InvalidArgumentException;
 
 class MaterialRequisitionService extends BaseService implements MaterialRequisitionServiceInterface
 {
@@ -54,7 +53,7 @@ class MaterialRequisitionService extends BaseService implements MaterialRequisit
     public function update(MaterialRequisition $mr, array $data): MaterialRequisition
     {
         if (! $mr->canBeEdited()) {
-            throw new InvalidArgumentException('Material requisition hanya dapat diedit dalam status draft.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotEdit($mr, 'Material requisition hanya dapat diedit dalam status draft.');
         }
 
         return $this->executeInTransaction('update', function () use ($mr, $data) {
@@ -82,7 +81,7 @@ class MaterialRequisitionService extends BaseService implements MaterialRequisit
     public function delete(MaterialRequisition $mr): bool
     {
         if (! $mr->canBeEdited()) {
-            throw new InvalidArgumentException('Hanya material requisition draft yang dapat dihapus.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotDelete($mr, 'Hanya material requisition draft yang dapat dihapus.');
         }
 
         return $this->executeInTransaction('delete', function () use ($mr) {
@@ -98,7 +97,12 @@ class MaterialRequisitionService extends BaseService implements MaterialRequisit
     public function approve(MaterialRequisition $mr, ?int $userId = null): MaterialRequisition
     {
         if (! $mr->stateMachine()->canApprove()) {
-            throw new InvalidArgumentException('Material requisition tidak dapat disetujui.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Material Requisition',
+                'disetujui',
+                $mr->status->value,
+                'draft'
+            );
         }
 
         return $this->executeInTransaction('approve', function () use ($mr, $userId) {
@@ -120,7 +124,12 @@ class MaterialRequisitionService extends BaseService implements MaterialRequisit
     public function issue(MaterialRequisition $mr, array $items, ?int $userId = null): MaterialRequisition
     {
         if (! $mr->stateMachine()->canIssue()) {
-            throw new InvalidArgumentException('Material requisition tidak dapat dikeluarkan. Pastikan sudah disetujui.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Material Requisition',
+                'dikeluarkan',
+                $mr->status->value,
+                'approved'
+            );
         }
 
         return $this->executeInTransaction('issue', function () use ($mr, $items, $userId) {
@@ -128,15 +137,20 @@ class MaterialRequisitionService extends BaseService implements MaterialRequisit
                 $mrItem = MaterialRequisitionItem::findOrFail($issueData['item_id']);
 
                 if ($mrItem->material_requisition_id !== $mr->id) {
-                    throw new InvalidArgumentException('Item tidak ditemukan dalam requisition ini.');
+                    throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                        'mengeluarkan item',
+                        'Item tidak ditemukan dalam requisition ini'
+                    );
                 }
 
                 $quantityToIssue = $issueData['quantity'];
 
                 if ($quantityToIssue > $mrItem->quantity_pending) {
-                    throw new InvalidArgumentException(
-                        'Tidak dapat mengeluarkan lebih dari yang pending. '.
-                        "Pending: {$mrItem->quantity_pending}, Diminta: {$quantityToIssue}"
+                    throw \App\Exceptions\Domain\BusinessRuleException::quantityValidation(
+                        'Jumlah pengeluaran',
+                        $quantityToIssue,
+                        $mrItem->quantity_pending,
+                        'exceeds'
                     );
                 }
 
@@ -148,9 +162,11 @@ class MaterialRequisitionService extends BaseService implements MaterialRequisit
                     $availableQty = (float) $stock->quantity - (float) $stock->reserved_quantity;
                     if ($availableQty < $quantityToIssue) {
                         $product = $mrItem->product;
-                        throw new InvalidArgumentException(
-                            "Stok tidak mencukupi untuk {$product->name}. ".
-                            "Tersedia: {$availableQty}, Diminta: {$quantityToIssue}"
+                        throw \App\Exceptions\Domain\BusinessRuleException::quantityValidation(
+                            "Stok {$product->name}",
+                            $quantityToIssue,
+                            $availableQty,
+                            'exceeds'
                         );
                     }
                 }
@@ -180,7 +196,12 @@ class MaterialRequisitionService extends BaseService implements MaterialRequisit
     public function cancel(MaterialRequisition $mr, ?string $reason = null, ?int $userId = null): MaterialRequisition
     {
         if (! $mr->stateMachine()->canCancel()) {
-            throw new InvalidArgumentException('Material requisition tidak dapat dibatalkan.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Material Requisition',
+                'dibatalkan',
+                $mr->status->value,
+                'draft, approved, atau issued'
+            );
         }
 
         $mr->transitionTo(DocumentStatus::Cancelled, $userId, [

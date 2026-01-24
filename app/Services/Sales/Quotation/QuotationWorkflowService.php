@@ -12,7 +12,6 @@ use App\Models\Sales\Quotation;
 use App\Services\Base\Traits\WithEventDispatching;
 use App\Services\Base\Traits\WithOperationContext;
 use App\Services\Base\Traits\WithTransaction;
-use InvalidArgumentException;
 
 /**
  * Handles workflow state transitions for quotations.
@@ -55,8 +54,11 @@ class QuotationWorkflowService
             $stateMachine = $this->domainFactory->stateMachine($quotation);
 
             if (! $stateMachine->canSubmit()) {
-                throw new InvalidArgumentException(
-                    'Penawaran tidak dapat diajukan. Pastikan status draft dan memiliki item.'
+                throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                    'Quotation',
+                    'diajukan',
+                    $quotation->status->value,
+                    'draft dengan item'
                 );
             }
 
@@ -75,8 +77,11 @@ class QuotationWorkflowService
             $stateMachine = $this->domainFactory->stateMachine($quotation);
 
             if (! $stateMachine->canApprove()) {
-                throw new InvalidArgumentException(
-                    'Penawaran tidak dapat disetujui. Pastikan sudah diajukan dan belum kedaluwarsa.'
+                throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                    'Quotation',
+                    'disetujui',
+                    $quotation->status->value,
+                    'submitted dan belum kedaluwarsa'
                 );
             }
 
@@ -95,13 +100,16 @@ class QuotationWorkflowService
             $stateMachine = $this->domainFactory->stateMachine($quotation);
 
             if (! $stateMachine->canReject()) {
-                throw new InvalidArgumentException(
-                    'Penawaran tidak dapat ditolak. Pastikan sudah diajukan.'
+                throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                    'Quotation',
+                    'ditolak',
+                    $quotation->status->value,
+                    'submitted'
                 );
             }
 
             if (empty($reason)) {
-                throw new InvalidArgumentException('Alasan penolakan harus diisi.');
+                throw \App\Exceptions\Domain\BusinessRuleException::missingRequiredData('Penolakan Quotation', 'alasan');
             }
 
             $stateMachine->transitionTo(DocumentStatus::Rejected, [
@@ -122,8 +130,11 @@ class QuotationWorkflowService
             $stateMachine = $this->domainFactory->stateMachine($quotation);
 
             if (! $stateMachine->canCancel()) {
-                throw new InvalidArgumentException(
-                    'Penawaran tidak dapat dibatalkan. Hanya penawaran dengan status Draft, Submitted, atau Approved yang dapat dibatalkan.'
+                throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                    'Quotation',
+                    'dibatalkan',
+                    $quotation->status->value,
+                    'draft, submitted, atau approved'
                 );
             }
 
@@ -149,14 +160,18 @@ class QuotationWorkflowService
         ?string $via = 'email'
     ): Quotation {
         if ($quotation->status !== DocumentStatus::Approved) {
-            throw new InvalidArgumentException(
-                'Hanya penawaran yang sudah disetujui yang dapat ditandai sebagai terkirim.'
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Quotation',
+                'ditandai terkirim',
+                $quotation->status->value,
+                'approved'
             );
         }
 
         if ($quotation->isSent()) {
-            throw new InvalidArgumentException(
-                'Penawaran sudah ditandai sebagai terkirim pada '.$quotation->sent_at->format('d/m/Y H:i').'.'
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'menandai quotation terkirim',
+                'Quotation sudah ditandai sebagai terkirim pada '.$quotation->sent_at->format('d/m/Y H:i')
             );
         }
 

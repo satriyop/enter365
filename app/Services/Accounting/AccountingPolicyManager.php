@@ -23,7 +23,6 @@ use App\Services\Accounting\Strategies\Manufacturing\WIPAccountingStrategy;
 use App\Services\Accounting\Strategies\Returns\FullReturnJournalStrategy;
 use App\Services\Accounting\Strategies\Returns\InventoryOnlyReturnStrategy;
 use Illuminate\Contracts\Container\Container;
-use InvalidArgumentException;
 
 /**
  * Manages accounting policy strategies.
@@ -98,7 +97,10 @@ class AccountingPolicyManager
         $method = config('accounting.policies.inventory_method', 'hybrid');
 
         if (! isset($this->inventoryStrategies[$method])) {
-            throw new InvalidArgumentException("Unknown inventory method: {$method}");
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'menggunakan inventory method',
+                "Unknown inventory method: {$method}"
+            );
         }
 
         return $this->container->make($this->inventoryStrategies[$method]);
@@ -112,7 +114,10 @@ class AccountingPolicyManager
         $method = config('accounting.policies.cogs_recognition', 'on_invoice');
 
         if (! isset($this->cogsStrategies[$method])) {
-            throw new InvalidArgumentException("Unknown COGS recognition method: {$method}");
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'menggunakan COGS recognition method',
+                "Unknown COGS recognition method: {$method}"
+            );
         }
 
         return $this->container->make($this->cogsStrategies[$method]);
@@ -126,7 +131,10 @@ class AccountingPolicyManager
         $method = config('accounting.policies.return_accounting', 'full_journal');
 
         if (! isset($this->returnStrategies[$method])) {
-            throw new InvalidArgumentException("Unknown return accounting method: {$method}");
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'menggunakan return accounting method',
+                "Unknown return accounting method: {$method}"
+            );
         }
 
         return $this->container->make($this->returnStrategies[$method]);
@@ -140,7 +148,10 @@ class AccountingPolicyManager
         $method = config('accounting.policies.manufacturing_costing', 'project_based');
 
         if (! isset($this->manufacturingStrategies[$method])) {
-            throw new InvalidArgumentException("Unknown manufacturing costing method: {$method}");
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'menggunakan manufacturing costing method',
+                "Unknown manufacturing costing method: {$method}"
+            );
         }
 
         return $this->container->make($this->manufacturingStrategies[$method]);
@@ -154,7 +165,10 @@ class AccountingPolicyManager
         $method = config('accounting.policies.closing_strategy', 'direct');
 
         if (! isset($this->closingStrategies[$method])) {
-            throw new InvalidArgumentException("Unknown closing strategy: {$method}");
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'menggunakan closing strategy',
+                "Unknown closing strategy: {$method}"
+            );
         }
 
         return $this->container->make($this->closingStrategies[$method]);

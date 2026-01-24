@@ -15,7 +15,6 @@ use App\Models\Solar\IndonesiaSolarData;
 use App\Models\Solar\SolarProposal;
 use App\Services\Base\BaseService;
 use App\Services\Sales\QuotationService;
-use InvalidArgumentException;
 
 class SolarProposalService extends BaseService implements SolarProposalServiceInterface
 {
@@ -94,7 +93,7 @@ class SolarProposalService extends BaseService implements SolarProposalServiceIn
     public function update(SolarProposal $proposal, array $data): SolarProposal
     {
         if (! $proposal->isEditable()) {
-            throw new InvalidArgumentException('Proposal hanya dapat diedit dalam status draft.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotEdit($proposal, 'Proposal hanya dapat diedit dalam status draft.');
         }
 
         return $this->executeInTransaction('update', function () use ($proposal, $data) {
@@ -149,7 +148,7 @@ class SolarProposalService extends BaseService implements SolarProposalServiceIn
     public function delete(SolarProposal $proposal): bool
     {
         if ($proposal->status !== DocumentStatus::Draft) {
-            throw new InvalidArgumentException('Hanya proposal draft yang dapat dihapus.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotDelete($proposal, 'Hanya proposal draft yang dapat dihapus.');
         }
 
         return $proposal->delete();
@@ -163,7 +162,7 @@ class SolarProposalService extends BaseService implements SolarProposalServiceIn
     public function calculateProposal(SolarProposal $proposal): SolarProposal
     {
         if (! $proposal->isEditable()) {
-            throw new InvalidArgumentException('Proposal hanya dapat dihitung ulang dalam status draft.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotEdit($proposal, 'Proposal hanya dapat dihitung ulang dalam status draft.');
         }
 
         return $this->executeInTransaction('calculate_proposal', function () use ($proposal) {
@@ -248,12 +247,12 @@ class SolarProposalService extends BaseService implements SolarProposalServiceIn
     public function attachVariantGroup(SolarProposal $proposal, int $variantGroupId): SolarProposal
     {
         if (! $proposal->isEditable()) {
-            throw new InvalidArgumentException('Proposal hanya dapat diedit dalam status draft.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotEdit($proposal, 'Proposal hanya dapat diedit dalam status draft.');
         }
 
         $variantGroup = BomVariantGroup::with('activeBoms')->find($variantGroupId);
         if (! $variantGroup) {
-            throw new InvalidArgumentException('Variant group tidak ditemukan.');
+            throw new \App\Exceptions\Domain\EntityNotFoundException('BomVariantGroup', $variantGroupId);
         }
 
         return $this->executeInTransaction('attach_variant_group', function () use ($proposal, $variantGroup) {
@@ -279,17 +278,20 @@ class SolarProposalService extends BaseService implements SolarProposalServiceIn
     public function selectBom(SolarProposal $proposal, int $bomId): SolarProposal
     {
         if (! $proposal->isEditable()) {
-            throw new InvalidArgumentException('Proposal hanya dapat diedit dalam status draft.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotEdit($proposal, 'Proposal hanya dapat diedit dalam status draft.');
         }
 
         $bom = Bom::find($bomId);
         if (! $bom) {
-            throw new InvalidArgumentException('BOM tidak ditemukan.');
+            throw new \App\Exceptions\Domain\EntityNotFoundException('Bom', $bomId);
         }
 
         // Verify BOM belongs to the attached variant group (if any)
         if ($proposal->variant_group_id && $bom->variant_group_id !== $proposal->variant_group_id) {
-            throw new InvalidArgumentException('BOM tidak termasuk dalam variant group yang dipilih.');
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'memilih BOM',
+                'BOM tidak termasuk dalam variant group yang dipilih'
+            );
         }
 
         return $this->executeInTransaction('select_bom', function () use ($proposal, $bom) {
@@ -315,8 +317,11 @@ class SolarProposalService extends BaseService implements SolarProposalServiceIn
         $stateMachine = $proposal->stateMachine();
 
         if (! $stateMachine->canSend()) {
-            throw new InvalidArgumentException(
-                'Proposal tidak dapat dikirim. Pastikan variant group sudah dipilih dan kalkulasi sudah selesai.'
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Proposal Solar',
+                'dikirim',
+                $proposal->status->value,
+                'draft dengan variant group dan kalkulasi lengkap'
             );
         }
 
@@ -339,7 +344,12 @@ class SolarProposalService extends BaseService implements SolarProposalServiceIn
         $stateMachine = $proposal->stateMachine();
 
         if (! $stateMachine->canAccept()) {
-            throw new InvalidArgumentException('Proposal tidak dapat diterima dalam status saat ini.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Proposal Solar',
+                'diterima',
+                $proposal->status->value,
+                'sent'
+            );
         }
 
         return $this->executeInTransaction('accept', function () use ($proposal, $selectedBomId) {
@@ -368,7 +378,12 @@ class SolarProposalService extends BaseService implements SolarProposalServiceIn
         $stateMachine = $proposal->stateMachine();
 
         if (! $stateMachine->canReject()) {
-            throw new InvalidArgumentException('Proposal tidak dapat ditolak dalam status saat ini.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Proposal Solar',
+                'ditolak',
+                $proposal->status->value,
+                'sent'
+            );
         }
 
         return $this->executeInTransaction('reject', function () use ($proposal, $reason) {
@@ -388,8 +403,11 @@ class SolarProposalService extends BaseService implements SolarProposalServiceIn
     public function convertToQuotation(SolarProposal $proposal): Quotation
     {
         if (! $proposal->canConvert()) {
-            throw new InvalidArgumentException(
-                'Proposal tidak dapat dikonversi. Pastikan sudah diterima dan memiliki BOM yang dipilih.'
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Proposal Solar',
+                'dikonversi ke quotation',
+                $proposal->status->value,
+                'accepted dengan BOM yang dipilih'
             );
         }
 

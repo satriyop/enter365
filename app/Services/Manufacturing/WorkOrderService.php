@@ -15,7 +15,6 @@ use App\Models\Manufacturing\WorkOrder;
 use App\Models\Manufacturing\WorkOrderItem;
 use App\Models\Projects\Project;
 use App\Services\Base\BaseService;
-use InvalidArgumentException;
 
 class WorkOrderService extends BaseService implements WorkOrderServiceInterface
 {
@@ -133,7 +132,7 @@ class WorkOrderService extends BaseService implements WorkOrderServiceInterface
     public function update(WorkOrder $wo, array $data): WorkOrder
     {
         if (! $wo->canBeEdited()) {
-            throw new InvalidArgumentException('Work order hanya dapat diedit dalam status draft.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotEdit($wo, 'Work order hanya dapat diedit dalam status draft.');
         }
 
         return $this->executeInTransaction('update', function () use ($wo, $data) {
@@ -158,7 +157,7 @@ class WorkOrderService extends BaseService implements WorkOrderServiceInterface
     public function delete(WorkOrder $wo): bool
     {
         if (! $wo->canBeEdited()) {
-            throw new InvalidArgumentException('Hanya work order draft yang dapat dihapus.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotDelete($wo, 'Hanya work order draft yang dapat dihapus.');
         }
 
         return $this->executeInTransaction('delete', function () use ($wo) {
@@ -175,7 +174,12 @@ class WorkOrderService extends BaseService implements WorkOrderServiceInterface
     public function confirm(WorkOrder $wo, ?int $userId = null): WorkOrder
     {
         if (! $this->domainFactory->stateMachine($wo)->canConfirm()) {
-            throw new InvalidArgumentException('Work order tidak dapat dikonfirmasi. Pastikan memiliki item dan dalam status draft.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Work Order',
+                'dikonfirmasi',
+                $wo->status->value,
+                'draft dengan item'
+            );
         }
 
         return $this->executeInTransaction('confirm', function () use ($wo, $userId) {
@@ -193,7 +197,12 @@ class WorkOrderService extends BaseService implements WorkOrderServiceInterface
     public function start(WorkOrder $wo, ?int $userId = null): WorkOrder
     {
         if (! $this->domainFactory->stateMachine($wo)->canStart()) {
-            throw new InvalidArgumentException('Work order hanya dapat dimulai setelah dikonfirmasi.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Work Order',
+                'dimulai',
+                $wo->status->value,
+                'confirmed'
+            );
         }
 
         $wo->transitionTo(DocumentStatus::InProgress, $userId);
@@ -207,7 +216,12 @@ class WorkOrderService extends BaseService implements WorkOrderServiceInterface
     public function complete(WorkOrder $wo, ?int $userId = null): WorkOrder
     {
         if (! $this->domainFactory->stateMachine($wo)->canComplete()) {
-            throw new InvalidArgumentException('Work order hanya dapat diselesaikan saat dalam proses.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Work Order',
+                'diselesaikan',
+                $wo->status->value,
+                'in progress'
+            );
         }
 
         return $this->executeInTransaction('complete', function () use ($wo, $userId) {
@@ -235,7 +249,12 @@ class WorkOrderService extends BaseService implements WorkOrderServiceInterface
     public function cancel(WorkOrder $wo, ?string $reason = null, ?int $userId = null): WorkOrder
     {
         if (! $this->domainFactory->stateMachine($wo)->canCancel()) {
-            throw new InvalidArgumentException('Work order tidak dapat dibatalkan.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Work Order',
+                'dibatalkan',
+                $wo->status->value,
+                'draft, confirmed, atau in progress'
+            );
         }
 
         return $this->executeInTransaction('cancel', function () use ($wo, $reason, $userId) {
@@ -257,7 +276,12 @@ class WorkOrderService extends BaseService implements WorkOrderServiceInterface
     public function recordOutput(WorkOrder $wo, float $quantity, float $scrapped = 0): WorkOrder
     {
         if ($wo->status !== DocumentStatus::InProgress) {
-            throw new InvalidArgumentException('Output hanya dapat dicatat saat work order dalam proses.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Work Order',
+                'mencatat output',
+                $wo->status->value,
+                'in progress'
+            );
         }
 
         $wo->quantity_completed = (float) $wo->quantity_completed + $quantity;

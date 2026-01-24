@@ -15,7 +15,6 @@ use App\Services\Manufacturing\WorkOrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use InvalidArgumentException;
 
 class WorkOrderController extends Controller
 {
@@ -70,15 +69,11 @@ class WorkOrderController extends Controller
     /**
      * Update the specified work order.
      */
-    public function update(UpdateWorkOrderRequest $request, WorkOrder $workOrder): WorkOrderResource|JsonResponse
+    public function update(UpdateWorkOrderRequest $request, WorkOrder $workOrder): WorkOrderResource
     {
-        try {
-            $workOrder = $this->workOrderService->update($workOrder, $request->validated());
+        $workOrder = $this->workOrderService->update($workOrder, $request->validated());
 
-            return new WorkOrderResource($workOrder);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return new WorkOrderResource($workOrder);
     }
 
     /**
@@ -86,13 +81,9 @@ class WorkOrderController extends Controller
      */
     public function destroy(WorkOrder $workOrder): JsonResponse
     {
-        try {
-            $this->workOrderService->delete($workOrder);
+        $this->workOrderService->delete($workOrder);
 
-            return response()->json(['message' => 'Work order berhasil dihapus.']);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json(['message' => 'Work order berhasil dihapus.']);
     }
 
     /**
@@ -169,70 +160,54 @@ class WorkOrderController extends Controller
     /**
      * Confirm work order and reserve materials.
      */
-    public function confirm(WorkOrder $workOrder): WorkOrderResource|JsonResponse
+    public function confirm(WorkOrder $workOrder): WorkOrderResource
     {
-        try {
-            $workOrder = $this->workOrderService->confirm($workOrder);
+        $workOrder = $this->workOrderService->confirm($workOrder);
 
-            return new WorkOrderResource($workOrder);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return new WorkOrderResource($workOrder);
     }
 
     /**
      * Start work order.
      */
-    public function start(WorkOrder $workOrder): WorkOrderResource|JsonResponse
+    public function start(WorkOrder $workOrder): WorkOrderResource
     {
-        try {
-            $workOrder = $this->workOrderService->start($workOrder);
+        $workOrder = $this->workOrderService->start($workOrder);
 
-            return new WorkOrderResource($workOrder);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return new WorkOrderResource($workOrder);
     }
 
     /**
      * Complete work order.
      */
-    public function complete(WorkOrder $workOrder): WorkOrderResource|JsonResponse
+    public function complete(WorkOrder $workOrder): WorkOrderResource
     {
-        try {
-            $workOrder = $this->workOrderService->complete($workOrder);
+        $workOrder = $this->workOrderService->complete($workOrder);
 
-            return new WorkOrderResource($workOrder);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return new WorkOrderResource($workOrder);
     }
 
     /**
      * Cancel work order.
      */
-    public function cancel(Request $request, WorkOrder $workOrder): WorkOrderResource|JsonResponse
+    public function cancel(Request $request, WorkOrder $workOrder): WorkOrderResource
     {
         $request->validate([
             'reason' => ['nullable', 'string', 'max:500'],
         ]);
 
-        try {
-            $workOrder = $this->workOrderService->cancel(
-                $workOrder,
-                $request->input('reason')
-            );
+        $workOrder = $this->workOrderService->cancel(
+            $workOrder,
+            $request->input('reason')
+        );
 
-            return new WorkOrderResource($workOrder);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return new WorkOrderResource($workOrder);
     }
 
     /**
      * Record output quantity.
      */
-    public function recordOutput(Request $request, WorkOrder $workOrder): WorkOrderResource|JsonResponse
+    public function recordOutput(Request $request, WorkOrder $workOrder): WorkOrderResource
     {
         $request->validate([
             'quantity' => ['required', 'numeric', 'min:0.0001'],
@@ -242,17 +217,13 @@ class WorkOrderController extends Controller
             'quantity.min' => 'Kuantitas output harus lebih dari 0.',
         ]);
 
-        try {
-            $workOrder = $this->workOrderService->recordOutput(
-                $workOrder,
-                $request->input('quantity'),
-                $request->input('scrapped', 0)
-            );
+        $workOrder = $this->workOrderService->recordOutput(
+            $workOrder,
+            $request->input('quantity'),
+            $request->input('scrapped', 0)
+        );
 
-            return new WorkOrderResource($workOrder);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return new WorkOrderResource($workOrder);
     }
 
     /**
@@ -278,16 +249,12 @@ class WorkOrderController extends Controller
             'consumptions.*.quantity_consumed.required' => 'Kuantitas yang dikonsumsi harus diisi.',
         ]);
 
-        try {
-            $this->workOrderService->recordConsumption($workOrder, $request->input('consumptions'));
+        $this->workOrderService->recordConsumption($workOrder, $request->input('consumptions'));
 
-            return response()->json([
-                'message' => 'Konsumsi material berhasil dicatat.',
-                'data' => new WorkOrderResource($workOrder->fresh(['items', 'consumptions'])),
-            ]);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Konsumsi material berhasil dicatat.',
+            'data' => new WorkOrderResource($workOrder->fresh(['items', 'consumptions'])),
+        ]);
     }
 
     /**

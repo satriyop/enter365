@@ -16,7 +16,6 @@ use App\Models\Manufacturing\WorkOrder;
 use App\Models\Purchasing\PurchaseOrder;
 use App\Models\Purchasing\PurchaseOrderItem;
 use App\Services\Base\BaseService;
-use InvalidArgumentException;
 
 /**
  * Service for MRP suggestion management and conversion.
@@ -118,7 +117,7 @@ class MrpSuggestionService extends BaseService
     public function updateSuggestionQuantity(MrpSuggestion $suggestion, float $quantity): MrpSuggestion
     {
         if (! $suggestion->isPending() && ! $suggestion->isAccepted()) {
-            throw new InvalidArgumentException('Hanya saran pending atau diterima yang dapat diubah kuantitasnya.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotEdit($suggestion, 'Hanya saran pending atau diterima yang dapat diubah kuantitasnya.');
         }
 
         $suggestion->adjusted_quantity = $quantity;
@@ -134,11 +133,19 @@ class MrpSuggestionService extends BaseService
     public function convertToPurchaseOrder(MrpSuggestion $suggestion, ?int $userId = null): PurchaseOrder
     {
         if (! $suggestion->canBeConverted()) {
-            throw new InvalidArgumentException('Saran harus diterima terlebih dahulu sebelum dikonversi.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'MRP Suggestion',
+                'dikonversi',
+                $suggestion->status->value,
+                'accepted'
+            );
         }
 
         if ($suggestion->suggestion_type !== MrpSuggestion::TYPE_PURCHASE) {
-            throw new InvalidArgumentException('Hanya saran pembelian yang dapat dikonversi ke PO.');
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'konversi suggestion ke PO',
+                'Hanya suggestion pembelian yang dapat dikonversi ke PO'
+            );
         }
 
         return $this->executeInTransaction('convert_to_purchase_order', function () use ($suggestion, $userId) {
@@ -191,11 +198,19 @@ class MrpSuggestionService extends BaseService
     public function convertToWorkOrder(MrpSuggestion $suggestion, ?int $userId = null): WorkOrder
     {
         if (! $suggestion->canBeConverted()) {
-            throw new InvalidArgumentException('Saran harus diterima terlebih dahulu sebelum dikonversi.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'MRP Suggestion',
+                'dikonversi',
+                $suggestion->status->value,
+                'accepted'
+            );
         }
 
         if ($suggestion->suggestion_type !== MrpSuggestion::TYPE_WORK_ORDER) {
-            throw new InvalidArgumentException('Hanya saran work order yang dapat dikonversi ke WO.');
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'konversi suggestion ke WO',
+                'Hanya suggestion work order yang dapat dikonversi ke WO'
+            );
         }
 
         return $this->executeInTransaction('convert_to_work_order', function () use ($suggestion, $userId) {
@@ -248,11 +263,19 @@ class MrpSuggestionService extends BaseService
         ?int $userId = null
     ): SubcontractorWorkOrder {
         if (! $suggestion->canBeConverted()) {
-            throw new InvalidArgumentException('Saran harus diterima terlebih dahulu sebelum dikonversi.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'MRP Suggestion',
+                'dikonversi',
+                $suggestion->status->value,
+                'accepted'
+            );
         }
 
         if ($suggestion->suggestion_type !== MrpSuggestion::TYPE_SUBCONTRACT) {
-            throw new InvalidArgumentException('Hanya saran subkontrak yang dapat dikonversi ke SC WO.');
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'konversi suggestion ke SC WO',
+                'Hanya suggestion subkontrak yang dapat dikonversi ke SC WO'
+            );
         }
 
         return $this->executeInTransaction('convert_to_subcontractor_wo', function () use ($suggestion, $subcontractorId, $userId) {

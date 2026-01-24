@@ -88,4 +88,41 @@ class BusinessRuleException extends DomainException
             ]
         );
     }
+
+    /**
+     * Create exception for quantity validation.
+     */
+    public static function quantityValidation(string $field, float $provided, float $limit, string $comparison = 'exceeds'): self
+    {
+        $message = match ($comparison) {
+            'exceeds' => "{$field} ({$provided}) melebihi batas ({$limit}).",
+            'below' => "{$field} ({$provided}) di bawah minimum ({$limit}).",
+            'invalid' => "{$field} ({$provided}) tidak valid.",
+            default => "{$field} ({$provided}) tidak sesuai dengan batas ({$limit})."
+        };
+
+        return new self(
+            $message,
+            [
+                'field' => $field,
+                'provided' => $provided,
+                'limit' => $limit,
+                'comparison' => $comparison,
+            ]
+        );
+    }
+
+    /**
+     * Create exception for missing required data.
+     */
+    public static function missingRequiredData(string $entity, string $field): self
+    {
+        return new self(
+            "{$entity} memerlukan {$field}.",
+            [
+                'entity' => $entity,
+                'field' => $field,
+            ]
+        );
+    }
 }

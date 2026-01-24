@@ -13,7 +13,6 @@ use App\Models\Sales\Invoice;
 use App\Models\Sales\InvoiceItem;
 use App\Models\Sales\Quotation;
 use App\Services\Base\BaseService;
-use InvalidArgumentException;
 
 /**
  * Service for quotation conversion operations.
@@ -39,7 +38,10 @@ class QuotationConversionService extends BaseService implements QuotationConvers
         if (! $stateMachine->canConvert()) {
             $reason = $stateMachine->getConversionBlockReason()
                 ?? 'Penawaran tidak dapat dikonversi.';
-            throw new InvalidArgumentException($reason);
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'mengkonversi quotation ke invoice',
+                $reason
+            );
         }
 
         return $this->executeInTransaction('convert_to_invoice', function () use ($quotation) {

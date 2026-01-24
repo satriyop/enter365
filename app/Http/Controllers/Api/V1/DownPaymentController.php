@@ -118,16 +118,12 @@ class DownPaymentController extends Controller
      */
     public function update(UpdateDownPaymentRequest $request, DownPayment $downPayment): JsonResponse
     {
-        try {
-            $downPayment = $this->downPaymentService->update($downPayment, $request->validated());
+        $downPayment = $this->downPaymentService->update($downPayment, $request->validated());
 
-            return response()->json([
-                'message' => 'Down payment updated successfully.',
-                'data' => new DownPaymentResource($downPayment),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Down payment updated successfully.',
+            'data' => new DownPaymentResource($downPayment),
+        ]);
     }
 
     /**
@@ -135,13 +131,9 @@ class DownPaymentController extends Controller
      */
     public function destroy(DownPayment $downPayment): JsonResponse
     {
-        try {
-            $this->downPaymentService->delete($downPayment);
+        $this->downPaymentService->delete($downPayment);
 
-            return response()->json(['message' => 'Down payment deleted successfully.']);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json(['message' => 'Down payment deleted successfully.']);
     }
 
     /**
@@ -149,20 +141,16 @@ class DownPaymentController extends Controller
      */
     public function applyToInvoice(ApplyDownPaymentRequest $request, DownPayment $downPayment, Invoice $invoice): JsonResponse
     {
-        try {
-            $data = $request->validated();
-            $data['created_by'] = $request->user()?->id;
+        $data = $request->validated();
+        $data['created_by'] = $request->user()?->id;
 
-            $application = $this->downPaymentService->applyToInvoice($downPayment, $invoice, $data);
+        $application = $this->downPaymentService->applyToInvoice($downPayment, $invoice, $data);
 
-            return response()->json([
-                'message' => 'Down payment applied to invoice successfully.',
-                'application' => new DownPaymentApplicationResource($application),
-                'down_payment' => new DownPaymentResource($downPayment->fresh(['contact', 'cashAccount'])),
-            ], 201);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Down payment applied to invoice successfully.',
+            'application' => new DownPaymentApplicationResource($application),
+            'down_payment' => new DownPaymentResource($downPayment->fresh(['contact', 'cashAccount'])),
+        ], 201);
     }
 
     /**
@@ -170,20 +158,16 @@ class DownPaymentController extends Controller
      */
     public function applyToBill(ApplyDownPaymentRequest $request, DownPayment $downPayment, Bill $bill): JsonResponse
     {
-        try {
-            $data = $request->validated();
-            $data['created_by'] = $request->user()?->id;
+        $data = $request->validated();
+        $data['created_by'] = $request->user()?->id;
 
-            $application = $this->downPaymentService->applyToBill($downPayment, $bill, $data);
+        $application = $this->downPaymentService->applyToBill($downPayment, $bill, $data);
 
-            return response()->json([
-                'message' => 'Down payment applied to bill successfully.',
-                'application' => new DownPaymentApplicationResource($application),
-                'down_payment' => new DownPaymentResource($downPayment->fresh(['contact', 'cashAccount'])),
-            ], 201);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Down payment applied to bill successfully.',
+            'application' => new DownPaymentApplicationResource($application),
+            'down_payment' => new DownPaymentResource($downPayment->fresh(['contact', 'cashAccount'])),
+        ], 201);
     }
 
     /**
@@ -195,16 +179,12 @@ class DownPaymentController extends Controller
             return response()->json(['message' => 'Application does not belong to this down payment.'], 422);
         }
 
-        try {
-            $this->downPaymentService->unapply($application);
+        $this->downPaymentService->unapply($application);
 
-            return response()->json([
-                'message' => 'Down payment application reversed successfully.',
-                'down_payment' => new DownPaymentResource($downPayment->fresh(['contact', 'cashAccount', 'applications'])),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Down payment application reversed successfully.',
+            'down_payment' => new DownPaymentResource($downPayment->fresh(['contact', 'cashAccount', 'applications'])),
+        ]);
     }
 
     /**
@@ -212,24 +192,20 @@ class DownPaymentController extends Controller
      */
     public function refund(RefundDownPaymentRequest $request, DownPayment $downPayment): JsonResponse
     {
-        try {
-            $data = $request->validated();
-            $data['created_by'] = $request->user()?->id;
+        $data = $request->validated();
+        $data['created_by'] = $request->user()?->id;
 
-            $payment = $this->downPaymentService->refund($downPayment, $data);
+        $payment = $this->downPaymentService->refund($downPayment, $data);
 
-            return response()->json([
-                'message' => 'Down payment refunded successfully.',
-                'refund_payment' => [
-                    'id' => $payment->id,
-                    'payment_number' => $payment->payment_number,
-                    'amount' => $payment->amount,
-                ],
-                'down_payment' => new DownPaymentResource($downPayment->fresh(['contact', 'cashAccount'])),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Down payment refunded successfully.',
+            'refund_payment' => [
+                'id' => $payment->id,
+                'payment_number' => $payment->payment_number,
+                'amount' => $payment->amount,
+            ],
+            'down_payment' => new DownPaymentResource($downPayment->fresh(['contact', 'cashAccount'])),
+        ]);
     }
 
     /**
@@ -237,17 +213,13 @@ class DownPaymentController extends Controller
      */
     public function cancel(Request $request, DownPayment $downPayment): JsonResponse
     {
-        try {
-            $reason = $request->input('reason');
-            $downPayment = $this->downPaymentService->cancel($downPayment, $reason);
+        $reason = $request->input('reason');
+        $downPayment = $this->downPaymentService->cancel($downPayment, $reason);
 
-            return response()->json([
-                'message' => 'Down payment cancelled successfully.',
-                'data' => new DownPaymentResource($downPayment),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Down payment cancelled successfully.',
+            'data' => new DownPaymentResource($downPayment),
+        ]);
     }
 
     /**

@@ -18,7 +18,6 @@ use App\Services\Base\Traits\WithOperationContext;
 use App\Services\Base\Traits\WithTransaction;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
-use InvalidArgumentException;
 
 class DeliveryOrderService implements DeliveryOrderServiceInterface
 {
@@ -96,7 +95,7 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
     {
         /** @var DeliveryOrder $document */
         if (! $document->isEditable()) {
-            throw new InvalidArgumentException('Delivery order can only be edited in draft status.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotEdit($document, 'Delivery order can only be edited in draft status.');
         }
     }
 
@@ -104,7 +103,7 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
     {
         /** @var DeliveryOrder $document */
         if (! $document->isEditable()) {
-            throw new InvalidArgumentException('Only draft delivery orders can be deleted.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotDelete($document, 'Only draft delivery orders can be deleted.');
         }
     }
 
@@ -150,7 +149,12 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
     public function confirm(DeliveryOrder $deliveryOrder, ?int $userId = null): DeliveryOrder
     {
         if (! $deliveryOrder->stateMachine()->canConfirm()) {
-            throw new InvalidArgumentException('Delivery order cannot be confirmed. Ensure it has items and is in draft status.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Delivery Order',
+                'dikonfirmasi',
+                $deliveryOrder->status->value,
+                'draft dengan item'
+            );
         }
 
         $deliveryOrder->transitionTo(DocumentStatus::Confirmed, $userId);
@@ -164,7 +168,12 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
     public function ship(DeliveryOrder $deliveryOrder, array $data = [], ?int $userId = null): DeliveryOrder
     {
         if (! $deliveryOrder->stateMachine()->canShip()) {
-            throw new InvalidArgumentException('Only confirmed delivery orders can be shipped.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Delivery Order',
+                'dikirim',
+                $deliveryOrder->status->value,
+                'confirmed'
+            );
         }
 
         return $this->executeInTransaction('ship', function () use ($deliveryOrder, $data, $userId) {
@@ -193,7 +202,12 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
     public function deliver(DeliveryOrder $deliveryOrder, array $data = [], ?int $userId = null): DeliveryOrder
     {
         if (! $deliveryOrder->stateMachine()->canDeliver()) {
-            throw new InvalidArgumentException('Only shipped delivery orders can be marked as delivered.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Delivery Order',
+                'ditandai delivered',
+                $deliveryOrder->status->value,
+                'shipped'
+            );
         }
 
         return $this->executeInTransaction('deliver', function () use ($deliveryOrder, $data, $userId) {
@@ -220,7 +234,12 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
     public function cancel(DeliveryOrder $deliveryOrder, ?string $reason = null, ?int $userId = null): DeliveryOrder
     {
         if (! $deliveryOrder->stateMachine()->canCancel()) {
-            throw new InvalidArgumentException('Only draft, confirmed, or shipped delivery orders can be cancelled.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Delivery Order',
+                'dibatalkan',
+                $deliveryOrder->status->value,
+                'draft, confirmed, atau shipped'
+            );
         }
 
         $deliveryOrder->transitionTo(DocumentStatus::Cancelled, $userId, [
@@ -236,7 +255,12 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
     public function updateDeliveryProgress(DeliveryOrder $deliveryOrder, array $itemsDelivered): DeliveryOrder
     {
         if ($deliveryOrder->status !== DocumentStatus::Shipped) {
-            throw new InvalidArgumentException('Only shipped delivery orders can have delivery progress updated.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Delivery Order',
+                'update delivery progress',
+                $deliveryOrder->status->value,
+                'shipped'
+            );
         }
 
         return $this->executeInTransaction('update_delivery_progress', function () use ($deliveryOrder, $itemsDelivered) {
@@ -245,7 +269,12 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
                 if ($item) {
                     $newDelivered = $itemData['quantity_delivered'];
                     if ($newDelivered > $item->quantity) {
-                        throw new InvalidArgumentException("Delivered quantity cannot exceed ordered quantity for item {$item->id}.");
+                        throw \App\Exceptions\Domain\BusinessRuleException::quantityValidation(
+                            'Jumlah delivered untuk item '.$item->id,
+                            $newDelivered,
+                            $item->quantity,
+                            'exceeds'
+                        );
                     }
                     $item->quantity_delivered = $newDelivered;
                     $item->save();

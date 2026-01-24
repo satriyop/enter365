@@ -111,7 +111,7 @@ class SalesReturnService implements SalesReturnServiceInterface
     {
         /** @var SalesReturn $document */
         if (! $document->canBeEdited()) {
-            throw new \InvalidArgumentException('Sales return can only be edited in draft status.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotEdit($document, 'Sales return can only be edited in draft status.');
         }
     }
 
@@ -119,7 +119,7 @@ class SalesReturnService implements SalesReturnServiceInterface
     {
         /** @var SalesReturn $document */
         if (! $document->canBeEdited()) {
-            throw new \InvalidArgumentException('Only draft sales returns can be deleted.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotDelete($document, 'Only draft sales returns can be deleted.');
         }
     }
 
@@ -175,7 +175,12 @@ class SalesReturnService implements SalesReturnServiceInterface
     public function submit(SalesReturn $salesReturn, ?int $userId = null): SalesReturn
     {
         if (! $salesReturn->canBeSubmitted()) {
-            throw new \InvalidArgumentException('Sales return cannot be submitted. Ensure it has items and is in draft status.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Sales Return',
+                'diajukan',
+                $salesReturn->status->value,
+                'draft dengan item'
+            );
         }
 
         $salesReturn->transitionTo(DocumentStatus::Submitted, $userId);
@@ -193,7 +198,12 @@ class SalesReturnService implements SalesReturnServiceInterface
     public function approve(SalesReturn $salesReturn, ?int $userId = null): SalesReturn
     {
         if (! $salesReturn->canBeApproved()) {
-            throw new \InvalidArgumentException('Only submitted sales returns can be approved.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Sales Return',
+                'disetujui',
+                $salesReturn->status->value,
+                'submitted'
+            );
         }
 
         return $this->executeInTransaction('approve', function () use ($salesReturn, $userId) {
@@ -212,7 +222,12 @@ class SalesReturnService implements SalesReturnServiceInterface
     public function reject(SalesReturn $salesReturn, ?string $reason = null, ?int $userId = null): SalesReturn
     {
         if (! $salesReturn->canBeRejected()) {
-            throw new \InvalidArgumentException('Only submitted sales returns can be rejected.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Sales Return',
+                'ditolak',
+                $salesReturn->status->value,
+                'submitted'
+            );
         }
 
         $salesReturn->transitionTo(DocumentStatus::Rejected, $userId, [
@@ -228,7 +243,12 @@ class SalesReturnService implements SalesReturnServiceInterface
     public function complete(SalesReturn $salesReturn, ?int $userId = null): SalesReturn
     {
         if (! $salesReturn->canBeCompleted()) {
-            throw new \InvalidArgumentException('Only approved sales returns can be completed.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Sales Return',
+                'diselesaikan',
+                $salesReturn->status->value,
+                'approved'
+            );
         }
 
         $salesReturn->transitionTo(DocumentStatus::Completed, $userId);
@@ -242,7 +262,12 @@ class SalesReturnService implements SalesReturnServiceInterface
     public function cancel(SalesReturn $salesReturn, ?string $reason = null): SalesReturn
     {
         if (! $salesReturn->canBeCancelled()) {
-            throw new \InvalidArgumentException('Only draft or submitted sales returns can be cancelled.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Sales Return',
+                'dibatalkan',
+                $salesReturn->status->value,
+                'draft atau submitted'
+            );
         }
 
         $salesReturn->transitionTo(DocumentStatus::Cancelled, $userId ?? null, [

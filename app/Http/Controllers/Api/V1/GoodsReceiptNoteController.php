@@ -73,16 +73,12 @@ class GoodsReceiptNoteController extends Controller
      */
     public function store(StoreGoodsReceiptNoteRequest $request): JsonResponse
     {
-        try {
-            $grn = $this->grnService->create($request->validated());
+        $grn = $this->grnService->create($request->validated());
 
-            return response()->json([
-                'message' => 'GRN berhasil dibuat.',
-                'data' => new GoodsReceiptNoteResource($grn->load(['warehouse', 'purchaseOrder', 'items'])),
-            ], 201);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'GRN berhasil dibuat.',
+            'data' => new GoodsReceiptNoteResource($grn->load(['warehouse', 'purchaseOrder', 'items'])),
+        ], 201);
     }
 
     /**
@@ -100,16 +96,12 @@ class GoodsReceiptNoteController extends Controller
      */
     public function update(UpdateGoodsReceiptNoteRequest $request, GoodsReceiptNote $goodsReceiptNote): JsonResponse
     {
-        try {
-            $grn = $this->grnService->update($goodsReceiptNote, $request->validated());
+        $grn = $this->grnService->update($goodsReceiptNote, $request->validated());
 
-            return response()->json([
-                'message' => 'GRN berhasil diperbarui.',
-                'data' => new GoodsReceiptNoteResource($grn->load(['warehouse', 'purchaseOrder', 'items'])),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'GRN berhasil diperbarui.',
+            'data' => new GoodsReceiptNoteResource($grn->load(['warehouse', 'purchaseOrder', 'items'])),
+        ]);
     }
 
     /**
@@ -117,15 +109,11 @@ class GoodsReceiptNoteController extends Controller
      */
     public function destroy(GoodsReceiptNote $goodsReceiptNote): JsonResponse
     {
-        try {
-            $this->grnService->delete($goodsReceiptNote);
+        $this->grnService->delete($goodsReceiptNote);
 
-            return response()->json([
-                'message' => 'GRN berhasil dihapus.',
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'GRN berhasil dihapus.',
+        ]);
     }
 
     /**
@@ -146,16 +134,12 @@ class GoodsReceiptNoteController extends Controller
             'warehouse_id.exists' => 'Gudang tidak ditemukan.',
         ]);
 
-        try {
-            $grn = $this->grnService->createFromPurchaseOrder($purchaseOrder, $request->all());
+        $grn = $this->grnService->createFromPurchaseOrder($purchaseOrder, $request->all());
 
-            return response()->json([
-                'message' => 'GRN berhasil dibuat dari Purchase Order.',
-                'data' => new GoodsReceiptNoteResource($grn->load(['warehouse', 'purchaseOrder', 'items.product'])),
-            ], 201);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'GRN berhasil dibuat dari Purchase Order.',
+            'data' => new GoodsReceiptNoteResource($grn->load(['warehouse', 'purchaseOrder', 'items.product'])),
+        ], 201);
     }
 
     /**
@@ -177,16 +161,12 @@ class GoodsReceiptNoteController extends Controller
             'expiry_date' => ['sometimes', 'date'],
         ]);
 
-        try {
-            $item = $this->grnService->updateItem($item, $request->all());
+        $item = $this->grnService->updateItem($item, $request->all());
 
-            return response()->json([
-                'message' => 'Item berhasil diperbarui.',
-                'data' => new GoodsReceiptNoteItemResource($item->load('product')),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Item berhasil diperbarui.',
+            'data' => new GoodsReceiptNoteItemResource($item->load('product')),
+        ]);
     }
 
     /**
@@ -194,16 +174,12 @@ class GoodsReceiptNoteController extends Controller
      */
     public function startReceiving(GoodsReceiptNote $goodsReceiptNote): JsonResponse
     {
-        try {
-            $grn = $this->grnService->startReceiving($goodsReceiptNote, auth()->id());
+        $grn = $this->grnService->startReceiving($goodsReceiptNote, auth()->id());
 
-            return response()->json([
-                'message' => 'Proses penerimaan dimulai.',
-                'data' => new GoodsReceiptNoteResource($grn->load(['warehouse', 'purchaseOrder', 'items.product'])),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Proses penerimaan dimulai.',
+            'data' => new GoodsReceiptNoteResource($grn->load(['warehouse', 'purchaseOrder', 'items.product'])),
+        ]);
     }
 
     /**
@@ -211,16 +187,12 @@ class GoodsReceiptNoteController extends Controller
      */
     public function complete(GoodsReceiptNote $goodsReceiptNote): JsonResponse
     {
-        try {
-            $grn = $this->grnService->complete($goodsReceiptNote, auth()->id());
+        $grn = $this->grnService->complete($goodsReceiptNote, auth()->id());
 
-            return response()->json([
-                'message' => 'GRN berhasil diselesaikan dan stok telah diperbarui.',
-                'data' => new GoodsReceiptNoteResource($grn->load(['warehouse', 'purchaseOrder', 'items.product'])),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'GRN berhasil diselesaikan dan stok telah diperbarui.',
+            'data' => new GoodsReceiptNoteResource($grn->load(['warehouse', 'purchaseOrder', 'items.product'])),
+        ]);
     }
 
     /**
@@ -228,16 +200,12 @@ class GoodsReceiptNoteController extends Controller
      */
     public function cancel(GoodsReceiptNote $goodsReceiptNote): JsonResponse
     {
-        try {
-            $grn = $this->grnService->cancel($goodsReceiptNote, auth()->id());
+        $grn = $this->grnService->cancel($goodsReceiptNote, auth()->id());
 
-            return response()->json([
-                'message' => 'GRN berhasil dibatalkan.',
-                'data' => new GoodsReceiptNoteResource($grn),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'GRN berhasil dibatalkan.',
+            'data' => new GoodsReceiptNoteResource($grn),
+        ]);
     }
 
     /**

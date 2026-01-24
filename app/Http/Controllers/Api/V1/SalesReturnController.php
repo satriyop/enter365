@@ -95,16 +95,12 @@ class SalesReturnController extends Controller
      */
     public function update(UpdateSalesReturnRequest $request, SalesReturn $salesReturn): JsonResponse
     {
-        try {
-            $salesReturn = $this->salesReturnService->update($salesReturn, $request->validated());
+        $salesReturn = $this->salesReturnService->update($salesReturn, $request->validated());
 
-            return response()->json([
-                'message' => 'Retur penjualan berhasil diperbarui.',
-                'data' => new SalesReturnResource($salesReturn),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Retur penjualan berhasil diperbarui.',
+            'data' => new SalesReturnResource($salesReturn),
+        ]);
     }
 
     /**
@@ -112,13 +108,9 @@ class SalesReturnController extends Controller
      */
     public function destroy(SalesReturn $salesReturn): JsonResponse
     {
-        try {
-            $this->salesReturnService->delete($salesReturn);
+        $this->salesReturnService->delete($salesReturn);
 
-            return response()->json(['message' => 'Retur penjualan berhasil dihapus.']);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json(['message' => 'Retur penjualan berhasil dihapus.']);
     }
 
     /**
@@ -126,19 +118,15 @@ class SalesReturnController extends Controller
      */
     public function submit(Request $request, SalesReturn $salesReturn): JsonResponse
     {
-        try {
-            $salesReturn = $this->salesReturnService->submit(
-                $salesReturn,
-                $request->user()?->id
-            );
+        $salesReturn = $this->salesReturnService->submit(
+            $salesReturn,
+            $request->user()?->id
+        );
 
-            return response()->json([
-                'message' => 'Retur penjualan berhasil diajukan.',
-                'data' => new SalesReturnResource($salesReturn),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Retur penjualan berhasil diajukan.',
+            'data' => new SalesReturnResource($salesReturn),
+        ]);
     }
 
     /**
@@ -146,19 +134,15 @@ class SalesReturnController extends Controller
      */
     public function approve(Request $request, SalesReturn $salesReturn): JsonResponse
     {
-        try {
-            $salesReturn = $this->salesReturnService->approve(
-                $salesReturn,
-                $request->user()?->id
-            );
+        $salesReturn = $this->salesReturnService->approve(
+            $salesReturn,
+            $request->user()?->id
+        );
 
-            return response()->json([
-                'message' => 'Retur penjualan berhasil disetujui.',
-                'data' => new SalesReturnResource($salesReturn),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Retur penjualan berhasil disetujui.',
+            'data' => new SalesReturnResource($salesReturn),
+        ]);
     }
 
     /**
@@ -170,20 +154,16 @@ class SalesReturnController extends Controller
             'reason' => ['nullable', 'string', 'max:500'],
         ]);
 
-        try {
-            $salesReturn = $this->salesReturnService->reject(
-                $salesReturn,
-                $data['reason'] ?? null,
-                $request->user()?->id
-            );
+        $salesReturn = $this->salesReturnService->reject(
+            $salesReturn,
+            $data['reason'] ?? null,
+            $request->user()?->id
+        );
 
-            return response()->json([
-                'message' => 'Retur penjualan berhasil ditolak.',
-                'data' => new SalesReturnResource($salesReturn),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Retur penjualan berhasil ditolak.',
+            'data' => new SalesReturnResource($salesReturn),
+        ]);
     }
 
     /**
@@ -191,19 +171,15 @@ class SalesReturnController extends Controller
      */
     public function complete(Request $request, SalesReturn $salesReturn): JsonResponse
     {
-        try {
-            $salesReturn = $this->salesReturnService->complete(
-                $salesReturn,
-                $request->user()?->id
-            );
+        $salesReturn = $this->salesReturnService->complete(
+            $salesReturn,
+            $request->user()?->id
+        );
 
-            return response()->json([
-                'message' => 'Retur penjualan berhasil diselesaikan.',
-                'data' => new SalesReturnResource($salesReturn),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Retur penjualan berhasil diselesaikan.',
+            'data' => new SalesReturnResource($salesReturn),
+        ]);
     }
 
     /**
@@ -211,17 +187,13 @@ class SalesReturnController extends Controller
      */
     public function cancel(Request $request, SalesReturn $salesReturn): JsonResponse
     {
-        try {
-            $reason = $request->input('reason');
-            $salesReturn = $this->salesReturnService->cancel($salesReturn, $reason);
+        $reason = $request->input('reason');
+        $salesReturn = $this->salesReturnService->cancel($salesReturn, $reason);
 
-            return response()->json([
-                'message' => 'Retur penjualan berhasil dibatalkan.',
-                'data' => new SalesReturnResource($salesReturn),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Retur penjualan berhasil dibatalkan.',
+            'data' => new SalesReturnResource($salesReturn),
+        ]);
     }
 
     /**

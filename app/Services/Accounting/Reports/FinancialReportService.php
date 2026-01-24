@@ -195,7 +195,7 @@ class FinancialReportService
 
         return $accounts->map(function ($account) use ($startDate, $endDate) {
             $ledger = $this->balanceService->getLedger($account, $startDate, $endDate);
-            $closingBalance = $ledger->isNotEmpty() ? $ledger->last()->balance : $account->opening_balance;
+            $closingBalance = $ledger->isNotEmpty() ? $ledger->last()->running_balance : $account->opening_balance;
 
             return (object) [
                 'account_id' => $account->id,

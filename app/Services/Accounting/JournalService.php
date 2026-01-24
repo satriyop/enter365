@@ -94,22 +94,29 @@ class JournalService extends BaseService implements JournalServiceInterface
     public function postEntry(JournalEntry $entry): JournalEntry
     {
         if ($entry->is_posted) {
-            throw new \InvalidArgumentException('Journal entry is already posted.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotEdit($entry, 'Journal entry is already posted.');
         }
 
         if (! $entry->isBalanced()) {
-            throw new \InvalidArgumentException(
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'posting journal entry',
                 'Journal entry is not balanced. Debit: '.$entry->getTotalDebit().', Credit: '.$entry->getTotalCredit()
             );
         }
 
         if ($entry->lines()->count() < 2) {
-            throw new \InvalidArgumentException('Journal entry must have at least two lines.');
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'posting journal entry',
+                'Journal entry must have at least two lines'
+            );
         }
 
         // Check fiscal period
         if ($entry->fiscalPeriod && $entry->fiscalPeriod->is_closed) {
-            throw new \InvalidArgumentException('Cannot post to a closed fiscal period.');
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'posting journal entry',
+                'Cannot post to a closed fiscal period'
+            );
         }
 
         $entry->update(['is_posted' => true]);
@@ -123,11 +130,17 @@ class JournalService extends BaseService implements JournalServiceInterface
     public function reverseEntry(JournalEntry $entry, ?string $description = null): JournalEntry
     {
         if (! $entry->is_posted) {
-            throw new \InvalidArgumentException('Cannot reverse an unposted journal entry.');
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'reversing journal entry',
+                'Cannot reverse an unposted journal entry'
+            );
         }
 
         if ($entry->is_reversed) {
-            throw new \InvalidArgumentException('Journal entry is already reversed.');
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'reversing journal entry',
+                'Journal entry is already reversed'
+            );
         }
 
         return $this->executeInTransaction('reverse_entry', function () use ($entry, $description) {
@@ -168,7 +181,10 @@ class JournalService extends BaseService implements JournalServiceInterface
     public function postInvoice(Invoice $invoice): JournalEntry
     {
         if ($invoice->journal_entry_id) {
-            throw new \InvalidArgumentException('Invoice is already posted to journal.');
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'posting invoice',
+                'Invoice is already posted to journal'
+            );
         }
 
         // Fail-fast: validate required accounts exist
@@ -242,7 +258,10 @@ class JournalService extends BaseService implements JournalServiceInterface
     public function postBill(Bill $bill): JournalEntry
     {
         if ($bill->journal_entry_id) {
-            throw new \InvalidArgumentException('Bill is already posted to journal.');
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'posting bill',
+                'Bill is already posted to journal'
+            );
         }
 
         // Fail-fast: validate required accounts exist

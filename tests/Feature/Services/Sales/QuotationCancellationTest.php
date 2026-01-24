@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domain\Sales\Quotations\Events\QuotationCancelled;
 use App\Enums\DocumentStatus;
+use App\Exceptions\Domain\StateTransitionException;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\Quotation;
 use App\Models\Sales\QuotationItem;
@@ -74,7 +75,7 @@ describe('QuotationService::cancel', function () {
         ]);
 
         $this->quotationService->cancel($quotation);
-    })->throws(InvalidArgumentException::class, 'tidak dapat dibatalkan');
+    })->throws(StateTransitionException::class);
 
     it('cannot cancel already cancelled quotation', function () {
         $quotation = Quotation::factory()->create([
@@ -82,7 +83,7 @@ describe('QuotationService::cancel', function () {
         ]);
 
         $this->quotationService->cancel($quotation);
-    })->throws(InvalidArgumentException::class, 'tidak dapat dibatalkan');
+    })->throws(StateTransitionException::class);
 
     it('cannot cancel expired quotation', function () {
         $quotation = Quotation::factory()->create([
@@ -90,7 +91,7 @@ describe('QuotationService::cancel', function () {
         ]);
 
         $this->quotationService->cancel($quotation);
-    })->throws(InvalidArgumentException::class, 'tidak dapat dibatalkan');
+    })->throws(StateTransitionException::class);
 
     it('clears follow-up on cancellation', function () {
         $quotation = Quotation::factory()

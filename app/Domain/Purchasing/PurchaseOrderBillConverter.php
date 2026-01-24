@@ -15,7 +15,12 @@ class PurchaseOrderBillConverter
     public function convert(PurchaseOrder $purchaseOrder): Bill
     {
         if (! $purchaseOrder->canConvert()) {
-            throw new \InvalidArgumentException('PO tidak dapat dikonversi. Pastikan sudah menerima barang dan belum dikonversi.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'PO',
+                'dikonversi ke tagihan',
+                $purchaseOrder->status->value,
+                'sudah diterima barang'
+            );
         }
 
         return DB::transaction(function () use ($purchaseOrder) {

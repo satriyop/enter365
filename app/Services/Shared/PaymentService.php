@@ -20,7 +20,6 @@ use App\Services\Base\BaseService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Event;
-use InvalidArgumentException;
 
 class PaymentService extends BaseService implements PaymentServiceInterface
 {
@@ -104,7 +103,10 @@ class PaymentService extends BaseService implements PaymentServiceInterface
     public function void(Payment $payment, ?string $reason = null): Payment
     {
         if ($payment->is_voided) {
-            throw new InvalidArgumentException('Pembayaran sudah dibatalkan.');
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'membatalkan pembayaran',
+                'Pembayaran sudah dibatalkan'
+            );
         }
 
         return $this->executeInTransaction('void', function () use ($payment, $reason) {
@@ -173,7 +175,10 @@ class PaymentService extends BaseService implements PaymentServiceInterface
     public function getOutstandingAmount(Model $payable): int
     {
         if (! method_exists($payable, 'getOutstandingAmount')) {
-            throw new InvalidArgumentException('Model does not support outstanding amount calculation.');
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'menggunakan model sebagai payable',
+                'Model does not support outstanding amount calculation'
+            );
         }
 
         return $payable->getOutstandingAmount();
@@ -206,11 +211,21 @@ class PaymentService extends BaseService implements PaymentServiceInterface
     private function validateInvoicePayment(Invoice $invoice, int $amount): void
     {
         if (! $this->canReceivePayment($invoice)) {
-            throw new InvalidArgumentException('Faktur tidak dalam status yang bisa dibayar.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Invoice',
+                'menerima pembayaran',
+                $invoice->status->value,
+                'approved atau partial'
+            );
         }
 
         if ($amount > $invoice->getOutstandingAmount()) {
-            throw new InvalidArgumentException('Jumlah pembayaran melebihi sisa tagihan.');
+            throw \App\Exceptions\Domain\BusinessRuleException::quantityValidation(
+                'Jumlah pembayaran',
+                $amount,
+                $invoice->getOutstandingAmount(),
+                'exceeds'
+            );
         }
     }
 
@@ -220,11 +235,21 @@ class PaymentService extends BaseService implements PaymentServiceInterface
     private function validateBillPayment(Bill $bill, int $amount): void
     {
         if (! $this->canReceivePayment($bill)) {
-            throw new InvalidArgumentException('Tagihan tidak dalam status yang bisa dibayar.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Bill',
+                'menerima pembayaran',
+                $bill->status->value,
+                'approved atau partial'
+            );
         }
 
         if ($amount > $bill->getOutstandingAmount()) {
-            throw new InvalidArgumentException('Jumlah pembayaran melebihi sisa tagihan.');
+            throw \App\Exceptions\Domain\BusinessRuleException::quantityValidation(
+                'Jumlah pembayaran',
+                $amount,
+                $bill->getOutstandingAmount(),
+                'exceeds'
+            );
         }
     }
 

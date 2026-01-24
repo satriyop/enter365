@@ -20,7 +20,6 @@ use App\Services\Base\Traits\WithEventDispatching;
 use App\Services\Base\Traits\WithOperationContext;
 use App\Services\Base\Traits\WithTransaction;
 use Illuminate\Database\Eloquent\Model;
-use InvalidArgumentException;
 
 class BillService implements BillServiceInterface
 {
@@ -140,7 +139,7 @@ class BillService implements BillServiceInterface
     {
         /** @var Bill $document */
         if ($document->status !== DocumentStatus::Draft) {
-            throw new InvalidArgumentException('Hanya tagihan draft yang bisa diubah.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotEdit($document, 'Hanya tagihan draft yang bisa diubah.');
         }
     }
 
@@ -153,11 +152,14 @@ class BillService implements BillServiceInterface
     {
         /** @var Bill $document */
         if ($document->status !== DocumentStatus::Draft) {
-            throw new InvalidArgumentException('Hanya tagihan draft yang bisa dihapus.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotDelete($document, 'Hanya tagihan draft yang bisa dihapus.');
         }
 
         if ($document->payments()->exists()) {
-            throw new InvalidArgumentException('Tidak bisa menghapus tagihan yang sudah memiliki pembayaran.');
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'menghapus bill',
+                'Tidak bisa menghapus tagihan yang sudah memiliki pembayaran'
+            );
         }
     }
 
@@ -167,7 +169,12 @@ class BillService implements BillServiceInterface
     public function post(Bill $bill): Bill
     {
         if (! $bill->stateMachine()->canPost()) {
-            throw new InvalidArgumentException('Tagihan sudah diposting.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Bill',
+                'diposting',
+                $bill->status->value,
+                'draft'
+            );
         }
 
         $this->journalService->postBill($bill);

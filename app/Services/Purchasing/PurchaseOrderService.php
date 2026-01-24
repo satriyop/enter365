@@ -11,6 +11,7 @@ use App\Domain\Purchasing\PurchaseOrderBillConverter;
 use App\Domain\Purchasing\PurchaseOrders\PurchaseOrderDomainFactory;
 use App\Domain\Purchasing\PurchaseOrderStatistics;
 use App\Enums\DocumentStatus;
+use App\Exceptions\Domain\DocumentLockedException;
 use App\Models\Purchasing\PurchaseOrder;
 use App\Models\Purchasing\PurchaseOrderItem;
 use App\Services\Base\Traits\WithDocuments;
@@ -18,7 +19,6 @@ use App\Services\Base\Traits\WithEventDispatching;
 use App\Services\Base\Traits\WithOperationContext;
 use App\Services\Base\Traits\WithTransaction;
 use Illuminate\Database\Eloquent\Model;
-use InvalidArgumentException;
 
 class PurchaseOrderService implements PurchaseOrderServiceInterface
 {
@@ -115,7 +115,7 @@ class PurchaseOrderService implements PurchaseOrderServiceInterface
     {
         /** @var PurchaseOrder $document */
         if (! $document->isEditable()) {
-            throw new InvalidArgumentException('Hanya PO draft yang dapat diubah.');
+            throw DocumentLockedException::cannotEdit($document, 'Hanya PO draft yang dapat diubah.');
         }
     }
 
@@ -123,7 +123,7 @@ class PurchaseOrderService implements PurchaseOrderServiceInterface
     {
         /** @var PurchaseOrder $document */
         if (! $document->isDraft()) {
-            throw new InvalidArgumentException('Hanya PO draft yang dapat dihapus.');
+            throw DocumentLockedException::cannotDelete($document, 'Hanya PO draft yang dapat dihapus.');
         }
     }
 
@@ -164,7 +164,7 @@ class PurchaseOrderService implements PurchaseOrderServiceInterface
     public function submit(PurchaseOrder $purchaseOrder, ?int $userId = null): PurchaseOrder
     {
         if (! $this->domainFactory->stateMachine($purchaseOrder)->canSubmit()) {
-            throw new InvalidArgumentException('PO tidak dapat diajukan. Pastikan status draft dan memiliki item.');
+            throw \App\Exceptions\Domain\StateTransitionException::actionNotAvailable('diajukan', $purchaseOrder->status->value, 'PO harus dalam status draft dan memiliki item.');
         }
 
         $purchaseOrder->transitionTo(DocumentStatus::Submitted, $userId);
@@ -175,7 +175,7 @@ class PurchaseOrderService implements PurchaseOrderServiceInterface
     public function approve(PurchaseOrder $purchaseOrder, ?int $userId = null): PurchaseOrder
     {
         if (! $this->domainFactory->stateMachine($purchaseOrder)->canApprove()) {
-            throw new InvalidArgumentException('PO tidak dapat disetujui. Pastikan sudah diajukan.');
+            throw \App\Exceptions\Domain\StateTransitionException::actionNotAvailable('disetujui', $purchaseOrder->status->value, 'PO harus sudah diajukan.');
         }
 
         $purchaseOrder->transitionTo(DocumentStatus::Approved, $userId);
@@ -186,11 +186,11 @@ class PurchaseOrderService implements PurchaseOrderServiceInterface
     public function reject(PurchaseOrder $purchaseOrder, string $reason, ?int $userId = null): PurchaseOrder
     {
         if (! $this->domainFactory->stateMachine($purchaseOrder)->canReject()) {
-            throw new InvalidArgumentException('PO tidak dapat ditolak. Pastikan sudah diajukan.');
+            throw \App\Exceptions\Domain\StateTransitionException::actionNotAvailable('ditolak', $purchaseOrder->status->value, 'PO harus sudah diajukan.');
         }
 
         if (empty($reason)) {
-            throw new InvalidArgumentException('Alasan penolakan harus diisi.');
+            throw \App\Exceptions\Domain\BusinessRuleException::missingRequiredData('Penolakan PO', 'alasan');
         }
 
         $purchaseOrder->transitionTo(DocumentStatus::Rejected, $userId, ['rejection_reason' => $reason]);
@@ -201,11 +201,11 @@ class PurchaseOrderService implements PurchaseOrderServiceInterface
     public function cancel(PurchaseOrder $purchaseOrder, string $reason, ?int $userId = null): PurchaseOrder
     {
         if (! $this->domainFactory->stateMachine($purchaseOrder)->canCancel()) {
-            throw new InvalidArgumentException('PO tidak dapat dibatalkan.');
+            throw \App\Exceptions\Domain\StateTransitionException::actionNotAvailable('dibatalkan', $purchaseOrder->status->value);
         }
 
         if (empty($reason)) {
-            throw new InvalidArgumentException('Alasan pembatalan harus diisi.');
+            throw \App\Exceptions\Domain\BusinessRuleException::missingRequiredData('Pembatalan PO', 'alasan');
         }
 
         $purchaseOrder->transitionTo(DocumentStatus::Cancelled, $userId, ['cancellation_reason' => $reason]);
@@ -216,7 +216,7 @@ class PurchaseOrderService implements PurchaseOrderServiceInterface
     public function receive(PurchaseOrder $purchaseOrder, array $receivedItems): PurchaseOrder
     {
         if (! $purchaseOrder->canReceive()) {
-            throw new InvalidArgumentException('PO tidak dapat menerima barang. Pastikan sudah disetujui.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation('PO', 'menerima barang', $purchaseOrder->status->value, 'disetujui');
         }
 
         return $this->executeInTransaction('receive', function () use ($purchaseOrder, $receivedItems) {
@@ -224,14 +224,19 @@ class PurchaseOrderService implements PurchaseOrderServiceInterface
                 $item = $purchaseOrder->items()->find($received['item_id']);
 
                 if (! $item) {
-                    throw new InvalidArgumentException("Item dengan ID {$received['item_id']} tidak ditemukan.");
+                    throw new \App\Exceptions\Domain\EntityNotFoundException('PurchaseOrderItem', $received['item_id']);
                 }
 
                 $newQty = $received['quantity'];
                 $remaining = $item->getQuantityRemaining();
 
                 if ($newQty > $remaining) {
-                    throw new InvalidArgumentException("Jumlah terima ({$newQty}) melebihi sisa yang harus diterima ({$remaining}) untuk item: {$item->description}");
+                    throw \App\Exceptions\Domain\BusinessRuleException::quantityValidation(
+                        "Jumlah terima untuk {$item->description}",
+                        $newQty,
+                        $remaining,
+                        'exceeds'
+                    );
                 }
 
                 $item->receive($newQty);

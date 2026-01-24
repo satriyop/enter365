@@ -13,7 +13,6 @@ use App\Services\Manufacturing\MaterialRequisitionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use InvalidArgumentException;
 
 class MaterialRequisitionController extends Controller
 {
@@ -94,15 +93,11 @@ class MaterialRequisitionController extends Controller
     /**
      * Update the specified material requisition.
      */
-    public function update(UpdateMaterialRequisitionRequest $request, MaterialRequisition $materialRequisition): MaterialRequisitionResource|JsonResponse
+    public function update(UpdateMaterialRequisitionRequest $request, MaterialRequisition $materialRequisition): MaterialRequisitionResource
     {
-        try {
-            $requisition = $this->materialRequisitionService->update($materialRequisition, $request->validated());
+        $requisition = $this->materialRequisitionService->update($materialRequisition, $request->validated());
 
-            return new MaterialRequisitionResource($requisition);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return new MaterialRequisitionResource($requisition);
     }
 
     /**
@@ -110,33 +105,25 @@ class MaterialRequisitionController extends Controller
      */
     public function destroy(MaterialRequisition $materialRequisition): JsonResponse
     {
-        try {
-            $this->materialRequisitionService->delete($materialRequisition);
+        $this->materialRequisitionService->delete($materialRequisition);
 
-            return response()->json(['message' => 'Material requisition berhasil dihapus.']);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json(['message' => 'Material requisition berhasil dihapus.']);
     }
 
     /**
      * Approve material requisition.
      */
-    public function approve(MaterialRequisition $materialRequisition): MaterialRequisitionResource|JsonResponse
+    public function approve(MaterialRequisition $materialRequisition): MaterialRequisitionResource
     {
-        try {
-            $requisition = $this->materialRequisitionService->approve($materialRequisition);
+        $requisition = $this->materialRequisitionService->approve($materialRequisition);
 
-            return new MaterialRequisitionResource($requisition);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return new MaterialRequisitionResource($requisition);
     }
 
     /**
      * Issue materials from requisition.
      */
-    public function issue(Request $request, MaterialRequisition $materialRequisition): MaterialRequisitionResource|JsonResponse
+    public function issue(Request $request, MaterialRequisition $materialRequisition): MaterialRequisitionResource
     {
         $request->validate([
             'items' => ['required', 'array', 'min:1'],
@@ -149,29 +136,21 @@ class MaterialRequisitionController extends Controller
             'items.*.quantity.min' => 'Kuantitas harus lebih dari 0.',
         ]);
 
-        try {
-            $requisition = $this->materialRequisitionService->issue(
-                $materialRequisition,
-                $request->input('items')
-            );
+        $requisition = $this->materialRequisitionService->issue(
+            $materialRequisition,
+            $request->input('items')
+        );
 
-            return new MaterialRequisitionResource($requisition);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return new MaterialRequisitionResource($requisition);
     }
 
     /**
      * Cancel material requisition.
      */
-    public function cancel(MaterialRequisition $materialRequisition): MaterialRequisitionResource|JsonResponse
+    public function cancel(MaterialRequisition $materialRequisition): MaterialRequisitionResource
     {
-        try {
-            $requisition = $this->materialRequisitionService->cancel($materialRequisition);
+        $requisition = $this->materialRequisitionService->cancel($materialRequisition);
 
-            return new MaterialRequisitionResource($requisition);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return new MaterialRequisitionResource($requisition);
     }
 }

@@ -16,7 +16,6 @@ use App\Services\Sales\QuotationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use InvalidArgumentException;
 
 class QuotationController extends Controller
 {
@@ -73,15 +72,11 @@ class QuotationController extends Controller
      */
     public function fromBom(StoreQuotationFromBomRequest $request): JsonResponse
     {
-        try {
-            $quotation = $this->quotationService->createFromBom($request->validated());
+        $quotation = $this->quotationService->createFromBom($request->validated());
 
-            return (new QuotationResource($quotation))
-                ->response()
-                ->setStatusCode(201);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return (new QuotationResource($quotation))
+            ->response()
+            ->setStatusCode(201);
     }
 
     /**
@@ -106,15 +101,11 @@ class QuotationController extends Controller
     /**
      * Update the specified quotation.
      */
-    public function update(UpdateQuotationRequest $request, Quotation $quotation): QuotationResource|JsonResponse
+    public function update(UpdateQuotationRequest $request, Quotation $quotation): QuotationResource
     {
-        try {
-            $quotation = $this->quotationService->update($quotation, $request->validated());
+        $quotation = $this->quotationService->update($quotation, $request->validated());
 
-            return new QuotationResource($quotation);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return new QuotationResource($quotation);
     }
 
     /**
@@ -136,35 +127,27 @@ class QuotationController extends Controller
     /**
      * Submit quotation for approval.
      */
-    public function submit(Quotation $quotation): QuotationResource|JsonResponse
+    public function submit(Quotation $quotation): QuotationResource
     {
-        try {
-            $quotation = $this->quotationService->submit($quotation);
+        $quotation = $this->quotationService->submit($quotation);
 
-            return new QuotationResource($quotation);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return new QuotationResource($quotation);
     }
 
     /**
      * Approve a quotation.
      */
-    public function approve(Quotation $quotation): QuotationResource|JsonResponse
+    public function approve(Quotation $quotation): QuotationResource
     {
-        try {
-            $quotation = $this->quotationService->approve($quotation);
+        $quotation = $this->quotationService->approve($quotation);
 
-            return new QuotationResource($quotation);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return new QuotationResource($quotation);
     }
 
     /**
      * Reject a quotation.
      */
-    public function reject(Request $request, Quotation $quotation): QuotationResource|JsonResponse
+    public function reject(Request $request, Quotation $quotation): QuotationResource
     {
         $request->validate([
             'reason' => ['required', 'string', 'max:1000'],
@@ -172,13 +155,9 @@ class QuotationController extends Controller
             'reason.required' => 'Alasan penolakan harus diisi.',
         ]);
 
-        try {
-            $quotation = $this->quotationService->reject($quotation, $request->input('reason'));
+        $quotation = $this->quotationService->reject($quotation, $request->input('reason'));
 
-            return new QuotationResource($quotation);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return new QuotationResource($quotation);
     }
 
     /**
@@ -187,18 +166,14 @@ class QuotationController extends Controller
      * Cancels a Draft, Submitted, or Approved quotation.
      * Cancelled quotations can be revised to create a new draft.
      */
-    public function cancel(CancelQuotationRequest $request, Quotation $quotation): QuotationResource|JsonResponse
+    public function cancel(CancelQuotationRequest $request, Quotation $quotation): QuotationResource
     {
-        try {
-            $quotation = $this->quotationService->cancel(
-                $quotation,
-                $request->input('reason')
-            );
+        $quotation = $this->quotationService->cancel(
+            $quotation,
+            $request->input('reason')
+        );
 
-            return new QuotationResource($quotation);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return new QuotationResource($quotation);
     }
 
     /**
@@ -207,40 +182,32 @@ class QuotationController extends Controller
      * Sent quotations will NOT auto-expire when past valid_until date.
      * This protects quotations that customers have seen from silent expiration.
      */
-    public function markAsSent(Request $request, Quotation $quotation): QuotationResource|JsonResponse
+    public function markAsSent(Request $request, Quotation $quotation): QuotationResource
     {
         $request->validate([
             'email' => ['nullable', 'email', 'max:255'],
             'via' => ['nullable', 'string', 'in:email,print,portal'],
         ]);
 
-        try {
-            $quotation = $this->quotationService->markAsSent(
-                $quotation,
-                $request->input('email'),
-                $request->input('via', 'email')
-            );
+        $quotation = $this->quotationService->markAsSent(
+            $quotation,
+            $request->input('email'),
+            $request->input('via', 'email')
+        );
 
-            return new QuotationResource($quotation);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return new QuotationResource($quotation);
     }
 
     /**
      * Create a revision of a quotation.
      */
-    public function revise(Quotation $quotation): QuotationResource|JsonResponse
+    public function revise(Quotation $quotation): JsonResponse
     {
-        try {
-            $newQuotation = $this->quotationService->revise($quotation);
+        $newQuotation = $this->quotationService->revise($quotation);
 
-            return (new QuotationResource($newQuotation))
-                ->response()
-                ->setStatusCode(201);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return (new QuotationResource($newQuotation))
+            ->response()
+            ->setStatusCode(201);
     }
 
     /**
@@ -248,29 +215,13 @@ class QuotationController extends Controller
      */
     public function convertToInvoice(Quotation $quotation): JsonResponse
     {
-        try {
-            $invoice = $this->quotationService->convertToInvoice($quotation);
+        $invoice = $this->quotationService->convertToInvoice($quotation);
 
-            return response()->json([
-                'message' => 'Penawaran berhasil dikonversi menjadi faktur.',
-                'invoice' => new InvoiceResource($invoice),
-                'quotation' => new QuotationResource($quotation->fresh(['contact', 'items'])),
-            ], 201);
-        } catch (InvalidArgumentException $e) {
-            $response = ['message' => $e->getMessage()];
-
-            // Add helpful context for multi-option quotations without variant selection
-            if ($quotation->isMultiOption() && ! $quotation->hasSelectedVariant()) {
-                $response['error_code'] = 'VARIANT_NOT_SELECTED';
-                $response['available_variants'] = $quotation->variantOptions()
-                    ->select('id', 'display_name', 'selling_price', 'is_recommended')
-                    ->orderBy('sort_order')
-                    ->get();
-                $response['suggestion'] = 'Gunakan POST /api/v1/quotations/{id}/select-variant untuk memilih varian.';
-            }
-
-            return response()->json($response, 422);
-        }
+        return response()->json([
+            'message' => 'Penawaran berhasil dikonversi menjadi faktur.',
+            'invoice' => new InvoiceResource($invoice),
+            'quotation' => new QuotationResource($quotation->fresh(['contact', 'items'])),
+        ], 201);
     }
 
     /**
@@ -363,16 +314,12 @@ class QuotationController extends Controller
             'options.*.selling_price.required' => 'Harga jual harus diisi.',
         ]);
 
-        try {
-            $savedOptions = $this->quotationService->syncVariantOptions($quotation, $validated['options']);
+        $savedOptions = $this->quotationService->syncVariantOptions($quotation, $validated['options']);
 
-            return response()->json([
-                'message' => 'Opsi varian berhasil disimpan.',
-                'data' => QuotationVariantOptionResource::collection($savedOptions),
-            ]);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Opsi varian berhasil disimpan.',
+            'data' => QuotationVariantOptionResource::collection($savedOptions),
+        ]);
     }
 
     /**
@@ -394,15 +341,11 @@ class QuotationController extends Controller
             'variant_option_id.exists' => 'Pilihan varian tidak ditemukan.',
         ]);
 
-        try {
-            $quotation = $this->quotationService->selectVariant($quotation, $validated['variant_option_id']);
+        $quotation = $this->quotationService->selectVariant($quotation, $validated['variant_option_id']);
 
-            return new QuotationResource(
-                $quotation->load(['variantGroup', 'selectedVariant', 'variantOptions.bom'])
-            );
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return new QuotationResource(
+            $quotation->load(['variantGroup', 'selectedVariant', 'variantOptions.bom'])
+        );
     }
 
     /**

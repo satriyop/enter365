@@ -102,7 +102,7 @@ class ExportController extends Controller
             'description' => $entry->description,
             'debit' => $entry->debit,
             'credit' => $entry->credit,
-            'balance' => $entry->balance,
+            'balance' => $entry->running_balance,
         ])->toArray();
 
         return $this->exportReport($rows, 'general-ledger', $format, [

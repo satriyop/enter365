@@ -55,11 +55,16 @@ class DownPaymentService extends BaseService implements DownPaymentServiceInterf
     public function update(DownPayment $downPayment, array $data): DownPayment
     {
         if ($downPayment->applications()->exists()) {
-            throw new \InvalidArgumentException('Cannot update down payment with existing applications.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotEdit($downPayment, 'Tidak dapat mengubah down payment dengan aplikasi yang sudah ada.');
         }
 
         if ($downPayment->status !== DownPayment::STATUS_ACTIVE) {
-            throw new \InvalidArgumentException('Can only update active down payments.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Down Payment',
+                'diubah',
+                $downPayment->status->value,
+                'active'
+            );
         }
 
         return $this->executeInTransaction('update', function () use ($downPayment, $data) {
@@ -90,7 +95,7 @@ class DownPaymentService extends BaseService implements DownPaymentServiceInterf
     public function delete(DownPayment $downPayment): bool
     {
         if ($downPayment->applications()->exists()) {
-            throw new \InvalidArgumentException('Cannot delete down payment with existing applications.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotDelete($downPayment, 'Tidak dapat menghapus down payment dengan aplikasi yang sudah ada.');
         }
 
         return $this->executeInTransaction('delete', function () use ($downPayment) {
@@ -111,26 +116,47 @@ class DownPaymentService extends BaseService implements DownPaymentServiceInterf
     public function applyToInvoice(DownPayment $downPayment, Invoice $invoice, array $data): DownPaymentApplication
     {
         if (! $downPayment->canBeApplied()) {
-            throw new \InvalidArgumentException('Down payment cannot be applied.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Down Payment',
+                'diterapkan',
+                $downPayment->status->value,
+                'active'
+            );
         }
 
         if ($downPayment->type !== DownPayment::TYPE_RECEIVABLE) {
-            throw new \InvalidArgumentException('Only receivable down payments can be applied to invoices.');
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'menerapkan down payment ke invoice',
+                'Down payment harus tipe receivable'
+            );
         }
 
         if ($invoice->contact_id !== $downPayment->contact_id) {
-            throw new \InvalidArgumentException('Down payment and invoice must belong to the same contact.');
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'menerapkan down payment',
+                'Down payment dan invoice harus milik contact yang sama'
+            );
         }
 
         $amount = $data['amount'];
         $outstandingAmount = $invoice->getOutstandingAmount();
 
         if ($amount > $downPayment->getRemainingAmount()) {
-            throw new \InvalidArgumentException('Amount exceeds remaining down payment balance.');
+            throw \App\Exceptions\Domain\BusinessRuleException::quantityValidation(
+                'Jumlah aplikasi down payment',
+                $amount,
+                $downPayment->getRemainingAmount(),
+                'exceeds'
+            );
         }
 
         if ($amount > $outstandingAmount) {
-            throw new \InvalidArgumentException('Amount exceeds invoice outstanding balance.');
+            throw \App\Exceptions\Domain\BusinessRuleException::quantityValidation(
+                'Jumlah aplikasi down payment',
+                $amount,
+                $outstandingAmount,
+                'exceeds'
+            );
         }
 
         return $this->executeInTransaction('apply_to_invoice', function () use ($downPayment, $invoice, $data, $amount) {
@@ -170,26 +196,47 @@ class DownPaymentService extends BaseService implements DownPaymentServiceInterf
     public function applyToBill(DownPayment $downPayment, Bill $bill, array $data): DownPaymentApplication
     {
         if (! $downPayment->canBeApplied()) {
-            throw new \InvalidArgumentException('Down payment cannot be applied.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Down Payment',
+                'diterapkan',
+                $downPayment->status->value,
+                'active'
+            );
         }
 
         if ($downPayment->type !== DownPayment::TYPE_PAYABLE) {
-            throw new \InvalidArgumentException('Only payable down payments can be applied to bills.');
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'menerapkan down payment ke bill',
+                'Down payment harus tipe payable'
+            );
         }
 
         if ($bill->contact_id !== $downPayment->contact_id) {
-            throw new \InvalidArgumentException('Down payment and bill must belong to the same contact.');
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'menerapkan down payment',
+                'Down payment dan bill harus milik contact yang sama'
+            );
         }
 
         $amount = $data['amount'];
         $outstandingAmount = $bill->getOutstandingAmount();
 
         if ($amount > $downPayment->getRemainingAmount()) {
-            throw new \InvalidArgumentException('Amount exceeds remaining down payment balance.');
+            throw \App\Exceptions\Domain\BusinessRuleException::quantityValidation(
+                'Jumlah aplikasi down payment',
+                $amount,
+                $downPayment->getRemainingAmount(),
+                'exceeds'
+            );
         }
 
         if ($amount > $outstandingAmount) {
-            throw new \InvalidArgumentException('Amount exceeds bill outstanding balance.');
+            throw \App\Exceptions\Domain\BusinessRuleException::quantityValidation(
+                'Jumlah aplikasi down payment',
+                $amount,
+                $outstandingAmount,
+                'exceeds'
+            );
         }
 
         return $this->executeInTransaction('apply_to_bill', function () use ($downPayment, $bill, $data, $amount) {
@@ -259,13 +306,23 @@ class DownPaymentService extends BaseService implements DownPaymentServiceInterf
     public function refund(DownPayment $downPayment, array $data): Payment
     {
         if (! $downPayment->canBeRefunded()) {
-            throw new \InvalidArgumentException('Down payment cannot be refunded.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Down Payment',
+                'direfund',
+                $downPayment->status->value,
+                'active dengan sisa saldo'
+            );
         }
 
         $refundAmount = $data['amount'] ?? $downPayment->getRemainingAmount();
 
         if ($refundAmount > $downPayment->getRemainingAmount()) {
-            throw new \InvalidArgumentException('Refund amount exceeds remaining balance.');
+            throw \App\Exceptions\Domain\BusinessRuleException::quantityValidation(
+                'Jumlah refund',
+                $refundAmount,
+                $downPayment->getRemainingAmount(),
+                'exceeds'
+            );
         }
 
         return $this->executeInTransaction('refund', function () use ($downPayment, $data, $refundAmount) {
@@ -307,11 +364,16 @@ class DownPaymentService extends BaseService implements DownPaymentServiceInterf
     public function cancel(DownPayment $downPayment, ?string $reason = null): DownPayment
     {
         if ($downPayment->applications()->exists()) {
-            throw new \InvalidArgumentException('Cannot cancel down payment with existing applications.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotEdit($downPayment, 'Tidak dapat membatalkan down payment dengan aplikasi yang sudah ada.');
         }
 
         if ($downPayment->status !== DownPayment::STATUS_ACTIVE) {
-            throw new \InvalidArgumentException('Can only cancel active down payments.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Down Payment',
+                'dibatalkan',
+                $downPayment->status->value,
+                'active'
+            );
         }
 
         return $this->executeInTransaction('cancel', function () use ($downPayment, $reason) {

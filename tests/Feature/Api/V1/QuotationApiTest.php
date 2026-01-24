@@ -430,7 +430,7 @@ describe('Quotation Conversion', function () {
 
         $response = $this->postJson("/api/v1/quotations/{$quotation->id}/convert-to-invoice");
 
-        $response->assertUnprocessable();
+        $response->assertStatus(409);
     });
 
     it('cannot convert already converted quotation', function () {
@@ -438,7 +438,7 @@ describe('Quotation Conversion', function () {
 
         $response = $this->postJson("/api/v1/quotations/{$quotation->id}/convert-to-invoice");
 
-        $response->assertUnprocessable();
+        $response->assertStatus(409);
     });
 });
 

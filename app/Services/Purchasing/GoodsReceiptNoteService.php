@@ -58,7 +58,12 @@ class GoodsReceiptNoteService extends BaseService implements GoodsReceiptNoteSer
     public function createFromPurchaseOrder(PurchaseOrder $po, array $data): GoodsReceiptNote
     {
         if (! $po->canReceive()) {
-            throw new \InvalidArgumentException('PO tidak dapat menerima barang pada status ini.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Purchase Order',
+                'menerima barang',
+                $po->status->value,
+                'approved'
+            );
         }
 
         return $this->executeInTransaction('create_from_purchase_order', function () use ($po, $data) {
@@ -103,7 +108,7 @@ class GoodsReceiptNoteService extends BaseService implements GoodsReceiptNoteSer
     public function update(GoodsReceiptNote $grn, array $data): GoodsReceiptNote
     {
         if (! $grn->canEdit()) {
-            throw new \InvalidArgumentException('GRN tidak dapat diubah pada status ini.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotEdit($grn, 'GRN tidak dapat diubah pada status ini.');
         }
 
         $grn->update([
@@ -124,7 +129,7 @@ class GoodsReceiptNoteService extends BaseService implements GoodsReceiptNoteSer
     public function delete(GoodsReceiptNote $grn): void
     {
         if (! $grn->canDelete()) {
-            throw new \InvalidArgumentException('GRN tidak dapat dihapus pada status ini.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotDelete($grn, 'GRN tidak dapat dihapus pada status ini.');
         }
 
         $grn->items()->delete();
@@ -139,21 +144,29 @@ class GoodsReceiptNoteService extends BaseService implements GoodsReceiptNoteSer
         $grn = $item->goodsReceiptNote;
 
         if (! $grn->canEdit()) {
-            throw new \InvalidArgumentException('Item tidak dapat diubah pada status ini.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotEdit($grn, 'Item tidak dapat diubah pada status ini.');
         }
 
         // Validate received quantity
         if (isset($data['quantity_received'])) {
             $maxAllowed = $item->quantity_ordered;
             if ($data['quantity_received'] > $maxAllowed) {
-                throw new \InvalidArgumentException("Jumlah terima tidak boleh melebihi {$maxAllowed}.");
+                throw \App\Exceptions\Domain\BusinessRuleException::quantityValidation(
+                    'Jumlah terima',
+                    $data['quantity_received'],
+                    $maxAllowed,
+                    'exceeds'
+                );
             }
         }
 
         // Validate rejected quantity
         $totalQty = ($data['quantity_received'] ?? $item->quantity_received) + ($data['quantity_rejected'] ?? $item->quantity_rejected);
         if ($totalQty > $item->quantity_ordered) {
-            throw new \InvalidArgumentException('Jumlah terima + ditolak tidak boleh melebihi jumlah pesan.');
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'mengubah item GRN',
+                'Jumlah terima + ditolak tidak boleh melebihi jumlah pesan'
+            );
         }
 
         $item->update([
@@ -179,9 +192,17 @@ class GoodsReceiptNoteService extends BaseService implements GoodsReceiptNoteSer
 
         if (! $stateMachine->canStartReceiving()) {
             if ($grn->status !== DocumentStatus::Draft) {
-                throw new \InvalidArgumentException('GRN harus dalam status draft untuk memulai penerimaan.');
+                throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                    'GRN',
+                    'mulai penerimaan',
+                    $grn->status->value,
+                    'draft'
+                );
             }
-            throw new \InvalidArgumentException('GRN tidak memiliki item untuk diterima.');
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'mulai penerimaan GRN',
+                'GRN tidak memiliki item untuk diterima'
+            );
         }
 
         // Use state machine for status transition
@@ -198,7 +219,12 @@ class GoodsReceiptNoteService extends BaseService implements GoodsReceiptNoteSer
         $stateMachine = $grn->stateMachine();
 
         if (! $stateMachine->canComplete()) {
-            throw new \InvalidArgumentException('GRN tidak dapat diselesaikan. Pastikan ada item yang telah diterima.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'GRN',
+                'diselesaikan',
+                $grn->status->value,
+                'receiving dengan item yang telah diterima'
+            );
         }
 
         return $this->executeInTransaction('complete', function () use ($grn, $userId) {
@@ -247,7 +273,12 @@ class GoodsReceiptNoteService extends BaseService implements GoodsReceiptNoteSer
         $stateMachine = $grn->stateMachine();
 
         if (! $stateMachine->canCancel()) {
-            throw new \InvalidArgumentException('GRN tidak dapat dibatalkan pada status ini.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'GRN',
+                'dibatalkan',
+                $grn->status->value,
+                'draft atau receiving'
+            );
         }
 
         // Use state machine for status transition

@@ -5,6 +5,9 @@ declare(strict_types=1);
 use App\Contracts\Sales\QuotationServiceInterface;
 use App\Domain\Sales\Quotations\QuotationDomainFactory;
 use App\Enums\DocumentStatus;
+use App\Exceptions\Domain\BusinessRuleException;
+use App\Exceptions\Domain\DocumentLockedException;
+use App\Exceptions\Domain\StateTransitionException;
 use App\Models\Contacts\Contact;
 use App\Models\Inventory\Product;
 use App\Models\Manufacturing\Bom;
@@ -127,7 +130,7 @@ describe('CRUD Operations', function () {
             ]);
 
         $this->service->update($quotation, ['subject' => 'New Subject']);
-    })->throws(InvalidArgumentException::class, 'Hanya penawaran draft');
+    })->throws(DocumentLockedException::class, 'Hanya penawaran draft');
 });
 
 describe('State Transitions', function () {
@@ -256,7 +259,7 @@ describe('Mark as Sent', function () {
             ]);
 
         $this->service->markAsSent($quotation);
-    })->throws(InvalidArgumentException::class, 'Hanya penawaran yang sudah disetujui');
+    })->throws(StateTransitionException::class, 'approved');
 });
 
 describe('Expiration', function () {
@@ -324,7 +327,7 @@ describe('BOM Integration', function () {
             'bom_id' => $bom->id,
             'contact_id' => $this->contact->id,
         ]);
-    })->throws(InvalidArgumentException::class, 'Hanya BOM dengan status aktif');
+    })->throws(BusinessRuleException::class, 'aktif');
 });
 
 describe('Statistics', function () {

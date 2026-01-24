@@ -207,8 +207,8 @@ describe('Variant Selection', function () {
             'variant_option_id' => $option->id,
         ]);
 
-        $response->assertUnprocessable()
-            ->assertJsonPath('message', 'Pilihan varian tidak valid untuk penawaran ini.');
+        $response->assertStatus(409)
+            ->assertJsonPath('message', 'Operasi memilih varian tidak diizinkan. Pilihan varian tidak valid untuk penawaran ini');
     });
 });
 

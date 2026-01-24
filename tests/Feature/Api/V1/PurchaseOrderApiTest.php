@@ -339,7 +339,7 @@ describe('Purchase Order Receiving', function () {
             ],
         ]);
 
-        $response->assertUnprocessable();
+        $response->assertStatus(409); // Business rule violation
     });
 
     it('cannot receive items for non-approved purchase order', function () {

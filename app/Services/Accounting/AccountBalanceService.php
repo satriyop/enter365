@@ -52,9 +52,12 @@ class AccountBalanceService
             ->where('je.is_posted', true)
             ->whereNull('je.deleted_at')
             ->select([
+                'jel.id',
+                'je.id as journal_entry_id',
                 'je.entry_date as date',
                 'je.entry_number',
-                'je.description',
+                'je.description as entry_description',
+                'je.reference',
                 'jel.description as line_description',
                 'jel.debit',
                 'jel.credit',
@@ -73,7 +76,7 @@ class AccountBalanceService
         $entries = $query->get();
 
         // Calculate running balance
-        $runningBalance = $account->opening_balance;
+        $runningBalance = (int) $account->opening_balance;
 
         // If start date is provided, calculate opening balance as of that date
         if ($startDate) {
@@ -90,23 +93,26 @@ class AccountBalanceService
                 ? ($priorMovements->total_debit ?? 0) - ($priorMovements->total_credit ?? 0)
                 : ($priorMovements->total_credit ?? 0) - ($priorMovements->total_debit ?? 0);
 
-            $runningBalance = $account->opening_balance + $priorBalance;
+            $runningBalance = (int) $account->opening_balance + $priorBalance;
         }
 
         return $entries->map(function ($entry) use ($account, &$runningBalance) {
             $movement = $account->isDebitNormal()
-                ? $entry->debit - $entry->credit
-                : $entry->credit - $entry->debit;
+                ? (int) $entry->debit - (int) $entry->credit
+                : (int) $entry->credit - (int) $entry->debit;
 
             $runningBalance += $movement;
 
             return (object) [
+                'id' => $entry->id,
+                'journal_entry_id' => $entry->journal_entry_id,
                 'date' => $entry->date,
                 'entry_number' => $entry->entry_number,
-                'description' => $entry->line_description ?? $entry->description,
+                'description' => $entry->line_description ?? $entry->entry_description,
+                'reference' => $entry->reference,
                 'debit' => (int) $entry->debit,
                 'credit' => (int) $entry->credit,
-                'balance' => $runningBalance,
+                'running_balance' => $runningBalance,
             ];
         });
     }

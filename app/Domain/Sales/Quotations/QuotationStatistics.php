@@ -34,9 +34,9 @@ class QuotationStatistics
         $expired = (clone $query)->where('status', DocumentStatus::Expired)->count();
         $converted = (clone $query)->where('status', DocumentStatus::Converted)->count();
 
-        $totalValue = (clone $query)->sum('total');
-        $approvedValue = (clone $query)->where('status', DocumentStatus::Approved)->sum('total');
-        $convertedValue = (clone $query)->where('status', DocumentStatus::Converted)->sum('total');
+        $totalValue = (clone $query)->sum('total_amount');
+        $approvedValue = (clone $query)->where('status', DocumentStatus::Approved)->sum('total_amount');
+        $convertedValue = (clone $query)->where('status', DocumentStatus::Converted)->sum('total_amount');
 
         $approvalRate = $total > 0 ? round((($approved + $converted) / $total) * 100, 2) : 0;
         $conversionRate = ($approved + $converted) > 0 ? round(($converted / ($approved + $converted)) * 100, 2) : 0;

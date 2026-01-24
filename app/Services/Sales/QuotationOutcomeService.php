@@ -10,7 +10,6 @@ use App\Domain\Sales\Quotations\Enums\QuotationOutcome;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\Quotation;
 use App\Services\Base\BaseService;
-use InvalidArgumentException;
 
 /**
  * Service for quotation outcome management.
@@ -40,11 +39,19 @@ class QuotationOutcomeService extends BaseService
     public function markAsWon(Quotation $quotation, array $data = []): Quotation
     {
         if ($quotation->status !== DocumentStatus::Approved) {
-            throw new InvalidArgumentException('Hanya penawaran yang disetujui yang dapat ditandai sebagai menang.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Quotation',
+                'ditandai sebagai menang',
+                $quotation->status->value,
+                'approved'
+            );
         }
 
         if ($quotation->outcome !== null) {
-            throw new InvalidArgumentException('Penawaran sudah memiliki hasil.');
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'menandai quotation sebagai menang',
+                'Quotation sudah memiliki hasil'
+            );
         }
 
         return $this->executeInTransaction('mark_as_won', function () use ($quotation, $data) {
@@ -69,11 +76,19 @@ class QuotationOutcomeService extends BaseService
     public function markAsLost(Quotation $quotation, array $data = []): Quotation
     {
         if (! in_array($quotation->status, [DocumentStatus::Approved, DocumentStatus::Submitted])) {
-            throw new InvalidArgumentException('Hanya penawaran yang diajukan atau disetujui yang dapat ditandai sebagai kalah.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Quotation',
+                'ditandai sebagai kalah',
+                $quotation->status->value,
+                'submitted atau approved'
+            );
         }
 
         if ($quotation->outcome !== null) {
-            throw new InvalidArgumentException('Penawaran sudah memiliki hasil.');
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'menandai quotation sebagai kalah',
+                'Quotation sudah memiliki hasil'
+            );
         }
 
         return $this->executeInTransaction('mark_as_lost', function () use ($quotation, $data) {

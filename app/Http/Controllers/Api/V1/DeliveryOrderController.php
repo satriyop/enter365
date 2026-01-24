@@ -97,16 +97,12 @@ class DeliveryOrderController extends Controller
      */
     public function update(UpdateDeliveryOrderRequest $request, DeliveryOrder $deliveryOrder): JsonResponse
     {
-        try {
-            $deliveryOrder = $this->deliveryOrderService->update($deliveryOrder, $request->validated());
+        $deliveryOrder = $this->deliveryOrderService->update($deliveryOrder, $request->validated());
 
-            return response()->json([
-                'message' => 'Delivery order updated successfully.',
-                'data' => new DeliveryOrderResource($deliveryOrder),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Delivery order updated successfully.',
+            'data' => new DeliveryOrderResource($deliveryOrder),
+        ]);
     }
 
     /**
@@ -114,13 +110,9 @@ class DeliveryOrderController extends Controller
      */
     public function destroy(DeliveryOrder $deliveryOrder): JsonResponse
     {
-        try {
-            $this->deliveryOrderService->delete($deliveryOrder);
+        $this->deliveryOrderService->delete($deliveryOrder);
 
-            return response()->json(['message' => 'Delivery order deleted successfully.']);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json(['message' => 'Delivery order deleted successfully.']);
     }
 
     /**
@@ -128,19 +120,15 @@ class DeliveryOrderController extends Controller
      */
     public function confirm(Request $request, DeliveryOrder $deliveryOrder): JsonResponse
     {
-        try {
-            $deliveryOrder = $this->deliveryOrderService->confirm(
-                $deliveryOrder,
-                $request->user()?->id
-            );
+        $deliveryOrder = $this->deliveryOrderService->confirm(
+            $deliveryOrder,
+            $request->user()?->id
+        );
 
-            return response()->json([
-                'message' => 'Delivery order confirmed successfully.',
-                'data' => new DeliveryOrderResource($deliveryOrder),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Delivery order confirmed successfully.',
+            'data' => new DeliveryOrderResource($deliveryOrder),
+        ]);
     }
 
     /**
@@ -157,16 +145,12 @@ class DeliveryOrderController extends Controller
 
         $data['shipped_by'] = $request->user()?->id;
 
-        try {
-            $deliveryOrder = $this->deliveryOrderService->ship($deliveryOrder, $data);
+        $deliveryOrder = $this->deliveryOrderService->ship($deliveryOrder, $data);
 
-            return response()->json([
-                'message' => 'Delivery order shipped successfully.',
-                'data' => new DeliveryOrderResource($deliveryOrder),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Delivery order shipped successfully.',
+            'data' => new DeliveryOrderResource($deliveryOrder),
+        ]);
     }
 
     /**
@@ -182,16 +166,12 @@ class DeliveryOrderController extends Controller
 
         $data['delivered_by'] = $request->user()?->id;
 
-        try {
-            $deliveryOrder = $this->deliveryOrderService->deliver($deliveryOrder, $data);
+        $deliveryOrder = $this->deliveryOrderService->deliver($deliveryOrder, $data);
 
-            return response()->json([
-                'message' => 'Delivery order marked as delivered.',
-                'data' => new DeliveryOrderResource($deliveryOrder),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Delivery order marked as delivered.',
+            'data' => new DeliveryOrderResource($deliveryOrder),
+        ]);
     }
 
     /**
@@ -199,17 +179,13 @@ class DeliveryOrderController extends Controller
      */
     public function cancel(Request $request, DeliveryOrder $deliveryOrder): JsonResponse
     {
-        try {
-            $reason = $request->input('reason');
-            $deliveryOrder = $this->deliveryOrderService->cancel($deliveryOrder, $reason);
+        $reason = $request->input('reason');
+        $deliveryOrder = $this->deliveryOrderService->cancel($deliveryOrder, $reason);
 
-            return response()->json([
-                'message' => 'Delivery order cancelled successfully.',
-                'data' => new DeliveryOrderResource($deliveryOrder),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Delivery order cancelled successfully.',
+            'data' => new DeliveryOrderResource($deliveryOrder),
+        ]);
     }
 
     /**
@@ -223,19 +199,15 @@ class DeliveryOrderController extends Controller
             'items.*.quantity_delivered' => ['required', 'numeric', 'min:0'],
         ]);
 
-        try {
-            $deliveryOrder = $this->deliveryOrderService->updateDeliveryProgress(
-                $deliveryOrder,
-                $data['items']
-            );
+        $deliveryOrder = $this->deliveryOrderService->updateDeliveryProgress(
+            $deliveryOrder,
+            $data['items']
+        );
 
-            return response()->json([
-                'message' => 'Delivery progress updated successfully.',
-                'data' => new DeliveryOrderResource($deliveryOrder),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Delivery progress updated successfully.',
+            'data' => new DeliveryOrderResource($deliveryOrder),
+        ]);
     }
 
     /**

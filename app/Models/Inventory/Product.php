@@ -8,6 +8,7 @@ use App\Models\Contacts\Contact;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomItem;
 use App\Models\Manufacturing\WorkOrder;
+use App\Models\Manufacturing\ComponentBrandMapping;
 use App\Models\Purchasing\BillItem;
 use App\Models\Purchasing\PurchaseOrderItem;
 use App\Models\Sales\InvoiceItem;

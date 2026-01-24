@@ -52,7 +52,7 @@ class StockOpnameService extends BaseService implements StockOpnameServiceInterf
     public function update(StockOpname $opname, array $data): StockOpname
     {
         if (! $opname->canEdit()) {
-            throw new \InvalidArgumentException('Stock opname tidak dapat diubah pada status ini.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotEdit($opname, 'Stock opname tidak dapat diubah pada status ini.');
         }
 
         $opname->update([
@@ -70,7 +70,7 @@ class StockOpnameService extends BaseService implements StockOpnameServiceInterf
     public function delete(StockOpname $opname): void
     {
         if (! $opname->canDelete()) {
-            throw new \InvalidArgumentException('Stock opname tidak dapat dihapus pada status ini.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotDelete($opname, 'Stock opname tidak dapat dihapus pada status ini.');
         }
 
         $opname->items()->delete();
@@ -83,7 +83,12 @@ class StockOpnameService extends BaseService implements StockOpnameServiceInterf
     public function generateItems(StockOpname $opname): StockOpname
     {
         if (! $opname->isDraft()) {
-            throw new \InvalidArgumentException('Item hanya dapat di-generate pada status draft.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Stock Opname',
+                'generate item',
+                $opname->status->value,
+                'draft'
+            );
         }
 
         return $this->executeInTransaction('generate_items', function () use ($opname) {
@@ -123,19 +128,26 @@ class StockOpnameService extends BaseService implements StockOpnameServiceInterf
     public function addItem(StockOpname $opname, array $data): StockOpnameItem
     {
         if (! $opname->canEdit()) {
-            throw new \InvalidArgumentException('Item tidak dapat ditambahkan pada status ini.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotEdit($opname, 'Item tidak dapat ditambahkan pada status ini.');
         }
 
         $product = Product::findOrFail($data['product_id']);
 
         if (! $product->track_inventory) {
-            throw new \InvalidArgumentException('Produk ini tidak melacak inventori.');
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'menambah produk',
+                'Produk tidak melacak inventori'
+            );
         }
 
         // Check if product already exists
         $existing = $opname->items()->where('product_id', $product->id)->first();
         if ($existing) {
-            throw new \InvalidArgumentException('Produk sudah ada dalam stock opname ini.');
+            throw \App\Exceptions\Domain\BusinessRuleException::duplicateEntry(
+                'Item Stock Opname',
+                'produk',
+                $product->name
+            );
         }
 
         // Get current stock
@@ -167,7 +179,12 @@ class StockOpnameService extends BaseService implements StockOpnameServiceInterf
         $opname = $item->stockOpname;
 
         if (! in_array($opname->status, [StockOpname::STATUS_DRAFT, StockOpname::STATUS_COUNTING])) {
-            throw new \InvalidArgumentException('Item tidak dapat diubah pada status ini.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Stock Opname',
+                'ubah item',
+                $opname->status->value,
+                'draft atau counting'
+            );
         }
 
         if (isset($data['counted_quantity'])) {
@@ -192,7 +209,7 @@ class StockOpnameService extends BaseService implements StockOpnameServiceInterf
         $opname = $item->stockOpname;
 
         if (! $opname->canEdit()) {
-            throw new \InvalidArgumentException('Item tidak dapat dihapus pada status ini.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotEdit($opname, 'Item tidak dapat dihapus pada status ini.');
         }
 
         $item->delete();
@@ -207,7 +224,12 @@ class StockOpnameService extends BaseService implements StockOpnameServiceInterf
         $stateMachine = $opname->stateMachine();
 
         if (! $stateMachine->canStartCounting()) {
-            throw new \InvalidArgumentException('Stock opname tidak dapat memulai penghitungan. Pastikan ada item yang akan dihitung.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Stock Opname',
+                'mulai penghitungan',
+                $opname->status,
+                'draft dengan item'
+            );
         }
 
         // Refresh system quantities before starting
@@ -241,9 +263,17 @@ class StockOpnameService extends BaseService implements StockOpnameServiceInterf
         if (! $stateMachine->canSubmitForReview()) {
             $uncounted = $opname->items()->whereNull('counted_quantity')->count();
             if ($uncounted > 0) {
-                throw new \InvalidArgumentException("Masih ada {$uncounted} item yang belum dihitung.");
+                throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                    'submit stock opname',
+                    "Masih ada {$uncounted} item yang belum dihitung"
+                );
             }
-            throw new \InvalidArgumentException('Stock opname tidak dapat disubmit untuk review.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Stock Opname',
+                'submit untuk review',
+                $opname->status->value,
+                'counting selesai'
+            );
         }
 
         // Use state machine for status transition
@@ -263,7 +293,12 @@ class StockOpnameService extends BaseService implements StockOpnameServiceInterf
         $stateMachine = $opname->stateMachine();
 
         if (! $stateMachine->canApprove()) {
-            throw new \InvalidArgumentException('Stock opname tidak dapat diapprove pada status ini.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Stock Opname',
+                'approve',
+                $opname->status->value,
+                'reviewed'
+            );
         }
 
         return $this->executeInTransaction('approve', function () use ($opname, $userId) {
@@ -305,7 +340,12 @@ class StockOpnameService extends BaseService implements StockOpnameServiceInterf
         $stateMachine = $opname->stateMachine();
 
         if (! $stateMachine->canReject()) {
-            throw new \InvalidArgumentException('Stock opname tidak dapat direject pada status ini.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Stock Opname',
+                'reject',
+                $opname->status->value,
+                'reviewed'
+            );
         }
 
         // Update notes with rejection reason before transition
@@ -336,7 +376,10 @@ class StockOpnameService extends BaseService implements StockOpnameServiceInterf
         $stateMachine = $opname->stateMachine();
 
         if (! $stateMachine->canCancel()) {
-            throw new \InvalidArgumentException('Stock opname tidak dapat dibatalkan pada status ini.');
+            throw \App\Exceptions\Domain\StateTransitionException::actionNotAvailable(
+                'dibatalkan',
+                $opname->status
+            );
         }
 
         // Use state machine for status transition

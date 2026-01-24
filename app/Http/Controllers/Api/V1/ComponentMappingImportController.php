@@ -188,18 +188,18 @@ class ComponentMappingImportController extends Controller
      */
     public function stats(): JsonResponse
     {
-        $totalStandards = \App\Models\Accounting\ComponentStandard::count();
-        $totalMappings = \App\Models\Accounting\ComponentBrandMapping::count();
+        $totalStandards = \App\Models\Manufacturing\ComponentStandard::count();
+        $totalMappings = \App\Models\Manufacturing\ComponentBrandMapping::count();
 
-        $productsWithMapping = \App\Models\Accounting\ComponentBrandMapping::distinct('product_id')->count();
-        $totalProducts = \App\Models\Accounting\Product::count();
+        $productsWithMapping = \App\Models\Manufacturing\ComponentBrandMapping::distinct('product_id')->count();
+        $totalProducts = \App\Models\Inventory\Product::count();
         $productsWithoutMapping = $totalProducts - $productsWithMapping;
 
         $coveragePercentage = $totalProducts > 0
             ? round(($productsWithMapping / $totalProducts) * 100)
             : 0;
 
-        $brandCounts = \App\Models\Accounting\ComponentBrandMapping::query()
+        $brandCounts = \App\Models\Manufacturing\ComponentBrandMapping::query()
             ->selectRaw('brand, COUNT(*) as count')
             ->groupBy('brand')
             ->pluck('count', 'brand')

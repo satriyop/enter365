@@ -17,7 +17,6 @@ use App\Services\Base\Traits\WithEventDispatching;
 use App\Services\Base\Traits\WithOperationContext;
 use App\Services\Base\Traits\WithTransaction;
 use Illuminate\Database\Eloquent\Model;
-use InvalidArgumentException;
 
 class PurchaseReturnService implements PurchaseReturnServiceInterface
 {
@@ -95,7 +94,7 @@ class PurchaseReturnService implements PurchaseReturnServiceInterface
     {
         /** @var PurchaseReturn $document */
         if (! $document->isEditable()) {
-            throw new InvalidArgumentException('Purchase return can only be edited in draft status.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotEdit($document, 'Purchase return can only be edited in draft status.');
         }
     }
 
@@ -103,7 +102,7 @@ class PurchaseReturnService implements PurchaseReturnServiceInterface
     {
         /** @var PurchaseReturn $document */
         if (! $document->isEditable()) {
-            throw new InvalidArgumentException('Only draft purchase returns can be deleted.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotDelete($document, 'Only draft purchase returns can be deleted.');
         }
     }
 
@@ -152,7 +151,12 @@ class PurchaseReturnService implements PurchaseReturnServiceInterface
     public function submit(PurchaseReturn $purchaseReturn, ?int $userId = null): PurchaseReturn
     {
         if (! $purchaseReturn->stateMachine()->canSubmit()) {
-            throw new InvalidArgumentException('Purchase return cannot be submitted. Ensure it has items and is in draft status.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Purchase Return',
+                'diajukan',
+                $purchaseReturn->status->value,
+                'draft dengan item'
+            );
         }
 
         $purchaseReturn->transitionTo(DocumentStatus::Submitted, $userId);
@@ -170,7 +174,12 @@ class PurchaseReturnService implements PurchaseReturnServiceInterface
     public function approve(PurchaseReturn $purchaseReturn, ?int $userId = null): PurchaseReturn
     {
         if (! $purchaseReturn->stateMachine()->canApprove()) {
-            throw new InvalidArgumentException('Only submitted purchase returns can be approved.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Purchase Return',
+                'disetujui',
+                $purchaseReturn->status->value,
+                'submitted'
+            );
         }
 
         return $this->executeInTransaction('approve', function () use ($purchaseReturn, $userId) {
@@ -186,7 +195,12 @@ class PurchaseReturnService implements PurchaseReturnServiceInterface
     public function reject(PurchaseReturn $purchaseReturn, ?string $reason = null, ?int $userId = null): PurchaseReturn
     {
         if (! $purchaseReturn->stateMachine()->canReject()) {
-            throw new InvalidArgumentException('Only submitted purchase returns can be rejected.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Purchase Return',
+                'ditolak',
+                $purchaseReturn->status->value,
+                'submitted'
+            );
         }
 
         $purchaseReturn->transitionTo(DocumentStatus::Rejected, $userId, ['rejection_reason' => $reason]);
@@ -197,7 +211,12 @@ class PurchaseReturnService implements PurchaseReturnServiceInterface
     public function complete(PurchaseReturn $purchaseReturn, ?int $userId = null): PurchaseReturn
     {
         if (! $purchaseReturn->stateMachine()->canComplete()) {
-            throw new InvalidArgumentException('Only approved purchase returns can be completed.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Purchase Return',
+                'diselesaikan',
+                $purchaseReturn->status->value,
+                'approved'
+            );
         }
 
         $purchaseReturn->transitionTo(DocumentStatus::Completed, $userId);
@@ -208,7 +227,12 @@ class PurchaseReturnService implements PurchaseReturnServiceInterface
     public function cancel(PurchaseReturn $purchaseReturn, ?string $reason = null, ?int $userId = null): PurchaseReturn
     {
         if (! $purchaseReturn->stateMachine()->canCancel()) {
-            throw new InvalidArgumentException('Only draft, submitted, or approved purchase returns can be cancelled.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Purchase Return',
+                'dibatalkan',
+                $purchaseReturn->status->value,
+                'draft, submitted, atau approved'
+            );
         }
 
         $purchaseReturn->transitionTo(DocumentStatus::Cancelled, $userId, ['cancellation_reason' => $reason]);

@@ -19,7 +19,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
-use InvalidArgumentException;
 
 class SolarProposalController extends Controller
 {
@@ -116,13 +115,9 @@ class SolarProposalController extends Controller
      */
     public function update(UpdateSolarProposalRequest $request, SolarProposal $solarProposal): JsonResponse
     {
-        try {
-            $proposal = $this->service->update($solarProposal, $request->validated());
+        $proposal = $this->service->update($solarProposal, $request->validated());
 
-            return (new SolarProposalResource($proposal))->response();
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return (new SolarProposalResource($proposal))->response();
     }
 
     /**
@@ -132,13 +127,9 @@ class SolarProposalController extends Controller
      */
     public function destroy(SolarProposal $solarProposal): JsonResponse
     {
-        try {
-            $this->service->delete($solarProposal);
+        $this->service->delete($solarProposal);
 
-            return response()->json(['message' => 'Proposal berhasil dihapus.']);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json(['message' => 'Proposal berhasil dihapus.']);
     }
 
     /**
@@ -148,13 +139,9 @@ class SolarProposalController extends Controller
      */
     public function calculate(SolarProposal $solarProposal): JsonResponse
     {
-        try {
-            $proposal = $this->service->calculateProposal($solarProposal);
+        $proposal = $this->service->calculateProposal($solarProposal);
 
-            return (new SolarProposalResource($proposal))->response();
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return (new SolarProposalResource($proposal))->response();
     }
 
     /**
@@ -164,16 +151,12 @@ class SolarProposalController extends Controller
      */
     public function attachVariants(AttachSolarVariantsRequest $request, SolarProposal $solarProposal): JsonResponse
     {
-        try {
-            $proposal = $this->service->attachVariantGroup(
-                $solarProposal,
-                $request->validated()['variant_group_id']
-            );
+        $proposal = $this->service->attachVariantGroup(
+            $solarProposal,
+            $request->validated()['variant_group_id']
+        );
 
-            return (new SolarProposalResource($proposal))->response();
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return (new SolarProposalResource($proposal))->response();
     }
 
     /**
@@ -187,13 +170,9 @@ class SolarProposalController extends Controller
             'bom_id' => ['required', 'exists:boms,id'],
         ]);
 
-        try {
-            $proposal = $this->service->selectBom($solarProposal, $request->input('bom_id'));
+        $proposal = $this->service->selectBom($solarProposal, $request->input('bom_id'));
 
-            return (new SolarProposalResource($proposal))->response();
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return (new SolarProposalResource($proposal))->response();
     }
 
     /**
@@ -203,13 +182,9 @@ class SolarProposalController extends Controller
      */
     public function send(SolarProposal $solarProposal): JsonResponse
     {
-        try {
-            $proposal = $this->service->send($solarProposal);
+        $proposal = $this->service->send($solarProposal);
 
-            return (new SolarProposalResource($proposal))->response();
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return (new SolarProposalResource($proposal))->response();
     }
 
     /**
@@ -219,16 +194,12 @@ class SolarProposalController extends Controller
      */
     public function accept(AcceptSolarProposalRequest $request, SolarProposal $solarProposal): JsonResponse
     {
-        try {
-            $proposal = $this->service->accept(
-                $solarProposal,
-                $request->validated()['selected_bom_id'] ?? null
-            );
+        $proposal = $this->service->accept(
+            $solarProposal,
+            $request->validated()['selected_bom_id'] ?? null
+        );
 
-            return (new SolarProposalResource($proposal))->response();
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return (new SolarProposalResource($proposal))->response();
     }
 
     /**
@@ -242,13 +213,9 @@ class SolarProposalController extends Controller
             'reason' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        try {
-            $proposal = $this->service->reject($solarProposal, $request->input('reason'));
+        $proposal = $this->service->reject($solarProposal, $request->input('reason'));
 
-            return (new SolarProposalResource($proposal))->response();
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return (new SolarProposalResource($proposal))->response();
     }
 
     /**
@@ -258,17 +225,13 @@ class SolarProposalController extends Controller
      */
     public function convertToQuotation(SolarProposal $solarProposal): JsonResponse
     {
-        try {
-            $quotation = $this->service->convertToQuotation($solarProposal);
+        $quotation = $this->service->convertToQuotation($solarProposal);
 
-            return response()->json([
-                'message' => 'Proposal berhasil dikonversi ke quotation.',
-                'quotation' => new QuotationResource($quotation),
-                'proposal' => new SolarProposalResource($solarProposal->fresh()),
-            ]);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Proposal berhasil dikonversi ke quotation.',
+            'quotation' => new QuotationResource($quotation),
+            'proposal' => new SolarProposalResource($solarProposal->fresh()),
+        ]);
     }
 
     /**

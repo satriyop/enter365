@@ -65,4 +65,20 @@ class StateTransitionException extends DomainException
             ]
         );
     }
+
+    /**
+     * Create exception when document is in wrong state for operation.
+     */
+    public static function wrongStateForOperation(string $documentType, string $operation, string $currentState, string $requiredState): self
+    {
+        return new self(
+            "{$documentType} hanya dapat {$operation} dalam status {$requiredState}.",
+            [
+                'document_type' => $documentType,
+                'operation' => $operation,
+                'current_state' => $currentState,
+                'required_state' => $requiredState,
+            ]
+        );
+    }
 }

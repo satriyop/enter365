@@ -16,7 +16,6 @@ use App\Models\Purchasing\Bill;
 use App\Models\Purchasing\BillItem;
 use App\Models\Shared\SubcontractorInvoice;
 use App\Services\Base\BaseService;
-use InvalidArgumentException;
 
 class SubcontractorService extends BaseService implements SubcontractorServiceInterface
 {
@@ -60,7 +59,7 @@ class SubcontractorService extends BaseService implements SubcontractorServiceIn
     public function update(SubcontractorWorkOrder $scWo, array $data): SubcontractorWorkOrder
     {
         if (! $scWo->canBeEdited()) {
-            throw new InvalidArgumentException('SC WO hanya dapat diedit dalam status draft atau ditugaskan.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotEdit($scWo, 'SC WO hanya dapat diedit dalam status draft atau ditugaskan.');
         }
 
         return $this->executeInTransaction('update', function () use ($scWo, $data) {
@@ -78,7 +77,7 @@ class SubcontractorService extends BaseService implements SubcontractorServiceIn
     public function delete(SubcontractorWorkOrder $scWo): bool
     {
         if (! $scWo->isDeletable()) {
-            throw new InvalidArgumentException('Hanya SC WO draft yang dapat dihapus.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotDelete($scWo, 'Hanya SC WO draft yang dapat dihapus.');
         }
 
         return $this->executeInTransaction('delete', function () use ($scWo) {
@@ -94,7 +93,7 @@ class SubcontractorService extends BaseService implements SubcontractorServiceIn
     public function assign(SubcontractorWorkOrder $scWo, ?int $userId = null): SubcontractorWorkOrder
     {
         if (! $scWo->stateMachine()->canAssign()) {
-            throw new InvalidArgumentException('SC WO hanya dapat ditugaskan dalam status draft.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation('SC WO', 'ditugaskan', $scWo->status->value, 'draft');
         }
 
         $scWo->transitionTo(DocumentStatus::Assigned, $userId);
@@ -108,7 +107,7 @@ class SubcontractorService extends BaseService implements SubcontractorServiceIn
     public function start(SubcontractorWorkOrder $scWo, ?int $userId = null): SubcontractorWorkOrder
     {
         if (! $scWo->stateMachine()->canStart()) {
-            throw new InvalidArgumentException('SC WO hanya dapat dimulai setelah ditugaskan.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation('SC WO', 'dimulai', $scWo->status->value, 'ditugaskan');
         }
 
         $scWo->transitionTo(DocumentStatus::InProgress, $userId);
@@ -122,11 +121,21 @@ class SubcontractorService extends BaseService implements SubcontractorServiceIn
     public function updateProgress(SubcontractorWorkOrder $scWo, int $percentage): SubcontractorWorkOrder
     {
         if (! $scWo->canUpdateProgress()) {
-            throw new InvalidArgumentException('Progres hanya saat SC WO dalam dapat diperbarui proses.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'SC WO',
+                'update progres',
+                $scWo->status->value,
+                'dalam proses'
+            );
         }
 
         if ($percentage < 0 || $percentage > 100) {
-            throw new InvalidArgumentException('Persentase harus antara 0 dan 100.');
+            throw \App\Exceptions\Domain\BusinessRuleException::quantityValidation(
+                'Persentase progres',
+                $percentage,
+                100,
+                'invalid'
+            );
         }
 
         $scWo->completion_percentage = $percentage;
@@ -144,7 +153,12 @@ class SubcontractorService extends BaseService implements SubcontractorServiceIn
         ?int $userId = null
     ): SubcontractorWorkOrder {
         if (! $scWo->stateMachine()->canComplete()) {
-            throw new InvalidArgumentException('SC WO hanya dapat diselesaikan saat dalam proses.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'SC WO',
+                'diselesaikan',
+                $scWo->status->value,
+                'dalam proses'
+            );
         }
 
         return $this->executeInTransaction('complete', function () use ($scWo, $actualAmount, $userId) {
@@ -176,7 +190,7 @@ class SubcontractorService extends BaseService implements SubcontractorServiceIn
         ?int $userId = null
     ): SubcontractorWorkOrder {
         if (! $scWo->stateMachine()->canCancel()) {
-            throw new InvalidArgumentException('SC WO tidak dapat dibatalkan.');
+            throw \App\Exceptions\Domain\StateTransitionException::actionNotAvailable('dibatalkan', $scWo->status->value);
         }
 
         $scWo->transitionTo(DocumentStatus::Cancelled, $userId, [
@@ -194,15 +208,23 @@ class SubcontractorService extends BaseService implements SubcontractorServiceIn
     public function createInvoice(SubcontractorWorkOrder $scWo, array $data): SubcontractorInvoice
     {
         if (! $scWo->canCreateInvoice()) {
-            throw new InvalidArgumentException('Invoice hanya dapat dibuat saat SC WO dalam proses atau selesai.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'SC WO',
+                'membuat invoice',
+                $scWo->status->value,
+                'dalam proses atau selesai'
+            );
         }
 
         $grossAmount = $data['gross_amount'];
         $remaining = $scWo->getRemainingInvoiceableAmount();
 
         if ($grossAmount > $remaining) {
-            throw new InvalidArgumentException(
-                'Jumlah invoice (Rp '.number_format($grossAmount).') melebihi sisa yang dapat ditagihkan (Rp '.number_format($remaining).').'
+            throw \App\Exceptions\Domain\BusinessRuleException::quantityValidation(
+                "Jumlah invoice untuk {$scWo->name}",
+                $grossAmount,
+                $remaining,
+                'exceeds'
             );
         }
 
@@ -244,7 +266,7 @@ class SubcontractorService extends BaseService implements SubcontractorServiceIn
     public function updateInvoice(SubcontractorInvoice $invoice, array $data): SubcontractorInvoice
     {
         if (! $invoice->isPending()) {
-            throw new InvalidArgumentException('Hanya invoice pending yang dapat diubah.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotEdit($invoice, 'Hanya invoice pending yang dapat diubah.');
         }
 
         return $this->executeInTransaction('update_invoice', function () use ($invoice, $data) {
@@ -266,7 +288,12 @@ class SubcontractorService extends BaseService implements SubcontractorServiceIn
     public function approveInvoice(SubcontractorInvoice $invoice, ?int $userId = null): SubcontractorInvoice
     {
         if (! $invoice->canBeApproved()) {
-            throw new InvalidArgumentException('Invoice hanya dapat disetujui dalam status pending.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Invoice Subkontraktor',
+                'disetujui',
+                $invoice->status->value ?? 'unknown',
+                'pending'
+            );
         }
 
         $invoice->status = DocumentStatus::Approved;
@@ -286,11 +313,16 @@ class SubcontractorService extends BaseService implements SubcontractorServiceIn
         ?int $userId = null
     ): SubcontractorInvoice {
         if (! $invoice->canBeRejected()) {
-            throw new InvalidArgumentException('Invoice hanya dapat ditolak dalam status pending.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Invoice Subkontraktor',
+                'ditolak',
+                $invoice->status->value ?? 'unknown',
+                'pending'
+            );
         }
 
         if (empty($reason)) {
-            throw new InvalidArgumentException('Alasan penolakan harus diisi.');
+            throw \App\Exceptions\Domain\BusinessRuleException::missingRequiredData('Penolakan Invoice', 'alasan');
         }
 
         $invoice->status = DocumentStatus::Rejected;
@@ -308,7 +340,12 @@ class SubcontractorService extends BaseService implements SubcontractorServiceIn
     public function convertToBill(SubcontractorInvoice $invoice): Bill
     {
         if (! $invoice->canBeConvertedToBill()) {
-            throw new InvalidArgumentException('Invoice harus disetujui dan belum dikonversi ke bill.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Invoice Subkontraktor',
+                'dikonversi ke bill',
+                $invoice->status->value ?? 'unknown',
+                'disetujui'
+            );
         }
 
         return $this->executeInTransaction('convert_to_bill', function () use ($invoice) {

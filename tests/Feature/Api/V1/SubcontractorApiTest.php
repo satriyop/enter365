@@ -151,7 +151,7 @@ describe('Subcontractor Work Order CRUD', function () {
 
         $response = $this->deleteJson("/api/v1/subcontractor-work-orders/{$scWo->id}");
 
-        $response->assertStatus(500);
+        $response->assertStatus(422);
     });
 });
 
@@ -171,7 +171,7 @@ describe('Subcontractor Work Order Workflow', function () {
 
         $response = $this->postJson("/api/v1/subcontractor-work-orders/{$scWo->id}/assign");
 
-        $response->assertStatus(500);
+        $response->assertStatus(422);
     });
 
     it('can start an assigned work order', function () {
@@ -188,7 +188,7 @@ describe('Subcontractor Work Order Workflow', function () {
 
         $response = $this->postJson("/api/v1/subcontractor-work-orders/{$scWo->id}/start");
 
-        $response->assertStatus(500);
+        $response->assertStatus(422);
     });
 
     it('can update progress', function () {
@@ -256,7 +256,7 @@ describe('Subcontractor Work Order Workflow', function () {
 
         $response = $this->postJson("/api/v1/subcontractor-work-orders/{$scWo->id}/cancel");
 
-        $response->assertStatus(500);
+        $response->assertStatus(422);
     });
 });
 
@@ -290,7 +290,7 @@ describe('Subcontractor Invoices', function () {
             'gross_amount' => 20000000,
         ]);
 
-        $response->assertStatus(500);
+        $response->assertStatus(409); // Business rule violation
     });
 
     it('can list invoices for work order', function () {
@@ -404,7 +404,7 @@ describe('Subcontractor Invoices', function () {
 
         $response = $this->postJson("/api/v1/subcontractor-invoices/{$invoice->id}/convert-to-bill");
 
-        $response->assertStatus(500);
+        $response->assertStatus(422);
     });
 
     it('cannot convert already converted invoice', function () {
@@ -415,7 +415,7 @@ describe('Subcontractor Invoices', function () {
 
         $response = $this->postJson("/api/v1/subcontractor-invoices/{$invoice->id}/convert-to-bill");
 
-        $response->assertStatus(500);
+        $response->assertStatus(422);
     });
 });
 

@@ -98,7 +98,7 @@ describe('Stock Opname CRUD', function () {
             'name' => 'Updated Name',
         ]);
 
-        $response->assertStatus(422);
+        $response->assertStatus(409); // Business rule violation
     });
 
     it('can delete a stock opname in draft status', function () {
@@ -115,7 +115,7 @@ describe('Stock Opname CRUD', function () {
 
         $response = $this->deleteJson("/api/v1/stock-opnames/{$opname->id}");
 
-        $response->assertStatus(422);
+        $response->assertStatus(409); // Business rule violation
         $this->assertDatabaseHas('stock_opnames', ['id' => $opname->id]);
     });
 
@@ -166,7 +166,7 @@ describe('Stock Opname Item Management', function () {
             'product_id' => $product->id,
         ]);
 
-        $response->assertStatus(422);
+        $response->assertStatus(409); // Business rule violation
     });
 
     it('can update item with counted quantity', function () {
@@ -216,7 +216,7 @@ describe('Stock Opname Workflow', function () {
 
         $response = $this->postJson("/api/v1/stock-opnames/{$opname->id}/start-counting");
 
-        $response->assertStatus(422);
+        $response->assertStatus(409); // Business rule violation
     });
 
     it('can submit for review when all items counted', function () {
@@ -238,7 +238,7 @@ describe('Stock Opname Workflow', function () {
 
         $response = $this->postJson("/api/v1/stock-opnames/{$opname->id}/submit-review");
 
-        $response->assertStatus(422);
+        $response->assertStatus(409); // Business rule violation
     });
 
     it('can approve and apply adjustments', function () {
@@ -302,7 +302,7 @@ describe('Stock Opname Workflow', function () {
 
         $response = $this->postJson("/api/v1/stock-opnames/{$opname->id}/cancel");
 
-        $response->assertStatus(422);
+        $response->assertStatus(409); // Business rule violation
     });
 
 });

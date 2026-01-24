@@ -95,16 +95,12 @@ class PurchaseReturnController extends Controller
      */
     public function update(UpdatePurchaseReturnRequest $request, PurchaseReturn $purchaseReturn): JsonResponse
     {
-        try {
-            $purchaseReturn = $this->purchaseReturnService->update($purchaseReturn, $request->validated());
+        $purchaseReturn = $this->purchaseReturnService->update($purchaseReturn, $request->validated());
 
-            return response()->json([
-                'message' => 'Retur pembelian berhasil diperbarui.',
-                'data' => new PurchaseReturnResource($purchaseReturn),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Retur pembelian berhasil diperbarui.',
+            'data' => new PurchaseReturnResource($purchaseReturn),
+        ]);
     }
 
     /**
@@ -112,13 +108,9 @@ class PurchaseReturnController extends Controller
      */
     public function destroy(PurchaseReturn $purchaseReturn): JsonResponse
     {
-        try {
-            $this->purchaseReturnService->delete($purchaseReturn);
+        $this->purchaseReturnService->delete($purchaseReturn);
 
-            return response()->json(['message' => 'Retur pembelian berhasil dihapus.']);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json(['message' => 'Retur pembelian berhasil dihapus.']);
     }
 
     /**
@@ -126,19 +118,15 @@ class PurchaseReturnController extends Controller
      */
     public function submit(Request $request, PurchaseReturn $purchaseReturn): JsonResponse
     {
-        try {
-            $purchaseReturn = $this->purchaseReturnService->submit(
-                $purchaseReturn,
-                $request->user()?->id
-            );
+        $purchaseReturn = $this->purchaseReturnService->submit(
+            $purchaseReturn,
+            $request->user()?->id
+        );
 
-            return response()->json([
-                'message' => 'Retur pembelian berhasil diajukan.',
-                'data' => new PurchaseReturnResource($purchaseReturn),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Retur pembelian berhasil diajukan.',
+            'data' => new PurchaseReturnResource($purchaseReturn),
+        ]);
     }
 
     /**
@@ -146,19 +134,15 @@ class PurchaseReturnController extends Controller
      */
     public function approve(Request $request, PurchaseReturn $purchaseReturn): JsonResponse
     {
-        try {
-            $purchaseReturn = $this->purchaseReturnService->approve(
-                $purchaseReturn,
-                $request->user()?->id
-            );
+        $purchaseReturn = $this->purchaseReturnService->approve(
+            $purchaseReturn,
+            $request->user()?->id
+        );
 
-            return response()->json([
-                'message' => 'Retur pembelian berhasil disetujui.',
-                'data' => new PurchaseReturnResource($purchaseReturn),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Retur pembelian berhasil disetujui.',
+            'data' => new PurchaseReturnResource($purchaseReturn),
+        ]);
     }
 
     /**
@@ -170,20 +154,16 @@ class PurchaseReturnController extends Controller
             'reason' => ['nullable', 'string', 'max:500'],
         ]);
 
-        try {
-            $purchaseReturn = $this->purchaseReturnService->reject(
-                $purchaseReturn,
-                $data['reason'] ?? null,
-                $request->user()?->id
-            );
+        $purchaseReturn = $this->purchaseReturnService->reject(
+            $purchaseReturn,
+            $data['reason'] ?? null,
+            $request->user()?->id
+        );
 
-            return response()->json([
-                'message' => 'Retur pembelian berhasil ditolak.',
-                'data' => new PurchaseReturnResource($purchaseReturn),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Retur pembelian berhasil ditolak.',
+            'data' => new PurchaseReturnResource($purchaseReturn),
+        ]);
     }
 
     /**
@@ -191,19 +171,15 @@ class PurchaseReturnController extends Controller
      */
     public function complete(Request $request, PurchaseReturn $purchaseReturn): JsonResponse
     {
-        try {
-            $purchaseReturn = $this->purchaseReturnService->complete(
-                $purchaseReturn,
-                $request->user()?->id
-            );
+        $purchaseReturn = $this->purchaseReturnService->complete(
+            $purchaseReturn,
+            $request->user()?->id
+        );
 
-            return response()->json([
-                'message' => 'Retur pembelian berhasil diselesaikan.',
-                'data' => new PurchaseReturnResource($purchaseReturn),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Retur pembelian berhasil diselesaikan.',
+            'data' => new PurchaseReturnResource($purchaseReturn),
+        ]);
     }
 
     /**
@@ -211,17 +187,13 @@ class PurchaseReturnController extends Controller
      */
     public function cancel(Request $request, PurchaseReturn $purchaseReturn): JsonResponse
     {
-        try {
-            $reason = $request->input('reason');
-            $purchaseReturn = $this->purchaseReturnService->cancel($purchaseReturn, $reason);
+        $reason = $request->input('reason');
+        $purchaseReturn = $this->purchaseReturnService->cancel($purchaseReturn, $reason);
 
-            return response()->json([
-                'message' => 'Retur pembelian berhasil dibatalkan.',
-                'data' => new PurchaseReturnResource($purchaseReturn),
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'Retur pembelian berhasil dibatalkan.',
+            'data' => new PurchaseReturnResource($purchaseReturn),
+        ]);
     }
 
     /**

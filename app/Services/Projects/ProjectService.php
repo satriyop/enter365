@@ -88,7 +88,7 @@ class ProjectService extends BaseService implements ProjectServiceInterface
     public function delete(Project $project): bool
     {
         if (! $project->isDeletable()) {
-            throw new \InvalidArgumentException('Only draft or planning projects can be deleted.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotDelete($project, 'Only draft or planning projects can be deleted.');
         }
 
         return $this->executeInTransaction('delete', function () use ($project) {
@@ -105,7 +105,12 @@ class ProjectService extends BaseService implements ProjectServiceInterface
     public function start(Project $project, ?int $userId = null): Project
     {
         if (! $project->stateMachine()->canStart()) {
-            throw new \InvalidArgumentException('Project cannot be started.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Project',
+                'dimulai',
+                $project->status->value,
+                'planning'
+            );
         }
 
         $project->transitionTo(DocumentStatus::InProgress, $userId);
@@ -119,7 +124,12 @@ class ProjectService extends BaseService implements ProjectServiceInterface
     public function putOnHold(Project $project, ?string $reason = null, ?int $userId = null): Project
     {
         if (! $project->stateMachine()->canPutOnHold()) {
-            throw new \InvalidArgumentException('Only in-progress projects can be put on hold.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Project',
+                'ditunda',
+                $project->status->value,
+                'in progress'
+            );
         }
 
         if ($reason) {
@@ -140,7 +150,12 @@ class ProjectService extends BaseService implements ProjectServiceInterface
     public function cancel(Project $project, ?string $reason = null, ?int $userId = null): Project
     {
         if (! $project->stateMachine()->canCancel()) {
-            throw new \InvalidArgumentException('Project cannot be cancelled.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Project',
+                'dibatalkan',
+                $project->status->value,
+                'draft, planning, in progress, atau on hold'
+            );
         }
 
         if ($reason) {
@@ -161,7 +176,12 @@ class ProjectService extends BaseService implements ProjectServiceInterface
     public function resume(Project $project, ?int $userId = null): Project
     {
         if (! $project->stateMachine()->canResume()) {
-            throw new \InvalidArgumentException('Only on-hold projects can be resumed.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Project',
+                'dilanjutkan',
+                $project->status->value,
+                'on hold'
+            );
         }
 
         $project->transitionTo(DocumentStatus::InProgress, $userId);
@@ -175,7 +195,12 @@ class ProjectService extends BaseService implements ProjectServiceInterface
     public function complete(Project $project, ?int $userId = null): Project
     {
         if (! $project->stateMachine()->canComplete()) {
-            throw new \InvalidArgumentException('Only in-progress projects can be completed.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Project',
+                'diselesaikan',
+                $project->status->value,
+                'in progress'
+            );
         }
 
         return $this->executeInTransaction('complete', function () use ($project, $userId) {
@@ -195,7 +220,12 @@ class ProjectService extends BaseService implements ProjectServiceInterface
     public function updateProgress(Project $project, float $percentage): Project
     {
         if ($project->status !== DocumentStatus::InProgress) {
-            throw new \InvalidArgumentException('Progress can only be updated for in-progress projects.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Project',
+                'update progress',
+                $project->status->value,
+                'in progress'
+            );
         }
 
         $project->progress_percentage = min(100, max(0, $percentage));

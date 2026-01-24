@@ -13,7 +13,6 @@ use App\Services\Purchasing\PurchaseOrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use InvalidArgumentException;
 
 class PurchaseOrderController extends Controller
 {
@@ -59,15 +58,11 @@ class PurchaseOrderController extends Controller
     /**
      * Update the specified purchase order.
      */
-    public function update(UpdatePurchaseOrderRequest $request, PurchaseOrder $purchaseOrder): PurchaseOrderResource|JsonResponse
+    public function update(UpdatePurchaseOrderRequest $request, PurchaseOrder $purchaseOrder): PurchaseOrderResource
     {
-        try {
-            $purchaseOrder = $this->purchaseOrderService->update($purchaseOrder, $request->validated());
+        $purchaseOrder = $this->purchaseOrderService->update($purchaseOrder, $request->validated());
 
-            return new PurchaseOrderResource($purchaseOrder);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return new PurchaseOrderResource($purchaseOrder);
     }
 
     /**
@@ -89,29 +84,21 @@ class PurchaseOrderController extends Controller
     /**
      * Submit PO for approval.
      */
-    public function submit(PurchaseOrder $purchaseOrder): PurchaseOrderResource|JsonResponse
+    public function submit(PurchaseOrder $purchaseOrder): PurchaseOrderResource
     {
-        try {
-            $purchaseOrder = $this->purchaseOrderService->submit($purchaseOrder);
+        $purchaseOrder = $this->purchaseOrderService->submit($purchaseOrder);
 
-            return new PurchaseOrderResource($purchaseOrder);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return new PurchaseOrderResource($purchaseOrder);
     }
 
     /**
      * Approve a PO.
      */
-    public function approve(PurchaseOrder $purchaseOrder): PurchaseOrderResource|JsonResponse
+    public function approve(PurchaseOrder $purchaseOrder): PurchaseOrderResource
     {
-        try {
-            $purchaseOrder = $this->purchaseOrderService->approve($purchaseOrder);
+        $purchaseOrder = $this->purchaseOrderService->approve($purchaseOrder);
 
-            return new PurchaseOrderResource($purchaseOrder);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return new PurchaseOrderResource($purchaseOrder);
     }
 
     /**
@@ -125,13 +112,9 @@ class PurchaseOrderController extends Controller
             'reason.required' => 'Alasan penolakan harus diisi.',
         ]);
 
-        try {
-            $purchaseOrder = $this->purchaseOrderService->reject($purchaseOrder, $request->input('reason'));
+        $purchaseOrder = $this->purchaseOrderService->reject($purchaseOrder, $request->input('reason'));
 
-            return new PurchaseOrderResource($purchaseOrder);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return new PurchaseOrderResource($purchaseOrder);
     }
 
     /**
@@ -145,13 +128,9 @@ class PurchaseOrderController extends Controller
             'reason.required' => 'Alasan pembatalan harus diisi.',
         ]);
 
-        try {
-            $purchaseOrder = $this->purchaseOrderService->cancel($purchaseOrder, $request->input('reason'));
+        $purchaseOrder = $this->purchaseOrderService->cancel($purchaseOrder, $request->input('reason'));
 
-            return new PurchaseOrderResource($purchaseOrder);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return new PurchaseOrderResource($purchaseOrder);
     }
 
     /**
@@ -171,13 +150,9 @@ class PurchaseOrderController extends Controller
             'items.*.quantity.min' => 'Jumlah terima harus lebih dari 0.',
         ]);
 
-        try {
-            $purchaseOrder = $this->purchaseOrderService->receive($purchaseOrder, $request->input('items'));
+        $purchaseOrder = $this->purchaseOrderService->receive($purchaseOrder, $request->input('items'));
 
-            return new PurchaseOrderResource($purchaseOrder);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return new PurchaseOrderResource($purchaseOrder);
     }
 
     /**
@@ -185,17 +160,13 @@ class PurchaseOrderController extends Controller
      */
     public function convertToBill(PurchaseOrder $purchaseOrder): JsonResponse
     {
-        try {
-            $bill = $this->purchaseOrderService->convertToBill($purchaseOrder);
+        $bill = $this->purchaseOrderService->convertToBill($purchaseOrder);
 
-            return response()->json([
-                'message' => 'PO berhasil dikonversi menjadi tagihan.',
-                'bill' => new BillResource($bill),
-                'purchase_order' => new PurchaseOrderResource($purchaseOrder->fresh(['contact', 'items'])),
-            ], 201);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json([
+            'message' => 'PO berhasil dikonversi menjadi tagihan.',
+            'bill' => new BillResource($bill),
+            'purchase_order' => new PurchaseOrderResource($purchaseOrder->fresh(['contact', 'items'])),
+        ], 201);
     }
 
     /**

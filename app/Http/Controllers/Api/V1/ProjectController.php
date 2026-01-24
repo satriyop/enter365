@@ -65,15 +65,11 @@ class ProjectController extends Controller
     /**
      * Update the specified project.
      */
-    public function update(UpdateProjectRequest $request, Project $project): ProjectResource|JsonResponse
+    public function update(UpdateProjectRequest $request, Project $project): ProjectResource
     {
-        try {
-            $project = $this->projectService->update($project, $request->validated());
+        $project = $this->projectService->update($project, $request->validated());
 
-            return new ProjectResource($project);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return new ProjectResource($project);
     }
 
     /**
@@ -81,13 +77,9 @@ class ProjectController extends Controller
      */
     public function destroy(Project $project): JsonResponse
     {
-        try {
-            $this->projectService->delete($project);
+        $this->projectService->delete($project);
 
-            return response()->json(['message' => 'Proyek berhasil dihapus.']);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json(['message' => 'Proyek berhasil dihapus.']);
     }
 
     /**
@@ -138,71 +130,55 @@ class ProjectController extends Controller
     /**
      * Put project on hold.
      */
-    public function hold(Request $request, Project $project): ProjectResource|JsonResponse
+    public function hold(Request $request, Project $project): ProjectResource
     {
         $request->validate([
             'reason' => ['nullable', 'string', 'max:500'],
         ]);
 
-        try {
-            $project = $this->projectService->putOnHold($project, $request->input('reason'));
+        $project = $this->projectService->putOnHold($project, $request->input('reason'));
 
-            return new ProjectResource($project);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return new ProjectResource($project);
     }
 
     /**
      * Resume a project.
      */
-    public function resume(Project $project): ProjectResource|JsonResponse
+    public function resume(Project $project): ProjectResource
     {
-        try {
-            $project = $this->projectService->resume($project);
+        $project = $this->projectService->resume($project);
 
-            return new ProjectResource($project);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return new ProjectResource($project);
     }
 
     /**
      * Complete a project.
      */
-    public function complete(Project $project): ProjectResource|JsonResponse
+    public function complete(Project $project): ProjectResource
     {
-        try {
-            $project = $this->projectService->complete($project);
+        $project = $this->projectService->complete($project);
 
-            return new ProjectResource($project);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return new ProjectResource($project);
     }
 
     /**
      * Cancel a project.
      */
-    public function cancel(Request $request, Project $project): ProjectResource|JsonResponse
+    public function cancel(Request $request, Project $project): ProjectResource
     {
         $request->validate([
             'reason' => ['nullable', 'string', 'max:500'],
         ]);
 
-        try {
-            $project = $this->projectService->cancel($project, $request->input('reason'));
+        $project = $this->projectService->cancel($project, $request->input('reason'));
 
-            return new ProjectResource($project);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return new ProjectResource($project);
     }
 
     /**
      * Update project progress.
      */
-    public function updateProgress(Request $request, Project $project): ProjectResource|JsonResponse
+    public function updateProgress(Request $request, Project $project): ProjectResource
     {
         $request->validate([
             'progress' => ['required', 'numeric', 'min:0', 'max:100'],
@@ -212,13 +188,9 @@ class ProjectController extends Controller
             'progress.max' => 'Persentase progress maksimal 100%.',
         ]);
 
-        try {
-            $project = $this->projectService->updateProgress($project, $request->input('progress'));
+        $project = $this->projectService->updateProgress($project, $request->input('progress'));
 
-            return new ProjectResource($project);
-        } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return new ProjectResource($project);
     }
 
     /**
