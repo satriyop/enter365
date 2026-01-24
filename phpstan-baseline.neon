@@ -1471,10 +1471,10 @@ parameters:
 			path: app/Services/Accounting/BudgetService.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Accounting\\JournalEntryLine\:\:\$balance\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/Accounting/FiscalPeriodService.php
+			message: '#^Access to undefined constant App\\Models\\Accounting\\JournalEntry\:\:SOURCE_REVERSAL\.$#'
+			identifier: classConstant.notFound
+			count: 1
+			path: app/Services/Accounting/JournalService.php
 
 		-
 			message: '#^Cannot call method toDateString\(\) on string\.$#'
@@ -1509,7 +1509,7 @@ parameters:
 		-
 			message: '#^Cannot call method format\(\) on string\.$#'
 			identifier: method.nonObject
-			count: 6
+			count: 4
 			path: app/Services/Accounting/Reports/BankReconciliationReportService.php
 
 		-
@@ -1521,19 +1521,19 @@ parameters:
 		-
 			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Accounting\\BankTransaction\>\:\:map\(\) contains unresolvable type\.$#'
 			identifier: argument.unresolvableType
-			count: 3
-			path: app/Services/Accounting/Reports/BankReconciliationReportService.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Accounting\\JournalEntryLine\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
+			count: 2
 			path: app/Services/Accounting/Reports/BankReconciliationReportService.php
 
 		-
 			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Shared\\Payment\>\:\:map\(\) contains unresolvable type\.$#'
 			identifier: argument.unresolvableType
 			count: 3
+			path: app/Services/Accounting/Reports/BankReconciliationReportService.php
+
+		-
+			message: '#^Variable \$payDate in PHPDoc tag @var does not match assigned variable \$paymentDate\.$#'
+			identifier: varTag.differentVariable
+			count: 1
 			path: app/Services/Accounting/Reports/BankReconciliationReportService.php
 
 		-
@@ -2221,24 +2221,6 @@ parameters:
 			path: app/Services/Shared/PaymentService.php
 
 		-
-			message: '#^Property App\\Models\\Solar\\SolarProposal\:\:\$annual_production_kwh \(string\|null\) does not accept float\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Services/Solar/SolarProposalService.php
-
-		-
-			message: '#^Property App\\Models\\Solar\\SolarProposal\:\:\$system_capacity_kwp \(string\|null\) does not accept float\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Services/Solar/SolarProposalService.php
-
-		-
-			message: '#^Property App\\Models\\Solar\\SolarProposal\:\:\$system_capacity_kwp \(string\|null\) does not accept float\|null\.$#'
-			identifier: assign.propertyType
-			count: 2
-			path: app/Services/Solar/SolarProposalService.php
-
-		-
 			message: '#^Using nullsafe method call on non\-nullable type Illuminate\\Http\\Request\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
@@ -2609,15 +2591,3 @@ parameters:
 			identifier: nullsafe.neverNull
 			count: 1
 			path: database/seeders/Demo/Vahana/VahanaTransactionSeeder.php
-
-		-
-			message: '#^Method Illuminate\\Routing\\RouteRegistrar\:\:where\(\) invoked with 2 parameters, 1 required\.$#'
-			identifier: arguments.count
-			count: 1
-			path: routes/api.php
-
-		-
-			message: '#^Parameter \#1 \$where of method Illuminate\\Routing\\RouteRegistrar\:\:where\(\) expects array, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: routes/api.php
