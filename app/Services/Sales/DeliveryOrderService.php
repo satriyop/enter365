@@ -267,12 +267,13 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
             foreach ($itemsDelivered as $itemData) {
                 $item = $deliveryOrder->items()->find($itemData['item_id']);
                 if ($item) {
-                    $newDelivered = $itemData['quantity_delivered'];
-                    if ($newDelivered > $item->quantity) {
+                    $newDelivered = (float) $itemData['quantity_delivered'];
+                    $orderedQty = (float) $item->quantity;
+                    if ($newDelivered > $orderedQty) {
                         throw \App\Exceptions\Domain\BusinessRuleException::quantityValidation(
                             'Jumlah delivered untuk item '.$item->id,
                             $newDelivered,
-                            $item->quantity,
+                            $orderedQty,
                             'exceeds'
                         );
                     }

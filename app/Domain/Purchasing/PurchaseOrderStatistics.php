@@ -45,11 +45,11 @@ class PurchaseOrderStatistics
         $received = (clone $query)->where('status', DocumentStatus::Received)->count();
         $cancelled = (clone $query)->where('status', DocumentStatus::Cancelled)->count();
 
-        $totalValue = (clone $query)->sum('total');
+        $totalValue = (clone $query)->sum('total_amount');
         $outstandingValue = (clone $query)->whereIn('status', [
             DocumentStatus::Approved,
             DocumentStatus::Partial,
-        ])->sum('total');
+        ])->sum('total_amount');
 
         return [
             'total' => $total,

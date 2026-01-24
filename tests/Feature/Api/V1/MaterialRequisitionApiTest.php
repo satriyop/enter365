@@ -304,12 +304,12 @@ describe('Material Requisition Workflow', function () {
             'items' => [
                 [
                     'item_id' => $item->id,
-                    'quantity' => 20, // More than pending
+                    'quantity' => 15, // Exceeds pending
                 ],
             ],
         ]);
 
-        $response->assertUnprocessable();
+        $response->assertStatus(409);
     });
 
     it('cannot issue from draft requisition', function () {

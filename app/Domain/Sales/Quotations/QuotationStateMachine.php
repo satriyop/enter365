@@ -217,7 +217,12 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
         if (in_array($to, [DocumentStatus::Approved, DocumentStatus::Rejected], true)
             && $from === DocumentStatus::Submitted
             && $this->quotation->valid_until->isPast()) {
-            throw new \InvalidArgumentException('Penawaran sudah kedaluwarsa.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Quotation',
+                'diproses',
+                $from->value,
+                'belum kedaluwarsa'
+            );
         }
     }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domain\Sales\Quotations\Enums\QuotationType;
 use App\Enums\DocumentStatus;
+use App\Exceptions\Domain\BusinessRuleException;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\Quotation;
 use App\Models\Sales\QuotationItem;
@@ -163,19 +164,13 @@ describe('QuotationService::convertToInvoice with variant guard', function () {
 
     it('throws exception for multi-option without variant selection', function () {
         $quotation = Quotation::factory()
-            ->has(QuotationItem::factory(), 'items')
+            ->multiOption()
             ->approved()
-            ->create([
-                'quotation_type' => QuotationType::MultiOption->value,
-                'selected_variant_id' => null,
-            ]);
+            ->create();
 
-        QuotationVariantOption::factory()->count(2)->create([
-            'quotation_id' => $quotation->id,
-        ]);
-
-        $this->quotationService->convertToInvoice($quotation->fresh());
-    })->throws(InvalidArgumentException::class, 'varian');
+        $this->expectException(BusinessRuleException::class);
+        $this->quotationService->convertToInvoice($quotation);
+    });
 
     it('converts multi-option quotation with variant selected', function () {
         $quotation = Quotation::factory()
@@ -221,16 +216,18 @@ describe('API endpoint with variant guard', function () {
 
         $response = $this->postJson("/api/v1/quotations/{$quotation->id}/convert-to-invoice");
 
-        $response->assertUnprocessable()
-            ->assertJsonPath('error_code', 'VARIANT_NOT_SELECTED')
-            ->assertJsonCount(2, 'available_variants')
+        $response->assertStatus(409)
+            ->assertJsonPath('context.error_code', 'VARIANT_NOT_SELECTED')
+            ->assertJsonCount(2, 'context.available_variants')
             ->assertJsonStructure([
                 'message',
-                'error_code',
-                'available_variants' => [
-                    '*' => ['id', 'display_name', 'selling_price', 'is_recommended'],
+                'context' => [
+                    'error_code',
+                    'available_variants' => [
+                        '*' => ['id', 'display_name', 'selling_price', 'is_recommended'],
+                    ],
+                    'suggestion',
                 ],
-                'suggestion',
             ]);
     });
 

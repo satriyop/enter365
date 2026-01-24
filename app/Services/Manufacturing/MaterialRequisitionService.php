@@ -143,13 +143,14 @@ class MaterialRequisitionService extends BaseService implements MaterialRequisit
                     );
                 }
 
-                $quantityToIssue = $issueData['quantity'];
+                $quantityToIssue = (float) $issueData['quantity'];
+                $pendingQty = (float) $mrItem->quantity_pending;
 
-                if ($quantityToIssue > $mrItem->quantity_pending) {
+                if ($quantityToIssue > $pendingQty) {
                     throw \App\Exceptions\Domain\BusinessRuleException::quantityValidation(
                         'Jumlah pengeluaran',
                         $quantityToIssue,
-                        $mrItem->quantity_pending,
+                        $pendingQty,
                         'exceeds'
                     );
                 }

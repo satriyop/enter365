@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Enums\DocumentStatus;
+use App\Exceptions\Domain\BusinessRuleException;
+use App\Exceptions\Domain\StateTransitionException;
 use App\Models\Sales\Quotation;
 use App\Models\Sales\QuotationItem;
 use App\Models\User;
@@ -150,25 +152,21 @@ describe('markAsSent behavior', function () {
     });
 
     it('cannot mark non-approved quotation as sent', function () {
-        $quotation = Quotation::factory()
-            ->has(QuotationItem::factory(), 'items')
-            ->submitted()
-            ->create();
+        $quotation = Quotation::factory()->submitted()->create();
 
+        $this->expectException(StateTransitionException::class);
         $this->quotationService->markAsSent($quotation);
-    })->throws(InvalidArgumentException::class, 'disetujui');
+    });
 
     it('cannot mark already sent quotation', function () {
-        $quotation = Quotation::factory()
-            ->has(QuotationItem::factory(), 'items')
-            ->approved()
-            ->create([
-                'sent_at' => now()->subDay(),
-                'sent_by' => $this->user->id,
-            ]);
+        $quotation = Quotation::factory()->approved()->create([
+            'sent_at' => now(),
+            'sent_by' => User::factory()->create()->id,
+        ]);
 
+        $this->expectException(BusinessRuleException::class);
         $this->quotationService->markAsSent($quotation);
-    })->throws(InvalidArgumentException::class, 'sudah ditandai');
+    });
 
     it('isSent helper returns correct value', function () {
         $unsent = Quotation::factory()->create(['sent_at' => null]);

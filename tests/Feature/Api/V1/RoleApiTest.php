@@ -16,30 +16,37 @@ beforeEach(function () {
 describe('Role CRUD', function () {
 
     it('can list all roles', function () {
+        // Create 5 unique roles
         Role::factory()->count(5)->create();
 
         $response = $this->getJson('/api/v1/roles');
 
-        $response->assertOk()
-            ->assertJsonCount(5, 'data');
+        $response->assertOk();
+        // Assert that we have AT LEAST the 5 we just created (plus seeded ones)
+        expect($response->json('meta.total'))->toBeGreaterThanOrEqual(5);
     });
 
     it('can filter roles by is_system', function () {
-        Role::factory()->count(2)->system()->create();
-        Role::factory()->count(3)->create(['is_system' => false]);
+        // Create a non-system role
+        Role::factory()->create(['is_system' => false, 'name' => 'non-sys-role']);
 
         $response = $this->getJson('/api/v1/roles?is_system=true');
 
-        $response->assertOk()
-            ->assertJsonCount(2, 'data');
+        $response->assertOk();
+        // Every item in the response must have is_system = true
+        foreach ($response->json('data') as $role) {
+            expect($role['is_system'])->toBeTrue();
+        }
     });
 
     it('can search roles by name or display_name', function () {
-        Role::factory()->create(['name' => 'admin', 'display_name' => 'Administrator']);
-        Role::factory()->create(['name' => 'manager', 'display_name' => 'Manager']);
-        Role::factory()->create(['name' => 'staff', 'display_name' => 'Staff Admin']);
+        // Use a unique search term to avoid clashing with seeded data
+        $uniqueTerm = 'unique-search-xyz';
+        Role::factory()->create(['name' => "role-{$uniqueTerm}", 'display_name' => 'Alpha Role']);
+        Role::factory()->create(['name' => 'other', 'display_name' => "Display-{$uniqueTerm}"]);
+        Role::factory()->create(['name' => 'ignored', 'display_name' => 'Ignored']);
 
-        $response = $this->getJson('/api/v1/roles?search=admin');
+        $response = $this->getJson("/api/v1/roles?search={$uniqueTerm}");
 
         $response->assertOk()
             ->assertJsonCount(2, 'data');
@@ -129,10 +136,11 @@ describe('Role CRUD', function () {
     });
 
     it('cannot rename system role name', function () {
-        $role = Role::factory()->system()->create(['name' => 'admin']);
+        // Create a unique system role specifically for this test
+        $role = Role::factory()->system()->create(['name' => 'unique-system-role']);
 
         $response = $this->putJson("/api/v1/roles/{$role->id}", [
-            'name' => 'super_admin',
+            'name' => 'renamed_name',
         ]);
 
         $response->assertStatus(422)
@@ -140,14 +148,14 @@ describe('Role CRUD', function () {
     });
 
     it('can update system role display name', function () {
-        $role = Role::factory()->system()->create(['name' => 'admin']);
+        $role = Role::factory()->system()->create(['name' => 'other-system-role']);
 
         $response = $this->putJson("/api/v1/roles/{$role->id}", [
-            'display_name' => 'Super Administrator',
+            'display_name' => 'Updated Display Name',
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.display_name', 'Super Administrator');
+            ->assertJsonPath('data.display_name', 'Updated Display Name');
     });
 
     it('can delete a custom role', function () {

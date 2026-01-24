@@ -2,13 +2,14 @@
 
 namespace App\Models\Core;
 
+use App\Traits\Filterable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Permission extends Model
 {
-    use HasFactory;
+    use Filterable, HasFactory;
 
     // Permission groups
     public const GROUP_ACCOUNTS = 'accounts';

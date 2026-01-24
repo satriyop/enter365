@@ -23,6 +23,12 @@ class PublicSolarProposalController extends Controller
      */
     public function show(string $token): JsonResponse
     {
+        if (! preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $token)) {
+            return response()->json([
+                'message' => 'Proposal tidak ditemukan.',
+            ], 404);
+        }
+
         $proposal = SolarProposal::findByPublicToken($token);
 
         if (! $proposal) {
@@ -52,6 +58,12 @@ class PublicSolarProposalController extends Controller
      */
     public function accept(Request $request, string $token): JsonResponse
     {
+        if (! preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $token)) {
+            return response()->json([
+                'message' => 'Proposal tidak ditemukan.',
+            ], 404);
+        }
+
         $proposal = SolarProposal::findByPublicToken($token);
 
         if (! $proposal) {
@@ -98,6 +110,12 @@ class PublicSolarProposalController extends Controller
         $request->validate([
             'reason' => ['nullable', 'string', 'max:1000'],
         ]);
+
+        if (! preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $token)) {
+            return response()->json([
+                'message' => 'Proposal tidak ditemukan.',
+            ], 404);
+        }
 
         $proposal = SolarProposal::findByPublicToken($token);
 

@@ -196,6 +196,6 @@ describe('Journal Entry API', function () {
 
         $response = $this->postJson("/api/v1/journal-entries/{$entry->id}/reverse");
 
-        $response->assertUnprocessable();
+        $response->assertStatus(409);
     });
 });

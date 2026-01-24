@@ -3,13 +3,14 @@
 namespace App\Models\Core;
 
 use App\Models\User;
+use App\Traits\Filterable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Role extends Model
 {
-    use HasFactory;
+    use Filterable, HasFactory;
 
     public const ADMIN = 'admin';
 
@@ -105,11 +106,8 @@ class Role extends Model
      */
     public function givePermissions(array $permissions): void
     {
-        $permissionIds = Permission::whereIn('name', $permissions)
-            ->orWhereIn('id', $permissions)
-            ->pluck('id');
-
-        $this->permissions()->syncWithoutDetaching($permissionIds);
+        $resolvedIds = $this->resolvePermissionIds($permissions);
+        $this->permissions()->syncWithoutDetaching($resolvedIds);
     }
 
     /**
@@ -119,11 +117,8 @@ class Role extends Model
      */
     public function revokePermissions(array $permissions): void
     {
-        $permissionIds = Permission::whereIn('name', $permissions)
-            ->orWhereIn('id', $permissions)
-            ->pluck('id');
-
-        $this->permissions()->detach($permissionIds);
+        $resolvedIds = $this->resolvePermissionIds($permissions);
+        $this->permissions()->detach($resolvedIds);
     }
 
     /**
@@ -133,11 +128,30 @@ class Role extends Model
      */
     public function syncPermissions(array $permissions): void
     {
-        $permissionIds = Permission::whereIn('name', $permissions)
-            ->orWhereIn('id', $permissions)
-            ->pluck('id');
+        $resolvedIds = $this->resolvePermissionIds($permissions);
+        $this->permissions()->sync($resolvedIds);
+    }
 
-        $this->permissions()->sync($permissionIds);
+    /**
+     * Resolve permission names/IDs to IDs.
+     */
+    private function resolvePermissionIds(array $permissions): \Illuminate\Support\Collection
+    {
+        $names = [];
+        $ids = [];
+
+        foreach ($permissions as $p) {
+            if (is_numeric($p)) {
+                $ids[] = (int) $p;
+            } else {
+                $names[] = $p;
+            }
+        }
+
+        return Permission::query()
+            ->when(! empty($names), fn ($q) => $q->whereIn('name', $names))
+            ->when(! empty($ids), fn ($q) => $q->orWhereIn('id', $ids))
+            ->pluck('id');
     }
 
     /**

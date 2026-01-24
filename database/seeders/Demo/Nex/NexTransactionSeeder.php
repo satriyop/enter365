@@ -192,7 +192,7 @@ class NexTransactionSeeder extends Seeder
                 'discount_amount' => 0,
                 'tax_rate' => 11.0,
                 'tax_amount' => 0,
-                'total' => 0,
+                'total_amount' => 0,
                 'base_currency_total' => 0,
                 'notes' => 'Penawaran dengan 3 pilihan konfigurasi material. Silakan pilih sesuai dengan kebutuhan dan budget Anda.',
                 'terms_conditions' => Quotation::getDefaultTermsConditions(),

@@ -58,7 +58,7 @@ describe('Down Payment CRUD', function () {
     });
 
     it('can filter down payments by status', function () {
-        DownPayment::factory()->count(3)->create(['status' => DownPayment::STATUS_ACTIVE]);
+        DownPayment::factory()->count(3)->create(['status' => DocumentStatus::Active]);
         DownPayment::factory()->fullyApplied()->count(2)->create();
 
         $response = $this->getJson('/api/v1/down-payments?status=active');
@@ -79,7 +79,7 @@ describe('Down Payment CRUD', function () {
     });
 
     it('can filter available down payments only', function () {
-        DownPayment::factory()->count(3)->create(['status' => DownPayment::STATUS_ACTIVE]);
+        DownPayment::factory()->count(3)->create(['status' => DocumentStatus::Active]);
         DownPayment::factory()->fullyApplied()->count(2)->create();
 
         $response = $this->getJson('/api/v1/down-payments?available_only=true');
@@ -121,7 +121,7 @@ describe('Down Payment CRUD', function () {
             ->assertJsonPath('data.amount', 10000000)
             ->assertJsonPath('data.applied_amount', 0)
             ->assertJsonPath('data.remaining_amount', 10000000)
-            ->assertJsonPath('data.status', 'active');
+            ->assertJsonPath('data.status.value', 'active');
 
         expect($response->json('data.dp_number'))->toStartWith('DPR-');
     });
@@ -144,7 +144,7 @@ describe('Down Payment CRUD', function () {
         $response->assertCreated()
             ->assertJsonPath('data.type', 'payable')
             ->assertJsonPath('data.amount', 5000000)
-            ->assertJsonPath('data.status', 'active');
+            ->assertJsonPath('data.status.value', 'active');
 
         expect($response->json('data.dp_number'))->toStartWith('DPP-');
     });
@@ -189,7 +189,7 @@ describe('Down Payment CRUD', function () {
             'amount' => 15000000,
         ]);
 
-        $response->assertUnprocessable();
+        $response->assertStatus(422);
     });
 
     it('can delete a down payment without applications', function () {
@@ -207,7 +207,7 @@ describe('Down Payment CRUD', function () {
 
         $response = $this->deleteJson("/api/v1/down-payments/{$downPayment->id}");
 
-        $response->assertUnprocessable();
+        $response->assertStatus(422);
     });
 });
 
@@ -265,7 +265,7 @@ describe('Down Payment Apply to Invoice', function () {
             'amount' => 10000000,
         ]);
 
-        $response->assertUnprocessable();
+        $response->assertStatus(409);
     });
 
     it('cannot apply more than invoice outstanding', function () {
@@ -287,7 +287,7 @@ describe('Down Payment Apply to Invoice', function () {
             'amount' => 10000000, // Only 5M outstanding
         ]);
 
-        $response->assertUnprocessable();
+        $response->assertStatus(409);
     });
 
     it('cannot apply to invoice with different contact', function () {
@@ -307,7 +307,7 @@ describe('Down Payment Apply to Invoice', function () {
             'amount' => 1000000,
         ]);
 
-        $response->assertUnprocessable();
+        $response->assertStatus(409);
     });
 
     it('cannot apply payable down payment to invoice', function () {
@@ -326,7 +326,7 @@ describe('Down Payment Apply to Invoice', function () {
             'amount' => 1000000,
         ]);
 
-        $response->assertUnprocessable();
+        $response->assertStatus(409);
     });
 
     it('marks invoice as paid when fully covered', function () {
@@ -408,7 +408,7 @@ describe('Down Payment Apply to Bill', function () {
             'amount' => 1000000,
         ]);
 
-        $response->assertUnprocessable();
+        $response->assertStatus(409);
     });
 });
 
@@ -446,7 +446,7 @@ describe('Down Payment Unapply', function () {
         $invoice->refresh();
 
         expect($downPayment->applied_amount)->toBe(0);
-        expect($downPayment->status)->toBe(DownPayment::STATUS_ACTIVE);
+        expect($downPayment->status)->toBe(DocumentStatus::Active);
         expect($invoice->paid_amount)->toBe(0);
     });
 
@@ -484,7 +484,7 @@ describe('Down Payment Refund', function () {
             ->assertJsonPath('refund_payment.amount', 7000000);
 
         $downPayment->refresh();
-        expect($downPayment->status)->toBe(DownPayment::STATUS_REFUNDED);
+        expect($downPayment->status)->toBe(DocumentStatus::Refunded);
         expect($downPayment->refunded_at)->not->toBeNull();
     });
 
@@ -520,7 +520,7 @@ describe('Down Payment Refund', function () {
             'amount' => 5000000, // Only 2M remaining
         ]);
 
-        $response->assertUnprocessable();
+        $response->assertStatus(409);
     });
 
     it('cannot refund fully applied down payment', function () {
@@ -528,7 +528,7 @@ describe('Down Payment Refund', function () {
 
         $response = $this->postJson("/api/v1/down-payments/{$downPayment->id}/refund");
 
-        $response->assertUnprocessable();
+        $response->assertStatus(422);
     });
 });
 
@@ -542,7 +542,7 @@ describe('Down Payment Cancel', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.status', DocumentStatus::Cancelled->value);
+            ->assertJsonPath('data.status.value', DocumentStatus::Cancelled->value);
 
         $downPayment->refresh();
         expect($downPayment->notes)->toContain('Cancelled: Customer cancelled project');
@@ -554,7 +554,7 @@ describe('Down Payment Cancel', function () {
 
         $response = $this->postJson("/api/v1/down-payments/{$downPayment->id}/cancel");
 
-        $response->assertUnprocessable();
+        $response->assertStatus(422);
     });
 
     it('cannot cancel non-active down payment', function () {
@@ -562,7 +562,7 @@ describe('Down Payment Cancel', function () {
 
         $response = $this->postJson("/api/v1/down-payments/{$downPayment->id}/cancel");
 
-        $response->assertUnprocessable();
+        $response->assertStatus(422);
     });
 });
 
@@ -691,6 +691,6 @@ describe('Down Payment Status Updates', function () {
         $response->assertCreated();
 
         $downPayment->refresh();
-        expect($downPayment->status)->toBe(DownPayment::STATUS_FULLY_APPLIED);
+        expect($downPayment->status)->toBe(DocumentStatus::FullyApplied);
     });
 });

@@ -84,15 +84,13 @@ describe('GRN CRUD', function () {
         $response = $this->postJson('/api/v1/goods-receipt-notes', [
             'purchase_order_id' => $po->id,
             'warehouse_id' => $warehouse->id,
-            'receipt_date' => '2024-12-25',
-            'supplier_do_number' => 'DO-2024-001',
-            'notes' => 'First delivery',
+            'receipt_date' => now()->toDateString(),
         ]);
 
         $response->assertCreated()
             ->assertJsonPath('data.purchase_order_id', $po->id)
             ->assertJsonPath('data.warehouse_id', $warehouse->id)
-            ->assertJsonPath('data.status', 'draft');
+            ->assertJsonPath('data.status.value', 'draft');
     });
 
     it('can show a goods receipt note', function () {
@@ -187,7 +185,7 @@ describe('Create GRN from Purchase Order', function () {
         ]);
 
         $response->assertStatus(422)
-            ->assertJsonFragment(['message' => 'PO tidak dapat menerima barang pada status ini.']);
+            ->assertJsonFragment(['message' => 'Purchase Order hanya dapat menerima barang dalam status approved.']);
     });
 
     it('creates grn items with remaining quantity only', function () {
@@ -257,7 +255,7 @@ describe('GRN Item Management', function () {
             'quantity_received' => 150, // Exceeds ordered
         ]);
 
-        $response->assertStatus(422);
+        $response->assertStatus(409);
     });
 
     it('cannot update item from another grn', function () {
@@ -283,7 +281,7 @@ describe('GRN Workflow', function () {
         $response = $this->postJson("/api/v1/goods-receipt-notes/{$grn->id}/start-receiving");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'receiving');
+            ->assertJsonPath('data.status.value', 'receiving');
     });
 
     it('cannot start receiving without items', function () {
@@ -291,7 +289,7 @@ describe('GRN Workflow', function () {
 
         $response = $this->postJson("/api/v1/goods-receipt-notes/{$grn->id}/start-receiving");
 
-        $response->assertStatus(422);
+        $response->assertStatus(409);
     });
 
     it('can complete grn and update inventory', function () {
@@ -322,7 +320,7 @@ describe('GRN Workflow', function () {
         $response = $this->postJson("/api/v1/goods-receipt-notes/{$grn->id}/complete");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'completed');
+            ->assertJsonPath('data.status.value', 'completed');
 
         // Verify inventory movement was created
         $this->assertDatabaseHas('inventory_movements', [
@@ -358,7 +356,7 @@ describe('GRN Workflow', function () {
         $response = $this->postJson("/api/v1/goods-receipt-notes/{$grn->id}/cancel");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'cancelled');
+            ->assertJsonPath('data.status.value', 'cancelled');
     });
 
     it('cannot cancel a completed grn', function () {

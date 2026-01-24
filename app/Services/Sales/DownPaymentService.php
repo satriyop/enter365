@@ -8,6 +8,7 @@ use App\Contracts\Accounting\JournalServiceInterface;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Sales\DownPaymentServiceInterface;
+use App\Enums\DocumentStatus;
 use App\Models\Accounting\Account;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\DownPayment;
@@ -58,7 +59,7 @@ class DownPaymentService extends BaseService implements DownPaymentServiceInterf
             throw \App\Exceptions\Domain\DocumentLockedException::cannotEdit($downPayment, 'Tidak dapat mengubah down payment dengan aplikasi yang sudah ada.');
         }
 
-        if ($downPayment->status !== DownPayment::STATUS_ACTIVE) {
+        if ($downPayment->status !== DocumentStatus::Active) {
             throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
                 'Down Payment',
                 'diubah',
@@ -348,7 +349,7 @@ class DownPaymentService extends BaseService implements DownPaymentServiceInterf
             // Update down payment
             $downPayment->refund_payment_id = $payment->id;
             $downPayment->refunded_at = now();
-            $downPayment->status = DownPayment::STATUS_REFUNDED;
+            $downPayment->status = DocumentStatus::Refunded;
             $downPayment->save();
 
             // Create refund journal entry
@@ -367,7 +368,7 @@ class DownPaymentService extends BaseService implements DownPaymentServiceInterf
             throw \App\Exceptions\Domain\DocumentLockedException::cannotEdit($downPayment, 'Tidak dapat membatalkan down payment dengan aplikasi yang sudah ada.');
         }
 
-        if ($downPayment->status !== DownPayment::STATUS_ACTIVE) {
+        if ($downPayment->status !== DocumentStatus::Active) {
             throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
                 'Down Payment',
                 'dibatalkan',
@@ -382,7 +383,7 @@ class DownPaymentService extends BaseService implements DownPaymentServiceInterf
                 $this->journalService->reverseEntry($downPayment->journalEntry);
             }
 
-            $downPayment->status = DownPayment::STATUS_CANCELLED;
+            $downPayment->status = DocumentStatus::Cancelled;
             if ($reason) {
                 $downPayment->notes = ($downPayment->notes ? $downPayment->notes."\n" : '').'Cancelled: '.$reason;
             }
@@ -402,7 +403,7 @@ class DownPaymentService extends BaseService implements DownPaymentServiceInterf
         return DownPayment::query()
             ->where('contact_id', $contactId)
             ->where('type', $type)
-            ->where('status', DownPayment::STATUS_ACTIVE)
+            ->where('status', DocumentStatus::Active->value)
             ->whereRaw('applied_amount < amount')
             ->orderBy('dp_date')
             ->get();

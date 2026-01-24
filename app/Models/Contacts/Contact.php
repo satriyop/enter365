@@ -8,6 +8,7 @@ use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
 use App\Models\Shared\Payment;
 use App\Models\Shared\SubcontractorInvoice;
+use App\Traits\Filterable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -16,7 +17,7 @@ use Illuminate\Support\Facades\DB;
 
 class Contact extends Model
 {
-    use HasFactory, SoftDeletes;
+    use Filterable, HasFactory, SoftDeletes;
 
     public const TYPE_CUSTOMER = 'customer';
 

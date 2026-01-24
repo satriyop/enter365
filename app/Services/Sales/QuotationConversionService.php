@@ -38,6 +38,24 @@ class QuotationConversionService extends BaseService implements QuotationConvers
         if (! $stateMachine->canConvert()) {
             $reason = $stateMachine->getConversionBlockReason()
                 ?? 'Penawaran tidak dapat dikonversi.';
+
+            // Specific error for multi-option quotations without selection
+            if ($quotation->isMultiOption() && ! $quotation->hasSelectedVariant()) {
+                throw new \App\Exceptions\Domain\BusinessRuleException(
+                    $reason,
+                    [
+                        'error_code' => 'VARIANT_NOT_SELECTED', // Keep for backward compatibility
+                        'available_variants' => $quotation->variantOptions->map(fn ($v) => [
+                            'id' => $v->id,
+                            'display_name' => $v->display_name,
+                            'selling_price' => $v->selling_price,
+                            'is_recommended' => $v->is_recommended,
+                        ]),
+                        'suggestion' => 'Pilih salah satu varian sebelum melanjutkan ke faktur.',
+                    ]
+                );
+            }
+
             throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
                 'mengkonversi quotation ke invoice',
                 $reason

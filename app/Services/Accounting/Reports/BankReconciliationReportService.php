@@ -184,7 +184,7 @@ class BankReconciliationReportService
 
         // Find payments that don't have matching bank transactions
         $outstandingPayments = Payment::query()
-            ->where('account_id', $account->id)
+            ->where('cash_account_id', $account->id)
             ->whereDate('payment_date', '<=', $asOfDate)
             ->where('is_voided', false)
             ->whereDoesntHave('bankTransaction')
@@ -200,7 +200,6 @@ class BankReconciliationReportService
                     ? $payment->amount
                     : -$payment->amount,
             ]);
-
         $items = $items->merge($outstandingPayments);
 
         // Negative total because these are in books but NOT in bank yet
@@ -238,7 +237,7 @@ class BankReconciliationReportService
     protected function getOutstandingDeposits(Account $account, Carbon $asOfDate): Collection
     {
         return Payment::query()
-            ->where('account_id', $account->id)
+            ->where('cash_account_id', $account->id)
             ->where('type', Payment::TYPE_RECEIVE)
             ->whereDate('payment_date', '<=', $asOfDate)
             ->where('is_voided', false)
@@ -260,7 +259,7 @@ class BankReconciliationReportService
     protected function getOutstandingChecks(Account $account, Carbon $asOfDate): Collection
     {
         return Payment::query()
-            ->where('account_id', $account->id)
+            ->where('cash_account_id', $account->id)
             ->where('type', Payment::TYPE_SEND)
             ->whereDate('payment_date', '<=', $asOfDate)
             ->where('is_voided', false)

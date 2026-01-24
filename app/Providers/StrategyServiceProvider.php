@@ -28,30 +28,9 @@ class StrategyServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->registerNumberGenerationStrategies();
         $this->registerTaxStrategies();
         $this->registerPricingStrategies();
         $this->registerApprovalStrategies();
-    }
-
-    /**
-     * Register document number generation strategies.
-     */
-    private function registerNumberGenerationStrategies(): void
-    {
-        $this->app->singleton(NumberGenerationManager::class, function ($app) {
-            $manager = new NumberGenerationManager;
-
-            // Register available strategies
-            $manager->register(new SequentialNumberStrategy);
-            $manager->register(new ProjectBasedNumberStrategy);
-
-            // Set default from config
-            $default = config('documents.default_numbering', 'sequential');
-            $manager->setDefault($default);
-
-            return $manager;
-        });
     }
 
     /**

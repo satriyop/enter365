@@ -346,7 +346,7 @@ describe('Delivery Order Progress', function () {
             ],
         ]);
 
-        $response->assertUnprocessable();
+        $response->assertStatus(409);
     });
 
     it('cannot update progress for non-shipped order', function () {

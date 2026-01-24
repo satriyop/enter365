@@ -166,11 +166,23 @@ trait HasRolesAndPermissions
      */
     public function syncRoles(array $roles): void
     {
-        $roleIds = Role::whereIn('name', $roles)
-            ->orWhereIn('id', $roles)
+        $roleNames = [];
+        $roleIds = [];
+
+        foreach ($roles as $role) {
+            if (is_numeric($role)) {
+                $roleIds[] = (int) $role;
+            } else {
+                $roleNames[] = $role;
+            }
+        }
+
+        $resolvedIds = Role::query()
+            ->when(! empty($roleNames), fn ($q) => $q->whereIn('name', $roleNames))
+            ->when(! empty($roleIds), fn ($q) => $q->orWhereIn('id', $roleIds))
             ->pluck('id');
 
-        $this->roles()->sync($roleIds);
+        $this->roles()->sync($resolvedIds);
     }
 
     /**

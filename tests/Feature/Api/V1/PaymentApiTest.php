@@ -1,9 +1,9 @@
 <?php
 
+use App\Domain\Purchasing\Bills\Events\BillFullyPaid;
 use App\Domain\Sales\Events\PaymentReceived;
 use App\Domain\Sales\Events\PaymentVoided;
 use App\Domain\Sales\Invoices\Events\InvoiceFullyPaid;
-use App\Domain\Purchasing\Bills\Events\BillFullyPaid;
 use App\Enums\DocumentStatus;
 use App\Models\Accounting\Account;
 use App\Models\Contacts\Contact;
@@ -175,23 +175,25 @@ describe('Payment API', function () {
 
     it('prevents payment exceeding invoice outstanding amount', function () {
         $customer = Contact::factory()->customer()->create();
-        $invoice = Invoice::factory()->forContact($customer)->sent()->create([
-            'total_amount' => 100000,
+        $bankAccount = Account::where('code', '1-1001')->first();
+        $invoice = Invoice::factory()->create([
+            'contact_id' => $customer->id,
+            'total_amount' => 1000000,
             'paid_amount' => 0,
+            'status' => DocumentStatus::Sent,
         ]);
 
-        $bankAccount = Account::where('code', '1-1010')->first();
-
         $response = $this->postJson('/api/v1/payments', [
-            'type' => Payment::TYPE_RECEIVE,
+            'type' => 'receive',
             'contact_id' => $customer->id,
-            'payment_date' => '2024-12-25',
-            'amount' => 200000, // More than outstanding
+            'payment_date' => now()->toDateString(),
+            'amount' => 1500000, // Exceeds outstanding
+            'payment_method' => 'transfer',
             'cash_account_id' => $bankAccount->id,
             'invoice_id' => $invoice->id,
         ]);
 
-        $response->assertUnprocessable();
+        $response->assertStatus(409);
     });
 
     it('prevents receive payment allocated to bill', function () {
@@ -252,7 +254,7 @@ describe('Payment API', function () {
 
         $response = $this->postJson("/api/v1/payments/{$payment->id}/void");
 
-        $response->assertUnprocessable();
+        $response->assertStatus(409);
     });
 
     it('dispatches PaymentReceived event when payment is posted to invoice', function () {

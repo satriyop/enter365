@@ -10,8 +10,13 @@ namespace App\Contracts\Shared;
  * Extends the basic DocumentNumberGeneratorInterface with
  * context awareness and strategy identification.
  */
-interface NumberGenerationStrategy extends DocumentNumberGeneratorInterface
+interface NumberGenerationStrategy
 {
+    /**
+     * Generate a unique document number.
+     */
+    public function generate(string $prefix, string $table, string $column): string;
+
     /**
      * Generate document number with extended context.
      *
