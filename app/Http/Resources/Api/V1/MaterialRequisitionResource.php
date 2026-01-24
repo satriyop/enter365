@@ -5,12 +5,34 @@ namespace App\Http\Resources\Api\V1;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin \App\Models\Manufacturing\MaterialRequisition
+ */
 class MaterialRequisitionResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
      *
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   requisition_number: string,
+     *   status: string,
+     *   requested_date: string|null,
+     *   required_date: string|null,
+     *   total_items: int,
+     *   total_quantity: float,
+     *   notes: string|null,
+     *   work_order_id: int,
+     *   work_order?: array{id: int, wo_number: string, name: string}|null,
+     *   warehouse_id: int,
+     *   warehouse?: array{id: int, name: string}|null,
+     *   items?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
+     *   approved_at: string|null,
+     *   issued_at: string|null,
+     *   created_at: string|null,
+     *   updated_at: string|null
+     * }
      */
     public function toArray(Request $request): array
     {

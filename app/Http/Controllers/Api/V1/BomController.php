@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\DocumentStatus;
+use App\Filters\BomFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreBomRequest;
 use App\Http\Requests\Api\V1\UpdateBomRequest;
@@ -24,30 +25,14 @@ class BomController extends Controller
     /**
      * Display a listing of BOMs.
      */
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(BomFilter $filter): AnonymousResourceCollection
     {
-        $query = Bom::query()->with(['product', 'items']);
-
-        if ($request->has('status')) {
-            $query->where('status', $request->input('status'));
-        }
-
-        if ($request->has('product_id')) {
-            $query->where('product_id', $request->input('product_id'));
-        }
-
-        if ($request->has('search')) {
-            $search = strtolower($request->input('search'));
-            $query->where(function ($q) use ($search) {
-                $q->whereRaw('LOWER(bom_number) LIKE ?', ["%{$search}%"])
-                    ->orWhereRaw('LOWER(name) LIKE ?', ["%{$search}%"])
-                    ->orWhereHas('product', fn ($q) => $q->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]));
-            });
-        }
-
-        $boms = $query->orderByDesc('created_at')
+        $boms = Bom::query()
+            ->with(['product'])
+            ->filter($filter)
+            ->orderByDesc('created_at')
             ->orderByDesc('id')
-            ->paginate($request->input('per_page', 25));
+            ->paginate($filter->getRequest()->input('per_page', 25));
 
         return BomResource::collection($boms);
     }
@@ -67,11 +52,13 @@ class BomController extends Controller
     /**
      * Display the specified BOM.
      */
-    public function show(Bom $bom): BomResource
+    public function show(Bom $bom, BomFilter $filter): BomResource
     {
-        return new BomResource(
-            $bom->load(['product', 'items.product', 'creator', 'parentBom'])
-        );
+        $filter->apply($bom->newQuery());
+
+        $bom->loadMissing(['product', 'items.product', 'creator', 'parentBom']);
+
+        return new BomResource($bom);
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\DocumentStatus;
+use App\Filters\MaterialRequisitionFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreMaterialRequisitionRequest;
 use App\Http\Requests\Api\V1\UpdateMaterialRequisitionRequest;
@@ -23,41 +24,14 @@ class MaterialRequisitionController extends Controller
     /**
      * Display a listing of material requisitions.
      */
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(MaterialRequisitionFilter $filter): AnonymousResourceCollection
     {
-        $query = MaterialRequisition::query()->with(['workOrder', 'warehouse']);
-
-        if ($request->has('status')) {
-            $query->where('status', $request->input('status'));
-        }
-
-        if ($request->has('work_order_id')) {
-            $query->where('work_order_id', $request->input('work_order_id'));
-        }
-
-        if ($request->has('warehouse_id')) {
-            $query->where('warehouse_id', $request->input('warehouse_id'));
-        }
-
-        if ($request->has('start_date')) {
-            $query->where('requested_date', '>=', $request->input('start_date'));
-        }
-
-        if ($request->has('end_date')) {
-            $query->where('requested_date', '<=', $request->input('end_date'));
-        }
-
-        if ($request->has('search')) {
-            $search = strtolower($request->input('search'));
-            $query->where(function ($q) use ($search) {
-                $q->whereRaw('LOWER(requisition_number) LIKE ?', ["%{$search}%"])
-                    ->orWhereHas('workOrder', fn ($q) => $q->whereRaw('LOWER(wo_number) LIKE ?', ["%{$search}%"]));
-            });
-        }
-
-        $requisitions = $query->orderByDesc('created_at')
+        $requisitions = MaterialRequisition::query()
+            ->with(['workOrder', 'warehouse'])
+            ->filter($filter)
+            ->orderByDesc('created_at')
             ->orderByDesc('id')
-            ->paginate($request->input('per_page', 25));
+            ->paginate($filter->getRequest()->input('per_page', 25));
 
         return MaterialRequisitionResource::collection($requisitions);
     }
@@ -83,11 +57,13 @@ class MaterialRequisitionController extends Controller
     /**
      * Display the specified material requisition.
      */
-    public function show(MaterialRequisition $materialRequisition): MaterialRequisitionResource
+    public function show(MaterialRequisition $materialRequisition, MaterialRequisitionFilter $filter): MaterialRequisitionResource
     {
-        return new MaterialRequisitionResource(
-            $materialRequisition->load(['workOrder', 'warehouse', 'items.product'])
-        );
+        $filter->apply($materialRequisition->newQuery());
+
+        $materialRequisition->loadMissing(['workOrder', 'warehouse', 'items.product']);
+
+        return new MaterialRequisitionResource($materialRequisition);
     }
 
     /**

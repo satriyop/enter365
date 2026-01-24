@@ -10,6 +10,42 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class BomResource extends JsonResource
 {
+    /**
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   bom_number: string,
+     *   name: string,
+     *   description: string|null,
+     *   product_id: int,
+     *   product?: array{id: int, name: string, sku: string},
+     *   output_quantity: float,
+     *   output_unit: string,
+     *   total_material_cost: int,
+     *   total_labor_cost: int,
+     *   total_overhead_cost: int,
+     *   total_cost: int,
+     *   unit_cost: int,
+     *   status: string,
+     *   version: int,
+     *   parent_bom_id: int|null,
+     *   variant_group_id: int|null,
+     *   variant_name: string|null,
+     *   variant_label: string|null,
+     *   is_primary_variant: bool,
+     *   variant_sort_order: int,
+     *   notes: string|null,
+     *   items?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
+     *   items_count?: int,
+     *   cost_breakdown?: array<string, mixed>,
+     *   created_by: int|null,
+     *   creator?: array{id: int, name: string},
+     *   approved_by: int|null,
+     *   approved_at: string|null,
+     *   created_at: string,
+     *   updated_at: string
+     * }
+     */
     public function toArray(Request $request): array
     {
         return [

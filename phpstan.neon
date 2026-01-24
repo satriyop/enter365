@@ -16,7 +16,6 @@ parameters:
     # Ignore errors that are common in Laravel but not real issues
     ignoreErrors:
         # Common Laravel patterns
-        - '#Unsafe usage of new static#'
         - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Builder#'
 
         # Generic type warnings (too noisy, low value)

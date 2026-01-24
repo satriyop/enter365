@@ -14,7 +14,64 @@ class WorkOrderResource extends JsonResource
     /**
      * Transform the resource into an array.
      *
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   wo_number: string,
+     *   type: string,
+     *   name: string,
+     *   description: string|null,
+     *   status: array{value: string, label: string, color: string},
+     *   priority: string,
+     *   quantity_ordered: float,
+     *   quantity_completed: float,
+     *   quantity_scrapped: float,
+     *   completion_percentage: float,
+     *   planned_start_date: string|null,
+     *   planned_end_date: string|null,
+     *   actual_start_date: string|null,
+     *   actual_end_date: string|null,
+     *   estimated_material_cost: int,
+     *   estimated_labor_cost: int,
+     *   estimated_overhead_cost: int,
+     *   estimated_total_cost: int,
+     *   actual_material_cost: int,
+     *   actual_labor_cost: int,
+     *   actual_overhead_cost: int,
+     *   actual_total_cost: int,
+     *   cost_variance: int,
+     *   notes: string|null,
+     *   project_id: int|null,
+     *   project?: array{id: int, project_number: string, name: string}|null,
+     *   bom_id: int|null,
+     *   bom?: array{id: int, bom_number: string, name: string}|null,
+     *   product_id: int|null,
+     *   product?: array{id: int, sku: string, name: string}|null,
+     *   warehouse_id: int,
+     *   warehouse?: array{id: int, name: string}|null,
+     *   parent_work_order_id: int|null,
+     *   parent_work_order?: array{id: int, wo_number: string, name: string}|null,
+     *   items?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
+     *   sub_work_orders?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
+     *   consumptions?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
+     *   workflow?: array<string, mixed>,
+     *   status_history?: array<mixed>,
+     *   actions: array{
+     *     can_edit: bool,
+     *     can_confirm: bool,
+     *     can_start: bool,
+     *     can_complete: bool,
+     *     can_cancel: bool,
+     *     can_delete: bool
+     *   },
+     *   confirmed_at: string|null,
+     *   started_at: string|null,
+     *   completed_at: string|null,
+     *   cancelled_at: string|null,
+     *   cancellation_reason: string|null,
+     *   created_at: string|null,
+     *   updated_at: string|null
+     * }
      */
     public function toArray(Request $request): array
     {

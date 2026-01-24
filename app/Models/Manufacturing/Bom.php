@@ -5,6 +5,7 @@ namespace App\Models\Manufacturing;
 use App\Enums\DocumentStatus;
 use App\Models\Inventory\Product;
 use App\Models\User;
+use App\Traits\Filterable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Bom extends Model
 {
-    use HasFactory, SoftDeletes;
+    use Filterable, HasFactory, SoftDeletes;
 
     protected $fillable = [
         'bom_number',

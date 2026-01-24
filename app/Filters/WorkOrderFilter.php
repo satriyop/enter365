@@ -65,6 +65,24 @@ class WorkOrderFilter extends QueryFilter
     }
 
     /**
+     * {@inheritdoc}
+     */
+    protected function getAllowedIncludes(): array
+    {
+        return [
+            'project',
+            'bom',
+            'product',
+            'warehouse',
+            'parentWorkOrder',
+            'items',
+            'items.product',
+            'subWorkOrders',
+            'consumptions',
+        ];
+    }
+
+    /**
      * Filter by work order type.
      */
     public function type(string $value): void

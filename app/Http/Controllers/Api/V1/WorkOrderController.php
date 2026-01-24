@@ -28,7 +28,7 @@ class WorkOrderController extends Controller
     public function index(WorkOrderFilter $filter): AnonymousResourceCollection
     {
         $workOrders = WorkOrder::query()
-            ->with(['project', 'product', 'bom', 'warehouse'])
+            ->with(['project', 'product', 'warehouse']) // Default eager loads
             ->filter($filter)
             ->paginate($filter->getRequest()->input('per_page', 25));
 
@@ -50,20 +50,22 @@ class WorkOrderController extends Controller
     /**
      * Display the specified work order.
      */
-    public function show(WorkOrder $workOrder): WorkOrderResource
+    public function show(WorkOrder $workOrder, WorkOrderFilter $filter): WorkOrderResource
     {
-        return new WorkOrderResource(
-            $workOrder->load([
-                'project',
-                'product',
-                'bom',
-                'warehouse',
-                'parentWorkOrder',
-                'items.product',
-                'subWorkOrders',
-                'consumptions.product',
-            ])
-        );
+        $filter->apply($workOrder->newQuery());
+
+        $workOrder->loadMissing([
+            'project',
+            'product',
+            'bom',
+            'warehouse',
+            'parentWorkOrder',
+            'items.product',
+            'subWorkOrders',
+            'consumptions.product',
+        ]);
+
+        return new WorkOrderResource($workOrder);
     }
 
     /**
