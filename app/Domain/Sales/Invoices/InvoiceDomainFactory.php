@@ -77,8 +77,8 @@ class InvoiceDomainFactory
         $invoice->total_amount = $totals->totalAmount;
 
         // Calculate base currency total if multi-currency
-        if ($invoice->currency !== 'IDR' && $invoice->exchange_rate > 0) {
-            $invoice->base_currency_total = (int) round($invoice->total_amount * $invoice->exchange_rate);
+        if ($invoice->currency !== 'IDR' && (float) $invoice->exchange_rate > 0) {
+            $invoice->base_currency_total = (int) round($invoice->total_amount * (float) $invoice->exchange_rate);
         } else {
             $invoice->base_currency_total = $invoice->total_amount;
         }

@@ -23,13 +23,16 @@ class StockOpnameStateMachine
 {
     private DocumentStatus $currentStatus;
 
+    /** @var array<string, mixed> */
     private array $context = [];
 
     public function __construct(
         private StockOpname $stockOpname,
         private ?EventDispatcherInterface $eventDispatcher = null
     ) {
-        $this->currentStatus = $stockOpname->status;
+        /** @var DocumentStatus $status */
+        $status = $stockOpname->status;
+        $this->currentStatus = $status;
         $this->eventDispatcher = $eventDispatcher ?? app(EventDispatcherInterface::class);
     }
 
@@ -107,7 +110,7 @@ class StockOpnameStateMachine
         $statuses = $this->getTransitions()[$this->currentStatus->value] ?? [];
 
         return array_values(array_filter($statuses, function ($status) {
-            return $this->canTransitionTo(DocumentStatus::from($status));
+            return $this->canTransitionTo(DocumentStatus::from((string) $status));
         }));
     }
 
@@ -143,15 +146,17 @@ class StockOpnameStateMachine
         $this->currentStatus = $targetEnum;
 
         // Dispatch event - explicitly pass the value strings for stability
-        $this->eventDispatcher->dispatch(
-            new StockOpnameStatusChanged(
-                stockOpnameId: $this->stockOpname->id,
-                opnameNumber: $this->stockOpname->opname_number,
-                fromStatus: $from->value,
-                toStatus: $targetEnum->value,
-                userId: $this->context['user_id'] ?? null
-            )
-        );
+        if ($this->eventDispatcher) {
+            $this->eventDispatcher->dispatch(
+                new StockOpnameStatusChanged(
+                    stockOpnameId: (int) $this->stockOpname->id,
+                    opnameNumber: (string) $this->stockOpname->opname_number,
+                    fromStatus: $from->value,
+                    toStatus: $targetEnum->value,
+                    userId: isset($this->context['user_id']) ? (int) $this->context['user_id'] : null
+                )
+            );
+        }
     }
 
     // Convenience methods for common transitions
@@ -324,14 +329,5 @@ class StockOpnameStateMachine
             ]),
             default => null,
         };
-    }
-
-    private function getStatusLabel(DocumentStatus|string $status): string
-    {
-        if ($status instanceof DocumentStatus) {
-            return $status->label();
-        }
-
-        return $status;
     }
 }

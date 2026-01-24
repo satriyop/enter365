@@ -36,7 +36,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string|null $roof_type
  * @property string|null $roof_orientation
  * @property string|null $roof_tilt_degrees
+ * @property string|null $roof_tilt_angle
  * @property string|null $shading_percentage
+ * @property string|null $shading_factor
  * @property string|null $monthly_consumption_kwh
  * @property string|null $pln_tariff_category
  * @property int|null $electricity_rate

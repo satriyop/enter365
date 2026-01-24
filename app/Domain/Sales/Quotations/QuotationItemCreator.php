@@ -20,10 +20,10 @@ class QuotationItemCreator
     public function createItems(Quotation $quotation, array $items): void
     {
         foreach ($items as $index => $itemData) {
-            $quantity = $itemData['quantity'] ?? 1;
-            $unitPrice = $itemData['unit_price'] ?? 0;
-            $discountPercent = $itemData['discount_percent'] ?? 0;
-            $taxRate = $itemData['tax_rate'] ?? $quotation->tax_rate;
+            $quantity = (float) ($itemData['quantity'] ?? 1);
+            $unitPrice = (int) ($itemData['unit_price'] ?? 0);
+            $discountPercent = (float) ($itemData['discount_percent'] ?? 0);
+            $taxRate = (float) ($itemData['tax_rate'] ?? $quotation->tax_rate);
 
             $grossAmount = (int) round($quantity * $unitPrice);
             $discountAmount = $discountPercent > 0
@@ -109,7 +109,8 @@ class QuotationItemCreator
      */
     public function createFromBomSingle(Quotation $quotation, Bom $bom, int $sellingPrice): void
     {
-        $description = $bom->product?->name ?? $bom->name;
+        $product = $bom->product;
+        $description = $product ? $product->name : $bom->name;
         if ($bom->variant_name) {
             $description .= ' ('.$bom->variant_name.')';
         }

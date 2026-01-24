@@ -77,10 +77,13 @@ class SolarProposalProjectionsSheet implements FromArray, ShouldAutoSize, WithHe
         $lastRow = count($this->proposal->financial_analysis['yearly_projections'] ?? []) + 3;
 
         return [
-            1 => ['font' => ['bold' => true], 'fill' => [
-                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                'color' => ['rgb' => 'F97316'],
-            ], 'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']]],
+            1 => [
+                'fill' => [
+                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'color' => ['rgb' => 'F97316'],
+                ],
+                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']]
+            ],
             $lastRow => ['font' => ['bold' => true]],
         ];
     }

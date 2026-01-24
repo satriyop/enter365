@@ -102,6 +102,35 @@ class Account extends Model
     }
 
     /**
+     * Get the detailed balance of this account.
+     * 
+     * @return array{balance: int, total_debit: int, total_credit: int}
+     */
+    public function getBalanceDetails(?string $asOfDate = null): array
+    {
+        $query = $this->journalEntryLines()
+            ->whereHas('journalEntry', function ($q) use ($asOfDate) {
+                $q->where('is_posted', true);
+                if ($asOfDate) {
+                    $q->where('entry_date', '<=', $asOfDate);
+                }
+            });
+
+        $totalDebit = (int) (clone $query)->sum('debit');
+        $totalCredit = (int) (clone $query)->sum('credit');
+
+        $netMovement = $this->isDebitNormal()
+            ? $totalDebit - $totalCredit
+            : $totalCredit - $totalDebit;
+
+        return [
+            'balance' => (int) $this->opening_balance + $netMovement,
+            'total_debit' => $totalDebit,
+            'total_credit' => $totalCredit,
+        ];
+    }
+
+    /**
      * Get the current balance of this account.
      */
     public function getBalance(?string $asOfDate = null): int

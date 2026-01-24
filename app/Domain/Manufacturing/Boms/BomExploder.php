@@ -198,9 +198,10 @@ class BomExploder
                 $key = $productId;
 
                 if (! isset($result[$key])) {
+                    $product = $item->product;
                     $result[$key] = [
                         'product_id' => $productId,
-                        'description' => $item->description ?: $item->product?->name ?? 'Unknown',
+                        'description' => $item->description ?: ($product ? $product->name : 'Unknown'),
                         'quantity' => 0.0,
                         'unit' => $item->unit ?? 'pcs',
                         'unit_cost' => $item->unit_cost ?? 0,
@@ -260,9 +261,10 @@ class BomExploder
                 $children = $this->explodeRecursiveHierarchical($subBom, $effectiveQty, $level + 1);
             }
 
+            $product = $item->product;
             $items[] = [
                 'product_id' => $item->product_id,
-                'description' => $item->description ?: $item->product?->name ?? 'Unknown',
+                'description' => $item->description ?: ($product ? $product->name : 'Unknown'),
                 'quantity' => $effectiveQty,
                 'unit' => $item->unit ?? 'pcs',
                 'unit_cost' => $item->unit_cost ?? 0,

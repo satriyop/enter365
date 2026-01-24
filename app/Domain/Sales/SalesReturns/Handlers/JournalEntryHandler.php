@@ -80,7 +80,7 @@ class JournalEntryHandler implements ApprovalHandlerInterface
         ];
 
         $entry = $this->journalService->createEntry([
-            'entry_date' => $salesReturn->return_date->toDateString(),
+            'entry_date' => $salesReturn->return_date instanceof \Carbon\Carbon ? $salesReturn->return_date->toDateString() : (string) $salesReturn->return_date,
             'description' => 'Retur penjualan: '.$salesReturn->return_number,
             'reference' => $salesReturn->return_number,
             'source_type' => JournalEntry::SOURCE_MANUAL,
