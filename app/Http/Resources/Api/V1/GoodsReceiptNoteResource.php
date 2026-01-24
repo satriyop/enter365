@@ -72,6 +72,8 @@ class GoodsReceiptNoteResource extends JsonResource
                 'value' => $this->status->value,
                 'label' => $this->status->label(),
                 'color' => $this->status->color(),
+                'is_terminal' => $this->status->isTerminal(),
+                'is_editable' => $this->status->isEditable(),
             ],
 
             // Supplier references

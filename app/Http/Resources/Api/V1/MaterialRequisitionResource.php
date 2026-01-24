@@ -39,7 +39,13 @@ class MaterialRequisitionResource extends JsonResource
         return [
             'id' => $this->id,
             'requisition_number' => $this->requisition_number,
-            'status' => $this->status,
+            'status' => [
+                'value' => $this->status->value,
+                'label' => $this->status->label(),
+                'color' => $this->status->color(),
+                'is_terminal' => $this->status->isTerminal(),
+                'is_editable' => $this->status->isEditable(),
+            ],
             'requested_date' => $this->requested_date?->toDateString(),
             'required_date' => $this->required_date?->toDateString(),
             'total_items' => $this->total_items,

@@ -116,7 +116,13 @@ class QuotationResource extends JsonResource
             'selected_variant_id' => $this->selected_variant_id,
             'selected_variant' => new BomResource($this->whenLoaded('selectedVariant')),
             'has_selected_variant' => $this->hasSelectedVariant(),
-            'status' => $this->status,
+            'status' => [
+                'value' => $this->status->value,
+                'label' => $this->status->label(),
+                'color' => $this->status->color(),
+                'is_terminal' => $this->status->isTerminal(),
+                'is_editable' => $this->status->isEditable(),
+            ],
             'status_label' => $this->getStatusLabel(),
 
             'currency' => $this->currency,

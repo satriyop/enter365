@@ -83,6 +83,8 @@ class PurchaseReturnResource extends JsonResource
                 'value' => $this->status->value,
                 'label' => $this->status->label(),
                 'color' => $this->status->color(),
+                'is_terminal' => $this->status->isTerminal(),
+                'is_editable' => $this->status->isEditable(),
             ],
             'items' => PurchaseReturnItemResource::collection($this->whenLoaded('items')),
             'items_count' => $this->whenCounted('items'),
