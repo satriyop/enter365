@@ -96,6 +96,36 @@ abstract class QueryFilter
     }
 
     /**
+     * Explicitly load relationships (e.g., ?include=items,contact)
+     *
+     * @param string $value Comma-separated list of relationships
+     */
+    public function include(string $value): void
+    {
+        $includes = explode(',', $value);
+        $allowed = $this->getAllowedIncludes();
+
+        $validIncludes = array_filter($includes, function ($include) use ($allowed) {
+            return in_array(trim($include), $allowed, true);
+        });
+
+        if (! empty($validIncludes)) {
+            $this->builder->with(array_map('trim', $validIncludes));
+        }
+    }
+
+    /**
+     * Get allowed relationships for explicit loading.
+     * Override in child classes.
+     *
+     * @return array<string>
+     */
+    protected function getAllowedIncludes(): array
+    {
+        return [];
+    }
+
+    /**
      * Check if a filter method should be applied.
      */
     protected function shouldApplyFilter(string $method, mixed $value): bool
