@@ -12,10 +12,10 @@ class QuotationDefaults
      * Get default values for a new quotation.
      *
      * @param  array<string, mixed>  $data  Input data that may override defaults
-     * @param  int  $userId  The user creating the quotation
+     * @param  int|null  $userId  The user creating the quotation
      * @return array<string, mixed>
      */
-    public function getForCreate(array $data, int $userId): array
+    public function getForCreate(array $data, ?int $userId): array
     {
         $taxRate = (float) ($data['tax_rate'] ?? config('accounting.tax.default_rate', 11.00));
         $quotationDate = $data['quotation_date'] ?? now();
@@ -87,10 +87,10 @@ class QuotationDefaults
      *
      * @param  array<string, mixed>  $data  Input data from request
      * @param  \App\Models\Manufacturing\Bom  $bom  The BOM being used
-     * @param  int  $userId  The user creating the quotation
+     * @param  int|null  $userId  The user creating the quotation
      * @return array<string, mixed>
      */
-    public function forBom(array $data, $bom, int $userId): array
+    public function forBom(array $data, $bom, ?int $userId): array
     {
         $taxRate = (float) ($data['tax_rate'] ?? config('accounting.tax.default_rate', 11.00));
         $quotationDate = $data['quotation_date'] ?? now();

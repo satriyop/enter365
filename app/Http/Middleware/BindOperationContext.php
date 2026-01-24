@@ -21,20 +21,20 @@ class BindOperationContext
 {
     public function handle(Request $request, Closure $next): Response
     {
-        // Create context from current request
-        $context = new OperationContext(
-            userId: auth()->id(),
-            tenantId: $this->resolveTenantId($request),
-            ipAddress: $request->ip(),
-            timestamp: now(),
-            metadata: [
-                'source' => 'http',
-                'request_id' => $request->header('X-Request-ID'),
-            ],
-        );
-
-        // Bind as scoped singleton - same instance for entire request lifecycle
-        app()->scoped(OperationContext::class, fn () => $context);
+        // Bind as scoped singleton - resolved only when needed by services
+        // This allows auth()->id() to be correctly resolved AFTER Sanctum/auth middleware runs
+        app()->scoped(OperationContext::class, function () use ($request) {
+            return new OperationContext(
+                userId: auth()->id(),
+                tenantId: $this->resolveTenantId($request),
+                ipAddress: $request->ip(),
+                timestamp: now(),
+                metadata: [
+                    'source' => 'http',
+                    'request_id' => $request->header('X-Request-ID'),
+                ],
+            );
+        });
 
         return $next($request);
     }

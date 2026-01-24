@@ -20,7 +20,6 @@ use App\Services\Base\Traits\WithEventDispatching;
 use App\Services\Base\Traits\WithOperationContext;
 use App\Services\Base\Traits\WithTransaction;
 use Illuminate\Support\Collection;
-use InvalidArgumentException;
 
 /**
  * Handles CRUD operations for quotations.
@@ -95,7 +94,7 @@ class QuotationCrudService
     public function update(Quotation $quotation, array $data): Quotation
     {
         if (! $this->domainFactory->stateMachine($quotation)->canEdit()) {
-            throw new InvalidArgumentException('Hanya penawaran draft yang dapat diubah.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotEdit($quotation, 'Hanya penawaran draft yang dapat diubah.');
         }
 
         return $this->executeInTransaction('update', function () use ($quotation, $data) {
@@ -123,7 +122,7 @@ class QuotationCrudService
     public function delete(Quotation $quotation): bool
     {
         if (! $this->domainFactory->stateMachine($quotation)->canEdit()) {
-            throw new InvalidArgumentException('Hanya penawaran draft yang dapat dihapus.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotDelete($quotation, 'Hanya penawaran draft yang dapat dihapus.');
         }
 
         return $this->executeInTransaction('delete', function () use ($quotation) {
@@ -152,7 +151,7 @@ class QuotationCrudService
             : (int) round($bomCost * (1 + ($marginPercent / 100)));
 
         return $this->executeInTransaction('create_from_bom', function () use ($data, $bom, $sellingPrice, $marginPercent, $expandItems) {
-            $defaults = $this->defaults->forBom($data, $bom, $this->getUserId() ?? 0);
+            $defaults = $this->defaults->forBom($data, $bom, $this->getUserId());
             $defaults['quotation_number'] = $this->quotationNumberGenerator->generateQuotationNumber();
 
             $quotation = Quotation::create($defaults);
@@ -192,7 +191,12 @@ class QuotationCrudService
     public function revise(Quotation $quotation): Quotation
     {
         if (! $this->domainFactory->stateMachine($quotation)->canRevise()) {
-            throw new InvalidArgumentException('Penawaran tidak dapat direvisi. Pastikan sudah disetujui, ditolak, atau kedaluwarsa.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Quotation',
+                'direvisi',
+                $quotation->status->value,
+                'disetujui, ditolak, atau kedaluwarsa'
+            );
         }
 
         return $this->executeInTransaction('revise', function () use ($quotation) {
@@ -210,16 +214,19 @@ class QuotationCrudService
     {
         $bomId = $data['bom_id'] ?? null;
         if (! $bomId) {
-            throw new InvalidArgumentException('BOM harus dipilih.');
+            throw \App\Exceptions\Domain\BusinessRuleException::missingRequiredData('Quotation', 'BOM');
         }
 
         $bom = Bom::with(['items.product', 'product'])->find($bomId);
         if (! $bom) {
-            throw new InvalidArgumentException('BOM tidak ditemukan.');
+            throw new \App\Exceptions\Domain\EntityNotFoundException('Bom', $bomId);
         }
 
         if ($bom->status !== DocumentStatus::Active) {
-            throw new InvalidArgumentException('Hanya BOM dengan status aktif yang dapat digunakan.');
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'menggunakan BOM',
+                'BOM harus memiliki status aktif'
+            );
         }
 
         return $bom;
@@ -233,7 +240,7 @@ class QuotationCrudService
         return $this->loadRelations($newQuotation);
     }
 
-    private function resolveUserId(User|int|null $user): int
+    private function resolveUserId(User|int|null $user): ?int
     {
         if ($user instanceof User) {
             return $user->id;
@@ -243,7 +250,7 @@ class QuotationCrudService
             return $user;
         }
 
-        return $this->getUserId() ?? 0;
+        return $this->getUserId();
     }
 
     private function loadRelations(Quotation $quotation): Quotation
@@ -264,7 +271,7 @@ class QuotationCrudService
     public function syncVariantOptions(Quotation $quotation, array $options): Collection
     {
         if (! $this->domainFactory->stateMachine($quotation)->canEdit()) {
-            throw new InvalidArgumentException('Penawaran ini tidak dapat diubah.');
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotEdit($quotation, 'Penawaran ini tidak dapat diubah.');
         }
 
         return $this->executeInTransaction('sync_variant_options', function () use ($quotation, $options) {
@@ -301,18 +308,24 @@ class QuotationCrudService
     public function selectVariant(Quotation $quotation, int $variantOptionId): Quotation
     {
         if (! $quotation->isMultiOption()) {
-            throw new InvalidArgumentException('Penawaran ini bukan tipe multi-option.');
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'memilih varian',
+                'Penawaran harus tipe multi-option'
+            );
         }
 
         /** @var QuotationVariantOption|null $variantOption */
         $variantOption = QuotationVariantOption::find($variantOptionId);
 
         if (! $variantOption) {
-            throw new InvalidArgumentException('Pilihan varian tidak ditemukan.');
+            throw new \App\Exceptions\Domain\EntityNotFoundException('QuotationVariantOption', $variantOptionId);
         }
 
         if ($variantOption->quotation_id !== $quotation->id) {
-            throw new InvalidArgumentException('Pilihan varian tidak valid untuk penawaran ini.');
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'memilih varian',
+                'Pilihan varian tidak valid untuk penawaran ini'
+            );
         }
 
         return $this->executeInTransaction('select_variant', function () use ($quotation, $variantOption) {
@@ -331,7 +344,10 @@ class QuotationCrudService
     public function clearVariantSelection(Quotation $quotation): Quotation
     {
         if (! $quotation->isMultiOption()) {
-            throw new InvalidArgumentException('Penawaran ini bukan tipe multi-option.');
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'membersihkan varian',
+                'Penawaran harus tipe multi-option'
+            );
         }
 
         return $this->executeInTransaction('clear_variant', function () use ($quotation) {
