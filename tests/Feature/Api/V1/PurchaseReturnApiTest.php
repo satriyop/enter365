@@ -10,7 +10,7 @@ use App\Models\Purchasing\PurchaseReturnItem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(Tests\TestCase::class, RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->user = User::factory()->create();
@@ -90,7 +90,7 @@ describe('Purchase Return CRUD', function () {
         ]);
 
         $response->assertCreated()
-            ->assertJsonPath('data.status', 'draft')
+            ->assertJsonPath('data.status.value', 'draft')
             ->assertJsonCount(2, 'data.items');
 
         expect($response->json('data.return_number'))->toStartWith('PR-');
@@ -175,7 +175,7 @@ describe('Purchase Return Workflow', function () {
         $response = $this->postJson("/api/v1/purchase-returns/{$purchaseReturn->id}/submit");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'submitted');
+            ->assertJsonPath('data.status.value', 'submitted');
 
         $purchaseReturn->refresh();
         expect($purchaseReturn->submitted_at)->not->toBeNull();
@@ -197,7 +197,7 @@ describe('Purchase Return Workflow', function () {
         $response = $this->postJson("/api/v1/purchase-returns/{$purchaseReturn->id}/approve");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'approved');
+            ->assertJsonPath('data.status.value', 'approved');
 
         $purchaseReturn->refresh();
         expect($purchaseReturn->approved_at)->not->toBeNull();
@@ -221,7 +221,7 @@ describe('Purchase Return Workflow', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'rejected')
+            ->assertJsonPath('data.status.value', 'rejected')
             ->assertJsonPath('data.rejection_reason', 'Supplier does not accept return');
 
         $purchaseReturn->refresh();
@@ -243,7 +243,7 @@ describe('Purchase Return Workflow', function () {
         $response = $this->postJson("/api/v1/purchase-returns/{$purchaseReturn->id}/complete");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'completed');
+            ->assertJsonPath('data.status.value', 'completed');
 
         $purchaseReturn->refresh();
         expect($purchaseReturn->completed_at)->not->toBeNull();
@@ -266,7 +266,7 @@ describe('Purchase Return Workflow', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'cancelled');
+            ->assertJsonPath('data.status.value', 'cancelled');
     });
 
     it('can cancel a submitted purchase return', function () {
@@ -277,7 +277,7 @@ describe('Purchase Return Workflow', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'cancelled');
+            ->assertJsonPath('data.status.value', 'cancelled');
     });
 
     it('cannot cancel an approved purchase return', function () {

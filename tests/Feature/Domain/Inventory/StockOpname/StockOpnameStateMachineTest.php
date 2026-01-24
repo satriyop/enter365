@@ -6,7 +6,7 @@ use App\Enums\DocumentStatus;
 use App\Models\Inventory\StockOpname;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(Tests\TestCase::class, RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->eventDispatcher = app(EventDispatcherInterface::class);

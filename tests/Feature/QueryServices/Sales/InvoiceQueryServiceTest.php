@@ -10,7 +10,7 @@ use App\Models\Sales\Invoice;
 use App\QueryServices\Sales\InvoiceQueryService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(Tests\TestCase::class, RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->logger = app(ContextualLoggerInterface::class);

@@ -46,4 +46,14 @@ class UserFilter extends QueryFilter
     {
         $this->builder->where('is_active', filter_var($value, FILTER_VALIDATE_BOOLEAN));
     }
+
+    /**
+     * Filter by role name.
+     */
+    public function role(string $roleName): void
+    {
+        $this->builder->whereHas('roles', function ($query) use ($roleName) {
+            $query->where('name', $roleName);
+        });
+    }
 }

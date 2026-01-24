@@ -262,7 +262,8 @@ class SolarProposalService extends BaseService implements SolarProposalServiceIn
             $primaryBom = $variantGroup->primaryBom();
             if ($primaryBom) {
                 $proposal->selected_bom_id = $primaryBom->id;
-                $proposal->system_capacity_kwp = (string) $this->extractCapacityFromBom($primaryBom);
+                $capacity = $this->extractCapacityFromBom($primaryBom);
+                $proposal->system_capacity_kwp = $capacity !== null ? (string) $capacity : null;
             }
 
             $proposal->save();
@@ -296,7 +297,8 @@ class SolarProposalService extends BaseService implements SolarProposalServiceIn
 
         return $this->executeInTransaction('select_bom', function () use ($proposal, $bom) {
             $proposal->selected_bom_id = $bom->id;
-            $proposal->system_capacity_kwp = (string) $this->extractCapacityFromBom($bom);
+            $capacity = $this->extractCapacityFromBom($bom);
+            $proposal->system_capacity_kwp = $capacity !== null ? (string) $capacity : null;
 
             // If no variant group attached, attach it now
             if (! $proposal->variant_group_id && $bom->variant_group_id) {

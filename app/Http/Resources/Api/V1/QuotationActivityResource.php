@@ -37,6 +37,8 @@ class QuotationActivityResource extends JsonResource
             ]),
             'activity_type' => $this->type,
             'description' => $this->description,
+            'outcome' => $this->outcome,
+            'duration_minutes' => $this->duration_minutes,
             'created_at' => $createdAt?->toIso8601String(),
         ];
     }

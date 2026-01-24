@@ -45,11 +45,11 @@ trait HasSearchFilter
                     [$relation, $column] = explode('.', $field, 2);
                     $method = $index === 0 ? 'whereHas' : 'orWhereHas';
                     $query->{$method}($relation, function ($q) use ($column, $searchTerm) {
-                        $q->whereRaw("LOWER({$column}) LIKE ?", ["%{$searchTerm}%"]);
+                        $q->whereRaw("LOWER(\"{$column}\") LIKE ?", ["%{$searchTerm}%"]);
                     });
                 } else {
                     $method = $index === 0 ? 'whereRaw' : 'orWhereRaw';
-                    $query->{$method}("LOWER({$field}) LIKE ?", ["%{$searchTerm}%"]);
+                    $query->{$method}("LOWER(\"{$field}\") LIKE ?", ["%{$searchTerm}%"]);
                 }
             }
         });
@@ -87,7 +87,7 @@ trait HasSearchFilter
                 $method = $index === 0 ? 'whereRaw' : 'orWhereRaw';
                 // Match whole word or word at boundaries
                 $query->{$method}(
-                    "LOWER({$field}) REGEXP ?",
+                    "LOWER(\"{$field}\") REGEXP ?",
                     ["(^|[^a-z]){$searchTerm}([^a-z]|$)"]
                 );
             }

@@ -16,7 +16,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 
-uses(Tests\TestCase::class, RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\ChartOfAccountsSeeder']);
@@ -56,7 +56,7 @@ describe('MRP Run CRUD', function () {
         ]);
 
         $response->assertCreated()
-            ->assertJsonPath('data.status', 'draft')
+            ->assertJsonPath('data.status.value', 'draft')
             ->assertJsonPath('data.name', 'Weekly MRP Run');
     });
 
@@ -176,7 +176,7 @@ describe('MRP Execution', function () {
         $response = $this->postJson("/api/v1/mrp-runs/{$run->id}/execute");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'completed')
+            ->assertJsonPath('data.status.value', 'completed')
             ->assertJsonPath('data.total_demands', 1)
             ->assertJsonPath('data.total_shortages', 1);
     });

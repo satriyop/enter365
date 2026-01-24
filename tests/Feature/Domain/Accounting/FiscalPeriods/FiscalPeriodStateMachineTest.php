@@ -12,7 +12,7 @@ use App\Models\Accounting\FiscalPeriod;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(Tests\TestCase::class, RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 describe('FiscalPeriodStateMachine', function () {
 

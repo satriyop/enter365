@@ -9,7 +9,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 
-uses(Tests\TestCase::class, RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $user = User::factory()->create();
@@ -87,7 +87,7 @@ describe('Subcontractor Work Order CRUD', function () {
         ]);
 
         $response->assertCreated()
-            ->assertJsonPath('data.status', 'draft')
+            ->assertJsonPath('data.status.value', 'draft')
             ->assertJsonPath('data.name', 'Instalasi Panel Listrik')
             ->assertJsonPath('data.agreed_amount', 50000000)
             ->assertJsonPath('data.retention_percent', 5);
@@ -163,7 +163,7 @@ describe('Subcontractor Work Order Workflow', function () {
         $response = $this->postJson("/api/v1/subcontractor-work-orders/{$scWo->id}/assign");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'assigned');
+            ->assertJsonPath('data.status.value', 'assigned');
     });
 
     it('cannot assign an already assigned work order', function () {
@@ -180,7 +180,7 @@ describe('Subcontractor Work Order Workflow', function () {
         $response = $this->postJson("/api/v1/subcontractor-work-orders/{$scWo->id}/start");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'in_progress');
+            ->assertJsonPath('data.status.value', 'in_progress');
     });
 
     it('cannot start a draft work order', function () {
@@ -223,7 +223,7 @@ describe('Subcontractor Work Order Workflow', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'completed')
+            ->assertJsonPath('data.status.value', 'completed')
             ->assertJsonPath('data.actual_amount', 52000000)
             ->assertJsonPath('data.completion_percentage', 100);
     });
@@ -247,7 +247,7 @@ describe('Subcontractor Work Order Workflow', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'cancelled')
+            ->assertJsonPath('data.status.value', 'cancelled')
             ->assertJsonPath('data.cancellation_reason', 'Proyek dibatalkan');
     });
 
@@ -277,7 +277,7 @@ describe('Subcontractor Invoices', function () {
             ->assertJsonPath('data.gross_amount', 50000000)
             ->assertJsonPath('data.retention_held', 2500000) // 5% of 50M
             ->assertJsonPath('data.net_amount', 47500000)
-            ->assertJsonPath('data.status', 'pending');
+            ->assertJsonPath('data.status', 'submitted');
     });
 
     it('cannot invoice more than remaining amount', function () {
@@ -316,7 +316,7 @@ describe('Subcontractor Invoices', function () {
         SubcontractorInvoice::factory()->pending()->count(3)->create();
         SubcontractorInvoice::factory()->approved()->count(2)->create();
 
-        $response = $this->getJson('/api/v1/subcontractor-invoices?status=pending');
+        $response = $this->getJson('/api/v1/subcontractor-invoices?status=submitted');
 
         $response->assertOk()
             ->assertJsonCount(3, 'data');

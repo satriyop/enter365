@@ -291,7 +291,7 @@ class SubcontractorService extends BaseService implements SubcontractorServiceIn
             throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
                 'Invoice Subkontraktor',
                 'disetujui',
-                $invoice->status->value ?? 'unknown',
+                $invoice->status->label(),
                 'pending'
             );
         }
@@ -316,7 +316,7 @@ class SubcontractorService extends BaseService implements SubcontractorServiceIn
             throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
                 'Invoice Subkontraktor',
                 'ditolak',
-                $invoice->status->value ?? 'unknown',
+                $invoice->status->label(),
                 'pending'
             );
         }
@@ -343,7 +343,7 @@ class SubcontractorService extends BaseService implements SubcontractorServiceIn
             throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
                 'Invoice Subkontraktor',
                 'dikonversi ke bill',
-                $invoice->status->value ?? 'unknown',
+                $invoice->status->label(),
                 'disetujui'
             );
         }

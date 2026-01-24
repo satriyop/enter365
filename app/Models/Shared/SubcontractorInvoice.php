@@ -2,6 +2,7 @@
 
 namespace App\Models\Shared;
 
+use App\Enums\DocumentStatus;
 use App\Models\Contacts\Contact;
 use App\Models\Manufacturing\SubcontractorWorkOrder;
 use App\Models\Purchasing\Bill;
@@ -15,13 +16,13 @@ class SubcontractorInvoice extends Model
 {
     use HasFactory, SoftDeletes;
 
-    public const STATUS_PENDING = 'pending';
+    public const STATUS_PENDING = DocumentStatus::Submitted->value;
 
-    public const STATUS_APPROVED = 'approved';
+    public const STATUS_APPROVED = DocumentStatus::Approved->value;
 
-    public const STATUS_REJECTED = 'rejected';
+    public const STATUS_REJECTED = DocumentStatus::Rejected->value;
 
-    public const STATUS_PAID = 'paid';
+    public const STATUS_PAID = DocumentStatus::Paid->value;
 
     protected $fillable = [
         'invoice_number',
@@ -73,6 +74,7 @@ class SubcontractorInvoice extends Model
             'converted_to_bill_at' => 'datetime',
             'approved_at' => 'datetime',
             'rejected_at' => 'datetime',
+            'status' => DocumentStatus::class,
         ];
     }
 
@@ -129,7 +131,7 @@ class SubcontractorInvoice extends Model
      */
     public function isPending(): bool
     {
-        return $this->status === self::STATUS_PENDING;
+        return $this->status->value === self::STATUS_PENDING;
     }
 
     /**
@@ -137,7 +139,7 @@ class SubcontractorInvoice extends Model
      */
     public function isApproved(): bool
     {
-        return $this->status === self::STATUS_APPROVED;
+        return $this->status->value === self::STATUS_APPROVED;
     }
 
     /**
@@ -145,7 +147,7 @@ class SubcontractorInvoice extends Model
      */
     public function isRejected(): bool
     {
-        return $this->status === self::STATUS_REJECTED;
+        return $this->status->value === self::STATUS_REJECTED;
     }
 
     /**
@@ -153,7 +155,7 @@ class SubcontractorInvoice extends Model
      */
     public function isPaid(): bool
     {
-        return $this->status === self::STATUS_PAID;
+        return $this->status->value === self::STATUS_PAID;
     }
 
     /**
@@ -161,7 +163,7 @@ class SubcontractorInvoice extends Model
      */
     public function canBeApproved(): bool
     {
-        return $this->status === self::STATUS_PENDING;
+        return $this->status->value === self::STATUS_PENDING;
     }
 
     /**
@@ -169,7 +171,7 @@ class SubcontractorInvoice extends Model
      */
     public function canBeRejected(): bool
     {
-        return $this->status === self::STATUS_PENDING;
+        return $this->status->value === self::STATUS_PENDING;
     }
 
     /**
@@ -177,7 +179,7 @@ class SubcontractorInvoice extends Model
      */
     public function canBeConvertedToBill(): bool
     {
-        return $this->status === self::STATUS_APPROVED && $this->bill_id === null;
+        return $this->status->value === self::STATUS_APPROVED && $this->bill_id === null;
     }
 
     /**

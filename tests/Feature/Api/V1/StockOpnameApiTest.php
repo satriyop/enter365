@@ -9,7 +9,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 
-uses(Tests\TestCase::class, RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\ChartOfAccountsSeeder']);
@@ -182,8 +182,8 @@ describe('Stock Opname Item Management', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.counted_quantity', 95)
-            ->assertJsonPath('data.variance_quantity', -5)
+            ->assertJsonPath('data.actual_quantity', 95)
+            ->assertJsonPath('data.difference_quantity', -5)
             ->assertJsonPath('data.notes', 'Some items damaged');
     });
 

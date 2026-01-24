@@ -7,7 +7,7 @@ use App\Models\Sales\Invoice;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(Tests\TestCase::class, RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 describe('HasStatusHistory trait', function () {
     beforeEach(function () {

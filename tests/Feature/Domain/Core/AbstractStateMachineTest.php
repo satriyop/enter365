@@ -8,7 +8,7 @@ use App\Enums\DocumentStatus;
 use App\Exceptions\Domain\StateTransitionException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(Tests\TestCase::class, RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 // Create a concrete implementation for testing
 class TestStateMachine extends AbstractStateMachine

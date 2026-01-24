@@ -8,7 +8,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 
-uses(Tests\TestCase::class, RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->user = User::factory()->create();
@@ -131,7 +131,7 @@ describe('Quotation Activities', function () {
         ]);
 
         $response->assertCreated()
-            ->assertJsonPath('data.type', 'call')
+            ->assertJsonPath('data.activity_type', 'call')
             ->assertJsonPath('data.outcome', 'positive')
             ->assertJsonPath('data.duration_minutes', 15);
 

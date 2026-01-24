@@ -5,7 +5,7 @@ use App\Models\Accounting\Account;
 use App\Services\Accounting\AccountLookupService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(Tests\TestCase::class, RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->service = new AccountLookupService;
