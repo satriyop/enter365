@@ -157,6 +157,48 @@ parameters:
 			path: app/Http/Controllers/Api/V1/DashboardController.php
 
 		-
+			message: '#^Cannot access property \$credit on array\<string, int\|string\|null\>\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Controllers/Api/V1/ExportController.php
+
+		-
+			message: '#^Cannot access property \$date on array\<string, int\|string\|null\>\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Controllers/Api/V1/ExportController.php
+
+		-
+			message: '#^Cannot access property \$debit on array\<string, int\|string\|null\>\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Controllers/Api/V1/ExportController.php
+
+		-
+			message: '#^Cannot access property \$description on array\<string, int\|string\|null\>\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Controllers/Api/V1/ExportController.php
+
+		-
+			message: '#^Cannot access property \$entry_number on array\<string, int\|string\|null\>\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Controllers/Api/V1/ExportController.php
+
+		-
+			message: '#^Cannot access property \$running_balance on array\<string, int\|string\|null\>\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Controllers/Api/V1/ExportController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,array\<string, int\|string\|null\>\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Api/V1/ExportController.php
+
+		-
 			message: '''
 				#^PHPDoc tag @return has invalid value \(JsonResponse\{
 				    modules\: array\<string, bool\>,
@@ -1417,13 +1459,7 @@ parameters:
 			path: app/QueryServices/Sales/InvoiceQueryService.php
 
 		-
-			message: '#^Method App\\Services\\Accounting\\AccountBalanceService\:\:getLedger\(\) should return Illuminate\\Support\\Collection\<int, object\{id\: int, journal_entry_id\: int, date\: string, entry_number\: string, description\: string, reference\: string\|null, debit\: int, credit\: int, running_balance\: int\}\> but returns Illuminate\\Support\\Collection\<int, object\{id\: int, journal_entry_id\: int, date\: string, entry_number\: string, description\: string, reference\: non\-falsy\-string\|null, debit\: int, credit\: int, running_balance\: int\}&stdClass\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/Accounting/AccountBalanceService.php
-
-		-
-			message: '#^Method App\\Services\\Accounting\\AccountBalanceService\:\:getTrialBalance\(\) should return Illuminate\\Support\\Collection\<int, object\{account_id\: int, code\: string, name\: string, type\: string, debit_balance\: int, credit_balance\: int\}\> but returns Illuminate\\Support\\Collection\<int, object\{account_id\: int, code\: string, name\: string, type\: string, debit_balance\: int\<0, max\>, credit_balance\: int\<0, max\>\}&stdClass\>\.$#'
+			message: '#^Method App\\Services\\Accounting\\AccountBalanceService\:\:getLedger\(\) should return Illuminate\\Support\\Collection\<int, array\{id\: int, journal_entry_id\: int, date\: string, entry_number\: string, description\: string, reference\: string\|null, debit\: int, credit\: int, \.\.\.\}\> but returns Illuminate\\Support\\Collection\<int, array\{id\: int, journal_entry_id\: int, date\: string, entry_number\: string, description\: string, reference\: string\|null, debit\: int, credit\: int, \.\.\.\}\>\.$#'
 			identifier: return.type
 			count: 1
 			path: app/Services/Accounting/AccountBalanceService.php
@@ -1433,12 +1469,6 @@ parameters:
 			identifier: return.type
 			count: 1
 			path: app/Services/Accounting/BudgetService.php
-
-		-
-			message: '#^Cannot call method toDateString\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Services/Accounting/JournalService.php
 
 		-
 			message: '#^Access to an undefined property App\\Models\\Accounting\\BankTransaction\:\:\$count\.$#'
@@ -1489,14 +1519,32 @@ parameters:
 			path: app/Services/Accounting/Reports/CashFlowReportService.php
 
 		-
-			message: '#^Anonymous function should return object\{account_id\: int, code\: string, name\: string, type\: string, opening_balance\: int, entries\: Illuminate\\Support\\Collection\<int, object\{id\: int, journal_entry_id\: int, date\: string, entry_number\: string, description\: string, reference\: string\|null, debit\: int, credit\: int, running_balance\: int\}\>, closing_balance\: int\}&stdClass but returns object\{account_id\: int, code\: string, name\: string, type\: string, opening_balance\: int, entries\: Illuminate\\Support\\Collection\<int, object\{id\: int, journal_entry_id\: int, date\: string, entry_number\: string, description\: string, reference\: string\|null, debit\: int, credit\: int, running_balance\: int\}\>, closing_balance\: int\}&stdClass\.$#'
+			message: '#^Anonymous function should return object\{account_id\: int, code\: string, name\: string, type\: string, opening_balance\: int, entries\: Illuminate\\Support\\Collection\<int, array\{id\: int, journal_entry_id\: int, date\: string, entry_number\: string, description\: string, reference\: string\|null, debit\: int, credit\: int, \.\.\.\}\>, closing_balance\: mixed\}&stdClass but returns object\{account_id\: int, code\: string, name\: string, type\: string, opening_balance\: int, entries\: Illuminate\\Support\\Collection\<int, array\{id\: int, journal_entry_id\: int, date\: string, entry_number\: string, description\: string, reference\: string\|null, debit\: int, credit\: int, \.\.\.\}\>, closing_balance\: mixed\}&stdClass\.$#'
 			identifier: return.type
 			count: 1
 			path: app/Services/Accounting/Reports/FinancialReportService.php
 
 		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Accounting\\Account\>\:\:map\(\) expects callable\(App\\Models\\Accounting\\Account, int\)\: \(object\{account_id\: mixed, code\: mixed, name\: mixed, type\: mixed, opening_balance\: mixed, entries\: Illuminate\\Support\\Collection\<int, object\{id\: int, journal_entry_id\: int, date\: string, entry_number\: string, description\: string, reference\: string\|null, debit\: int, credit\: int, running_balance\: int\}\>, closing_balance\: mixed\}&stdClass\), Closure\(mixed\)\: \(object\{account_id\: mixed, code\: mixed, name\: mixed, type\: mixed, opening_balance\: mixed, entries\: Illuminate\\Support\\Collection\<int, object\{id\: int, journal_entry_id\: int, date\: string, entry_number\: string, description\: string, reference\: string\|null, debit\: int, credit\: int, running_balance\: int\}\>, closing_balance\: mixed\}&stdClass\) given\.$#'
+			message: '#^Cannot access property \$running_balance on array\<string, int\|string\|null\>\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Services/Accounting/Reports/FinancialReportService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Accounting\\Account\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Services/Accounting/Reports/FinancialReportService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Accounting\\Account\>\:\:map\(\) expects callable\(App\\Models\\Accounting\\Account, int\)\: \(object\{account_id\: mixed, code\: mixed, name\: mixed, type\: mixed, opening_balance\: mixed, entries\: Illuminate\\Support\\Collection\<int, array\{id\: int, journal_entry_id\: int, date\: string, entry_number\: string, description\: string, reference\: string\|null, debit\: int, credit\: int, running_balance\: int\}\>, closing_balance\: mixed\}&stdClass\), Closure\(mixed\)\: \(object\{account_id\: mixed, code\: mixed, name\: mixed, type\: mixed, opening_balance\: mixed, entries\: Illuminate\\Support\\Collection\<int, array\{id\: int, journal_entry_id\: int, date\: string, entry_number\: string, description\: string, reference\: string\|null, debit\: int, credit\: int, running_balance\: int\}\>, closing_balance\: mixed\}&stdClass\) given\.$#'
 			identifier: argument.type
+			count: 1
+			path: app/Services/Accounting/Reports/FinancialReportService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,object\{account_id\: int, code\: string, name\: string, type\: string, opening_balance\: int, entries\: Illuminate\\Support\\Collection\<int, array\<string, int\|string\|null\>\>, closing_balance\: mixed\}&stdClass\>\:\:filter\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
 			count: 1
 			path: app/Services/Accounting/Reports/FinancialReportService.php
 
