@@ -10,6 +10,24 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class WarehouseResource extends JsonResource
 {
+    /**
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   code: string,
+     *   name: string,
+     *   address: string|null,
+     *   phone: string|null,
+     *   contact_person: string|null,
+     *   is_default: bool,
+     *   is_active: bool,
+     *   notes: string|null,
+     *   product_stocks_count?: int,
+     *   product_stocks?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
+     *   created_at: string|null,
+     *   updated_at: string|null
+     * }
+     */
     public function toArray(Request $request): array
     {
         return [

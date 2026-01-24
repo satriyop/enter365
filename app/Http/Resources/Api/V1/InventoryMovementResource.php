@@ -10,6 +10,34 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class InventoryMovementResource extends JsonResource
 {
+    /**
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   movement_number: string,
+     *   product_id: int,
+     *   product?: ProductResource,
+     *   warehouse_id: int,
+     *   warehouse?: WarehouseResource,
+     *   type: string,
+     *   type_label: string,
+     *   quantity: float,
+     *   quantity_before: float,
+     *   quantity_after: float,
+     *   unit_cost: int,
+     *   total_cost: int,
+     *   reference_type: string|null,
+     *   reference_id: int|null,
+     *   transfer_warehouse_id: int|null,
+     *   transfer_warehouse?: WarehouseResource,
+     *   movement_date: string|null,
+     *   notes: string|null,
+     *   created_by: int|null,
+     *   created_by_user?: array{id: int, name: string},
+     *   created_at: string|null,
+     *   updated_at: string|null
+     * }
+     */
     public function toArray(Request $request): array
     {
         return [

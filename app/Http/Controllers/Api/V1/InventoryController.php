@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Filters\InventoryMovementFilter;
+use App\Filters\ProductStockFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StockAdjustmentRequest;
 use App\Http\Requests\Api\V1\StockInRequest;
@@ -27,37 +29,14 @@ class InventoryController extends Controller
     /**
      * List inventory movements.
      */
-    public function movements(Request $request): AnonymousResourceCollection
+    public function movements(InventoryMovementFilter $filter): AnonymousResourceCollection
     {
-        $query = InventoryMovement::query()
-            ->with(['product', 'warehouse', 'createdByUser']);
-
-        // Filter by product
-        if ($request->has('product_id')) {
-            $query->where('product_id', $request->input('product_id'));
-        }
-
-        // Filter by warehouse
-        if ($request->has('warehouse_id')) {
-            $query->where('warehouse_id', $request->input('warehouse_id'));
-        }
-
-        // Filter by type
-        if ($request->has('type')) {
-            $query->where('type', $request->input('type'));
-        }
-
-        // Filter by date range
-        if ($request->has('start_date')) {
-            $query->where('movement_date', '>=', $request->input('start_date'));
-        }
-        if ($request->has('end_date')) {
-            $query->where('movement_date', '<=', $request->input('end_date'));
-        }
-
-        $movements = $query->orderByDesc('movement_date')
+        $movements = InventoryMovement::query()
+            ->with(['product', 'warehouse']) // Default eager loads
+            ->filter($filter)
+            ->orderByDesc('movement_date')
             ->orderByDesc('id')
-            ->paginate($request->input('per_page', 25));
+            ->paginate($filter->getRequest()->input('per_page', 25));
 
         return InventoryMovementResource::collection($movements);
     }
@@ -355,22 +334,14 @@ class InventoryController extends Controller
     /**
      * Get stock levels.
      */
-    public function stockLevels(Request $request): AnonymousResourceCollection
+    public function stockLevels(ProductStockFilter $filter): AnonymousResourceCollection
     {
-        $query = ProductStock::query()
+        $stocks = ProductStock::query()
             ->with(['product', 'warehouse'])
-            ->where('quantity', '>', 0);
-
-        if ($request->has('warehouse_id')) {
-            $query->where('warehouse_id', $request->input('warehouse_id'));
-        }
-
-        if ($request->has('product_id')) {
-            $query->where('product_id', $request->input('product_id'));
-        }
-
-        $stocks = $query->orderBy('product_id')
-            ->paginate($request->input('per_page', 25));
+            ->where('quantity', '>', 0)
+            ->filter($filter)
+            ->orderBy('product_id')
+            ->paginate($filter->getRequest()->input('per_page', 25));
 
         return ProductStockResource::collection($stocks);
     }

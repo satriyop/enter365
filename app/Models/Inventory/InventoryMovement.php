@@ -3,6 +3,7 @@
 namespace App\Models\Inventory;
 
 use App\Models\User;
+use App\Traits\Filterable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class InventoryMovement extends Model
 {
-    use HasFactory;
+    use Filterable, HasFactory;
 
     public const TYPE_IN = 'in';
 

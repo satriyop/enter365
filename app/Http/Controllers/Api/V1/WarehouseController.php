@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Filters\WarehouseFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreWarehouseRequest;
 use App\Http\Requests\Api\V1\UpdateWarehouseRequest;
@@ -13,28 +14,14 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class WarehouseController extends Controller
 {
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(WarehouseFilter $filter): AnonymousResourceCollection
     {
-        $query = Warehouse::query();
-
-        // Filter by active status
-        if ($request->has('is_active')) {
-            $query->where('is_active', $request->boolean('is_active'));
-        }
-
-        // Search
-        if ($request->has('search')) {
-            $search = strtolower($request->input('search'));
-            $query->where(function ($q) use ($search) {
-                $q->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"])
-                    ->orWhereRaw('LOWER(code) LIKE ?', ["%{$search}%"]);
-            });
-        }
-
-        $warehouses = $query->withCount('productStocks')
+        $warehouses = Warehouse::query()
+            ->filter($filter)
+            ->withCount('productStocks')
             ->orderByDesc('is_default')
             ->orderBy('name')
-            ->paginate($request->input('per_page', 25));
+            ->paginate($filter->getRequest()->input('per_page', 25));
 
         return WarehouseResource::collection($warehouses);
     }
@@ -69,11 +56,14 @@ class WarehouseController extends Controller
             ->setStatusCode(201);
     }
 
-    public function show(Warehouse $warehouse): WarehouseResource
+    public function show(Warehouse $warehouse, WarehouseFilter $filter): WarehouseResource
     {
-        return new WarehouseResource(
-            $warehouse->loadCount('productStocks')
-        );
+        $filter->apply($warehouse->newQuery());
+
+        $warehouse->loadMissing(['productStocks']);
+        $warehouse->loadCount('productStocks');
+
+        return new WarehouseResource($warehouse);
     }
 
     public function update(UpdateWarehouseRequest $request, Warehouse $warehouse): WarehouseResource

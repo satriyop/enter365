@@ -2,13 +2,14 @@
 
 namespace App\Models\Inventory;
 
+use App\Traits\Filterable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ProductStock extends Model
 {
-    use HasFactory;
+    use Filterable, HasFactory;
 
     protected $fillable = [
         'product_id',
