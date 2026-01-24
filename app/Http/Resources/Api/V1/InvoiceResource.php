@@ -18,6 +18,67 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class InvoiceResource extends JsonResource
 {
+    /**
+     * Transform the resource into an array.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   invoice_number: string,
+     *   reference: string|null,
+     *   description: string|null,
+     *   contact_id: int,
+     *   contact?: array{id: int, name: string, email: string|null},
+     *   invoice_date: string|null,
+     *   due_date: string|null,
+     *   days_until_due: int,
+     *   is_overdue: bool,
+     *   days_overdue?: int,
+     *   currency: string,
+     *   exchange_rate: float,
+     *   subtotal: int,
+     *   discount_amount: int,
+     *   tax_rate: float,
+     *   tax_amount: int,
+     *   total_amount: int,
+     *   paid_amount: int,
+     *   outstanding_amount: int,
+     *   base_currency_total: int,
+     *   formatted: array{
+     *     subtotal: string,
+     *     discount_amount: string,
+     *     tax_amount: string,
+     *     total_amount: string,
+     *     paid_amount: string,
+     *     outstanding_amount: string
+     *   },
+     *   status: array{
+     *     value: string,
+     *     label: string,
+     *     color: string,
+     *     is_terminal: bool,
+     *     is_editable: bool
+     *   },
+     *   journal_entry_id: int|null,
+     *   has_journal_entry: bool,
+     *   journal_entry?: array{id: int, entry_number: string},
+     *   receivable_account_id: int|null,
+     *   items?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
+     *   item_count?: int,
+     *   payments?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
+     *   payment_count?: int,
+     *   actions: array{
+     *     can_edit: bool,
+     *     can_post: bool,
+     *     can_cancel: bool,
+     *     can_delete: bool,
+     *     can_mark_as_paid: bool,
+     *     can_mark_as_partial: bool
+     *   },
+     *   created_at: string|null,
+     *   updated_at: string|null
+     * }
+     */
     public function toArray(Request $request): array
     {
         $stateMachine = InvoiceStateMachine::fromInvoice($this->resource);

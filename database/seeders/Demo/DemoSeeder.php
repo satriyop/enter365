@@ -2,15 +2,12 @@
 
 namespace Database\Seeders\Demo;
 
-use Database\Seeders\ChartOfAccountsSeeder;
 use Database\Seeders\Demo\Nex\NexContactSeeder;
 use Database\Seeders\Demo\Nex\NexProductSeeder;
 use Database\Seeders\Demo\Nex\NexTransactionSeeder;
 use Database\Seeders\Demo\Vahana\VahanaContactSeeder;
 use Database\Seeders\Demo\Vahana\VahanaProductSeeder;
 use Database\Seeders\Demo\Vahana\VahanaTransactionSeeder;
-use Database\Seeders\FiscalPeriodSeeder;
-use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Database\Seeder;
 
 class DemoSeeder extends Seeder

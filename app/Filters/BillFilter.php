@@ -67,6 +67,23 @@ class BillFilter extends QueryFilter
     }
 
     /**
+     * {@inheritdoc}
+     */
+    protected function getAllowedIncludes(): array
+    {
+        return [
+            'contact',
+            'items',
+            'items.product',
+            'items.expenseAccount',
+            'journalEntry',
+            'journalEntry.lines',
+            'payments',
+            'createdByUser',
+        ];
+    }
+
+    /**
      * Filter by supplier contact.
      */
     public function contactId(int|string $value): void

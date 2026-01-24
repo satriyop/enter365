@@ -68,6 +68,22 @@ class PurchaseOrderFilter extends QueryFilter
     }
 
     /**
+     * {@inheritdoc}
+     */
+    protected function getAllowedIncludes(): array
+    {
+        return [
+            'contact',
+            'items',
+            'items.product',
+            'items.expenseAccount',
+            'revisions',
+            'convertedBill',
+            'createdByUser',
+        ];
+    }
+
+    /**
      * Filter by supplier contact.
      */
     public function contactId(int|string $value): void

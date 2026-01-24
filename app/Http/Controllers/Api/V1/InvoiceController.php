@@ -37,6 +37,7 @@ class InvoiceController extends Controller
      * @queryParam date_from string Filter from date. Example: 2024-01-01
      * @queryParam date_to string Filter to date. Example: 2024-12-31
      * @queryParam search string Search by invoice number or contact name.
+     * @queryParam include string Explicitly load relationships. Example: items,contact
      * @queryParam per_page int Items per page. Default: 25
      * @queryParam include_workflow bool Include workflow metadata.
      * @queryParam include_history bool Include status history.
@@ -44,7 +45,7 @@ class InvoiceController extends Controller
     public function index(InvoiceFilter $filter): AnonymousResourceCollection
     {
         $invoices = Invoice::query()
-            ->with(['contact', 'items'])
+            ->with(['contact']) // Default eager loads
             ->filter($filter)
             ->paginate($filter->getRequest()->input('per_page', 25));
 
@@ -71,14 +72,19 @@ class InvoiceController extends Controller
     /**
      * Get invoice details.
      *
+     * @queryParam include string Explicitly load relationships. Example: items,payments
      * @queryParam include_workflow bool Include workflow metadata.
      * @queryParam include_history bool Include status history.
      */
-    public function show(Invoice $invoice): InvoiceResource
+    public function show(Invoice $invoice, InvoiceFilter $filter): InvoiceResource
     {
-        return new InvoiceResource(
-            $invoice->load(['contact', 'items.revenueAccount', 'journalEntry.lines.account', 'payments'])
-        );
+        // Use filter to handle ?include= logic
+        $filter->apply($invoice->newQuery()); 
+        
+        // Ensure default loads if not provided via ?include
+        $invoice->loadMissing(['contact', 'items.revenueAccount', 'journalEntry.lines.account', 'payments']);
+
+        return new InvoiceResource($invoice);
     }
 
     /**

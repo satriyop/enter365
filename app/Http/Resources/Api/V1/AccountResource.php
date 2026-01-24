@@ -10,6 +10,26 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class AccountResource extends JsonResource
 {
+    /**
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   code: string,
+     *   name: string,
+     *   type: string,
+     *   subtype: string|null,
+     *   description: string|null,
+     *   parent_id: int|null,
+     *   is_active: bool,
+     *   is_system: bool,
+     *   opening_balance: int,
+     *   current_balance?: int,
+     *   parent?: array{id: int, name: string, code: string},
+     *   children?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
+     *   created_at: string|null,
+     *   updated_at: string|null
+     * }
+     */
     public function toArray(Request $request): array
     {
         return [

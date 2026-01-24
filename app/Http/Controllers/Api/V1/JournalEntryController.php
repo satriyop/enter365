@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Filters\JournalEntryFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreJournalEntryRequest;
 use App\Http\Resources\Api\V1\JournalEntryResource;
@@ -18,38 +19,13 @@ class JournalEntryController extends Controller
         private JournalService $journalService
     ) {}
 
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(JournalEntryFilter $filter): AnonymousResourceCollection
     {
-        $query = JournalEntry::query()->with(['lines.account']);
-
-        if ($request->has('is_posted')) {
-            $query->where('is_posted', $request->boolean('is_posted'));
-        }
-
-        if ($request->has('source_type')) {
-            $query->where('source_type', $request->input('source_type'));
-        }
-
-        if ($request->has('start_date')) {
-            $query->where('entry_date', '>=', $request->input('start_date'));
-        }
-
-        if ($request->has('end_date')) {
-            $query->where('entry_date', '<=', $request->input('end_date'));
-        }
-
-        if ($request->has('search')) {
-            $search = strtolower($request->input('search'));
-            $query->where(function ($q) use ($search) {
-                $q->whereRaw('LOWER(entry_number) LIKE ?', ["%{$search}%"])
-                    ->orWhereRaw('LOWER(description) LIKE ?', ["%{$search}%"])
-                    ->orWhereRaw('LOWER(reference) LIKE ?', ["%{$search}%"]);
-            });
-        }
-
-        $entries = $query->orderByDesc('entry_date')
+        $entries = JournalEntry::query()
+            ->filter($filter)
+            ->orderByDesc('entry_date')
             ->orderByDesc('id')
-            ->paginate($request->input('per_page', 25));
+            ->paginate($filter->getRequest()->input('per_page', 25));
 
         return JournalEntryResource::collection($entries);
     }
@@ -66,11 +42,13 @@ class JournalEntryController extends Controller
             ->setStatusCode(201);
     }
 
-    public function show(JournalEntry $journalEntry): JournalEntryResource
+    public function show(JournalEntry $journalEntry, JournalEntryFilter $filter): JournalEntryResource
     {
-        return new JournalEntryResource(
-            $journalEntry->load(['lines.account', 'fiscalPeriod', 'reversedBy', 'reversalOf'])
-        );
+        $filter->apply($journalEntry->newQuery());
+
+        $journalEntry->loadMissing(['lines.account', 'fiscalPeriod', 'reversedBy', 'reversalOf']);
+
+        return new JournalEntryResource($journalEntry);
     }
 
     public function post(JournalEntry $journalEntry): JournalEntryResource|JsonResponse

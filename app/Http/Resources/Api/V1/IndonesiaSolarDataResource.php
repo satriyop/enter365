@@ -13,7 +13,23 @@ class IndonesiaSolarDataResource extends JsonResource
     /**
      * Transform the resource into an array.
      *
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   province: string,
+     *   city: string,
+     *   latitude: float,
+     *   longitude: float,
+     *   peak_sun_hours: float,
+     *   solar_irradiance_kwh_m2_day: float,
+     *   optimal_tilt_angle: float,
+     *   irradiance_rating: string,
+     *   irradiance_rating_label: string,
+     *   ghi_annual: float|null,
+     *   dni_annual: float|null,
+     *   dhi_annual: float|null,
+     *   temperature_avg: float|null
+     * }
      */
     public function toArray(Request $request): array
     {

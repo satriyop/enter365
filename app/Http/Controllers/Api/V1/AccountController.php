@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Filters\AccountFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreAccountRequest;
 use App\Http\Requests\Api\V1\UpdateAccountRequest;
@@ -18,28 +19,12 @@ class AccountController extends Controller
         private AccountBalanceService $balanceService
     ) {}
 
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(AccountFilter $filter): AnonymousResourceCollection
     {
-        $query = Account::query()
-            ->with($request->boolean('include_children') ? ['parent', 'children'] : ['parent']);
-
-        if ($request->has('type')) {
-            $query->where('type', $request->input('type'));
-        }
-
-        if ($request->has('is_active')) {
-            $query->where('is_active', $request->boolean('is_active'));
-        }
-
-        if ($request->has('search')) {
-            $search = strtolower($request->input('search'));
-            $query->where(function ($q) use ($search) {
-                $q->whereRaw('LOWER(code) LIKE ?', ["%{$search}%"])
-                    ->orWhereRaw('LOWER(name) LIKE ?', ["%{$search}%"]);
-            });
-        }
-
-        $accounts = $query->orderBy('code')->paginate($request->input('per_page', 50));
+        $accounts = Account::query()
+            ->filter($filter)
+            ->orderBy('code')
+            ->paginate($filter->getRequest()->input('per_page', 50));
 
         return AccountResource::collection($accounts);
     }
@@ -51,9 +36,13 @@ class AccountController extends Controller
         return new AccountResource($account->load('parent'));
     }
 
-    public function show(Account $account): AccountResource
+    public function show(Account $account, AccountFilter $filter): AccountResource
     {
-        return new AccountResource($account->load(['parent', 'children']));
+        $filter->apply($account->newQuery());
+        
+        $account->loadMissing(['parent', 'children']);
+
+        return new AccountResource($account);
     }
 
     public function update(UpdateAccountRequest $request, Account $account): AccountResource
