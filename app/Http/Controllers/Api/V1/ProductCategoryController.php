@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Filters\ProductCategoryFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreProductCategoryRequest;
 use App\Http\Requests\Api\V1\UpdateProductCategoryRequest;
@@ -13,34 +14,14 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class ProductCategoryController extends Controller
 {
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(ProductCategoryFilter $filter): AnonymousResourceCollection
     {
-        $query = ProductCategory::query()->with('parent');
-
-        if ($request->has('is_active')) {
-            $query->where('is_active', $request->boolean('is_active'));
-        }
-
-        if ($request->has('parent_id')) {
-            $parentId = $request->input('parent_id');
-            if ($parentId === 'null' || $parentId === '') {
-                $query->whereNull('parent_id');
-            } else {
-                $query->where('parent_id', $parentId);
-            }
-        }
-
-        if ($request->has('search')) {
-            $search = strtolower($request->input('search'));
-            $query->where(function ($q) use ($search) {
-                $q->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"])
-                    ->orWhereRaw('LOWER(code) LIKE ?', ["%{$search}%"]);
-            });
-        }
-
-        $categories = $query->orderBy('sort_order')
+        $categories = ProductCategory::query()
+            ->with(['parent'])
+            ->filter($filter)
+            ->orderBy('sort_order')
             ->orderBy('name')
-            ->paginate($request->input('per_page', 25));
+            ->paginate($filter->getRequest()->input('per_page', 25));
 
         return ProductCategoryResource::collection($categories);
     }
@@ -63,11 +44,13 @@ class ProductCategoryController extends Controller
             ->setStatusCode(201);
     }
 
-    public function show(ProductCategory $productCategory): ProductCategoryResource
+    public function show(ProductCategory $productCategory, ProductCategoryFilter $filter): ProductCategoryResource
     {
-        return new ProductCategoryResource(
-            $productCategory->load(['parent', 'children', 'products'])
-        );
+        $filter->apply($productCategory->newQuery());
+
+        $productCategory->loadMissing(['parent', 'children', 'products']);
+
+        return new ProductCategoryResource($productCategory);
     }
 
     public function update(UpdateProductCategoryRequest $request, ProductCategory $productCategory): ProductCategoryResource

@@ -10,6 +10,49 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class ProductResource extends JsonResource
 {
+    /**
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   sku: string,
+     *   name: string,
+     *   description: string|null,
+     *   type: string,
+     *   type_label: string,
+     *   category_id: int|null,
+     *   category?: ProductCategoryResource,
+     *   unit: string,
+     *   purchase_price: int,
+     *   selling_price: int,
+     *   selling_price_with_tax: int,
+     *   selling_tax_amount: int,
+     *   tax_rate: float,
+     *   is_taxable: bool,
+     *   profit_margin: float,
+     *   markup: float,
+     *   track_inventory: bool,
+     *   min_stock: float,
+     *   current_stock: float,
+     *   is_low_stock: bool,
+     *   is_out_of_stock: bool,
+     *   inventory_account_id: int|null,
+     *   inventory_account?: AccountResource,
+     *   cogs_account_id: int|null,
+     *   cogs_account?: AccountResource,
+     *   sales_account_id: int|null,
+     *   sales_account?: AccountResource,
+     *   purchase_account_id: int|null,
+     *   purchase_account?: AccountResource,
+     *   is_active: bool,
+     *   is_purchasable: bool,
+     *   is_sellable: bool,
+     *   barcode: string|null,
+     *   brand: string|null,
+     *   custom_fields: array<string, mixed>|null,
+     *   created_at: string|null,
+     *   updated_at: string|null
+     * }
+     */
     public function toArray(Request $request): array
     {
         return [

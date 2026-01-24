@@ -68,6 +68,20 @@ class ProductFilter extends QueryFilter
     }
 
     /**
+     * {@inheritdoc}
+     */
+    protected function getAllowedIncludes(): array
+    {
+        return [
+            'category',
+            'inventoryAccount',
+            'cogsAccount',
+            'salesAccount',
+            'purchaseAccount',
+        ];
+    }
+
+    /**
      * Filter by product type.
      */
     public function type(string $value): void

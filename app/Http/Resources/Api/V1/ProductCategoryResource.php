@@ -10,6 +10,26 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class ProductCategoryResource extends JsonResource
 {
+    /**
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   code: string,
+     *   name: string,
+     *   description: string|null,
+     *   parent_id: int|null,
+     *   parent?: ProductCategoryResource,
+     *   children?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
+     *   descendants?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
+     *   full_path: string,
+     *   is_active: bool,
+     *   sort_order: int,
+     *   products_count?: int,
+     *   has_children?: bool,
+     *   created_at: string|null,
+     *   updated_at: string|null
+     * }
+     */
     public function toArray(Request $request): array
     {
         return [

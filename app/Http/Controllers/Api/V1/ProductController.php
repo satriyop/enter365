@@ -26,7 +26,7 @@ class ProductController extends Controller
     public function index(ProductFilter $filter): AnonymousResourceCollection
     {
         $products = Product::query()
-            ->with('category')
+            ->with(['category']) // Default eager loads
             ->filter($filter)
             ->paginate($filter->getRequest()->input('per_page', 25));
 
@@ -48,17 +48,19 @@ class ProductController extends Controller
     /**
      * Display the specified product.
      */
-    public function show(Product $product): ProductResource
+    public function show(Product $product, ProductFilter $filter): ProductResource
     {
-        return new ProductResource(
-            $product->load([
-                'category',
-                'inventoryAccount',
-                'cogsAccount',
-                'salesAccount',
-                'purchaseAccount',
-            ])
-        );
+        $filter->apply($product->newQuery());
+
+        $product->loadMissing([
+            'category',
+            'inventoryAccount',
+            'cogsAccount',
+            'salesAccount',
+            'purchaseAccount',
+        ]);
+
+        return new ProductResource($product);
     }
 
     /**
