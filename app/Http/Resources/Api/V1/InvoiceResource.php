@@ -52,13 +52,8 @@ class InvoiceResource extends JsonResource
      *     paid_amount: string,
      *     outstanding_amount: string
      *   },
-     *   status: array{
-     *     value: string,
-     *     label: string,
-     *     color: string,
-     *     is_terminal: bool,
-     *     is_editable: bool
-     *   },
+     *   status: StatusResource,
+     *   status_label: string,
      *   journal_entry_id: int|null,
      *   has_journal_entry: bool,
      *   journal_entry?: array{id: int, entry_number: string},
@@ -67,6 +62,8 @@ class InvoiceResource extends JsonResource
      *   item_count?: int,
      *   payments?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
      *   payment_count?: int,
+     *   workflow?: array<string, mixed>,
+     *   status_history?: array<int, mixed>,
      *   actions: array{
      *     can_edit: bool,
      *     can_post: bool,
@@ -75,8 +72,12 @@ class InvoiceResource extends JsonResource
      *     can_mark_as_paid: bool,
      *     can_mark_as_partial: bool
      *   },
+     *   reminder_count: int,
+     *   last_reminder_at: string|null,
+     *   created_by: int|null,
      *   created_at: string|null,
-     *   updated_at: string|null
+     *   updated_at: string|null,
+     *   links?: array<string, string>
      * }
      */
     public function toArray(Request $request): array
@@ -128,13 +129,7 @@ class InvoiceResource extends JsonResource
             ],
 
             // Status
-            'status' => [
-                'value' => $this->status->value,
-                'label' => $this->status->label(),
-                'color' => $this->status->color(),
-                'is_terminal' => $this->status->isTerminal(),
-                'is_editable' => $this->status->isEditable(),
-            ],
+            'status' => new StatusResource($this->status),
             'status_label' => $this->status->label(),
 
             // Journal entry

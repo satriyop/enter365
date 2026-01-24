@@ -21,7 +21,7 @@ class WorkOrderResource extends JsonResource
      *   type: string,
      *   name: string,
      *   description: string|null,
-     *   status: array{value: string, label: string, color: string},
+     *   status: StatusResource,
      *   priority: string,
      *   quantity_ordered: float,
      *   quantity_completed: float,
@@ -83,11 +83,7 @@ class WorkOrderResource extends JsonResource
             'type' => $this->type,
             'name' => $this->name,
             'description' => $this->description,
-            'status' => [
-                'value' => $this->status->value,
-                'label' => $this->status->label(),
-                'color' => $this->status->color(),
-            ],
+            'status' => new StatusResource($this->status),
             'priority' => $this->priority,
 
             // Quantities

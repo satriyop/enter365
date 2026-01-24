@@ -18,7 +18,7 @@ class SubcontractorWorkOrderResource extends JsonResource
      *   name: string,
      *   description: string|null,
      *   scope_of_work: string|null,
-     *   status: array{value: string, label: string, color: string},
+     *   status: StatusResource,
      *   subcontractor_id: int,
      *   subcontractor?: array{id: int, name: string, phone: string|null, email: string|null}|null,
      *   work_order_id: int|null,
@@ -67,11 +67,7 @@ class SubcontractorWorkOrderResource extends JsonResource
             'name' => $this->name,
             'description' => $this->description,
             'scope_of_work' => $this->scope_of_work,
-            'status' => [
-                'value' => $this->status->value,
-                'label' => $this->status->label(),
-                'color' => $this->status->color(),
-            ],
+            'status' => new StatusResource($this->status),
 
             // Subcontractor
             'subcontractor_id' => $this->subcontractor_id,

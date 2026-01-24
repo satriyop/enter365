@@ -7,6 +7,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * @mixin \App\Models\Manufacturing\Bom
+ * @property \App\Enums\DocumentStatus $status
  */
 class BomResource extends JsonResource
 {
@@ -26,7 +27,8 @@ class BomResource extends JsonResource
      *   total_overhead_cost: int,
      *   total_cost: int,
      *   unit_cost: int,
-     *   status: string,
+     *   status: StatusResource,
+     *   status_label: string,
      *   version: int,
      *   parent_bom_id: int|null,
      *   variant_group_id: int|null,
@@ -66,13 +68,7 @@ class BomResource extends JsonResource
             'total_overhead_cost' => $this->total_overhead_cost,
             'total_cost' => $this->total_cost,
             'unit_cost' => $this->unit_cost,
-            'status' => [
-                'value' => $this->status->value,
-                'label' => $this->status->label(),
-                'color' => $this->status->color(),
-                'is_terminal' => $this->status->isTerminal(),
-                'is_editable' => $this->status->isEditable(),
-            ],
+            'status' => new StatusResource($this->status),
             'status_label' => $this->status->label(),
             'version' => $this->version,
             'parent_bom_id' => $this->parent_bom_id,

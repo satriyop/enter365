@@ -40693,7 +40693,42 @@
                         "type": "integer"
                     },
                     "status": {
-                        "$ref": "#/components/schemas/DocumentStatus"
+                        "$ref": "#/components/schemas/StatusResource"
+                    },
+                    "status_label": {
+                        "type": "string",
+                        "enum": [
+                            "Draft",
+                            "Dibatalkan",
+                            "Diajukan",
+                            "Disetujui",
+                            "Ditolak",
+                            "Selesai",
+                            "Dikonversi",
+                            "Kedaluwarsa",
+                            "Terkirim",
+                            "Sebagian",
+                            "Lunas",
+                            "Jatuh Tempo",
+                            "Diterima",
+                            "Selesai Digunakan",
+                            "Direfund",
+                            "Aktif",
+                            "Tidak Aktif",
+                            "Dikonfirmasi",
+                            "Dalam Proses",
+                            "Memproses",
+                            "Diterapkan",
+                            "Dikeluarkan",
+                            "Ditugaskan",
+                            "Penghitungan",
+                            "Direview",
+                            "Dikirim",
+                            "Menerima",
+                            "Perencanaan",
+                            "Ditunda",
+                            "Diarsipkan"
+                        ]
                     },
                     "journal_entry_id": {
                         "type": [
@@ -40755,6 +40790,7 @@
                     "paid_amount",
                     "outstanding_amount",
                     "status",
+                    "status_label",
                     "journal_entry_id",
                     "payable_account_id",
                     "created_by",
@@ -41019,7 +41055,42 @@
                         "type": "integer"
                     },
                     "status": {
-                        "$ref": "#/components/schemas/DocumentStatus"
+                        "$ref": "#/components/schemas/StatusResource"
+                    },
+                    "status_label": {
+                        "type": "string",
+                        "enum": [
+                            "Draft",
+                            "Dibatalkan",
+                            "Diajukan",
+                            "Disetujui",
+                            "Ditolak",
+                            "Selesai",
+                            "Dikonversi",
+                            "Kedaluwarsa",
+                            "Terkirim",
+                            "Sebagian",
+                            "Lunas",
+                            "Jatuh Tempo",
+                            "Diterima",
+                            "Selesai Digunakan",
+                            "Direfund",
+                            "Aktif",
+                            "Tidak Aktif",
+                            "Dikonfirmasi",
+                            "Dalam Proses",
+                            "Memproses",
+                            "Diterapkan",
+                            "Dikeluarkan",
+                            "Ditugaskan",
+                            "Penghitungan",
+                            "Direview",
+                            "Dikirim",
+                            "Menerima",
+                            "Perencanaan",
+                            "Ditunda",
+                            "Diarsipkan"
+                        ]
                     },
                     "version": {
                         "type": "string"
@@ -41124,6 +41195,7 @@
                     "total_cost",
                     "unit_cost",
                     "status",
+                    "status_label",
                     "version",
                     "parent_bom_id",
                     "variant_group_id",
@@ -42647,7 +42719,7 @@
                         ]
                     },
                     "status": {
-                        "$ref": "#/components/schemas/DocumentStatus"
+                        "$ref": "#/components/schemas/StatusResource"
                     },
                     "received_by": {
                         "type": [
@@ -43021,68 +43093,7 @@
                         ]
                     },
                     "status": {
-                        "type": "object",
-                        "properties": {
-                            "value": {
-                                "type": "string"
-                            },
-                            "label": {
-                                "type": "string",
-                                "enum": [
-                                    "Draft",
-                                    "Dibatalkan",
-                                    "Diajukan",
-                                    "Disetujui",
-                                    "Ditolak",
-                                    "Selesai",
-                                    "Dikonversi",
-                                    "Kedaluwarsa",
-                                    "Terkirim",
-                                    "Sebagian",
-                                    "Lunas",
-                                    "Jatuh Tempo",
-                                    "Diterima",
-                                    "Selesai Digunakan",
-                                    "Direfund",
-                                    "Aktif",
-                                    "Tidak Aktif",
-                                    "Dikonfirmasi",
-                                    "Dalam Proses",
-                                    "Memproses",
-                                    "Diterapkan",
-                                    "Dikeluarkan",
-                                    "Ditugaskan",
-                                    "Penghitungan",
-                                    "Direview",
-                                    "Dikirim",
-                                    "Menerima",
-                                    "Perencanaan",
-                                    "Ditunda",
-                                    "Diarsipkan"
-                                ]
-                            },
-                            "color": {
-                                "type": "string",
-                                "enum": [
-                                    "zinc",
-                                    "red",
-                                    "yellow",
-                                    "green",
-                                    "blue",
-                                    "orange",
-                                    "indigo",
-                                    "cyan",
-                                    "emerald",
-                                    "gray",
-                                    "purple"
-                                ]
-                            }
-                        },
-                        "required": [
-                            "value",
-                            "label",
-                            "color"
-                        ]
+                        "$ref": "#/components/schemas/StatusResource"
                     },
                     "journal_entry_id": {
                         "type": [
@@ -43474,68 +43485,7 @@
                         "type": "string"
                     },
                     "status": {
-                        "type": "object",
-                        "properties": {
-                            "value": {
-                                "type": "string"
-                            },
-                            "label": {
-                                "type": "string",
-                                "enum": [
-                                    "Draft",
-                                    "Dibatalkan",
-                                    "Diajukan",
-                                    "Disetujui",
-                                    "Ditolak",
-                                    "Selesai",
-                                    "Dikonversi",
-                                    "Kedaluwarsa",
-                                    "Terkirim",
-                                    "Sebagian",
-                                    "Lunas",
-                                    "Jatuh Tempo",
-                                    "Diterima",
-                                    "Selesai Digunakan",
-                                    "Direfund",
-                                    "Aktif",
-                                    "Tidak Aktif",
-                                    "Dikonfirmasi",
-                                    "Dalam Proses",
-                                    "Memproses",
-                                    "Diterapkan",
-                                    "Dikeluarkan",
-                                    "Ditugaskan",
-                                    "Penghitungan",
-                                    "Direview",
-                                    "Dikirim",
-                                    "Menerima",
-                                    "Perencanaan",
-                                    "Ditunda",
-                                    "Diarsipkan"
-                                ]
-                            },
-                            "color": {
-                                "type": "string",
-                                "enum": [
-                                    "zinc",
-                                    "red",
-                                    "yellow",
-                                    "green",
-                                    "blue",
-                                    "orange",
-                                    "indigo",
-                                    "cyan",
-                                    "emerald",
-                                    "gray",
-                                    "purple"
-                                ]
-                            }
-                        },
-                        "required": [
-                            "value",
-                            "label",
-                            "color"
-                        ]
+                        "$ref": "#/components/schemas/StatusResource"
                     },
                     "supplier_do_number": {
                         "type": [
@@ -44085,76 +44035,42 @@
                         ]
                     },
                     "status": {
-                        "type": "object",
                         "description": "Status",
-                        "properties": {
-                            "value": {
-                                "type": "string"
-                            },
-                            "label": {
-                                "type": "string",
-                                "enum": [
-                                    "Draft",
-                                    "Dibatalkan",
-                                    "Diajukan",
-                                    "Disetujui",
-                                    "Ditolak",
-                                    "Selesai",
-                                    "Dikonversi",
-                                    "Kedaluwarsa",
-                                    "Terkirim",
-                                    "Sebagian",
-                                    "Lunas",
-                                    "Jatuh Tempo",
-                                    "Diterima",
-                                    "Selesai Digunakan",
-                                    "Direfund",
-                                    "Aktif",
-                                    "Tidak Aktif",
-                                    "Dikonfirmasi",
-                                    "Dalam Proses",
-                                    "Memproses",
-                                    "Diterapkan",
-                                    "Dikeluarkan",
-                                    "Ditugaskan",
-                                    "Penghitungan",
-                                    "Direview",
-                                    "Dikirim",
-                                    "Menerima",
-                                    "Perencanaan",
-                                    "Ditunda",
-                                    "Diarsipkan"
-                                ]
-                            },
-                            "color": {
-                                "type": "string",
-                                "enum": [
-                                    "zinc",
-                                    "red",
-                                    "yellow",
-                                    "green",
-                                    "blue",
-                                    "orange",
-                                    "indigo",
-                                    "cyan",
-                                    "emerald",
-                                    "gray",
-                                    "purple"
-                                ]
-                            },
-                            "is_terminal": {
-                                "type": "boolean"
-                            },
-                            "is_editable": {
-                                "type": "boolean"
-                            }
-                        },
-                        "required": [
-                            "value",
-                            "label",
-                            "color",
-                            "is_terminal",
-                            "is_editable"
+                        "$ref": "#/components/schemas/StatusResource"
+                    },
+                    "status_label": {
+                        "type": "string",
+                        "enum": [
+                            "Draft",
+                            "Dibatalkan",
+                            "Diajukan",
+                            "Disetujui",
+                            "Ditolak",
+                            "Selesai",
+                            "Dikonversi",
+                            "Kedaluwarsa",
+                            "Terkirim",
+                            "Sebagian",
+                            "Lunas",
+                            "Jatuh Tempo",
+                            "Diterima",
+                            "Selesai Digunakan",
+                            "Direfund",
+                            "Aktif",
+                            "Tidak Aktif",
+                            "Dikonfirmasi",
+                            "Dalam Proses",
+                            "Memproses",
+                            "Diterapkan",
+                            "Dikeluarkan",
+                            "Ditugaskan",
+                            "Penghitungan",
+                            "Direview",
+                            "Dikirim",
+                            "Menerima",
+                            "Perencanaan",
+                            "Ditunda",
+                            "Diarsipkan"
                         ]
                     },
                     "journal_entry_id": {
@@ -44432,6 +44348,7 @@
                     "base_currency_total",
                     "formatted",
                     "status",
+                    "status_label",
                     "journal_entry_id",
                     "has_journal_entry",
                     "receivable_account_id",
@@ -44930,7 +44847,7 @@
                         "type": "string"
                     },
                     "status": {
-                        "$ref": "#/components/schemas/DocumentStatus"
+                        "$ref": "#/components/schemas/StatusResource"
                     },
                     "requested_date": {
                         "type": "string"
@@ -45205,68 +45122,7 @@
                         "type": "string"
                     },
                     "status": {
-                        "type": "object",
-                        "properties": {
-                            "value": {
-                                "type": "string"
-                            },
-                            "label": {
-                                "type": "string",
-                                "enum": [
-                                    "Draft",
-                                    "Dibatalkan",
-                                    "Diajukan",
-                                    "Disetujui",
-                                    "Ditolak",
-                                    "Selesai",
-                                    "Dikonversi",
-                                    "Kedaluwarsa",
-                                    "Terkirim",
-                                    "Sebagian",
-                                    "Lunas",
-                                    "Jatuh Tempo",
-                                    "Diterima",
-                                    "Selesai Digunakan",
-                                    "Direfund",
-                                    "Aktif",
-                                    "Tidak Aktif",
-                                    "Dikonfirmasi",
-                                    "Dalam Proses",
-                                    "Memproses",
-                                    "Diterapkan",
-                                    "Dikeluarkan",
-                                    "Ditugaskan",
-                                    "Penghitungan",
-                                    "Direview",
-                                    "Dikirim",
-                                    "Menerima",
-                                    "Perencanaan",
-                                    "Ditunda",
-                                    "Diarsipkan"
-                                ]
-                            },
-                            "color": {
-                                "type": "string",
-                                "enum": [
-                                    "zinc",
-                                    "red",
-                                    "yellow",
-                                    "green",
-                                    "blue",
-                                    "orange",
-                                    "indigo",
-                                    "cyan",
-                                    "emerald",
-                                    "gray",
-                                    "purple"
-                                ]
-                            }
-                        },
-                        "required": [
-                            "value",
-                            "label",
-                            "color"
-                        ]
+                        "$ref": "#/components/schemas/StatusResource"
                     },
                     "planning_horizon_start": {
                         "type": [
@@ -46717,7 +46573,7 @@
                         "type": "string"
                     },
                     "status": {
-                        "$ref": "#/components/schemas/DocumentStatus"
+                        "$ref": "#/components/schemas/StatusResource"
                     },
                     "budget_amount": {
                         "type": "integer"
@@ -47148,7 +47004,7 @@
                         "type": "string"
                     },
                     "status": {
-                        "type": "string"
+                        "$ref": "#/components/schemas/StatusResource"
                     },
                     "status_label": {
                         "type": "string"
@@ -47593,68 +47449,7 @@
                         "type": "integer"
                     },
                     "status": {
-                        "type": "object",
-                        "properties": {
-                            "value": {
-                                "type": "string"
-                            },
-                            "label": {
-                                "type": "string",
-                                "enum": [
-                                    "Draft",
-                                    "Dibatalkan",
-                                    "Diajukan",
-                                    "Disetujui",
-                                    "Ditolak",
-                                    "Selesai",
-                                    "Dikonversi",
-                                    "Kedaluwarsa",
-                                    "Terkirim",
-                                    "Sebagian",
-                                    "Lunas",
-                                    "Jatuh Tempo",
-                                    "Diterima",
-                                    "Selesai Digunakan",
-                                    "Direfund",
-                                    "Aktif",
-                                    "Tidak Aktif",
-                                    "Dikonfirmasi",
-                                    "Dalam Proses",
-                                    "Memproses",
-                                    "Diterapkan",
-                                    "Dikeluarkan",
-                                    "Ditugaskan",
-                                    "Penghitungan",
-                                    "Direview",
-                                    "Dikirim",
-                                    "Menerima",
-                                    "Perencanaan",
-                                    "Ditunda",
-                                    "Diarsipkan"
-                                ]
-                            },
-                            "color": {
-                                "type": "string",
-                                "enum": [
-                                    "zinc",
-                                    "red",
-                                    "yellow",
-                                    "green",
-                                    "blue",
-                                    "orange",
-                                    "indigo",
-                                    "cyan",
-                                    "emerald",
-                                    "gray",
-                                    "purple"
-                                ]
-                            }
-                        },
-                        "required": [
-                            "value",
-                            "label",
-                            "color"
-                        ]
+                        "$ref": "#/components/schemas/StatusResource"
                     },
                     "items": {
                         "type": "array",
@@ -47866,6 +47661,18 @@
                             "null"
                         ]
                     },
+                    "outcome": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "duration_minutes": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
                     "created_at": {
                         "type": "string"
                     }
@@ -47876,6 +47683,8 @@
                     "user_id",
                     "activity_type",
                     "description",
+                    "outcome",
+                    "duration_minutes",
                     "created_at"
                 ],
                 "title": "QuotationActivityResource"
@@ -48064,7 +47873,7 @@
                         "type": "boolean"
                     },
                     "status": {
-                        "$ref": "#/components/schemas/DocumentStatus"
+                        "$ref": "#/components/schemas/StatusResource"
                     },
                     "status_label": {
                         "type": "string"
@@ -49044,7 +48853,7 @@
                         "type": "integer"
                     },
                     "status": {
-                        "$ref": "#/components/schemas/DocumentStatus"
+                        "$ref": "#/components/schemas/StatusResource"
                     },
                     "items": {
                         "type": "array",
@@ -49193,68 +49002,7 @@
                         "type": "string"
                     },
                     "status": {
-                        "type": "object",
-                        "properties": {
-                            "value": {
-                                "type": "string"
-                            },
-                            "label": {
-                                "type": "string",
-                                "enum": [
-                                    "Draft",
-                                    "Dibatalkan",
-                                    "Diajukan",
-                                    "Disetujui",
-                                    "Ditolak",
-                                    "Selesai",
-                                    "Dikonversi",
-                                    "Kedaluwarsa",
-                                    "Terkirim",
-                                    "Sebagian",
-                                    "Lunas",
-                                    "Jatuh Tempo",
-                                    "Diterima",
-                                    "Selesai Digunakan",
-                                    "Direfund",
-                                    "Aktif",
-                                    "Tidak Aktif",
-                                    "Dikonfirmasi",
-                                    "Dalam Proses",
-                                    "Memproses",
-                                    "Diterapkan",
-                                    "Dikeluarkan",
-                                    "Ditugaskan",
-                                    "Penghitungan",
-                                    "Direview",
-                                    "Dikirim",
-                                    "Menerima",
-                                    "Perencanaan",
-                                    "Ditunda",
-                                    "Diarsipkan"
-                                ]
-                            },
-                            "color": {
-                                "type": "string",
-                                "enum": [
-                                    "zinc",
-                                    "red",
-                                    "yellow",
-                                    "green",
-                                    "blue",
-                                    "orange",
-                                    "indigo",
-                                    "cyan",
-                                    "emerald",
-                                    "gray",
-                                    "purple"
-                                ]
-                            }
-                        },
-                        "required": [
-                            "value",
-                            "label",
-                            "color"
-                        ]
+                        "$ref": "#/components/schemas/StatusResource"
                     },
                     "status_label": {
                         "type": "string"
@@ -49357,7 +49105,7 @@
                         "type": "string"
                     },
                     "status": {
-                        "$ref": "#/components/schemas/DocumentStatus"
+                        "$ref": "#/components/schemas/StatusResource"
                     },
                     "status_label": {
                         "type": "string"
@@ -49926,6 +49674,79 @@
                 ],
                 "title": "SpecValidationRuleSetResource"
             },
+            "StatusResource": {
+                "type": "object",
+                "properties": {
+                    "value": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string",
+                        "enum": [
+                            "Draft",
+                            "Dibatalkan",
+                            "Diajukan",
+                            "Disetujui",
+                            "Ditolak",
+                            "Selesai",
+                            "Dikonversi",
+                            "Kedaluwarsa",
+                            "Terkirim",
+                            "Sebagian",
+                            "Lunas",
+                            "Jatuh Tempo",
+                            "Diterima",
+                            "Selesai Digunakan",
+                            "Direfund",
+                            "Aktif",
+                            "Tidak Aktif",
+                            "Dikonfirmasi",
+                            "Dalam Proses",
+                            "Memproses",
+                            "Diterapkan",
+                            "Dikeluarkan",
+                            "Ditugaskan",
+                            "Penghitungan",
+                            "Direview",
+                            "Dikirim",
+                            "Menerima",
+                            "Perencanaan",
+                            "Ditunda",
+                            "Diarsipkan"
+                        ]
+                    },
+                    "color": {
+                        "type": "string",
+                        "enum": [
+                            "zinc",
+                            "red",
+                            "yellow",
+                            "green",
+                            "blue",
+                            "orange",
+                            "indigo",
+                            "cyan",
+                            "emerald",
+                            "gray",
+                            "purple"
+                        ]
+                    },
+                    "is_terminal": {
+                        "type": "boolean"
+                    },
+                    "is_editable": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "value",
+                    "label",
+                    "color",
+                    "is_terminal",
+                    "is_editable"
+                ],
+                "title": "StatusResource"
+            },
             "StockAdjustmentRequest": {
                 "type": "object",
                 "properties": {
@@ -50107,68 +49928,7 @@
                         "type": "string"
                     },
                     "status": {
-                        "type": "object",
-                        "properties": {
-                            "value": {
-                                "type": "string"
-                            },
-                            "label": {
-                                "type": "string",
-                                "enum": [
-                                    "Draft",
-                                    "Dibatalkan",
-                                    "Diajukan",
-                                    "Disetujui",
-                                    "Ditolak",
-                                    "Selesai",
-                                    "Dikonversi",
-                                    "Kedaluwarsa",
-                                    "Terkirim",
-                                    "Sebagian",
-                                    "Lunas",
-                                    "Jatuh Tempo",
-                                    "Diterima",
-                                    "Selesai Digunakan",
-                                    "Direfund",
-                                    "Aktif",
-                                    "Tidak Aktif",
-                                    "Dikonfirmasi",
-                                    "Dalam Proses",
-                                    "Memproses",
-                                    "Diterapkan",
-                                    "Dikeluarkan",
-                                    "Ditugaskan",
-                                    "Penghitungan",
-                                    "Direview",
-                                    "Dikirim",
-                                    "Menerima",
-                                    "Perencanaan",
-                                    "Ditunda",
-                                    "Diarsipkan"
-                                ]
-                            },
-                            "color": {
-                                "type": "string",
-                                "enum": [
-                                    "zinc",
-                                    "red",
-                                    "yellow",
-                                    "green",
-                                    "blue",
-                                    "orange",
-                                    "indigo",
-                                    "cyan",
-                                    "emerald",
-                                    "gray",
-                                    "purple"
-                                ]
-                            }
-                        },
-                        "required": [
-                            "value",
-                            "label",
-                            "color"
-                        ]
+                        "$ref": "#/components/schemas/StatusResource"
                     },
                     "name": {
                         "type": [
@@ -54564,6 +54324,15 @@
                             "name"
                         ]
                     },
+                    "gross_amount": {
+                        "type": "integer"
+                    },
+                    "retention_held": {
+                        "type": "integer"
+                    },
+                    "other_deductions": {
+                        "type": "integer"
+                    },
                     "net_amount": {
                         "type": "integer"
                     },
@@ -54574,7 +54343,48 @@
                         "type": "string"
                     },
                     "status": {
-                        "type": "string"
+                        "$ref": "#/components/schemas/StatusResource"
+                    },
+                    "status_label": {
+                        "type": "string",
+                        "enum": [
+                            "Draft",
+                            "Dibatalkan",
+                            "Diajukan",
+                            "Disetujui",
+                            "Ditolak",
+                            "Selesai",
+                            "Dikonversi",
+                            "Kedaluwarsa",
+                            "Terkirim",
+                            "Sebagian",
+                            "Lunas",
+                            "Jatuh Tempo",
+                            "Diterima",
+                            "Selesai Digunakan",
+                            "Direfund",
+                            "Aktif",
+                            "Tidak Aktif",
+                            "Dikonfirmasi",
+                            "Dalam Proses",
+                            "Memproses",
+                            "Diterapkan",
+                            "Dikeluarkan",
+                            "Ditugaskan",
+                            "Penghitungan",
+                            "Direview",
+                            "Dikirim",
+                            "Menerima",
+                            "Perencanaan",
+                            "Ditunda",
+                            "Diarsipkan"
+                        ]
+                    },
+                    "rejection_reason": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "notes": {
                         "type": [
@@ -54594,10 +54404,15 @@
                     "invoice_number",
                     "subcontractor_id",
                     "subcontractor_work_order_id",
+                    "gross_amount",
+                    "retention_held",
+                    "other_deductions",
                     "net_amount",
                     "invoice_date",
                     "due_date",
                     "status",
+                    "status_label",
+                    "rejection_reason",
                     "notes",
                     "created_at",
                     "updated_at"
@@ -54629,68 +54444,7 @@
                         ]
                     },
                     "status": {
-                        "type": "object",
-                        "properties": {
-                            "value": {
-                                "type": "string"
-                            },
-                            "label": {
-                                "type": "string",
-                                "enum": [
-                                    "Draft",
-                                    "Dibatalkan",
-                                    "Diajukan",
-                                    "Disetujui",
-                                    "Ditolak",
-                                    "Selesai",
-                                    "Dikonversi",
-                                    "Kedaluwarsa",
-                                    "Terkirim",
-                                    "Sebagian",
-                                    "Lunas",
-                                    "Jatuh Tempo",
-                                    "Diterima",
-                                    "Selesai Digunakan",
-                                    "Direfund",
-                                    "Aktif",
-                                    "Tidak Aktif",
-                                    "Dikonfirmasi",
-                                    "Dalam Proses",
-                                    "Memproses",
-                                    "Diterapkan",
-                                    "Dikeluarkan",
-                                    "Ditugaskan",
-                                    "Penghitungan",
-                                    "Direview",
-                                    "Dikirim",
-                                    "Menerima",
-                                    "Perencanaan",
-                                    "Ditunda",
-                                    "Diarsipkan"
-                                ]
-                            },
-                            "color": {
-                                "type": "string",
-                                "enum": [
-                                    "zinc",
-                                    "red",
-                                    "yellow",
-                                    "green",
-                                    "blue",
-                                    "orange",
-                                    "indigo",
-                                    "cyan",
-                                    "emerald",
-                                    "gray",
-                                    "purple"
-                                ]
-                            }
-                        },
-                        "required": [
-                            "value",
-                            "label",
-                            "color"
-                        ]
+                        "$ref": "#/components/schemas/StatusResource"
                     },
                     "subcontractor_id": {
                         "type": "integer",
@@ -58497,68 +58251,7 @@
                         ]
                     },
                     "status": {
-                        "type": "object",
-                        "properties": {
-                            "value": {
-                                "type": "string"
-                            },
-                            "label": {
-                                "type": "string",
-                                "enum": [
-                                    "Draft",
-                                    "Dibatalkan",
-                                    "Diajukan",
-                                    "Disetujui",
-                                    "Ditolak",
-                                    "Selesai",
-                                    "Dikonversi",
-                                    "Kedaluwarsa",
-                                    "Terkirim",
-                                    "Sebagian",
-                                    "Lunas",
-                                    "Jatuh Tempo",
-                                    "Diterima",
-                                    "Selesai Digunakan",
-                                    "Direfund",
-                                    "Aktif",
-                                    "Tidak Aktif",
-                                    "Dikonfirmasi",
-                                    "Dalam Proses",
-                                    "Memproses",
-                                    "Diterapkan",
-                                    "Dikeluarkan",
-                                    "Ditugaskan",
-                                    "Penghitungan",
-                                    "Direview",
-                                    "Dikirim",
-                                    "Menerima",
-                                    "Perencanaan",
-                                    "Ditunda",
-                                    "Diarsipkan"
-                                ]
-                            },
-                            "color": {
-                                "type": "string",
-                                "enum": [
-                                    "zinc",
-                                    "red",
-                                    "yellow",
-                                    "green",
-                                    "blue",
-                                    "orange",
-                                    "indigo",
-                                    "cyan",
-                                    "emerald",
-                                    "gray",
-                                    "purple"
-                                ]
-                            }
-                        },
-                        "required": [
-                            "value",
-                            "label",
-                            "color"
-                        ]
+                        "$ref": "#/components/schemas/StatusResource"
                     },
                     "priority": {
                         "type": "string"

@@ -20,7 +20,7 @@ class GoodsReceiptNoteResource extends JsonResource
      *   warehouse_id: int,
      *   warehouse?: array{id: int, code: string, name: string},
      *   receipt_date: string,
-     *   status: array{value: string, label: string, color: string},
+     *   status: StatusResource,
      *   supplier_do_number: string|null,
      *   supplier_invoice_number: string|null,
      *   vehicle_number: string|null,
@@ -68,13 +68,7 @@ class GoodsReceiptNoteResource extends JsonResource
                 'name' => $this->warehouse->name,
             ]),
             'receipt_date' => $this->receipt_date->toDateString(),
-            'status' => [
-                'value' => $this->status->value,
-                'label' => $this->status->label(),
-                'color' => $this->status->color(),
-                'is_terminal' => $this->status->isTerminal(),
-                'is_editable' => $this->status->isEditable(),
-            ],
+            'status' => new StatusResource($this->status),
 
             // Supplier references
             'supplier_do_number' => $this->supplier_do_number,

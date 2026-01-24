@@ -7,6 +7,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * @mixin \App\Models\Shared\SubcontractorInvoice
+ * @property \App\Enums\DocumentStatus $status
  */
 class SubcontractorInvoiceResource extends JsonResource
 {
@@ -22,7 +23,7 @@ class SubcontractorInvoiceResource extends JsonResource
      *   net_amount: int,
      *   invoice_date: string,
      *   due_date: string,
-     *   status: string,
+     *   status: StatusResource,
      *   notes: string|null,
      *   created_at: string,
      *   updated_at: string
@@ -59,13 +60,7 @@ class SubcontractorInvoiceResource extends JsonResource
             'net_amount' => $this->net_amount,
             'invoice_date' => $invoiceDate?->toDateString(),
             'due_date' => $dueDate?->toDateString(),
-            'status' => [
-                'value' => $this->status->value,
-                'label' => $this->status->label(),
-                'color' => $this->status->color(),
-                'is_terminal' => $this->status->isTerminal(),
-                'is_editable' => $this->status->isEditable(),
-            ],
+            'status' => new StatusResource($this->status),
             'status_label' => $this->status->label(),
             'rejection_reason' => $this->rejection_reason,
             'notes' => $this->notes,

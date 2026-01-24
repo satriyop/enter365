@@ -25,7 +25,7 @@ class PurchaseOrderResource extends JsonResource
      *   expected_date: string|null,
      *   reference: string|null,
      *   subject: string|null,
-     *   status: string,
+     *   status: StatusResource,
      *   status_label: string,
      *   currency: string,
      *   exchange_rate: float,
@@ -90,14 +90,7 @@ class PurchaseOrderResource extends JsonResource
 
             'reference' => $this->reference,
             'subject' => $this->subject,
-            'status' => [
-                'value' => $this->status->value,
-                'label' => $this->status->label(),
-                'color' => $this->status->color(),
-                'is_terminal' => $this->status->isTerminal(),
-                'is_editable' => $this->status->isEditable(),
-            ],
-            'status_label' => $this->status->label(),
+            'status' => new StatusResource($this->status),
             'status_label' => $this->getStatusLabel(),
 
             'currency' => $this->currency,

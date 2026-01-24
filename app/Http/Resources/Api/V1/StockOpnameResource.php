@@ -20,7 +20,7 @@ class StockOpnameResource extends JsonResource
      *   warehouse_id: int,
      *   warehouse?: array{id: int, code: string, name: string},
      *   opname_date: string,
-     *   status: array{value: string, label: string, color: string},
+     *   status: StatusResource,
      *   name: string|null,
      *   notes: string|null,
      *   counted_by: int|null,
@@ -65,11 +65,7 @@ class StockOpnameResource extends JsonResource
                 'name' => $this->warehouse->name,
             ]),
             'opname_date' => $this->opname_date->toDateString(),
-            'status' => [
-                'value' => $this->status->value,
-                'label' => $this->status->label(),
-                'color' => $this->status->color(),
-            ],
+            'status' => new StatusResource($this->status),
             'name' => $this->name,
             'notes' => $this->notes,
 
