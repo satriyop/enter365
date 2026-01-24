@@ -97,6 +97,7 @@ class PurchaseOrderResource extends JsonResource
                 'is_terminal' => $this->status->isTerminal(),
                 'is_editable' => $this->status->isEditable(),
             ],
+            'status_label' => $this->status->label(),
             'status_label' => $this->getStatusLabel(),
 
             'currency' => $this->currency,

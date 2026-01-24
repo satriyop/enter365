@@ -65,6 +65,7 @@ class BillResource extends JsonResource
                 'is_terminal' => $this->status->isTerminal(),
                 'is_editable' => $this->status->isEditable(),
             ],
+            'status_label' => $this->status->label(),
             'journal_entry_id' => $this->journal_entry_id,
             'payable_account_id' => $this->payable_account_id,
             'contact' => new ContactResource($this->whenLoaded('contact')),

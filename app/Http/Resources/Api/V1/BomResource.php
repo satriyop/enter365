@@ -73,6 +73,7 @@ class BomResource extends JsonResource
                 'is_terminal' => $this->status->isTerminal(),
                 'is_editable' => $this->status->isEditable(),
             ],
+            'status_label' => $this->status->label(),
             'version' => $this->version,
             'parent_bom_id' => $this->parent_bom_id,
             'variant_group_id' => $this->variant_group_id,

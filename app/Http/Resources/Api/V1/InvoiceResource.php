@@ -135,6 +135,7 @@ class InvoiceResource extends JsonResource
                 'is_terminal' => $this->status->isTerminal(),
                 'is_editable' => $this->status->isEditable(),
             ],
+            'status_label' => $this->status->label(),
 
             // Journal entry
             'journal_entry_id' => $this->journal_entry_id,

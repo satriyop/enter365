@@ -66,6 +66,7 @@ class SubcontractorInvoiceResource extends JsonResource
                 'is_terminal' => $this->status->isTerminal(),
                 'is_editable' => $this->status->isEditable(),
             ],
+            'status_label' => $this->status->label(),
             'rejection_reason' => $this->rejection_reason,
             'notes' => $this->notes,
             'created_at' => $createdAt?->toIso8601String(),
