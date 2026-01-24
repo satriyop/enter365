@@ -380,12 +380,11 @@ describe('Work Order Workflow', function () {
             'quantity_required' => 10,
         ]);
 
-        $response = $this->postJson("/api/v1/work-orders/{$workOrder->id}/confirm");
-
-        $response->assertUnprocessable();
-        expect($response->json('message'))->toContain('Stok tidak mencukupi');
-    });
-
+                $response = $this->postJson("/api/v1/work-orders/{$workOrder->id}/confirm");
+         
+                $response->assertStatus(409);
+                expect($response->json('message'))->toContain('Stok tidak cukup');
+            });
     it('can start confirmed work order', function () {
         $workOrder = WorkOrder::factory()->confirmed()->create();
 

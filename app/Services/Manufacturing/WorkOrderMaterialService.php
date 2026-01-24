@@ -14,7 +14,6 @@ use App\Models\Manufacturing\MaterialConsumption;
 use App\Models\Manufacturing\WorkOrder;
 use App\Models\Manufacturing\WorkOrderItem;
 use App\Services\Base\BaseService;
-use InvalidArgumentException;
 
 /**
  * Service for work order material management.
@@ -53,9 +52,10 @@ class WorkOrderMaterialService extends BaseService
 
             if ($availableQty < (float) $item->quantity_required) {
                 $product = $item->product;
-                throw new InvalidArgumentException(
-                    "Stok tidak mencukupi untuk {$product->name}. ".
-                    "Dibutuhkan: {$item->quantity_required}, Tersedia: {$availableQty}"
+                throw \App\Exceptions\Domain\BusinessRuleException::insufficientStock(
+                    $product->name,
+                    (float) $item->quantity_required,
+                    $availableQty
                 );
             }
 
@@ -150,7 +150,12 @@ class WorkOrderMaterialService extends BaseService
     public function recordConsumption(WorkOrder $wo, array $consumptions): void
     {
         if ($wo->status !== DocumentStatus::InProgress) {
-            throw new InvalidArgumentException('Konsumsi material hanya dapat dicatat saat work order dalam proses.');
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Work Order',
+                'catat konsumsi material',
+                $wo->status->value,
+                'dalam proses'
+            );
         }
 
         $this->executeInTransaction('record_consumption', function () use ($wo, $consumptions) {
