@@ -5,16 +5,55 @@ namespace App\Http\Resources\Api\V1;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin \App\Models\Sales\DeliveryOrder
+ */
 class DeliveryOrderResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
      *
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   do_number: string,
+     *   invoice_id: int|null,
+     *   invoice?: array{id: int, invoice_number: string, total_amount: int},
+     *   contact_id: int,
+     *   contact?: array{id: int, name: string, address: string|null, phone: string|null},
+     *   warehouse_id: int,
+     *   warehouse?: array{id: int, name: string},
+     *   do_date: string,
+     *   shipping_date: string|null,
+     *   received_date: string|null,
+     *   shipping_address: string,
+     *   shipping_method: string|null,
+     *   tracking_number: string|null,
+     *   driver_name: string|null,
+     *   vehicle_number: string|null,
+     *   notes: string|null,
+     *   status: string,
+     *   received_by: string|null,
+     *   delivery_notes: string|null,
+     *   items?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
+     *   items_count?: int,
+     *   total_quantity?: float,
+     *   total_delivered?: float,
+     *   delivery_progress?: float,
+     *   created_by: int|null,
+     *   creator?: array{id: int, name: string},
+     *   confirmed_by: int|null,
+     *   confirmed_at: string|null,
+     *   shipped_by: int|null,
+     *   shipped_at: string|null,
+     *   delivered_by: int|null,
+     *   delivered_at: string|null,
+     *   created_at: string,
+     *   updated_at: string
+     * }
      */
     public function toArray(Request $request): array
-    {
-        return [
+    {        return [
             'id' => $this->id,
             'do_number' => $this->do_number,
             'invoice_id' => $this->invoice_id,

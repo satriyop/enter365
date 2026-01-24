@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Filters\CompanyProfileFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreCompanyProfileRequest;
 use App\Http\Requests\Api\V1\UpdateCompanyProfileRequest;
@@ -14,24 +15,12 @@ use Illuminate\Support\Facades\Storage;
 
 class CompanyProfileController extends Controller
 {
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(CompanyProfileFilter $filter): AnonymousResourceCollection
     {
-        $query = CompanyProfile::query();
-
-        if ($request->has('is_active')) {
-            $query->where('is_active', $request->boolean('is_active'));
-        }
-
-        if ($request->has('search')) {
-            $search = $request->input('search');
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'LIKE', "%{$search}%")
-                    ->orWhere('slug', 'LIKE', "%{$search}%")
-                    ->orWhere('tagline', 'LIKE', "%{$search}%");
-            });
-        }
-
-        $profiles = $query->orderBy('name')->paginate($request->input('per_page', 25));
+        $profiles = CompanyProfile::query()
+            ->filter($filter)
+            ->orderBy('name')
+            ->paginate($filter->getRequest()->input('per_page', 25));
 
         return CompanyProfileResource::collection($profiles);
     }
@@ -58,8 +47,10 @@ class CompanyProfileController extends Controller
         return new CompanyProfileResource($profile);
     }
 
-    public function show(CompanyProfile $companyProfile): CompanyProfileResource
+    public function show(CompanyProfile $companyProfile, CompanyProfileFilter $filter): CompanyProfileResource
     {
+        $filter->apply($companyProfile->newQuery());
+
         return new CompanyProfileResource($companyProfile);
     }
 

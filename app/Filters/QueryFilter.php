@@ -70,7 +70,7 @@ abstract class QueryFilter
 
         foreach ($this->getFilterableParameters() as $name => $value) {
             $method = Str::camel($name);
-
+            
             if ($this->shouldApplyFilter($method, $value)) {
                 $this->{$method}($value);
             }

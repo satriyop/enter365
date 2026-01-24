@@ -5,12 +5,51 @@ namespace App\Http\Resources\Api\V1;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin \App\Models\Sales\SalesReturn
+ */
 class SalesReturnResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
      *
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   return_number: string,
+     *   invoice_id: int|null,
+     *   invoice?: array{id: int, invoice_number: string, total_amount: int},
+     *   contact_id: int,
+     *   contact?: array{id: int, name: string, address: string|null, phone: string|null},
+     *   warehouse_id: int,
+     *   warehouse?: array{id: int, name: string},
+     *   return_date: string,
+     *   reason: string|null,
+     *   notes: string|null,
+     *   subtotal: int,
+     *   tax_rate: float,
+     *   tax_amount: int,
+     *   total_amount: int,
+     *   status: string,
+     *   items?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
+     *   items_count?: int,
+     *   journal_entry_id: int|null,
+     *   journal_entry?: array{id: int, entry_number: string},
+     *   credit_note_id: int|null,
+     *   created_by: int|null,
+     *   creator?: array{id: int, name: string},
+     *   submitted_by: int|null,
+     *   submitted_at: string|null,
+     *   approved_by: int|null,
+     *   approved_at: string|null,
+     *   rejected_by: int|null,
+     *   rejected_at: string|null,
+     *   rejection_reason: string|null,
+     *   completed_by: int|null,
+     *   completed_at: string|null,
+     *   created_at: string,
+     *   updated_at: string
+     * }
      */
     public function toArray(Request $request): array
     {

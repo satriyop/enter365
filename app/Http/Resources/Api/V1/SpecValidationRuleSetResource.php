@@ -12,7 +12,21 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class SpecValidationRuleSetResource extends JsonResource
 {
     /**
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   code: string,
+     *   name: string,
+     *   description: string|null,
+     *   is_default: bool,
+     *   is_active: bool,
+     *   rules?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
+     *   rules_count?: int,
+     *   boms_count?: int,
+     *   creator?: array{id: int, name: string},
+     *   created_at: string|null,
+     *   updated_at: string|null
+     * }
      */
     public function toArray(Request $request): array
     {

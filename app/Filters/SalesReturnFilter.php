@@ -67,6 +67,22 @@ class SalesReturnFilter extends QueryFilter
     }
 
     /**
+     * {@inheritdoc}
+     */
+    protected function getAllowedIncludes(): array
+    {
+        return [
+            'contact',
+            'warehouse',
+            'items',
+            'items.product',
+            'invoice',
+            'journalEntry',
+            'creator',
+        ];
+    }
+
+    /**
      * Filter by customer contact.
      */
     public function contactId(int|string $value): void

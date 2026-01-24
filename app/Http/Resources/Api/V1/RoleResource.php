@@ -6,10 +6,25 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Models\Accounting\Role
+ * @mixin \App\Models\Core\Role
  */
 class RoleResource extends JsonResource
 {
+    /**
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   name: string,
+     *   display_name: string,
+     *   description: string|null,
+     *   is_system: bool,
+     *   permissions?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
+     *   permissions_count?: int,
+     *   users_count?: int,
+     *   created_at: string|null,
+     *   updated_at: string|null
+     * }
+     */
     public function toArray(Request $request): array
     {
         return [

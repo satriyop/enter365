@@ -10,6 +10,38 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class CompanyProfileResource extends JsonResource
 {
+    /**
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   name: string,
+     *   slug: string,
+     *   tagline: string|null,
+     *   description: string|null,
+     *   founded_year: int|null,
+     *   employees_count: int|null,
+     *   logo_path: string|null,
+     *   logo_url: string|null,
+     *   cover_image_path: string|null,
+     *   cover_image_url: string|null,
+     *   primary_color: string|null,
+     *   secondary_color: string|null,
+     *   services: array<mixed>,
+     *   portfolio: array<mixed>,
+     *   team: array<mixed>,
+     *   certifications: array<mixed>,
+     *   social_links: array<mixed>,
+     *   email: string|null,
+     *   phone: string|null,
+     *   address: string|null,
+     *   website: string|null,
+     *   custom_domain: string|null,
+     *   public_url: string|null,
+     *   is_active: bool,
+     *   created_at: string|null,
+     *   updated_at: string|null
+     * }
+     */
     public function toArray(Request $request): array
     {
         return [

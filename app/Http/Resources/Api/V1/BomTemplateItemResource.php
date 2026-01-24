@@ -12,7 +12,28 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class BomTemplateItemResource extends JsonResource
 {
     /**
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   template_id: int,
+     *   type: string,
+     *   type_label: string,
+     *   component_standard_id: int|null,
+     *   component_standard?: array{id: int, code: string, name: string, category: string},
+     *   product_id: int|null,
+     *   product?: array{id: int, name: string, sku: string, purchase_price: int},
+     *   description: string,
+     *   default_quantity: float,
+     *   unit: string,
+     *   is_required: bool,
+     *   is_quantity_variable: bool,
+     *   sort_order: int,
+     *   notes: string|null,
+     *   has_component_standard: bool,
+     *   has_product: bool,
+     *   created_at: string|null,
+     *   updated_at: string|null
+     * }
      */
     public function toArray(Request $request): array
     {

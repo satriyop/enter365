@@ -6,10 +6,22 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Models\Accounting\Permission
+ * @mixin \App\Models\Core\Permission
  */
 class PermissionResource extends JsonResource
 {
+    /**
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   name: string,
+     *   display_name: string,
+     *   group: string|null,
+     *   description: string|null,
+     *   created_at: string|null,
+     *   updated_at: string|null
+     * }
+     */
     public function toArray(Request $request): array
     {
         return [

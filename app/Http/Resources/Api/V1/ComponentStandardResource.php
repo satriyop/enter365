@@ -12,7 +12,26 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class ComponentStandardResource extends JsonResource
 {
     /**
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   code: string,
+     *   name: string,
+     *   category: string,
+     *   category_label: string,
+     *   subcategory: string|null,
+     *   specifications: array<string, mixed>|null,
+     *   standard: string|null,
+     *   description: string|null,
+     *   unit: string|null,
+     *   is_active: bool,
+     *   brand_mappings?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
+     *   available_brands?: array<string>,
+     *   brand_count?: int,
+     *   creator?: array{id: int, name: string},
+     *   created_at: string|null,
+     *   updated_at: string|null
+     * }
      */
     public function toArray(Request $request): array
     {

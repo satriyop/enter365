@@ -5,12 +5,32 @@ namespace App\Http\Resources\Api\V1;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin \App\Models\Manufacturing\BomItem
+ */
 class BomItemResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   bom_id: int,
+     *   type: string,
+     *   product_id: int|null,
+     *   product?: array{id: int, name: string, sku: string},
+     *   description: string,
+     *   quantity: float,
+     *   unit: string,
+     *   unit_cost: int,
+     *   total_cost: int,
+     *   waste_percentage: float,
+     *   effective_quantity: float,
+     *   sort_order: int,
+     *   notes: string|null,
+     *   component_standard_id: int|null,
+     *   created_at: string,
+     *   updated_at: string
+     * }
      */
     public function toArray(Request $request): array
     {

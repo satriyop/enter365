@@ -6,14 +6,86 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Models\Accounting\SolarProposal
+ * @mixin \App\Models\Solar\SolarProposal
  */
 class SolarProposalResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
      *
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   proposal_number: string,
+     *   status: string,
+     *   status_label: string,
+     *   contact_id: int,
+     *   contact?: array{id: int, name: string},
+     *   site_name: string|null,
+     *   site_address: string|null,
+     *   province: string|null,
+     *   city: string|null,
+     *   latitude: float|null,
+     *   longitude: float|null,
+     *   roof_area_m2: float|null,
+     *   roof_polygon: array<mixed>|null,
+     *   roof_type: string|null,
+     *   roof_type_label: string|null,
+     *   roof_orientation: string|null,
+     *   roof_orientation_label: string|null,
+     *   roof_tilt_degrees: float|null,
+     *   shading_percentage: float|null,
+     *   monthly_consumption_kwh: float|null,
+     *   pln_tariff_category: string|null,
+     *   electricity_rate: int|null,
+     *   tariff_escalation_percent: float|null,
+     *   peak_sun_hours: float|null,
+     *   solar_irradiance: float|null,
+     *   performance_ratio: float|null,
+     *   variant_group_id: int|null,
+     *   variant_group?: array{id: int, name: string},
+     *   selected_bom_id: int|null,
+     *   selected_bom?: array{id: int, name: string},
+     *   system_capacity_kwp: float|null,
+     *   annual_production_kwh: float|null,
+     *   monthly_production_kwh: float|null,
+     *   solar_offset_percent: float|null,
+     *   system_cost: int|null,
+     *   financial_analysis: array<string, mixed>|null,
+     *   payback_years: float|null,
+     *   roi_percent: float|null,
+     *   npv: int|null,
+     *   irr_percent: float|null,
+     *   first_year_savings: int|null,
+     *   total_lifetime_savings: int|null,
+     *   environmental_impact: array<string, mixed>|null,
+     *   co2_offset_tons: float|null,
+     *   trees_equivalent: int|null,
+     *   cars_equivalent: int|null,
+     *   sections_config: array<string, mixed>|null,
+     *   custom_content: array<string, mixed>|null,
+     *   valid_until: string|null,
+     *   days_until_expiry: int,
+     *   is_expired: bool,
+     *   notes: string|null,
+     *   created_by: int|null,
+     *   creator?: array{id: int, name: string},
+     *   sent_at: string|null,
+     *   accepted_at: string|null,
+     *   rejected_at: string|null,
+     *   rejection_reason: string|null,
+     *   converted_quotation_id: int|null,
+     *   converted_quotation?: array{id: int, quotation_number: string},
+     *   public_url: string,
+     *   has_valid_public_token: bool,
+     *   can_edit: bool,
+     *   can_send: bool,
+     *   can_accept: bool,
+     *   can_reject: bool,
+     *   can_convert: bool,
+     *   created_at: string,
+     *   updated_at: string
+     * }
      */
     public function toArray(Request $request): array
     {

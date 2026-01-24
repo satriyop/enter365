@@ -67,6 +67,22 @@ class InvoiceFilter extends QueryFilter
     }
 
     /**
+     * {@inheritdoc}
+     */
+    protected function getAllowedIncludes(): array
+    {
+        return [
+            'contact',
+            'items',
+            'items.revenueAccount',
+            'payments',
+            'journalEntry',
+            'journalEntry.lines',
+            'journalEntry.lines.account',
+        ];
+    }
+
+    /**
      * Filter by customer contact.
      */
     public function contactId(int|string $value): void

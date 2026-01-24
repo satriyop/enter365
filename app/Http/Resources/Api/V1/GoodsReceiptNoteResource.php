@@ -33,7 +33,11 @@ class GoodsReceiptNoteResource extends JsonResource
                 'name' => $this->warehouse->name,
             ]),
             'receipt_date' => $this->receipt_date->toDateString(),
-            'status' => $this->status,
+            'status' => [
+                'value' => $this->status->value,
+                'label' => $this->status->label(),
+                'color' => $this->status->color(),
+            ],
 
             // Supplier references
             'supplier_do_number' => $this->supplier_do_number,

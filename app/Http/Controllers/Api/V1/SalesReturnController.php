@@ -25,19 +25,10 @@ class SalesReturnController extends Controller
      */
     public function index(SalesReturnFilter $filter): AnonymousResourceCollection
     {
-        $request = $filter->getRequest();
-
         $salesReturns = SalesReturn::query()
-            ->with(['contact', 'invoice', 'warehouse', 'creator'])
-            ->withCount('items')
-            ->filter($filter);
-
-        // Support both paginated and non-paginated responses
-        if ($request->has('per_page')) {
-            $salesReturns = $salesReturns->paginate($request->per_page);
-        } else {
-            $salesReturns = $salesReturns->get();
-        }
+            ->with(['contact', 'invoice'])
+            ->filter($filter)
+            ->paginate($filter->getRequest()->input('per_page', 25));
 
         return SalesReturnResource::collection($salesReturns);
     }
@@ -83,9 +74,11 @@ class SalesReturnController extends Controller
     /**
      * Display the specified sales return.
      */
-    public function show(SalesReturn $salesReturn): SalesReturnResource
+    public function show(SalesReturn $salesReturn, SalesReturnFilter $filter): SalesReturnResource
     {
-        $salesReturn->load(['items.product', 'contact', 'invoice', 'warehouse', 'creator', 'journalEntry']);
+        $filter->apply($salesReturn->newQuery());
+
+        $salesReturn->loadMissing(['items.product', 'contact', 'invoice', 'warehouse', 'creator', 'journalEntry']);
 
         return new SalesReturnResource($salesReturn);
     }

@@ -10,6 +10,20 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class JournalEntryLineResource extends JsonResource
 {
+    /**
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   journal_entry_id: int,
+     *   account_id: int,
+     *   description: string|null,
+     *   debit: int,
+     *   credit: int,
+     *   account?: AccountResource,
+     *   created_at: string|null,
+     *   updated_at: string|null
+     * }
+     */
     public function toArray(Request $request): array
     {
         return [

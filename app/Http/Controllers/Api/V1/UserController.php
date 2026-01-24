@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Filters\UserFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreUserRequest;
 use App\Http\Requests\Api\V1\UpdatePasswordRequest;
@@ -19,34 +20,15 @@ class UserController extends Controller
      * Display a listing of users.
      * Only admin can list all users.
      */
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(UserFilter $filter): AnonymousResourceCollection
     {
-        $this->authorizeAdmin($request);
+        $this->authorizeAdmin($filter->getRequest());
 
-        $query = User::with('roles');
-
-        // Filter by active status
-        if ($request->has('is_active')) {
-            $query->where('is_active', $request->boolean('is_active'));
-        }
-
-        // Filter by role
-        if ($request->has('role')) {
-            $query->whereHas('roles', function ($q) use ($request) {
-                $q->where('name', $request->input('role'));
-            });
-        }
-
-        // Search by name or email
-        if ($request->has('search')) {
-            $search = $request->input('search');
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
-            });
-        }
-
-        $users = $query->orderBy('name')->paginate($request->input('per_page', 15));
+        $users = User::query()
+            ->with(['roles']) // Default eager loads
+            ->filter($filter)
+            ->orderBy('name')
+            ->paginate($filter->getRequest()->input('per_page', 15));
 
         return UserResource::collection($users);
     }
@@ -80,14 +62,16 @@ class UserController extends Controller
     /**
      * Display the specified user.
      */
-    public function show(Request $request, User $user): JsonResponse
+    public function show(Request $request, User $user, UserFilter $filter): JsonResponse
     {
         // Users can only view themselves unless admin
         if (! $request->user()->isAdmin() && $request->user()->id !== $user->id) {
             abort(403, 'Anda tidak memiliki akses untuk melihat user ini.');
         }
 
-        $user->load('roles');
+        $filter->apply($user->newQuery());
+
+        $user->loadMissing(['roles']);
 
         return response()->json([
             'user' => new UserResource($user),

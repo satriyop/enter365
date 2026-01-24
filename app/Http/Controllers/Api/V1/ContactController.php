@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Filters\ContactFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreContactRequest;
 use App\Http\Requests\Api\V1\UpdateContactRequest;
@@ -13,35 +14,12 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class ContactController extends Controller
 {
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(ContactFilter $filter): AnonymousResourceCollection
     {
-        $query = Contact::query();
-
-        if ($request->has('type')) {
-            $type = $request->input('type');
-            if ($type === Contact::TYPE_CUSTOMER) {
-                $query->whereIn('type', [Contact::TYPE_CUSTOMER, Contact::TYPE_BOTH]);
-            } elseif ($type === Contact::TYPE_SUPPLIER) {
-                $query->whereIn('type', [Contact::TYPE_SUPPLIER, Contact::TYPE_BOTH]);
-            } else {
-                $query->where('type', $type);
-            }
-        }
-
-        if ($request->has('is_active')) {
-            $query->where('is_active', $request->boolean('is_active'));
-        }
-
-        if ($request->has('search')) {
-            $search = strtolower($request->input('search'));
-            $query->where(function ($q) use ($search) {
-                $q->whereRaw('LOWER(code) LIKE ?', ["%{$search}%"])
-                    ->orWhereRaw('LOWER(name) LIKE ?', ["%{$search}%"])
-                    ->orWhereRaw('LOWER(email) LIKE ?', ["%{$search}%"]);
-            });
-        }
-
-        $contacts = $query->orderBy('name')->paginate($request->input('per_page', 25));
+        $contacts = Contact::query()
+            ->filter($filter)
+            ->orderBy('name')
+            ->paginate($filter->getRequest()->input('per_page', 25));
 
         return ContactResource::collection($contacts);
     }
@@ -53,8 +31,10 @@ class ContactController extends Controller
         return new ContactResource($contact);
     }
 
-    public function show(Contact $contact): ContactResource
+    public function show(Contact $contact, ContactFilter $filter): ContactResource
     {
+        $filter->apply($contact->newQuery());
+
         return new ContactResource($contact);
     }
 

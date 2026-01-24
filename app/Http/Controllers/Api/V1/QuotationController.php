@@ -36,11 +36,12 @@ class QuotationController extends Controller
      * @queryParam quotation_type string Filter by type (single_option, multi_option).
      * @queryParam active_only boolean Filter active quotations only.
      * @queryParam expired_only boolean Filter expired quotations only.
+     * @queryParam include string Explicitly load relationships. Example: items,contact
      */
     public function index(QuotationFilter $filter): AnonymousResourceCollection
     {
         $quotations = Quotation::query()
-            ->with(['contact', 'items'])
+            ->with(['contact'])
             ->filter($filter)
             ->paginate($filter->getRequest()->input('per_page', 25));
 
@@ -82,8 +83,10 @@ class QuotationController extends Controller
     /**
      * Display the specified quotation.
      */
-    public function show(Quotation $quotation): QuotationResource
+    public function show(Quotation $quotation, QuotationFilter $filter): QuotationResource
     {
+        $filter->apply($quotation->newQuery());
+
         $relations = ['contact', 'items.product', 'revisions', 'convertedInvoice'];
 
         // Load variant relationships for multi-option quotations
@@ -95,7 +98,9 @@ class QuotationController extends Controller
             ]);
         }
 
-        return new QuotationResource($quotation->load($relations));
+        $quotation->loadMissing($relations);
+
+        return new QuotationResource($quotation);
     }
 
     /**

@@ -43,6 +43,8 @@ class InventoryController extends Controller
 
     /**
      * Record stock in.
+     * 
+     * @response array{message: string, data: InventoryMovementResource}
      */
     public function stockIn(StockInRequest $request): JsonResponse
     {
@@ -82,6 +84,8 @@ class InventoryController extends Controller
 
     /**
      * Record stock out.
+     * 
+     * @response array{message: string, data: InventoryMovementResource}
      */
     public function stockOut(StockOutRequest $request): JsonResponse
     {
@@ -128,6 +132,8 @@ class InventoryController extends Controller
 
     /**
      * Adjust stock.
+     * 
+     * @response array{message: string, data: InventoryMovementResource}
      */
     public function adjust(StockAdjustmentRequest $request): JsonResponse
     {
@@ -167,6 +173,8 @@ class InventoryController extends Controller
 
     /**
      * Transfer stock between warehouses.
+     * 
+     * @response array{message: string, data: array{out: InventoryMovementResource, in: InventoryMovementResource}}
      */
     public function transfer(StockTransferRequest $request): JsonResponse
     {
@@ -216,6 +224,8 @@ class InventoryController extends Controller
 
     /**
      * Get stock card for a product.
+     * 
+     * @response array{product: array{id: int, sku: string, name: string, unit: string, current_stock: float}, warehouse: array{id: int, code: string, name: string}|null, movements: \Illuminate\Http\Resources\Json\AnonymousResourceCollection}
      */
     public function stockCard(Request $request, Product $product): JsonResponse
     {
@@ -255,6 +265,8 @@ class InventoryController extends Controller
 
     /**
      * Get stock valuation report.
+     * 
+     * @response array{warehouse: array{id: int, code: string, name: string}|null, summary: array{total_items: int, total_value: float}, items: array<mixed>}
      */
     public function valuation(Request $request): JsonResponse
     {
@@ -282,6 +294,8 @@ class InventoryController extends Controller
 
     /**
      * Get inventory summary.
+     * 
+     * @response array{warehouse: array{id: int, code: string, name: string}|null, summary: array<mixed>}
      */
     public function summary(Request $request): JsonResponse
     {
@@ -303,6 +317,8 @@ class InventoryController extends Controller
 
     /**
      * Get movement summary for a period.
+     * 
+     * @response array{warehouse: array{id: int, code: string, name: string}|null, summary: array<mixed>}
      */
     public function movementSummary(Request $request): JsonResponse
     {

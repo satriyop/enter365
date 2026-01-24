@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\DocumentStatus;
 use App\Exports\SolarProposalExport;
+use App\Filters\SolarProposalFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\AcceptSolarProposalRequest;
 use App\Http\Requests\Api\V1\AttachSolarVariantsRequest;
@@ -31,47 +32,14 @@ class SolarProposalController extends Controller
      *
      * @operationId listSolarProposals
      */
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(SolarProposalFilter $filter): AnonymousResourceCollection
     {
-        $query = SolarProposal::query()->with(['contact', 'creator']);
-
-        if ($request->has('status')) {
-            $query->where('status', $request->input('status'));
-        }
-
-        if ($request->has('contact_id')) {
-            $query->where('contact_id', $request->input('contact_id'));
-        }
-
-        if ($request->has('province')) {
-            $query->where('province', $request->input('province'));
-        }
-
-        if ($request->has('city')) {
-            $query->where('city', $request->input('city'));
-        }
-
-        if ($request->boolean('expired_only')) {
-            $query->where('status', DocumentStatus::Expired);
-        }
-
-        if ($request->boolean('active_only')) {
-            $query->active();
-        }
-
-        if ($request->has('search')) {
-            $search = strtolower($request->input('search'));
-            $query->where(function ($q) use ($search) {
-                $q->whereRaw('LOWER(proposal_number) LIKE ?', ["%{$search}%"])
-                    ->orWhereRaw('LOWER(site_name) LIKE ?', ["%{$search}%"])
-                    ->orWhereRaw('LOWER(site_address) LIKE ?', ["%{$search}%"])
-                    ->orWhereHas('contact', fn ($q) => $q->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]));
-            });
-        }
-
-        $proposals = $query->orderByDesc('created_at')
+        $proposals = SolarProposal::query()
+            ->with(['contact', 'creator'])
+            ->filter($filter)
+            ->orderByDesc('created_at')
             ->orderByDesc('id')
-            ->paginate($request->input('per_page', 25));
+            ->paginate($filter->getRequest()->input('per_page', 25));
 
         return SolarProposalListResource::collection($proposals);
     }
@@ -95,9 +63,11 @@ class SolarProposalController extends Controller
      *
      * @operationId getSolarProposal
      */
-    public function show(SolarProposal $solarProposal): SolarProposalResource
+    public function show(SolarProposal $solarProposal, SolarProposalFilter $filter): SolarProposalResource
     {
-        $solarProposal->load([
+        $filter->apply($solarProposal->newQuery());
+
+        $solarProposal->loadMissing([
             'contact',
             'creator',
             'variantGroup.activeBoms',

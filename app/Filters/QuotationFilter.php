@@ -72,6 +72,25 @@ class QuotationFilter extends QueryFilter
     }
 
     /**
+     * {@inheritdoc}
+     */
+    protected function getAllowedIncludes(): array
+    {
+        return [
+            'contact',
+            'items',
+            'items.product',
+            'variantGroup',
+            'selectedVariant',
+            'assignedTo',
+            'revisions',
+            'convertedInvoice',
+            'activities',
+            'variantOptions',
+        ];
+    }
+
+    /**
      * Filter by contact/customer.
      */
     public function contactId(int|string $value): void

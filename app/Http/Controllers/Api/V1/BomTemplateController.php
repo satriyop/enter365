@@ -141,6 +141,8 @@ class BomTemplateController extends Controller
 
     /**
      * Get metadata for creating templates.
+     * 
+     * @response array{data: array{categories: array<string, string>, item_types: array<string, string>}}
      */
     public function metadata(): JsonResponse
     {
@@ -209,6 +211,8 @@ class BomTemplateController extends Controller
 
     /**
      * Reorder items within a template.
+     * 
+     * @response array{message: string, data: BomTemplateResource}
      */
     public function reorderItems(
         Request $request,
@@ -298,6 +302,8 @@ class BomTemplateController extends Controller
 
     /**
      * Get available brands for a template.
+     * 
+     * @response array{data: array<array{code: string, name: string, coverage: int, coverage_percent: float}>, meta: array{template_id: int, template_code: string, items_with_standard: int}}
      */
     public function availableBrands(BomTemplate $bomTemplate): JsonResponse
     {
@@ -317,6 +323,8 @@ class BomTemplateController extends Controller
 
     /**
      * Preview creating a BOM from a template.
+     * 
+     * @response array{data: array<array{template_item_id: int, type: string, description: string, quantity: float, unit: string, unit_cost: int, product: array<mixed>|null, component_standard: array<mixed>|null, status: string, notes: string|null, is_required: bool, is_quantity_variable: bool}>, report: array<mixed>}
      */
     public function previewCreateBom(
         Request $request,
@@ -340,6 +348,8 @@ class BomTemplateController extends Controller
 
     /**
      * Create a BOM from a template.
+     * 
+     * @response array{message: string, data: BomResource, report: array<mixed>}
      */
     public function createBom(
         CreateBomFromTemplateRequest $request,

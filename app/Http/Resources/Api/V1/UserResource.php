@@ -11,9 +11,18 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class UserResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   name: string,
+     *   email: string,
+     *   email_verified_at: string|null,
+     *   is_active: bool,
+     *   roles?: array<array{id: int, name: string, display_name: string}>,
+     *   permissions?: \Illuminate\Support\Collection<int, string>,
+     *   created_at: string|null,
+     *   updated_at: string|null
+     * }
      */
     public function toArray(Request $request): array
     {

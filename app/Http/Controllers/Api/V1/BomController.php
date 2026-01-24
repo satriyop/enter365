@@ -150,6 +150,8 @@ class BomController extends Controller
 
     /**
      * Calculate production cost for a quantity.
+     * 
+     * @response array{data: array{bom_id: int, quantity: float, material_cost: int, labor_cost: int, overhead_cost: int, total_cost: int, unit_cost: int, items: array<mixed>}}
      */
     public function calculateCost(Request $request): JsonResponse
     {
@@ -178,6 +180,8 @@ class BomController extends Controller
 
     /**
      * Get BOM statistics.
+     * 
+     * @response array{data: array{total: int, active: int, draft: int, inactive: int}}
      */
     public function statistics(): JsonResponse
     {

@@ -6,14 +6,90 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Models\Accounting\Quotation
+ * @mixin \App\Models\Sales\Quotation
  */
 class QuotationResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
      *
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   quotation_number: string,
+     *   revision: int,
+     *   full_number: string,
+     *   contact_id: int,
+     *   contact?: array{id: int, name: string},
+     *   quotation_date: string,
+     *   valid_until: string,
+     *   days_until_expiry: int,
+     *   is_expired: bool,
+     *   reference: string|null,
+     *   subject: string|null,
+     *   quotation_type: string,
+     *   is_multi_option: bool,
+     *   variant_group_id: int|null,
+     *   variant_group?: array{id: int, name: string},
+     *   selected_variant_id: int|null,
+     *   selected_variant?: array{id: int, name: string},
+     *   has_selected_variant: bool,
+     *   status: string,
+     *   status_label: string,
+     *   currency: string,
+     *   exchange_rate: float,
+     *   subtotal: int,
+     *   discount_type: string,
+     *   discount_value: float,
+     *   discount_amount: int,
+     *   tax_rate: float,
+     *   tax_amount: int,
+     *   total: int,
+     *   base_currency_total: int,
+     *   notes: string|null,
+     *   terms_conditions: string|null,
+     *   submitted_at: string|null,
+     *   submitted_by: int|null,
+     *   approved_at: string|null,
+     *   approved_by: int|null,
+     *   rejected_at: string|null,
+     *   rejected_by: int|null,
+     *   rejection_reason: string|null,
+     *   next_follow_up_at: string|null,
+     *   last_contacted_at: string|null,
+     *   assigned_to: int|null,
+     *   assigned_user?: array{id: int, name: string},
+     *   follow_up_count: int,
+     *   priority: string,
+     *   priority_label: string,
+     *   needs_follow_up: bool,
+     *   days_since_last_contact: int,
+     *   outcome: string|null,
+     *   outcome_label: string|null,
+     *   won_reason: string|null,
+     *   lost_reason: string|null,
+     *   lost_to_competitor: string|null,
+     *   outcome_notes: string|null,
+     *   outcome_at: string|null,
+     *   converted_to_invoice_id: int|null,
+     *   converted_at: string|null,
+     *   original_quotation_id: int|null,
+     *   can_edit: bool,
+     *   can_submit: bool,
+     *   can_approve: bool,
+     *   can_reject: bool,
+     *   can_convert: bool,
+     *   can_revise: bool,
+     *   items?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
+     *   revisions?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
+     *   converted_invoice?: array{id: int, invoice_number: string},
+     *   activities?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
+     *   variant_options?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
+     *   variant_comparison?: array<string, mixed>,
+     *   created_by: int|null,
+     *   created_at: string,
+     *   updated_at: string
+     * }
      */
     public function toArray(Request $request): array
     {

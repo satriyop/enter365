@@ -89,6 +89,8 @@ class ProductController extends Controller
 
     /**
      * Adjust product stock with audit trail.
+     * 
+     * @response array{message: string, current_stock: float, movement: array<mixed>}
      */
     public function adjustStock(Request $request, Product $product): JsonResponse
     {
@@ -129,6 +131,8 @@ class ProductController extends Controller
 
     /**
      * Get product price list.
+     * 
+     * @response array{data: array<array{id: int, sku: string, name: string, unit: string, purchase_price: int, selling_price: int, selling_price_with_tax: int, tax_rate: float, is_taxable: bool}>}
      */
     public function priceList(Request $request): JsonResponse
     {
@@ -163,6 +167,8 @@ class ProductController extends Controller
 
     /**
      * Lookup product by SKU or barcode.
+     * 
+     * @response array{data: ProductResource}
      */
     public function lookup(Request $request): JsonResponse
     {

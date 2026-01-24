@@ -71,6 +71,11 @@ class AccountController extends Controller
         return response()->json(['message' => 'Akun berhasil dihapus.']);
     }
 
+    /**
+     * Get account balance.
+     * 
+     * @response array{account_id: int, code: string, name: string, type: string, as_of_date: string, balance: int}
+     */
     public function balance(Account $account, Request $request): JsonResponse
     {
         $asOfDate = $request->input('as_of_date');
@@ -86,6 +91,11 @@ class AccountController extends Controller
         ]);
     }
 
+    /**
+     * Get account ledger.
+     * 
+     * @response array{account_id: int, code: string, name: string, type: string, start_date: string|null, end_date: string|null, opening_balance: int, entries: array<mixed>}
+     */
     public function ledger(Account $account, Request $request): JsonResponse
     {
         $startDate = $request->input('start_date');

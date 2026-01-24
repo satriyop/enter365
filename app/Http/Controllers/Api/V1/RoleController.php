@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Filters\RoleFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreRoleRequest;
 use App\Http\Requests\Api\V1\UpdateRoleRequest;
@@ -16,26 +17,13 @@ class RoleController extends Controller
     /**
      * List all roles.
      */
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(RoleFilter $filter): AnonymousResourceCollection
     {
-        $query = Role::query()->withCount(['permissions', 'users']);
-
-        // Filter by system roles
-        if ($request->has('is_system')) {
-            $query->where('is_system', $request->boolean('is_system'));
-        }
-
-        // Search
-        if ($request->has('search')) {
-            $search = strtolower($request->input('search'));
-            $query->where(function ($q) use ($search) {
-                $q->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"])
-                    ->orWhereRaw('LOWER(display_name) LIKE ?', ["%{$search}%"]);
-            });
-        }
-
-        $roles = $query->orderBy('name')
-            ->paginate($request->input('per_page', 25));
+        $roles = Role::query()
+            ->withCount(['permissions', 'users'])
+            ->filter($filter)
+            ->orderBy('name')
+            ->paginate($filter->getRequest()->input('per_page', 25));
 
         return RoleResource::collection($roles);
     }
@@ -63,11 +51,14 @@ class RoleController extends Controller
     /**
      * Show a role.
      */
-    public function show(Role $role): RoleResource
+    public function show(Role $role, RoleFilter $filter): RoleResource
     {
-        return new RoleResource(
-            $role->load('permissions')->loadCount('users')
-        );
+        $filter->apply($role->newQuery());
+
+        $role->loadMissing(['permissions']);
+        $role->loadCount('users');
+
+        return new RoleResource($role);
     }
 
     /**
@@ -124,6 +115,9 @@ class RoleController extends Controller
 
     /**
      * Sync permissions for a role.
+     * 
+     * @bodyParam permissions array required The list of permission IDs. Example: [1, 2, 3]
+     * @bodyParam permissions.* integer required Permission ID.
      */
     public function syncPermissions(Request $request, Role $role): JsonResponse
     {
@@ -142,6 +136,8 @@ class RoleController extends Controller
 
     /**
      * Get users with this role.
+     * 
+     * @response array{role: array{id: int, name: string, display_name: string}, users: array<array{id: int, name: string, email: string}>}
      */
     public function users(Role $role): JsonResponse
     {

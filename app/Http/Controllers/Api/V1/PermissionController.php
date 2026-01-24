@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Filters\PermissionFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\PermissionResource;
 use App\Models\Core\Permission;
@@ -14,33 +15,21 @@ class PermissionController extends Controller
     /**
      * List all permissions.
      */
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(PermissionFilter $filter): AnonymousResourceCollection
     {
-        $query = Permission::query();
-
-        // Filter by group
-        if ($request->has('group')) {
-            $query->where('group', $request->input('group'));
-        }
-
-        // Search
-        if ($request->has('search')) {
-            $search = strtolower($request->input('search'));
-            $query->where(function ($q) use ($search) {
-                $q->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"])
-                    ->orWhereRaw('LOWER(display_name) LIKE ?', ["%{$search}%"]);
-            });
-        }
-
-        $permissions = $query->orderBy('group')
+        $permissions = Permission::query()
+            ->filter($filter)
+            ->orderBy('group')
             ->orderBy('name')
-            ->paginate($request->input('per_page', 100));
+            ->paginate($filter->getRequest()->input('per_page', 100));
 
         return PermissionResource::collection($permissions);
     }
 
     /**
      * Get permissions grouped by group.
+     * 
+     * @response array{data: array<array{group: string, group_label: string, permissions: \Illuminate\Http\Resources\Json\AnonymousResourceCollection}>}
      */
     public function grouped(): JsonResponse
     {
@@ -61,6 +50,8 @@ class PermissionController extends Controller
 
     /**
      * Get available permission groups.
+     * 
+     * @response array{data: array<array{name: string, label: string}>}
      */
     public function groups(): JsonResponse
     {

@@ -6,10 +6,25 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Models\Accounting\ProductStock
+ * @mixin \App\Models\Inventory\ProductStock
  */
 class ProductStockResource extends JsonResource
 {
+    /**
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   product_id: int,
+     *   product?: ProductResource,
+     *   warehouse_id: int,
+     *   warehouse?: WarehouseResource,
+     *   quantity: float,
+     *   average_cost: int,
+     *   total_value: int,
+     *   created_at: string|null,
+     *   updated_at: string|null
+     * }
+     */
     public function toArray(Request $request): array
     {
         return [

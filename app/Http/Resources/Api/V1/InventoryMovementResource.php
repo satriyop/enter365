@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Models\Accounting\InventoryMovement
+ * @mixin \App\Models\Inventory\InventoryMovement
  */
 class InventoryMovementResource extends JsonResource
 {

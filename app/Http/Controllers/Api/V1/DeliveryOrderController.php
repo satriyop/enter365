@@ -26,19 +26,10 @@ class DeliveryOrderController extends Controller
      */
     public function index(DeliveryOrderFilter $filter): AnonymousResourceCollection
     {
-        $request = $filter->getRequest();
-
         $deliveryOrders = DeliveryOrder::query()
-            ->with(['contact', 'invoice', 'warehouse', 'creator'])
-            ->withCount('items')
-            ->filter($filter);
-
-        // Support both paginated and non-paginated responses
-        if ($request->has('per_page')) {
-            $deliveryOrders = $deliveryOrders->paginate($request->per_page);
-        } else {
-            $deliveryOrders = $deliveryOrders->get();
-        }
+            ->with(['contact', 'warehouse'])
+            ->filter($filter)
+            ->paginate($filter->getRequest()->input('per_page', 25));
 
         return DeliveryOrderResource::collection($deliveryOrders);
     }
@@ -85,9 +76,11 @@ class DeliveryOrderController extends Controller
     /**
      * Display the specified delivery order.
      */
-    public function show(DeliveryOrder $deliveryOrder): DeliveryOrderResource
+    public function show(DeliveryOrder $deliveryOrder, DeliveryOrderFilter $filter): DeliveryOrderResource
     {
-        $deliveryOrder->load(['items.product', 'contact', 'invoice', 'warehouse', 'creator']);
+        $filter->apply($deliveryOrder->newQuery());
+
+        $deliveryOrder->loadMissing(['items.product', 'contact', 'invoice', 'warehouse', 'creator']);
 
         return new DeliveryOrderResource($deliveryOrder);
     }

@@ -12,7 +12,26 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class BomTemplateResource extends JsonResource
 {
     /**
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   code: string,
+     *   name: string,
+     *   description: string|null,
+     *   category: string,
+     *   category_label: string,
+     *   thumbnail_path: string|null,
+     *   thumbnail_url: string|null,
+     *   is_active: bool,
+     *   usage_count: int,
+     *   default_rule_set?: array{id: int, name: string, code: string},
+     *   items?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
+     *   items_count?: int,
+     *   summary?: array{material_count: int, labor_count: int, overhead_count: int},
+     *   creator?: array{id: int, name: string},
+     *   created_at: string|null,
+     *   updated_at: string|null
+     * }
      */
     public function toArray(Request $request): array
     {

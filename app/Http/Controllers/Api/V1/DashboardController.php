@@ -215,40 +215,40 @@ class DashboardController extends Controller
     protected function getReceivablesSummary(): array
     {
         $outstanding = Invoice::query()
-            ->whereIn('status', [DocumentStatus::Sent, DocumentStatus::Partial, DocumentStatus::Overdue])
+            ->whereIn('status', [DocumentStatus::Sent->value, DocumentStatus::Partial->value, DocumentStatus::Overdue->value])
             ->selectRaw('SUM(total_amount - paid_amount) as total, COUNT(*) as count')
             ->first();
 
         $overdue = Invoice::query()
-            ->where('status', DocumentStatus::Overdue)
+            ->where('status', DocumentStatus::Overdue->value)
             ->selectRaw('SUM(total_amount - paid_amount) as total, COUNT(*) as count')
             ->first();
 
         return [
-            'outstanding' => $outstanding->total ?? 0,
-            'outstanding_count' => $outstanding->count ?? 0,
-            'overdue' => $overdue->total ?? 0,
-            'overdue_count' => $overdue->count ?? 0,
+            'outstanding' => (int) ($outstanding->total ?? 0),
+            'outstanding_count' => (int) ($outstanding->count ?? 0),
+            'overdue' => (int) ($overdue->total ?? 0),
+            'overdue_count' => (int) ($overdue->count ?? 0),
         ];
     }
 
     protected function getPayablesSummary(): array
     {
         $outstanding = Bill::query()
-            ->whereIn('status', [DocumentStatus::Received, DocumentStatus::Partial, DocumentStatus::Overdue])
+            ->whereIn('status', [DocumentStatus::Received->value, DocumentStatus::Partial->value, DocumentStatus::Overdue->value])
             ->selectRaw('SUM(total_amount - paid_amount) as total, COUNT(*) as count')
             ->first();
 
         $overdue = Bill::query()
-            ->where('status', DocumentStatus::Overdue)
+            ->where('status', DocumentStatus::Overdue->value)
             ->selectRaw('SUM(total_amount - paid_amount) as total, COUNT(*) as count')
             ->first();
 
         return [
-            'outstanding' => $outstanding->total ?? 0,
-            'outstanding_count' => $outstanding->count ?? 0,
-            'overdue' => $overdue->total ?? 0,
-            'overdue_count' => $overdue->count ?? 0,
+            'outstanding' => (int) ($outstanding->total ?? 0),
+            'outstanding_count' => (int) ($outstanding->count ?? 0),
+            'overdue' => (int) ($overdue->total ?? 0),
+            'overdue_count' => (int) ($overdue->count ?? 0),
         ];
     }
 
@@ -351,7 +351,7 @@ class DashboardController extends Controller
         return DB::table('contacts')
             ->join('invoices', 'contacts.id', '=', 'invoices.contact_id')
             ->whereIn('contacts.type', [Contact::TYPE_CUSTOMER, Contact::TYPE_BOTH])
-            ->whereIn('invoices.status', [DocumentStatus::Sent, DocumentStatus::Partial, DocumentStatus::Overdue])
+            ->whereIn('invoices.status', [DocumentStatus::Sent->value, DocumentStatus::Partial->value, DocumentStatus::Overdue->value])
             ->whereNull('contacts.deleted_at')
             ->select(
                 'contacts.id',
@@ -359,7 +359,7 @@ class DashboardController extends Controller
                 DB::raw('SUM(invoices.total_amount - invoices.paid_amount) as outstanding')
             )
             ->groupBy('contacts.id', 'contacts.name')
-            ->having('outstanding', '>', 0)
+            ->having(DB::raw('SUM(invoices.total_amount - invoices.paid_amount)'), '>', 0)
             ->orderByDesc('outstanding')
             ->limit($limit)
             ->get()
@@ -376,7 +376,7 @@ class DashboardController extends Controller
         return DB::table('contacts')
             ->join('bills', 'contacts.id', '=', 'bills.contact_id')
             ->whereIn('contacts.type', [Contact::TYPE_SUPPLIER, Contact::TYPE_BOTH])
-            ->whereIn('bills.status', [DocumentStatus::Received, DocumentStatus::Partial, DocumentStatus::Overdue])
+            ->whereIn('bills.status', [DocumentStatus::Received->value, DocumentStatus::Partial->value, DocumentStatus::Overdue->value])
             ->whereNull('contacts.deleted_at')
             ->select(
                 'contacts.id',
@@ -384,7 +384,7 @@ class DashboardController extends Controller
                 DB::raw('SUM(bills.total_amount - bills.paid_amount) as outstanding')
             )
             ->groupBy('contacts.id', 'contacts.name')
-            ->having('outstanding', '>', 0)
+            ->having(DB::raw('SUM(bills.total_amount - bills.paid_amount)'), '>', 0)
             ->orderByDesc('outstanding')
             ->limit($limit)
             ->get()
