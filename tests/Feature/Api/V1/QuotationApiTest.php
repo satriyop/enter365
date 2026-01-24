@@ -23,12 +23,24 @@ beforeEach(function () {
 describe('Quotation CRUD', function () {
 
     it('can list all quotations', function () {
-        Quotation::factory()->count(3)->create();
+        Quotation::factory()->count(10)->create();
+
+        $this->assertMaxQueries(15, function () {
+            $response = $this->getJson('/api/v1/quotations');
+            $response->assertOk();
+        });
 
         $response = $this->getJson('/api/v1/quotations');
-
-        $response->assertOk()
-            ->assertJsonCount(3, 'data');
+        $response->assertJsonCount(10, 'data')
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => [
+                        'priority' => ['value', 'label'],
+                        'quotation_type' => ['value', 'label'],
+                        'status' => ['value', 'label', 'color', 'is_terminal', 'is_editable'],
+                    ]
+                ]
+            ]);
     });
 
     it('can filter quotations by status', function () {
@@ -101,7 +113,7 @@ describe('Quotation CRUD', function () {
         ]);
 
         $response->assertCreated()
-            ->assertJsonPath('data.status', 'draft')
+            ->assertJsonPath('data.status.value', 'draft')
             ->assertJsonCount(2, 'data.items');
 
         // Verify calculations: 2,500,000 + 1,000,000 = 3,500,000 subtotal
@@ -247,7 +259,7 @@ describe('Quotation Workflow', function () {
         $response = $this->postJson("/api/v1/quotations/{$quotation->id}/submit");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'submitted');
+            ->assertJsonPath('data.status.value', 'submitted');
 
         $quotation->refresh();
         expect($quotation->submitted_at)->not->toBeNull();
@@ -276,7 +288,7 @@ describe('Quotation Workflow', function () {
         $response = $this->postJson("/api/v1/quotations/{$quotation->id}/approve");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'approved');
+            ->assertJsonPath('data.status.value', 'approved');
 
         $quotation->refresh();
         expect($quotation->approved_at)->not->toBeNull();
@@ -309,7 +321,7 @@ describe('Quotation Workflow', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'rejected')
+            ->assertJsonPath('data.status.value', 'rejected')
             ->assertJsonPath('data.rejection_reason', 'Harga terlalu tinggi');
     });
 
@@ -329,7 +341,7 @@ describe('Quotation Workflow', function () {
         $response = $this->postJson("/api/v1/quotations/{$quotation->id}/revise");
 
         $response->assertCreated()
-            ->assertJsonPath('data.status', 'draft')
+            ->assertJsonPath('data.status.value', 'draft')
             ->assertJsonPath('data.revision', 1)
             ->assertJsonPath('data.quotation_number', $quotation->quotation_number)
             ->assertJsonCount(2, 'data.items');
@@ -342,7 +354,7 @@ describe('Quotation Workflow', function () {
         $response = $this->postJson("/api/v1/quotations/{$quotation->id}/revise");
 
         $response->assertCreated()
-            ->assertJsonPath('data.status', 'draft')
+            ->assertJsonPath('data.status.value', 'draft')
             ->assertJsonPath('data.revision', 1);
     });
 
@@ -601,7 +613,7 @@ describe('Quotation Duplicate', function () {
         $response = $this->postJson("/api/v1/quotations/{$quotation->id}/duplicate");
 
         $response->assertCreated()
-            ->assertJsonPath('data.status', 'draft')
+            ->assertJsonPath('data.status.value', 'draft')
             ->assertJsonPath('data.subject', 'Original Subject')
             ->assertJsonCount(2, 'data.items');
 

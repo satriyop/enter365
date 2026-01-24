@@ -74,7 +74,7 @@ describe('BOM Variant Group CRUD', function () {
 
         $response->assertCreated()
             ->assertJsonPath('data.name', 'Material Options for PLTS 50kWp')
-            ->assertJsonPath('data.status', 'draft')
+            ->assertJsonPath('data.status.value', 'draft')
             ->assertJsonPath('data.product.name', 'PLTS 50 kWp');
     });
 
@@ -129,7 +129,7 @@ describe('BOM Variant Group CRUD', function () {
 
         $response->assertOk()
             ->assertJsonPath('data.name', 'Updated Name')
-            ->assertJsonPath('data.status', 'active');
+            ->assertJsonPath('data.status.value', 'active');
     });
 
     it('can delete a variant group', function () {
@@ -265,7 +265,7 @@ describe('BOM Variant Group - BOM Management', function () {
         $response->assertCreated()
             ->assertJsonPath('data.variant_name', 'Premium')
             ->assertJsonPath('data.name', 'Premium Version BOM')
-            ->assertJsonPath('data.status', 'draft')
+            ->assertJsonPath('data.status.value', 'draft')
             ->assertJsonCount(4, 'data.items');
 
         // Source BOM should remain unchanged

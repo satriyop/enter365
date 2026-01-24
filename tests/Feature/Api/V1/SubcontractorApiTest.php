@@ -277,7 +277,7 @@ describe('Subcontractor Invoices', function () {
             ->assertJsonPath('data.gross_amount', 50000000)
             ->assertJsonPath('data.retention_held', 2500000) // 5% of 50M
             ->assertJsonPath('data.net_amount', 47500000)
-            ->assertJsonPath('data.status', 'submitted');
+            ->assertJsonPath('data.status.value', 'submitted');
     });
 
     it('cannot invoice more than remaining amount', function () {
@@ -354,7 +354,7 @@ describe('Subcontractor Invoices', function () {
         $response = $this->postJson("/api/v1/subcontractor-invoices/{$invoice->id}/approve");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'approved');
+            ->assertJsonPath('data.status.value', 'approved');
     });
 
     it('can reject an invoice', function () {
@@ -365,7 +365,7 @@ describe('Subcontractor Invoices', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'rejected')
+            ->assertJsonPath('data.status.value', 'rejected')
             ->assertJsonPath('data.rejection_reason', 'Dokumen tidak lengkap');
     });
 

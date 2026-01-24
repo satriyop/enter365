@@ -21,12 +21,22 @@ beforeEach(function () {
 describe('Delivery Order CRUD', function () {
 
     it('can list all delivery orders', function () {
-        DeliveryOrder::factory()->count(5)->create();
+        DeliveryOrder::factory()->count(10)->create();
+
+        $this->assertMaxQueries(15, function () {
+            $response = $this->getJson('/api/v1/delivery-orders');
+            $response->assertOk();
+        });
 
         $response = $this->getJson('/api/v1/delivery-orders');
-
-        $response->assertOk()
-            ->assertJsonCount(5, 'data');
+        $response->assertJsonCount(10, 'data')
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => [
+                        'status' => ['value', 'label', 'color', 'is_terminal', 'is_editable'],
+                    ]
+                ]
+            ]);
     });
 
     it('can filter delivery orders by status', function () {
@@ -99,7 +109,7 @@ describe('Delivery Order CRUD', function () {
         ]);
 
         $response->assertCreated()
-            ->assertJsonPath('data.status', 'draft')
+            ->assertJsonPath('data.status.value', 'draft')
             ->assertJsonCount(2, 'data.items');
 
         expect($response->json('data.do_number'))->toStartWith('DO-');
@@ -182,7 +192,7 @@ describe('Delivery Order Workflow', function () {
         $response = $this->postJson("/api/v1/delivery-orders/{$deliveryOrder->id}/confirm");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'confirmed');
+            ->assertJsonPath('data.status.value', 'confirmed');
 
         $deliveryOrder->refresh();
         expect($deliveryOrder->confirmed_at)->not->toBeNull();
@@ -208,7 +218,7 @@ describe('Delivery Order Workflow', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'shipped')
+            ->assertJsonPath('data.status.value', 'shipped')
             ->assertJsonPath('data.tracking_number', 'TRK12345678');
 
         $deliveryOrder->refresh();
@@ -236,7 +246,7 @@ describe('Delivery Order Workflow', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'delivered')
+            ->assertJsonPath('data.status.value', 'delivered')
             ->assertJsonPath('data.received_by', 'Ahmad');
 
         $deliveryOrder->refresh();
@@ -264,7 +274,7 @@ describe('Delivery Order Workflow', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'cancelled');
+            ->assertJsonPath('data.status.value', 'cancelled');
     });
 
     it('can cancel a confirmed delivery order', function () {
@@ -275,7 +285,7 @@ describe('Delivery Order Workflow', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'cancelled');
+            ->assertJsonPath('data.status.value', 'cancelled');
     });
 
     it('cannot cancel a shipped delivery order', function () {
@@ -330,7 +340,7 @@ describe('Delivery Order Progress', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'delivered');
+            ->assertJsonPath('data.status.value', 'delivered');
     });
 
     it('cannot deliver more than ordered quantity', function () {
@@ -401,7 +411,7 @@ describe('Delivery Order Duplicate', function () {
         $response = $this->postJson("/api/v1/delivery-orders/{$deliveryOrder->id}/duplicate");
 
         $response->assertCreated()
-            ->assertJsonPath('data.status', 'draft')
+            ->assertJsonPath('data.status.value', 'draft')
             ->assertJsonCount(2, 'data.items');
 
         // New DO number

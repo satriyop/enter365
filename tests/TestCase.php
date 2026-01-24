@@ -15,5 +15,23 @@ use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
  */
 abstract class TestCase extends BaseTestCase
 {
-    //
+    /**
+     * Assert that the number of database queries does not exceed a limit.
+     */
+    protected function assertMaxQueries(int $max, callable $callback): void
+    {
+        \DB::flushQueryLog();
+        \DB::enableQueryLog();
+
+        $callback();
+
+        $queries = count(\DB::getQueryLog());
+        \DB::disableQueryLog();
+
+        $this->assertLessThanOrEqual(
+            $max,
+            $queries,
+            "Terlalu banyak query: {$queries} (Max: {$max}). Kemungkinan ada masalah N+1."
+        );
+    }
 }

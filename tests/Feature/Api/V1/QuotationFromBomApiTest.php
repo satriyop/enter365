@@ -32,7 +32,7 @@ describe('Create Quotation from BOM', function () {
 
         $response->assertCreated()
             ->assertJsonPath('data.quotation_type', 'single')
-            ->assertJsonPath('data.status', 'draft');
+            ->assertJsonPath('data.status.value', 'draft');
 
         // Default margin is 20%
         $expectedTotal = (int) round(1300000 * 1.2); // BOM cost * 1.20

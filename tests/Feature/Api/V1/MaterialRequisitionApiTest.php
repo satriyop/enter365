@@ -98,7 +98,7 @@ describe('Material Requisition from Work Order', function () {
 
         $response->assertCreated()
             ->assertJsonPath('data.work_order_id', $workOrder->id)
-            ->assertJsonPath('data.status', 'draft')
+            ->assertJsonPath('data.status.value', 'draft')
             ->assertJsonCount(1, 'data.items');
     });
 
@@ -109,7 +109,7 @@ describe('Material Requisition from Work Order', function () {
         $response = $this->postJson("/api/v1/work-orders/{$workOrder->id}/material-requisitions");
 
         $response->assertCreated()
-            ->assertJsonPath('data.status', 'draft');
+            ->assertJsonPath('data.status.value', 'draft');
     });
 
     it('cannot create material requisition for draft work order', function () {
@@ -169,7 +169,7 @@ describe('Material Requisition Workflow', function () {
         $response = $this->postJson("/api/v1/material-requisitions/{$requisition->id}/approve");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'approved');
+            ->assertJsonPath('data.status.value', 'approved');
 
         // Verify items have approved quantities
         $requisition->refresh();
@@ -224,7 +224,7 @@ describe('Material Requisition Workflow', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'issued');
+            ->assertJsonPath('data.status.value', 'issued');
 
         $item->refresh();
         expect((float) $item->quantity_issued)->toBe(10.0);
@@ -267,7 +267,7 @@ describe('Material Requisition Workflow', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'partial');
+            ->assertJsonPath('data.status.value', 'partial');
 
         $item->refresh();
         expect((float) $item->quantity_issued)->toBe(5.0);
@@ -334,7 +334,7 @@ describe('Material Requisition Workflow', function () {
         $response = $this->postJson("/api/v1/material-requisitions/{$requisition->id}/cancel");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'cancelled');
+            ->assertJsonPath('data.status.value', 'cancelled');
     });
 
     it('can cancel approved material requisition', function () {
@@ -343,7 +343,7 @@ describe('Material Requisition Workflow', function () {
         $response = $this->postJson("/api/v1/material-requisitions/{$requisition->id}/cancel");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'cancelled');
+            ->assertJsonPath('data.status.value', 'cancelled');
     });
 
     it('cannot cancel issued material requisition', function () {

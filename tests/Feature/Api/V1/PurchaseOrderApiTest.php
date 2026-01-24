@@ -22,12 +22,22 @@ beforeEach(function () {
 describe('Purchase Order CRUD', function () {
 
     it('can list all purchase orders', function () {
-        PurchaseOrder::factory()->count(3)->create();
+        PurchaseOrder::factory()->count(10)->create();
+
+        $this->assertMaxQueries(15, function () {
+            $response = $this->getJson('/api/v1/purchase-orders');
+            $response->assertOk();
+        });
 
         $response = $this->getJson('/api/v1/purchase-orders');
-
-        $response->assertOk()
-            ->assertJsonCount(3, 'data');
+        $response->assertJsonCount(10, 'data')
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => [
+                        'status' => ['value', 'label', 'color', 'is_terminal', 'is_editable'],
+                    ]
+                ]
+            ]);
     });
 
     it('can filter purchase orders by status', function () {
@@ -112,7 +122,7 @@ describe('Purchase Order CRUD', function () {
         ]);
 
         $response->assertCreated()
-            ->assertJsonPath('data.status', 'draft')
+            ->assertJsonPath('data.status.value', 'draft')
             ->assertJsonCount(2, 'data.items');
 
         // Verify calculations: 1,500,000 + 1,000,000 = 2,500,000 subtotal
@@ -208,7 +218,7 @@ describe('Purchase Order Workflow', function () {
         $response = $this->postJson("/api/v1/purchase-orders/{$purchaseOrder->id}/submit");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'submitted');
+            ->assertJsonPath('data.status.value', 'submitted');
 
         $purchaseOrder->refresh();
         expect($purchaseOrder->submitted_at)->not->toBeNull();
@@ -229,7 +239,7 @@ describe('Purchase Order Workflow', function () {
         $response = $this->postJson("/api/v1/purchase-orders/{$purchaseOrder->id}/approve");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'approved');
+            ->assertJsonPath('data.status.value', 'approved');
 
         $purchaseOrder->refresh();
         expect($purchaseOrder->approved_at)->not->toBeNull();
@@ -251,7 +261,7 @@ describe('Purchase Order Workflow', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'rejected')
+            ->assertJsonPath('data.status.value', 'rejected')
             ->assertJsonPath('data.rejection_reason', 'Harga terlalu mahal');
     });
 
@@ -272,7 +282,7 @@ describe('Purchase Order Workflow', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'cancelled')
+            ->assertJsonPath('data.status.value', 'cancelled')
             ->assertJsonPath('data.cancellation_reason', 'Vendor tidak bisa memenuhi pesanan');
     });
 
@@ -302,7 +312,7 @@ describe('Purchase Order Receiving', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'partial');
+            ->assertJsonPath('data.status.value', 'partial');
 
         $item->refresh();
         expect((float) $item->quantity_received)->toBe(5.0);
@@ -322,7 +332,7 @@ describe('Purchase Order Receiving', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'received')
+            ->assertJsonPath('data.status.value', 'received')
             ->assertJsonPath('data.is_fully_received', true);
     });
 
@@ -433,7 +443,7 @@ describe('Purchase Order Duplicate', function () {
         $response = $this->postJson("/api/v1/purchase-orders/{$purchaseOrder->id}/duplicate");
 
         $response->assertCreated()
-            ->assertJsonPath('data.status', 'draft')
+            ->assertJsonPath('data.status.value', 'draft')
             ->assertJsonPath('data.subject', 'Original Subject')
             ->assertJsonCount(2, 'data.items');
 

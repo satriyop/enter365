@@ -99,7 +99,7 @@ describe('BOM CRUD', function () {
         ]);
 
         $response->assertCreated()
-            ->assertJsonPath('data.status', 'draft')
+            ->assertJsonPath('data.status.value', 'draft')
             ->assertJsonPath('data.name', 'Panel Assembly 100A')
             ->assertJsonCount(3, 'data.items');
 
@@ -216,7 +216,7 @@ describe('BOM Workflow', function () {
         $response = $this->postJson("/api/v1/boms/{$bom->id}/activate");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'active');
+            ->assertJsonPath('data.status.value', 'active');
 
         $bom->refresh();
         expect($bom->approved_at)->not->toBeNull();
@@ -250,7 +250,7 @@ describe('BOM Workflow', function () {
         $response = $this->postJson("/api/v1/boms/{$newBom->id}/activate");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'active');
+            ->assertJsonPath('data.status.value', 'active');
 
         $oldBom->refresh();
         expect($oldBom->status)->toBe(DocumentStatus::Inactive);
@@ -262,7 +262,7 @@ describe('BOM Workflow', function () {
         $response = $this->postJson("/api/v1/boms/{$bom->id}/deactivate");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'inactive');
+            ->assertJsonPath('data.status.value', 'inactive');
     });
 
     it('cannot deactivate non-active bom', function () {
@@ -286,7 +286,7 @@ describe('BOM Duplicate', function () {
         $response = $this->postJson("/api/v1/boms/{$bom->id}/duplicate");
 
         $response->assertCreated()
-            ->assertJsonPath('data.status', 'draft')
+            ->assertJsonPath('data.status.value', 'draft')
             ->assertJsonPath('data.name', 'Original BOM')
             ->assertJsonPath('data.version', '1.1')
             ->assertJsonPath('data.parent_bom_id', $bom->id)

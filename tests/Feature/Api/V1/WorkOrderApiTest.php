@@ -25,12 +25,24 @@ beforeEach(function () {
 describe('Work Order CRUD', function () {
 
     it('can list all work orders', function () {
-        WorkOrder::factory()->count(3)->create();
+        WorkOrder::factory()->count(10)->create();
+
+        $this->assertMaxQueries(15, function () {
+            $response = $this->getJson('/api/v1/work-orders');
+            $response->assertOk();
+        });
 
         $response = $this->getJson('/api/v1/work-orders');
-
-        $response->assertOk()
-            ->assertJsonCount(3, 'data');
+        $response->assertJsonCount(10, 'data')
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => [
+                        'status' => ['value', 'label', 'color', 'is_terminal', 'is_editable'],
+                        'type' => ['value', 'label'],
+                        'priority' => ['value', 'label'],
+                    ]
+                ]
+            ]);
     });
 
     it('can filter work orders by status', function () {

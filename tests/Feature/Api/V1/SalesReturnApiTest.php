@@ -90,7 +90,7 @@ describe('Sales Return CRUD', function () {
         ]);
 
         $response->assertCreated()
-            ->assertJsonPath('data.status', 'draft')
+            ->assertJsonPath('data.status.value', 'draft')
             ->assertJsonCount(2, 'data.items');
 
         expect($response->json('data.return_number'))->toStartWith('SR-');
@@ -175,7 +175,7 @@ describe('Sales Return Workflow', function () {
         $response = $this->postJson("/api/v1/sales-returns/{$salesReturn->id}/submit");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'submitted');
+            ->assertJsonPath('data.status.value', 'submitted');
 
         $salesReturn->refresh();
         expect($salesReturn->submitted_at)->not->toBeNull();
@@ -197,7 +197,7 @@ describe('Sales Return Workflow', function () {
         $response = $this->postJson("/api/v1/sales-returns/{$salesReturn->id}/approve");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'approved');
+            ->assertJsonPath('data.status.value', 'approved');
 
         $salesReturn->refresh();
         expect($salesReturn->approved_at)->not->toBeNull();
@@ -221,7 +221,7 @@ describe('Sales Return Workflow', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'rejected')
+            ->assertJsonPath('data.status.value', 'rejected')
             ->assertJsonPath('data.rejection_reason', 'Return not valid');
 
         $salesReturn->refresh();
@@ -243,7 +243,7 @@ describe('Sales Return Workflow', function () {
         $response = $this->postJson("/api/v1/sales-returns/{$salesReturn->id}/complete");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'completed');
+            ->assertJsonPath('data.status.value', 'completed');
 
         $salesReturn->refresh();
         expect($salesReturn->completed_at)->not->toBeNull();
@@ -266,7 +266,7 @@ describe('Sales Return Workflow', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'cancelled');
+            ->assertJsonPath('data.status.value', 'cancelled');
     });
 
     it('can cancel a submitted sales return', function () {
@@ -277,7 +277,7 @@ describe('Sales Return Workflow', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'cancelled');
+            ->assertJsonPath('data.status.value', 'cancelled');
     });
 
     it('cannot cancel an approved sales return', function () {

@@ -21,12 +21,23 @@ beforeEach(function () {
 describe('Invoice API', function () {
 
     it('can list all invoices', function () {
-        Invoice::factory()->count(3)->create();
+        Invoice::factory()->count(10)->create();
+
+        $this->assertMaxQueries(15, function () {
+            $response = $this->getJson('/api/v1/invoices');
+            $response->assertOk();
+        });
 
         $response = $this->getJson('/api/v1/invoices');
-
-        $response->assertOk()
-            ->assertJsonCount(3, 'data');
+        $response->assertJsonCount(10, 'data')
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => [
+                        'status' => ['value', 'label', 'color', 'is_terminal', 'is_editable'],
+                        'formatted' => ['total_amount', 'paid_amount', 'outstanding_amount'],
+                    ]
+                ]
+            ]);
     });
 
     it('can filter invoices by status', function () {

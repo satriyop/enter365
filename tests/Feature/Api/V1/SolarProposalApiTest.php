@@ -29,12 +29,22 @@ beforeEach(function () {
 describe('Solar Proposal CRUD', function () {
 
     it('can list all solar proposals', function () {
-        SolarProposal::factory()->count(3)->create();
+        SolarProposal::factory()->count(10)->create();
+
+        $this->assertMaxQueries(15, function () {
+            $response = $this->getJson('/api/v1/solar-proposals');
+            $response->assertOk();
+        });
 
         $response = $this->getJson('/api/v1/solar-proposals');
-
-        $response->assertOk()
-            ->assertJsonCount(3, 'data');
+        $response->assertJsonCount(10, 'data')
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => [
+                        'status' => ['value', 'label', 'color', 'is_terminal', 'is_editable'],
+                    ]
+                ]
+            ]);
     });
 
     it('can filter proposals by status', function () {
@@ -116,7 +126,7 @@ describe('Solar Proposal CRUD', function () {
         ]);
 
         $response->assertCreated()
-            ->assertJsonPath('data.status', 'draft')
+            ->assertJsonPath('data.status.value', 'draft')
             ->assertJsonPath('data.site_name', 'PT Energi Matahari')
             ->assertJsonPath('data.province', 'DKI Jakarta');
 
@@ -362,7 +372,7 @@ describe('Solar Proposal Workflow', function () {
         $response = $this->postJson("/api/v1/solar-proposals/{$proposal->id}/send");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'sent');
+            ->assertJsonPath('data.status.value', 'sent');
 
         expect($response->json('data.sent_at'))->not->toBeNull();
     });
@@ -390,7 +400,7 @@ describe('Solar Proposal Workflow', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'accepted')
+            ->assertJsonPath('data.status.value', 'accepted')
             ->assertJsonPath('data.selected_bom_id', $bom->id);
 
         expect($response->json('data.accepted_at'))->not->toBeNull();
@@ -427,7 +437,7 @@ describe('Solar Proposal Workflow', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'rejected')
+            ->assertJsonPath('data.status.value', 'rejected')
             ->assertJsonPath('data.rejection_reason', 'Harga terlalu tinggi');
 
         expect($response->json('data.rejected_at'))->not->toBeNull();

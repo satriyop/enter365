@@ -25,12 +25,22 @@ beforeEach(function () {
 describe('Bill API', function () {
 
     it('can list all bills', function () {
-        Bill::factory()->count(3)->create();
+        \App\Models\Purchasing\Bill::factory()->count(10)->create();
+
+        $this->assertMaxQueries(15, function () {
+            $response = $this->getJson('/api/v1/bills');
+            $response->assertOk();
+        });
 
         $response = $this->getJson('/api/v1/bills');
-
-        $response->assertOk()
-            ->assertJsonCount(3, 'data');
+        $response->assertJsonCount(10, 'data')
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => [
+                        'status' => ['value', 'label', 'color', 'is_terminal', 'is_editable'],
+                    ]
+                ]
+            ]);
     });
 
     it('can filter bills by status', function () {
@@ -81,7 +91,7 @@ describe('Bill API', function () {
         ]);
 
         $response->assertCreated()
-            ->assertJsonPath('data.status', 'draft')
+            ->assertJsonPath('data.status.value', 'draft')
             ->assertJsonPath('data.vendor_invoice_number', 'INV-SUP-001')
             ->assertJsonCount(2, 'data.items');
 
@@ -165,7 +175,7 @@ describe('Bill API', function () {
         $response = $this->postJson("/api/v1/bills/{$bill->id}/post");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'received')
+            ->assertJsonPath('data.status.value', 'received')
             ->assertJsonStructure(['data' => ['journal_entry']]);
 
         $this->assertNotNull($response->json('data.journal_entry_id'));

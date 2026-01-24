@@ -395,7 +395,7 @@ describe('Payment API', function () {
         $response = $this->postJson("/api/v1/bills/{$bill->id}/post");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'received');
+            ->assertJsonPath('data.status.value', 'received');
 
         Event::assertDispatched(\App\Domain\Purchasing\Bills\Events\BillReceived::class);
     });

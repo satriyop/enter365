@@ -66,7 +66,7 @@ describe('Bank Reconciliation API', function () {
         ]);
 
         $response->assertCreated()
-            ->assertJsonPath('data.status', 'unmatched')
+            ->assertJsonPath('data.status.value', 'unmatched')
             ->assertJsonPath('data.debit', 1000000);
     });
 
@@ -113,7 +113,7 @@ describe('Bank Reconciliation API', function () {
         $response = $this->postJson("/api/v1/bank-transactions/{$transaction->id}/reconcile");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'reconciled')
+            ->assertJsonPath('data.status.value', 'reconciled')
             ->assertJsonPath('data.is_reconciled', true);
     });
 
@@ -177,7 +177,7 @@ describe('Bank Reconciliation API', function () {
         $response = $this->postJson("/api/v1/bank-transactions/{$transaction->id}/unmatch");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'unmatched');
+            ->assertJsonPath('data.status.value', 'unmatched');
     });
 
     it('cannot unmatch reconciled transaction', function () {

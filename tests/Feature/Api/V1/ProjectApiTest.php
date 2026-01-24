@@ -113,7 +113,7 @@ describe('Project CRUD', function () {
         ]);
 
         $response->assertCreated()
-            ->assertJsonPath('data.status', 'draft')
+            ->assertJsonPath('data.status.value', 'draft')
             ->assertJsonPath('data.name', 'Solar EPC Project')
             ->assertJsonPath('data.priority', 'high');
     });
@@ -191,7 +191,7 @@ describe('Project Workflow', function () {
         $response = $this->postJson("/api/v1/projects/{$project->id}/start");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'in_progress');
+            ->assertJsonPath('data.status.value', 'in_progress');
 
         $project->refresh();
         expect($project->actual_start_date)->not->toBeNull();
@@ -203,7 +203,7 @@ describe('Project Workflow', function () {
         $response = $this->postJson("/api/v1/projects/{$project->id}/start");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'in_progress');
+            ->assertJsonPath('data.status.value', 'in_progress');
     });
 
     it('cannot start in-progress project', function () {
@@ -222,7 +222,7 @@ describe('Project Workflow', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'on_hold');
+            ->assertJsonPath('data.status.value', 'on_hold');
 
         $project->refresh();
         expect($project->notes)->toContain('Ditunda: Material belum tersedia');
@@ -242,7 +242,7 @@ describe('Project Workflow', function () {
         $response = $this->postJson("/api/v1/projects/{$project->id}/resume");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'in_progress');
+            ->assertJsonPath('data.status.value', 'in_progress');
     });
 
     it('cannot resume non-on-hold project', function () {
@@ -259,7 +259,7 @@ describe('Project Workflow', function () {
         $response = $this->postJson("/api/v1/projects/{$project->id}/complete");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'completed')
+            ->assertJsonPath('data.status.value', 'completed')
             ->assertJsonPath('data.progress_percentage', 100);
 
         $project->refresh();
@@ -282,7 +282,7 @@ describe('Project Workflow', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'cancelled');
+            ->assertJsonPath('data.status.value', 'cancelled');
 
         $project->refresh();
         expect($project->notes)->toContain('Dibatalkan: Proyek dibatalkan oleh klien');
@@ -349,7 +349,7 @@ describe('Project from Quotation', function () {
         ]);
 
         $response->assertCreated()
-            ->assertJsonPath('data.status', 'planning')
+            ->assertJsonPath('data.status.value', 'planning')
             ->assertJsonPath('data.quotation_id', $quotation->id)
             ->assertJsonPath('data.contract_amount', 100000000);
 

@@ -63,7 +63,7 @@ describe('Budget CRUD', function () {
 
         $response->assertCreated()
             ->assertJsonPath('data.name', 'Anggaran 2025')
-            ->assertJsonPath('data.status', 'draft');
+            ->assertJsonPath('data.status.value', 'draft');
 
         $this->assertDatabaseHas('budgets', [
             'name' => 'Anggaran 2025',
@@ -278,7 +278,7 @@ describe('Budget Workflow', function () {
         $response = $this->postJson("/api/v1/budgets/{$budget->id}/approve");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'approved');
+            ->assertJsonPath('data.status.value', 'approved');
 
         expect($budget->fresh()->isApproved())->toBeTrue();
     });
@@ -306,7 +306,7 @@ describe('Budget Workflow', function () {
         $response = $this->postJson("/api/v1/budgets/{$budget->id}/reopen");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'draft');
+            ->assertJsonPath('data.status.value', 'draft');
     });
 
     it('cannot reopen a closed budget', function () {
@@ -323,7 +323,7 @@ describe('Budget Workflow', function () {
         $response = $this->postJson("/api/v1/budgets/{$budget->id}/close");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'closed');
+            ->assertJsonPath('data.status.value', 'closed');
     });
 
     it('cannot close a draft budget', function () {
@@ -346,7 +346,7 @@ describe('Budget Workflow', function () {
 
         $response->assertCreated()
             ->assertJsonPath('data.name', 'Anggaran Baru')
-            ->assertJsonPath('data.status', 'draft');
+            ->assertJsonPath('data.status.value', 'draft');
 
         $this->assertDatabaseCount('budgets', 2);
     });

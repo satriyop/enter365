@@ -279,7 +279,7 @@ describe('MRP Suggestion Management', function () {
         $response = $this->postJson("/api/v1/mrp-suggestions/{$suggestion->id}/accept");
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'accepted');
+            ->assertJsonPath('data.status.value', 'accepted');
     });
 
     it('can reject a suggestion', function () {
@@ -290,7 +290,7 @@ describe('MRP Suggestion Management', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.status', 'rejected');
+            ->assertJsonPath('data.status.value', 'rejected');
     });
 
     it('can update suggestion quantity', function () {
