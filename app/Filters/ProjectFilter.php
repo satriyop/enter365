@@ -66,6 +66,26 @@ class ProjectFilter extends QueryFilter
     }
 
     /**
+     * {@inheritdoc}
+     */
+    protected function getAllowedIncludes(): array
+    {
+        return [
+            'contact',
+            'quotation',
+            'manager',
+            'creator',
+            'costs',
+            'costs.bill',
+            'costs.product',
+            'revenues',
+            'revenues.invoice',
+            'revenues.downPayment',
+            'workOrders',
+        ];
+    }
+
+    /**
      * Filter by priority.
      */
     public function priority(string $value): void

@@ -33,7 +33,7 @@ class ProjectController extends Controller
     public function index(ProjectFilter $filter): AnonymousResourceCollection
     {
         $projects = Project::query()
-            ->with(['contact', 'manager'])
+            ->with(['contact', 'manager']) // Default eager loads
             ->filter($filter)
             ->paginate($filter->getRequest()->input('per_page', 25));
 
@@ -55,11 +55,13 @@ class ProjectController extends Controller
     /**
      * Display the specified project.
      */
-    public function show(Project $project): ProjectResource
+    public function show(Project $project, ProjectFilter $filter): ProjectResource
     {
-        return new ProjectResource(
-            $project->load(['contact', 'manager', 'quotation', 'costs', 'revenues', 'creator'])
-        );
+        $filter->apply($project->newQuery());
+
+        $project->loadMissing(['contact', 'manager', 'quotation', 'costs', 'revenues', 'creator']);
+
+        return new ProjectResource($project);
     }
 
     /**

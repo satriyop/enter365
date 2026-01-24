@@ -5,12 +5,57 @@ namespace App\Http\Resources\Api\V1;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin \App\Models\Projects\Project
+ */
 class ProjectResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
      *
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array{
+     *   id: int,
+     *   project_number: string,
+     *   name: string,
+     *   description: string|null,
+     *   contact_id: int,
+     *   contact?: array{id: int, name: string, phone: string|null},
+     *   quotation_id: int|null,
+     *   quotation?: array{id: int, quotation_number: string, total_amount: int},
+     *   start_date: string|null,
+     *   end_date: string|null,
+     *   actual_start_date: string|null,
+     *   actual_end_date: string|null,
+     *   status: string,
+     *   budget_amount: int,
+     *   contract_amount: int,
+     *   total_cost: int,
+     *   total_revenue: int,
+     *   gross_profit: int,
+     *   profit_margin: float,
+     *   progress_percentage: float,
+     *   priority: string,
+     *   location: string|null,
+     *   notes: string|null,
+     *   budget_utilization: float,
+     *   budget_variance: int,
+     *   is_over_budget: bool,
+     *   is_overdue: bool,
+     *   days_until_deadline: int|null,
+     *   duration_days: int,
+     *   costs?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
+     *   costs_count?: int,
+     *   revenues?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
+     *   revenues_count?: int,
+     *   cost_breakdown?: array<string, mixed>,
+     *   manager_id: int|null,
+     *   manager?: array{id: int, name: string},
+     *   created_by: int|null,
+     *   creator?: array{id: int, name: string},
+     *   created_at: string,
+     *   updated_at: string
+     * }
      */
     public function toArray(Request $request): array
     {
