@@ -58,7 +58,7 @@ class Invoice extends Model
         'status',
         'subtotal',
         'tax_amount',
-        'total',
+        'total_amount',  // Contract standard: use total_amount
         'amount_paid',
         'amount_due',
         'notes',
@@ -73,7 +73,7 @@ class Invoice extends Model
             'due_date' => 'date',
             'subtotal' => 'integer',
             'tax_amount' => 'integer',
-            'total' => 'integer',
+            'total_amount' => 'integer',  // Contract standard: use total_amount
             'amount_paid' => 'integer',
             'amount_due' => 'integer',
             'approved_at' => 'datetime',
@@ -278,15 +278,16 @@ public function scopeOverdue($query) { }
 protected function casts(): array
 {
     return [
-        'subtotal' => 'integer',   // 1500000 = Rp 1,500,000
-        'total' => 'integer',
+        'subtotal' => 'integer',        // 1500000 = Rp 1,500,000
+        'tax_amount' => 'integer',
+        'total_amount' => 'integer',    // Contract standard: use total_amount
     ];
 }
 
 // Format for display via accessor
-public function getTotalFormattedAttribute(): string
+public function getTotalAmountFormattedAttribute(): string
 {
-    return Currency::format($this->total);
+    return Currency::format($this->total_amount);
 }
 ```
 

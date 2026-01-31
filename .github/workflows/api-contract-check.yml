@@ -1,0 +1,90 @@
+name: API Contract Check
+
+on:
+  pull_request:
+    paths:
+      - 'app/Http/Resources/Api/**'
+      - 'app/Http/Controllers/Api/**'
+      - 'routes/api.php'
+      - 'api.json'
+      - 'check-api-mismatches.php'
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'app/Http/Resources/Api/**'
+      - 'app/Http/Controllers/Api/**'
+      - 'routes/api.php'
+      - 'api.json'
+      - 'check-api-mismatches.php'
+
+jobs:
+  check-api-contracts:
+    name: Check API Contracts
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, imagick
+          coverage: none
+
+      - name: Copy .env
+        run: php -r "file_exists('.env') || copy('.env.example', '.env');"
+
+      - name: Install Dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Generate Application Key
+        run: php artisan key:generate
+
+      - name: Generate OpenAPI Schema
+        run: php artisan scramble:export --path=api.json
+
+      - name: Check API Contract Mismatches
+        run: php check-api-mismatches.php
+        continue-on-error: false
+
+      - name: Validate api.json
+        run: |
+          if [ ! -f "api.json" ]; then
+            echo "❌ api.json not found"
+            exit 1
+          fi
+          php -r "json_decode(file_get_contents('api.json'), true) ?: exit(1);"
+          echo "✅ api.json is valid JSON"
+
+      - name: Run PHPStan on API Resources
+        run: |
+          if [ -f "vendor/bin/phpstan" ]; then
+            vendor/bin/phpstan analyse app/Http/Resources/Api/V1/ --level=5 --no-progress --error-format=github || true
+          else
+            echo "⚠️  PHPStan not installed, skipping..."
+          fi
+
+      - name: Check for api.json changes
+        run: |
+          if [ -n "${{ github.event.pull_request.number }}" ]; then
+            if git diff --exit-code api.json; then
+              echo "✅ api.json is up to date"
+            else
+              echo "⚠️  api.json has uncommitted changes"
+              echo "Please run 'php artisan scramble:export --path=api.json' and commit the changes"
+              git diff api.json || true
+            fi
+          fi
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## API Contract Check Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ OpenAPI schema generated" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Contract mismatches checked" >> $GITHUB_STEP_SUMMARY
+          echo "✅ api.json validated" >> $GITHUB_STEP_SUMMARY

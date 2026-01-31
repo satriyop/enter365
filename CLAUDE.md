@@ -650,15 +650,95 @@ See `~/.claude/CLAUDE.md` for detailed performance patterns.
 
 This project uses [Scramble](https://scramble.dedoc.co/) for automatic OpenAPI documentation generation.
 
-### After Creating or Modifying API Endpoints
+### Automated API Contract Validation
 
-**IMPORTANT:** After creating or modifying any API endpoints, always run:
+**IMPORTANT:** This project has automated API contract validation to ensure consistency between backend and frontend.
+
+#### Quick Workflow
+
+When modifying API Resources or Controllers:
 
 ```bash
+# Run automated integration check (recommended)
+./scripts/check-api-integration.sh
+
+# Or manually:
 php artisan scramble:export --path=api.json
+php check-api-mismatches.php
 ```
 
-This generates the OpenAPI specification that the Vue frontend uses for TypeScript type generation.
+The pre-commit hook will automatically validate API contracts before commit. CI/CD validates on every PR.
+
+#### Integration Check Script
+
+The `scripts/check-api-integration.sh` script automates the full validation process:
+
+```bash
+# Full check (recommended)
+./scripts/check-api-integration.sh
+
+# Skip tests (faster)
+./scripts/check-api-integration.sh --no-tests
+
+# Skip PHPStan (faster, but no type checking)
+./scripts/check-api-integration.sh --no-phpstan
+```
+
+**What it does:**
+1. Generates OpenAPI schema via Scramble
+2. Checks for contract mismatches
+3. Validates api.json format
+4. Runs PHPStan on API Resources
+5. Runs API tests
+6. Provides summary and next steps
+
+#### Pre-commit Hook
+
+A pre-commit hook automatically validates API contracts before each commit:
+
+- Detects when API files are modified
+- Generates OpenAPI schema
+- Checks for mismatches
+- Blocks commit if issues found
+- Reminds to stage `api.json` if modified
+
+**Installation:**
+```bash
+./scripts/install-pre-commit-hook.sh
+```
+
+#### CI/CD Integration
+
+GitHub Actions automatically validates API contracts on:
+- Pull requests that modify API files
+- Pushes to `main` or `develop` branches
+
+The workflow (`.github/workflows/api-contract-check.yml`) ensures broken contracts cannot be merged.
+
+### After Creating or Modifying API Endpoints
+
+**IMPORTANT:** After creating or modifying any API endpoints:
+
+1. **Run integration check:**
+   ```bash
+   ./scripts/check-api-integration.sh
+   ```
+
+2. **Or manually:**
+   ```bash
+   php artisan scramble:export --path=api.json
+   php check-api-mismatches.php
+   ```
+
+3. **Update tests** if field names/types changed
+
+4. **Regenerate frontend types** (in frontend directory):
+   ```bash
+   cd ../front-end-enter365
+   npm run types:generate
+   ```
+
+The OpenAPI specification (`api.json`) is used by the Vue frontend for TypeScript type generation.
 
 ### Scramble Best Practices
 
@@ -671,6 +751,8 @@ This generates the OpenAPI specification that the Vue frontend uses for TypeScri
 2. **Use Form Request classes** - Scramble automatically extracts validation rules from Form Requests
 
 3. **Use API Resources** - Scramble understands Laravel API Resources for response documentation
+
+4. **Keep Resources and Schema in sync** - The mismatch checker (`check-api-mismatches.php`) helps identify inconsistencies
 
 ### Example Controller Documentation
 
@@ -692,12 +774,36 @@ This generates the OpenAPI specification that the Vue frontend uses for TypeScri
 public function index(Request $request): AnonymousResourceCollection
 ```
 
-### Workflow Reminder
+### API Contract Consistency
 
-1. Create/modify API endpoint
-2. Run `php artisan test --filter=YourTest` to verify
-3. Run `php artisan scramble:export --path=api.json`
-4. Regenerate frontend types if needed: `npm run types:generate`
+**Field Naming Standards:**
+- Use `_amount` suffix for monetary values: `total_amount`, `discount_amount`, `tax_amount`
+- Be consistent across all Resources
+- Database column names should match Resource field names
+
+**Validation:**
+- Run `./scripts/check-api-integration.sh` before committing API changes
+- Pre-commit hook enforces validation automatically
+- CI/CD blocks PRs with broken contracts
+- **Runtime validation** (optional): Enable `API_RESPONSE_VALIDATION_ENABLED=true` in development
+- **Contract tests**: Run `php artisan test --filter=ApiContractTest` to validate responses
+
+**Response Validation Middleware:**
+- Validates API responses against OpenAPI schema at runtime
+- Enabled via `API_RESPONSE_VALIDATION_ENABLED=true` in `.env`
+- Logs validation failures (doesn't block responses by default)
+- Strict mode available for development: `API_RESPONSE_VALIDATION_STRICT=true`
+
+**Contract Testing:**
+- Automated tests in `tests/Contract/ApiContractTest.php`
+- Validates actual API responses match schema
+- Runs automatically in integration check script
+- Great for regression testing
+
+**Documentation:**
+- See `docs/04-api/integration-check/` for detailed integration check documentation
+- See `docs/04-api/tools/` for Scramble and PHPStan usage guides
+- See `INTEGRATION_CHECK_PRIORITY2_IMPLEMENTATION.md` for response validation details
 
 ---
 
@@ -707,6 +813,18 @@ This project uses [Larastan](https://github.com/larastan/larastan) for static an
 
 ### Running PHPStan
 
+**Recommended:** Use the helper script for consistent execution:
+
+```bash
+# Check specific file or directory (recommended)
+./scripts/phpstan-check.sh app/Services/Sales/
+
+# Check full codebase
+./scripts/phpstan-check.sh
+```
+
+**Manual execution:**
+
 ```bash
 # Run full analysis
 vendor/bin/phpstan analyse
@@ -715,8 +833,10 @@ vendor/bin/phpstan analyse
 vendor/bin/phpstan analyse app/Services/Sales/
 
 # With more memory for large analysis
-vendor/bin/phpstan analyse --memory-limit=512M
+vendor/bin/phpstan analyse --memory-limit=1G
 ```
+
+**Note:** PHPStan is configured to run in single-process mode (`maximumNumberOfProcesses: 0`) to avoid TCP server permission issues on macOS. See `README_PHPSTAN.md` for details.
 
 ### Configuration
 
@@ -729,9 +849,16 @@ vendor/bin/phpstan analyse --memory-limit=512M
 **IMPORTANT:** Run PHPStan after writing or modifying PHP code:
 
 ```bash
-# After modifying files, check for new errors
+# After modifying files, check for new errors (recommended)
+./scripts/phpstan-check.sh app/Services/YourModifiedService.php
+
+# Or manually
 vendor/bin/phpstan analyse app/Services/YourModifiedService.php
 ```
+
+**Automated checks:**
+- API Resources are automatically checked via `./scripts/check-api-integration.sh`
+- CI/CD can be configured to run PHPStan on PRs (optional)
 
 ### What PHPStan Catches
 
@@ -791,3 +918,58 @@ These patterns are intentionally ignored in `phpstan.neon`:
 Files excluded from analysis (incomplete implementations):
 
 - `app/Services/Accounting/Strategies/Manufacturing/*.php` - TODO: Complete these strategies
+
+---
+
+## Development Workflow
+
+### Code Quality Checks
+
+Before committing code, ensure:
+
+1. **Tests pass:**
+   ```bash
+   php artisan test --filter=YourTest
+   ```
+
+2. **Code formatted:**
+   ```bash
+   vendor/bin/pint --dirty
+   ```
+
+3. **Type checking (for modified files):**
+   ```bash
+   ./scripts/phpstan-check.sh app/YourModifiedFile.php
+   ```
+
+4. **API contracts valid (if modifying API):**
+   ```bash
+   ./scripts/check-api-integration.sh
+   ```
+
+### Automated Validation
+
+**Pre-commit Hook:**
+- Automatically validates API contracts when API files are modified
+- Install: `./scripts/install-pre-commit-hook.sh`
+- Can be skipped with `git commit --no-verify` (not recommended)
+
+**CI/CD:**
+- GitHub Actions validates API contracts on PRs
+- Runs automatically when API files are modified
+- Blocks merge if contracts are broken
+
+### Helper Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `./scripts/check-api-integration.sh` | Full API contract validation |
+| `./scripts/phpstan-check.sh [path]` | PHPStan type checking |
+| `./scripts/install-pre-commit-hook.sh` | Install pre-commit hook |
+| `php check-api-mismatches.php` | Check API Resource vs Schema mismatches |
+
+### Documentation
+
+- **API Integration:** `docs/04-api/integration-check/` - Complete integration check workflow
+- **Development Tools:** `docs/04-api/tools/` - Scramble, PHPStan usage guides
+- **Architecture:** `.claude/skills/enter365/` - Domain patterns, state machines, events

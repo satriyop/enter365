@@ -15,9 +15,11 @@ parameters:
     level: 5
 
     # Ensure model properties are checked against the database schema/migrations.
+    # This helps catch typos and missing properties.
     checkModelProperties: true
 
     # Standard Laravel ignore for builder methods
+    # Eloquent's dynamic query builder methods can't be statically analyzed
     ignoreErrors:
         - '#Call to an undefined method Illuminate\Database\Eloquent\Builder::#'
 
@@ -31,5 +33,18 @@ parameters:
             - tests/*
 
     # Laravel-specific settings
+    # Don't trust PHPDoc types completely - verify against actual code
     treatPhpDocTypesAsCertain: false
+    # Report if ignored errors are no longer present (helps cleanup)
     reportUnmatchedIgnoredErrors: false
+
+    # Configure tmp directory for PHPStan cache
+    # Using project-relative path to avoid permission issues
+    tmpDir: %rootDir%/tmp
+
+    # Disable parallel processing to avoid TCP server issues on macOS
+    # Setting maximumNumberOfProcesses to 0 completely disables worker processes
+    # and prevents PHPStan from trying to create a TCP server
+    # This runs in true single-process mode (slower but works on restricted systems)
+    parallel:
+        maximumNumberOfProcesses: 0

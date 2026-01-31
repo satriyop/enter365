@@ -64,12 +64,35 @@
 | Document | Purpose |
 |----------|---------|
 | `/api.json` | OpenAPI specification (Scramble-generated) |
+| `/INTEGRATION_CHECK_FLOW.md` | API contract validation workflow |
+| `/INTEGRATION_CHECK_QUICK_REFERENCE.md` | Quick reference for API validation |
 
 **Note:** Use Laravel Boost's `list-routes` tool for route discovery.
 
+**API Contract Validation:**
+- Run `./scripts/check-api-integration.sh` after modifying API Resources
+- Pre-commit hook validates automatically
+- CI/CD validates on pull requests
+
 ---
 
-## 05 - Entities
+## 05 - Development Workflow
+
+| Document | Purpose |
+|----------|---------|
+| `/docs/09-development/development-workflow.md` | Complete development workflow guide |
+| `/README_PHPSTAN.md` | PHPStan setup and usage |
+| `/INTEGRATION_CHECK_PRIORITY2_IMPLEMENTATION.md` | API contract validation implementation |
+
+**Key Tools:**
+- Laravel Pint - Code formatting
+- PHPStan - Type checking
+- API Contract Validation - Schema consistency
+- Pre-commit Hooks - Automated checks
+
+---
+
+## 06 - Entities
 
 Entity documentation is embedded in:
 - Model files: `app/Models/{Domain}/` (71 models)
@@ -78,7 +101,7 @@ Entity documentation is embedded in:
 
 ---
 
-## 06 - Business Rules
+## 07 - Business Rules
 
 Business rules are documented in:
 - ADRs: `/docs/08-adr/` (see Indonesian Context ADRs)
@@ -87,7 +110,7 @@ Business rules are documented in:
 
 ---
 
-## 07 - Code Patterns
+## 08 - Code Patterns
 
 | Document | Purpose |
 |----------|---------|
@@ -103,7 +126,7 @@ Business rules are documented in:
 
 ---
 
-## 08 - Architecture Decision Records (48 ADRs)
+## 09 - Architecture Decision Records (48 ADRs)
 
 | Document | Purpose |
 |----------|---------|

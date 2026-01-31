@@ -114,15 +114,17 @@ class QuotationController extends Controller
 ```
 
 ```php
-// Service: Business logic (implements interface)
+// Service: Business logic (implements interface, extends BaseService)
 use App\Contracts\Services\Domains\QuotationServiceInterface;
 use App\Models\Sales\Quotation;
+use App\Services\Base\BaseService;
 
-class QuotationService implements QuotationServiceInterface
+class QuotationService extends BaseService implements QuotationServiceInterface
 {
     public function create(array $data): Quotation
     {
-        return DB::transaction(function () use ($data) {
+        // BaseService provides executeInTransaction() via WithTransaction trait
+        return $this->executeInTransaction('create_quotation', function () use ($data) {
             // Generate number
             $data['quotation_number'] = $this->generateNumber();
 
@@ -256,14 +258,30 @@ See [Service Pattern: Factory Pattern](../07-code-patterns/service-pattern.md#se
 
 ## Service Patterns
 
-### 1. Transaction Wrapping
+### 1. BaseService + Traits Architecture
 
-All multi-step operations wrapped in transactions:
+All services extend `BaseService` which provides composable traits:
+
+```php
+use App\Services\Base\BaseService;
+
+class MyService extends BaseService
+{
+    // BaseService includes:
+    // - WithTransaction trait (executeInTransaction, execute)
+    // - WithEventDispatching trait (dispatch)
+    // - WithOperationContext trait (getContext, getUserId)
+}
+```
+
+### 2. Transaction Wrapping
+
+All multi-step operations use `executeInTransaction()` from `WithTransaction` trait:
 
 ```php
 public function create(array $data): Model
 {
-    return DB::transaction(function () use ($data) {
+    return $this->executeInTransaction('create_model', function () use ($data) {
         // All operations atomic
         $parent = Parent::create($data);
         $this->syncItems($parent, $data['items']);
@@ -273,7 +291,12 @@ public function create(array $data): Model
 }
 ```
 
-### 2. Interface-Based Constructor Injection
+**Benefits:**
+- Automatic logging of operation entry/exit
+- Performance tracking
+- Consistent transaction handling
+
+### 3. Interface-Based Constructor Injection
 
 Dependencies injected via constructor using interfaces for testability:
 
@@ -299,7 +322,7 @@ $mock = $this->mock(BomServiceInterface::class);
 $mock->shouldReceive('explode')->andReturn($mockItems);
 ```
 
-### 3. Return Fresh Models
+### 4. Return Fresh Models
 
 Always return fresh models with relationships:
 
@@ -307,7 +330,7 @@ Always return fresh models with relationships:
 return $quotation->fresh(['items', 'contact', 'createdBy']);
 ```
 
-### 4. Array Shape Documentation
+### 5. Array Shape Documentation
 
 Document complex array parameters:
 
@@ -325,7 +348,7 @@ Document complex array parameters:
 public function create(array $data): Quotation
 ```
 
-### 5. Domain Exceptions for Business Rules
+### 6. Domain Exceptions for Business Rules
 
 Use semantic domain exceptions for business rule violations:
 
@@ -362,16 +385,17 @@ use App\Contracts\Services\Domains\QuotationServiceInterface;
 use App\Exceptions\Domain\StateTransitionException;
 use App\Models\Sales\Quotation;
 use App\Models\Sales\Invoice;
-use Illuminate\Support\Facades\DB;
+use App\Services\Base\BaseService;
 
-class QuotationService implements QuotationServiceInterface
+class QuotationService extends BaseService implements QuotationServiceInterface
 {
     /**
      * Create a new quotation with items.
      */
     public function create(array $data): Quotation
     {
-        return DB::transaction(function () use ($data) {
+        // BaseService provides executeInTransaction() via WithTransaction trait
+        return $this->executeInTransaction('create_quotation', function () use ($data) {
             $data['quotation_number'] = $this->generateNumber();
             $data['status'] = Quotation::STATUS_DRAFT;
 
@@ -389,7 +413,7 @@ class QuotationService implements QuotationServiceInterface
      */
     public function update(Quotation $quotation, array $data): Quotation
     {
-        return DB::transaction(function () use ($quotation, $data) {
+        return $this->executeInTransaction('update_quotation', function () use ($quotation, $data) {
             $quotation->update($data);
 
             if (isset($data['items'])) {
@@ -462,7 +486,7 @@ class QuotationService implements QuotationServiceInterface
             );
         }
 
-        return DB::transaction(function () use ($quotation) {
+        return $this->executeInTransaction('convert_quotation_to_invoice', function () use ($quotation) {
             $invoice = Invoice::create([
                 'contact_id' => $quotation->contact_id,
                 'quotation_id' => $quotation->id,

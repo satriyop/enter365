@@ -46,10 +46,14 @@ app/
 │       ├── InsufficientStockException.php
 │       └── DocumentLockedException.php
 ├── Services/
-│   ├── Base/                   # Abstract base classes
-│   │   ├── AbstractDocumentService.php
-│   │   ├── AbstractWorkflowService.php
-│   │   └── AbstractReportService.php
+│   ├── Base/                   # Base service and traits
+│   │   ├── BaseService.php     # Core service class
+│   │   ├── AbstractDocumentService.php  # Legacy (deprecated)
+│   │   └── Traits/             # Composable traits
+│   │       ├── WithTransaction.php
+│   │       ├── WithEventDispatching.php
+│   │       ├── WithOperationContext.php
+│   │       └── WithDocuments.php
 │   ├── Accounting/             # Core accounting services
 │   │   └── Reports/            # Report services + factory
 │   ├── Sales/                  # Sales domain
@@ -64,6 +68,8 @@ app/
 
 ## Service Structure
 
+**Current Architecture:** All services extend `BaseService` with composable traits.
+
 ```php
 <?php
 
@@ -75,21 +81,26 @@ use App\Contracts\Services\Domains\InvoiceServiceInterface;
 use App\Models\Sales\Invoice;
 use App\Services\Accounting\JournalService;
 use App\Services\Inventory\InventoryService;
-use Illuminate\Support\Facades\DB;
+use App\Services\Base\BaseService;
 
-class InvoiceService implements InvoiceServiceInterface
+class InvoiceService extends BaseService implements InvoiceServiceInterface
 {
     public function __construct(
         private JournalService $journalService,
-        private InventoryService $inventoryService
-    ) {}
+        private InventoryService $inventoryService,
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger
+    ) {
+        parent::__construct($eventDispatcher, $logger);
+    }
 
     /**
      * Create a new invoice with items.
      */
     public function create(array $data): Invoice
     {
-        return DB::transaction(function () use ($data) {
+        // BaseService provides executeInTransaction() via WithTransaction trait
+        return $this->executeInTransaction('create_invoice', function () use ($data) {
             $invoice = Invoice::create([
                 'contact_id' => $data['contact_id'],
                 'date' => $data['date'],
@@ -112,7 +123,7 @@ class InvoiceService implements InvoiceServiceInterface
     {
         $this->ensureCanEdit($invoice);
 
-        return DB::transaction(function () use ($invoice, $data) {
+        return $this->executeInTransaction('update_invoice', function () use ($invoice, $data) {
             $invoice->update([
                 'contact_id' => $data['contact_id'] ?? $invoice->contact_id,
                 'date' => $data['date'] ?? $invoice->date,
@@ -137,14 +148,17 @@ class InvoiceService implements InvoiceServiceInterface
     {
         $this->ensureCanApprove($invoice);
 
-        return DB::transaction(function () use ($invoice) {
+        return $this->executeInTransaction('approve_invoice', function () use ($invoice) {
             $invoice->update([
                 'status' => 'approved',
                 'approved_at' => now(),
-                'approved_by' => auth()->id(),
+                'approved_by' => $this->getUserId(), // From WithOperationContext trait
             ]);
 
             $this->createJournalEntry($invoice);
+
+            // Dispatch domain event (from WithEventDispatching trait)
+            $this->dispatch(new InvoiceApproved($invoice));
 
             return $invoice;
         });
@@ -155,7 +169,7 @@ class InvoiceService implements InvoiceServiceInterface
      */
     public function recordPayment(Invoice $invoice, array $paymentData): Payment
     {
-        return DB::transaction(function () use ($invoice, $paymentData) {
+        return $this->executeInTransaction('record_payment', function () use ($invoice, $paymentData) {
             $payment = $invoice->payments()->create($paymentData);
 
             $this->updateInvoiceBalance($invoice);
@@ -256,25 +270,48 @@ class InvoiceService implements InvoiceServiceInterface
 
 ## Key Principles
 
-### 1. Constructor Injection
+### 1. Extend BaseService
+
+All services extend `BaseService` which provides core functionality:
+
+```php
+use App\Services\Base\BaseService;
+
+class MyService extends BaseService
+{
+    // Automatically includes:
+    // - WithTransaction trait (executeInTransaction, execute)
+    // - WithEventDispatching trait (dispatch)
+    // - WithOperationContext trait (getContext, getUserId)
+}
+```
+
+### 2. Constructor Injection
 
 ```php
 public function __construct(
     private JournalEntryService $journalService,
-    private InventoryService $inventoryService
-) {}
+    private InventoryService $inventoryService,
+    EventDispatcherInterface $eventDispatcher,
+    ContextualLoggerInterface $logger
+) {
+    parent::__construct($eventDispatcher, $logger);
+}
 ```
 
-### 2. Transaction Wrapping
+### 3. Transaction Wrapping
+
+Use `executeInTransaction()` from `WithTransaction` trait:
 
 ```php
-return DB::transaction(function () use ($data) {
+return $this->executeInTransaction('operation_name', function () use ($data) {
     // Multiple database operations
     // All succeed or all fail
+    // Automatic logging and performance tracking
 });
 ```
 
-### 3. Validation in Service
+### 4. Validation in Service
 
 ```php
 private function ensureCanApprove(Invoice $invoice): void
@@ -285,7 +322,39 @@ private function ensureCanApprove(Invoice $invoice): void
 }
 ```
 
-### 4. Event Coordination
+### 5. Event Coordination
+
+Use `dispatch()` from `WithEventDispatching` trait:
+
+```php
+public function complete(WorkOrder $workOrder): void
+{
+    $this->executeInTransaction('complete_work_order', function () use ($workOrder) {
+        $workOrder->update(['status' => 'completed']);
+
+        // Coordinate with other services
+        $this->inventoryService->incrementStock(...);
+        $this->costService->allocateToProject(...);
+
+        // Dispatch domain event
+        $this->dispatch(new WorkOrderCompleted($workOrder));
+    });
+}
+```
+
+### 6. Operation Context
+
+Use `getUserId()` and `getContext()` from `WithOperationContext` trait:
+
+```php
+public function createRecord(array $data)
+{
+    $data['created_by'] = $this->getUserId(); // From OperationContext
+    $data['tenant_id'] = $this->getTenantId(); // Future multi-tenant
+
+    return Model::create($data);
+}
+```
 
 ```php
 public function complete(WorkOrder $workOrder): void
@@ -444,13 +513,19 @@ interface InvoiceServiceInterface extends DocumentLifecycleInterface
 namespace App\Services\Sales;
 
 use App\Contracts\Services\Domains\InvoiceServiceInterface;
-use App\Services\Base\AbstractDocumentService;
+use App\Services\Base\BaseService;
+use App\Services\Base\Traits\WithDocuments;
 
-class InvoiceService extends AbstractDocumentService implements InvoiceServiceInterface
+class InvoiceService extends BaseService implements InvoiceServiceInterface
 {
+    use WithDocuments;
+
     // Implementation...
+    // WithDocuments trait provides document lifecycle methods
 }
 ```
+
+**Note:** `AbstractDocumentService` is deprecated. Use `BaseService + WithDocuments` trait instead.
 
 ### Binding Interfaces (AppServiceProvider)
 

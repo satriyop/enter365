@@ -209,17 +209,20 @@ app/Services/Accounting/
 └── WorkOrderService.php           # Work orders
 ```
 
-**Service Pattern:**
+**Service Pattern (Current Architecture):**
+
+All services extend `BaseService` with composable traits:
 
 ```php
-// File: /app/Services/Accounting/QuotationService.php
+// File: /app/Services/Sales/QuotationService.php
 
-namespace App\Services\Accounting;
+namespace App\Services\Sales;
 
-use App\Models\Accounting\Quotation;
-use Illuminate\Support\Facades\DB;
+use App\Contracts\Services\Domains\QuotationServiceInterface;
+use App\Models\Sales\Quotation;
+use App\Services\Base\BaseService;
 
-class QuotationService
+class QuotationService extends BaseService implements QuotationServiceInterface
 {
     /**
      * Create a new quotation with items.
@@ -233,7 +236,8 @@ class QuotationService
      */
     public function create(array $data): Quotation
     {
-        return DB::transaction(function () use ($data) {
+        // BaseService provides executeInTransaction() via WithTransaction trait
+        return $this->executeInTransaction('create_quotation', function () use ($data) {
             // Generate number
             $data['quotation_number'] = $this->generateNumber();
 
@@ -321,11 +325,14 @@ class QuotationController extends Controller
 
 **Key Patterns:**
 
-1. **Constructor Injection** - Dependencies via constructor property promotion
-2. **Transaction Wrapping** - `DB::transaction()` for atomic operations
-3. **Method Documentation** - Array shape PHPDoc for complex parameters
-4. **Return Fresh** - `->fresh(['relationships'])` for consistent responses
-5. **Exception for Validation** - Throw exceptions for business rule violations
+1. **BaseService Extension** - All services extend `BaseService` for core functionality
+2. **Composable Traits** - `WithTransaction`, `WithEventDispatching`, `WithOperationContext`, `WithDocuments`
+3. **Transaction Wrapping** - `executeInTransaction()` for atomic operations with logging
+4. **Constructor Injection** - Dependencies via constructor property promotion
+5. **Method Documentation** - Array shape PHPDoc for complex parameters
+6. **Return Fresh** - `->fresh(['relationships'])` for consistent responses
+7. **Exception for Validation** - Throw exceptions for business rule violations
+8. **Operation Context** - Automatic user/tenant tracking via `WithOperationContext` trait
 
 ---
 

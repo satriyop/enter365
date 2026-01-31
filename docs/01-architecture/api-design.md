@@ -384,14 +384,15 @@ class QuotationResource extends JsonResource
             'items' => QuotationItemResource::collection($this->whenLoaded('items')),
 
             // Amounts (raw integers for calculations)
+            // Contract standard: use total_amount (not total)
             'subtotal' => $this->subtotal,
             'discount_amount' => $this->discount_amount,
             'tax_amount' => $this->tax_amount,
-            'total' => $this->total,
+            'total_amount' => $this->total_amount,  // Contract standard
 
             // Formatted amounts (for display)
             'subtotal_formatted' => $this->formatted_subtotal,
-            'total_formatted' => $this->formatted_total,
+            'total_amount_formatted' => $this->formatted_total_amount,
 
             // Tax
             'tax_rate' => $this->tax_rate,
@@ -518,9 +519,32 @@ $this->authorize('approve', $quotation);
 
 ---
 
+## API Contract Validation
+
+**Automated validation ensures API responses match OpenAPI schema.**
+
+### Field Naming Standards
+
+- **Monetary fields:** Use `total_amount` (not `total`)
+- **Consistency:** Database columns match Resource field names
+- **Validation:** Run `./scripts/check-api-integration.sh` after modifying API Resources
+
+### Contract Validation Tools
+
+- **Mismatch Detection:** `php check-api-mismatches.php`
+- **Schema Generation:** `php artisan scramble:export --path=api.json`
+- **Contract Tests:** `tests/Contract/ApiContractTest.php`
+- **Response Validation:** Middleware (optional, development only)
+
+**See:** `/docs/09-development/development-workflow.md` for complete guide.
+
+---
+
 ## Related Documentation
 
 - [ADR-0004: Sanctum Authentication](../08-adr/0004-sanctum-authentication.md)
 - [ADR-0034: API Versioning](../08-adr/0034-api-versioning.md)
+- [ADR-0035: API Resource Conventions](../08-adr/0035-api-resource-conventions.md)
 - [ADR-0036: Error Response Format](../08-adr/0036-error-response-format.md)
 - [Service Layer](./service-layer.md)
+- [Development Workflow](../09-development/development-workflow.md)

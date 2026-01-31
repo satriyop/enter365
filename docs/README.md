@@ -118,7 +118,7 @@
 | **Strategy** | Pluggable algorithms (COGS, Closing) | `/app/Contracts/*/Strategies/` | `/docs/07-code-patterns/strategy-pattern.md` |
 | **Domain Events** | Decoupled side effects | `/app/Domain/*/Events/` | `/docs/07-code-patterns/event-listener-pattern.md` |
 | **Value Objects** | Composite domain values | `/app/Domain/*/` (e.g., InvoiceTotals) | `/docs/01-architecture/domain-layer.md` |
-| **Service Layer** | Business logic, not controllers | `/app/Services/{Domain}/` | `/docs/07-code-patterns/service-pattern.md` |
+| **Service Layer** | Business logic, BaseService + traits | `/app/Services/{Domain}/` | `/docs/07-code-patterns/service-pattern.md` |
 | **Query Filters** | Reusable filter classes | `/app/Filters/` | `/docs/07-code-patterns/filter-pattern.md` |
 | **Form Requests** | Validation in dedicated classes | `/app/Http/Requests/` | `/docs/07-code-patterns/validation-pattern.md` |
 | **API Resources** | Response transformation | `/app/Http/Resources/` | `/docs/01-architecture/api-design.md` |
@@ -143,7 +143,7 @@ docs/
 ├── 06-business-rules/           # Business logic rules
 ├── 07-code-patterns/            # Code conventions + DDD patterns
 ├── 08-adr/                      # Architecture Decision Records (48)
-├── 09-development/              # Setup, testing, debugging
+├── 09-development/              # Development workflow, code quality, API validation
 └── 10-references/               # External references
 ```
 
@@ -256,6 +256,18 @@ Architecture Decision Records document the "why" behind decisions.
 
 ---
 
+## Development Workflow
+
+**Automated Validation:**
+- API Contract Validation - Ensures API Resources match OpenAPI schema
+- PHPStan Type Checking - Static analysis for type safety
+- Pre-commit Hooks - Automatic validation before commits
+- CI/CD Integration - Continuous validation on pull requests
+
+**See:** `/docs/09-development/development-workflow.md` for complete guide.
+
+---
+
 ## Maintenance
 
 **When to update documentation:**
@@ -269,6 +281,7 @@ Architecture Decision Records document the "why" behind decisions.
 | Business rule changed | Update `/docs/06-business-rules/` |
 | New Indonesian term | Add to `/docs/GLOSSARY.md` |
 | Workflow changed | Update `/docs/03-workflows/` |
+| API contract changed | Run `./scripts/check-api-integration.sh` and update `api.json` |
 
 ---
 

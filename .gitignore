@@ -24,3 +24,5 @@ Homestead.yaml
 Thumbs.db
 /ideas
 /notes
+tmp/
+.phpstan.cache/

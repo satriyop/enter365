@@ -8,15 +8,13 @@ use App\Enums\DocumentStatus;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\Quotation;
 use App\Models\Sales\QuotationItem;
-use App\Models\User;
 use App\Services\Sales\QuotationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->user = User::factory()->create();
-    $this->actingAs($this->user);
+    $this->user = authenticatedAdmin();
     $this->quotationService = app(QuotationService::class);
 });
 
