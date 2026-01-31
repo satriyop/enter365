@@ -11,7 +11,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class BudgetResource extends JsonResource
 {
     /**
-     * @param  \Illuminate\Http\Request  $request
      * @return array{
      *   id: int,
      *   name: string,
@@ -20,8 +19,7 @@ class BudgetResource extends JsonResource
      *   fiscal_period?: array{id: int, name: string, start_date: string, end_date: string},
      *   type: string,
      *   type_label: string,
-     *   status: string,
-     *   status_label: string,
+     *   status: array{value: string, label: string, color: string, is_terminal: bool, is_editable: bool},
      *   is_editable: bool,
      *   total_revenue: int,
      *   total_expense: int,
@@ -51,8 +49,7 @@ class BudgetResource extends JsonResource
             ]),
             'type' => $this->type,
             'type_label' => $this->type_label,
-            'status' => $this->status,
-            'status_label' => $this->status_label,
+            'status' => new StatusResource($this->status),
             'is_editable' => $this->isEditable(),
 
             // Totals

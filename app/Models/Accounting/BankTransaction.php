@@ -2,6 +2,7 @@
 
 namespace App\Models\Accounting;
 
+use App\Enums\BankTransactionStatus;
 use App\Models\Shared\Payment;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -43,6 +44,7 @@ class BankTransaction extends Model
             'debit' => 'integer',
             'credit' => 'integer',
             'balance' => 'integer',
+            'status' => BankTransactionStatus::class,
             'reconciled_at' => 'datetime',
         ];
     }
@@ -100,7 +102,7 @@ class BankTransaction extends Model
      */
     public function isReconciled(): bool
     {
-        return $this->status === self::STATUS_RECONCILED;
+        return $this->status === BankTransactionStatus::Reconciled;
     }
 
     /**
@@ -109,7 +111,7 @@ class BankTransaction extends Model
     public function matchToPayment(Payment $payment): void
     {
         $this->update([
-            'status' => self::STATUS_MATCHED,
+            'status' => BankTransactionStatus::Matched,
             'matched_payment_id' => $payment->id,
         ]);
     }
@@ -120,7 +122,7 @@ class BankTransaction extends Model
     public function matchToJournalLine(JournalEntryLine $line): void
     {
         $this->update([
-            'status' => self::STATUS_MATCHED,
+            'status' => BankTransactionStatus::Matched,
             'matched_journal_line_id' => $line->id,
         ]);
     }
@@ -131,7 +133,7 @@ class BankTransaction extends Model
     public function reconcile(?int $userId = null): void
     {
         $this->update([
-            'status' => self::STATUS_RECONCILED,
+            'status' => BankTransactionStatus::Reconciled,
             'reconciled_at' => now(),
             'reconciled_by' => $userId ?? auth()->id(),
         ]);
@@ -143,7 +145,7 @@ class BankTransaction extends Model
     public function unmatch(): void
     {
         $this->update([
-            'status' => self::STATUS_UNMATCHED,
+            'status' => BankTransactionStatus::Unmatched,
             'matched_payment_id' => null,
             'matched_journal_line_id' => null,
             'reconciled_at' => null,

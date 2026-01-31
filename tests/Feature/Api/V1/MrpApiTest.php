@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\MrpSuggestionStatus;
 use App\Models\Contacts\Contact;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\ProductStock;
@@ -352,7 +353,7 @@ describe('MRP Suggestion Conversion', function () {
             ->assertJsonStructure(['message', 'purchase_order']);
 
         $suggestion->refresh();
-        expect($suggestion->status)->toBe(MrpSuggestion::STATUS_CONVERTED);
+        expect($suggestion->status)->toBe(MrpSuggestionStatus::Converted);
         expect($suggestion->converted_to_type)->toBe(PurchaseOrder::class);
     });
 
@@ -361,7 +362,7 @@ describe('MRP Suggestion Conversion', function () {
 
         $response = $this->postJson("/api/v1/mrp-suggestions/{$suggestion->id}/convert-to-po");
 
-        $response->assertStatus(500);
+        $response->assertUnprocessable();
     });
 
     it('can convert work order suggestion to WO', function () {
@@ -383,7 +384,7 @@ describe('MRP Suggestion Conversion', function () {
             ->assertJsonStructure(['message', 'work_order']);
 
         $suggestion->refresh();
-        expect($suggestion->status)->toBe(MrpSuggestion::STATUS_CONVERTED);
+        expect($suggestion->status)->toBe(MrpSuggestionStatus::Converted);
         expect($suggestion->converted_to_type)->toBe(WorkOrder::class);
     });
 
@@ -407,7 +408,7 @@ describe('MRP Suggestion Conversion', function () {
             ->assertJsonStructure(['message', 'subcontractor_work_order']);
 
         $suggestion->refresh();
-        expect($suggestion->status)->toBe(MrpSuggestion::STATUS_CONVERTED);
+        expect($suggestion->status)->toBe(MrpSuggestionStatus::Converted);
     });
 });
 

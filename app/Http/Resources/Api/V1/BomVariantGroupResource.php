@@ -11,7 +11,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class BomVariantGroupResource extends JsonResource
 {
     /**
-     * @param  \Illuminate\Http\Request  $request
      * @return array{
      *   id: int,
      *   product_id: int,
@@ -19,7 +18,7 @@ class BomVariantGroupResource extends JsonResource
      *   name: string,
      *   description: string|null,
      *   comparison_notes: string|null,
-     *   status: string,
+     *   status: array{value: string, label: string, color: string, is_terminal: bool, is_editable: bool},
      *   created_by: int|null,
      *   creator?: array{id: int, name: string},
      *   boms?: array<array{id: int, bom_number: string, name: string, variant_name: string|null, variant_label: string|null, is_primary_variant: bool, variant_sort_order: int, status: string, total_cost: int, unit_cost: int, cost_breakdown: array<string, mixed>}>,
@@ -43,7 +42,7 @@ class BomVariantGroupResource extends JsonResource
             'name' => $this->name,
             'description' => $this->description,
             'comparison_notes' => $this->comparison_notes,
-            'status' => $this->status,
+            'status' => new StatusResource($this->status),
             'created_by' => $this->created_by,
             'creator' => $this->whenLoaded('creator', fn () => [
                 'id' => $this->creator->id,

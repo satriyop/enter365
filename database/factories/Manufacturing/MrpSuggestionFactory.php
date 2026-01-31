@@ -2,6 +2,7 @@
 
 namespace Database\Factories\Manufacturing;
 
+use App\Enums\MrpSuggestionStatus;
 use App\Models\Contacts\Contact;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\Warehouse;
@@ -47,7 +48,7 @@ class MrpSuggestionFactory extends Factory
             'estimated_unit_cost' => $unitCost,
             'estimated_total_cost' => $unitCost * $suggestedQty,
             'priority' => MrpSuggestion::PRIORITY_NORMAL,
-            'status' => MrpSuggestion::STATUS_PENDING,
+            'status' => MrpSuggestionStatus::Pending,
             'reason' => 'Kekurangan stok untuk memenuhi permintaan',
             'notes' => $this->faker->optional()->sentence(),
             'converted_to_type' => null,
@@ -96,7 +97,7 @@ class MrpSuggestionFactory extends Factory
     public function pending(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => MrpSuggestion::STATUS_PENDING,
+            'status' => MrpSuggestionStatus::Pending,
         ]);
     }
 
@@ -106,7 +107,7 @@ class MrpSuggestionFactory extends Factory
     public function accepted(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => MrpSuggestion::STATUS_ACCEPTED,
+            'status' => MrpSuggestionStatus::Accepted,
         ]);
     }
 
@@ -116,7 +117,7 @@ class MrpSuggestionFactory extends Factory
     public function rejected(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => MrpSuggestion::STATUS_REJECTED,
+            'status' => MrpSuggestionStatus::Rejected,
             'notes' => 'Tidak diperlukan saat ini',
         ]);
     }
@@ -127,7 +128,7 @@ class MrpSuggestionFactory extends Factory
     public function converted(?string $type = null, ?int $id = null): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => MrpSuggestion::STATUS_CONVERTED,
+            'status' => MrpSuggestionStatus::Converted,
             'converted_to_type' => $type ?? PurchaseOrder::class,
             'converted_to_id' => $id ?? $this->faker->numberBetween(1, 100),
             'converted_at' => now(),
@@ -141,7 +142,7 @@ class MrpSuggestionFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'suggestion_type' => MrpSuggestion::TYPE_PURCHASE,
-            'status' => MrpSuggestion::STATUS_CONVERTED,
+            'status' => MrpSuggestionStatus::Converted,
             'converted_to_type' => PurchaseOrder::class,
             'converted_to_id' => $po->id,
             'converted_at' => now(),
@@ -155,7 +156,7 @@ class MrpSuggestionFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'suggestion_type' => MrpSuggestion::TYPE_WORK_ORDER,
-            'status' => MrpSuggestion::STATUS_CONVERTED,
+            'status' => MrpSuggestionStatus::Converted,
             'converted_to_type' => WorkOrder::class,
             'converted_to_id' => $wo->id,
             'converted_at' => now(),
@@ -169,7 +170,7 @@ class MrpSuggestionFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'suggestion_type' => MrpSuggestion::TYPE_SUBCONTRACT,
-            'status' => MrpSuggestion::STATUS_CONVERTED,
+            'status' => MrpSuggestionStatus::Converted,
             'converted_to_type' => SubcontractorWorkOrder::class,
             'converted_to_id' => $scWo->id,
             'converted_at' => now(),

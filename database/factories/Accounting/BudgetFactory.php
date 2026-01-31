@@ -2,6 +2,7 @@
 
 namespace Database\Factories\Accounting;
 
+use App\Enums\BudgetStatus;
 use App\Models\Accounting\Budget;
 use App\Models\Accounting\FiscalPeriod;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -23,7 +24,7 @@ class BudgetFactory extends Factory
             'description' => $this->faker->optional()->sentence(),
             'fiscal_period_id' => FiscalPeriod::factory(),
             'type' => Budget::TYPE_ANNUAL,
-            'status' => Budget::STATUS_DRAFT,
+            'status' => BudgetStatus::Draft,
             'total_revenue' => $totalRevenue,
             'total_expense' => $totalExpense,
             'net_budget' => $totalRevenue - $totalExpense,
@@ -44,7 +45,7 @@ class BudgetFactory extends Factory
     public function draft(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => Budget::STATUS_DRAFT,
+            'status' => BudgetStatus::Draft,
             'approved_by' => null,
             'approved_at' => null,
         ]);
@@ -53,7 +54,7 @@ class BudgetFactory extends Factory
     public function approved(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => Budget::STATUS_APPROVED,
+            'status' => BudgetStatus::Approved,
             'approved_at' => now(),
         ]);
     }
@@ -61,7 +62,7 @@ class BudgetFactory extends Factory
     public function closed(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => Budget::STATUS_CLOSED,
+            'status' => BudgetStatus::Closed,
             'approved_at' => now()->subMonth(),
         ]);
     }

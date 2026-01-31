@@ -2,6 +2,7 @@
 
 namespace App\Services\Accounting\Reports;
 
+use App\Enums\BankTransactionStatus;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\BankTransaction;
 use App\Models\Accounting\JournalEntryLine;
@@ -154,7 +155,7 @@ class BankReconciliationReportService
         $items = BankTransaction::query()
             ->where('account_id', $account->id)
             ->whereDate('transaction_date', '<=', $asOfDate)
-            ->where('status', BankTransaction::STATUS_UNMATCHED)
+            ->where('status', BankTransactionStatus::Unmatched)
             ->orderBy('transaction_date')
             ->get()
             ->map(function (BankTransaction $txn) {
@@ -235,9 +236,9 @@ class BankReconciliationReportService
 
         return [
             'total' => (clone $baseQuery)->count(),
-            'reconciled' => (clone $baseQuery)->where('status', BankTransaction::STATUS_RECONCILED)->count(),
-            'matched' => (clone $baseQuery)->where('status', BankTransaction::STATUS_MATCHED)->count(),
-            'unmatched' => (clone $baseQuery)->where('status', BankTransaction::STATUS_UNMATCHED)->count(),
+            'reconciled' => (clone $baseQuery)->where('status', BankTransactionStatus::Reconciled)->count(),
+            'matched' => (clone $baseQuery)->where('status', BankTransactionStatus::Matched)->count(),
+            'unmatched' => (clone $baseQuery)->where('status', BankTransactionStatus::Unmatched)->count(),
         ];
     }
 
@@ -293,7 +294,7 @@ class BankReconciliationReportService
         return BankTransaction::query()
             ->where('account_id', $account->id)
             ->whereDate('transaction_date', '<=', $asOfDate)
-            ->where('status', BankTransaction::STATUS_UNMATCHED)
+            ->where('status', BankTransactionStatus::Unmatched)
             ->orderBy('transaction_date')
             ->get()
             ->map(fn (BankTransaction $txn) => [
@@ -357,7 +358,7 @@ class BankReconciliationReportService
 
         return BankTransaction::query()
             ->where('account_id', $account->id)
-            ->where('status', BankTransaction::STATUS_RECONCILED)
+            ->where('status', BankTransactionStatus::Reconciled)
             ->whereNotNull('reconciled_at')
             ->whereBetween('reconciled_at', [$startDate, $endDate])
             ->selectRaw('DATE(reconciled_at) as date, COUNT(*) as count, SUM(debit) - SUM(credit) as total_amount')

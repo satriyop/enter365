@@ -11,7 +11,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class BankTransactionResource extends JsonResource
 {
     /**
-     * @param  \Illuminate\Http\Request  $request
      * @return array{
      *   id: int,
      *   account_id: int,
@@ -23,8 +22,7 @@ class BankTransactionResource extends JsonResource
      *   credit: int,
      *   net_amount: int,
      *   balance: int,
-     *   status: string,
-     *   status_label: string,
+     *   status: array{value: string, label: string, color: string, is_terminal: bool, is_editable: bool},
      *   is_reconciled: bool,
      *   matched_payment_id: int|null,
      *   matched_payment?: PaymentResource,
@@ -50,8 +48,7 @@ class BankTransactionResource extends JsonResource
             'credit' => $this->credit,
             'net_amount' => $this->getNetAmount(),
             'balance' => $this->balance,
-            'status' => $this->status,
-            'status_label' => $this->getStatusLabel(),
+            'status' => new StatusResource($this->status),
             'is_reconciled' => $this->isReconciled(),
             'matched_payment_id' => $this->matched_payment_id,
             'matched_payment' => new PaymentResource($this->whenLoaded('matchedPayment')),
@@ -63,15 +60,5 @@ class BankTransactionResource extends JsonResource
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];
-    }
-
-    protected function getStatusLabel(): string
-    {
-        return match ($this->status) {
-            'unmatched' => 'Belum Di-match',
-            'matched' => 'Sudah Di-match',
-            'reconciled' => 'Sudah Rekonsiliasi',
-            default => $this->status,
-        };
     }
 }

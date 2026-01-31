@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domain\Sales\Quotations\Enums\QuotationOutcome;
 use App\Domain\Sales\Quotations\Enums\QuotationType;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\Invoice;
@@ -64,7 +65,7 @@ describe('Auto-mark as Won on conversion', function () {
         $this->quotationService->convertToInvoice($quotation);
 
         expect($quotation->fresh())
-            ->outcome->toBe('won')
+            ->outcome->toBe(QuotationOutcome::Won)
             ->won_reason->toBe('converted_to_invoice')
             ->outcome_at->not->toBeNull();
     });
@@ -84,7 +85,7 @@ describe('Auto-mark as Won on conversion', function () {
         $this->quotationService->convertToInvoice($quotation);
 
         $fresh = $quotation->fresh();
-        expect($fresh->outcome)->toBe('won');
+        expect($fresh->outcome)->toBe(QuotationOutcome::Won);
         expect($fresh->won_reason)->toBe('harga_kompetitif');
         // outcome_at should be preserved (within a second tolerance for datetime comparison)
         expect($fresh->outcome_at->diffInSeconds($outcomeAt))->toBeLessThan(2);
@@ -105,7 +106,7 @@ describe('Auto-mark as Won on conversion', function () {
         $this->quotationService->convertToInvoice($quotation);
 
         expect($quotation->fresh())
-            ->outcome->toBe('lost')
+            ->outcome->toBe(QuotationOutcome::Lost)
             ->lost_reason->toBe('harga_tinggi');
     });
 });
@@ -141,7 +142,7 @@ describe('API endpoint clears follow-up', function () {
 
         $response->assertCreated();
         expect($quotation->fresh())
-            ->outcome->toBe('won')
+            ->outcome->toBe(QuotationOutcome::Won)
             ->won_reason->toBe('converted_to_invoice');
     });
 });

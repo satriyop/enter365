@@ -2,6 +2,7 @@
 
 namespace App\Models\Manufacturing;
 
+use App\Enums\MrpSuggestionStatus;
 use App\Models\Contacts\Contact;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\Warehouse;
@@ -79,6 +80,7 @@ class MrpSuggestion extends Model
             'adjusted_quantity' => 'decimal:4',
             'estimated_unit_cost' => 'integer',
             'estimated_total_cost' => 'integer',
+            'status' => MrpSuggestionStatus::class,
             'converted_at' => 'datetime',
         ];
     }
@@ -138,7 +140,7 @@ class MrpSuggestion extends Model
      */
     public function isPending(): bool
     {
-        return $this->status === self::STATUS_PENDING;
+        return $this->status === MrpSuggestionStatus::Pending;
     }
 
     /**
@@ -146,7 +148,7 @@ class MrpSuggestion extends Model
      */
     public function isAccepted(): bool
     {
-        return $this->status === self::STATUS_ACCEPTED;
+        return $this->status === MrpSuggestionStatus::Accepted;
     }
 
     /**
@@ -154,7 +156,7 @@ class MrpSuggestion extends Model
      */
     public function isConverted(): bool
     {
-        return $this->status === self::STATUS_CONVERTED;
+        return $this->status === MrpSuggestionStatus::Converted;
     }
 
     /**
@@ -162,7 +164,7 @@ class MrpSuggestion extends Model
      */
     public function isRejected(): bool
     {
-        return $this->status === self::STATUS_REJECTED;
+        return $this->status === MrpSuggestionStatus::Rejected;
     }
 
     /**
@@ -170,7 +172,7 @@ class MrpSuggestion extends Model
      */
     public function canBeAccepted(): bool
     {
-        return $this->status === self::STATUS_PENDING;
+        return $this->status === MrpSuggestionStatus::Pending;
     }
 
     /**
@@ -178,7 +180,7 @@ class MrpSuggestion extends Model
      */
     public function canBeRejected(): bool
     {
-        return $this->status === self::STATUS_PENDING;
+        return $this->status === MrpSuggestionStatus::Pending;
     }
 
     /**
@@ -186,7 +188,7 @@ class MrpSuggestion extends Model
      */
     public function canBeConverted(): bool
     {
-        return $this->status === self::STATUS_ACCEPTED;
+        return $this->status === MrpSuggestionStatus::Accepted;
     }
 
     /**
@@ -232,7 +234,7 @@ class MrpSuggestion extends Model
             throw new \InvalidArgumentException('Saran tidak dapat diterima.');
         }
 
-        $this->status = self::STATUS_ACCEPTED;
+        $this->status = MrpSuggestionStatus::Accepted;
         $this->save();
     }
 
@@ -245,7 +247,7 @@ class MrpSuggestion extends Model
             throw new \InvalidArgumentException('Saran tidak dapat ditolak.');
         }
 
-        $this->status = self::STATUS_REJECTED;
+        $this->status = MrpSuggestionStatus::Rejected;
         if ($reason) {
             $this->notes = $reason;
         }
@@ -257,7 +259,7 @@ class MrpSuggestion extends Model
      */
     public function markAsConverted(string $type, int $id, ?int $userId = null): void
     {
-        $this->status = self::STATUS_CONVERTED;
+        $this->status = MrpSuggestionStatus::Converted;
         $this->converted_to_type = $type;
         $this->converted_to_id = $id;
         $this->converted_at = now();
@@ -370,7 +372,7 @@ class MrpSuggestion extends Model
      */
     public function scopePending($query)
     {
-        return $query->where('status', self::STATUS_PENDING);
+        return $query->where('status', MrpSuggestionStatus::Pending);
     }
 
     /**
@@ -381,7 +383,7 @@ class MrpSuggestion extends Model
      */
     public function scopeAccepted($query)
     {
-        return $query->where('status', self::STATUS_ACCEPTED);
+        return $query->where('status', MrpSuggestionStatus::Accepted);
     }
 
     /**

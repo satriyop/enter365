@@ -11,13 +11,12 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class MrpSuggestionResource extends JsonResource
 {
     /**
-     * @param  \Illuminate\Http\Request  $request
      * @return array{
      *   id: int,
      *   mrp_run_id: int,
      *   suggestion_type: string,
      *   action: string,
-     *   status: string,
+     *   status: array{value: string, label: string, color: string, is_terminal: bool, is_editable: bool},
      *   priority: string,
      *   product_id: int,
      *   product?: array{id: int, sku: string, name: string, unit: string, procurement_type: string}|null,
@@ -59,7 +58,7 @@ class MrpSuggestionResource extends JsonResource
             // Suggestion type and action
             'suggestion_type' => $this->suggestion_type,
             'action' => $this->action,
-            'status' => $this->status,
+            'status' => new StatusResource($this->status),
             'priority' => $this->priority,
 
             // Product

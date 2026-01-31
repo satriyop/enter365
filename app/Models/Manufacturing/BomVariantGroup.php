@@ -23,6 +23,13 @@ class BomVariantGroup extends Model
         'created_by',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'status' => DocumentStatus::class,
+        ];
+    }
+
     /**
      * @return BelongsTo<Product, $this>
      */

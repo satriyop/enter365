@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\BankTransactionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\ReconcileBankTransactionRequest;
 use App\Http\Requests\Api\V1\StoreBankTransactionRequest;
@@ -51,7 +52,7 @@ class BankReconciliationController extends Controller
     {
         $transaction = BankTransaction::create([
             ...$request->validated(),
-            'status' => BankTransaction::STATUS_UNMATCHED,
+            'status' => BankTransactionStatus::Unmatched,
             'created_by' => auth()->id(),
         ]);
 
@@ -82,7 +83,7 @@ class BankReconciliationController extends Controller
 
     public function matchToPayment(BankTransaction $bankTransaction, Payment $payment): JsonResponse
     {
-        if ($bankTransaction->status !== BankTransaction::STATUS_UNMATCHED) {
+        if ($bankTransaction->status !== BankTransactionStatus::Unmatched) {
             return response()->json([
                 'message' => 'Transaksi sudah di-match atau direkonsiliasi.',
             ], 422);
@@ -137,7 +138,7 @@ class BankReconciliationController extends Controller
 
         $count = DB::transaction(function () use ($request) {
             $transactions = BankTransaction::whereIn('id', $request->transaction_ids)
-                ->where('status', '!=', BankTransaction::STATUS_RECONCILED)
+                ->where('status', '!=', BankTransactionStatus::Reconciled)
                 ->get();
 
             foreach ($transactions as $transaction) {
@@ -165,9 +166,9 @@ class BankReconciliationController extends Controller
 
         $summary = [
             'total_transactions' => (clone $query)->count(),
-            'unmatched' => (clone $query)->where('status', BankTransaction::STATUS_UNMATCHED)->count(),
-            'matched' => (clone $query)->where('status', BankTransaction::STATUS_MATCHED)->count(),
-            'reconciled' => (clone $query)->where('status', BankTransaction::STATUS_RECONCILED)->count(),
+            'unmatched' => (clone $query)->where('status', BankTransactionStatus::Unmatched)->count(),
+            'matched' => (clone $query)->where('status', BankTransactionStatus::Matched)->count(),
+            'reconciled' => (clone $query)->where('status', BankTransactionStatus::Reconciled)->count(),
             'total_debits' => (clone $query)->sum('debit'),
             'total_credits' => (clone $query)->sum('credit'),
         ];
@@ -186,7 +187,7 @@ class BankReconciliationController extends Controller
 
     public function suggestMatches(BankTransaction $bankTransaction): JsonResponse
     {
-        if ($bankTransaction->status !== BankTransaction::STATUS_UNMATCHED) {
+        if ($bankTransaction->status !== BankTransactionStatus::Unmatched) {
             return response()->json([
                 'message' => 'Transaksi sudah di-match.',
                 'suggestions' => [],

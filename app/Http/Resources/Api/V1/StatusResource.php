@@ -9,17 +9,16 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * Shared Status API Resource.
- * 
+ *
  * Used for consistent status object representation across all documents.
- * 
- * @property \App\Enums\DocumentStatus $resource
+ *
+ * @property \App\Enums\DocumentStatus|\App\Enums\BankTransactionStatus|\App\Enums\BudgetStatus|\App\Enums\MrpSuggestionStatus $resource
  */
 class StatusResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return array{
      *   value: string,
      *   label: string,

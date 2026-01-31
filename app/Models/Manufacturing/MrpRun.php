@@ -3,6 +3,7 @@
 namespace App\Models\Manufacturing;
 
 use App\Enums\DocumentStatus;
+use App\Enums\MrpSuggestionStatus;
 use App\Models\Inventory\Warehouse;
 use App\Models\User;
 use Carbon\Carbon;
@@ -137,7 +138,7 @@ class MrpRun extends Model
     public function pendingSuggestions(): HasMany
     {
         return $this->hasMany(MrpSuggestion::class)
-            ->where('status', MrpSuggestion::STATUS_PENDING);
+            ->where('status', MrpSuggestionStatus::Pending);
     }
 
     /**
@@ -146,7 +147,7 @@ class MrpRun extends Model
     public function acceptedSuggestions(): HasMany
     {
         return $this->hasMany(MrpSuggestion::class)
-            ->where('status', MrpSuggestion::STATUS_ACCEPTED);
+            ->where('status', MrpSuggestionStatus::Accepted);
     }
 
     /**

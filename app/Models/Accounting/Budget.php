@@ -2,6 +2,7 @@
 
 namespace App\Models\Accounting;
 
+use App\Enums\BudgetStatus;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -45,6 +46,7 @@ class Budget extends Model
             'total_revenue' => 'integer',
             'total_expense' => 'integer',
             'net_budget' => 'integer',
+            'status' => BudgetStatus::class,
             'approved_at' => 'datetime',
         ];
     }
@@ -78,7 +80,7 @@ class Budget extends Model
      */
     public function isEditable(): bool
     {
-        return $this->status === self::STATUS_DRAFT;
+        return $this->status === BudgetStatus::Draft;
     }
 
     /**
@@ -86,7 +88,7 @@ class Budget extends Model
      */
     public function isApproved(): bool
     {
-        return $this->status === self::STATUS_APPROVED;
+        return $this->status === BudgetStatus::Approved;
     }
 
     /**
@@ -94,7 +96,7 @@ class Budget extends Model
      */
     public function isClosed(): bool
     {
-        return $this->status === self::STATUS_CLOSED;
+        return $this->status === BudgetStatus::Closed;
     }
 
     /**
@@ -107,7 +109,7 @@ class Budget extends Model
         }
 
         $this->update([
-            'status' => self::STATUS_APPROVED,
+            'status' => BudgetStatus::Approved,
             'approved_by' => $userId ?? auth()->id(),
             'approved_at' => now(),
         ]);
@@ -120,11 +122,11 @@ class Budget extends Model
      */
     public function close(): bool
     {
-        if ($this->status !== self::STATUS_APPROVED) {
+        if ($this->status !== BudgetStatus::Approved) {
             return false;
         }
 
-        $this->update(['status' => self::STATUS_CLOSED]);
+        $this->update(['status' => BudgetStatus::Closed]);
 
         return true;
     }
@@ -134,12 +136,12 @@ class Budget extends Model
      */
     public function reopen(): bool
     {
-        if ($this->status === self::STATUS_CLOSED) {
+        if ($this->status === BudgetStatus::Closed) {
             return false;
         }
 
         $this->update([
-            'status' => self::STATUS_DRAFT,
+            'status' => BudgetStatus::Draft,
             'approved_by' => null,
             'approved_at' => null,
         ]);
@@ -229,7 +231,7 @@ class Budget extends Model
      */
     public function scopeApproved($query)
     {
-        return $query->where('status', self::STATUS_APPROVED);
+        return $query->where('status', BudgetStatus::Approved);
     }
 
     /**
@@ -240,7 +242,7 @@ class Budget extends Model
      */
     public function scopeDraft($query)
     {
-        return $query->where('status', self::STATUS_DRAFT);
+        return $query->where('status', BudgetStatus::Draft);
     }
 
     /**

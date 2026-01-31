@@ -2,6 +2,7 @@
 
 namespace Database\Factories\Accounting;
 
+use App\Enums\BankTransactionStatus;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\BankTransaction;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -26,7 +27,7 @@ class BankTransactionFactory extends Factory
             'debit' => $isDebit ? $amount : 0,
             'credit' => $isDebit ? 0 : $amount,
             'balance' => $this->faker->numberBetween(10000000, 100000000),
-            'status' => BankTransaction::STATUS_UNMATCHED,
+            'status' => BankTransactionStatus::Unmatched,
             'matched_payment_id' => null,
             'matched_journal_line_id' => null,
             'reconciled_at' => null,
@@ -56,7 +57,7 @@ class BankTransactionFactory extends Factory
     public function unmatched(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => BankTransaction::STATUS_UNMATCHED,
+            'status' => BankTransactionStatus::Unmatched,
             'matched_payment_id' => null,
             'matched_journal_line_id' => null,
         ]);
@@ -65,14 +66,14 @@ class BankTransactionFactory extends Factory
     public function matched(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => BankTransaction::STATUS_MATCHED,
+            'status' => BankTransactionStatus::Matched,
         ]);
     }
 
     public function reconciled(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => BankTransaction::STATUS_RECONCILED,
+            'status' => BankTransactionStatus::Reconciled,
             'reconciled_at' => now(),
         ]);
     }

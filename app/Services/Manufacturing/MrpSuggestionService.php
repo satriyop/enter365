@@ -7,6 +7,7 @@ namespace App\Services\Manufacturing;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Enums\DocumentStatus;
+use App\Enums\MrpSuggestionStatus;
 use App\Models\Inventory\Product;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\MrpRun;
@@ -85,7 +86,7 @@ class MrpSuggestionService extends BaseService
                 'estimated_unit_cost' => $product->purchase_price ?? 0,
                 'estimated_total_cost' => (int) round($suggestedQty * ($product->purchase_price ?? 0)),
                 'priority' => $priority,
-                'status' => MrpSuggestion::STATUS_PENDING,
+                'status' => MrpSuggestionStatus::Pending,
                 'reason' => $this->generateReason($product, $totalShort, $productShortages->count()),
             ]);
         }

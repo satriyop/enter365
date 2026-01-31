@@ -100,9 +100,9 @@ describe('Public Solar Proposal Portal', function () {
                 'message' => 'Proposal berhasil diterima.',
                 'data' => [
                     'id' => $this->proposal->id,
-                    'status' => 'accepted',
                 ],
-            ]);
+            ])
+            ->assertJsonPath('data.status.value', 'accepted');
 
         $this->proposal->refresh();
         expect($this->proposal->status)->toBe(DocumentStatus::Accepted);
@@ -131,9 +131,9 @@ describe('Public Solar Proposal Portal', function () {
                 'message' => 'Proposal berhasil ditolak.',
                 'data' => [
                     'id' => $this->proposal->id,
-                    'status' => 'rejected',
                 ],
-            ]);
+            ])
+            ->assertJsonPath('data.status.value', 'rejected');
 
         $this->proposal->refresh();
         expect($this->proposal->status)->toBe(DocumentStatus::Rejected);

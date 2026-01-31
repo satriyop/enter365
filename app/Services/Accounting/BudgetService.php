@@ -6,7 +6,7 @@ namespace App\Services\Accounting;
 
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
-use App\Enums\DocumentStatus;
+use App\Enums\BudgetStatus;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\Budget;
 use App\Models\Accounting\BudgetLine;
@@ -318,7 +318,7 @@ class BudgetService extends BaseService
                 'description' => $budget->description,
                 'fiscal_period_id' => $newPeriod->id,
                 'type' => $budget->type,
-                'status' => DocumentStatus::Draft,
+                'status' => BudgetStatus::Draft,
                 'total_revenue' => $budget->total_revenue,
                 'total_expense' => $budget->total_expense,
                 'net_budget' => $budget->net_budget,

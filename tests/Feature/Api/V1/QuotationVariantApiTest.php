@@ -180,7 +180,7 @@ describe('Variant Selection', function () {
         $response->assertOk()
             ->assertJsonPath('data.selected_variant_id', $bom2->id)
             ->assertJsonPath('data.has_selected_variant', true)
-            ->assertJsonPath('data.total', 50000000);
+            ->assertJsonPath('data.total_amount', 50000000);
     });
 
     it('cannot select variant for a single quotation', function () {
