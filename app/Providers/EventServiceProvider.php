@@ -29,6 +29,8 @@ class EventServiceProvider extends ServiceProvider
         // Purchasing Domain
         \App\Listeners\Purchasing\BillEventSubscriber::class,
         \App\Listeners\Purchasing\PurchaseOrderEventSubscriber::class,
+        \App\Listeners\Purchasing\GoodsReceiptNoteEventSubscriber::class,
+        \App\Listeners\Purchasing\PurchaseReturnEventSubscriber::class,
 
         // Manufacturing Domain
         \App\Listeners\Manufacturing\WorkOrderEventSubscriber::class,
@@ -37,6 +39,13 @@ class EventServiceProvider extends ServiceProvider
 
         // Projects Domain
         \App\Listeners\Projects\ProjectEventSubscriber::class,
+
+        // Inventory Domain
+        \App\Listeners\Inventory\InventoryEventSubscriber::class,
+        \App\Listeners\Inventory\StockOpnameEventSubscriber::class,
+
+        // Accounting Domain
+        \App\Listeners\Accounting\FiscalPeriodEventSubscriber::class,
     ];
 
     /**

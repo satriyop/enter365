@@ -24,7 +24,7 @@ class ProjectBasedCostingStrategy implements ManufacturingCostStrategy
         return null;
     }
 
-    public function onMaterialConsume(MaterialConsumption $consumption): ?JournalEntry
+    public function onMaterialConsumption(MaterialConsumption $consumption): ?JournalEntry
     {
         // No journal entry - material costs flow to project via project_costs
         return null;
@@ -34,6 +34,12 @@ class ProjectBasedCostingStrategy implements ManufacturingCostStrategy
     {
         // No journal entry - project costing handles this
         return null;
+    }
+
+    public function calculateTotalCost(WorkOrder $workOrder): int
+    {
+        // Costs tracked in project_costs table, not here
+        return 0;
     }
 
     public function getIdentifier(): string

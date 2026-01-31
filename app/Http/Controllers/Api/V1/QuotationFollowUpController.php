@@ -11,6 +11,7 @@ use App\Http\Resources\Api\V1\QuotationActivityResource;
 use App\Http\Resources\Api\V1\QuotationResource;
 use App\Models\Sales\Quotation;
 use App\Models\Sales\QuotationActivity;
+use App\Services\Sales\Quotation\QuotationStatisticsService;
 use App\Services\Sales\QuotationFollowUpService;
 use App\Services\Sales\QuotationOutcomeService;
 use Illuminate\Http\JsonResponse;
@@ -23,7 +24,8 @@ class QuotationFollowUpController extends Controller
 {
     public function __construct(
         private QuotationOutcomeService $outcomeService,
-        private QuotationFollowUpService $followUpService
+        private QuotationFollowUpService $followUpService,
+        private QuotationStatisticsService $statisticsService
     ) {}
 
     /**
@@ -278,22 +280,10 @@ class QuotationFollowUpController extends Controller
         $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->input('end_date', now()->endOfMonth()->toDateString());
 
-        $stats = DB::table('quotations')
-            ->whereBetween('quotation_date', [$startDate, $endDate])
-            ->whereNull('deleted_at')
-            ->select([
-                DB::raw('COUNT(*) as total_quotations'),
-                DB::raw('COUNT(CASE WHEN outcome = \'won\' THEN 1 END) as won_count'),
-                DB::raw('COUNT(CASE WHEN outcome = \'lost\' THEN 1 END) as lost_count'),
-                DB::raw('COUNT(CASE WHEN outcome IS NULL AND status NOT IN (\'draft\', \'expired\', \'converted\') THEN 1 END) as pending_count'),
-                DB::raw('SUM(CASE WHEN outcome = \'won\' THEN total_amount ELSE 0 END) as won_value'),
-                DB::raw('SUM(CASE WHEN outcome = \'lost\' THEN total_amount ELSE 0 END) as lost_value'),
-                DB::raw('SUM(CASE WHEN outcome IS NULL AND status NOT IN (\'draft\', \'expired\', \'converted\') THEN total_amount ELSE 0 END) as pending_value'),
-            ])
-            ->first();
+        $stats = $this->statisticsService->getOutcomeStatistics($startDate, $endDate);
 
-        $wonCount = $stats->won_count ?? 0;
-        $lostCount = $stats->lost_count ?? 0;
+        $wonCount = $stats->won_count;
+        $lostCount = $stats->lost_count;
         $totalDecided = $wonCount + $lostCount;
 
         return response()->json([
@@ -302,21 +292,21 @@ class QuotationFollowUpController extends Controller
                 'end' => $endDate,
             ],
             'counts' => [
-                'total' => $stats->total_quotations ?? 0,
+                'total' => $stats->total_quotations,
                 'won' => $wonCount,
                 'lost' => $lostCount,
-                'pending' => $stats->pending_count ?? 0,
+                'pending' => $stats->pending_count,
             ],
             'values' => [
-                'won' => (int) ($stats->won_value ?? 0),
-                'lost' => (int) ($stats->lost_value ?? 0),
-                'pending' => (int) ($stats->pending_value ?? 0),
+                'won' => $stats->won_value,
+                'lost' => $stats->lost_value,
+                'pending' => $stats->pending_value,
             ],
             'conversion_rate' => $totalDecided > 0
                 ? round(($wonCount / $totalDecided) * 100, 2)
                 : 0,
-            'lost_reasons' => $this->getLostReasonsBreakdown($startDate, $endDate),
-            'won_reasons' => $this->getWonReasonsBreakdown($startDate, $endDate),
+            'lost_reasons' => $this->statisticsService->getLostReasonsBreakdown($startDate, $endDate),
+            'won_reasons' => $this->statisticsService->getWonReasonsBreakdown($startDate, $endDate),
         ]);
     }
 
@@ -353,61 +343,5 @@ class QuotationFollowUpController extends Controller
             'upcoming_week' => $upcomingWeek,
             'no_follow_up_scheduled' => $noFollowUp,
         ]);
-    }
-
-    /**
-     * Get lost reasons breakdown.
-     *
-     * @return array<array{reason: string, label: string, count: int, value: int}>
-     */
-    private function getLostReasonsBreakdown(string $startDate, string $endDate): array
-    {
-        $results = DB::table('quotations')
-            ->whereBetween('quotation_date', [$startDate, $endDate])
-            ->where('outcome', 'lost')
-            ->whereNotNull('lost_reason')
-            ->whereNull('deleted_at')
-            ->groupBy('lost_reason')
-            ->select([
-                'lost_reason',
-                DB::raw('COUNT(*) as count'),
-                DB::raw('SUM(total_amount) as value'),
-            ])
-            ->get();
-
-        return $results->map(fn ($row) => [
-            'reason' => $row->lost_reason,
-            'label' => QuotationOutcome::LOST_REASONS[$row->lost_reason] ?? $row->lost_reason,
-            'count' => (int) $row->count,
-            'value' => (int) $row->value,
-        ])->toArray();
-    }
-
-    /**
-     * Get won reasons breakdown.
-     *
-     * @return array<array{reason: string, label: string, count: int, value: int}>
-     */
-    private function getWonReasonsBreakdown(string $startDate, string $endDate): array
-    {
-        $results = DB::table('quotations')
-            ->whereBetween('quotation_date', [$startDate, $endDate])
-            ->where('outcome', 'won')
-            ->whereNotNull('won_reason')
-            ->whereNull('deleted_at')
-            ->groupBy('won_reason')
-            ->select([
-                'won_reason',
-                DB::raw('COUNT(*) as count'),
-                DB::raw('SUM(total_amount) as value'),
-            ])
-            ->get();
-
-        return $results->map(fn ($row) => [
-            'reason' => $row->won_reason,
-            'label' => QuotationOutcome::WON_REASONS[$row->won_reason] ?? $row->won_reason,
-            'count' => (int) $row->count,
-            'value' => (int) $row->value,
-        ])->toArray();
     }
 }

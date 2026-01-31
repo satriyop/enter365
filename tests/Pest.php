@@ -135,10 +135,18 @@ function createDraftInvoice(): Invoice
  */
 function createSentInvoice(int $itemCount = 1): Invoice
 {
-    return Invoice::factory()
-        ->has(InvoiceItem::factory()->count($itemCount))
-        ->sent()
-        ->create();
+    $invoice = Invoice::factory()->sent()->create();
+
+    // Create items that match the invoice subtotal
+    $lineTotal = (int) ($invoice->subtotal / $itemCount);
+    for ($i = 0; $i < $itemCount; $i++) {
+        InvoiceItem::factory()->create([
+            'invoice_id' => $invoice->id,
+            'line_total' => $lineTotal,
+        ]);
+    }
+
+    return $invoice->fresh(['items']);
 }
 
 /**

@@ -283,6 +283,14 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(\App\Models\Manufacturing\Bom::class, \App\Policies\BomPolicy::class);
         Gate::policy(\App\Models\Projects\Project::class, \App\Policies\ProjectPolicy::class);
         Gate::policy(\App\Models\User::class, \App\Policies\UserPolicy::class);
+        Gate::policy(\App\Models\Sales\SalesReturn::class, \App\Policies\SalesReturnPolicy::class);
+        Gate::policy(\App\Models\Purchasing\GoodsReceiptNote::class, \App\Policies\GoodsReceiptNotePolicy::class);
+        Gate::policy(\App\Models\Purchasing\PurchaseReturn::class, \App\Policies\PurchaseReturnPolicy::class);
+        Gate::policy(\App\Models\Manufacturing\MaterialRequisition::class, \App\Policies\MaterialRequisitionPolicy::class);
+        Gate::policy(\App\Models\Manufacturing\SubcontractorWorkOrder::class, \App\Policies\SubcontractorWorkOrderPolicy::class);
+        Gate::policy(\App\Models\Inventory\StockOpname::class, \App\Policies\StockOpnamePolicy::class);
+        Gate::policy(\App\Models\Accounting\FiscalPeriod::class, \App\Policies\FiscalPeriodPolicy::class);
+        Gate::policy(\App\Models\Inventory\Warehouse::class, \App\Policies\WarehousePolicy::class);
     }
 
     /**

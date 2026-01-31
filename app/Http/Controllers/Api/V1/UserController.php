@@ -10,13 +10,17 @@ use App\Http\Requests\Api\V1\UpdatePasswordRequest;
 use App\Http\Requests\Api\V1\UpdateUserRequest;
 use App\Http\Resources\Api\V1\UserResource;
 use App\Models\User;
+use App\Services\Shared\UserService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
+    public function __construct(
+        private UserService $userService
+    ) {}
+
     /**
      * Display a listing of users.
      */
@@ -40,19 +44,7 @@ class UserController extends Controller
     {
         $this->authorize('create', User::class);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'is_active' => $request->boolean('is_active', true),
-            'email_verified_at' => now(),
-        ]);
-
-        if ($request->has('roles')) {
-            $user->roles()->attach($request->input('roles'));
-        }
-
-        $user->load('roles');
+        $user = $this->userService->create($request->validated());
 
         return $this->created(new UserResource($user), 'User berhasil dibuat.');
     }
@@ -78,24 +70,10 @@ class UserController extends Controller
     {
         $this->authorize('update', $user);
 
-        $data = $request->only(['name', 'email']);
+        $canManageRoles = $request->user()->can('manageRoles', User::class);
+        $updatedUser = $this->userService->update($user, $request->validated(), $canManageRoles);
 
-        // Only users with manageRoles permission can update is_active and roles
-        if ($request->user()->can('manageRoles', User::class)) {
-            if ($request->has('is_active')) {
-                $data['is_active'] = $request->boolean('is_active');
-            }
-        }
-
-        $user->update($data);
-
-        if ($request->user()->can('manageRoles', User::class) && $request->has('roles')) {
-            $user->roles()->sync($request->input('roles'));
-        }
-
-        $user->load('roles');
-
-        return new UserResource($user);
+        return new UserResource($updatedUser);
     }
 
     /**
@@ -105,17 +83,13 @@ class UserController extends Controller
     {
         $this->authorize('delete', $user);
 
-        // Cannot delete yourself
-        if ($request->user()->id === $user->id) {
-            return $this->error('Anda tidak dapat menghapus akun Anda sendiri.', 422);
+        try {
+            $this->userService->delete($user, $request->user()->id);
+
+            return $this->deleted('User berhasil dihapus.');
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage(), 422);
         }
-
-        // Revoke all tokens
-        $user->tokens()->delete();
-
-        $user->delete();
-
-        return $this->deleted('User berhasil dihapus.');
     }
 
     /**
@@ -125,17 +99,15 @@ class UserController extends Controller
     {
         $this->authorize('update', $user);
 
-        $user->update([
-            'password' => Hash::make($request->password),
-        ]);
+        $currentToken = $request->user()->currentAccessToken();
+        $currentTokenId = ($currentToken && is_object($currentToken)) ? $currentToken->id : null;
 
-        // Optionally revoke all tokens except current if user is changing own password
-        if ($request->user()->id === $user->id) {
-            $user->tokens()->where('id', '!=', $request->user()->currentAccessToken()->id)->delete();
-        } else {
-            // Admin changing other user's password - revoke all their tokens
-            $user->tokens()->delete();
-        }
+        $this->userService->updatePassword(
+            $user,
+            $request->password,
+            $request->user()->id,
+            $currentTokenId
+        );
 
         return $this->success(message: 'Password berhasil diperbarui.');
     }
@@ -152,11 +124,10 @@ class UserController extends Controller
             'roles.*' => ['integer', 'exists:roles,id'],
         ]);
 
-        $user->roles()->sync($request->input('roles'));
-        $user->load('roles');
+        $updatedUser = $this->userService->assignRoles($user, $request->input('roles'));
 
         return $this->success(
-            new UserResource($user),
+            new UserResource($updatedUser),
             'Role berhasil diperbarui.'
         );
     }
@@ -168,25 +139,17 @@ class UserController extends Controller
     {
         $this->authorize('manageRoles', User::class);
 
-        // Cannot deactivate yourself
-        if ($request->user()->id === $user->id) {
-            return $this->error('Anda tidak dapat menonaktifkan akun Anda sendiri.', 422);
+        try {
+            $updatedUser = $this->userService->toggleActive($user, $request->user()->id);
+
+            return $this->success(
+                new UserResource($updatedUser),
+                $updatedUser->is_active
+                    ? 'User berhasil diaktifkan.'
+                    : 'User berhasil dinonaktifkan.'
+            );
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage(), 422);
         }
-
-        $user->update([
-            'is_active' => ! $user->is_active,
-        ]);
-
-        // If deactivating, revoke all tokens
-        if (! $user->is_active) {
-            $user->tokens()->delete();
-        }
-
-        return $this->success(
-            new UserResource($user->load('roles')),
-            $user->is_active
-                ? 'User berhasil diaktifkan.'
-                : 'User berhasil dinonaktifkan.'
-        );
     }
 }

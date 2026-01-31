@@ -10,6 +10,7 @@ use App\Http\Resources\Api\V1\BankTransactionResource;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\BankTransaction;
 use App\Models\Shared\Payment;
+use App\Services\Accounting\BankReconciliationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -17,6 +18,10 @@ use Illuminate\Support\Facades\DB;
 
 class BankReconciliationController extends Controller
 {
+    public function __construct(
+        private BankReconciliationService $reconciliationService
+    ) {}
+
     public function index(Request $request): AnonymousResourceCollection
     {
         $query = BankTransaction::query()->with(['account', 'matchedPayment']);
@@ -50,11 +55,7 @@ class BankReconciliationController extends Controller
 
     public function store(StoreBankTransactionRequest $request): JsonResponse
     {
-        $transaction = BankTransaction::create([
-            ...$request->validated(),
-            'status' => BankTransactionStatus::Unmatched,
-            'created_by' => auth()->id(),
-        ]);
+        $transaction = $this->reconciliationService->create($request->validated());
 
         return (new BankTransactionResource($transaction->load('account')))
             ->response()
@@ -70,15 +71,13 @@ class BankReconciliationController extends Controller
 
     public function destroy(BankTransaction $bankTransaction): JsonResponse
     {
-        if ($bankTransaction->isReconciled()) {
-            return response()->json([
-                'message' => 'Tidak dapat menghapus transaksi yang sudah direkonsiliasi.',
-            ], 422);
+        try {
+            $this->reconciliationService->delete($bankTransaction);
+
+            return response()->json(['message' => 'Transaksi bank berhasil dihapus.']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
         }
-
-        $bankTransaction->delete();
-
-        return response()->json(['message' => 'Transaksi bank berhasil dihapus.']);
     }
 
     public function matchToPayment(BankTransaction $bankTransaction, Payment $payment): JsonResponse

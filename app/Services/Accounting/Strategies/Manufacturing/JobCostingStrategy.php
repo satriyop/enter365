@@ -28,20 +28,91 @@ class JobCostingStrategy implements ManufacturingCostStrategy
         return null;
     }
 
-    public function onMaterialConsume(MaterialConsumption $consumption): ?JournalEntry
+    public function onMaterialConsumption(MaterialConsumption $consumption): ?JournalEntry
     {
-        // TODO: Implement material consumption journal
-        // Dr Work in Progress (by work order/project)
-        // Cr Raw Materials Inventory
-        return null;
+        $consumption->loadMissing(['product', 'workOrder']);
+
+        $amount = $consumption->total_cost;
+
+        if ($amount <= 0) {
+            return null;
+        }
+
+        $workOrderNumber = $consumption->workOrder->wo_number;
+
+        $entryDate = $consumption->consumed_date ?? now();
+        if ($entryDate instanceof \Illuminate\Support\Carbon || $entryDate instanceof \DateTimeInterface) {
+            $entryDate = $entryDate->format('Y-m-d');
+        }
+
+        return $this->journalService->createEntry([
+            'entry_date' => $entryDate,
+            'reference' => $workOrderNumber,
+            'description' => "Konsumsi Material (Job Costing): {$workOrderNumber}",
+            'source_type' => MaterialConsumption::class,
+            'source_id' => $consumption->id,
+            'lines' => [
+                [
+                    'account_code' => config('accounting.default_accounts.wip', '1-1450'),
+                    'description' => "Konsumsi material: {$consumption->product->name}",
+                    'debit' => $amount,
+                    'credit' => 0,
+                ],
+                [
+                    'account_code' => config('accounting.default_accounts.inventory', '1-1400'),
+                    'description' => "Transfer ke WIP: {$workOrderNumber}",
+                    'debit' => 0,
+                    'credit' => $amount,
+                ],
+            ],
+        ]);
     }
 
     public function onWorkOrderComplete(WorkOrder $workOrder): ?JournalEntry
     {
-        // TODO: Implement work order completion journal
-        // Dr Finished Goods / COGS (depending on context)
-        // Cr Work in Progress
-        return null;
+        $workOrder->loadMissing(['consumptions.product']);
+
+        $totalWIP = $workOrder->consumptions->sum('total_cost');
+
+        if ($totalWIP <= 0) {
+            return null;
+        }
+
+        $workOrderNumber = $workOrder->wo_number;
+
+        $entryDate = $workOrder->completed_at ?? now();
+        if ($entryDate instanceof \Illuminate\Support\Carbon || $entryDate instanceof \DateTimeInterface) {
+            $entryDate = $entryDate->format('Y-m-d');
+        }
+
+        return $this->journalService->createEntry([
+            'entry_date' => $entryDate,
+            'reference' => $workOrderNumber,
+            'description' => "Penyelesaian Work Order (Job Costing): {$workOrderNumber}",
+            'source_type' => WorkOrder::class,
+            'source_id' => $workOrder->id,
+            'lines' => [
+                [
+                    'account_code' => config('accounting.default_accounts.finished_goods', '1-1410'),
+                    'description' => "Barang jadi (Job Costing): {$workOrderNumber}",
+                    'debit' => $totalWIP,
+                    'credit' => 0,
+                ],
+                [
+                    'account_code' => config('accounting.default_accounts.wip', '1-1450'),
+                    'description' => "Transfer dari WIP: {$workOrderNumber}",
+                    'debit' => 0,
+                    'credit' => $totalWIP,
+                ],
+            ],
+        ]);
+    }
+
+    public function calculateTotalCost(WorkOrder $workOrder): int
+    {
+        $workOrder->loadMissing(['consumptions']);
+
+        return (int) $workOrder->consumptions->sum('total_cost');
     }
 
     public function getIdentifier(): string

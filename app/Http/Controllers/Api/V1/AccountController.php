@@ -9,6 +9,7 @@ use App\Http\Requests\Api\V1\UpdateAccountRequest;
 use App\Http\Resources\Api\V1\AccountResource;
 use App\Models\Accounting\Account;
 use App\Services\Accounting\AccountBalanceService;
+use App\Services\Accounting\AccountService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -16,7 +17,8 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 class AccountController extends Controller
 {
     public function __construct(
-        private AccountBalanceService $balanceService
+        private AccountBalanceService $balanceService,
+        private AccountService $accountService
     ) {}
 
     public function index(AccountFilter $filter): AnonymousResourceCollection
@@ -35,7 +37,7 @@ class AccountController extends Controller
     {
         $this->authorize('create', Account::class);
 
-        $account = Account::create($request->validated());
+        $account = $this->accountService->create($request->validated());
 
         return new AccountResource($account->load('parent'));
     }
@@ -51,34 +53,30 @@ class AccountController extends Controller
         return new AccountResource($account);
     }
 
-    public function update(UpdateAccountRequest $request, Account $account): AccountResource
+    public function update(UpdateAccountRequest $request, Account $account): AccountResource|JsonResponse
     {
         $this->authorize('update', $account);
 
-        if ($account->is_system && $request->has('code')) {
-            abort(422, 'Tidak bisa mengubah kode akun sistem.');
+        try {
+            $updatedAccount = $this->accountService->update($account, $request->validated());
+
+            return new AccountResource($updatedAccount);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
         }
-
-        $account->update($request->validated());
-
-        return new AccountResource($account->fresh(['parent', 'children']));
     }
 
     public function destroy(Account $account): JsonResponse
     {
         $this->authorize('delete', $account);
 
-        if ($account->is_system) {
-            abort(422, 'Tidak bisa menghapus akun sistem.');
+        try {
+            $this->accountService->delete($account);
+
+            return response()->json(['message' => 'Akun berhasil dihapus.']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
         }
-
-        if ($account->journalEntryLines()->exists()) {
-            abort(422, 'Tidak bisa menghapus akun yang sudah digunakan dalam jurnal.');
-        }
-
-        $account->delete();
-
-        return response()->json(['message' => 'Akun berhasil dihapus.']);
     }
 
     /**

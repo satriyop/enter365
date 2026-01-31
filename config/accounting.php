@@ -281,6 +281,10 @@ return [
         'foreign_exchange_gain' => '4-3001',
         'foreign_exchange_loss' => '5-4001',
         'inventory' => '1-1400', // Persediaan
+        'goods_received_not_invoiced' => '2-1300', // Barang Diterima Belum Ditagih
+        'wip' => '1-1450', // Barang Dalam Proses (WIP)
+        'finished_goods' => '1-1410', // Barang Jadi
+        'raw_materials' => '1-1400', // Bahan Baku (alias for inventory)
         'cogs' => '5-1001', // Harga Pokok Penjualan
         'inventory_adjustment' => '5-2900', // Penyesuaian Persediaan (Beban Operasional Lainnya)
         'sales_returns' => '4-1004', // Retur Penjualan

@@ -249,6 +249,17 @@ class Invoice extends Model
     }
 
     /**
+     * Check if invoice has early payment discount configured.
+     */
+    public function hasEarlyPaymentDiscount(): bool
+    {
+        return $this->early_discount_percent !== null
+            && $this->early_discount_percent > 0
+            && $this->early_discount_days !== null
+            && $this->early_discount_days > 0;
+    }
+
+    /**
      * Calculate and update totals from items.
      *
      * @param  InvoiceCalculatorInterface|null  $calculator  Optional calculator for unit testing

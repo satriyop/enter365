@@ -27,16 +27,15 @@ class WIPAccountingStrategy implements ManufacturingCostStrategy
 
     public function onWorkOrderStart(WorkOrder $workOrder): ?JournalEntry
     {
-        // TODO: Optionally record WO start
-        // Some systems create a journal to allocate planned costs
+        // WIP is tracked when materials are actually consumed, not on WO start
         return null;
     }
 
-    public function onMaterialConsume(MaterialConsumption $consumption): ?JournalEntry
+    public function onMaterialConsumption(MaterialConsumption $consumption): ?JournalEntry
     {
         $consumption->loadMissing(['product', 'workOrder']);
 
-        $amount = $consumption->quantity * ($consumption->product->purchase_price ?? 0);
+        $amount = $consumption->total_cost;
 
         if ($amount <= 0) {
             return null;
@@ -45,7 +44,7 @@ class WIPAccountingStrategy implements ManufacturingCostStrategy
         $wipAccount = config('accounting.default_accounts.wip', '1-1450');
         $rawMaterialsAccount = config('accounting.default_accounts.inventory', '1-1400');
 
-        $woNumber = $consumption->workOrder->work_order_number ?? 'WO-Unknown';
+        $woNumber = $consumption->workOrder->wo_number ?? 'WO-Unknown';
 
         $lines = [
             [
@@ -62,7 +61,7 @@ class WIPAccountingStrategy implements ManufacturingCostStrategy
             ],
         ];
 
-        $entryDate = $consumption->consumed_at ?? now();
+        $entryDate = $consumption->consumed_date ?? now();
 
         return $this->journalService->createEntry([
             'entry_date' => $entryDate instanceof \DateTimeInterface ? $entryDate->format('Y-m-d') : $entryDate,
@@ -77,10 +76,9 @@ class WIPAccountingStrategy implements ManufacturingCostStrategy
     public function onWorkOrderComplete(WorkOrder $workOrder): ?JournalEntry
     {
         // Calculate total WIP accumulated for this work order
-        $totalWIP = $workOrder->materialConsumptions()
-            ->with('product')
+        $totalWIP = $workOrder->consumptions()
             ->get()
-            ->sum(fn ($c) => $c->quantity * ($c->product->purchase_price ?? 0));
+            ->sum(fn ($c) => $c->total_cost);
 
         if ($totalWIP <= 0) {
             return null;
@@ -94,13 +92,13 @@ class WIPAccountingStrategy implements ManufacturingCostStrategy
                 'account_code' => $finishedGoodsAccount,
                 'debit' => $totalWIP,
                 'credit' => 0,
-                'description' => "Barang jadi: {$workOrder->work_order_number}",
+                'description' => "Barang jadi: {$workOrder->wo_number}",
             ],
             [
                 'account_code' => $wipAccount,
                 'debit' => 0,
                 'credit' => $totalWIP,
-                'description' => "Transfer dari WIP: {$workOrder->work_order_number}",
+                'description' => "Transfer dari WIP: {$workOrder->wo_number}",
             ],
         ];
 
@@ -108,12 +106,19 @@ class WIPAccountingStrategy implements ManufacturingCostStrategy
 
         return $this->journalService->createEntry([
             'entry_date' => $entryDate instanceof \DateTimeInterface ? $entryDate->format('Y-m-d') : $entryDate,
-            'description' => "Penyelesaian Work Order: {$workOrder->work_order_number}",
-            'reference' => $workOrder->work_order_number,
+            'description' => "Penyelesaian Work Order: {$workOrder->wo_number}",
+            'reference' => $workOrder->wo_number,
             'source_type' => WorkOrder::class,
             'source_id' => $workOrder->id,
             'lines' => $lines,
         ], autoPost: true);
+    }
+
+    public function calculateTotalCost(WorkOrder $workOrder): int
+    {
+        $workOrder->loadMissing(['consumptions']);
+
+        return (int) $workOrder->consumptions->sum('total_cost');
     }
 
     public function getIdentifier(): string

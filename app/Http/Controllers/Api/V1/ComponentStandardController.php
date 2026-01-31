@@ -6,15 +6,19 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreComponentStandardRequest;
 use App\Http\Requests\Api\V1\UpdateComponentStandardRequest;
 use App\Http\Resources\Api\V1\ComponentStandardResource;
-use App\Models\Manufacturing\BomItem;
 use App\Models\Manufacturing\ComponentBrandMapping;
 use App\Models\Manufacturing\ComponentStandard;
+use App\Services\Manufacturing\ComponentStandardService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class ComponentStandardController extends Controller
 {
+    public function __construct(
+        private ComponentStandardService $standardService
+    ) {}
+
     /**
      * Display a listing of component standards.
      */
@@ -70,7 +74,7 @@ class ComponentStandardController extends Controller
      */
     public function store(StoreComponentStandardRequest $request): JsonResponse
     {
-        $standard = ComponentStandard::create($request->validated());
+        $standard = $this->standardService->create($request->validated());
 
         return (new ComponentStandardResource($standard))
             ->response()
@@ -94,11 +98,9 @@ class ComponentStandardController extends Controller
         UpdateComponentStandardRequest $request,
         ComponentStandard $componentStandard
     ): ComponentStandardResource {
-        $componentStandard->update($request->validated());
+        $standard = $this->standardService->update($componentStandard, $request->validated());
 
-        return new ComponentStandardResource(
-            $componentStandard->fresh(['brandMappings.product'])
-        );
+        return new ComponentStandardResource($standard);
     }
 
     /**
@@ -106,18 +108,7 @@ class ComponentStandardController extends Controller
      */
     public function destroy(ComponentStandard $componentStandard): JsonResponse
     {
-        // Check if any BOM items reference this standard
-        $bomItemCount = BomItem::query()
-            ->where('component_standard_id', $componentStandard->id)
-            ->count();
-
-        if ($bomItemCount > 0) {
-            return response()->json([
-                'message' => "Tidak dapat dihapus: {$bomItemCount} item BOM menggunakan komponen ini.",
-            ], 422);
-        }
-
-        $componentStandard->delete();
+        $this->standardService->delete($componentStandard);
 
         return response()->json(['message' => 'Component standard berhasil dihapus.']);
     }

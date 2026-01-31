@@ -8,12 +8,16 @@ use App\Http\Requests\Api\V1\StoreProductCategoryRequest;
 use App\Http\Requests\Api\V1\UpdateProductCategoryRequest;
 use App\Http\Resources\Api\V1\ProductCategoryResource;
 use App\Models\Inventory\ProductCategory;
+use App\Services\Inventory\ProductCategoryService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class ProductCategoryController extends Controller
 {
+    public function __construct(
+        private ProductCategoryService $categoryService
+    ) {}
+
     public function index(ProductCategoryFilter $filter): AnonymousResourceCollection
     {
         $categories = ProductCategory::query()
@@ -28,18 +32,9 @@ class ProductCategoryController extends Controller
 
     public function store(StoreProductCategoryRequest $request): JsonResponse
     {
-        $data = $request->validated();
+        $category = $this->categoryService->create($request->validated());
 
-        if (empty($data['code'])) {
-            $data['code'] = ProductCategory::generateCode($data['parent_id'] ?? null);
-        }
-
-        $data['is_active'] = $data['is_active'] ?? true;
-        $data['sort_order'] = $data['sort_order'] ?? 0;
-
-        $category = ProductCategory::create($data);
-
-        return (new ProductCategoryResource($category->load('parent')))
+        return (new ProductCategoryResource($category))
             ->response()
             ->setStatusCode(201);
     }
@@ -55,26 +50,14 @@ class ProductCategoryController extends Controller
 
     public function update(UpdateProductCategoryRequest $request, ProductCategory $productCategory): ProductCategoryResource
     {
-        $productCategory->update($request->validated());
+        $category = $this->categoryService->update($productCategory, $request->validated());
 
-        return new ProductCategoryResource($productCategory->fresh('parent'));
+        return new ProductCategoryResource($category);
     }
 
     public function destroy(ProductCategory $productCategory): JsonResponse
     {
-        if ($productCategory->hasChildren()) {
-            return response()->json([
-                'message' => 'Kategori tidak bisa dihapus karena memiliki sub-kategori.',
-            ], 422);
-        }
-
-        if ($productCategory->products()->exists()) {
-            return response()->json([
-                'message' => 'Kategori tidak bisa dihapus karena memiliki produk.',
-            ], 422);
-        }
-
-        $productCategory->delete();
+        $this->categoryService->delete($productCategory);
 
         return response()->json([
             'message' => 'Kategori berhasil dihapus.',

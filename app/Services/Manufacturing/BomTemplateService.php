@@ -26,6 +26,44 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
     }
 
     /**
+     * Create a new BOM template.
+     *
+     * @param  array{code: string, name: string, description?: string, category?: string, thumbnail_path?: string, default_rule_set_id?: int, is_active?: bool}  $data
+     */
+    public function createTemplate(array $data): BomTemplate
+    {
+        return $this->executeInTransaction('create_bom_template', function () use ($data) {
+            $data['created_by'] = $this->getUserId();
+
+            return BomTemplate::create($data);
+        }, ['code' => $data['code']]);
+    }
+
+    /**
+     * Update a BOM template.
+     *
+     * @param  array{code?: string, name?: string, description?: string, category?: string, thumbnail_path?: string, default_rule_set_id?: int, is_active?: bool}  $data
+     */
+    public function updateTemplate(BomTemplate $template, array $data): BomTemplate
+    {
+        return $this->executeInTransaction('update_bom_template', function () use ($template, $data) {
+            $template->update($data);
+
+            return $template->fresh(['items', 'defaultRuleSet', 'creator']);
+        }, ['template_id' => $template->id]);
+    }
+
+    /**
+     * Delete a BOM template.
+     */
+    public function deleteTemplate(BomTemplate $template): void
+    {
+        $this->executeInTransaction('delete_bom_template', function () use ($template) {
+            $template->delete();
+        }, ['template_id' => $template->id]);
+    }
+
+    /**
      * Create a new BOM from a template.
      *
      * @param  array<string, mixed>  $options  {

@@ -8,12 +8,16 @@ use App\Http\Requests\Api\V1\StoreWarehouseRequest;
 use App\Http\Requests\Api\V1\UpdateWarehouseRequest;
 use App\Http\Resources\Api\V1\WarehouseResource;
 use App\Models\Inventory\Warehouse;
+use App\Services\Inventory\WarehouseService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class WarehouseController extends Controller
 {
+    public function __construct(
+        private WarehouseService $warehouseService
+    ) {}
+
     public function index(WarehouseFilter $filter): AnonymousResourceCollection
     {
         $warehouses = Warehouse::query()
@@ -28,28 +32,7 @@ class WarehouseController extends Controller
 
     public function store(StoreWarehouseRequest $request): JsonResponse
     {
-        $data = $request->validated();
-
-        // Generate code if not provided
-        if (empty($data['code'])) {
-            $data['code'] = Warehouse::generateCode();
-        }
-
-        // Set defaults
-        $data['is_active'] = $data['is_active'] ?? true;
-        $data['is_default'] = $data['is_default'] ?? false;
-
-        // If this is the first warehouse, make it default
-        if (! Warehouse::exists()) {
-            $data['is_default'] = true;
-        }
-
-        // If marked as default, unset other defaults
-        if ($data['is_default']) {
-            Warehouse::where('is_default', true)->update(['is_default' => false]);
-        }
-
-        $warehouse = Warehouse::create($data);
+        $warehouse = $this->warehouseService->create($request->validated());
 
         return (new WarehouseResource($warehouse))
             ->response()
@@ -68,39 +51,14 @@ class WarehouseController extends Controller
 
     public function update(UpdateWarehouseRequest $request, Warehouse $warehouse): WarehouseResource
     {
-        $data = $request->validated();
+        $warehouse = $this->warehouseService->update($warehouse, $request->validated());
 
-        // If marked as default, unset other defaults
-        if (isset($data['is_default']) && $data['is_default']) {
-            Warehouse::where('is_default', true)
-                ->where('id', '!=', $warehouse->id)
-                ->update(['is_default' => false]);
-        }
-
-        $warehouse->update($data);
-
-        return new WarehouseResource($warehouse->fresh());
+        return new WarehouseResource($warehouse);
     }
 
     public function destroy(Warehouse $warehouse): JsonResponse
     {
-        // Check for stock
-        if ($warehouse->productStocks()->where('quantity', '>', 0)->exists()) {
-            return response()->json([
-                'message' => 'Gudang tidak bisa dihapus karena masih memiliki stok.',
-            ], 422);
-        }
-
-        // Check if default
-        if ($warehouse->is_default) {
-            return response()->json([
-                'message' => 'Gudang default tidak bisa dihapus. Tetapkan gudang lain sebagai default terlebih dahulu.',
-            ], 422);
-        }
-
-        // Delete related stock records (with zero quantity)
-        $warehouse->productStocks()->delete();
-        $warehouse->delete();
+        $this->warehouseService->delete($warehouse);
 
         return response()->json([
             'message' => 'Gudang berhasil dihapus.',
@@ -112,17 +70,11 @@ class WarehouseController extends Controller
      */
     public function setDefault(Warehouse $warehouse): JsonResponse
     {
-        if (! $warehouse->is_active) {
-            return response()->json([
-                'message' => 'Gudang tidak aktif tidak bisa dijadikan default.',
-            ], 422);
-        }
-
-        $warehouse->setAsDefault();
+        $warehouse = $this->warehouseService->setAsDefault($warehouse);
 
         return response()->json([
             'message' => 'Gudang berhasil ditetapkan sebagai default.',
-            'data' => new WarehouseResource($warehouse->fresh()),
+            'data' => new WarehouseResource($warehouse),
         ]);
     }
 

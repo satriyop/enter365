@@ -301,7 +301,7 @@ describe('COGSOnDeliveryStrategy', function () {
 
     beforeEach(function () {
         $invoiceStrategy = new COGSOnInvoiceStrategy($this->journalServiceMock);
-        $this->strategy = new COGSOnDeliveryStrategy($invoiceStrategy);
+        $this->strategy = new COGSOnDeliveryStrategy($invoiceStrategy, $this->journalServiceMock);
     });
 
     it('returns identifier "on_delivery"', function () {
@@ -316,12 +316,176 @@ describe('COGSOnDeliveryStrategy', function () {
         expect($result)->toBeNull();
     });
 
-    it('returns null on delivery ship (not yet implemented)', function () {
-        $deliveryOrder = Mockery::mock(DeliveryOrder::class);
+    it('creates journal entry on delivery ship with correct structure', function () {
+        $product = Product::factory()->create([
+            'track_inventory' => true,
+            'purchase_price' => 100000,
+        ]);
+
+        $deliveryOrder = DeliveryOrder::factory()
+            ->hasItems(1, [
+                'product_id' => $product->id,
+                'quantity' => 10,
+            ])
+            ->create([
+                'do_number' => 'DO-2025-001',
+                'do_date' => now()->startOfDay(),
+            ]);
+
+        $deliveryOrder->load('items.product');
+
+        // Mock journal entry creation
+        $mockJournalEntry = Mockery::mock(JournalEntry::class);
+
+        $this->journalServiceMock
+            ->shouldReceive('createEntry')
+            ->once()
+            ->with(Mockery::on(function ($data) use ($deliveryOrder) {
+                $expectedDate = ($deliveryOrder->shipping_date ?? $deliveryOrder->do_date)->format('Y-m-d');
+
+                return $data['entry_date'] === $expectedDate
+                    && str_contains($data['description'], $deliveryOrder->do_number)
+                    && $data['reference'] === $deliveryOrder->do_number
+                    && $data['source_type'] === DeliveryOrder::class
+                    && $data['source_id'] === $deliveryOrder->id
+                    && count($data['lines']) === 2;
+            }), true)
+            ->andReturn($mockJournalEntry);
+
+        $result = $this->strategy->onDeliveryShip($deliveryOrder);
+
+        expect($result)->toBe($mockJournalEntry);
+    });
+
+    it('creates journal entry with correct account codes and amounts on delivery', function () {
+        $product = Product::factory()->create([
+            'track_inventory' => true,
+            'purchase_price' => 100000,
+        ]);
+
+        $deliveryOrder = DeliveryOrder::factory()
+            ->hasItems(1, [
+                'product_id' => $product->id,
+                'quantity' => 5,
+            ])
+            ->create([
+                'do_number' => 'DO-2025-002',
+            ]);
+
+        $deliveryOrder->load('items.product');
+
+        $expectedCOGS = 500000;
+        $cogsAccount = config('accounting.default_accounts.cogs', '5-1001');
+        $inventoryAccount = config('accounting.default_accounts.inventory', '1-1400');
+
+        $mockJournalEntry = Mockery::mock(JournalEntry::class);
+
+        $this->journalServiceMock
+            ->shouldReceive('createEntry')
+            ->once()
+            ->with(Mockery::on(function ($data) use ($expectedCOGS, $cogsAccount, $inventoryAccount) {
+                if (count($data['lines']) !== 2) {
+                    return false;
+                }
+
+                // Check COGS debit line
+                $cogsLine = $data['lines'][0];
+                if ($cogsLine['account_code'] !== $cogsAccount
+                    || $cogsLine['debit'] !== $expectedCOGS
+                    || $cogsLine['credit'] !== 0) {
+                    return false;
+                }
+
+                // Check Inventory credit line
+                $inventoryLine = $data['lines'][1];
+                if ($inventoryLine['account_code'] !== $inventoryAccount
+                    || $inventoryLine['debit'] !== 0
+                    || $inventoryLine['credit'] !== $expectedCOGS) {
+                    return false;
+                }
+
+                return true;
+            }), true)
+            ->andReturn($mockJournalEntry);
+
+        $result = $this->strategy->onDeliveryShip($deliveryOrder);
+
+        expect($result)->toBe($mockJournalEntry);
+    });
+
+    it('returns null when COGS is zero on delivery ship', function () {
+        $serviceProduct = Product::factory()->service()->create([
+            'track_inventory' => false,
+            'purchase_price' => 100000,
+        ]);
+
+        $deliveryOrder = DeliveryOrder::factory()
+            ->hasItems(1, [
+                'product_id' => $serviceProduct->id,
+                'quantity' => 5,
+            ])
+            ->create();
+
+        $deliveryOrder->load('items.product');
+
+        // Should not call journal service when COGS is zero
+        $this->journalServiceMock->shouldNotReceive('createEntry');
 
         $result = $this->strategy->onDeliveryShip($deliveryOrder);
 
         expect($result)->toBeNull();
+    });
+
+    it('skips service items in delivery COGS calculation', function () {
+        $inventoryProduct = Product::factory()->create([
+            'track_inventory' => true,
+            'purchase_price' => 100000,
+        ]);
+
+        $serviceProduct = Product::factory()->service()->create([
+            'track_inventory' => false,
+            'purchase_price' => 200000,
+        ]);
+
+        $deliveryOrder = DeliveryOrder::factory()->create();
+
+        $deliveryOrder->items()->createMany([
+            [
+                'product_id' => $inventoryProduct->id,
+                'quantity' => 5,
+                'unit_price' => 150000,
+                'description' => 'Inventory Product',
+            ],
+            [
+                'product_id' => $serviceProduct->id,
+                'quantity' => 3,
+                'unit_price' => 250000,
+                'description' => 'Service Product',
+            ],
+        ]);
+
+        $deliveryOrder->load('items.product');
+
+        $expectedCOGS = 500000; // Only inventory: 100000 * 5
+
+        $mockJournalEntry = Mockery::mock(JournalEntry::class);
+
+        $this->journalServiceMock
+            ->shouldReceive('createEntry')
+            ->once()
+            ->with(Mockery::on(function ($data) use ($expectedCOGS) {
+                if (count($data['lines']) !== 2) {
+                    return false;
+                }
+
+                return $data['lines'][0]['debit'] === $expectedCOGS
+                    && $data['lines'][1]['credit'] === $expectedCOGS;
+            }), true)
+            ->andReturn($mockJournalEntry);
+
+        $result = $this->strategy->onDeliveryShip($deliveryOrder);
+
+        expect($result)->toBe($mockJournalEntry);
     });
 
     it('delegates COGS calculation to invoice strategy', function () {

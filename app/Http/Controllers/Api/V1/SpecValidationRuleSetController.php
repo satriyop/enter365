@@ -12,12 +12,17 @@ use App\Http\Resources\Api\V1\SpecValidationRuleSetResource;
 use App\Models\Manufacturing\ComponentStandard;
 use App\Models\Manufacturing\SpecValidationRule;
 use App\Models\Manufacturing\SpecValidationRuleSet;
+use App\Services\Manufacturing\SpecValidationRuleSetService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class SpecValidationRuleSetController extends Controller
 {
+    public function __construct(
+        private SpecValidationRuleSetService $ruleSetService
+    ) {}
+
     /**
      * List all rule sets.
      */
@@ -50,14 +55,9 @@ class SpecValidationRuleSetController extends Controller
      */
     public function store(StoreSpecValidationRuleSetRequest $request): JsonResponse
     {
-        $ruleSet = SpecValidationRuleSet::create($request->validated());
+        $ruleSet = $this->ruleSetService->create($request->validated());
 
-        // If this is set as default, unset other defaults
-        if ($ruleSet->is_default) {
-            $ruleSet->setAsDefault();
-        }
-
-        return (new SpecValidationRuleSetResource($ruleSet->load('rules')))
+        return (new SpecValidationRuleSetResource($ruleSet))
             ->response()
             ->setStatusCode(201);
     }
@@ -79,16 +79,9 @@ class SpecValidationRuleSetController extends Controller
         UpdateSpecValidationRuleSetRequest $request,
         SpecValidationRuleSet $specRuleSet
     ): SpecValidationRuleSetResource {
-        $specRuleSet->update($request->validated());
+        $ruleSet = $this->ruleSetService->update($specRuleSet, $request->validated());
 
-        // If this is set as default, unset other defaults
-        if ($request->boolean('is_default')) {
-            $specRuleSet->setAsDefault();
-        }
-
-        return new SpecValidationRuleSetResource(
-            $specRuleSet->fresh(['rules', 'creator'])
-        );
+        return new SpecValidationRuleSetResource($ruleSet);
     }
 
     /**
@@ -96,16 +89,7 @@ class SpecValidationRuleSetController extends Controller
      */
     public function destroy(SpecValidationRuleSet $specRuleSet): JsonResponse
     {
-        // Check if any BOMs reference this rule set
-        $bomCount = $specRuleSet->boms()->count();
-
-        if ($bomCount > 0) {
-            return response()->json([
-                'message' => "Tidak dapat dihapus: {$bomCount} BOM menggunakan rule set ini.",
-            ], 422);
-        }
-
-        $specRuleSet->delete();
+        $this->ruleSetService->delete($specRuleSet);
 
         return response()->json(['message' => 'Rule set berhasil dihapus.']);
     }
@@ -115,11 +99,11 @@ class SpecValidationRuleSetController extends Controller
      */
     public function setDefault(SpecValidationRuleSet $specRuleSet): JsonResponse
     {
-        $specRuleSet->setAsDefault();
+        $ruleSet = $this->ruleSetService->setAsDefault($specRuleSet);
 
         return response()->json([
             'message' => 'Rule set berhasil dijadikan default.',
-            'data' => new SpecValidationRuleSetResource($specRuleSet->fresh('rules')),
+            'data' => new SpecValidationRuleSetResource($ruleSet),
         ]);
     }
 

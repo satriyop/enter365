@@ -281,6 +281,9 @@ class PaymentService extends BaseService implements PaymentServiceInterface
      */
     private function updatePayableAfterVoid(Model $payable, Payment $payment, int $previousPaidAmount): void
     {
+        // Refresh to get latest state
+        $payable->refresh();
+
         $payable->paid_amount = max(0, $payable->paid_amount - $payment->amount);
         $payable->save();
 

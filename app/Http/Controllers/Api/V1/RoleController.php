@@ -9,12 +9,17 @@ use App\Http\Requests\Api\V1\StoreRoleRequest;
 use App\Http\Requests\Api\V1\UpdateRoleRequest;
 use App\Http\Resources\Api\V1\RoleResource;
 use App\Models\Core\Role;
+use App\Services\Shared\RoleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class RoleController extends Controller
 {
+    public function __construct(
+        private RoleService $roleService
+    ) {}
+
     /**
      * List all roles.
      */
@@ -34,18 +39,10 @@ class RoleController extends Controller
      */
     public function store(StoreRoleRequest $request): JsonResponse
     {
-        $data = $request->validated();
-        $permissions = $data['permissions'] ?? [];
-        unset($data['permissions']);
-
-        $role = Role::create($data);
-
-        if (! empty($permissions)) {
-            $role->permissions()->sync($permissions);
-        }
+        $role = $this->roleService->create($request->validated());
 
         return $this->created(
-            new RoleResource($role->fresh()->load('permissions')),
+            new RoleResource($role),
             'Role berhasil dibuat.'
         );
     }
@@ -68,21 +65,13 @@ class RoleController extends Controller
      */
     public function update(UpdateRoleRequest $request, Role $role): RoleResource|JsonResponse
     {
-        if ($role->is_system && $request->has('name') && $request->input('name') !== $role->name) {
-            return $this->error('Nama role sistem tidak bisa diubah.', 422);
+        try {
+            $updatedRole = $this->roleService->update($role, $request->validated());
+
+            return new RoleResource($updatedRole);
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage(), 422);
         }
-
-        $data = $request->validated();
-        $permissions = $data['permissions'] ?? null;
-        unset($data['permissions']);
-
-        $role->update($data);
-
-        if ($permissions !== null) {
-            $role->permissions()->sync($permissions);
-        }
-
-        return new RoleResource($role->fresh('permissions'));
     }
 
     /**
@@ -90,18 +79,13 @@ class RoleController extends Controller
      */
     public function destroy(Role $role): JsonResponse
     {
-        if ($role->is_system) {
-            return $this->error('Role sistem tidak bisa dihapus.', 422);
+        try {
+            $this->roleService->delete($role);
+
+            return $this->deleted('Role berhasil dihapus.');
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage(), 422);
         }
-
-        if ($role->users()->count() > 0) {
-            return $this->error('Role tidak bisa dihapus karena masih memiliki pengguna.', 422);
-        }
-
-        $role->permissions()->detach();
-        $role->delete();
-
-        return $this->deleted('Role berhasil dihapus.');
     }
 
     /**
@@ -117,10 +101,10 @@ class RoleController extends Controller
             'permissions.*' => 'exists:permissions,id',
         ]);
 
-        $role->permissions()->sync($request->input('permissions'));
+        $updatedRole = $this->roleService->syncPermissions($role, $request->input('permissions'));
 
         return $this->success(
-            new RoleResource($role->fresh('permissions')),
+            new RoleResource($updatedRole),
             'Permission berhasil diperbarui.'
         );
     }

@@ -8,10 +8,15 @@ use App\Http\Requests\Api\V1\UpdateComponentBrandMappingRequest;
 use App\Http\Resources\Api\V1\ComponentBrandMappingResource;
 use App\Models\Manufacturing\ComponentBrandMapping;
 use App\Models\Manufacturing\ComponentStandard;
+use App\Services\Manufacturing\ComponentBrandMappingService;
 use Illuminate\Http\JsonResponse;
 
 class ComponentBrandMappingController extends Controller
 {
+    public function __construct(
+        private ComponentBrandMappingService $mappingService
+    ) {}
+
     /**
      * Add a brand mapping to a component standard.
      */
@@ -19,17 +24,9 @@ class ComponentBrandMappingController extends Controller
         StoreComponentBrandMappingRequest $request,
         ComponentStandard $componentStandard
     ): JsonResponse {
-        $data = $request->validated();
-        $data['component_standard_id'] = $componentStandard->id;
+        $mapping = $this->mappingService->create($componentStandard, $request->validated());
 
-        $mapping = ComponentBrandMapping::create($data);
-
-        // Set as preferred if requested
-        if ($request->boolean('is_preferred')) {
-            $mapping->setAsPreferred();
-        }
-
-        return (new ComponentBrandMappingResource($mapping->load('product')))
+        return (new ComponentBrandMappingResource($mapping))
             ->response()
             ->setStatusCode(201);
     }
@@ -46,13 +43,9 @@ class ComponentBrandMappingController extends Controller
             abort(404, 'Mapping tidak ditemukan untuk standard ini.');
         }
 
-        $mapping->update($request->validated());
+        $mapping = $this->mappingService->update($mapping, $request->validated());
 
-        if ($request->boolean('is_preferred')) {
-            $mapping->setAsPreferred();
-        }
-
-        return new ComponentBrandMappingResource($mapping->fresh('product'));
+        return new ComponentBrandMappingResource($mapping);
     }
 
     /**
@@ -66,7 +59,7 @@ class ComponentBrandMappingController extends Controller
             abort(404, 'Mapping tidak ditemukan untuk standard ini.');
         }
 
-        $mapping->delete();
+        $this->mappingService->delete($mapping);
 
         return response()->json(['message' => 'Brand mapping berhasil dihapus.']);
     }
@@ -82,11 +75,11 @@ class ComponentBrandMappingController extends Controller
             abort(404, 'Mapping tidak ditemukan untuk standard ini.');
         }
 
-        $mapping->verify(auth()->id());
+        $mapping = $this->mappingService->verify($mapping, auth()->id());
 
         return response()->json([
             'message' => 'Brand mapping berhasil diverifikasi.',
-            'data' => new ComponentBrandMappingResource($mapping->fresh('product')),
+            'data' => new ComponentBrandMappingResource($mapping),
         ]);
     }
 
@@ -101,11 +94,11 @@ class ComponentBrandMappingController extends Controller
             abort(404, 'Mapping tidak ditemukan untuk standard ini.');
         }
 
-        $mapping->setAsPreferred();
+        $mapping = $this->mappingService->setAsPreferred($mapping);
 
         return response()->json([
             'message' => 'Brand mapping berhasil di-set sebagai preferred.',
-            'data' => new ComponentBrandMappingResource($mapping->fresh('product')),
+            'data' => new ComponentBrandMappingResource($mapping),
         ]);
     }
 }

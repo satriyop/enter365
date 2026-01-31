@@ -97,6 +97,9 @@ class RolesAndPermissionsSeeder extends Seeder
             'projects.view',
             'reports.financial', 'reports.tax', 'reports.aging', 'reports.export',
             'settings.fiscal_periods',
+            'fiscal_periods.view', 'fiscal_periods.create', 'fiscal_periods.edit', 'fiscal_periods.close', 'fiscal_periods.reopen',
+            'sales_returns.view',
+            'purchase_returns.view',
         ])->pluck('id');
         $accountantRole->permissions()->sync($accountantPermissions);
 
@@ -122,6 +125,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'projects.view', 'projects.create', 'projects.edit',
             'boms.view',
             'reports.aging',
+            'sales_returns.view', 'sales_returns.create', 'sales_returns.edit',
         ])->pluck('id');
         $salesRole->permissions()->sync($salesPermissions);
 
@@ -135,6 +139,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'inventory.view',
             'boms.view',
             'reports.aging',
+            'goods_receipt_notes.view', 'goods_receipt_notes.create', 'goods_receipt_notes.edit', 'goods_receipt_notes.receive',
+            'purchase_returns.view', 'purchase_returns.create', 'purchase_returns.edit',
         ])->pluck('id');
         $purchasingRole->permissions()->sync($purchasingPermissions);
 
@@ -146,6 +152,10 @@ class RolesAndPermissionsSeeder extends Seeder
             'work_orders.view',
             'boms.view',
             'settings.warehouses',
+            'stock_opnames.view', 'stock_opnames.create', 'stock_opnames.edit',
+            'warehouses.view', 'warehouses.create', 'warehouses.edit',
+            'goods_receipt_notes.view',
+            'material_requisitions.view',
         ])->pluck('id');
         $inventoryRole->permissions()->sync($inventoryPermissions);
 

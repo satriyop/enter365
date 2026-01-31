@@ -25,6 +25,22 @@ class FiscalPeriodService extends BaseService
     }
 
     /**
+     * Create a new fiscal period.
+     *
+     * @param  array{name: string, start_date: string, end_date: string, description?: string}  $data
+     */
+    public function create(array $data): FiscalPeriod
+    {
+        return $this->executeInTransaction('create_fiscal_period', function () use ($data) {
+            return FiscalPeriod::create([
+                ...$data,
+                'is_closed' => false,
+                'is_locked' => false,
+            ]);
+        }, ['name' => $data['name']]);
+    }
+
+    /**
      * Close a fiscal period with closing journal entry.
      *
      * Delegates to YearEndCloseService for the full closing process.

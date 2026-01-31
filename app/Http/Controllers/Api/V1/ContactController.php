@@ -7,11 +7,16 @@ use App\Http\Requests\Api\V1\StoreContactRequest;
 use App\Http\Requests\Api\V1\UpdateContactRequest;
 use App\Http\Resources\Api\V1\ContactResource;
 use App\Models\Contacts\Contact;
+use App\Services\Shared\ContactService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class ContactController extends Controller
 {
+    public function __construct(
+        private ContactService $contactService
+    ) {}
+
     public function index(ContactFilter $filter): AnonymousResourceCollection
     {
         $this->authorize('viewAny', Contact::class);
@@ -28,7 +33,7 @@ class ContactController extends Controller
     {
         $this->authorize('create', Contact::class);
 
-        $contact = Contact::create($request->validated());
+        $contact = $this->contactService->create($request->validated());
 
         return new ContactResource($contact);
     }
@@ -46,22 +51,22 @@ class ContactController extends Controller
     {
         $this->authorize('update', $contact);
 
-        $contact->update($request->validated());
+        $updatedContact = $this->contactService->update($contact, $request->validated());
 
-        return new ContactResource($contact->fresh());
+        return new ContactResource($updatedContact);
     }
 
     public function destroy(Contact $contact): JsonResponse
     {
         $this->authorize('delete', $contact);
 
-        if ($contact->invoices()->exists() || $contact->bills()->exists()) {
-            abort(422, 'Tidak bisa menghapus kontak yang sudah memiliki transaksi.');
+        try {
+            $this->contactService->delete($contact);
+
+            return $this->deleted('Kontak berhasil dihapus.');
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage(), 422);
         }
-
-        $contact->delete();
-
-        return $this->deleted('Kontak berhasil dihapus.');
     }
 
     public function balances(Contact $contact): JsonResponse

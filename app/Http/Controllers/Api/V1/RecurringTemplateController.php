@@ -8,6 +8,7 @@ use App\Http\Requests\Api\V1\UpdateRecurringTemplateRequest;
 use App\Http\Resources\Api\V1\RecurringTemplateResource;
 use App\Models\Shared\RecurringTemplate;
 use App\Services\Sales\RecurringService;
+use App\Services\Sales\RecurringTemplateService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -15,7 +16,8 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 class RecurringTemplateController extends Controller
 {
     public function __construct(
-        private RecurringService $recurringService
+        private RecurringService $recurringService,
+        private RecurringTemplateService $templateService
     ) {}
 
     public function index(Request $request): AnonymousResourceCollection
@@ -53,17 +55,9 @@ class RecurringTemplateController extends Controller
 
     public function store(StoreRecurringTemplateRequest $request): JsonResponse
     {
-        $template = RecurringTemplate::create([
-            ...$request->validated(),
-            'next_generate_date' => $request->start_date,
-            'occurrences_count' => 0,
-            'is_active' => true,
-            'auto_post' => $request->boolean('auto_post', false),
-            'auto_send' => $request->boolean('auto_send', false),
-            'created_by' => auth()->id(),
-        ]);
+        $template = $this->templateService->create($request->validated());
 
-        return (new RecurringTemplateResource($template->load('contact')))
+        return (new RecurringTemplateResource($template))
             ->response()
             ->setStatusCode(201);
     }
@@ -77,29 +71,22 @@ class RecurringTemplateController extends Controller
 
     public function update(UpdateRecurringTemplateRequest $request, RecurringTemplate $recurringTemplate): RecurringTemplateResource
     {
-        $recurringTemplate->update($request->validated());
+        $updatedTemplate = $this->templateService->update($recurringTemplate, $request->validated());
 
-        return new RecurringTemplateResource($recurringTemplate->fresh('contact'));
+        return new RecurringTemplateResource($updatedTemplate);
     }
 
     public function destroy(RecurringTemplate $recurringTemplate): JsonResponse
     {
-        // Check if template has generated documents
-        $hasDocuments = $recurringTemplate->invoices()->exists() || $recurringTemplate->bills()->exists();
+        $hardDeleted = $this->templateService->delete($recurringTemplate);
 
-        if ($hasDocuments) {
-            // Soft delete by deactivating
-            $recurringTemplate->update(['is_active' => false]);
-            $recurringTemplate->delete();
-
-            return response()->json([
-                'message' => 'Template dinonaktifkan karena sudah memiliki dokumen yang dihasilkan.',
-            ]);
+        if ($hardDeleted) {
+            return response()->json(['message' => 'Template berhasil dihapus.']);
         }
 
-        $recurringTemplate->forceDelete();
-
-        return response()->json(['message' => 'Template berhasil dihapus.']);
+        return response()->json([
+            'message' => 'Template dinonaktifkan karena sudah memiliki dokumen yang dihasilkan.',
+        ]);
     }
 
     public function generate(RecurringTemplate $recurringTemplate): JsonResponse

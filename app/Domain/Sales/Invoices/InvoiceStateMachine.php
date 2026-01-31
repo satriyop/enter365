@@ -36,8 +36,8 @@ class InvoiceStateMachine extends AbstractStateMachine
             DocumentStatus::Draft->value,
             DocumentStatus::Sent->value,
             fn () => [
-                'passes' => isset($this->invoice->items_count) 
-                    ? $this->invoice->items_count > 0 
+                'passes' => isset($this->invoice->items_count)
+                    ? $this->invoice->items_count > 0
                     : $this->invoice->items()->exists(),
                 'message' => 'Faktur tidak memiliki item.',
             ]
@@ -106,6 +106,36 @@ class InvoiceStateMachine extends AbstractStateMachine
             fn () => [
                 'passes' => $this->invoice->paid_amount > 0 && $this->invoice->paid_amount < $this->invoice->total_amount,
                 'message' => 'Status partial membutuhkan pembayaran sebagian.',
+            ]
+        );
+
+        // Guard: Can revert from Paid to Partial if payment reversed
+        $this->addGuard(
+            DocumentStatus::Paid->value,
+            DocumentStatus::Partial->value,
+            fn () => [
+                'passes' => $this->invoice->paid_amount > 0 && $this->invoice->paid_amount < $this->invoice->total_amount,
+                'message' => 'Status partial membutuhkan pembayaran sebagian.',
+            ]
+        );
+
+        // Guard: Can revert from Paid to Sent if all payments reversed
+        $this->addGuard(
+            DocumentStatus::Paid->value,
+            DocumentStatus::Sent->value,
+            fn () => [
+                'passes' => $this->invoice->paid_amount === 0,
+                'message' => 'Faktur masih memiliki pembayaran.',
+            ]
+        );
+
+        // Guard: Can revert from Partial to Sent if all payments reversed
+        $this->addGuard(
+            DocumentStatus::Partial->value,
+            DocumentStatus::Sent->value,
+            fn () => [
+                'passes' => $this->invoice->paid_amount === 0,
+                'message' => 'Faktur masih memiliki pembayaran.',
             ]
         );
     }
@@ -180,10 +210,13 @@ class InvoiceStateMachine extends AbstractStateMachine
             ],
             DocumentStatus::Partial->value => [
                 DocumentStatus::Paid->value,
+                DocumentStatus::Sent->value,
                 DocumentStatus::Overdue->value,
                 DocumentStatus::Cancelled->value,
             ],
             DocumentStatus::Paid->value => [
+                DocumentStatus::Partial->value,
+                DocumentStatus::Sent->value,
                 DocumentStatus::Cancelled->value,
             ],
             DocumentStatus::Overdue->value => [

@@ -26,10 +26,8 @@ parameters:
     excludePaths:
         analyseAndScan:
             - app/Console/Commands/Playground.php (?)
-            # Incomplete strategy implementations
-            - app/Services/Accounting/Strategies/Manufacturing/JobCostingStrategy.php
+            # ProjectBasedCostingStrategy intentionally returns null (costs tracked in project_costs table)
             - app/Services/Accounting/Strategies/Manufacturing/ProjectBasedCostingStrategy.php
-            - app/Services/Accounting/Strategies/Manufacturing/WIPAccountingStrategy.php
             - tests/*
 
     # Laravel-specific settings

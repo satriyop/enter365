@@ -44,6 +44,9 @@ class Payment extends Model
         'payable_type',
         'payable_id',
         'is_voided',
+        'voided_at',
+        'voided_by',
+        'void_reason',
         'created_by',
     ];
 
@@ -53,6 +56,7 @@ class Payment extends Model
             'payment_date' => 'date',
             'amount' => 'integer',
             'is_voided' => 'boolean',
+            'voided_at' => 'datetime',
         ];
     }
 

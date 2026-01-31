@@ -10,15 +10,16 @@ use App\Models\Sales\Invoice;
 use App\Models\Shared\Payment;
 use App\Services\Accounting\AccountBalanceService;
 use App\Services\Accounting\Reports\AgingReportService;
+use App\Services\Shared\DashboardQueryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
     public function __construct(
         private AccountBalanceService $balanceService,
-        private AgingReportService $agingService
+        private AgingReportService $agingService,
+        private DashboardQueryService $dashboardQuery
     ) {}
 
     public function summary(Request $request): JsonResponse
@@ -85,24 +86,17 @@ class DashboardController extends Controller
     {
         $days = (int) $request->input('days', 30);
         $startDate = now()->subDays($days);
+        $endDate = now();
 
         $cashAccounts = Account::where('type', Account::TYPE_ASSET)
             ->where('code', 'like', '1-1%')
             ->pluck('id');
 
-        $dailyMovement = DB::table('journal_entry_lines as jel')
-            ->join('journal_entries as je', 'je.id', '=', 'jel.journal_entry_id')
-            ->whereIn('jel.account_id', $cashAccounts)
-            ->where('je.is_posted', true)
-            ->where('je.entry_date', '>=', $startDate)
-            ->select(
-                DB::raw('DATE(je.entry_date) as date'),
-                DB::raw('SUM(jel.debit) as inflow'),
-                DB::raw('SUM(jel.credit) as outflow')
-            )
-            ->groupBy(DB::raw('DATE(je.entry_date)'))
-            ->orderBy('date')
-            ->get();
+        $dailyMovement = $this->dashboardQuery->getCashFlowDailyMovement(
+            $cashAccounts,
+            $startDate,
+            $endDate
+        );
 
         return $this->success([
             'period_days' => $days,
@@ -122,8 +116,8 @@ class DashboardController extends Controller
         $revenueAccounts = Account::where('type', Account::TYPE_REVENUE)->where('is_active', true)->get();
         $expenseAccounts = Account::where('type', Account::TYPE_EXPENSE)->where('is_active', true)->get();
 
-        $totalRevenue = $revenueAccounts->sum(fn ($acc) => abs($this->getAccountBalanceForPeriod($acc, $startDate, $endDate)));
-        $totalExpense = $expenseAccounts->sum(fn ($acc) => abs($this->getAccountBalanceForPeriod($acc, $startDate, $endDate)));
+        $totalRevenue = $revenueAccounts->sum(fn ($acc) => abs($this->dashboardQuery->getAccountBalanceForPeriod($acc, $startDate, $endDate)));
+        $totalExpense = $expenseAccounts->sum(fn ($acc) => abs($this->dashboardQuery->getAccountBalanceForPeriod($acc, $startDate, $endDate)));
         $netIncome = $totalRevenue - $totalExpense;
 
         return $this->success([
@@ -136,25 +130,6 @@ class DashboardController extends Controller
             'net_income' => $netIncome,
             'profit_margin' => $totalRevenue > 0 ? round(($netIncome / $totalRevenue) * 100, 2) : 0,
         ]);
-    }
-
-    protected function getAccountBalanceForPeriod(Account $account, string $startDate, string $endDate): int
-    {
-        $movements = DB::table('journal_entry_lines as jel')
-            ->join('journal_entries as je', 'je.id', '=', 'jel.journal_entry_id')
-            ->where('jel.account_id', $account->id)
-            ->where('je.is_posted', true)
-            ->whereBetween('je.entry_date', [$startDate, $endDate])
-            ->whereNull('je.deleted_at')
-            ->selectRaw('COALESCE(SUM(jel.debit), 0) as total_debit, COALESCE(SUM(jel.credit), 0) as total_credit')
-            ->first();
-
-        $totalDebit = (int) ($movements->total_debit ?? 0);
-        $totalCredit = (int) ($movements->total_credit ?? 0);
-
-        return $account->isDebitNormal()
-            ? $totalDebit - $totalCredit
-            : $totalCredit - $totalDebit;
     }
 
     public function kpis(): JsonResponse
@@ -174,20 +149,7 @@ class DashboardController extends Controller
             ->whereYear('invoice_date', $lastMonth->year)
             ->sum('total_amount');
 
-        // Average collection period (days) - database-agnostic
-        $driver = DB::getDriverName();
-        $avgDaysExpression = match ($driver) {
-            'sqlite' => 'AVG(julianday(updated_at) - julianday(invoice_date))',
-            'pgsql' => 'AVG(EXTRACT(EPOCH FROM (updated_at - invoice_date)) / 86400)',
-            'mysql', 'mariadb' => 'AVG(DATEDIFF(updated_at, invoice_date))',
-            default => 'AVG(DATEDIFF(updated_at, invoice_date))',
-        };
-
-        $avgCollectionDays = DB::table('invoices')
-            ->whereNotNull('paid_amount')
-            ->where('paid_amount', '>', 0)
-            ->selectRaw("{$avgDaysExpression} as avg_days")
-            ->value('avg_days') ?? 0;
+        $avgCollectionDays = $this->dashboardQuery->getAverageCollectionDays();
 
         return $this->success([
             'revenue' => [
@@ -347,51 +309,19 @@ class DashboardController extends Controller
 
     protected function getTopDebtors(int $limit): array
     {
-        return DB::table('contacts')
-            ->join('invoices', 'contacts.id', '=', 'invoices.contact_id')
-            ->whereIn('contacts.type', [Contact::TYPE_CUSTOMER, Contact::TYPE_BOTH])
-            ->whereIn('invoices.status', [DocumentStatus::Sent->value, DocumentStatus::Partial->value, DocumentStatus::Overdue->value])
-            ->whereNull('contacts.deleted_at')
-            ->select(
-                'contacts.id',
-                'contacts.name',
-                DB::raw('SUM(invoices.total_amount - invoices.paid_amount) as outstanding')
-            )
-            ->groupBy('contacts.id', 'contacts.name')
-            ->having(DB::raw('SUM(invoices.total_amount - invoices.paid_amount)'), '>', 0)
-            ->orderByDesc('outstanding')
-            ->limit($limit)
-            ->get()
-            ->map(fn ($c) => [
-                'id' => $c->id,
-                'name' => $c->name,
-                'outstanding' => (int) $c->outstanding,
-            ])
-            ->toArray();
+        return $this->dashboardQuery->getTopDebtors(
+            $limit,
+            [Contact::TYPE_CUSTOMER, Contact::TYPE_BOTH],
+            [DocumentStatus::Sent->value, DocumentStatus::Partial->value, DocumentStatus::Overdue->value]
+        );
     }
 
     protected function getTopCreditors(int $limit): array
     {
-        return DB::table('contacts')
-            ->join('bills', 'contacts.id', '=', 'bills.contact_id')
-            ->whereIn('contacts.type', [Contact::TYPE_SUPPLIER, Contact::TYPE_BOTH])
-            ->whereIn('bills.status', [DocumentStatus::Received->value, DocumentStatus::Partial->value, DocumentStatus::Overdue->value])
-            ->whereNull('contacts.deleted_at')
-            ->select(
-                'contacts.id',
-                'contacts.name',
-                DB::raw('SUM(bills.total_amount - bills.paid_amount) as outstanding')
-            )
-            ->groupBy('contacts.id', 'contacts.name')
-            ->having(DB::raw('SUM(bills.total_amount - bills.paid_amount)'), '>', 0)
-            ->orderByDesc('outstanding')
-            ->limit($limit)
-            ->get()
-            ->map(fn ($c) => [
-                'id' => $c->id,
-                'name' => $c->name,
-                'outstanding' => (int) $c->outstanding,
-            ])
-            ->toArray();
+        return $this->dashboardQuery->getTopCreditors(
+            $limit,
+            [Contact::TYPE_SUPPLIER, Contact::TYPE_BOTH],
+            [DocumentStatus::Received->value, DocumentStatus::Partial->value, DocumentStatus::Overdue->value]
+        );
     }
 }

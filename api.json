@@ -289,6 +289,9 @@
                     }
                 },
                 "responses": {
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
                     "200": {
                         "description": "`AccountResource`",
                         "content": {
@@ -306,9 +309,6 @@
                                 }
                             }
                         }
-                    },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
                     },
                     "403": {
                         "$ref": "#/components/responses/AuthorizationException"
@@ -338,6 +338,24 @@
                     }
                 ],
                 "responses": {
+                    "422": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
                     "200": {
                         "description": "",
                         "content": {
@@ -354,43 +372,6 @@
                                     },
                                     "required": [
                                         "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "An error\n\nAn error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "anyOf": [
-                                        {
-                                            "type": "object",
-                                            "properties": {
-                                                "message": {
-                                                    "type": "string",
-                                                    "description": "Error overview.",
-                                                    "example": "Tidak bisa menghapus akun sistem."
-                                                }
-                                            },
-                                            "required": [
-                                                "message"
-                                            ]
-                                        },
-                                        {
-                                            "type": "object",
-                                            "properties": {
-                                                "message": {
-                                                    "type": "string",
-                                                    "description": "Error overview.",
-                                                    "example": "Tidak bisa menghapus akun yang sudah digunakan dalam jurnal."
-                                                }
-                                            },
-                                            "required": [
-                                                "message"
-                                            ]
-                                        }
                                     ]
                                 }
                             }
@@ -1932,6 +1913,24 @@
                     }
                 ],
                 "responses": {
+                    "422": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
                     "200": {
                         "description": "",
                         "content": {
@@ -1943,27 +1942,6 @@
                                             "type": "string",
                                             "enum": [
                                                 "Transaksi bank berhasil dihapus."
-                                            ]
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "enum": [
-                                                "Tidak dapat menghapus transaksi yang sudah direkonsiliasi."
                                             ]
                                         }
                                     },
@@ -10960,24 +10938,6 @@
                             }
                         }
                     },
-                    "422": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
                     },
@@ -11368,6 +11328,32 @@
                     }
                 ],
                 "responses": {
+                    "422": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "errors": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "errors"
+                                    ]
+                                }
+                            }
+                        }
+                    },
                     "200": {
                         "description": "",
                         "content": {
@@ -11387,26 +11373,6 @@
                                     },
                                     "required": [
                                         "success",
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "An error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "description": "Error overview.",
-                                            "example": "Tidak bisa menghapus kontak yang sudah memiliki transaksi."
-                                        }
-                                    },
-                                    "required": [
                                         "message"
                                     ]
                                 }
@@ -11896,7 +11862,25 @@
                                                 },
                                                 "top_debtors": {
                                                     "type": "array",
-                                                    "items": {}
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer"
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            },
+                                                            "outstanding": {
+                                                                "type": "integer"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "id",
+                                                            "name",
+                                                            "outstanding"
+                                                        ]
+                                                    }
                                                 }
                                             },
                                             "required": [
@@ -11995,7 +11979,25 @@
                                                 },
                                                 "top_creditors": {
                                                     "type": "array",
-                                                    "items": {}
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer"
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            },
+                                                            "outstanding": {
+                                                                "type": "integer"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "id",
+                                                            "name",
+                                                            "outstanding"
+                                                        ]
+                                                    }
                                                 }
                                             },
                                             "required": [
@@ -12062,7 +12064,7 @@
                                                     "type": "string"
                                                 },
                                                 "daily_movement": {
-                                                    "type": "string"
+                                                    "type": "object"
                                                 }
                                             },
                                             "required": [
@@ -22622,45 +22624,6 @@
                             }
                         }
                     },
-                    "422": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "anyOf": [
-                                        {
-                                            "type": "object",
-                                            "properties": {
-                                                "message": {
-                                                    "type": "string",
-                                                    "enum": [
-                                                        "Kategori tidak bisa dihapus karena memiliki produk."
-                                                    ]
-                                                }
-                                            },
-                                            "required": [
-                                                "message"
-                                            ]
-                                        },
-                                        {
-                                            "type": "object",
-                                            "properties": {
-                                                "message": {
-                                                    "type": "string",
-                                                    "enum": [
-                                                        "Kategori tidak bisa dihapus karena memiliki sub-kategori."
-                                                    ]
-                                                }
-                                            },
-                                            "required": [
-                                                "message"
-                                            ]
-                                        }
-                                    ]
-                                }
-                            }
-                        }
-                    },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
                     },
@@ -24707,13 +24670,15 @@
                                             "integer",
                                             "null"
                                         ],
+                                        "description": "Min Rp 5 juta for B2B",
                                         "minimum": 5500
                                     },
                                     "pln_category": {
                                         "type": [
                                             "string",
                                             "null"
-                                        ]
+                                        ],
+                                        "description": "Min 5.5 kVA for B2B"
                                     },
                                     "target_savings": {
                                         "type": [
@@ -28998,56 +28963,16 @@
                                             "type": "object",
                                             "properties": {
                                                 "total": {
-                                                    "anyOf": [
-                                                        {
-                                                            "type": "string"
-                                                        },
-                                                        {
-                                                            "type": "integer",
-                                                            "enum": [
-                                                                0
-                                                            ]
-                                                        }
-                                                    ]
+                                                    "type": "string"
                                                 },
                                                 "won": {
-                                                    "anyOf": [
-                                                        {
-                                                            "type": "string"
-                                                        },
-                                                        {
-                                                            "type": "integer",
-                                                            "enum": [
-                                                                0
-                                                            ]
-                                                        }
-                                                    ]
+                                                    "type": "string"
                                                 },
                                                 "lost": {
-                                                    "anyOf": [
-                                                        {
-                                                            "type": "string"
-                                                        },
-                                                        {
-                                                            "type": "integer",
-                                                            "enum": [
-                                                                0
-                                                            ]
-                                                        }
-                                                    ]
+                                                    "type": "string"
                                                 },
                                                 "pending": {
-                                                    "anyOf": [
-                                                        {
-                                                            "type": "string"
-                                                        },
-                                                        {
-                                                            "type": "integer",
-                                                            "enum": [
-                                                                0
-                                                            ]
-                                                        }
-                                                    ]
+                                                    "type": "string"
                                                 }
                                             },
                                             "required": [
@@ -29061,13 +28986,13 @@
                                             "type": "object",
                                             "properties": {
                                                 "won": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 },
                                                 "lost": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 },
                                                 "pending": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 }
                                             },
                                             "required": [
@@ -30209,7 +30134,7 @@
                                                 "message": {
                                                     "type": "string",
                                                     "enum": [
-                                                        "Template berhasil dihapus."
+                                                        "Template dinonaktifkan karena sudah memiliki dokumen yang dihasilkan."
                                                     ]
                                                 }
                                             },
@@ -30223,7 +30148,7 @@
                                                 "message": {
                                                     "type": "string",
                                                     "enum": [
-                                                        "Template dinonaktifkan karena sudah memiliki dokumen yang dihasilkan."
+                                                        "Template berhasil dihapus."
                                                     ]
                                                 }
                                             },
@@ -32558,6 +32483,9 @@
                     }
                 },
                 "responses": {
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
                     "200": {
                         "description": "`RoleResource`",
                         "content": {
@@ -32575,9 +32503,6 @@
                                 }
                             }
                         }
-                    },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
@@ -32605,6 +32530,32 @@
                     }
                 ],
                 "responses": {
+                    "422": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "errors": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "errors"
+                                    ]
+                                }
+                            }
+                        }
+                    },
                     "200": {
                         "description": "",
                         "content": {
@@ -32625,61 +32576,6 @@
                                     "required": [
                                         "success",
                                         "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "anyOf": [
-                                        {
-                                            "type": "object",
-                                            "properties": {
-                                                "success": {
-                                                    "type": "boolean"
-                                                },
-                                                "message": {
-                                                    "type": "string",
-                                                    "enum": [
-                                                        "Role tidak bisa dihapus karena masih memiliki pengguna."
-                                                    ]
-                                                },
-                                                "errors": {
-                                                    "type": "string"
-                                                }
-                                            },
-                                            "required": [
-                                                "success",
-                                                "message",
-                                                "errors"
-                                            ]
-                                        },
-                                        {
-                                            "type": "object",
-                                            "properties": {
-                                                "success": {
-                                                    "type": "boolean"
-                                                },
-                                                "message": {
-                                                    "type": "string",
-                                                    "enum": [
-                                                        "Role sistem tidak bisa dihapus."
-                                                    ]
-                                                },
-                                                "errors": {
-                                                    "type": "string"
-                                                }
-                                            },
-                                            "required": [
-                                                "success",
-                                                "message",
-                                                "errors"
-                                            ]
-                                        }
                                     ]
                                 }
                             }
@@ -35824,24 +35720,6 @@
                             }
                         }
                     },
-                    "422": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
                     },
@@ -38598,31 +38476,6 @@
                         }
                     }
                 ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "allOf": [
-                                    {
-                                        "$ref": "#/components/schemas/UpdateUserRequest"
-                                    },
-                                    {
-                                        "type": "object",
-                                        "properties": {
-                                            "is_active": {
-                                                "type": "boolean",
-                                                "default": false
-                                            },
-                                            "roles": {
-                                                "type": "string"
-                                            }
-                                        }
-                                    }
-                                ]
-                            }
-                        }
-                    }
-                },
                 "responses": {
                     "200": {
                         "description": "`UserResource`",
@@ -38674,6 +38527,32 @@
                     }
                 ],
                 "responses": {
+                    "422": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "errors": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "errors"
+                                    ]
+                                }
+                            }
+                        }
+                    },
                     "200": {
                         "description": "",
                         "content": {
@@ -38694,35 +38573,6 @@
                                     "required": [
                                         "success",
                                         "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "enum": [
-                                                "Anda tidak dapat menghapus akun Anda sendiri."
-                                            ]
-                                        },
-                                        "errors": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "required": [
-                                        "success",
-                                        "message",
-                                        "errors"
                                     ]
                                 }
                             }
@@ -38916,6 +38766,32 @@
                     }
                 ],
                 "responses": {
+                    "422": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "errors": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "errors"
+                                    ]
+                                }
+                            }
+                        }
+                    },
                     "200": {
                         "description": "",
                         "content": {
@@ -38941,35 +38817,6 @@
                                         "success",
                                         "message",
                                         "data"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "enum": [
-                                                "Anda tidak dapat menonaktifkan akun Anda sendiri."
-                                            ]
-                                        },
-                                        "errors": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "required": [
-                                        "success",
-                                        "message",
-                                        "errors"
                                     ]
                                 }
                             }
@@ -39318,45 +39165,6 @@
                             }
                         }
                     },
-                    "422": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "anyOf": [
-                                        {
-                                            "type": "object",
-                                            "properties": {
-                                                "message": {
-                                                    "type": "string",
-                                                    "enum": [
-                                                        "Gudang default tidak bisa dihapus. Tetapkan gudang lain sebagai default terlebih dahulu."
-                                                    ]
-                                                }
-                                            },
-                                            "required": [
-                                                "message"
-                                            ]
-                                        },
-                                        {
-                                            "type": "object",
-                                            "properties": {
-                                                "message": {
-                                                    "type": "string",
-                                                    "enum": [
-                                                        "Gudang tidak bisa dihapus karena masih memiliki stok."
-                                                    ]
-                                                }
-                                            },
-                                            "required": [
-                                                "message"
-                                            ]
-                                        }
-                                    ]
-                                }
-                            }
-                        }
-                    },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
                     },
@@ -39405,27 +39213,6 @@
                                     "required": [
                                         "message",
                                         "data"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "enum": [
-                                                "Gudang tidak aktif tidak bisa dijadikan default."
-                                            ]
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
                                     ]
                                 }
                             }
@@ -58588,10 +58375,6 @@
                     }
                 },
                 "title": "UpdateSubcontractorWorkOrderRequest"
-            },
-            "UpdateUserRequest": {
-                "type": "object",
-                "title": "UpdateUserRequest"
             },
             "UpdateWarehouseRequest": {
                 "type": "object",

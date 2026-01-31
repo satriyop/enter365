@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreAttachmentRequest;
 use App\Http\Resources\Api\V1\AttachmentResource;
 use App\Models\Shared\Attachment;
+use App\Services\Shared\AttachmentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -14,6 +15,10 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AttachmentController extends Controller
 {
+    public function __construct(
+        private AttachmentService $attachmentService
+    ) {}
+
     public function index(Request $request): AnonymousResourceCollection
     {
         $query = Attachment::query()->with('uploader');
@@ -37,28 +42,12 @@ class AttachmentController extends Controller
 
     public function store(StoreAttachmentRequest $request): JsonResponse
     {
-        $file = $request->file('file');
-        $disk = config('filesystems.default', 'local');
+        $attachment = $this->attachmentService->create(
+            $request->file('file'),
+            $request->validated()
+        );
 
-        // Generate a unique path
-        $folder = 'attachments/'.now()->format('Y/m');
-        $filename = uniqid().'_'.$file->getClientOriginalName();
-        $path = $file->storeAs($folder, $filename, $disk);
-
-        $attachment = Attachment::create([
-            'attachable_type' => $request->input('attachable_type'),
-            'attachable_id' => $request->input('attachable_id'),
-            'filename' => $file->getClientOriginalName(),
-            'disk' => $disk,
-            'path' => $path,
-            'mime_type' => $file->getMimeType(),
-            'size' => $file->getSize(),
-            'description' => $request->input('description'),
-            'category' => $request->input('category', Attachment::CATEGORY_OTHER),
-            'uploaded_by' => auth()->id(),
-        ]);
-
-        return (new AttachmentResource($attachment->load('uploader')))
+        return (new AttachmentResource($attachment))
             ->response()
             ->setStatusCode(201);
     }
@@ -70,7 +59,7 @@ class AttachmentController extends Controller
 
     public function destroy(Attachment $attachment): JsonResponse
     {
-        $attachment->delete();
+        $this->attachmentService->delete($attachment);
 
         return response()->json(['message' => 'Lampiran berhasil dihapus.']);
     }

@@ -351,6 +351,24 @@ class InvoiceService implements InvoiceServiceInterface
             return $this->markAsPartial($invoice);
         }
 
+        // No payment remaining - revert to Sent or Overdue
+        if ($invoice->paid_amount === 0) {
+            // If was paid or partial, revert back to appropriate status
+            if (in_array($invoice->status, [DocumentStatus::Paid, DocumentStatus::Partial])) {
+                // Check if overdue
+                if ($invoice->due_date->isPast()) {
+                    return $this->markAsOverdue($invoice);
+                }
+
+                // Revert to Sent
+                if ($invoice->stateMachine()->canTransitionTo(DocumentStatus::Sent)) {
+                    $invoice->transitionTo(DocumentStatus::Sent, $this->getUserId());
+
+                    return $invoice;
+                }
+            }
+        }
+
         // No payment - check if overdue
         if ($invoice->due_date->isPast() && ! in_array($invoice->status, [DocumentStatus::Overdue, DocumentStatus::Paid])) {
             return $this->markAsOverdue($invoice);

@@ -59,11 +59,7 @@ class FiscalPeriodController extends Controller
             ], 422);
         }
 
-        $period = FiscalPeriod::create([
-            ...$request->validated(),
-            'is_closed' => false,
-            'is_locked' => false,
-        ]);
+        $period = $this->fiscalPeriodService->create($request->validated());
 
         return (new FiscalPeriodResource($period))
             ->response()

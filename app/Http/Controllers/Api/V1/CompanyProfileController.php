@@ -8,13 +8,16 @@ use App\Http\Requests\Api\V1\StoreCompanyProfileRequest;
 use App\Http\Requests\Api\V1\UpdateCompanyProfileRequest;
 use App\Http\Resources\Api\V1\CompanyProfileResource;
 use App\Models\CompanyProfile;
+use App\Services\Shared\CompanyProfileService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Support\Facades\Storage;
 
 class CompanyProfileController extends Controller
 {
+    public function __construct(
+        private CompanyProfileService $profileService
+    ) {}
+
     public function index(CompanyProfileFilter $filter): AnonymousResourceCollection
     {
         $profiles = CompanyProfile::query()
@@ -27,22 +30,7 @@ class CompanyProfileController extends Controller
 
     public function store(StoreCompanyProfileRequest $request): CompanyProfileResource
     {
-        $data = $request->validated();
-
-        // Handle logo upload
-        if ($request->hasFile('logo')) {
-            $data['logo_path'] = $request->file('logo')->store('company-profiles/logos', 'public');
-        }
-
-        // Handle cover image upload
-        if ($request->hasFile('cover_image')) {
-            $data['cover_image_path'] = $request->file('cover_image')->store('company-profiles/covers', 'public');
-        }
-
-        // Remove file keys from data (they're handled above)
-        unset($data['logo'], $data['cover_image']);
-
-        $profile = CompanyProfile::create($data);
+        $profile = $this->profileService->create($request->validated());
 
         return new CompanyProfileResource($profile);
     }
@@ -56,51 +44,14 @@ class CompanyProfileController extends Controller
 
     public function update(UpdateCompanyProfileRequest $request, CompanyProfile $companyProfile): CompanyProfileResource
     {
-        $data = $request->validated();
+        $profile = $this->profileService->update($companyProfile, $request->validated());
 
-        // Handle logo upload - upload first, then delete old to prevent data loss
-        if ($request->hasFile('logo')) {
-            $oldLogoPath = $companyProfile->logo_path;
-            $newPath = $request->file('logo')->store('company-profiles/logos', 'public');
-            if ($newPath) {
-                $data['logo_path'] = $newPath;
-                if ($oldLogoPath) {
-                    Storage::disk('public')->delete($oldLogoPath);
-                }
-            }
-        }
-
-        // Handle cover image upload - upload first, then delete old to prevent data loss
-        if ($request->hasFile('cover_image')) {
-            $oldCoverPath = $companyProfile->cover_image_path;
-            $newPath = $request->file('cover_image')->store('company-profiles/covers', 'public');
-            if ($newPath) {
-                $data['cover_image_path'] = $newPath;
-                if ($oldCoverPath) {
-                    Storage::disk('public')->delete($oldCoverPath);
-                }
-            }
-        }
-
-        // Remove file keys from data
-        unset($data['logo'], $data['cover_image']);
-
-        $companyProfile->update($data);
-
-        return new CompanyProfileResource($companyProfile->fresh());
+        return new CompanyProfileResource($profile);
     }
 
     public function destroy(CompanyProfile $companyProfile): JsonResponse
     {
-        // Delete associated images
-        if ($companyProfile->logo_path) {
-            Storage::disk('public')->delete($companyProfile->logo_path);
-        }
-        if ($companyProfile->cover_image_path) {
-            Storage::disk('public')->delete($companyProfile->cover_image_path);
-        }
-
-        $companyProfile->delete();
+        $this->profileService->delete($companyProfile);
 
         return response()->json(['message' => 'Profil perusahaan berhasil dihapus.']);
     }
@@ -110,12 +61,9 @@ class CompanyProfileController extends Controller
      */
     public function removeLogo(CompanyProfile $companyProfile): CompanyProfileResource
     {
-        if ($companyProfile->logo_path) {
-            Storage::disk('public')->delete($companyProfile->logo_path);
-            $companyProfile->update(['logo_path' => null]);
-        }
+        $profile = $this->profileService->removeLogo($companyProfile);
 
-        return new CompanyProfileResource($companyProfile->fresh());
+        return new CompanyProfileResource($profile);
     }
 
     /**
@@ -123,11 +71,8 @@ class CompanyProfileController extends Controller
      */
     public function removeCover(CompanyProfile $companyProfile): CompanyProfileResource
     {
-        if ($companyProfile->cover_image_path) {
-            Storage::disk('public')->delete($companyProfile->cover_image_path);
-            $companyProfile->update(['cover_image_path' => null]);
-        }
+        $profile = $this->profileService->removeCover($companyProfile);
 
-        return new CompanyProfileResource($companyProfile->fresh());
+        return new CompanyProfileResource($profile);
     }
 }
