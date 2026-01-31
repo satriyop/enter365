@@ -283,8 +283,8 @@ class MrpController extends Controller
         ]);
 
         $report = $this->demandService->getShortageReport(
-            new \DateTime($request->input('horizon_start')),
-            new \DateTime($request->input('horizon_end')),
+            $request->input('horizon_start'),
+            $request->input('horizon_end'),
             $request->input('warehouse_id')
         );
 

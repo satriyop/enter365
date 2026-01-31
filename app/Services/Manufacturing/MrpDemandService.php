@@ -34,7 +34,7 @@ class MrpDemandService
         $workOrders = WorkOrder::query()
             ->whereIn('status', [DocumentStatus::Confirmed, DocumentStatus::InProgress])
             ->where(function ($q) use ($run) {
-                $q->whereBetween('planned_end_date', [$run->planning_horizon_start, $run->planning_horizon_end])
+                $q->whereBetween('planned_end_date', [$run->planning_horizon_start->toDateString(), $run->planning_horizon_end->toDateString().' 23:59:59'])
                     ->orWhereNull('planned_end_date');
             })
             ->when($run->warehouse_id, fn ($q) => $q->where('warehouse_id', $run->warehouse_id))
@@ -187,8 +187,8 @@ class MrpDemandService
      * @return array{horizon_start: string, horizon_end: string, warehouse_id: int|null, total_shortages: int, shortages: array}
      */
     public function getShortageReport(
-        \DateTimeInterface $horizonStart,
-        \DateTimeInterface $horizonEnd,
+        string $horizonStart,
+        string $horizonEnd,
         ?int $warehouseId = null
     ): array {
         $shortages = [];
@@ -196,7 +196,7 @@ class MrpDemandService
         // Get work orders
         $workOrders = WorkOrder::query()
             ->whereIn('status', [DocumentStatus::Confirmed, DocumentStatus::InProgress])
-            ->whereBetween('planned_end_date', [$horizonStart, $horizonEnd])
+            ->whereBetween('planned_end_date', [$horizonStart, $horizonEnd.' 23:59:59'])
             ->when($warehouseId, fn ($q) => $q->where('warehouse_id', $warehouseId))
             ->with(['items.product'])
             ->get();
@@ -269,8 +269,8 @@ class MrpDemandService
         }
 
         return [
-            'horizon_start' => $horizonStart->format('Y-m-d'),
-            'horizon_end' => $horizonEnd->format('Y-m-d'),
+            'horizon_start' => $horizonStart,
+            'horizon_end' => $horizonEnd,
             'warehouse_id' => $warehouseId,
             'total_shortages' => count($shortages),
             'shortages' => $shortages,

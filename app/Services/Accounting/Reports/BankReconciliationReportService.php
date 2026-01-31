@@ -353,14 +353,14 @@ class BankReconciliationReportService
      */
     public function getReconciliationHistory(Account $account, ?string $startDate = null, ?string $endDate = null): Collection
     {
-        $startDate = $startDate ? Carbon::parse($startDate) : now()->subMonths(12);
-        $endDate = $endDate ? Carbon::parse($endDate) : now();
+        $startDate = $startDate ?? now()->subMonths(12)->toDateString();
+        $endDate = $endDate ?? now()->toDateString();
 
         return BankTransaction::query()
             ->where('account_id', $account->id)
             ->where('status', BankTransactionStatus::Reconciled)
             ->whereNotNull('reconciled_at')
-            ->whereBetween('reconciled_at', [$startDate, $endDate])
+            ->whereBetween('reconciled_at', [$startDate, $endDate.' 23:59:59'])
             ->selectRaw('DATE(reconciled_at) as date, COUNT(*) as count, SUM(debit) - SUM(credit) as total_amount')
             ->groupBy('date')
             ->orderBy('date', 'desc')

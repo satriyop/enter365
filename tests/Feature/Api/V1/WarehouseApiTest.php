@@ -36,9 +36,9 @@ describe('Warehouse API', function () {
     });
 
     it('can search warehouses by name or code', function () {
-        Warehouse::factory()->create(['name' => 'Gudang Utama', 'code' => 'WH-001']);
-        Warehouse::factory()->create(['name' => 'Gudang Cabang', 'code' => 'WH-002']);
-        Warehouse::factory()->create(['name' => 'Toko Jakarta', 'code' => 'WH-003']);
+        Warehouse::factory()->create(['name' => 'Gudang Utama', 'code' => 'WH-001', 'address' => 'Jl. Test 1', 'contact_person' => 'John']);
+        Warehouse::factory()->create(['name' => 'Gudang Cabang', 'code' => 'WH-002', 'address' => 'Jl. Test 2', 'contact_person' => 'Jane']);
+        Warehouse::factory()->create(['name' => 'Toko Jakarta', 'code' => 'WH-003', 'address' => 'Jl. Test 3', 'contact_person' => 'Bob']);
 
         $response = $this->getJson('/api/v1/warehouses?search=gudang');
 

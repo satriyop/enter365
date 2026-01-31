@@ -35,12 +35,22 @@ describe('Quotation CRUD', function () {
             ->assertJsonStructure([
                 'data' => [
                     '*' => [
+                        'id',
+                        'quotation_number',
+                        'total_amount', // Contract standard: use total_amount
                         'priority' => ['value', 'label'],
                         'quotation_type' => ['value', 'label'],
                         'status' => ['value', 'label', 'color', 'is_terminal', 'is_editable'],
-                    ]
-                ]
+                    ],
+                ],
             ]);
+
+        // Validate contract structure for first item (aligns with contract tests)
+        if (count($response->json('data')) > 0) {
+            $firstItem = $response->json('data')[0];
+            expect($firstItem)->toHaveKey('total_amount'); // Contract validation
+            expect($firstItem['total_amount'])->toBeInt();
+        }
     });
 
     it('can filter quotations by status', function () {
@@ -76,9 +86,13 @@ describe('Quotation CRUD', function () {
     });
 
     it('can search quotations', function () {
-        Quotation::factory()->create(['subject' => 'Panel Listrik 100A']);
-        Quotation::factory()->create(['subject' => 'Solar Panel Installation']);
-        Quotation::factory()->create(['reference' => 'REF-PANEL-001']);
+        $contact1 = Contact::factory()->customer()->create(['name' => 'Customer A']);
+        $contact2 = Contact::factory()->customer()->create(['name' => 'Customer B']);
+        $contact3 = Contact::factory()->customer()->create(['name' => 'Customer C']);
+
+        Quotation::factory()->forContact($contact1)->create(['subject' => 'Panel Listrik 100A', 'reference' => null]);
+        Quotation::factory()->forContact($contact2)->create(['subject' => 'Solar Panel Installation', 'reference' => null]);
+        Quotation::factory()->forContact($contact3)->create(['reference' => 'REF-PANEL-001', 'subject' => 'Other Work']);
 
         $response = $this->getJson('/api/v1/quotations?search=panel');
 
@@ -121,7 +135,7 @@ describe('Quotation CRUD', function () {
         // Total: 3,885,000
         $response->assertJsonPath('data.subtotal', 3500000)
             ->assertJsonPath('data.tax_amount', 385000)
-            ->assertJsonPath('data.total', 3885000);
+            ->assertJsonPath('data.total_amount', 3885000); // Contract standard: use total_amount
     });
 
     it('sets default validity to 30 days', function () {
@@ -185,7 +199,13 @@ describe('Quotation CRUD', function () {
 
         $response->assertOk()
             ->assertJsonPath('data.id', $quotation->id)
-            ->assertJsonCount(2, 'data.items');
+            ->assertJsonCount(2, 'data.items')
+            ->assertJsonPath('data.total_amount', $quotation->total_amount); // Contract validation
+
+        // Validate contract structure (aligns with contract tests)
+        $data = $response->json('data');
+        expect($data)->toHaveKey('total_amount');
+        expect($data['total_amount'])->toBeInt();
     });
 
     it('can update a draft quotation', function () {
@@ -545,7 +565,7 @@ describe('Quotation Calculations', function () {
         $response->assertJsonPath('data.subtotal', 1000000)
             ->assertJsonPath('data.discount_amount', 100000)
             ->assertJsonPath('data.tax_amount', 99000)
-            ->assertJsonPath('data.total', 999000);
+            ->assertJsonPath('data.total_amount', 999000); // Contract standard: use total_amount
     });
 
     it('applies fixed discount', function () {
@@ -571,7 +591,7 @@ describe('Quotation Calculations', function () {
         $response->assertJsonPath('data.subtotal', 1000000)
             ->assertJsonPath('data.discount_amount', 50000)
             ->assertJsonPath('data.tax_amount', 104500)
-            ->assertJsonPath('data.total', 1054500);
+            ->assertJsonPath('data.total_amount', 1054500); // Contract standard: use total_amount
     });
 
     it('applies line item discount', function () {

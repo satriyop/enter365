@@ -115,7 +115,7 @@ class OverdueService
     {
         return Invoice::query()
             ->whereIn('status', [DocumentStatus::Sent, DocumentStatus::Partial])
-            ->whereBetween('due_date', [now(), now()->addDays($daysAhead)])
+            ->whereBetween('due_date', [now()->toDateString(), now()->addDays($daysAhead)->toDateString().' 23:59:59'])
             ->orderBy('due_date')
             ->get();
     }
@@ -129,7 +129,7 @@ class OverdueService
     {
         return Bill::query()
             ->whereIn('status', [DocumentStatus::Received, DocumentStatus::Partial])
-            ->whereBetween('due_date', [now(), now()->addDays($daysAhead)])
+            ->whereBetween('due_date', [now()->toDateString(), now()->addDays($daysAhead)->toDateString().' 23:59:59'])
             ->orderBy('due_date')
             ->get();
     }

@@ -47,9 +47,9 @@ describe('Role CRUD', function () {
     it('can search roles by name or display_name', function () {
         // Use a unique search term to avoid clashing with seeded data
         $uniqueTerm = 'unique-search-xyz';
-        Role::factory()->create(['name' => "role-{$uniqueTerm}", 'display_name' => 'Alpha Role']);
-        Role::factory()->create(['name' => 'other', 'display_name' => "Display-{$uniqueTerm}"]);
-        Role::factory()->create(['name' => 'ignored', 'display_name' => 'Ignored']);
+        Role::factory()->create(['name' => "role-{$uniqueTerm}", 'display_name' => 'Alpha Role', 'description' => null]);
+        Role::factory()->create(['name' => 'other', 'display_name' => "Display-{$uniqueTerm}", 'description' => null]);
+        Role::factory()->create(['name' => 'ignored', 'display_name' => 'Ignored', 'description' => null]);
 
         $response = $this->getJson("/api/v1/roles?search={$uniqueTerm}");
 

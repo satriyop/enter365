@@ -62,8 +62,8 @@ describe('Contact API', function () {
     });
 
     it('can search contacts by name', function () {
-        Contact::factory()->create(['name' => 'PT ABC Indonesia']);
-        Contact::factory()->create(['name' => 'CV XYZ Makmur']);
+        Contact::factory()->create(['name' => 'PT ABC Indonesia', 'email' => 'info@ptabc.com', 'phone' => '0211234567', 'code' => 'C-001']);
+        Contact::factory()->create(['name' => 'CV XYZ Makmur', 'email' => 'info@xyz.com', 'phone' => '0217654321', 'code' => 'C-002']);
 
         $response = $this->getJson('/api/v1/contacts?search=ABC');
 

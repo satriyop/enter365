@@ -100,9 +100,13 @@ describe('Project CRUD', function () {
     });
 
     it('can search projects', function () {
-        Project::factory()->create(['name' => 'Solar Panel Installation']);
-        Project::factory()->create(['name' => 'Panel Listrik Workshop']);
-        Project::factory()->create(['project_number' => 'PRJ-PANEL-001']);
+        $contact1 = Contact::factory()->customer()->create(['name' => 'Client A']);
+        $contact2 = Contact::factory()->customer()->create(['name' => 'Client B']);
+        $contact3 = Contact::factory()->customer()->create(['name' => 'Client C']);
+
+        Project::factory()->forContact($contact1)->create(['name' => 'Solar Panel Installation']);
+        Project::factory()->forContact($contact2)->create(['name' => 'Panel Listrik Workshop']);
+        Project::factory()->forContact($contact3)->create(['project_number' => 'PRJ-PANEL-001']);
 
         $response = $this->getJson('/api/v1/projects?search=panel');
 

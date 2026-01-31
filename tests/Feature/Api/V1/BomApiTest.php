@@ -52,9 +52,13 @@ describe('BOM CRUD', function () {
     });
 
     it('can search boms', function () {
-        Bom::factory()->create(['name' => 'Panel Assembly 100A']);
-        Bom::factory()->create(['name' => 'Solar System Assembly']);
-        Bom::factory()->create(['bom_number' => 'BOM-PANEL-001']);
+        $product1 = Product::factory()->create(['name' => 'Product A', 'sku' => 'SKU-A001']);
+        $product2 = Product::factory()->create(['name' => 'Product B', 'sku' => 'SKU-B001']);
+        $product3 = Product::factory()->create(['name' => 'Product C', 'sku' => 'SKU-C001']);
+
+        Bom::factory()->forProduct($product1)->create(['name' => 'Panel Assembly 100A']);
+        Bom::factory()->forProduct($product2)->create(['name' => 'Solar System Assembly']);
+        Bom::factory()->forProduct($product3)->create(['bom_number' => 'BOM-PANEL-001', 'name' => 'Other Assembly']);
 
         $response = $this->getJson('/api/v1/boms?search=panel');
 

@@ -106,9 +106,9 @@ describe('Product API', function () {
     });
 
     it('can search products by name', function () {
-        Product::factory()->create(['name' => 'iPhone 15 Pro']);
-        Product::factory()->create(['name' => 'Samsung Galaxy']);
-        Product::factory()->create(['name' => 'iPhone Case']);
+        Product::factory()->create(['name' => 'iPhone 15 Pro', 'barcode' => null]);
+        Product::factory()->create(['name' => 'Samsung Galaxy', 'barcode' => null]);
+        Product::factory()->create(['name' => 'iPhone Case', 'barcode' => null]);
 
         $response = $this->getJson('/api/v1/products?search=iphone');
 

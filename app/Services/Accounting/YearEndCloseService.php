@@ -187,7 +187,7 @@ class YearEndCloseService extends BaseService
         // Check 2: Draft invoices (warning)
         $draftInvoices = \App\Models\Sales\Invoice::query()
             ->where('status', \App\Enums\DocumentStatus::Draft)
-            ->whereBetween('invoice_date', [$period->start_date, $period->end_date])
+            ->whereBetween('invoice_date', [$period->start_date->toDateString(), $period->end_date->toDateString().' 23:59:59'])
             ->count();
         $checks['draft_invoices'] = [
             'status' => $draftInvoices === 0 ? 'ok' : 'warning',
@@ -200,7 +200,7 @@ class YearEndCloseService extends BaseService
         // Check 3: Draft bills (warning)
         $draftBills = \App\Models\Purchasing\Bill::query()
             ->where('status', \App\Enums\DocumentStatus::Draft)
-            ->whereBetween('bill_date', [$period->start_date, $period->end_date])
+            ->whereBetween('bill_date', [$period->start_date->toDateString(), $period->end_date->toDateString().' 23:59:59'])
             ->count();
         $checks['draft_bills'] = [
             'status' => $draftBills === 0 ? 'ok' : 'warning',
@@ -213,7 +213,7 @@ class YearEndCloseService extends BaseService
         // Check 4: Unreconciled bank transactions (warning)
         $unreconciled = \App\Models\Accounting\BankTransaction::query()
             ->where('status', '!=', 'reconciled')
-            ->whereBetween('transaction_date', [$period->start_date, $period->end_date])
+            ->whereBetween('transaction_date', [$period->start_date->toDateString(), $period->end_date->toDateString().' 23:59:59'])
             ->count();
         $checks['unreconciled_bank'] = [
             'status' => $unreconciled === 0 ? 'ok' : 'warning',
