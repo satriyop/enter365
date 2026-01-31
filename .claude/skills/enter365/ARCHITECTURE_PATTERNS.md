@@ -35,7 +35,8 @@ class QuotationConversionService
 **Key Files:**
 - `app/Support/OperationContext.php` - Value object
 - `app/Http/Middleware/BindOperationContext.php` - Auto-binds for all HTTP requests
-- `app/Services/Base/AbstractApplicationService.php` - Resolves from container
+- `app/Services/Base/BaseService.php` - Base service class
+- `app/Services/Base/Traits/WithOperationContext.php` - Trait that resolves from container
 
 ### How It Works
 
@@ -65,8 +66,13 @@ public function store(StoreQuotationRequest $request): JsonResponse
 
 **Services resolve automatically:**
 ```php
-class InvoiceService extends AbstractApplicationService
+use App\Services\Base\BaseService;
+use App\Services\Base\Traits\WithOperationContext;
+
+class InvoiceService extends BaseService
 {
+    use WithOperationContext;
+
     public function create(array $data): Invoice
     {
         $data['created_by'] = $this->getUserId();  // Auto-resolved from container
@@ -77,7 +83,7 @@ class InvoiceService extends AbstractApplicationService
 
 ### Container Resolution Order
 
-`AbstractApplicationService::getContext()` uses this priority:
+`WithOperationContext::getContext()` (trait method) uses this priority:
 
 ```php
 protected function getContext(): OperationContext
@@ -274,25 +280,28 @@ See [Domain Factory Pattern](#domain-factory-pattern) below for the implementati
 
 ### 2. Inconsistent Service Layer ✅ RESOLVED
 
-**Symptom:** Two patterns coexisted:
-- Pattern A: Services extend `AbstractDocumentService`
-- Pattern B: Standalone services with different structure
+**Symptom:** Legacy pattern with `AbstractDocumentService` (deprecated)
 
-**Services using AbstractDocumentService:**
+**Current Architecture (2026):**
+- All services extend `BaseService`
+- Use composable traits: `WithTransaction`, `WithEventDispatching`, `WithOperationContext`, `WithDocuments`
+- `AbstractDocumentService` is deprecated (maintained for backward compatibility)
+
+**Document Services (using `BaseService + WithDocuments` trait):**
 - `InvoiceService`
 - `BillService`
 - `DeliveryOrderService`
 - `SalesReturnService`
 - `PurchaseOrderService`
 - `PurchaseReturnService`
-- `QuotationService` ✅ (migrated Jan 2026)
+- `QuotationService`
 
 **Specialized services (acceptable exceptions):**
 - `QuotationConversionService` - Single-purpose conversion logic
 
-**Migration Notes (QuotationService):**
-- Now extends `AbstractDocumentService`
-- Uses `QuotationRepositoryInterface` for data access
+**Migration Notes:**
+- Now extends `BaseService` with `WithDocuments` trait
+- Uses Eloquent directly for data access (no repository layer)
 - Uses `QuotationDomainFactory` for state machine and calculations
 - Key dependencies: `QuotationNumberGeneratorInterface`, `QuotationDefaults`, `QuotationItemCreator`
 
@@ -301,7 +310,7 @@ See [Domain Factory Pattern](#domain-factory-pattern) below for the implementati
 **Status:** All 54 `auth()->id()` violations eliminated from 24 services (Jan 2026).
 
 **Solution Applied:**
-- All services now extend `AbstractApplicationService`
+- All services now extend `BaseService` with `WithOperationContext` trait
 - Use `$this->getUserId()` which respects `OperationContext`
 - CI check script prevents regression: `scripts/check-auth-id-usage.sh`
 
@@ -330,9 +339,9 @@ See [Domain Factory Pattern](#domain-factory-pattern) below for the implementati
    app/Contracts/{Domain}/{Model}ServiceInterface.php
    ```
 
-2. **Extend appropriate base class:**
-   - Document services: `AbstractDocumentService`
-   - Other services: `AbstractApplicationService`
+2. **Extend BaseService and use traits:**
+   - All services: `BaseService`
+   - Add traits as needed: `WithTransaction`, `WithEventDispatching`, `WithOperationContext`, `WithDocuments`
 
 3. **Use constructor injection:**
    ```php
@@ -596,8 +605,15 @@ app/Services/Manufacturing/
 **Coordinator (Thin Facade):**
 
 ```php
-class BrandSwapService extends AbstractApplicationService
+use App\Services\Base\BaseService;
+use App\Services\Base\Traits\WithTransaction;
+use App\Services\Base\Traits\WithEventDispatching;
+
+class BrandSwapService extends BaseService
 {
+    use WithTransaction;
+    use WithEventDispatching;
+
     public function __construct(
         private BrandSwapPreviewService $previewService,
         private BrandSwapExecutionService $executionService,
@@ -639,8 +655,15 @@ class BrandSwapPreviewService
 **Focused Execution Service (Write Operations):**
 
 ```php
-class BrandSwapExecutionService extends AbstractApplicationService
+use App\Services\Base\BaseService;
+use App\Services\Base\Traits\WithTransaction;
+use App\Services\Base\Traits\WithEventDispatching;
+
+class BrandSwapExecutionService extends BaseService
 {
+    use WithTransaction;
+    use WithEventDispatching;
+
     public function __construct(
         private ProductEquivalenceService $equivalenceService,
         private BomVariantGroupService $variantGroupService,
@@ -697,20 +720,23 @@ The QuotationService was refactored from a God Service (549 lines, 12 dependenci
 ### Before (God Service)
 
 ```php
-class QuotationService extends AbstractDocumentService implements QuotationServiceInterface
+use App\Services\Base\BaseService;
+use App\Services\Base\Traits\WithDocuments;
+
+class QuotationService extends BaseService implements QuotationServiceInterface
 {
+    use WithDocuments;
     public function __construct(
-        QuotationRepositoryInterface $repository,
-        DocumentNumberGeneratorInterface $numberGenerator,
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger,
+        DocumentNumberGeneratorInterface $numberGenerator,
         QuotationNumberGeneratorInterface $quotationNumberGenerator,
         QuotationDefaults $defaults,
         QuotationItemCreator $itemCreator,
         QuotationStatistics $statistics,
         QuotationCalculatorInterface $calculator,
         QuotationDomainFactory $domainFactory,
-        QuotationConversionService $conversionService  // 11 dependencies!
+        QuotationConversionService $conversionService  // 10 dependencies!
     ) {}
 
     // 549 lines of mixed responsibilities:
@@ -774,15 +800,19 @@ class QuotationService implements QuotationServiceInterface
 }
 ```
 
-**Focused Services extend AbstractApplicationService:**
+**Focused Services extend BaseService:**
 
 ```php
-class QuotationCrudService extends AbstractApplicationService
+use App\Services\Base\BaseService;
+use App\Services\Base\Traits\WithTransaction;
+
+class QuotationCrudService extends BaseService
+{
+    use WithTransaction;
 {
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger,
-        private QuotationRepositoryInterface $repository,
         private QuotationNumberGeneratorInterface $quotationNumberGenerator,
         private QuotationDefaults $defaults,
         private QuotationItemCreator $itemCreator,
@@ -810,7 +840,7 @@ class QuotationCrudService extends AbstractApplicationService
 
 ### Key Learnings
 
-1. **Coordinator doesn't extend AbstractApplicationService** - It's just a plain class that delegates
+1. **Coordinator doesn't need to extend BaseService** - It's just a plain class that delegates (though it can extend BaseService if it needs traits)
 2. **withContext() must propagate** - Clone coordinator and set context on sub-services
 3. **Interface unchanged** - All existing code using QuotationServiceInterface works
 4. **No new bindings needed** - Laravel auto-resolves the focused services

@@ -9,6 +9,7 @@ Quick lookup for which interface to inject and what service it resolves to.
 | Interface | Implementation | Purpose |
 |-----------|----------------|---------|
 | `EventDispatcherInterface` | `LaravelEventDispatcher` | Domain event dispatching |
+| `ContextualLoggerInterface` | `LaravelContextualLogger` | Structured domain logging |
 | `FeatureManager` | `ConfigFeatureManager` | Feature flag management |
 
 ---
@@ -43,6 +44,8 @@ Quick lookup for which interface to inject and what service it resolves to.
 | `SalesReturnServiceInterface` | `SalesReturnService` | Sales returns with approval |
 | `RecurringServiceInterface` | `RecurringService` | Recurring document generation |
 | `QuotationCalculatorInterface` | `QuotationCalculator` | Quotation total calculations |
+| `InvoiceCalculatorInterface` | `InvoiceCalculator` | Invoice total calculations |
+| `QuotationNumberGeneratorInterface` | `QuotationNumberGenerator` | Quotation number generation |
 
 ### Quotation Services (Coordinator Pattern)
 
@@ -74,8 +77,8 @@ Services for quotation tracking, follow-ups, and outcomes (win/loss). No interfa
 
 | Class | Purpose | Base Class |
 |-------|---------|------------|
-| `QuotationFollowUpService` | Schedule follow-ups, record contacts | `AbstractApplicationService` |
-| `QuotationOutcomeService` | Mark quotations as won/lost | `AbstractApplicationService` |
+| `QuotationFollowUpService` | Schedule follow-ups, record contacts | `BaseService` |
+| `QuotationOutcomeService` | Mark quotations as won/lost | `BaseService` |
 
 **Note:** `QuotationOutcomeService` was renamed from `QuotationWorkflowService` (Jan 2026) to avoid naming collision with `Quotation\QuotationWorkflowService` which handles state transitions.
 
@@ -134,6 +137,18 @@ See: [ARCHITECTURE_PATTERNS.md](ARCHITECTURE_PATTERNS.md#coordinator-pattern-for
 
 ---
 
+## Strategy Services (StrategyServiceProvider)
+
+Config-driven strategy bindings that resolve different implementations based on application configuration.
+
+| Interface | Default Implementation | Alt Implementation | Config Key |
+|-----------|----------------------|-------------------|------------|
+| `TaxCalculationStrategy` | `TaxExclusiveStrategy` | `TaxInclusiveStrategy` | `accounting.tax.strategy` |
+| `PricingStrategy` | `StandardPricingStrategy` | `MarginBasedPricingStrategy` | `sales.pricing.strategy` |
+| `ApprovalStrategy` | `AutoApproveStrategy` | `AmountBasedApprovalStrategy` | `approval.strategy` |
+
+---
+
 ## Inventory Services
 
 | Interface | Implementation | Purpose |
@@ -169,21 +184,6 @@ See: [ARCHITECTURE_PATTERNS.md](ARCHITECTURE_PATTERNS.md#coordinator-pattern-for
 
 ---
 
-## Repositories
-
-Repositories provide a consistent API for data access, enabling testability and decoupling from Eloquent.
-
-**Provider:** `RepositoryServiceProvider`
-
-| Interface | Implementation | Purpose |
-|-----------|----------------|---------|
-| `InvoiceRepositoryInterface` | `EloquentInvoiceRepository` | Invoice queries, find by number/status |
-| `QuotationRepositoryInterface` | `EloquentQuotationRepository` | Quotation queries, follow-ups, pipeline stats |
-| `WorkOrderRepositoryInterface` | `EloquentWorkOrderRepository` | Work order queries |
-| `ProductStockRepositoryInterface` | `EloquentProductStockRepository` | Product stock queries |
-
----
-
 ## Domain Factories (Singletons)
 
 Domain factories are registered as **singletons** because they cache internal managers.
@@ -191,6 +191,9 @@ Domain factories are registered as **singletons** because they cache internal ma
 | Class | Purpose | Dependencies |
 |-------|---------|--------------|
 | `QuotationDomainFactory` | Creates state machines, managers, calculators for Quotation | `EventDispatcherInterface`, `QuotationCalculatorInterface` |
+| `InvoiceDomainFactory` | Invoice state machines and calculators | `EventDispatcherInterface`, `InvoiceCalculatorInterface` |
+| `PurchaseOrderDomainFactory` | PO state machines and calculators | `EventDispatcherInterface`, `PurchaseOrderCalculatorInterface` |
+| `WorkOrderDomainFactory` | Work order state machines | `EventDispatcherInterface` |
 
 **Usage in services:**
 
@@ -219,6 +222,7 @@ See: [ARCHITECTURE_PATTERNS.md](ARCHITECTURE_PATTERNS.md#domain-factory-pattern)
 |-------|----------|---------|
 | `SalesReturnApprovalPipeline` | InventoryReturnHandler, JournalEntryHandler | Sales return processing |
 | `PurchaseReturnApprovalPipeline` | InventoryReturnHandler, JournalEntryHandler | Purchase return processing |
+| `WorkOrderCompletionPipeline` | MaterialConsumptionHandler, FinishedGoodsHandler, CostCalculationHandler | Work order completion |
 
 ---
 
@@ -264,7 +268,16 @@ See: [ARCHITECTURE_PATTERNS.md](ARCHITECTURE_PATTERNS.md#domain-factory-pattern)
 | Document | Inject This |
 |----------|-------------|
 | Quotation | `QuotationCalculatorInterface` |
+| Invoice | `InvoiceCalculatorInterface` |
 | Purchase Order | `PurchaseOrderCalculatorInterface` |
+
+### "I need a configurable strategy"
+
+| Strategy | Inject This | Config Key |
+|----------|-------------|------------|
+| Tax calculation | `TaxCalculationStrategy` | `accounting.tax.strategy` |
+| Pricing logic | `PricingStrategy` | `sales.pricing.strategy` |
+| Approval rules | `ApprovalStrategy` | `approval.strategy` |
 
 ---
 

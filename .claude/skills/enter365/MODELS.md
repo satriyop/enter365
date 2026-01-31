@@ -1,6 +1,6 @@
 # Model Patterns
 
-Eloquent model patterns and conventions.
+72 Eloquent models across 11 directories. Patterns and conventions.
 
 ---
 
@@ -8,57 +8,95 @@ Eloquent model patterns and conventions.
 
 ```
 app/Models/
-├── Sales/
-│   ├── Invoice.php
-│   ├── InvoiceItem.php
-│   ├── Quotation.php
-│   └── QuotationItem.php
-├── Purchasing/
-│   ├── Bill.php
-│   └── PurchaseOrder.php
-├── Manufacturing/
-│   ├── WorkOrder.php
-│   └── Bom.php
-├── Inventory/
-│   ├── Product.php
-│   └── Warehouse.php
-├── Accounting/
-│   ├── JournalEntry.php
-│   └── FiscalPeriod.php
-├── Contacts/
+├── User.php
+├── CompanyProfile.php
+├── Accounting/          (10 models)
+│   ├── Account.php, BankTransaction.php, Budget.php
+│   ├── BudgetLine.php, Currency.php, ExchangeRate.php
+│   ├── FiscalPeriod.php, JournalEntry.php, JournalEntryLine.php
+├── Contacts/            (1 model)
 │   └── Contact.php
-└── Core/
-    └── User.php
+├── Core/                (4 models)
+│   ├── AuditLog.php, Permission.php, Role.php, StatusHistory.php
+├── Inventory/           (7 models)
+│   ├── InventoryMovement.php, Product.php, ProductCategory.php
+│   ├── ProductStock.php, StockOpname.php, StockOpnameItem.php
+│   └── Warehouse.php
+├── Manufacturing/       (18 models)
+│   ├── Bom.php, BomItem.php, BomTemplate.php, BomTemplateItem.php
+│   ├── BomVariantGroup.php, ComponentBrandMapping.php
+│   ├── ComponentStandard.php, MaterialConsumption.php
+│   ├── MaterialRequisition.php, MaterialRequisitionItem.php
+│   ├── MrpDemand.php, MrpRun.php, MrpSuggestion.php
+│   ├── SpecValidationRule.php, SpecValidationRuleSet.php
+│   ├── SubcontractorWorkOrder.php, WorkOrder.php, WorkOrderItem.php
+├── Projects/            (3 models)
+│   ├── Project.php, ProjectCost.php, ProjectRevenue.php
+├── Purchasing/          (8 models)
+│   ├── Bill.php, BillItem.php, GoodsReceiptNote.php
+│   ├── GoodsReceiptNoteItem.php, PurchaseOrder.php
+│   ├── PurchaseOrderItem.php, PurchaseReturn.php, PurchaseReturnItem.php
+├── Sales/               (12 models)
+│   ├── DeliveryOrder.php, DeliveryOrderItem.php
+│   ├── DownPayment.php, DownPaymentApplication.php
+│   ├── Invoice.php, InvoiceItem.php, Quotation.php
+│   ├── QuotationActivity.php, QuotationItem.php
+│   ├── QuotationVariantOption.php, SalesReturn.php, SalesReturnItem.php
+├── Shared/              (5 models)
+│   ├── Attachment.php, Payment.php, PaymentReminder.php
+│   ├── RecurringTemplate.php, SubcontractorInvoice.php
+└── Solar/               (3 models)
+    ├── IndonesiaSolarData.php, PlnTariff.php, SolarProposal.php
 ```
 
 ---
 
 ## Standard Traits
 
+| Trait | Count | Used On |
+|-------|-------|---------|
+| `HasFactory` | 65 | Almost all (except AuditLog, Currency, ExchangeRate, IndonesiaSolarData, PlnTariff, CompanyProfile, StatusHistory) |
+| `SoftDeletes` | 29 | Documents, master data (Product, Contact, Warehouse, etc.) |
+| `Filterable` | 27 | Models exposed via API with search/filter support |
+| `HasStatusHistory` | 9 | WorkOrder, Project, Bill, PurchaseOrder, PurchaseReturn, DeliveryOrder, Invoice, Quotation, SalesReturn |
+| `HasActiveStatus` | 7 | CompanyProfile, Product, ProductCategory, Warehouse, BomTemplate, ComponentStandard, SpecValidationRuleSet |
+| `HasDocumentDiscount` | 5 | Bill, PurchaseOrder, Invoice, Quotation, RecurringTemplate |
+| `HasRolesAndPermissions` | 1 | User |
+| `HasApiTokens` | 1 | User (Sanctum) |
+
 ```php
-use HasFactory;           // All models
-use SoftDeletes;          // Documents (Invoice, Bill, etc.)
-use Filterable;           // Queryable models
-use HasStatusHistory;     // Status tracking
+// Typical document model
+use Filterable, HasFactory, HasStatusHistory, SoftDeletes;
+
+// Typical line item model
+use HasFactory;
+
+// Typical master data model
+use Filterable, HasActiveStatus, HasFactory, SoftDeletes;
 ```
 
 ---
 
 ## Cast Patterns
 
+**Laravel 12 uses `casts()` method (not `$casts` property):**
+
 ```php
 protected function casts(): array
 {
     return [
-        // Amounts (integers for precision)
+        // Amounts (integers for precision - stored as cents/smallest unit)
         'unit_price' => 'integer',
         'tax_amount' => 'integer',
         'total_amount' => 'integer',
+        'discount_amount' => 'integer',
+        'paid_amount' => 'integer',
 
-        // Rates/Percentages
+        // Rates/Percentages (decimal strings)
         'tax_rate' => 'decimal:2',
         'discount_percent' => 'decimal:2',
         'exchange_rate' => 'decimal:4',
+        'early_discount_percent' => 'decimal:2',
 
         // Quantities
         'quantity' => 'decimal:4',
@@ -71,6 +109,7 @@ protected function casts(): array
         'invoice_date' => 'date',
         'due_date' => 'date',
         'approved_at' => 'datetime',
+        'last_reminder_at' => 'datetime',
 
         // Enums
         'status' => DocumentStatus::class,
@@ -80,6 +119,8 @@ protected function casts(): array
     ];
 }
 ```
+
+**Note:** Always use `protected function casts(): array` method, not `protected $casts = []` property. This is the Laravel 12 convention.
 
 ---
 

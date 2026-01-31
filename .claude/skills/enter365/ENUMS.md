@@ -1,6 +1,6 @@
 # Enums Registry
 
-All enums in Enter365.
+All 11 enums in Enter365 across `app/Enums/` and domain-specific directories.
 
 ---
 
@@ -36,6 +36,10 @@ enum DocumentStatus: string
     case Overdue = 'overdue';
     case Received = 'received';
 
+    // Financial (advanced)
+    case FullyApplied = 'fully_applied';
+    case Refunded = 'refunded';
+
     // Manufacturing
     case Active = 'active';
     case Inactive = 'inactive';
@@ -50,6 +54,10 @@ enum DocumentStatus: string
     case Shipped = 'shipped';
     case Delivered = 'delivered';
     case Receiving = 'receiving';
+
+    // Stock Opname
+    case Counting = 'counting';
+    case Reviewed = 'reviewed';
 
     // Project
     case Planning = 'planning';
@@ -178,6 +186,74 @@ enum QuotationOutcome: string
         'kalah_kompetitor' => 'Kalah dari Kompetitor',
         // ...
     ];
+}
+```
+
+### BankTransactionStatus
+
+**Location:** `app/Enums/BankTransactionStatus.php`
+
+```php
+enum BankTransactionStatus: string
+{
+    case Unmatched = 'unmatched';
+    case Matched = 'matched';
+    case Reconciled = 'reconciled';
+}
+```
+
+### BudgetStatus
+
+**Location:** `app/Enums/BudgetStatus.php`
+
+```php
+enum BudgetStatus: string
+{
+    case Draft = 'draft';
+    case Approved = 'approved';
+    case Closed = 'closed';
+}
+```
+
+### MrpSuggestionStatus
+
+**Location:** `app/Enums/MrpSuggestionStatus.php`
+
+```php
+enum MrpSuggestionStatus: string
+{
+    case Pending = 'pending';
+    case Accepted = 'accepted';
+    case Rejected = 'rejected';
+    case Converted = 'converted';
+}
+```
+
+### WorkOrderType
+
+**Location:** `app/Domain/Manufacturing/WorkOrders/Enums/WorkOrderType.php`
+
+```php
+enum WorkOrderType: string
+{
+    case Production = 'production';
+    case Assembly = 'assembly';
+    case Installation = 'installation';
+    case Maintenance = 'maintenance';
+}
+```
+
+### WorkOrderPriority
+
+**Location:** `app/Domain/Manufacturing/WorkOrders/Enums/WorkOrderPriority.php`
+
+```php
+enum WorkOrderPriority: string
+{
+    case Low = 'low';
+    case Normal = 'normal';
+    case High = 'high';
+    case Urgent = 'urgent';
 }
 ```
 

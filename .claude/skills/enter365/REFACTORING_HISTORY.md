@@ -16,80 +16,86 @@ Use when:
 
 ## 2026-01 Architectural Cleanup
 
-### P0: Service Locator Root Cause Fix
+### P0: Service Architecture Refactoring (BaseService + Traits)
 
 **Date:** Jan 2026
-**Files Changed:** 7 service files
-**Tests:** All passing
+**Files Changed:** All service files
+**Status:** ✅ Complete
 
-#### Issue Found
+#### Architecture Evolution
 
-`AbstractDocumentService` used optional constructor parameters with `app()` fallback:
+**Phase 1: AbstractApplicationService Pattern (Deprecated)**
+- Services extended `AbstractApplicationService` or `AbstractDocumentService`
+- Single inheritance pattern
+- All functionality in base class
+
+**Phase 2: BaseService + Traits Pattern (Current)**
+- All services extend `BaseService`
+- Composable traits: `WithTransaction`, `WithEventDispatching`, `WithOperationContext`, `WithDocuments`
+- Trait-based composition for flexibility
+
+#### Current Architecture
 
 ```php
-// BEFORE: AbstractDocumentService (BAD)
-public function __construct(
-    ?RepositoryInterface $repository = null,
-    ?DocumentNumberGeneratorInterface $numberGenerator = null,
-    ?EventDispatcherInterface $eventDispatcher = null,      // Optional!
-    ?ContextualLoggerInterface $logger = null               // Optional!
-) {
-    $eventDispatcher ??= app(EventDispatcherInterface::class);  // Service locator
-    $logger ??= app(ContextualLoggerInterface::class);
+// BaseService - Core functionality
+abstract class BaseService
+{
+    public function __construct(
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger
+    ) {
+        $this->eventDispatcher = $eventDispatcher;
+        $this->logger = $logger;
+    }
+}
+
+// Services use traits for composable features
+class InvoiceService extends BaseService
+{
+    use WithTransaction;
+    use WithEventDispatching;
+    use WithOperationContext;
+    use WithDocuments;
+
+    // Service-specific logic
 }
 ```
 
-This **enabled** child services to skip explicit DI:
+#### Benefits
 
-```php
-// BillService could skip required deps
-public function __construct(
-    JournalServiceInterface $journalService,
-    DocumentNumberGeneratorInterface $numberGenerator
-) {
-    parent::__construct(numberGenerator: $numberGenerator);  // No eventDispatcher, logger!
-}
-```
+| Benefit | Description |
+|---------|-------------|
+| **Composability** | Services only include traits they need |
+| **Flexibility** | Easy to add/remove features via traits |
+| **Clarity** | Traits explicitly show what a service does |
+| **Maintainability** | Single responsibility per trait |
 
-#### Why This Was Bad
+#### Migration Status
 
-| Problem | Impact |
-|---------|--------|
-| **Hidden dependencies** | Not visible in constructor signature |
-| **Untestable** | Can't mock container-resolved deps |
-| **Inconsistent** | Some services explicit, others implicit |
-| **Architectural drift** | Enabled lazy practices |
-
-#### The Fix
-
-Made `EventDispatcherInterface` and `ContextualLoggerInterface` required first parameters:
-
-```php
-// AFTER: AbstractDocumentService (GOOD)
-public function __construct(
-    EventDispatcherInterface $eventDispatcher,       // Required first
-    ContextualLoggerInterface $logger,               // Required second
-    ?RepositoryInterface $repository = null,
-    ?DocumentNumberGeneratorInterface $numberGenerator = null
-) {
-    parent::__construct($eventDispatcher, $logger);
-    // No app() fallback
-}
-```
-
-Updated all 6 child services:
-- `InvoiceService` - Reordered params
-- `BillService` - Added explicit deps
-- `PurchaseOrderService` - Added explicit deps
-- `PurchaseReturnService` - Added explicit deps
-- `DeliveryOrderService` - Added explicit deps
-- `SalesReturnService` - Added explicit deps
+- ✅ All new services use `BaseService + traits`
+- ✅ `AbstractDocumentService` deprecated (maintained for backward compatibility)
+- ✅ Document services can use `BaseService + WithDocuments` trait
 
 #### Lesson Learned
 
-> **Never use optional DI parameters with `app()` fallback.** It creates a backdoor that enables architectural drift. Future services will copy the lazy pattern.
+> **Trait composition > Multiple inheritance.** PHP doesn't support multiple inheritance, but traits provide composable functionality without the complexity.
 
-**Detection Rule:** Search for `??= app(` in service constructors.
+**Detection Rule:** New services should extend `BaseService`, not `AbstractApplicationService` or `AbstractDocumentService`.
+
+---
+
+### P1: Service Locator Root Cause Fix (Historical)
+
+**Date:** Jan 2026 (Before BaseService refactoring)
+**Status:** ✅ Resolved (superseded by BaseService pattern)
+
+#### Issue Found (Historical Context)
+
+`AbstractDocumentService` used optional constructor parameters with `app()` fallback. This was fixed before the BaseService refactoring.
+
+#### Current State
+
+All services now use explicit dependency injection via `BaseService` constructor. No service locator patterns remain.
 
 ---
 
@@ -135,15 +141,11 @@ class QuotationWorkflowService
     }
 }
 
-// AFTER: Pattern A
-class QuotationOutcomeService extends AbstractApplicationService
+// AFTER: BaseService + Traits
+class QuotationOutcomeService extends BaseService
 {
-    public function __construct(
-        EventDispatcherInterface $eventDispatcher,
-        ContextualLoggerInterface $logger
-    ) {
-        parent::__construct($eventDispatcher, $logger);
-    }
+    use WithTransaction;
+    use WithOperationContext;
 
     public function markAsWon(Quotation $quotation, array $data = []): Quotation
     {
@@ -208,11 +210,11 @@ public function convertToInvoice(Quotation $quotation): Invoice
 
 #### Lesson Learned
 
-> **If extending AbstractApplicationService, always use `executeInTransaction()` for write operations.** The base class provides it for a reason.
+> **If using `WithTransaction` trait, always use `executeInTransaction()` for write operations.** The trait provides it for a reason.
 
 **Detection Rule:**
 ```bash
-for file in $(grep -l "extends AbstractApplicationService" app/Services/**/*.php 2>/dev/null); do
+for file in $(grep -l "extends BaseService\|use WithTransaction" app/Services/**/*.php 2>/dev/null); do
     if grep -q "DB::transaction" "$file"; then
         echo "WARNING: $file uses raw DB::transaction()"
     fi
@@ -221,17 +223,20 @@ done
 
 ---
 
-## Pattern Summary: What We Committed To
+## Pattern Summary: Current Architecture (2026)
 
-After this refactoring, the project commits to **Pattern A** for all services:
+After refactoring, the project uses **BaseService + Traits** pattern for all services:
 
 | Aspect | Required Pattern |
 |--------|------------------|
-| **Base class** | `AbstractApplicationService` (or `AbstractDocumentService` for documents) |
+| **Base class** | `BaseService` (all services) |
+| **Traits** | `WithTransaction`, `WithEventDispatching`, `WithOperationContext`, `WithDocuments` (as needed) |
 | **Dependencies** | Explicit constructor injection, no optional with fallback |
 | **Transactions** | `$this->executeInTransaction()`, not raw `DB::transaction()` |
 | **User context** | `$this->getUserId()`, not `auth()->id()` |
 | **Class naming** | Globally unique, even across folders |
+
+**Note:** `AbstractApplicationService` and `AbstractDocumentService` are deprecated. Use `BaseService + traits` instead.
 
 See: [SKILL.md](SKILL.md#critical-pattern-commitment-read-first) for enforcement rules.
 
@@ -305,9 +310,9 @@ Created `scripts/check-pattern-compliance.sh` that checks:
 
 Manufacturing services audit revealed:
 - 18 total Manufacturing service files
-- 8 already using Pattern A (AbstractApplicationService)
+- 8 already using Pattern A (BaseService + traits)
 - 2 with write operations needing migration: `BomService`, `BomVariantGroupService`
-- Both services used raw `DB::transaction()` and didn't extend AbstractApplicationService
+- Both services used raw `DB::transaction()` and didn't extend BaseService
 
 ### The Fix
 
@@ -335,9 +340,12 @@ class BomService implements BomServiceInterface
     }
 }
 
-// AFTER: Pattern A with proper DI
-class BomService extends AbstractApplicationService implements BomServiceInterface
+// AFTER: BaseService + Traits with proper DI
+class BomService extends BaseService implements BomServiceInterface
 {
+    use WithTransaction;
+    use WithOperationContext;
+
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger,
@@ -378,13 +386,13 @@ Similar migration - 8 methods converted to `executeInTransaction()`:
 
 ### Lesson Learned
 
-> **When auditing services for Pattern A compliance, check both the base class AND the transaction usage.** A service might not extend AbstractApplicationService but still use `DB::transaction()` internally.
+> **When auditing services for Pattern A compliance, check both the base class AND the transaction usage.** A service might not extend `BaseService` but still use `DB::transaction()` internally.
 
 **Detection Rule:**
 ```bash
-# Find services not using Pattern A but having write operations
+# Find services not using BaseService but having write operations
 for file in app/Services/**/*.php; do
-    if ! grep -q "extends Abstract" "$file" && grep -q "DB::transaction\|->save()" "$file"; then
+    if ! grep -q "extends BaseService" "$file" && grep -q "DB::transaction\|->save()" "$file"; then
         echo "Needs review: $file"
     fi
 done
@@ -404,7 +412,7 @@ done
 
 ### Services Migrated
 
-These services didn't extend `AbstractApplicationService` and used raw `DB::transaction()`:
+These services didn't extend `BaseService` and used raw `DB::transaction()`:
 
 | Service | Transactions Migrated |
 |---------|----------------------|
@@ -435,8 +443,10 @@ class BudgetService
 }
 
 // AFTER
-class BudgetService extends AbstractApplicationService
+class BudgetService extends BaseService
 {
+    use WithTransaction;
+
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger
@@ -464,20 +474,20 @@ $this->executeInTransaction('apply_optimization', function () use ($bom, $itemId
 ### Verification
 
 ```bash
-# Only AbstractApplicationService.php should have DB::transaction()
-grep -rn "DB::transaction" app/Services/ | grep -v "AbstractApplicationService"
+# Only BaseService.php and WithTransaction.php should have DB::transaction()
+grep -rn "DB::transaction" app/Services/ | grep -v "BaseService\|WithTransaction"
 # Returns: 0 results ✅
 ```
 
 ### Lesson Learned
 
-> **Services that don't extend AbstractApplicationService easily drift to using raw `DB::transaction()`.** The migration pattern is straightforward: extend base class, add constructor DI, wrap transactions with `executeInTransaction()`.
+> **Services that don't extend `BaseService` easily drift to using raw `DB::transaction()`.** The migration pattern is straightforward: extend `BaseService`, add traits, wrap transactions with `executeInTransaction()`.
 
 **Detection Rule:**
 ```bash
-# Find services not extending Abstract* but using transactions
+# Find services not extending BaseService but using transactions
 for file in app/Services/**/*.php; do
-    if ! grep -q "extends Abstract" "$file" && grep -q "DB::transaction" "$file"; then
+    if ! grep -q "extends BaseService" "$file" && grep -q "DB::transaction" "$file"; then
         echo "Needs migration: $file"
     fi
 done

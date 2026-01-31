@@ -345,3 +345,43 @@ public function toArray(Request $request): array
 ```bash
 php artisan make:resource Api/V1/YourModelResource --no-interaction
 ```
+
+---
+
+## Contract Validation
+
+**IMPORTANT:** After creating or modifying API Resources:
+
+1. **Run integration check:**
+   ```bash
+   ./scripts/check-api-integration.sh
+   ```
+
+2. **Pre-commit hook** will automatically validate before commit
+
+3. **CI/CD** validates on every PR
+
+**What it checks:**
+- Resource fields match OpenAPI schema (`api.json`)
+- Field names are consistent
+- Types are correct
+- No missing or extra fields
+
+**Field Naming Standards:**
+- ✅ Use `_amount` suffix: `total_amount`, `discount_amount`, `tax_amount`
+- ✅ Be consistent across all Resources
+- ✅ Match database column names
+
+**Common Issues:**
+- Field in Resource but not in Schema → Add to Scramble annotations
+- Field in Schema but not in Resource → Add to `toArray()` method
+- Type mismatch → Fix type casting or PHPDoc
+
+**Workflow:**
+1. Modify Resource
+2. Run `./scripts/check-api-integration.sh`
+3. Fix any mismatches
+4. Update tests if field names changed
+5. Commit (hook validates automatically)
+
+See `docs/04-api/integration-check/` for detailed documentation.

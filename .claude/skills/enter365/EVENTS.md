@@ -1,6 +1,6 @@
 # Domain Events Reference
 
-Event-driven patterns in Enter365.
+84 domain events across 7 domains in Enter365.
 
 ---
 
@@ -100,7 +100,7 @@ interface EventDispatcherInterface
 
 ## Events by Domain
 
-### Sales (27 Events)
+### Sales (29 Events)
 
 | Event | Dispatched When |
 |-------|-----------------|
@@ -111,19 +111,30 @@ interface EventDispatcherInterface
 | `QuotationExpired` | Past validity date |
 | `QuotationWon` | Marked as won |
 | `QuotationLost` | Marked as lost |
+| `QuotationCancelled` | Quotation cancelled |
+| `QuotationStatusChanged` | Any quotation status change |
+| `InvoicePosted` | Invoice posted (top-level event) |
 | `InvoiceSent` | Invoice posted to customer |
 | `InvoiceFullyPaid` | All payments received |
+| `InvoicePartiallyPaid` | Partial payment received |
 | `InvoiceOverdue` | Past due date |
 | `InvoiceVoided` | Invoice voided |
+| `InvoiceStatusChanged` | Any invoice status change |
 | `DeliveryOrderConfirmed` | DO confirmed |
 | `DeliveryOrderShipped` | Goods shipped |
 | `DeliveryOrderDelivered` | Goods delivered |
+| `DeliveryOrderCancelled` | DO cancelled |
+| `DeliveryOrderStatusChanged` | Any DO status change |
 | `SalesReturnSubmitted` | Return submitted |
 | `SalesReturnApproved` | Return approved |
 | `SalesReturnCompleted` | Return completed |
+| `SalesReturnRejected` | Return rejected |
+| `SalesReturnCancelled` | Return cancelled |
+| `SalesReturnStatusChanged` | Any sales return status change |
 | `PaymentReceived` | Payment recorded |
+| `PaymentVoided` | Payment voided |
 
-### Purchasing (17 Events)
+### Purchasing (20 Events)
 
 | Event | Dispatched When |
 |-------|-----------------|
@@ -132,19 +143,44 @@ interface EventDispatcherInterface
 | `PurchaseOrderRejected` | PO rejected |
 | `PurchaseOrderPartial` | Partial receipt |
 | `PurchaseOrderReceived` | Fully received |
+| `PurchaseOrderCancelled` | PO cancelled |
+| `PurchaseOrderStatusChanged` | Any PO status change |
 | `BillReceived` | Bill posted |
 | `BillFullyPaid` | Bill fully paid |
+| `BillPartiallyPaid` | Partial payment on bill |
+| `BillOverdue` | Bill past due date |
+| `BillVoided` | Bill voided |
+| `BillStatusChanged` | Any bill status change |
+| `GoodsReceiptNoteStatusChanged` | GRN status change |
+| `PurchaseReturnSubmitted` | Return submitted |
 | `PurchaseReturnApproved` | Return approved |
+| `PurchaseReturnCompleted` | Return completed |
+| `PurchaseReturnRejected` | Return rejected |
+| `PurchaseReturnCancelled` | Return cancelled |
+| `PurchaseReturnStatusChanged` | Any purchase return status change |
 
-### Manufacturing (14 Events)
+### Manufacturing (18 Events)
 
 | Event | Dispatched When |
 |-------|-----------------|
 | `WorkOrderConfirmed` | WO confirmed |
 | `WorkOrderStarted` | Production started |
 | `WorkOrderCompleted` | Production completed |
+| `WorkOrderCancelled` | WO cancelled |
+| `WorkOrderStatusChanged` | Any WO status change |
 | `MaterialRequisitionApproved` | MR approved |
 | `MaterialRequisitionIssued` | Materials issued |
+| `MaterialRequisitionCancelled` | MR cancelled |
+| `MaterialRequisitionStatusChanged` | Any MR status change |
+| `SubcontractorWorkOrderAssigned` | SWO assigned to subcontractor |
+| `SubcontractorWorkOrderStarted` | SWO production started |
+| `SubcontractorWorkOrderCompleted` | SWO production completed |
+| `SubcontractorWorkOrderCancelled` | SWO cancelled |
+| `SubcontractorWorkOrderStatusChanged` | Any SWO status change |
+| `MrpRunStarted` | MRP run started |
+| `MrpRunCompleted` | MRP run completed |
+| `MrpRunFailed` | MRP run failed |
+| `MrpRunStatusChanged` | Any MRP run status change |
 
 ### Projects (6 Events)
 
@@ -152,8 +188,10 @@ interface EventDispatcherInterface
 |-------|-----------------|
 | `ProjectStarted` | Project started |
 | `ProjectOnHold` | Project put on hold |
+| `ProjectResumed` | Project resumed from hold |
 | `ProjectCompleted` | Project completed |
 | `ProjectCancelled` | Project cancelled |
+| `ProjectStatusChanged` | Any project status change |
 
 ### Accounting (5 Events)
 
@@ -163,6 +201,23 @@ interface EventDispatcherInterface
 | `FiscalPeriodClosing` | Closing started |
 | `FiscalPeriodClosed` | Period closed |
 | `FiscalPeriodReopened` | Period reopened |
+| `FiscalPeriodStatusChanged` | Any fiscal period status change |
+
+### Inventory (5 Events)
+
+| Event | Dispatched When |
+|-------|-----------------|
+| `InventoryAdjusted` | Manual stock adjustment |
+| `InventoryIssued` | Stock issued out |
+| `InventoryReceived` | Stock received in |
+| `InventoryTransferred` | Stock transferred between warehouses |
+| `StockOpnameStatusChanged` | Stock opname status change |
+
+### Solar (1 Event)
+
+| Event | Dispatched When |
+|-------|-----------------|
+| `SolarProposalStatusChanged` | Solar proposal status change |
 
 ---
 

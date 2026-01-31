@@ -14,20 +14,31 @@ Use when:
 
 ## CRITICAL: Pattern Commitment (Read First)
 
-**All new services MUST follow Pattern A (AbstractApplicationService with explicit DI).**
+**All new services MUST extend `BaseService` and use traits for composable features.**
 
 This is a project-wide commitment to prevent architectural drift. Do NOT deviate from this pattern.
 
-### The Canonical Pattern (Pattern A)
+### The Canonical Pattern (Current Architecture)
+
+**All services extend `BaseService` and use traits:**
 
 ```php
-class MyService extends AbstractApplicationService
+use App\Services\Base\BaseService;
+use App\Services\Base\Traits\WithTransaction;
+use App\Services\Base\Traits\WithEventDispatching;
+use App\Services\Base\Traits\WithOperationContext;
+
+class MyService extends BaseService
 {
+    use WithTransaction;
+    use WithEventDispatching;
+    use WithOperationContext;
+
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger,
         // Domain-specific dependencies below...
-        private MyRepositoryInterface $repository,
+        private MyDomainFactory $domainFactory,
     ) {
         parent::__construct($eventDispatcher, $logger);
     }
@@ -46,51 +57,74 @@ class MyService extends AbstractApplicationService
 
 | Requirement | Do This | NOT This |
 |-------------|---------|----------|
-| **Base class** | `extends AbstractApplicationService` | Plain class or AbstractDocumentService for non-documents |
+| **Base class** | `extends BaseService` | `AbstractApplicationService` (deprecated) or plain class |
+| **Traits** | Use `WithTransaction`, `WithEventDispatching`, `WithOperationContext` | Don't skip traits |
 | **DI** | Constructor injection (explicit) | Optional params with `??= app()` fallback |
 | **Transactions** | `$this->executeInTransaction()` | Raw `DB::transaction()` |
 | **User context** | `$this->getUserId()` | `auth()->id()` |
 | **Logging** | Automatic via base class | Manual or none |
 
-### When to Use Which Base Class
+### When to Use Which Traits
 
-| Use Case | Base Class |
-|----------|------------|
-| **Document services** (Invoice, Bill, PO, DO) | `AbstractDocumentService` |
-| **All other services** | `AbstractApplicationService` |
-| **Coordinators** (thin facades) | Plain class with `withContext()` method |
+| Feature Needed | Trait to Use |
+|----------------|--------------|
+| **Database transactions** | `WithTransaction` |
+| **Domain events** | `WithEventDispatching` |
+| **User/tenant context** | `WithOperationContext` |
+| **Document management** (Invoice, Bill, PO, etc.) | `WithDocuments` |
 
-### AbstractDocumentService: Now Pattern A Compliant ✅
+### Document Services Pattern
 
-**Status:** Fixed (Jan 2026)
-
-`AbstractDocumentService` now requires `EventDispatcherInterface` and `ContextualLoggerInterface` as the first two constructor params - matching `AbstractApplicationService`.
+**For document services (Invoice, Bill, PO, DO, etc.):**
 
 ```php
-// AbstractDocumentService constructor (AFTER fix)
-public function __construct(
-    EventDispatcherInterface $eventDispatcher,       // Required first
-    ContextualLoggerInterface $logger,               // Required second
-    ?RepositoryInterface $repository = null,         // Optional
-    ?DocumentNumberGeneratorInterface $numberGenerator = null
-) {
-    parent::__construct($eventDispatcher, $logger);
-    // ...
-}
+use App\Services\Base\BaseService;
+use App\Services\Base\Traits\WithDocuments;
 
-// Child services MUST pass eventDispatcher and logger
-public function __construct(
-    EventDispatcherInterface $eventDispatcher,
-    ContextualLoggerInterface $logger,
-    MyRepository $repository,
-    DocumentNumberGeneratorInterface $numberGenerator,
-    // domain deps...
-) {
-    parent::__construct($eventDispatcher, $logger, $repository, $numberGenerator);
+class InvoiceService extends BaseService
+{
+    use WithDocuments;
+    use WithTransaction;
+    use WithEventDispatching;
+    use WithOperationContext;
+
+    public function __construct(
+        EventDispatcherInterface $eventDispatcher,
+        ContextualLoggerInterface $logger,
+        // domain deps...
+    ) {
+        parent::__construct($eventDispatcher, $logger);
+    }
+
+    // Required abstract methods for WithDocuments trait
+    protected function getDocumentNumberField(): string
+    {
+        return 'invoice_number';
+    }
+
+    protected function getDocumentNumberPrefix(): string
+    {
+        return 'INV-'.now()->format('Ym').'-';
+    }
+
+    protected function getDocumentNumberConfig(): array
+    {
+        return ['table' => 'invoices', 'column' => 'invoice_number'];
+    }
+
+    protected function getItemRelation(): string
+    {
+        return 'items';
+    }
+
+    public function create(array $data): Invoice
+    {
+        return $this->createDocument($data)->getDataOrFail();
+    }
 }
 ```
 
-All document services (Invoice, Bill, PO, PR, DO, SR) now follow this pattern.
+**Note:** `AbstractDocumentService` is deprecated. Use `BaseService + WithDocuments` trait instead.
 
 ### Anti-Patterns to Avoid
 
@@ -137,8 +171,8 @@ This skill has detailed reference files for specific patterns:
 
 | Skill File | Purpose |
 |------------|---------|
-| [STATE_MACHINES.md](STATE_MACHINES.md) | 7 state machines with transitions, events, templates |
-| [EVENTS.md](EVENTS.md) | 74 domain events, event dispatcher pattern, testing |
+| [STATE_MACHINES.md](STATE_MACHINES.md) | 15 state machines with transitions, events, templates |
+| [EVENTS.md](EVENTS.md) | 84 domain events, event dispatcher pattern, testing |
 | [STRATEGIES.md](STRATEGIES.md) | Accounting strategies (COGS, Inventory, Manufacturing) |
 | [VALUE_OBJECTS.md](VALUE_OBJECTS.md) | Money, Quantity, Percentage; Calculator patterns |
 | [APPROVAL_PIPELINES.md](APPROVAL_PIPELINES.md) | Chain of responsibility for approvals |
@@ -147,7 +181,7 @@ This skill has detailed reference files for specific patterns:
 
 | Skill File | Purpose |
 |------------|---------|
-| [MODELS.md](MODELS.md) | 74 models, relationships, casts, scopes, templates |
+| [MODELS.md](MODELS.md) | 72 models, relationships, casts, scopes, templates |
 | [REPOSITORIES.md](REPOSITORIES.md) | Repository pattern, domain queries, DB::table() for stats |
 | [ENUMS.md](ENUMS.md) | DocumentStatus and domain-specific enums |
 | [FACTORIES.md](FACTORIES.md) | Factory patterns and states for testing |
@@ -177,13 +211,13 @@ This skill has detailed reference files for specific patterns:
 ```
 HTTP Layer (thin)
     ↓
-Service Layer (business logic) ← 77 services
+Service Layer (business logic) ← 81 services
     ↓
 Domain Layer (DDD patterns) ← StateMachines, Events, ValueObjects
     ↓
-Contracts (interfaces) ← 40+ interfaces
+Contracts (interfaces) ← 45 interfaces
     ↓
-Model Layer (Eloquent) ← 71 models
+Model Layer (Eloquent) ← 72 models
 ```
 
 ### Key Patterns
@@ -268,6 +302,12 @@ Use existing skill: `/scaffold-api`
 | PurchaseReturnStateMachine | Draft → Submitted → Approved → Completed | `app/Domain/Purchasing/PurchaseReturns/` |
 | FiscalPeriodStateMachine | Open → Closing → Closed → Locked | `app/Domain/Accounting/FiscalPeriods/` |
 | ProjectStateMachine | Draft → Active → OnHold → Completed | `app/Domain/Projects/` |
+| WorkOrderStateMachine | Draft → Released → InProgress → Completed | `app/Domain/Manufacturing/WorkOrders/` |
+| GoodsReceiptNoteStateMachine | Draft → Confirmed → Completed | `app/Domain/Purchasing/GoodsReceiptNotes/` |
+| MaterialRequisitionStateMachine | Draft → Submitted → Approved → Issued | `app/Domain/Manufacturing/MaterialRequisitions/` |
+| SubcontractorWorkOrderStateMachine | Draft → Submitted → Approved → InProgress → Completed | `app/Domain/Manufacturing/SubcontractorWorkOrders/` |
+| StockOpnameStateMachine | Draft → Counting → Reviewed → Approved | `app/Domain/Inventory/StockOpnames/` |
+| SolarProposalStateMachine | Draft → Submitted → Approved → Won/Lost | `app/Domain/Solar/Proposals/` |
 
 ---
 
@@ -356,7 +396,7 @@ public function __construct(
 
 **Status:** All 54 violations eliminated. CI script prevents regression.
 
-Services extending `AbstractApplicationService` must use `$this->getUserId()`:
+Services extending `BaseService` must use `$this->getUserId()`:
 
 ```php
 // ❌ WRONG - Direct auth call (CI will fail)
@@ -528,9 +568,9 @@ if ($quotation->isEditable()) { ... }
 
 See: [ARCHITECTURE_PATTERNS.md](ARCHITECTURE_PATTERNS.md#domain-factory-pattern)
 
-### 17. Use DB::table() for Repository Aggregations
+### 17. Use DB::table() for Dashboard/Report Aggregations
 
-In repositories, use `DB::table()` for statistics and aggregations to avoid Eloquent hydration overhead:
+In dashboard and report services, use `DB::table()` for statistics and aggregations to avoid Eloquent hydration overhead:
 
 ```php
 // ❌ SLOW - Hydrates all models just to count
@@ -551,8 +591,6 @@ $stats = DB::table('quotations')
 **Use DB::table() for:** Aggregations (SUM, COUNT, AVG), dashboards, reports with 100+ rows.
 
 **Use Eloquent for:** CRUD operations needing events, casts, mutators.
-
-See: [REPOSITORIES.md](REPOSITORIES.md#performance-dbtable-for-aggregations)
 
 ### 18. Model Field Naming - Don't Guess
 
@@ -722,7 +760,7 @@ public function store(Request $request): JsonResponse
 
 **How it works:**
 1. `BindOperationContext` middleware binds context to container
-2. `AbstractApplicationService::getContext()` resolves from container
+2. `BaseService::getContext()` resolves from container
 3. Controllers don't need to do anything
 
 **When to use explicit `withContext()`:**
@@ -867,12 +905,12 @@ class QuotationService implements QuotationServiceInterface
 
 **Why it matters:**
 - Tests using `$service->withContext($context)->create(...)` expect context to be used
-- Sub-services extend `AbstractApplicationService` which has `withContext()`
+- Sub-services extend `BaseService` which has `withContext()`
 - Without propagation, sub-services use container-resolved context (may be different)
 
 **Coordinator pattern checklist:**
 - [ ] Coordinator implements interface (backward compatibility)
-- [ ] Coordinator is plain class (no AbstractApplicationService)
+- [ ] Coordinator is plain class (no BaseService extension)
 - [ ] withContext() clones and propagates to sub-services
 - [ ] No new DI bindings needed (Laravel auto-resolves)
 
@@ -915,8 +953,8 @@ public function create(array $data): Model
 
 **Verification:**
 ```bash
-# Should return 0 results (only AbstractApplicationService allowed)
-grep -rn "DB::transaction" app/Services/ | grep -v "AbstractApplicationService"
+# Should return 0 results (only BaseService allowed)
+grep -rn "DB::transaction" app/Services/ | grep -v "BaseService"
 ```
 
 See: [REFACTORING_HISTORY.md](REFACTORING_HISTORY.md#p4-complete-pattern-a-migration-jan-2026)
@@ -965,8 +1003,17 @@ php artisan test --filter=InvoiceService
 # Format code
 vendor/bin/pint --dirty
 
-# Generate API docs
+# Type checking
+./scripts/phpstan-check.sh app/Services/YourService.php
+
+# API contract validation (after modifying API Resources)
+./scripts/check-api-integration.sh
+
+# Generate API docs (automated in check-api-integration.sh)
 php artisan scramble:export --path=api.json
+
+# Check API contract mismatches
+php check-api-mismatches.php
 
 # List routes
 php artisan route:list --path=api/v1
@@ -977,3 +1024,32 @@ php artisan db:show
 # Tinker
 php artisan tinker
 ```
+
+---
+
+## API Contract Validation Workflow
+
+**IMPORTANT:** After modifying API Resources or Controllers:
+
+1. **Run automated integration check:**
+   ```bash
+   ./scripts/check-api-integration.sh
+   ```
+   This validates:
+   - OpenAPI schema generation
+   - Resource vs Schema mismatches
+   - PHPStan type checking
+   - API tests
+
+2. **Pre-commit hook** automatically validates API contracts when API files are modified
+
+3. **CI/CD** validates on every PR (GitHub Actions)
+
+**Field Naming Standards:**
+- Use `_amount` suffix for monetary values: `total_amount`, `discount_amount`, `tax_amount`
+- Be consistent across all Resources
+- Database column names should match Resource field names
+
+**Documentation:**
+- See `docs/04-api/integration-check/` for complete workflow
+- See `docs/04-api/tools/` for Scramble and PHPStan guides

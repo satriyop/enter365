@@ -378,7 +378,9 @@ Event::fake([InvoiceSent::class]);
 
 ## Testing with OperationContext
 
-Services that extend `AbstractApplicationService` support explicit user context injection via `withContext()`. This enables unit testing without mocking Laravel's auth system.
+Services that use the `WithOperationContext` trait support explicit user context injection via `withContext()`. This enables unit testing without mocking Laravel's auth system.
+
+**Note:** All services extend `BaseService` and use the `WithOperationContext` trait for context management.
 
 ### Using TestsWithOperationContext Trait
 
@@ -460,117 +462,55 @@ it('uses operation context directly', function () {
 
 ---
 
-## Unit Testing with In-Memory Repositories
+## Unit Testing Services
 
-For true unit tests that don't hit the database, use in-memory repositories. This is particularly valuable for testing service logic in isolation.
+Enter365 uses **feature tests with RefreshDatabase** for all service testing. There is no repository layer — services access Eloquent models directly.
 
-### When to Use In-Memory vs Feature Tests
+### When to Use Feature vs Unit Tests
 
 | Scenario | Test Type | Why |
 |----------|-----------|-----|
-| Service business logic | Unit + In-Memory Repository | Fast, isolated |
-| Database interactions | Feature + RefreshDatabase | Tests actual queries |
+| Service business logic | Feature + RefreshDatabase | Tests real Eloquent interactions |
 | API endpoints | Feature + RefreshDatabase | Tests full stack |
-| State transitions | Both | Unit for logic, Feature for persistence |
+| State transitions | Feature + RefreshDatabase | Tests persistence and events |
+| Pure calculations | Unit (no database) | No side effects |
+| Value objects | Unit (no database) | Pure logic |
 
-### Using InMemoryQuotationRepository
+### Testing Services with RecordingEventDispatcher
+
+For verifying domain events without side effects:
 
 ```php
-<?php
+use App\Domain\Shared\Events\RecordingEventDispatcher;
 
-use App\Services\Sales\DocumentBasedQuotationService;
-use Tests\Support\InMemoryQuotationRepository;
-use App\Contracts\Events\EventDispatcherInterface;
-use App\Domain\Shared\Events\NullEventDispatcher;
+it('dispatches event on invoice send', function () {
+    $dispatcher = new RecordingEventDispatcher;
+    $service = new InvoiceService($dispatcher, $logger, ...);
 
-describe('QuotationService Unit Tests', function () {
+    $service->send($invoice);
 
-    beforeEach(function () {
-        $this->repository = new InMemoryQuotationRepository;
-        $this->eventDispatcher = new NullEventDispatcher;
-
-        $this->service = new DocumentBasedQuotationService(
-            $this->repository,
-            $this->eventDispatcher,
-            // ... other dependencies
-        );
-    });
-
-    afterEach(function () {
-        $this->repository->reset();  // Clean state between tests
-    });
-
-    it('finds quotations by status without database', function () {
-        // Arrange - seed repository with test data
-        $this->repository->create([
-            'contact_id' => 1,
-            'status' => DocumentStatus::Draft,
-        ]);
-        $this->repository->create([
-            'contact_id' => 2,
-            'status' => DocumentStatus::Submitted,
-        ]);
-
-        // Act
-        $drafts = $this->repository->findByStatus(DocumentStatus::Draft);
-
-        // Assert
-        expect($drafts)->toHaveCount(1);
-    });
-
-    it('can pre-seed specific scenarios', function () {
-        $existing = new Quotation(['contact_id' => 1]);
-        $existing->id = 100;
-        $existing->status = DocumentStatus::Approved;
-
-        $this->repository->seed([$existing]);
-
-        $found = $this->repository->find(100);
-        expect($found)->not->toBeNull();
-        expect($found->status)->toBe(DocumentStatus::Approved);
-    });
+    $dispatcher->assertDispatched(InvoiceSent::class);
 });
 ```
 
-### Helper Methods for Testing
+### Mocking Service Dependencies
 
-| Method | Purpose |
-|--------|---------|
-| `reset()` | Clear all data, reset ID counter |
-| `seed(array $entities)` | Pre-populate with specific entities |
-| `getCollection()` | Direct access for custom assertions |
-| `count(array $criteria)` | Count without database |
-
-### Binding In-Memory Repository in Tests
+When you need to isolate a service from its dependencies:
 
 ```php
-beforeEach(function () {
-    $repository = new InMemoryQuotationRepository;
+use App\Contracts\Sales\InvoiceServiceInterface;
 
-    // Replace binding for this test
-    $this->app->instance(
-        QuotationRepositoryInterface::class,
-        $repository
-    );
+it('creates invoice via service', function () {
+    $mockService = Mockery::mock(InvoiceServiceInterface::class);
+    $mockService->shouldReceive('create')->once()->andReturn($invoice);
 
-    $this->repository = $repository;
-    $this->service = app(QuotationServiceInterface::class);
+    $this->app->instance(InvoiceServiceInterface::class, $mockService);
+
+    // Test code that uses the service...
 });
 ```
 
-### Gotcha: Specifications Don't Work In-Memory
-
-Specifications use Eloquent Builder and won't work with in-memory repositories:
-
-```php
-// ❌ This will throw RuntimeException
-$this->repository->match(new ActiveQuotationsSpecification);
-
-// ✅ Use findBy() with explicit criteria instead
-$this->repository->findBy(['status' => DocumentStatus::Draft]);
-```
-
-See: [REPOSITORIES.md](REPOSITORIES.md#in-memory-repository-for-unit-tests) for full implementation details.
+See: [REPOSITORIES.md](REPOSITORIES.md) for data access patterns used in testing.
 
 ---
 
@@ -622,3 +562,27 @@ php artisan test --parallel
 # With coverage
 php artisan test --coverage
 ```
+
+---
+
+## API Contract Testing
+
+After modifying API Resources, ensure contract consistency:
+
+```bash
+# Run full API integration check (includes tests)
+./scripts/check-api-integration.sh
+
+# Or just run API tests
+php artisan test --filter=ApiTest
+```
+
+**What to test:**
+- API responses match OpenAPI schema
+- Field names are consistent (`total_amount` not `total`)
+- Types are correct (int for amounts, string for dates)
+- Required fields are present
+
+**Pre-commit hook** automatically validates API contracts when API files are modified.
+
+See `docs/04-api/integration-check/` for complete workflow.

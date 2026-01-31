@@ -42,8 +42,14 @@ class InvoiceService
 ### Service Layer Separation
 
 ```php
-// AbstractApplicationService - Only transaction/logging
-abstract class AbstractApplicationService
+// BaseService - Core service functionality
+abstract class BaseService
+{
+    // Provides base constructor and trait composition
+}
+
+// WithTransaction trait - Only transaction/logging
+trait WithTransaction
 {
     protected function executeInTransaction(string $operation, callable $callback): mixed
     {
@@ -52,8 +58,15 @@ abstract class AbstractApplicationService
 }
 
 // InvoiceService - Only invoice business logic
-class InvoiceService extends AbstractDocumentService
+use App\Services\Base\BaseService;
+use App\Services\Base\Traits\WithTransaction;
+use App\Services\Base\Traits\WithDocuments;
+
+class InvoiceService extends BaseService
 {
+    use WithTransaction;
+    use WithDocuments;
+
     public function send(Invoice $invoice): Invoice { }
     public function void(Invoice $invoice): Invoice { }
 }
@@ -138,22 +151,29 @@ interface EventDispatcherInterface
     public function dispatch(object $event): void;
 }
 
-// Domain-specific repository interface
-interface InvoiceRepositoryInterface extends RepositoryInterface
+// Domain-specific service interface - only what consumers need
+interface InvoiceServiceInterface
 {
-    public function findByStatus(DocumentStatus $status): Collection;
-    public function findOverdue(): Collection;
-    public function getOutstandingForContact(int $contactId): int;
+    public function create(array $data): Invoice;
+    public function send(Invoice $invoice): Invoice;
+    public function void(Invoice $invoice): Invoice;
+}
+
+// Calculator interface - separate from service
+interface InvoiceCalculatorInterface
+{
+    public function calculateTotals(Invoice $invoice): array;
 }
 ```
 
 ### Services Get Only What They Need
 
 ```php
-class InvoiceService
+class DeliveryOrderService extends BaseService
 {
     public function __construct(
-        private InvoiceRepositoryInterface $invoiceRepository  // Specific interface
+        private InventoryServiceInterface $inventoryService,  // Only inventory operations
+        // Not the full InvoiceServiceInterface or other unrelated services
     ) {}
 }
 ```
@@ -257,10 +277,10 @@ grep -n "purchaseOrderService" app/Services/Purchasing/GoodsReceiptNoteService.p
 
 | Pattern | Supports | Location |
 |---------|----------|----------|
-| Repository | SRP, DIP | `app/Infrastructure/Repositories/` |
+| Service Contracts | SRP, DIP | `app/Contracts/` (44 interfaces) |
 | Strategy | OCP, LSP | `app/Services/*/Strategies/` |
-| Factory | DIP | `AccountingPolicyManager` |
-| Service Layer | SRP | `app/Services/` |
+| Domain Factory | DIP | `app/Domain/*/` (state machines, calculators) |
+| Service Layer | SRP | `app/Services/` (81 services) |
 
 ---
 

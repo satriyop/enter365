@@ -12,8 +12,7 @@ Lessons learned from code review analysis. These are the patterns that cause the
 
 | Pattern | Infrastructure Built | Actual Usage |
 |---------|---------------------|--------------|
-| Repository | 4 interfaces | 70 models use Eloquent directly |
-| Domain Factory | QuotationDomainFactory | Only Quotation uses it |
+| Domain Factory | 4 factories | Used by models with state machines ✅ |
 | OperationContext | Full implementation | ✅ Fixed: Now uses middleware |
 
 **Problem:** Developers see infrastructure that's never used. Confuses everyone.
@@ -23,8 +22,8 @@ Lessons learned from code review analysis. These are the patterns that cause the
 - Or **delete it** (YAGNI)
 
 **Decision made for Enter365:**
-- Repository: Hybrid approach (aggregates only, not all models)
-- Domain Factory: For models with state machines
+- No repository layer — services access Eloquent directly
+- Domain Factory: For models with state machines (Quotation, Invoice, PurchaseOrder, WorkOrder)
 - OperationContext: Middleware auto-binding (complete)
 
 ---
@@ -33,14 +32,13 @@ Lessons learned from code review analysis. These are the patterns that cause the
 
 **Symptom:** Service with 500+ lines, 8+ constructor dependencies, multiple responsibilities.
 
-**Real Example - QuotationService (549 lines, 12 dependencies):**
+**Real Example - QuotationService (549 lines, 11 dependencies, before refactoring):**
 
 ```php
 public function __construct(
-    QuotationRepositoryInterface $repository,
-    DocumentNumberGeneratorInterface $numberGenerator,
     EventDispatcherInterface $eventDispatcher,
     ContextualLoggerInterface $logger,
+    DocumentNumberGeneratorInterface $numberGenerator,
     QuotationNumberGeneratorInterface $quotationNumberGenerator,
     QuotationDefaults $defaults,
     QuotationItemCreator $itemCreator,
@@ -86,9 +84,9 @@ See: [ARCHITECTURE_PATTERNS.md](ARCHITECTURE_PATTERNS.md#coordinator-pattern-for
 
 **Symptom:** Logic in wrong layer - repository doing calculations, controller doing business logic.
 
-#### 3a. Repository Doing Business Logic
+#### 3a. Data Access Mixed with Business Logic
 
-**Bad - EloquentQuotationRepository (40 lines of calculation):**
+**Bad - Service mixing raw query and calculation in one method:**
 ```php
 public function getWinRateStats(?DateRange $range = null): array
 {
@@ -96,7 +94,7 @@ public function getWinRateStats(?DateRange $range = null): array
         ->select(...)
         ->get();
 
-    // ❌ Business calculation in repository
+    // ❌ Business calculation mixed with data access
     $winRate = $decided > 0 ? round(($won / $decided) * 100, 2) : 0.0;
 
     return [...];
@@ -104,14 +102,14 @@ public function getWinRateStats(?DateRange $range = null): array
 ```
 
 **Why It's Bad:**
-- Repository should return **data**, not calculate business metrics
+- Data access and business logic are tangled
 - Can't test calculation logic without database
-- Mixes data access with business rules
+- Method does two things (query + calculate)
 
-**Good - Repository returns raw data, Service calculates:**
+**Good - Separate data retrieval from calculation:**
 ```php
-// Repository - just data
-public function getQuotationCountsByOutcome(?DateRange $range = null): array
+// Data retrieval method (or use DB::table() for aggregation)
+private function getQuotationCountsByOutcome(?DateRange $range = null): array
 {
     return DB::table('quotations')
         ->select('outcome')
@@ -122,12 +120,12 @@ public function getQuotationCountsByOutcome(?DateRange $range = null): array
         ->toArray();
 }
 
-// Analytics Service - business logic
+// Public method - business logic
 public function getWinRateStats(?DateRange $range = null): array
 {
-    $rawStats = $this->repository->getQuotationCountsByOutcome($range);
+    $rawStats = $this->getQuotationCountsByOutcome($range);
 
-    // ✅ Business calculation in service
+    // ✅ Business calculation separated from data access
     $decided = $rawStats['won'] + $rawStats['lost'];
     $winRate = $decided > 0 ? round(($rawStats['won'] / $decided) * 100, 2) : 0.0;
 
@@ -242,7 +240,7 @@ Use this during code review:
 - [ ] Pass-through methods that just delegate?
 
 ### Business Logic Misplacement Detection
-- [ ] Repository has calculations (SUM, AVG, percentages)?
+- [ ] Data access method has calculations (SUM, AVG, percentages)?
 - [ ] Controller has more than validation/auth/response?
 - [ ] Model uses `app()` helper?
 - [ ] Domain Factory has proxy methods that just forward calls?
@@ -291,14 +289,9 @@ Tracking what was actually fixed:
 - `QuotationWorkflowService.php` (205 lines) - submit, approve, reject, cancel
 - `QuotationStatisticsService.php` (67 lines) - statistics, dashboard
 
-### Pending
+### All Phases Complete
 
-| Issue | File | Status |
-|-------|------|--------|
-| **Business logic in repository** | `EloquentQuotationRepository.php` | Phase 3 - Move calculations to AnalyticsService |
-| **Business logic in controller** | `QuotationController.php` | Phase 3 - Move to service |
-
-See: `/plans/fixing/top-3-code-issues-remediation.md` for full plan.
+All identified anti-patterns have been resolved. See [REFACTORING_HISTORY.md](REFACTORING_HISTORY.md) for detailed migration notes.
 
 ---
 
@@ -342,14 +335,15 @@ find app/Services -name "*.php" -exec basename {} \; | sort | uniq -d
 
 | Service | Pattern | Base Class | Transaction |
 |---------|---------|------------|-------------|
-| `QuotationCrudService` | A (good) | AbstractApplicationService | `executeInTransaction()` |
-| `PurchaseOrderService` | B (legacy) | AbstractDocumentService | Mixed |
-| `QuotationConversionService` | C (bad) | None | Raw `DB::transaction()` |
+| `QuotationCrudService` | A (good) | BaseService + WithTransaction | `executeInTransaction()` |
+| `PurchaseOrderService` | A (current) | BaseService + WithDocuments | `executeInTransaction()` |
+| `QuotationConversionService` | A (current) | BaseService + WithTransaction | `executeInTransaction()` |
 
 **The Fix Applied (Jan 2026):**
 
-All services now follow Pattern A:
-- Extend `AbstractApplicationService` (or `AbstractDocumentService` for documents)
+All services now follow BaseService + Traits pattern:
+- Extend `BaseService` (all services)
+- Use traits: `WithTransaction`, `WithEventDispatching`, `WithOperationContext`, `WithDocuments` (as needed)
 - Use `executeInTransaction()` for all write operations
 - Use `$this->getUserId()` instead of `auth()->id()`
 
@@ -364,8 +358,8 @@ All services now follow Pattern A:
 
 **Verification:**
 ```bash
-# Should return 0 results (only AbstractApplicationService.php allowed)
-grep -rn "DB::transaction" app/Services/ | grep -v "AbstractApplicationService"
+# Should return 0 results (only BaseService.php and WithTransaction.php allowed)
+grep -rn "DB::transaction" app/Services/ | grep -v "BaseService\|WithTransaction"
 ```
 
 See: [SKILL.md - Pattern Commitment](SKILL.md#critical-pattern-commitment-read-first) and [REFACTORING_HISTORY.md](REFACTORING_HISTORY.md#p4-complete-pattern-a-migration-jan-2026)
@@ -431,10 +425,12 @@ All architectural issues resolved. Pattern A compliance at 100%.
 | ~~**P4**~~ | ~~Complete Pattern A migration~~ | 7 remaining services | ✅ **FIXED** (18 transactions migrated) |
 
 **Final State (Jan 2026):**
-- All 29 services extend `AbstractApplicationService` or `AbstractDocumentService`
-- All services use `executeInTransaction()` for write operations
-- All services use `$this->getUserId()` instead of `auth()->id()`
+- All services extend `BaseService` with composable traits
+- All services use `executeInTransaction()` for write operations (via `WithTransaction` trait)
+- All services use `$this->getUserId()` instead of `auth()->id()` (via `WithOperationContext` trait)
 - CI script prevents regression: `scripts/check-pattern-compliance.sh`
+
+**Note:** `AbstractApplicationService` and `AbstractDocumentService` are deprecated. Use `BaseService + traits` instead.
 
 See: [REFACTORING_HISTORY.md](REFACTORING_HISTORY.md) for detailed migration notes.
 
@@ -446,8 +442,7 @@ See: [REFACTORING_HISTORY.md](REFACTORING_HISTORY.md) for detailed migration not
 |-------|------|
 | God Service fix | [ARCHITECTURE_PATTERNS.md](ARCHITECTURE_PATTERNS.md#coordinator-pattern-for-god-services) |
 | Domain Factory | [ARCHITECTURE_PATTERNS.md](ARCHITECTURE_PATTERNS.md#domain-factory-pattern) |
-| Repository pattern | [REPOSITORIES.md](REPOSITORIES.md) |
-| Remediation plan | `/plans/fixing/top-3-code-issues-remediation.md` |
-| Pattern enforcement | `/plans/fixing/pattern-drift-prevention.md` |
+| Data access patterns | [REPOSITORIES.md](REPOSITORIES.md) |
+| Refactoring history | [REFACTORING_HISTORY.md](REFACTORING_HISTORY.md) |
 | Gotcha #26 (Proxy methods) | [SKILL.md](SKILL.md#26-proxy-methods-add-no-value---use-state-machine-directly) |
 | Gotcha #27 (Service locator) | [SKILL.md](SKILL.md#27-service-locator-in-models---replace-with-inline-logic) |

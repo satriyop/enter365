@@ -1,6 +1,6 @@
 # State Machines Reference
 
-All state machines in Enter365 with states, transitions, and usage.
+All 15 state machines in Enter365 with states, transitions, and usage.
 
 ---
 
@@ -144,7 +144,25 @@ approved → [completed, cancelled]
 
 ---
 
-### 5. PurchaseOrderStateMachine
+### 5. BillStateMachine
+
+**File:** `app/Domain/Purchasing/Bills/BillStateMachine.php`
+
+```
+draft → [received, cancelled]
+received → [partial, paid, overdue, cancelled]
+partial → [paid, overdue, cancelled]
+paid → [cancelled]
+overdue → [partial, paid, cancelled]
+```
+
+**Permission Methods:** `canPost()`, `canMarkAsPartial()`, `canMarkAsPaid()`, `canMarkAsOverdue()`, `canCancel()`, `canEdit()`, `canDelete()`
+
+**Guards:** Received: requires items; Paid: paid_amount ≥ total_amount; Partial: 0 < paid_amount < total_amount; Overdue: due_date passed
+
+---
+
+### 6. PurchaseOrderStateMachine
 
 **File:** `app/Domain/Purchasing/PurchaseOrders/PurchaseOrderStateMachine.php`
 
@@ -160,7 +178,7 @@ rejected → [draft]
 
 ---
 
-### 6. PurchaseReturnStateMachine
+### 7. PurchaseReturnStateMachine
 
 **File:** `app/Domain/Purchasing/PurchaseReturns/PurchaseReturnStateMachine.php`
 
@@ -172,7 +190,22 @@ approved → [completed, cancelled]
 
 ---
 
-### 7. ProjectStateMachine
+### 8. GoodsReceiptNoteStateMachine
+
+**File:** `app/Domain/Purchasing/GoodsReceiptNotes/GoodsReceiptNoteStateMachine.php`
+
+```
+draft → [receiving, completed, cancelled]
+receiving → [completed, cancelled]
+```
+
+**Permission Methods:** `canStartReceiving()`, `canComplete()`, `canCancel()`, `canEdit()`, `canDelete()`
+
+**Guards:** Receiving: requires items; Completed: requires items with quantity_received > 0
+
+---
+
+### 9. ProjectStateMachine
 
 **File:** `app/Domain/Projects/ProjectStateMachine.php`
 
@@ -187,7 +220,7 @@ on_hold → [in_progress, completed, cancelled]
 
 ---
 
-### 8. FiscalPeriodStateMachine
+### 10. FiscalPeriodStateMachine
 
 **File:** `app/Domain/Accounting/FiscalPeriods/FiscalPeriodStateMachine.php`
 
@@ -199,6 +232,96 @@ locked → [open, closing]
 closing → [locked, closed]
 closed → [open]
 ```
+
+---
+
+### 11. WorkOrderStateMachine
+
+**File:** `app/Domain/Manufacturing/WorkOrders/WorkOrderStateMachine.php`
+
+```
+draft → [confirmed, cancelled]
+confirmed → [in_progress, cancelled]
+in_progress → [completed, cancelled]
+```
+
+**Permission Methods:** `canConfirm()`, `canStart()`, `canComplete()`, `canCancel()`, `canEdit()`, `canDelete()`
+
+**Guards:** Draft→Confirmed: has items; InProgress→Completed: all sub-work orders completed
+
+**Timestamps:** confirmed_by/at, started_by/at + actual_start_date, completed_by/at + actual_end_date + quantity_completed, cancelled_by/at + reason
+
+---
+
+### 12. MaterialRequisitionStateMachine
+
+**File:** `app/Domain/Manufacturing/MaterialRequisitions/MaterialRequisitionStateMachine.php`
+
+```
+draft → [approved, cancelled]
+approved → [issued, partial, cancelled]
+partial → [issued, cancelled]
+```
+
+**Permission Methods:** `canApprove()`, `canIssue()`, `canCancel()`, `canEdit()`, `canDelete()`
+
+**Guards:** Approve: requires items
+
+**Events:** `MaterialRequisitionApproved`, `MaterialRequisitionIssued`, `MaterialRequisitionCancelled`
+
+---
+
+### 13. SubcontractorWorkOrderStateMachine
+
+**File:** `app/Domain/Manufacturing/SubcontractorWorkOrders/SubcontractorWorkOrderStateMachine.php`
+
+```
+draft → [assigned, cancelled]
+assigned → [in_progress, cancelled]
+in_progress → [completed, cancelled]
+```
+
+**Permission Methods:** `canAssign()`, `canStart()`, `canComplete()`, `canCancel()`, `canEdit()`, `canDelete()`
+
+**Timestamps:** assigned_at/by, actual_start_date + started_at/by, actual_end_date + completed_at/by + completion_percentage=100, cancelled_at/by + reason
+
+**Events:** `SubcontractorWorkOrderAssigned`, `SubcontractorWorkOrderStarted`, `SubcontractorWorkOrderCompleted`, `SubcontractorWorkOrderCancelled`
+
+---
+
+### 14. StockOpnameStateMachine
+
+**File:** `app/Domain/Inventory/StockOpname/StockOpnameStateMachine.php`
+
+```
+draft → [counting, cancelled]
+counting → [reviewed, cancelled]
+reviewed → [approved, counting, cancelled]
+approved → [completed]
+```
+
+**Permission Methods:** `canStartCounting()`, `canSubmitForReview()`, `canApprove()`, `canReject()`, `canComplete()`, `canCancel()`, `canEdit()`
+
+**Guards:** StartCounting: requires items; SubmitForReview: all items must be counted
+
+**Timestamps:** counting_started_at + counted_by, reviewed_at + reviewed_by, approved_at + approved_by, completed_at, cancelled_at
+
+---
+
+### 15. SolarProposalStateMachine
+
+**File:** `app/Domain/Solar/Proposals/SolarProposalStateMachine.php`
+
+```
+draft → [sent]
+sent → [accepted, rejected, expired]
+```
+
+**Permission Methods:** `canSend()`, `canAccept()`, `canReject()`, `canEdit()`, `canDelete()`
+
+**Guards:** Send: variant_group_id && financial_analysis not null; Accept/Reject: not expired
+
+**Timestamps:** sent_at + public_token (UUID) + public_token_expires_at, accepted_at, rejected_at + reason
 
 ---
 

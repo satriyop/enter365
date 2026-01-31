@@ -7,12 +7,14 @@ All domain exceptions with their error codes, context parameters, and usage.
 ## Exception Hierarchy
 
 ```
-DomainException (base)
-├── ValidationException
-├── StateTransitionException
+DomainException (abstract base)
+├── BusinessRuleException
 ├── DocumentLockedException
+├── EntityNotFoundException
 ├── InsufficientStockException
-└── MissingAccountException
+├── MissingAccountException
+├── StateTransitionException
+└── ValidationException
 ```
 
 ---
@@ -304,15 +306,54 @@ throw MissingAccountException::forType(
 
 ---
 
+## BusinessRuleException
+
+**Code:** `BUSINESS_RULE_VIOLATION`
+**HTTP Status:** 409
+
+For business rule violations that are not form validation errors.
+
+### Usage
+
+```php
+use App\Exceptions\Domain\BusinessRuleException;
+
+throw new BusinessRuleException(
+    message: 'Pesanan pembelian sudah memiliki penerimaan barang.'
+);
+```
+
+---
+
+## EntityNotFoundException
+
+**Code:** `ENTITY_NOT_FOUND`
+**HTTP Status:** 404
+
+For entity not found errors with domain context.
+
+### Usage
+
+```php
+use App\Exceptions\Domain\EntityNotFoundException;
+
+// Use constructor (NOT static factory - see SKILL.md Gotcha #20)
+throw new EntityNotFoundException('Quotation', $id);
+```
+
+---
+
 ## When to Use Each Exception
 
 | Scenario | Exception |
 |----------|-----------|
-| Business rule violated | `ValidationException` |
+| Business rule violated | `BusinessRuleException` |
+| Form/data validation failed | `ValidationException` |
 | Invalid workflow transition | `StateTransitionException` |
 | Trying to edit posted document | `DocumentLockedException` |
 | Not enough inventory | `InsufficientStockException` |
 | Account not found/configured | `MissingAccountException` |
+| Entity not found | `EntityNotFoundException` |
 
 ---
 

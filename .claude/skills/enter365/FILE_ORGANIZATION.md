@@ -36,8 +36,7 @@ app/
 ├── Enums/                     # Core enums (DocumentStatus)
 ├── Infrastructure/
 │   ├── Events/
-│   ├── Listeners/
-│   └── Repositories/
+│   └── Listeners/
 └── Providers/
 ```
 
@@ -72,7 +71,6 @@ app/
 | Model | `app/Models/Sales/` | `SalesReceipt.php` |
 | Model | `app/Models/Sales/` | `SalesReceiptItem.php` |
 | Service | `app/Services/Sales/` | `SalesReceiptService.php` |
-| Repository | `app/Infrastructure/Repositories/Sales/` | `EloquentSalesReceiptRepository.php` |
 | Listener | `app/Listeners/Sales/` | `SalesReceiptEventSubscriber.php` |
 | Controller | `app/Http/Controllers/Api/V1/` | `SalesReceiptController.php` |
 | Request | `app/Http/Requests/Api/V1/` | `StoreSalesReceiptRequest.php` |
@@ -90,7 +88,6 @@ app/
 | Controller | `{Entity}Controller` | `InvoiceController` |
 | Service | `{Entity}Service` | `InvoiceService` |
 | Interface | `{Entity}ServiceInterface` | `InvoiceServiceInterface` |
-| Repository | `Eloquent{Entity}Repository` | `EloquentInvoiceRepository` |
 | Form Request | `Store{Entity}Request` | `StoreInvoiceRequest` |
 | Form Request | `Update{Entity}Request` | `UpdateInvoiceRequest` |
 | Resource | `{Entity}Resource` | `InvoiceResource` |

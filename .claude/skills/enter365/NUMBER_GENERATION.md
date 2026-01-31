@@ -91,31 +91,42 @@ Format: `{PROJECT_NUMBER}/{PREFIX}/{SEQ}`
 
 ## Using in Services
 
-### AbstractDocumentService Pattern
+### BaseService + WithDocuments Trait Pattern
+
+**Current Pattern (2026):**
 
 ```php
-abstract class AbstractDocumentService
-{
-    abstract protected function getDocumentNumberField(): string;
-    abstract protected function getDocumentNumberPrefix(): string;
-    abstract protected function getDocumentNumberConfig(): array;
+use App\Services\Base\BaseService;
+use App\Services\Base\Traits\WithDocuments;
 
-    protected function generateDocumentNumber(): string
+class InvoiceService extends BaseService
+{
+    use WithDocuments;
+
+    // Required abstract methods for WithDocuments trait
+    protected function getDocumentNumberField(): string
     {
-        return $this->numberGenerator->generate(
-            $this->getDocumentNumberPrefix(),
-            $this->getDocumentNumberConfig()['table'],
-            $this->getDocumentNumberConfig()['column']
-        );
+        return 'invoice_number';
     }
-}
+
+    protected function getDocumentNumberPrefix(): string
+    {
+        return 'INV-'.now()->format('Ym').'-';
+    }
 ```
+
+**Note:** `AbstractDocumentService` is deprecated. Use `BaseService + WithDocuments` trait instead.
 
 ### Invoice Service Example
 
 ```php
-class InvoiceService extends AbstractDocumentService
+use App\Services\Base\BaseService;
+use App\Services\Base\Traits\WithDocuments;
+
+class InvoiceService extends BaseService
 {
+    use WithDocuments;
+
     protected function getDocumentNumberField(): string
     {
         return 'invoice_number';
@@ -132,6 +143,11 @@ class InvoiceService extends AbstractDocumentService
             'table' => 'invoices',
             'column' => 'invoice_number',
         ];
+    }
+
+    protected function getItemRelation(): string
+    {
+        return 'items';
     }
 }
 ```
