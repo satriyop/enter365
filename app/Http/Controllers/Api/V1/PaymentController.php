@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Contracts\Shared\PaymentServiceInterface;
 use App\Filters\PaymentFilter;
-use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StorePaymentRequest;
 use App\Http\Resources\Api\V1\PaymentResource;
 use App\Models\Shared\Payment;
@@ -23,6 +22,8 @@ class PaymentController extends Controller
      */
     public function index(PaymentFilter $filter): AnonymousResourceCollection
     {
+        $this->authorize('viewAny', Payment::class);
+
         $payments = Payment::query()
             ->with(['contact', 'cashAccount']) // Default eager loads
             ->filter($filter)
@@ -35,19 +36,21 @@ class PaymentController extends Controller
 
     public function store(StorePaymentRequest $request): JsonResponse
     {
+        $this->authorize('create', Payment::class);
+
         try {
             $payment = $this->paymentService->create($request->validated());
 
-            return (new PaymentResource($payment))
-                ->response()
-                ->setStatusCode(201);
+            return $this->created(new PaymentResource($payment), 'Pembayaran berhasil dibuat.');
         } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
+            return $this->error($e->getMessage(), 422);
         }
     }
 
     public function show(Payment $payment, PaymentFilter $filter): PaymentResource
     {
+        $this->authorize('view', $payment);
+
         $filter->apply($payment->newQuery());
 
         $payment->loadMissing(['contact', 'cashAccount', 'journalEntry.lines.account']);
@@ -57,17 +60,17 @@ class PaymentController extends Controller
 
     public function void(Payment $payment): JsonResponse
     {
+        $this->authorize('void', $payment);
+
         try {
             $voidedPayment = $this->paymentService->void($payment);
 
-            return response()->json([
-                'message' => 'Pembayaran berhasil dibatalkan.',
-                'payment' => new PaymentResource($voidedPayment),
-            ]);
+            return $this->success(
+                new PaymentResource($voidedPayment),
+                'Pembayaran berhasil dibatalkan.'
+            );
         } catch (InvalidArgumentException $e) {
-            return response()->json([
-                'message' => $e->getMessage(),
-            ], 422);
+            return $this->error($e->getMessage(), 422);
         }
     }
 }

@@ -7,15 +7,12 @@ use App\Models\Purchasing\Bill;
 use App\Models\Sales\DownPayment;
 use App\Models\Sales\DownPaymentApplication;
 use App\Models\Sales\Invoice;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->user = User::factory()->create();
-    Sanctum::actingAs($this->user);
+    $this->user = authenticatedAdmin();
 
     // Seed chart of accounts
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\ChartOfAccountsSeeder']);

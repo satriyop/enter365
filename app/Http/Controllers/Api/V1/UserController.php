@@ -1,9 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api\V1;
 
 use App\Filters\UserFilter;
-use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreUserRequest;
 use App\Http\Requests\Api\V1\UpdatePasswordRequest;
 use App\Http\Requests\Api\V1\UpdateUserRequest;
@@ -18,14 +19,13 @@ class UserController extends Controller
 {
     /**
      * Display a listing of users.
-     * Only admin can list all users.
      */
     public function index(UserFilter $filter): AnonymousResourceCollection
     {
-        $this->authorizeAdmin($filter->getRequest());
+        $this->authorize('viewAny', User::class);
 
         $users = User::query()
-            ->with(['roles']) // Default eager loads
+            ->with(['roles'])
             ->filter($filter)
             ->orderBy('name')
             ->paginate($filter->getRequest()->input('per_page', 15));
@@ -35,10 +35,11 @@ class UserController extends Controller
 
     /**
      * Store a newly created user.
-     * Only admin can create users.
      */
     public function store(StoreUserRequest $request): JsonResponse
     {
+        $this->authorize('create', User::class);
+
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
@@ -53,71 +54,60 @@ class UserController extends Controller
 
         $user->load('roles');
 
-        return response()->json([
-            'message' => 'User berhasil dibuat.',
-            'user' => new UserResource($user),
-        ], 201);
+        return $this->created(new UserResource($user), 'User berhasil dibuat.');
     }
 
     /**
      * Display the specified user.
      */
-    public function show(Request $request, User $user, UserFilter $filter): JsonResponse
+    public function show(User $user, UserFilter $filter): UserResource
     {
-        // Users can only view themselves unless admin
-        if (! $request->user()->isAdmin() && $request->user()->id !== $user->id) {
-            abort(403, 'Anda tidak memiliki akses untuk melihat user ini.');
-        }
+        $this->authorize('view', $user);
 
         $filter->apply($user->newQuery());
 
         $user->loadMissing(['roles']);
 
-        return response()->json([
-            'user' => new UserResource($user),
-        ]);
+        return new UserResource($user);
     }
 
     /**
      * Update the specified user.
      */
-    public function update(UpdateUserRequest $request, User $user): JsonResponse
+    public function update(UpdateUserRequest $request, User $user): UserResource
     {
+        $this->authorize('update', $user);
+
         $data = $request->only(['name', 'email']);
 
-        // Only admin can update is_active
-        if ($request->user()->isAdmin() && $request->has('is_active')) {
-            $data['is_active'] = $request->boolean('is_active');
+        // Only users with manageRoles permission can update is_active and roles
+        if ($request->user()->can('manageRoles', User::class)) {
+            if ($request->has('is_active')) {
+                $data['is_active'] = $request->boolean('is_active');
+            }
         }
 
         $user->update($data);
 
-        // Only admin can update roles
-        if ($request->user()->isAdmin() && $request->has('roles')) {
+        if ($request->user()->can('manageRoles', User::class) && $request->has('roles')) {
             $user->roles()->sync($request->input('roles'));
         }
 
         $user->load('roles');
 
-        return response()->json([
-            'message' => 'User berhasil diperbarui.',
-            'user' => new UserResource($user),
-        ]);
+        return new UserResource($user);
     }
 
     /**
      * Remove the specified user.
-     * Only admin can delete users.
      */
     public function destroy(Request $request, User $user): JsonResponse
     {
-        $this->authorizeAdmin($request);
+        $this->authorize('delete', $user);
 
         // Cannot delete yourself
         if ($request->user()->id === $user->id) {
-            return response()->json([
-                'message' => 'Anda tidak dapat menghapus akun Anda sendiri.',
-            ], 422);
+            return $this->error('Anda tidak dapat menghapus akun Anda sendiri.', 422);
         }
 
         // Revoke all tokens
@@ -125,9 +115,7 @@ class UserController extends Controller
 
         $user->delete();
 
-        return response()->json([
-            'message' => 'User berhasil dihapus.',
-        ]);
+        return $this->deleted('User berhasil dihapus.');
     }
 
     /**
@@ -135,6 +123,8 @@ class UserController extends Controller
      */
     public function updatePassword(UpdatePasswordRequest $request, User $user): JsonResponse
     {
+        $this->authorize('update', $user);
+
         $user->update([
             'password' => Hash::make($request->password),
         ]);
@@ -147,18 +137,15 @@ class UserController extends Controller
             $user->tokens()->delete();
         }
 
-        return response()->json([
-            'message' => 'Password berhasil diperbarui.',
-        ]);
+        return $this->success(message: 'Password berhasil diperbarui.');
     }
 
     /**
      * Assign roles to user.
-     * Only admin can assign roles.
      */
     public function assignRoles(Request $request, User $user): JsonResponse
     {
-        $this->authorizeAdmin($request);
+        $this->authorize('manageRoles', User::class);
 
         $request->validate([
             'roles' => ['required', 'array'],
@@ -168,25 +155,22 @@ class UserController extends Controller
         $user->roles()->sync($request->input('roles'));
         $user->load('roles');
 
-        return response()->json([
-            'message' => 'Role berhasil diperbarui.',
-            'user' => new UserResource($user),
-        ]);
+        return $this->success(
+            new UserResource($user),
+            'Role berhasil diperbarui.'
+        );
     }
 
     /**
      * Toggle user active status.
-     * Only admin can toggle status.
      */
     public function toggleActive(Request $request, User $user): JsonResponse
     {
-        $this->authorizeAdmin($request);
+        $this->authorize('manageRoles', User::class);
 
         // Cannot deactivate yourself
         if ($request->user()->id === $user->id) {
-            return response()->json([
-                'message' => 'Anda tidak dapat menonaktifkan akun Anda sendiri.',
-            ], 422);
+            return $this->error('Anda tidak dapat menonaktifkan akun Anda sendiri.', 422);
         }
 
         $user->update([
@@ -198,21 +182,11 @@ class UserController extends Controller
             $user->tokens()->delete();
         }
 
-        return response()->json([
-            'message' => $user->is_active
+        return $this->success(
+            new UserResource($user->load('roles')),
+            $user->is_active
                 ? 'User berhasil diaktifkan.'
-                : 'User berhasil dinonaktifkan.',
-            'user' => new UserResource($user->load('roles')),
-        ]);
-    }
-
-    /**
-     * Check if user is admin.
-     */
-    private function authorizeAdmin(Request $request): void
-    {
-        if (! $request->user()->isAdmin()) {
-            abort(403, 'Hanya administrator yang dapat mengakses resource ini.');
-        }
+                : 'User berhasil dinonaktifkan.'
+        );
     }
 }

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\DocumentStatus;
-use App\Http\Controllers\Controller;
 use App\Models\Accounting\Account;
 use App\Models\Contacts\Contact;
 use App\Models\Purchasing\Bill;
@@ -27,7 +26,7 @@ class DashboardController extends Controller
         $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->input('end_date', now()->toDateString());
 
-        return response()->json([
+        return $this->success([
             'period' => [
                 'start_date' => $startDate,
                 'end_date' => $endDate,
@@ -51,7 +50,7 @@ class DashboardController extends Controller
         $total = $invoices->sum(fn ($inv) => $inv->total_amount - $inv->paid_amount);
         $overdue = $invoices->where('status', DocumentStatus::Overdue)->sum(fn ($inv) => $inv->total_amount - $inv->paid_amount);
 
-        return response()->json([
+        return $this->success([
             'total_outstanding' => $total,
             'total_overdue' => $overdue,
             'count' => $invoices->count(),
@@ -72,7 +71,7 @@ class DashboardController extends Controller
         $total = $bills->sum(fn ($bill) => $bill->total_amount - $bill->paid_amount);
         $overdue = $bills->where('status', DocumentStatus::Overdue)->sum(fn ($bill) => $bill->total_amount - $bill->paid_amount);
 
-        return response()->json([
+        return $this->success([
             'total_outstanding' => $total,
             'total_overdue' => $overdue,
             'count' => $bills->count(),
@@ -105,7 +104,7 @@ class DashboardController extends Controller
             ->orderBy('date')
             ->get();
 
-        return response()->json([
+        return $this->success([
             'period_days' => $days,
             'total_inflow' => $dailyMovement->sum('inflow'),
             'total_outflow' => $dailyMovement->sum('outflow'),
@@ -127,7 +126,7 @@ class DashboardController extends Controller
         $totalExpense = $expenseAccounts->sum(fn ($acc) => abs($this->getAccountBalanceForPeriod($acc, $startDate, $endDate)));
         $netIncome = $totalRevenue - $totalExpense;
 
-        return response()->json([
+        return $this->success([
             'period' => [
                 'start_date' => $startDate,
                 'end_date' => $endDate,
@@ -190,7 +189,7 @@ class DashboardController extends Controller
             ->selectRaw("{$avgDaysExpression} as avg_days")
             ->value('avg_days') ?? 0;
 
-        return response()->json([
+        return $this->success([
             'revenue' => [
                 'current_month' => $currentRevenue,
                 'last_month' => $lastRevenue,

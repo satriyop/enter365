@@ -2,9 +2,7 @@
 
 use App\Models\Contacts\Contact;
 use App\Models\Sales\Invoice;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
@@ -12,9 +10,8 @@ beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\ChartOfAccountsSeeder']);
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\FiscalPeriodSeeder']);
 
-    // Authenticate user
-    $user = User::factory()->create();
-    Sanctum::actingAs($user);
+    // Authenticate as admin (has all permissions)
+    authenticatedAdmin();
 });
 
 describe('Credit Status API', function () {
@@ -28,15 +25,17 @@ describe('Credit Status API', function () {
 
         $response->assertOk()
             ->assertJsonStructure([
-                'contact_id',
-                'name',
-                'credit_limit',
-                'receivable_balance',
-                'available_credit',
-                'credit_utilization_percent',
-                'is_exceeded',
-                'is_warning',
-                'can_create_invoice',
+                'data' => [
+                    'contact_id',
+                    'name',
+                    'credit_limit',
+                    'receivable_balance',
+                    'available_credit',
+                    'credit_utilization_percent',
+                    'is_exceeded',
+                    'is_warning',
+                    'can_create_invoice',
+                ],
             ]);
     });
 
@@ -62,11 +61,11 @@ describe('Credit Status API', function () {
         $response = $this->getJson("/api/v1/contacts/{$customer->id}/credit-status");
 
         $response->assertOk()
-            ->assertJsonPath('receivable_balance', 5000000)
-            ->assertJsonPath('available_credit', 5000000)
-            ->assertJsonPath('is_exceeded', false);
+            ->assertJsonPath('data.receivable_balance', 5000000)
+            ->assertJsonPath('data.available_credit', 5000000)
+            ->assertJsonPath('data.is_exceeded', false);
 
-        expect((float) $response->json('credit_utilization_percent'))->toBe(50.0);
+        expect((float) $response->json('data.credit_utilization_percent'))->toBe(50.0);
     });
 
     it('detects exceeded credit limit', function () {
@@ -83,8 +82,8 @@ describe('Credit Status API', function () {
         $response = $this->getJson("/api/v1/contacts/{$customer->id}/credit-status");
 
         $response->assertOk()
-            ->assertJsonPath('is_exceeded', true)
-            ->assertJsonPath('available_credit', 0);
+            ->assertJsonPath('data.is_exceeded', true)
+            ->assertJsonPath('data.available_credit', 0);
     });
 
     it('detects credit limit warning threshold', function () {
@@ -101,8 +100,8 @@ describe('Credit Status API', function () {
         $response = $this->getJson("/api/v1/contacts/{$customer->id}/credit-status");
 
         $response->assertOk()
-            ->assertJsonPath('is_warning', true)
-            ->assertJsonPath('is_exceeded', false);
+            ->assertJsonPath('data.is_warning', true)
+            ->assertJsonPath('data.is_exceeded', false);
     });
 
     it('handles customer with no credit limit', function () {
@@ -119,9 +118,9 @@ describe('Credit Status API', function () {
         $response = $this->getJson("/api/v1/contacts/{$customer->id}/credit-status");
 
         $response->assertOk()
-            ->assertJsonPath('is_exceeded', false)
-            ->assertJsonPath('is_warning', false)
-            ->assertJsonPath('can_create_invoice', true);
+            ->assertJsonPath('data.is_exceeded', false)
+            ->assertJsonPath('data.is_warning', false)
+            ->assertJsonPath('data.can_create_invoice', true);
     });
 
     it('considers only outstanding invoices', function () {
@@ -144,8 +143,8 @@ describe('Credit Status API', function () {
         $response = $this->getJson("/api/v1/contacts/{$customer->id}/credit-status");
 
         $response->assertOk()
-            ->assertJsonPath('receivable_balance', 0)
-            ->assertJsonPath('available_credit', 10000000);
+            ->assertJsonPath('data.receivable_balance', 0)
+            ->assertJsonPath('data.available_credit', 10000000);
     });
 
     it('calculates partial payments correctly', function () {
@@ -162,7 +161,7 @@ describe('Credit Status API', function () {
         $response = $this->getJson("/api/v1/contacts/{$customer->id}/credit-status");
 
         $response->assertOk()
-            ->assertJsonPath('receivable_balance', 3000000)
-            ->assertJsonPath('available_credit', 7000000);
+            ->assertJsonPath('data.receivable_balance', 3000000)
+            ->assertJsonPath('data.available_credit', 7000000);
     });
 });

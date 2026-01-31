@@ -5,15 +5,12 @@ use App\Models\Inventory\ProductCategory;
 use App\Models\Inventory\Warehouse;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\InvoiceItem;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $user = User::factory()->create();
-    Sanctum::actingAs($user);
+    authenticatedAdmin();
 
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\ChartOfAccountsSeeder']);
 });
@@ -271,6 +268,7 @@ describe('Product API', function () {
         $response = $this->deleteJson("/api/v1/products/{$product->id}");
 
         $response->assertOk()
+            ->assertJsonPath('success', true)
             ->assertJsonPath('message', 'Produk berhasil dihapus.');
 
         $this->assertDatabaseMissing('products', ['id' => $product->id]);
@@ -289,6 +287,7 @@ describe('Product API', function () {
         $response = $this->deleteJson("/api/v1/products/{$product->id}");
 
         $response->assertOk()
+            ->assertJsonPath('success', true)
             ->assertJsonPath('message', 'Produk dinonaktifkan karena sudah memiliki transaksi.');
 
         $this->assertDatabaseHas('products', [
@@ -311,9 +310,9 @@ describe('Product API', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('current_stock', 60)
-            ->assertJsonPath('adjustment', 10)
-            ->assertJsonStructure(['movement_id', 'movement_number']);
+            ->assertJsonPath('data.current_stock', 60)
+            ->assertJsonPath('data.adjustment', 10)
+            ->assertJsonStructure(['data' => ['movement_id', 'movement_number']]);
 
         $this->assertDatabaseHas('products', [
             'id' => $product->id,
@@ -334,7 +333,7 @@ describe('Product API', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('current_stock', 30);
+            ->assertJsonPath('data.current_stock', 30);
     });
 
     it('prevents negative stock', function () {

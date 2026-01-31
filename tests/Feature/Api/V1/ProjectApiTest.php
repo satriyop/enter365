@@ -8,13 +8,11 @@ use App\Models\Sales\Quotation;
 use App\Models\Sales\QuotationItem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $user = User::factory()->create();
-    Sanctum::actingAs($user);
+    authenticatedAdmin();
 
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\ChartOfAccountsSeeder']);
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\FiscalPeriodSeeder']);

@@ -5,9 +5,7 @@ use App\Models\Inventory\ProductStock;
 use App\Models\Inventory\StockOpname;
 use App\Models\Inventory\StockOpnameItem;
 use App\Models\Inventory\Warehouse;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
@@ -15,9 +13,8 @@ beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\ChartOfAccountsSeeder']);
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\FiscalPeriodSeeder']);
 
-    // Authenticate user
-    $user = User::factory()->create();
-    Sanctum::actingAs($user);
+    // Authenticate as admin (has all permissions)
+    authenticatedAdmin();
 });
 
 describe('Stock Opname CRUD', function () {

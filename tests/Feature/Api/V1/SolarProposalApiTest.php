@@ -5,16 +5,12 @@ use App\Models\Contacts\Contact;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomVariantGroup;
 use App\Models\Solar\SolarProposal;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $user = User::factory()->create();
-    Sanctum::actingAs($user);
-    $this->user = $user;
+    $this->user = authenticatedAdmin();
 
     // Clear existing proposals to avoid cross-test contamination
     SolarProposal::query()->delete();
@@ -42,8 +38,8 @@ describe('Solar Proposal CRUD', function () {
                 'data' => [
                     '*' => [
                         'status' => ['value', 'label', 'color', 'is_terminal', 'is_editable'],
-                    ]
-                ]
+                    ],
+                ],
             ]);
     });
 

@@ -1,45 +1,45 @@
 <?php
 
 use App\Models\Core\Permission;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    // Authenticate user
-    $user = User::factory()->create();
-    Sanctum::actingAs($user);
+    // Authenticate as admin (has all permissions)
+    authenticatedAdmin();
 });
 
 describe('Permission API', function () {
 
     it('can list all permissions', function () {
+        $existingCount = Permission::count();
         Permission::factory()->count(10)->create();
 
         $response = $this->getJson('/api/v1/permissions');
 
-        $response->assertOk()
-            ->assertJsonCount(10, 'data');
+        $response->assertOk();
+        expect($response->json('meta.total'))->toBe($existingCount + 10);
     });
 
     it('can filter permissions by group', function () {
-        Permission::factory()->count(3)->inGroup('invoices')->create();
-        Permission::factory()->count(2)->inGroup('bills')->create();
+        // Use a unique group name to avoid collision with seeded permissions
+        Permission::factory()->count(3)->inGroup('test_widgets')->create();
+        Permission::factory()->count(2)->inGroup('test_gadgets')->create();
 
-        $response = $this->getJson('/api/v1/permissions?group=invoices');
+        $response = $this->getJson('/api/v1/permissions?group=test_widgets');
 
         $response->assertOk()
             ->assertJsonCount(3, 'data');
     });
 
     it('can search permissions', function () {
-        Permission::factory()->create(['name' => 'invoices.view', 'display_name' => 'View Invoices', 'group' => 'invoices', 'description' => null]);
-        Permission::factory()->create(['name' => 'invoices.create', 'display_name' => 'Create Invoices', 'group' => 'invoices', 'description' => null]);
-        Permission::factory()->create(['name' => 'bills.view', 'display_name' => 'View Bills', 'group' => 'bills', 'description' => null]);
+        // Use unique names to avoid collision with seeded permissions
+        Permission::factory()->create(['name' => 'xwidgets.view', 'display_name' => 'View Xwidgets', 'group' => 'xwidgets', 'description' => null]);
+        Permission::factory()->create(['name' => 'xwidgets.create', 'display_name' => 'Create Xwidgets', 'group' => 'xwidgets', 'description' => null]);
+        Permission::factory()->create(['name' => 'xgadgets.view', 'display_name' => 'View Xgadgets', 'group' => 'xgadgets', 'description' => null]);
 
-        $response = $this->getJson('/api/v1/permissions?search=invoice');
+        $response = $this->getJson('/api/v1/permissions?search=xwidget');
 
         $response->assertOk()
             ->assertJsonCount(2, 'data');
@@ -56,24 +56,27 @@ describe('Permission API', function () {
     });
 
     it('can get permissions grouped', function () {
-        Permission::factory()->count(3)->inGroup('invoices')->create();
-        Permission::factory()->count(2)->inGroup('bills')->create();
-        Permission::factory()->count(4)->inGroup('reports')->create();
+        $existingGroups = Permission::query()->distinct('group')->count('group');
+        Permission::factory()->count(3)->inGroup('test_alpha')->create();
+        Permission::factory()->count(2)->inGroup('test_beta')->create();
+        Permission::factory()->count(4)->inGroup('test_gamma')->create();
 
         $response = $this->getJson('/api/v1/permissions/grouped');
 
-        $response->assertOk()
-            ->assertJsonCount(3, 'data'); // 3 groups
+        $response->assertOk();
+        // 3 new groups + whatever was seeded by migration
+        expect(count($response->json('data')))->toBe($existingGroups + 3);
     });
 
     it('can get permission groups', function () {
-        Permission::factory()->count(2)->inGroup('invoices')->create();
-        Permission::factory()->count(2)->inGroup('bills')->create();
+        $existingGroups = Permission::query()->distinct('group')->count('group');
+        Permission::factory()->count(2)->inGroup('test_delta')->create();
+        Permission::factory()->count(2)->inGroup('test_epsilon')->create();
 
         $response = $this->getJson('/api/v1/permissions/groups');
 
-        $response->assertOk()
-            ->assertJsonCount(2, 'data');
+        $response->assertOk();
+        expect(count($response->json('data')))->toBe($existingGroups + 2);
     });
 
     it('returns group labels in Indonesian', function () {
@@ -104,14 +107,14 @@ describe('Permission Model', function () {
     });
 
     it('can get all permissions grouped', function () {
-        Permission::factory()->count(3)->inGroup('invoices')->create();
-        Permission::factory()->count(2)->inGroup('bills')->create();
+        Permission::factory()->count(3)->inGroup('test_foo')->create();
+        Permission::factory()->count(2)->inGroup('test_bar')->create();
 
         $grouped = Permission::allGrouped();
 
-        expect($grouped)->toHaveKeys(['invoices', 'bills'])
-            ->and($grouped['invoices'])->toHaveCount(3)
-            ->and($grouped['bills'])->toHaveCount(2);
+        expect($grouped)->toHaveKeys(['test_foo', 'test_bar'])
+            ->and($grouped['test_foo'])->toHaveCount(3)
+            ->and($grouped['test_bar'])->toHaveCount(2);
     });
 
     it('has default permissions list', function () {

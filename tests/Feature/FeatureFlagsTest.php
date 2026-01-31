@@ -163,10 +163,10 @@ describe('Feature Status API', function () {
         $response = $this->getJson('/api/v1/features');
 
         $response->assertOk()
-            ->assertJsonPath('modules.inventory', true)
-            ->assertJsonPath('modules.mrp', false)
-            ->assertJsonPath('enabled', ['inventory'])
-            ->assertJsonPath('disabled', ['mrp']);
+            ->assertJsonPath('data.modules.inventory', true)
+            ->assertJsonPath('data.modules.mrp', false)
+            ->assertJsonPath('data.enabled', ['inventory'])
+            ->assertJsonPath('data.disabled', ['mrp']);
     });
 
     it('returns empty arrays when no modules configured', function () {
@@ -175,9 +175,9 @@ describe('Feature Status API', function () {
         $response = $this->getJson('/api/v1/features');
 
         $response->assertOk()
-            ->assertJsonPath('modules', [])
-            ->assertJsonPath('enabled', [])
-            ->assertJsonPath('disabled', []);
+            ->assertJsonPath('data.modules', [])
+            ->assertJsonPath('data.enabled', [])
+            ->assertJsonPath('data.disabled', []);
     });
 
 });

@@ -3,19 +3,19 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Filters\ContactFilter;
-use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreContactRequest;
 use App\Http\Requests\Api\V1\UpdateContactRequest;
 use App\Http\Resources\Api\V1\ContactResource;
 use App\Models\Contacts\Contact;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class ContactController extends Controller
 {
     public function index(ContactFilter $filter): AnonymousResourceCollection
     {
+        $this->authorize('viewAny', Contact::class);
+
         $contacts = Contact::query()
             ->filter($filter)
             ->orderBy('name')
@@ -26,6 +26,8 @@ class ContactController extends Controller
 
     public function store(StoreContactRequest $request): ContactResource
     {
+        $this->authorize('create', Contact::class);
+
         $contact = Contact::create($request->validated());
 
         return new ContactResource($contact);
@@ -33,6 +35,8 @@ class ContactController extends Controller
 
     public function show(Contact $contact, ContactFilter $filter): ContactResource
     {
+        $this->authorize('view', $contact);
+
         $filter->apply($contact->newQuery());
 
         return new ContactResource($contact);
@@ -40,6 +44,8 @@ class ContactController extends Controller
 
     public function update(UpdateContactRequest $request, Contact $contact): ContactResource
     {
+        $this->authorize('update', $contact);
+
         $contact->update($request->validated());
 
         return new ContactResource($contact->fresh());
@@ -47,18 +53,22 @@ class ContactController extends Controller
 
     public function destroy(Contact $contact): JsonResponse
     {
+        $this->authorize('delete', $contact);
+
         if ($contact->invoices()->exists() || $contact->bills()->exists()) {
             abort(422, 'Tidak bisa menghapus kontak yang sudah memiliki transaksi.');
         }
 
         $contact->delete();
 
-        return response()->json(['message' => 'Kontak berhasil dihapus.']);
+        return $this->deleted('Kontak berhasil dihapus.');
     }
 
     public function balances(Contact $contact): JsonResponse
     {
-        return response()->json([
+        $this->authorize('view', $contact);
+
+        return $this->success([
             'contact_id' => $contact->id,
             'name' => $contact->name,
             'type' => $contact->type,
@@ -69,10 +79,10 @@ class ContactController extends Controller
 
     public function creditStatus(Contact $contact): JsonResponse
     {
+        $this->authorize('view', $contact);
+
         if (! $contact->isCustomer()) {
-            return response()->json([
-                'message' => 'Status kredit hanya tersedia untuk pelanggan.',
-            ], 422);
+            return $this->error('Status kredit hanya tersedia untuk pelanggan.', 422);
         }
 
         $receivableBalance = $contact->getReceivableBalance();
@@ -80,7 +90,7 @@ class ContactController extends Controller
         $availableCredit = $contact->getAvailableCredit();
         $utilization = $contact->getCreditUtilization();
 
-        return response()->json([
+        return $this->success([
             'contact_id' => $contact->id,
             'name' => $contact->name,
             'credit_limit' => $creditLimit,

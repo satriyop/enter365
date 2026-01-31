@@ -6,16 +6,13 @@ use App\Models\Accounting\BudgetLine;
 use App\Models\Accounting\FiscalPeriod;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Accounting\JournalEntryLine;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    // Authenticate user
-    $user = User::factory()->create();
-    Sanctum::actingAs($user);
+    // Authenticate as admin (has all permissions)
+    authenticatedAdmin();
 });
 
 describe('Budget CRUD', function () {

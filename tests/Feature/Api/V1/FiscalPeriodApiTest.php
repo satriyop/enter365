@@ -2,18 +2,15 @@
 
 use App\Models\Accounting\FiscalPeriod;
 use App\Models\Accounting\JournalEntry;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\ChartOfAccountsSeeder']);
 
-    // Authenticate user
-    $user = User::factory()->create();
-    Sanctum::actingAs($user);
+    // Authenticate as admin (has all permissions)
+    authenticatedAdmin();
 });
 
 describe('Fiscal Period API', function () {

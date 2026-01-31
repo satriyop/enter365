@@ -20,13 +20,25 @@ class Permission extends Model
 
     public const GROUP_INVOICES = 'invoices';
 
+    public const GROUP_QUOTATIONS = 'quotations';
+
     public const GROUP_BILLS = 'bills';
+
+    public const GROUP_PURCHASE_ORDERS = 'purchase_orders';
 
     public const GROUP_PAYMENTS = 'payments';
 
     public const GROUP_JOURNALS = 'journals';
 
     public const GROUP_INVENTORY = 'inventory';
+
+    public const GROUP_DELIVERY_ORDERS = 'delivery_orders';
+
+    public const GROUP_WORK_ORDERS = 'work_orders';
+
+    public const GROUP_BOMS = 'boms';
+
+    public const GROUP_PROJECTS = 'projects';
 
     public const GROUP_BUDGETS = 'budgets';
 
@@ -101,6 +113,14 @@ class Permission extends Model
             ['name' => 'invoices.edit', 'display_name' => 'Edit Faktur', 'group' => self::GROUP_INVOICES, 'description' => 'Mengubah faktur'],
             ['name' => 'invoices.delete', 'display_name' => 'Hapus Faktur', 'group' => self::GROUP_INVOICES, 'description' => 'Menghapus faktur'],
             ['name' => 'invoices.post', 'display_name' => 'Posting Faktur', 'group' => self::GROUP_INVOICES, 'description' => 'Memposting faktur'],
+            ['name' => 'invoices.void', 'display_name' => 'Void Faktur', 'group' => self::GROUP_INVOICES, 'description' => 'Membatalkan faktur'],
+
+            // Quotations
+            ['name' => 'quotations.view', 'display_name' => 'Lihat Penawaran', 'group' => self::GROUP_QUOTATIONS, 'description' => 'Melihat daftar penawaran'],
+            ['name' => 'quotations.create', 'display_name' => 'Buat Penawaran', 'group' => self::GROUP_QUOTATIONS, 'description' => 'Membuat penawaran baru'],
+            ['name' => 'quotations.edit', 'display_name' => 'Edit Penawaran', 'group' => self::GROUP_QUOTATIONS, 'description' => 'Mengubah penawaran'],
+            ['name' => 'quotations.delete', 'display_name' => 'Hapus Penawaran', 'group' => self::GROUP_QUOTATIONS, 'description' => 'Menghapus penawaran'],
+            ['name' => 'quotations.approve', 'display_name' => 'Setujui Penawaran', 'group' => self::GROUP_QUOTATIONS, 'description' => 'Menyetujui penawaran'],
 
             // Bills
             ['name' => 'bills.view', 'display_name' => 'Lihat Tagihan', 'group' => self::GROUP_BILLS, 'description' => 'Melihat daftar tagihan'],
@@ -108,6 +128,13 @@ class Permission extends Model
             ['name' => 'bills.edit', 'display_name' => 'Edit Tagihan', 'group' => self::GROUP_BILLS, 'description' => 'Mengubah tagihan'],
             ['name' => 'bills.delete', 'display_name' => 'Hapus Tagihan', 'group' => self::GROUP_BILLS, 'description' => 'Menghapus tagihan'],
             ['name' => 'bills.post', 'display_name' => 'Posting Tagihan', 'group' => self::GROUP_BILLS, 'description' => 'Memposting tagihan'],
+
+            // Purchase Orders
+            ['name' => 'purchase_orders.view', 'display_name' => 'Lihat PO', 'group' => self::GROUP_PURCHASE_ORDERS, 'description' => 'Melihat daftar purchase order'],
+            ['name' => 'purchase_orders.create', 'display_name' => 'Buat PO', 'group' => self::GROUP_PURCHASE_ORDERS, 'description' => 'Membuat purchase order baru'],
+            ['name' => 'purchase_orders.edit', 'display_name' => 'Edit PO', 'group' => self::GROUP_PURCHASE_ORDERS, 'description' => 'Mengubah purchase order'],
+            ['name' => 'purchase_orders.delete', 'display_name' => 'Hapus PO', 'group' => self::GROUP_PURCHASE_ORDERS, 'description' => 'Menghapus purchase order'],
+            ['name' => 'purchase_orders.approve', 'display_name' => 'Setujui PO', 'group' => self::GROUP_PURCHASE_ORDERS, 'description' => 'Menyetujui purchase order'],
 
             // Payments
             ['name' => 'payments.view', 'display_name' => 'Lihat Pembayaran', 'group' => self::GROUP_PAYMENTS, 'description' => 'Melihat daftar pembayaran'],
@@ -127,6 +154,30 @@ class Permission extends Model
             ['name' => 'inventory.adjust', 'display_name' => 'Penyesuaian Stok', 'group' => self::GROUP_INVENTORY, 'description' => 'Menyesuaikan stok'],
             ['name' => 'inventory.transfer', 'display_name' => 'Transfer Stok', 'group' => self::GROUP_INVENTORY, 'description' => 'Transfer antar gudang'],
 
+            // Delivery Orders
+            ['name' => 'delivery_orders.view', 'display_name' => 'Lihat Surat Jalan', 'group' => self::GROUP_DELIVERY_ORDERS, 'description' => 'Melihat daftar surat jalan'],
+            ['name' => 'delivery_orders.create', 'display_name' => 'Buat Surat Jalan', 'group' => self::GROUP_DELIVERY_ORDERS, 'description' => 'Membuat surat jalan baru'],
+            ['name' => 'delivery_orders.edit', 'display_name' => 'Edit Surat Jalan', 'group' => self::GROUP_DELIVERY_ORDERS, 'description' => 'Mengubah surat jalan'],
+            ['name' => 'delivery_orders.delete', 'display_name' => 'Hapus Surat Jalan', 'group' => self::GROUP_DELIVERY_ORDERS, 'description' => 'Menghapus surat jalan'],
+
+            // Work Orders
+            ['name' => 'work_orders.view', 'display_name' => 'Lihat Work Order', 'group' => self::GROUP_WORK_ORDERS, 'description' => 'Melihat daftar work order'],
+            ['name' => 'work_orders.create', 'display_name' => 'Buat Work Order', 'group' => self::GROUP_WORK_ORDERS, 'description' => 'Membuat work order baru'],
+            ['name' => 'work_orders.edit', 'display_name' => 'Edit Work Order', 'group' => self::GROUP_WORK_ORDERS, 'description' => 'Mengubah work order'],
+            ['name' => 'work_orders.delete', 'display_name' => 'Hapus Work Order', 'group' => self::GROUP_WORK_ORDERS, 'description' => 'Menghapus work order'],
+
+            // BOMs
+            ['name' => 'boms.view', 'display_name' => 'Lihat BOM', 'group' => self::GROUP_BOMS, 'description' => 'Melihat daftar bill of materials'],
+            ['name' => 'boms.create', 'display_name' => 'Buat BOM', 'group' => self::GROUP_BOMS, 'description' => 'Membuat bill of materials baru'],
+            ['name' => 'boms.edit', 'display_name' => 'Edit BOM', 'group' => self::GROUP_BOMS, 'description' => 'Mengubah bill of materials'],
+            ['name' => 'boms.delete', 'display_name' => 'Hapus BOM', 'group' => self::GROUP_BOMS, 'description' => 'Menghapus bill of materials'],
+
+            // Projects
+            ['name' => 'projects.view', 'display_name' => 'Lihat Proyek', 'group' => self::GROUP_PROJECTS, 'description' => 'Melihat daftar proyek'],
+            ['name' => 'projects.create', 'display_name' => 'Buat Proyek', 'group' => self::GROUP_PROJECTS, 'description' => 'Membuat proyek baru'],
+            ['name' => 'projects.edit', 'display_name' => 'Edit Proyek', 'group' => self::GROUP_PROJECTS, 'description' => 'Mengubah proyek'],
+            ['name' => 'projects.delete', 'display_name' => 'Hapus Proyek', 'group' => self::GROUP_PROJECTS, 'description' => 'Menghapus proyek'],
+
             // Budgets
             ['name' => 'budgets.view', 'display_name' => 'Lihat Anggaran', 'group' => self::GROUP_BUDGETS, 'description' => 'Melihat anggaran'],
             ['name' => 'budgets.create', 'display_name' => 'Buat Anggaran', 'group' => self::GROUP_BUDGETS, 'description' => 'Membuat anggaran baru'],
@@ -144,6 +195,7 @@ class Permission extends Model
             ['name' => 'settings.fiscal_periods', 'display_name' => 'Kelola Periode Fiskal', 'group' => self::GROUP_SETTINGS, 'description' => 'Mengelola periode fiskal'],
             ['name' => 'settings.close_period', 'display_name' => 'Tutup Periode', 'group' => self::GROUP_SETTINGS, 'description' => 'Menutup periode fiskal'],
             ['name' => 'settings.warehouses', 'display_name' => 'Kelola Gudang', 'group' => self::GROUP_SETTINGS, 'description' => 'Mengelola gudang'],
+            ['name' => 'settings.company_profile', 'display_name' => 'Kelola Profil Perusahaan', 'group' => self::GROUP_SETTINGS, 'description' => 'Mengelola profil perusahaan'],
 
             // Users
             ['name' => 'users.view', 'display_name' => 'Lihat Pengguna', 'group' => self::GROUP_USERS, 'description' => 'Melihat daftar pengguna'],

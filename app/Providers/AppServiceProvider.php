@@ -75,6 +75,7 @@ use Dedoc\Scramble\Support\Generator\SecurityScheme;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
@@ -246,6 +247,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureMorphMap();
         $this->configureRateLimiting();
+        $this->configurePolicies();
 
         // Events are now handled by EventServiceProvider via subscribers
         // See: app/Providers/EventServiceProvider.php
@@ -257,6 +259,30 @@ class AppServiceProvider extends ServiceProvider
                         ->setDescription('Sanctum Bearer Token. Obtain via POST /api/v1/auth/login')
                 );
             });
+    }
+
+    /**
+     * Register model policies for authorization.
+     *
+     * Models are in domain subdirectories so Laravel can't auto-discover them.
+     */
+    private function configurePolicies(): void
+    {
+        Gate::policy(\App\Models\Accounting\Account::class, \App\Policies\AccountPolicy::class);
+        Gate::policy(\App\Models\Contacts\Contact::class, \App\Policies\ContactPolicy::class);
+        Gate::policy(\App\Models\Inventory\Product::class, \App\Policies\ProductPolicy::class);
+        Gate::policy(\App\Models\Sales\Invoice::class, \App\Policies\InvoicePolicy::class);
+        Gate::policy(\App\Models\Sales\Quotation::class, \App\Policies\QuotationPolicy::class);
+        Gate::policy(\App\Models\Purchasing\Bill::class, \App\Policies\BillPolicy::class);
+        Gate::policy(\App\Models\Purchasing\PurchaseOrder::class, \App\Policies\PurchaseOrderPolicy::class);
+        Gate::policy(\App\Models\Shared\Payment::class, \App\Policies\PaymentPolicy::class);
+        Gate::policy(\App\Models\Accounting\JournalEntry::class, \App\Policies\JournalEntryPolicy::class);
+        Gate::policy(\App\Models\Accounting\Budget::class, \App\Policies\BudgetPolicy::class);
+        Gate::policy(\App\Models\Sales\DeliveryOrder::class, \App\Policies\DeliveryOrderPolicy::class);
+        Gate::policy(\App\Models\Manufacturing\WorkOrder::class, \App\Policies\WorkOrderPolicy::class);
+        Gate::policy(\App\Models\Manufacturing\Bom::class, \App\Policies\BomPolicy::class);
+        Gate::policy(\App\Models\Projects\Project::class, \App\Policies\ProjectPolicy::class);
+        Gate::policy(\App\Models\User::class, \App\Policies\UserPolicy::class);
     }
 
     /**

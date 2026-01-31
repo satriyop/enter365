@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\DocumentStatus;
 use App\Filters\WorkOrderFilter;
-use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreWorkOrderRequest;
 use App\Http\Requests\Api\V1\UpdateWorkOrderRequest;
 use App\Http\Resources\Api\V1\WorkOrderResource;
@@ -27,6 +26,8 @@ class WorkOrderController extends Controller
      */
     public function index(WorkOrderFilter $filter): AnonymousResourceCollection
     {
+        $this->authorize('viewAny', WorkOrder::class);
+
         $workOrders = WorkOrder::query()
             ->with(['project', 'product', 'warehouse']) // Default eager loads
             ->filter($filter)
@@ -40,6 +41,8 @@ class WorkOrderController extends Controller
      */
     public function store(StoreWorkOrderRequest $request): JsonResponse
     {
+        $this->authorize('create', WorkOrder::class);
+
         $workOrder = $this->workOrderService->create($request->validated());
 
         return (new WorkOrderResource($workOrder))
@@ -52,6 +55,8 @@ class WorkOrderController extends Controller
      */
     public function show(WorkOrder $workOrder, WorkOrderFilter $filter): WorkOrderResource
     {
+        $this->authorize('view', $workOrder);
+
         $filter->apply($workOrder->newQuery());
 
         $workOrder->loadMissing([
@@ -73,6 +78,8 @@ class WorkOrderController extends Controller
      */
     public function update(UpdateWorkOrderRequest $request, WorkOrder $workOrder): WorkOrderResource
     {
+        $this->authorize('update', $workOrder);
+
         $workOrder = $this->workOrderService->update($workOrder, $request->validated());
 
         return new WorkOrderResource($workOrder);
@@ -83,6 +90,8 @@ class WorkOrderController extends Controller
      */
     public function destroy(WorkOrder $workOrder): JsonResponse
     {
+        $this->authorize('delete', $workOrder);
+
         $this->workOrderService->delete($workOrder);
 
         return response()->json(['message' => 'Work order berhasil dihapus.']);
@@ -93,6 +102,8 @@ class WorkOrderController extends Controller
      */
     public function createForProject(StoreWorkOrderRequest $request, Project $project): JsonResponse
     {
+        $this->authorize('create', WorkOrder::class);
+
         $workOrder = $this->workOrderService->createFromProject($project, $request->validated());
 
         return (new WorkOrderResource($workOrder))
@@ -105,6 +116,8 @@ class WorkOrderController extends Controller
      */
     public function createFromBom(Request $request, Bom $bom): JsonResponse
     {
+        $this->authorize('create', WorkOrder::class);
+
         $request->validate([
             'quantity' => ['required', 'numeric', 'min:0.0001'],
             'project_id' => ['nullable', 'integer', 'exists:projects,id'],
@@ -139,6 +152,8 @@ class WorkOrderController extends Controller
      */
     public function subWorkOrders(WorkOrder $workOrder): AnonymousResourceCollection
     {
+        $this->authorize('view', $workOrder);
+
         $subWorkOrders = $workOrder->subWorkOrders()
             ->with(['project', 'product', 'bom'])
             ->orderByDesc('created_at')
@@ -152,6 +167,8 @@ class WorkOrderController extends Controller
      */
     public function createSubWorkOrder(StoreWorkOrderRequest $request, WorkOrder $workOrder): JsonResponse
     {
+        $this->authorize('create', WorkOrder::class);
+
         $subWorkOrder = $this->workOrderService->createSubWorkOrder($workOrder, $request->validated());
 
         return (new WorkOrderResource($subWorkOrder))
@@ -164,6 +181,8 @@ class WorkOrderController extends Controller
      */
     public function confirm(WorkOrder $workOrder): WorkOrderResource
     {
+        $this->authorize('update', $workOrder);
+
         $workOrder = $this->workOrderService->confirm($workOrder);
 
         return new WorkOrderResource($workOrder);
@@ -174,6 +193,8 @@ class WorkOrderController extends Controller
      */
     public function start(WorkOrder $workOrder): WorkOrderResource
     {
+        $this->authorize('update', $workOrder);
+
         $workOrder = $this->workOrderService->start($workOrder);
 
         return new WorkOrderResource($workOrder);
@@ -184,6 +205,8 @@ class WorkOrderController extends Controller
      */
     public function complete(WorkOrder $workOrder): WorkOrderResource
     {
+        $this->authorize('update', $workOrder);
+
         $workOrder = $this->workOrderService->complete($workOrder);
 
         return new WorkOrderResource($workOrder);
@@ -194,6 +217,8 @@ class WorkOrderController extends Controller
      */
     public function cancel(Request $request, WorkOrder $workOrder): WorkOrderResource
     {
+        $this->authorize('update', $workOrder);
+
         $request->validate([
             'reason' => ['nullable', 'string', 'max:500'],
         ]);
@@ -211,6 +236,8 @@ class WorkOrderController extends Controller
      */
     public function recordOutput(Request $request, WorkOrder $workOrder): WorkOrderResource
     {
+        $this->authorize('update', $workOrder);
+
         $request->validate([
             'quantity' => ['required', 'numeric', 'min:0.0001'],
             'scrapped' => ['nullable', 'numeric', 'min:0'],
@@ -233,6 +260,8 @@ class WorkOrderController extends Controller
      */
     public function recordConsumption(Request $request, WorkOrder $workOrder): JsonResponse
     {
+        $this->authorize('update', $workOrder);
+
         $request->validate([
             'consumptions' => ['required', 'array', 'min:1'],
             'consumptions.*.product_id' => ['required', 'integer', 'exists:products,id'],
@@ -264,6 +293,8 @@ class WorkOrderController extends Controller
      */
     public function costSummary(WorkOrder $workOrder): JsonResponse
     {
+        $this->authorize('view', $workOrder);
+
         $summary = $this->workOrderService->getCostSummary($workOrder);
 
         return response()->json(['data' => $summary]);
@@ -274,6 +305,8 @@ class WorkOrderController extends Controller
      */
     public function materialStatus(WorkOrder $workOrder): JsonResponse
     {
+        $this->authorize('view', $workOrder);
+
         $status = $this->workOrderService->getMaterialStatus($workOrder);
 
         return response()->json(['data' => $status]);
@@ -284,6 +317,8 @@ class WorkOrderController extends Controller
      */
     public function statistics(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', WorkOrder::class);
+
         $statistics = $this->workOrderService->getStatistics(
             $request->input('start_date'),
             $request->input('end_date')

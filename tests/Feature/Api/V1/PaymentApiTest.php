@@ -12,17 +12,14 @@ use App\Models\Purchasing\BillItem;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\InvoiceItem;
 use App\Models\Shared\Payment;
-use App\Models\User;
 use App\Services\Accounting\JournalService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
-use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $user = User::factory()->create();
-    Sanctum::actingAs($user);
+    authenticatedAdmin();
 
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\ChartOfAccountsSeeder']);
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\FiscalPeriodSeeder']);

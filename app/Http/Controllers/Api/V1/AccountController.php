@@ -21,6 +21,8 @@ class AccountController extends Controller
 
     public function index(AccountFilter $filter): AnonymousResourceCollection
     {
+        $this->authorize('viewAny', Account::class);
+
         $accounts = Account::query()
             ->filter($filter)
             ->orderBy('code')
@@ -31,6 +33,8 @@ class AccountController extends Controller
 
     public function store(StoreAccountRequest $request): AccountResource
     {
+        $this->authorize('create', Account::class);
+
         $account = Account::create($request->validated());
 
         return new AccountResource($account->load('parent'));
@@ -38,8 +42,10 @@ class AccountController extends Controller
 
     public function show(Account $account, AccountFilter $filter): AccountResource
     {
+        $this->authorize('view', $account);
+
         $filter->apply($account->newQuery());
-        
+
         $account->loadMissing(['parent', 'children']);
 
         return new AccountResource($account);
@@ -47,6 +53,8 @@ class AccountController extends Controller
 
     public function update(UpdateAccountRequest $request, Account $account): AccountResource
     {
+        $this->authorize('update', $account);
+
         if ($account->is_system && $request->has('code')) {
             abort(422, 'Tidak bisa mengubah kode akun sistem.');
         }
@@ -58,6 +66,8 @@ class AccountController extends Controller
 
     public function destroy(Account $account): JsonResponse
     {
+        $this->authorize('delete', $account);
+
         if ($account->is_system) {
             abort(422, 'Tidak bisa menghapus akun sistem.');
         }
@@ -73,11 +83,13 @@ class AccountController extends Controller
 
     /**
      * Get account balance.
-     * 
+     *
      * @response array{account_id: int, code: string, name: string, type: string, as_of_date: string, balance: int, total_debit: int, total_credit: int}
      */
     public function balance(Account $account, Request $request): JsonResponse
     {
+        $this->authorize('view', $account);
+
         $asOfDate = $request->input('as_of_date');
         $details = $account->getBalanceDetails($asOfDate);
 
@@ -95,11 +107,13 @@ class AccountController extends Controller
 
     /**
      * Get account ledger.
-     * 
+     *
      * @response array{account_id: int, code: string, name: string, type: string, start_date: string|null, end_date: string|null, opening_balance: int, entries: array<array{id: int, journal_entry_id: int, date: string, entry_number: string, description: string, reference: string|null, debit: int, credit: int, running_balance: int}>}
      */
     public function ledger(Account $account, Request $request): JsonResponse
     {
+        $this->authorize('view', $account);
+
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
 

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Filters\PurchaseOrderFilter;
-use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StorePurchaseOrderRequest;
 use App\Http\Requests\Api\V1\UpdatePurchaseOrderRequest;
 use App\Http\Resources\Api\V1\BillResource;
@@ -25,6 +24,8 @@ class PurchaseOrderController extends Controller
      */
     public function index(PurchaseOrderFilter $filter): AnonymousResourceCollection
     {
+        $this->authorize('viewAny', PurchaseOrder::class);
+
         $purchaseOrders = PurchaseOrder::query()
             ->with(['contact'])
             ->withCount(['items'])
@@ -41,6 +42,8 @@ class PurchaseOrderController extends Controller
      */
     public function store(StorePurchaseOrderRequest $request): JsonResponse
     {
+        $this->authorize('create', PurchaseOrder::class);
+
         $purchaseOrder = $this->purchaseOrderService->create($request->validated());
 
         return (new PurchaseOrderResource($purchaseOrder))
@@ -53,6 +56,8 @@ class PurchaseOrderController extends Controller
      */
     public function show(PurchaseOrder $purchaseOrder): PurchaseOrderResource
     {
+        $this->authorize('view', $purchaseOrder);
+
         return new PurchaseOrderResource(
             $purchaseOrder->load(['contact', 'items.product', 'revisions', 'convertedBill'])
         );
@@ -63,6 +68,8 @@ class PurchaseOrderController extends Controller
      */
     public function update(UpdatePurchaseOrderRequest $request, PurchaseOrder $purchaseOrder): PurchaseOrderResource
     {
+        $this->authorize('update', $purchaseOrder);
+
         $purchaseOrder = $this->purchaseOrderService->update($purchaseOrder, $request->validated());
 
         return new PurchaseOrderResource($purchaseOrder);
@@ -73,15 +80,15 @@ class PurchaseOrderController extends Controller
      */
     public function destroy(PurchaseOrder $purchaseOrder): JsonResponse
     {
+        $this->authorize('delete', $purchaseOrder);
+
         if (! $purchaseOrder->isEditable()) {
-            return response()->json([
-                'message' => 'Hanya PO draft yang dapat dihapus.',
-            ], 422);
+            return $this->error('Hanya PO draft yang dapat dihapus.', 422);
         }
 
         $purchaseOrder->delete();
 
-        return response()->json(['message' => 'PO berhasil dihapus.']);
+        return $this->deleted('PO berhasil dihapus.');
     }
 
     /**
@@ -89,6 +96,8 @@ class PurchaseOrderController extends Controller
      */
     public function submit(PurchaseOrder $purchaseOrder): PurchaseOrderResource
     {
+        $this->authorize('manage', $purchaseOrder);
+
         $purchaseOrder = $this->purchaseOrderService->submit($purchaseOrder);
 
         return new PurchaseOrderResource($purchaseOrder);
@@ -99,6 +108,8 @@ class PurchaseOrderController extends Controller
      */
     public function approve(PurchaseOrder $purchaseOrder): PurchaseOrderResource
     {
+        $this->authorize('approve', $purchaseOrder);
+
         $purchaseOrder = $this->purchaseOrderService->approve($purchaseOrder);
 
         return new PurchaseOrderResource($purchaseOrder);
@@ -109,6 +120,8 @@ class PurchaseOrderController extends Controller
      */
     public function reject(Request $request, PurchaseOrder $purchaseOrder): PurchaseOrderResource|JsonResponse
     {
+        $this->authorize('manage', $purchaseOrder);
+
         $request->validate([
             'reason' => ['required', 'string', 'max:1000'],
         ], [
@@ -125,6 +138,8 @@ class PurchaseOrderController extends Controller
      */
     public function cancel(Request $request, PurchaseOrder $purchaseOrder): PurchaseOrderResource|JsonResponse
     {
+        $this->authorize('manage', $purchaseOrder);
+
         $request->validate([
             'reason' => ['required', 'string', 'max:1000'],
         ], [
@@ -141,6 +156,8 @@ class PurchaseOrderController extends Controller
      */
     public function receive(Request $request, PurchaseOrder $purchaseOrder): PurchaseOrderResource|JsonResponse
     {
+        $this->authorize('manage', $purchaseOrder);
+
         $request->validate([
             'items' => ['required', 'array', 'min:1'],
             'items.*.item_id' => ['required', 'integer', 'exists:purchase_order_items,id'],
@@ -163,13 +180,14 @@ class PurchaseOrderController extends Controller
      */
     public function convertToBill(PurchaseOrder $purchaseOrder): JsonResponse
     {
+        $this->authorize('manage', $purchaseOrder);
+
         $bill = $this->purchaseOrderService->convertToBill($purchaseOrder);
 
-        return response()->json([
-            'message' => 'PO berhasil dikonversi menjadi tagihan.',
+        return $this->success([
             'bill' => new BillResource($bill),
             'purchase_order' => new PurchaseOrderResource($purchaseOrder->fresh(['contact', 'items'])),
-        ], 201);
+        ], 'PO berhasil dikonversi menjadi tagihan.', 201);
     }
 
     /**
@@ -177,12 +195,14 @@ class PurchaseOrderController extends Controller
      */
     public function duplicate(PurchaseOrder $purchaseOrder): JsonResponse
     {
+        $this->authorize('manage', $purchaseOrder);
+
         $newPo = $this->purchaseOrderService->duplicate($purchaseOrder);
 
-        return response()->json([
-            'message' => 'PO berhasil diduplikasi.',
-            'data' => new PurchaseOrderResource($newPo),
-        ], 201);
+        return $this->created(
+            new PurchaseOrderResource($newPo),
+            'PO berhasil diduplikasi.'
+        );
     }
 
     /**
@@ -190,6 +210,8 @@ class PurchaseOrderController extends Controller
      */
     public function outstanding(Request $request): AnonymousResourceCollection
     {
+        $this->authorize('viewAny', PurchaseOrder::class);
+
         $purchaseOrders = $this->purchaseOrderService->getOutstanding(
             $request->input('contact_id')
         );
@@ -202,11 +224,13 @@ class PurchaseOrderController extends Controller
      */
     public function statistics(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', PurchaseOrder::class);
+
         $statistics = $this->purchaseOrderService->getStatistics(
             $request->input('start_date'),
             $request->input('end_date')
         );
 
-        return response()->json(['data' => $statistics]);
+        return $this->success($statistics);
     }
 }

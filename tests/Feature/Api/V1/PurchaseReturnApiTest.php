@@ -7,14 +7,12 @@ use App\Models\Purchasing\Bill;
 use App\Models\Purchasing\BillItem;
 use App\Models\Purchasing\PurchaseReturn;
 use App\Models\Purchasing\PurchaseReturnItem;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->user = User::factory()->create();
-    $this->actingAs($this->user);
+    $this->user = authenticatedAdmin();
     $this->seed(\Database\Seeders\ChartOfAccountsSeeder::class);
 });
 

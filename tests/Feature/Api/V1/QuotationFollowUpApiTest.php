@@ -6,13 +6,11 @@ use App\Models\Sales\Quotation;
 use App\Models\Sales\QuotationActivity;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->user = User::factory()->create();
-    Sanctum::actingAs($this->user);
+    $this->user = authenticatedAdmin();
 
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\ChartOfAccountsSeeder']);
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\FiscalPeriodSeeder']);
@@ -44,8 +42,8 @@ describe('Quotation Follow-Up List', function () {
                         'status' => ['value', 'label', 'color'],
                         'priority' => ['value', 'label'],
                         'needs_follow_up',
-                    ]
-                ]
+                    ],
+                ],
             ]);
     });
 

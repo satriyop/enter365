@@ -5,15 +5,12 @@ use App\Models\Inventory\Product;
 use App\Models\Purchasing\Bill;
 use App\Models\Purchasing\PurchaseOrder;
 use App\Models\Purchasing\PurchaseOrderItem;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $user = User::factory()->create();
-    Sanctum::actingAs($user);
+    authenticatedAdmin();
 
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\ChartOfAccountsSeeder']);
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\FiscalPeriodSeeder']);
@@ -35,8 +32,8 @@ describe('Purchase Order CRUD', function () {
                 'data' => [
                     '*' => [
                         'status' => ['value', 'label', 'color', 'is_terminal', 'is_editable'],
-                    ]
-                ]
+                    ],
+                ],
             ]);
     });
 
@@ -130,7 +127,7 @@ describe('Purchase Order CRUD', function () {
         // Total: 2,775,000
         $response->assertJsonPath('data.subtotal', 2500000)
             ->assertJsonPath('data.tax_amount', 275000)
-            ->assertJsonPath('data.total', 2775000);
+            ->assertJsonPath('data.total_amount', 2775000);
     });
 
     it('validates required fields when creating purchase order', function () {
@@ -393,7 +390,7 @@ describe('Purchase Order Conversion', function () {
         $response = $this->postJson("/api/v1/purchase-orders/{$purchaseOrder->id}/convert-to-bill");
 
         $response->assertCreated()
-            ->assertJsonStructure(['message', 'bill', 'purchase_order']);
+            ->assertJsonStructure(['success', 'message', 'data' => ['bill', 'purchase_order']]);
 
         $purchaseOrder->refresh();
         expect($purchaseOrder->converted_to_bill_id)->not->toBeNull();
@@ -411,7 +408,7 @@ describe('Purchase Order Conversion', function () {
         $response->assertCreated();
 
         // Bill should have received quantity
-        $bill = Bill::find($response->json('bill.id'));
+        $bill = Bill::find($response->json('data.bill.id'));
         expect((float) $bill->items->first()->quantity)->toBe(5.0);
     });
 
@@ -553,7 +550,7 @@ describe('Purchase Order Calculations', function () {
             ->assertJsonPath('data.subtotal', 1000000)
             ->assertJsonPath('data.discount_amount', 100000)
             ->assertJsonPath('data.tax_amount', 99000)
-            ->assertJsonPath('data.total', 999000);
+            ->assertJsonPath('data.total_amount', 999000);
     });
 });
 

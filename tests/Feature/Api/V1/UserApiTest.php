@@ -118,10 +118,9 @@ describe('Create User', function () {
         ]);
 
         $response->assertCreated()
-            ->assertJsonPath('message', 'User berhasil dibuat.')
-            ->assertJsonPath('user.name', 'New User')
-            ->assertJsonPath('user.email', 'newuser@example.com')
-            ->assertJsonPath('user.is_active', true);
+            ->assertJsonPath('data.name', 'New User')
+            ->assertJsonPath('data.email', 'newuser@example.com')
+            ->assertJsonPath('data.is_active', true);
 
         $this->assertDatabaseHas('users', [
             'email' => 'newuser@example.com',
@@ -217,7 +216,7 @@ describe('Show User', function () {
         $response = $this->getJson("/api/v1/users/{$user->id}");
 
         $response->assertOk()
-            ->assertJsonPath('user.name', 'Test User');
+            ->assertJsonPath('data.name', 'Test User');
     });
 
     it('user can view own profile', function () {
@@ -227,7 +226,7 @@ describe('Show User', function () {
         $response = $this->getJson("/api/v1/users/{$user->id}");
 
         $response->assertOk()
-            ->assertJsonPath('user.name', 'My Profile');
+            ->assertJsonPath('data.name', 'My Profile');
     });
 
     it('user cannot view other users profile', function () {
@@ -258,10 +257,9 @@ describe('Update User', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('message', 'User berhasil diperbarui.')
-            ->assertJsonPath('user.name', 'Updated Name')
-            ->assertJsonPath('user.email', 'updated@example.com')
-            ->assertJsonPath('user.is_active', false);
+            ->assertJsonPath('data.name', 'Updated Name')
+            ->assertJsonPath('data.email', 'updated@example.com')
+            ->assertJsonPath('data.is_active', false);
     });
 
     it('user can update own profile', function () {
@@ -273,7 +271,7 @@ describe('Update User', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('user.name', 'My New Name');
+            ->assertJsonPath('data.name', 'My New Name');
     });
 
     it('user cannot update own is_active status', function () {
@@ -331,6 +329,7 @@ describe('Delete User', function () {
         $response = $this->deleteJson("/api/v1/users/{$user->id}");
 
         $response->assertOk()
+            ->assertJsonPath('success', true)
             ->assertJsonPath('message', 'User berhasil dihapus.');
 
         $this->assertDatabaseMissing('users', ['id' => $user->id]);
@@ -391,6 +390,7 @@ describe('Update Password', function () {
         ]);
 
         $response->assertOk()
+            ->assertJsonPath('success', true)
             ->assertJsonPath('message', 'Password berhasil diperbarui.');
 
         // Verify can login with new password
@@ -489,6 +489,7 @@ describe('Assign Roles', function () {
         ]);
 
         $response->assertOk()
+            ->assertJsonPath('success', true)
             ->assertJsonPath('message', 'Role berhasil diperbarui.');
 
         expect($user->fresh()->hasRole(Role::ACCOUNTANT))->toBeTrue();
@@ -537,7 +538,7 @@ describe('Toggle Active Status', function () {
         $response = $this->postJson("/api/v1/users/{$user->id}/toggle-active");
 
         $response->assertOk()
-            ->assertJsonPath('user.is_active', false);
+            ->assertJsonPath('data.is_active', false);
 
         expect($user->fresh()->is_active)->toBeFalse();
     });
@@ -551,7 +552,7 @@ describe('Toggle Active Status', function () {
         $response = $this->postJson("/api/v1/users/{$user->id}/toggle-active");
 
         $response->assertOk()
-            ->assertJsonPath('user.is_active', true);
+            ->assertJsonPath('data.is_active', true);
 
         expect($user->fresh()->is_active)->toBeTrue();
     });

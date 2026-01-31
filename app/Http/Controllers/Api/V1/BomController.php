@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\DocumentStatus;
 use App\Filters\BomFilter;
-use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreBomRequest;
 use App\Http\Requests\Api\V1\UpdateBomRequest;
 use App\Http\Resources\Api\V1\BomResource;
@@ -27,6 +26,8 @@ class BomController extends Controller
      */
     public function index(BomFilter $filter): AnonymousResourceCollection
     {
+        $this->authorize('viewAny', Bom::class);
+
         $boms = Bom::query()
             ->with(['product'])
             ->filter($filter)
@@ -42,6 +43,8 @@ class BomController extends Controller
      */
     public function store(StoreBomRequest $request): JsonResponse
     {
+        $this->authorize('create', Bom::class);
+
         $bom = $this->bomService->create($request->validated());
 
         return (new BomResource($bom))
@@ -54,6 +57,8 @@ class BomController extends Controller
      */
     public function show(Bom $bom, BomFilter $filter): BomResource
     {
+        $this->authorize('view', $bom);
+
         $filter->apply($bom->newQuery());
 
         $bom->loadMissing(['product', 'items.product', 'creator', 'parentBom']);
@@ -66,6 +71,8 @@ class BomController extends Controller
      */
     public function update(UpdateBomRequest $request, Bom $bom): BomResource|JsonResponse
     {
+        $this->authorize('update', $bom);
+
         try {
             $bom = $this->bomService->update($bom, $request->validated());
 
@@ -80,6 +87,8 @@ class BomController extends Controller
      */
     public function destroy(Bom $bom): JsonResponse
     {
+        $this->authorize('delete', $bom);
+
         try {
             $this->bomService->delete($bom);
 
@@ -94,6 +103,8 @@ class BomController extends Controller
      */
     public function activate(Bom $bom): BomResource|JsonResponse
     {
+        $this->authorize('update', $bom);
+
         try {
             $bom = $this->bomService->activate($bom);
 
@@ -108,6 +119,8 @@ class BomController extends Controller
      */
     public function deactivate(Bom $bom): BomResource|JsonResponse
     {
+        $this->authorize('update', $bom);
+
         try {
             $bom = $this->bomService->deactivate($bom);
 
@@ -122,6 +135,8 @@ class BomController extends Controller
      */
     public function duplicate(Bom $bom): JsonResponse
     {
+        $this->authorize('create', Bom::class);
+
         $newBom = $this->bomService->duplicate($bom);
 
         return response()->json([
@@ -135,6 +150,8 @@ class BomController extends Controller
      */
     public function forProduct(Product $product): JsonResponse
     {
+        $this->authorize('viewAny', Bom::class);
+
         $bom = $this->bomService->getActiveForProduct($product);
 
         if (! $bom) {
@@ -150,11 +167,13 @@ class BomController extends Controller
 
     /**
      * Calculate production cost for a quantity.
-     * 
+     *
      * @response array{data: array{bom_id: int, quantity: float, material_cost: int, labor_cost: int, overhead_cost: int, total_cost: int, unit_cost: int, items: array<mixed>}}
      */
     public function calculateCost(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Bom::class);
+
         $request->validate([
             'bom_id' => ['required', 'integer', 'exists:boms,id'],
             'quantity' => ['required', 'numeric', 'min:0.0001'],
@@ -180,11 +199,13 @@ class BomController extends Controller
 
     /**
      * Get BOM statistics.
-     * 
+     *
      * @response array{data: array{total: int, active: int, draft: int, inactive: int}}
      */
     public function statistics(): JsonResponse
     {
+        $this->authorize('viewAny', Bom::class);
+
         $statistics = $this->bomService->getStatistics();
 
         return response()->json(['data' => $statistics]);

@@ -5,15 +5,12 @@ use App\Models\Manufacturing\SubcontractorWorkOrder;
 use App\Models\Projects\Project;
 use App\Models\Purchasing\Bill;
 use App\Models\Shared\SubcontractorInvoice;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $user = User::factory()->create();
-    Sanctum::actingAs($user);
+    authenticatedAdmin();
 
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\ChartOfAccountsSeeder']);
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\FiscalPeriodSeeder']);

@@ -4,9 +4,7 @@ use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomVariantGroup;
 use App\Models\Sales\Quotation;
 use App\Models\Sales\QuotationVariantOption;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
@@ -14,8 +12,7 @@ beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\ChartOfAccountsSeeder']);
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\FiscalPeriodSeeder']);
 
-    $user = User::factory()->create();
-    Sanctum::actingAs($user);
+    authenticatedAdmin();
 });
 
 describe('Multi-Option Quotation Filtering', function () {
@@ -66,9 +63,9 @@ describe('Quotation Variant Options Management', function () {
         $response = $this->getJson("/api/v1/quotations/{$quotation->id}/variant-options");
 
         $response->assertOk()
-            ->assertJsonCount(2, 'data')
-            ->assertJsonPath('meta.quotation_id', $quotation->id)
-            ->assertJsonPath('meta.has_selected_variant', false);
+            ->assertJsonCount(2, 'data.options')
+            ->assertJsonPath('data.meta.quotation_id', $quotation->id)
+            ->assertJsonPath('data.meta.has_selected_variant', false);
     });
 
     it('returns error when getting variant options for a single quotation', function () {
@@ -310,7 +307,7 @@ describe('Quotation Variant Resource', function () {
 
         $response->assertOk();
 
-        $data = $response->json('data.0');
+        $data = $response->json('data.options.0');
         expect((float) $data['profit_margin'])->toBe(25.0); // (50M - 40M) / 40M * 100
         expect($data['profit_amount'])->toBe(10000000);
     });
@@ -330,7 +327,7 @@ describe('Quotation Variant Resource', function () {
         $response = $this->getJson("/api/v1/quotations/{$quotation->id}/variant-options");
 
         $response->assertOk()
-            ->assertJsonPath('data.0.features', ['Garansi 2 Tahun', 'Support 24/7'])
-            ->assertJsonPath('data.0.specifications.efficiency', 'High');
+            ->assertJsonPath('data.options.0.features', ['Garansi 2 Tahun', 'Support 24/7'])
+            ->assertJsonPath('data.options.0.specifications.efficiency', 'High');
     });
 });

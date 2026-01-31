@@ -4,13 +4,11 @@ use App\Models\Core\Permission;
 use App\Models\Core\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $user = User::factory()->create();
-    Sanctum::actingAs($user);
+    authenticatedAdmin();
 });
 
 describe('Role CRUD', function () {
@@ -168,7 +166,9 @@ describe('Role CRUD', function () {
 
         $response = $this->deleteJson("/api/v1/roles/{$role->id}");
 
-        $response->assertOk();
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Role berhasil dihapus.');
         $this->assertDatabaseMissing('roles', ['id' => $role->id]);
     });
 
@@ -177,7 +177,8 @@ describe('Role CRUD', function () {
 
         $response = $this->deleteJson("/api/v1/roles/{$role->id}");
 
-        $response->assertStatus(422)
+        $response->assertUnprocessable()
+            ->assertJsonPath('success', false)
             ->assertJsonPath('message', 'Role sistem tidak bisa dihapus.');
     });
 
@@ -188,7 +189,8 @@ describe('Role CRUD', function () {
 
         $response = $this->deleteJson("/api/v1/roles/{$role->id}");
 
-        $response->assertStatus(422)
+        $response->assertUnprocessable()
+            ->assertJsonPath('success', false)
             ->assertJsonPath('message', 'Role tidak bisa dihapus karena masih memiliki pengguna.');
     });
 });
@@ -215,8 +217,8 @@ describe('Role Permissions', function () {
         $response = $this->getJson("/api/v1/roles/{$role->id}/users");
 
         $response->assertOk()
-            ->assertJsonPath('role.id', $role->id)
-            ->assertJsonCount(3, 'users');
+            ->assertJsonPath('data.role.id', $role->id)
+            ->assertJsonCount(3, 'data.users');
     });
 
     it('role can check if it has a permission', function () {
@@ -229,7 +231,7 @@ describe('Role Permissions', function () {
     });
 
     it('admin role has all permissions', function () {
-        $role = Role::factory()->admin()->create();
+        $role = Role::where('name', Role::ADMIN)->first();
 
         expect($role->hasPermission('anything'))->toBeTrue()
             ->and($role->hasPermission('invoices.view'))->toBeTrue()
@@ -298,7 +300,7 @@ describe('User Roles', function () {
 
     it('admin user has all permissions', function () {
         $user = User::factory()->create();
-        $role = Role::factory()->admin()->create();
+        $role = Role::where('name', Role::ADMIN)->first();
         $user->roles()->attach($role);
 
         expect($user->isAdmin())->toBeTrue()

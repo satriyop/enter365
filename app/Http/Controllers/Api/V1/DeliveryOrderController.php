@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\DocumentStatus;
 use App\Filters\DeliveryOrderFilter;
-use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreDeliveryOrderRequest;
 use App\Http\Requests\Api\V1\UpdateDeliveryOrderRequest;
 use App\Http\Resources\Api\V1\DeliveryOrderResource;
@@ -26,6 +25,8 @@ class DeliveryOrderController extends Controller
      */
     public function index(DeliveryOrderFilter $filter): AnonymousResourceCollection
     {
+        $this->authorize('viewAny', DeliveryOrder::class);
+
         $deliveryOrders = DeliveryOrder::query()
             ->with(['contact', 'warehouse'])
             ->filter($filter)
@@ -39,6 +40,8 @@ class DeliveryOrderController extends Controller
      */
     public function store(StoreDeliveryOrderRequest $request): JsonResponse
     {
+        $this->authorize('create', DeliveryOrder::class);
+
         $data = $request->validated();
         $data['created_by'] = $request->user()?->id;
 
@@ -55,6 +58,8 @@ class DeliveryOrderController extends Controller
      */
     public function createFromInvoice(Request $request, Invoice $invoice): JsonResponse
     {
+        $this->authorize('create', DeliveryOrder::class);
+
         $data = $request->validate([
             'do_date' => ['sometimes', 'date'],
             'shipping_address' => ['nullable', 'string', 'max:500'],
@@ -78,6 +83,8 @@ class DeliveryOrderController extends Controller
      */
     public function show(DeliveryOrder $deliveryOrder, DeliveryOrderFilter $filter): DeliveryOrderResource
     {
+        $this->authorize('view', $deliveryOrder);
+
         $filter->apply($deliveryOrder->newQuery());
 
         $deliveryOrder->loadMissing(['items.product', 'contact', 'invoice', 'warehouse', 'creator']);
@@ -90,6 +97,8 @@ class DeliveryOrderController extends Controller
      */
     public function update(UpdateDeliveryOrderRequest $request, DeliveryOrder $deliveryOrder): JsonResponse
     {
+        $this->authorize('update', $deliveryOrder);
+
         $deliveryOrder = $this->deliveryOrderService->update($deliveryOrder, $request->validated());
 
         return response()->json([
@@ -103,6 +112,8 @@ class DeliveryOrderController extends Controller
      */
     public function destroy(DeliveryOrder $deliveryOrder): JsonResponse
     {
+        $this->authorize('delete', $deliveryOrder);
+
         $this->deliveryOrderService->delete($deliveryOrder);
 
         return response()->json(['message' => 'Delivery order deleted successfully.']);
@@ -113,6 +124,8 @@ class DeliveryOrderController extends Controller
      */
     public function confirm(Request $request, DeliveryOrder $deliveryOrder): JsonResponse
     {
+        $this->authorize('update', $deliveryOrder);
+
         $deliveryOrder = $this->deliveryOrderService->confirm(
             $deliveryOrder,
             $request->user()?->id
@@ -129,6 +142,8 @@ class DeliveryOrderController extends Controller
      */
     public function ship(Request $request, DeliveryOrder $deliveryOrder): JsonResponse
     {
+        $this->authorize('update', $deliveryOrder);
+
         $data = $request->validate([
             'shipping_date' => ['sometimes', 'date'],
             'tracking_number' => ['nullable', 'string', 'max:100'],
@@ -151,6 +166,8 @@ class DeliveryOrderController extends Controller
      */
     public function deliver(Request $request, DeliveryOrder $deliveryOrder): JsonResponse
     {
+        $this->authorize('update', $deliveryOrder);
+
         $data = $request->validate([
             'received_date' => ['sometimes', 'date'],
             'received_by' => ['nullable', 'string', 'max:100'],
@@ -172,6 +189,8 @@ class DeliveryOrderController extends Controller
      */
     public function cancel(Request $request, DeliveryOrder $deliveryOrder): JsonResponse
     {
+        $this->authorize('update', $deliveryOrder);
+
         $reason = $request->input('reason');
         $deliveryOrder = $this->deliveryOrderService->cancel($deliveryOrder, $reason);
 
@@ -186,6 +205,8 @@ class DeliveryOrderController extends Controller
      */
     public function updateProgress(Request $request, DeliveryOrder $deliveryOrder): JsonResponse
     {
+        $this->authorize('update', $deliveryOrder);
+
         $data = $request->validate([
             'items' => ['required', 'array', 'min:1'],
             'items.*.item_id' => ['required', 'integer', 'exists:delivery_order_items,id'],
@@ -208,6 +229,8 @@ class DeliveryOrderController extends Controller
      */
     public function duplicate(DeliveryOrder $deliveryOrder): JsonResponse
     {
+        $this->authorize('create', DeliveryOrder::class);
+
         $newDo = $this->deliveryOrderService->duplicate($deliveryOrder);
 
         return response()->json([
@@ -221,6 +244,8 @@ class DeliveryOrderController extends Controller
      */
     public function forInvoice(Invoice $invoice): AnonymousResourceCollection
     {
+        $this->authorize('viewAny', DeliveryOrder::class);
+
         $deliveryOrders = $this->deliveryOrderService->getForInvoice($invoice);
 
         return DeliveryOrderResource::collection($deliveryOrders);
@@ -231,6 +256,8 @@ class DeliveryOrderController extends Controller
      */
     public function statistics(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', DeliveryOrder::class);
+
         $query = DeliveryOrder::query();
 
         // Filter by date range

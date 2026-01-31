@@ -4,9 +4,7 @@ use App\Models\Inventory\Product;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomItem;
 use App\Models\Manufacturing\BomVariantGroup;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
@@ -14,9 +12,8 @@ beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\ChartOfAccountsSeeder']);
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\FiscalPeriodSeeder']);
 
-    // Authenticate user
-    $user = User::factory()->create();
-    Sanctum::actingAs($user);
+    // Authenticate as admin (has all permissions)
+    authenticatedAdmin();
 });
 
 describe('BOM Variant Group CRUD', function () {

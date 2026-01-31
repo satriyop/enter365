@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Filters\QuotationFilter;
-use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\CancelQuotationRequest;
 use App\Http\Requests\Api\V1\StoreQuotationFromBomRequest;
 use App\Http\Requests\Api\V1\StoreQuotationRequest;
@@ -40,6 +39,8 @@ class QuotationController extends Controller
      */
     public function index(QuotationFilter $filter): AnonymousResourceCollection
     {
+        $this->authorize('viewAny', Quotation::class);
+
         $quotations = Quotation::query()
             ->with(['contact'])
             ->filter($filter)
@@ -53,6 +54,8 @@ class QuotationController extends Controller
      */
     public function store(StoreQuotationRequest $request): JsonResponse
     {
+        $this->authorize('create', Quotation::class);
+
         $quotation = $this->quotationService->create($request->validated());
 
         return (new QuotationResource($quotation))
@@ -73,6 +76,8 @@ class QuotationController extends Controller
      */
     public function fromBom(StoreQuotationFromBomRequest $request): JsonResponse
     {
+        $this->authorize('create', Quotation::class);
+
         $quotation = $this->quotationService->createFromBom($request->validated());
 
         return (new QuotationResource($quotation))
@@ -85,6 +90,8 @@ class QuotationController extends Controller
      */
     public function show(Quotation $quotation, QuotationFilter $filter): QuotationResource
     {
+        $this->authorize('view', $quotation);
+
         $filter->apply($quotation->newQuery());
 
         $relations = ['contact', 'items.product', 'revisions', 'convertedInvoice'];
@@ -108,6 +115,8 @@ class QuotationController extends Controller
      */
     public function update(UpdateQuotationRequest $request, Quotation $quotation): QuotationResource
     {
+        $this->authorize('update', $quotation);
+
         $quotation = $this->quotationService->update($quotation, $request->validated());
 
         return new QuotationResource($quotation);
@@ -118,15 +127,15 @@ class QuotationController extends Controller
      */
     public function destroy(Quotation $quotation): JsonResponse
     {
+        $this->authorize('delete', $quotation);
+
         if (! $quotation->isEditable()) {
-            return response()->json([
-                'message' => 'Hanya penawaran draft yang dapat dihapus.',
-            ], 422);
+            return $this->error('Hanya penawaran draft yang dapat dihapus.', 422);
         }
 
         $quotation->delete();
 
-        return response()->json(['message' => 'Penawaran berhasil dihapus.']);
+        return $this->deleted('Penawaran berhasil dihapus.');
     }
 
     /**
@@ -134,6 +143,8 @@ class QuotationController extends Controller
      */
     public function submit(Quotation $quotation): QuotationResource
     {
+        $this->authorize('manage', $quotation);
+
         $quotation = $this->quotationService->submit($quotation);
 
         return new QuotationResource($quotation);
@@ -144,6 +155,8 @@ class QuotationController extends Controller
      */
     public function approve(Quotation $quotation): QuotationResource
     {
+        $this->authorize('approve', $quotation);
+
         $quotation = $this->quotationService->approve($quotation);
 
         return new QuotationResource($quotation);
@@ -154,6 +167,8 @@ class QuotationController extends Controller
      */
     public function reject(Request $request, Quotation $quotation): QuotationResource
     {
+        $this->authorize('manage', $quotation);
+
         $request->validate([
             'reason' => ['required', 'string', 'max:1000'],
         ], [
@@ -173,6 +188,8 @@ class QuotationController extends Controller
      */
     public function cancel(CancelQuotationRequest $request, Quotation $quotation): QuotationResource
     {
+        $this->authorize('manage', $quotation);
+
         $quotation = $this->quotationService->cancel(
             $quotation,
             $request->input('reason')
@@ -189,6 +206,8 @@ class QuotationController extends Controller
      */
     public function markAsSent(Request $request, Quotation $quotation): QuotationResource
     {
+        $this->authorize('manage', $quotation);
+
         $request->validate([
             'email' => ['nullable', 'email', 'max:255'],
             'via' => ['nullable', 'string', 'in:email,print,portal'],
@@ -208,6 +227,8 @@ class QuotationController extends Controller
      */
     public function revise(Quotation $quotation): JsonResponse
     {
+        $this->authorize('manage', $quotation);
+
         $newQuotation = $this->quotationService->revise($quotation);
 
         return (new QuotationResource($newQuotation))
@@ -220,13 +241,14 @@ class QuotationController extends Controller
      */
     public function convertToInvoice(Quotation $quotation): JsonResponse
     {
+        $this->authorize('manage', $quotation);
+
         $invoice = $this->quotationService->convertToInvoice($quotation);
 
-        return response()->json([
-            'message' => 'Penawaran berhasil dikonversi menjadi faktur.',
+        return $this->success([
             'invoice' => new InvoiceResource($invoice),
             'quotation' => new QuotationResource($quotation->fresh(['contact', 'items'])),
-        ], 201);
+        ], 'Penawaran berhasil dikonversi menjadi faktur.', 201);
     }
 
     /**
@@ -234,12 +256,14 @@ class QuotationController extends Controller
      */
     public function duplicate(Quotation $quotation): JsonResponse
     {
+        $this->authorize('manage', $quotation);
+
         $newQuotation = $this->quotationService->duplicate($quotation);
 
-        return response()->json([
-            'message' => 'Penawaran berhasil diduplikasi.',
-            'data' => new QuotationResource($newQuotation),
-        ], 201);
+        return $this->created(
+            new QuotationResource($newQuotation),
+            'Penawaran berhasil diduplikasi.'
+        );
     }
 
     /**
@@ -247,11 +271,9 @@ class QuotationController extends Controller
      */
     public function pdf(Quotation $quotation): JsonResponse
     {
-        // Placeholder for PDF generation
-        return response()->json([
-            'message' => 'Fitur PDF belum tersedia.',
-            'quotation_number' => $quotation->getFullNumber(),
-        ], 501);
+        $this->authorize('view', $quotation);
+
+        return $this->error('Fitur PDF belum tersedia.', 501);
     }
 
     /**
@@ -259,12 +281,14 @@ class QuotationController extends Controller
      */
     public function statistics(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Quotation::class);
+
         $statistics = $this->quotationService->getStatistics(
             $request->input('start_date'),
             $request->input('end_date')
         );
 
-        return response()->json(['data' => $statistics]);
+        return $this->success($statistics);
     }
 
     /**
@@ -272,10 +296,10 @@ class QuotationController extends Controller
      */
     public function variantOptions(Quotation $quotation): JsonResponse
     {
+        $this->authorize('view', $quotation);
+
         if (! $quotation->isMultiOption()) {
-            return response()->json([
-                'message' => 'Penawaran ini bukan tipe multi-option.',
-            ], 422);
+            return $this->error('Penawaran ini bukan tipe multi-option.', 422);
         }
 
         $options = $quotation->variantOptions()
@@ -283,8 +307,8 @@ class QuotationController extends Controller
             ->orderBy('sort_order')
             ->get();
 
-        return response()->json([
-            'data' => QuotationVariantOptionResource::collection($options),
+        return $this->success([
+            'options' => QuotationVariantOptionResource::collection($options),
             'meta' => [
                 'quotation_id' => $quotation->id,
                 'quotation_number' => $quotation->getFullNumber(),
@@ -300,6 +324,8 @@ class QuotationController extends Controller
      */
     public function syncVariantOptions(Request $request, Quotation $quotation): JsonResponse
     {
+        $this->authorize('manage', $quotation);
+
         $validated = $request->validate([
             'options' => ['required', 'array', 'min:2'],
             'options.*.bom_id' => ['required', 'exists:boms,id'],
@@ -321,10 +347,10 @@ class QuotationController extends Controller
 
         $savedOptions = $this->quotationService->syncVariantOptions($quotation, $validated['options']);
 
-        return response()->json([
-            'message' => 'Opsi varian berhasil disimpan.',
-            'data' => QuotationVariantOptionResource::collection($savedOptions),
-        ]);
+        return $this->success(
+            QuotationVariantOptionResource::collection($savedOptions),
+            'Opsi varian berhasil disimpan.'
+        );
     }
 
     /**
@@ -332,11 +358,11 @@ class QuotationController extends Controller
      */
     public function selectVariant(Request $request, Quotation $quotation): QuotationResource|JsonResponse
     {
+        $this->authorize('manage', $quotation);
+
         // Check quotation type BEFORE validation for better UX
         if (! $quotation->isMultiOption()) {
-            return response()->json([
-                'message' => 'Penawaran ini bukan tipe multi-option.',
-            ], 422);
+            return $this->error('Penawaran ini bukan tipe multi-option.', 422);
         }
 
         $validated = $request->validate([
@@ -358,29 +384,27 @@ class QuotationController extends Controller
      */
     public function variantComparison(Quotation $quotation): JsonResponse
     {
+        $this->authorize('view', $quotation);
+
         if (! $quotation->isMultiOption()) {
-            return response()->json([
-                'message' => 'Penawaran ini bukan tipe multi-option.',
-            ], 422);
+            return $this->error('Penawaran ini bukan tipe multi-option.', 422);
         }
 
         $comparison = $quotation->getVariantComparison();
 
-        return response()->json([
-            'data' => [
-                'quotation' => [
-                    'id' => $quotation->id,
-                    'quotation_number' => $quotation->getFullNumber(),
-                    'subject' => $quotation->subject,
-                    'contact' => $quotation->contact ? [
-                        'id' => $quotation->contact->id,
-                        'name' => $quotation->contact->name,
-                    ] : null,
-                    'selected_variant_id' => $quotation->selected_variant_id,
-                ],
-                'options' => $comparison['options'] ?? [],
-                'price_range' => $comparison['price_range'] ?? null,
+        return $this->success([
+            'quotation' => [
+                'id' => $quotation->id,
+                'quotation_number' => $quotation->getFullNumber(),
+                'subject' => $quotation->subject,
+                'contact' => $quotation->contact ? [
+                    'id' => $quotation->contact->id,
+                    'name' => $quotation->contact->name,
+                ] : null,
+                'selected_variant_id' => $quotation->selected_variant_id,
             ],
+            'options' => $comparison['options'] ?? [],
+            'price_range' => $comparison['price_range'] ?? null,
         ]);
     }
 }

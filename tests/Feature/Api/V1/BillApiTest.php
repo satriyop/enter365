@@ -6,10 +6,8 @@ use App\Models\Contacts\Contact;
 use App\Models\Purchasing\Bill;
 use App\Models\Purchasing\BillItem;
 use App\Models\Shared\Payment;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
-use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
@@ -17,9 +15,8 @@ beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\ChartOfAccountsSeeder']);
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\FiscalPeriodSeeder']);
 
-    // Authenticate user
-    $user = User::factory()->create();
-    Sanctum::actingAs($user);
+    // Authenticate as admin (has all permissions)
+    authenticatedAdmin();
 });
 
 describe('Bill API', function () {
@@ -38,8 +35,8 @@ describe('Bill API', function () {
                 'data' => [
                     '*' => [
                         'status' => ['value', 'label', 'color', 'is_terminal', 'is_editable'],
-                    ]
-                ]
+                    ],
+                ],
             ]);
     });
 

@@ -7,15 +7,12 @@ use App\Models\Sales\DeliveryOrder;
 use App\Models\Sales\DeliveryOrderItem;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\InvoiceItem;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->user = User::factory()->create();
-    Sanctum::actingAs($this->user);
+    $this->user = authenticatedAdmin();
 });
 
 describe('Delivery Order CRUD', function () {
@@ -34,8 +31,8 @@ describe('Delivery Order CRUD', function () {
                 'data' => [
                     '*' => [
                         'status' => ['value', 'label', 'color', 'is_terminal', 'is_editable'],
-                    ]
-                ]
+                    ],
+                ],
             ]);
     });
 

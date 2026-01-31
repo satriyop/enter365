@@ -8,15 +8,12 @@ use App\Models\Manufacturing\BomItem;
 use App\Models\Manufacturing\WorkOrder;
 use App\Models\Manufacturing\WorkOrderItem;
 use App\Models\Projects\Project;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $user = User::factory()->create();
-    Sanctum::actingAs($user);
+    authenticatedAdmin();
 
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\ChartOfAccountsSeeder']);
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\FiscalPeriodSeeder']);
@@ -40,8 +37,8 @@ describe('Work Order CRUD', function () {
                         'status' => ['value', 'label', 'color', 'is_terminal', 'is_editable'],
                         'type' => ['value', 'label'],
                         'priority' => ['value', 'label'],
-                    ]
-                ]
+                    ],
+                ],
             ]);
     });
 
@@ -392,11 +389,11 @@ describe('Work Order Workflow', function () {
             'quantity_required' => 10,
         ]);
 
-                $response = $this->postJson("/api/v1/work-orders/{$workOrder->id}/confirm");
-         
-                $response->assertStatus(409);
-                expect($response->json('message'))->toContain('Stok tidak cukup');
-            });
+        $response = $this->postJson("/api/v1/work-orders/{$workOrder->id}/confirm");
+
+        $response->assertStatus(409);
+        expect($response->json('message'))->toContain('Stok tidak cukup');
+    });
     it('can start confirmed work order', function () {
         $workOrder = WorkOrder::factory()->confirmed()->create();
 

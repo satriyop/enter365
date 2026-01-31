@@ -87,11 +87,14 @@ class RolesAndPermissionsSeeder extends Seeder
             'accounts.view', 'accounts.create', 'accounts.edit',
             'contacts.view', 'contacts.create', 'contacts.edit',
             'products.view',
-            'invoices.view', 'invoices.create', 'invoices.edit', 'invoices.post',
+            'invoices.view', 'invoices.create', 'invoices.edit', 'invoices.post', 'invoices.void',
+            'quotations.view',
             'bills.view', 'bills.create', 'bills.edit', 'bills.post',
+            'purchase_orders.view',
             'payments.view', 'payments.create',
             'journals.view', 'journals.create', 'journals.post', 'journals.reverse',
             'budgets.view', 'budgets.create', 'budgets.edit',
+            'projects.view',
             'reports.financial', 'reports.tax', 'reports.aging', 'reports.export',
             'settings.fiscal_periods',
         ])->pluck('id');
@@ -112,8 +115,12 @@ class RolesAndPermissionsSeeder extends Seeder
             'contacts.view', 'contacts.create', 'contacts.edit',
             'products.view',
             'invoices.view', 'invoices.create', 'invoices.edit',
+            'quotations.view', 'quotations.create', 'quotations.edit', 'quotations.delete',
+            'delivery_orders.view', 'delivery_orders.create', 'delivery_orders.edit',
             'payments.view',
             'inventory.view',
+            'projects.view', 'projects.create', 'projects.edit',
+            'boms.view',
             'reports.aging',
         ])->pluck('id');
         $salesRole->permissions()->sync($salesPermissions);
@@ -123,8 +130,10 @@ class RolesAndPermissionsSeeder extends Seeder
             'contacts.view', 'contacts.create', 'contacts.edit',
             'products.view',
             'bills.view', 'bills.create', 'bills.edit',
+            'purchase_orders.view', 'purchase_orders.create', 'purchase_orders.edit', 'purchase_orders.delete',
             'payments.view',
             'inventory.view',
+            'boms.view',
             'reports.aging',
         ])->pluck('id');
         $purchasingRole->permissions()->sync($purchasingPermissions);
@@ -133,6 +142,9 @@ class RolesAndPermissionsSeeder extends Seeder
         $inventoryPermissions = Permission::whereIn('name', [
             'products.view', 'products.create', 'products.edit',
             'inventory.view', 'inventory.stock_in', 'inventory.stock_out', 'inventory.adjust', 'inventory.transfer',
+            'delivery_orders.view', 'delivery_orders.create', 'delivery_orders.edit',
+            'work_orders.view',
+            'boms.view',
             'settings.warehouses',
         ])->pluck('id');
         $inventoryRole->permissions()->sync($inventoryPermissions);
@@ -143,10 +155,16 @@ class RolesAndPermissionsSeeder extends Seeder
             'contacts.view',
             'products.view',
             'invoices.view',
+            'quotations.view',
             'bills.view',
+            'purchase_orders.view',
             'payments.view',
             'journals.view',
             'inventory.view',
+            'delivery_orders.view',
+            'work_orders.view',
+            'boms.view',
+            'projects.view',
             'budgets.view',
             'reports.financial', 'reports.aging',
         ])->pluck('id');

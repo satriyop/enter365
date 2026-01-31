@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Contracts\Purchasing\BillServiceInterface;
 use App\Filters\BillFilter;
-use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\MakeRecurringRequest;
 use App\Http\Requests\Api\V1\StoreBillRequest;
 use App\Http\Requests\Api\V1\UpdateBillRequest;
@@ -28,6 +27,8 @@ class BillController extends Controller
      */
     public function index(BillFilter $filter): AnonymousResourceCollection
     {
+        $this->authorize('viewAny', Bill::class);
+
         $bills = Bill::query()
             ->with(['contact', 'items'])
             ->filter($filter)
@@ -38,6 +39,8 @@ class BillController extends Controller
 
     public function store(StoreBillRequest $request): JsonResponse
     {
+        $this->authorize('create', Bill::class);
+
         $bill = $this->billService->create($request->validated());
 
         return (new BillResource($bill))
@@ -47,6 +50,8 @@ class BillController extends Controller
 
     public function show(Bill $bill): BillResource
     {
+        $this->authorize('view', $bill);
+
         return new BillResource(
             $bill->load(['contact', 'items.expenseAccount', 'journalEntry.lines.account', 'payments'])
         );
@@ -54,46 +59,54 @@ class BillController extends Controller
 
     public function update(UpdateBillRequest $request, Bill $bill): BillResource|JsonResponse
     {
+        $this->authorize('update', $bill);
+
         try {
             $bill = $this->billService->update($bill, $request->validated());
 
             return new BillResource($bill);
         } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
+            return $this->error($e->getMessage(), 422);
         }
     }
 
     public function destroy(Bill $bill): JsonResponse
     {
+        $this->authorize('delete', $bill);
+
         try {
             $this->billService->delete($bill);
 
-            return response()->json(['message' => 'Tagihan berhasil dihapus.']);
+            return $this->deleted('Tagihan berhasil dihapus.');
         } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
+            return $this->error($e->getMessage(), 422);
         }
     }
 
     public function post(Bill $bill): BillResource|JsonResponse
     {
+        $this->authorize('post', $bill);
+
         try {
             $bill = $this->billService->post($bill);
 
             return new BillResource($bill);
         } catch (InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
+            return $this->error($e->getMessage(), 422);
         }
     }
 
     public function makeRecurring(MakeRecurringRequest $request, Bill $bill): JsonResponse
     {
+        $this->authorize('update', $bill);
+
         $bill->load('items');
 
         $template = $this->recurringService->createTemplateFromBill($bill, $request->validated());
 
-        return response()->json([
-            'message' => 'Template recurring berhasil dibuat dari tagihan.',
-            'data' => new RecurringTemplateResource($template->load('contact')),
-        ], 201);
+        return $this->created(
+            new RecurringTemplateResource($template->load('contact')),
+            'Template recurring berhasil dibuat dari tagihan.'
+        );
     }
 }

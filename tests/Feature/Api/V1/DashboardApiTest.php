@@ -4,9 +4,7 @@ use App\Enums\DocumentStatus;
 use App\Models\Contacts\Contact;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
@@ -14,9 +12,8 @@ beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\ChartOfAccountsSeeder']);
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\FiscalPeriodSeeder']);
 
-    // Authenticate user
-    $user = User::factory()->create();
-    Sanctum::actingAs($user);
+    // Authenticate as admin (has all permissions)
+    authenticatedAdmin();
 });
 
 describe('Dashboard API', function () {
@@ -25,13 +22,16 @@ describe('Dashboard API', function () {
         $response = $this->getJson('/api/v1/dashboard/summary');
 
         $response->assertOk()
+            ->assertJsonPath('success', true)
             ->assertJsonStructure([
-                'period',
-                'receivables',
-                'payables',
-                'cash_position',
-                'recent_activity',
-                'monthly_comparison',
+                'data' => [
+                    'period',
+                    'receivables',
+                    'payables',
+                    'cash_position',
+                    'recent_activity',
+                    'monthly_comparison',
+                ],
             ]);
     });
 
@@ -52,15 +52,17 @@ describe('Dashboard API', function () {
 
         $response->assertOk()
             ->assertJsonStructure([
-                'total_outstanding',
-                'total_overdue',
-                'count',
-                'overdue_count',
-                'aging',
-                'top_debtors',
+                'data' => [
+                    'total_outstanding',
+                    'total_overdue',
+                    'count',
+                    'overdue_count',
+                    'aging',
+                    'top_debtors',
+                ],
             ])
-            ->assertJsonPath('total_outstanding', 8000000)
-            ->assertJsonPath('total_overdue', 3000000);
+            ->assertJsonPath('data.total_outstanding', 8000000)
+            ->assertJsonPath('data.total_overdue', 3000000);
     });
 
     it('can get payables summary', function () {
@@ -76,12 +78,14 @@ describe('Dashboard API', function () {
 
         $response->assertOk()
             ->assertJsonStructure([
-                'total_outstanding',
-                'total_overdue',
-                'count',
-                'overdue_count',
-                'aging',
-                'top_creditors',
+                'data' => [
+                    'total_outstanding',
+                    'total_overdue',
+                    'count',
+                    'overdue_count',
+                    'aging',
+                    'top_creditors',
+                ],
             ]);
     });
 
@@ -90,11 +94,13 @@ describe('Dashboard API', function () {
 
         $response->assertOk()
             ->assertJsonStructure([
-                'period_days',
-                'total_inflow',
-                'total_outflow',
-                'net_flow',
-                'daily_movement',
+                'data' => [
+                    'period_days',
+                    'total_inflow',
+                    'total_outflow',
+                    'net_flow',
+                    'daily_movement',
+                ],
             ]);
     });
 
@@ -103,11 +109,13 @@ describe('Dashboard API', function () {
 
         $response->assertOk()
             ->assertJsonStructure([
-                'period',
-                'total_revenue',
-                'total_expense',
-                'net_income',
-                'profit_margin',
+                'data' => [
+                    'period',
+                    'total_revenue',
+                    'total_expense',
+                    'net_income',
+                    'profit_margin',
+                ],
             ]);
     });
 
@@ -116,18 +124,20 @@ describe('Dashboard API', function () {
 
         $response->assertOk()
             ->assertJsonStructure([
-                'revenue' => [
-                    'current_month',
-                    'last_month',
-                    'growth_percent',
-                ],
-                'collection' => [
-                    'average_days',
-                    'overdue_invoices',
-                ],
-                'customers' => [
-                    'total',
-                    'active_this_month',
+                'data' => [
+                    'revenue' => [
+                        'current_month',
+                        'last_month',
+                        'growth_percent',
+                    ],
+                    'collection' => [
+                        'average_days',
+                        'overdue_invoices',
+                    ],
+                    'customers' => [
+                        'total',
+                        'active_this_month',
+                    ],
                 ],
             ]);
     });
@@ -140,7 +150,7 @@ describe('Dashboard API', function () {
 
         $response->assertOk();
 
-        $recentActivity = $response->json('recent_activity');
+        $recentActivity = $response->json('data.recent_activity');
         expect($recentActivity)->toBeArray();
     });
 
@@ -149,7 +159,7 @@ describe('Dashboard API', function () {
 
         $response->assertOk();
 
-        $monthlyComparison = $response->json('monthly_comparison');
+        $monthlyComparison = $response->json('data.monthly_comparison');
         expect($monthlyComparison)->toHaveCount(6); // Last 6 months
     });
 
@@ -171,7 +181,7 @@ describe('Dashboard API', function () {
 
         $response->assertOk();
 
-        $topDebtors = $response->json('top_debtors');
+        $topDebtors = $response->json('data.top_debtors');
         expect($topDebtors[0]['name'])->toBe('Customer A');
         expect($topDebtors[0]['outstanding'])->toBe(10000000);
     });
@@ -180,7 +190,7 @@ describe('Dashboard API', function () {
         $response = $this->getJson('/api/v1/dashboard/cash-flow?days=7');
 
         $response->assertOk()
-            ->assertJsonPath('period_days', 7);
+            ->assertJsonPath('data.period_days', 7);
     });
 
     it('can filter profit/loss by date range', function () {
@@ -190,7 +200,7 @@ describe('Dashboard API', function () {
         $response = $this->getJson("/api/v1/dashboard/profit-loss?start_date={$startDate}&end_date={$endDate}");
 
         $response->assertOk()
-            ->assertJsonPath('period.start_date', $startDate)
-            ->assertJsonPath('period.end_date', $endDate);
+            ->assertJsonPath('data.period.start_date', $startDate)
+            ->assertJsonPath('data.period.end_date', $endDate);
     });
 });

@@ -177,7 +177,7 @@ describe('Get Current User', function () {
 
         $response->assertOk()
             ->assertJsonStructure([
-                'user' => [
+                'data' => [
                     'id',
                     'name',
                     'email',
@@ -186,11 +186,11 @@ describe('Get Current User', function () {
                     'permissions',
                 ],
             ])
-            ->assertJsonPath('user.name', 'John Doe')
-            ->assertJsonPath('user.email', 'john@example.com');
+            ->assertJsonPath('data.name', 'John Doe')
+            ->assertJsonPath('data.email', 'john@example.com');
 
         // Admin should have all permissions
-        expect($response->json('user.permissions'))->not->toBeEmpty();
+        expect($response->json('data.permissions'))->not->toBeEmpty();
     });
 
     it('requires authentication', function () {
@@ -207,7 +207,7 @@ describe('Get Current User', function () {
 
         $response->assertOk();
 
-        $roles = $response->json('user.roles');
+        $roles = $response->json('data.roles');
         expect($roles)->toBeArray();
         expect(collect($roles)->pluck('name'))->toContain(Role::ADMIN);
     });

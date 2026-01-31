@@ -29,6 +29,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(prepend: [
             \App\Http\Middleware\RequestIdMiddleware::class,
         ]);
+
+        // Add API response validation (only if enabled in config)
+        if (config('api.response_validation.enabled', false)) {
+            $middleware->api(append: [
+                \App\Http\Middleware\ValidateApiResponse::class,
+            ]);
+        }
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Handle domain exceptions with structured JSON response

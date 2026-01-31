@@ -44,6 +44,8 @@ class InvoiceController extends Controller
      */
     public function index(InvoiceFilter $filter): AnonymousResourceCollection
     {
+        $this->authorize('viewAny', Invoice::class);
+
         $invoices = Invoice::query()
             ->with(['contact'])
             ->withCount(['items', 'payments'])
@@ -62,6 +64,8 @@ class InvoiceController extends Controller
      */
     public function store(StoreInvoiceRequest $request): JsonResponse
     {
+        $this->authorize('create', Invoice::class);
+
         $invoice = $this->invoiceService->create($request->validated());
 
         return $this->created(
@@ -79,9 +83,11 @@ class InvoiceController extends Controller
      */
     public function show(Invoice $invoice, InvoiceFilter $filter): InvoiceResource
     {
+        $this->authorize('view', $invoice);
+
         // Use filter to handle ?include= logic
-        $filter->apply($invoice->newQuery()); 
-        
+        $filter->apply($invoice->newQuery());
+
         // Ensure default loads if not provided via ?include
         $invoice->loadMissing(['contact', 'items.revenueAccount', 'journalEntry.lines.account', 'payments']);
 
@@ -95,6 +101,8 @@ class InvoiceController extends Controller
      */
     public function update(UpdateInvoiceRequest $request, Invoice $invoice): InvoiceResource
     {
+        $this->authorize('update', $invoice);
+
         $invoice = $this->invoiceService->update($invoice, $request->validated());
 
         return new InvoiceResource($invoice);
@@ -107,6 +115,8 @@ class InvoiceController extends Controller
      */
     public function destroy(Invoice $invoice): JsonResponse
     {
+        $this->authorize('delete', $invoice);
+
         $this->invoiceService->delete($invoice);
 
         return $this->deleted('Faktur berhasil dihapus.');
@@ -120,6 +130,8 @@ class InvoiceController extends Controller
      */
     public function post(Invoice $invoice): JsonResponse
     {
+        $this->authorize('post', $invoice);
+
         $invoice = $this->invoiceService->post($invoice);
 
         return $this->success(new InvoiceResource($invoice));
@@ -135,6 +147,8 @@ class InvoiceController extends Controller
      */
     public function void(VoidInvoiceRequest $request, Invoice $invoice): JsonResponse
     {
+        $this->authorize('void', $invoice);
+
         $invoice = $this->invoiceService->void($invoice, $request->validated('reason'));
 
         return $this->success(new InvoiceResource($invoice));
@@ -147,6 +161,8 @@ class InvoiceController extends Controller
      */
     public function makeRecurring(MakeRecurringRequest $request, Invoice $invoice): JsonResponse
     {
+        $this->authorize('update', $invoice);
+
         $invoice->load('items');
 
         $template = $this->recurringService->createTemplateFromInvoice($invoice, $request->validated());

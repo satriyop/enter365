@@ -3,9 +3,7 @@
 use App\Models\Accounting\Account;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Accounting\JournalEntryLine;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
@@ -13,9 +11,8 @@ beforeEach(function () {
     // Seed default accounts
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\ChartOfAccountsSeeder']);
 
-    // Authenticate user
-    $user = User::factory()->create();
-    Sanctum::actingAs($user);
+    // Authenticate as admin (has all permissions)
+    authenticatedAdmin();
 });
 
 describe('Account API', function () {
@@ -154,14 +151,14 @@ describe('Account API', function () {
 
         $response->assertOk()
             ->assertJsonStructure([
-                'account_id', 
-                'code', 
-                'name', 
-                'type', 
-                'as_of_date', 
+                'account_id',
+                'code',
+                'name',
+                'type',
+                'as_of_date',
                 'balance',
                 'total_debit',
-                'total_credit'
+                'total_credit',
             ]);
     });
 
@@ -172,11 +169,11 @@ describe('Account API', function () {
 
         $response->assertOk()
             ->assertJsonStructure([
-                'account_id', 
-                'code', 
-                'name', 
-                'type', 
-                'opening_balance', 
+                'account_id',
+                'code',
+                'name',
+                'type',
+                'opening_balance',
                 'entries' => [
                     '*' => [
                         'id',
@@ -187,9 +184,9 @@ describe('Account API', function () {
                         'reference',
                         'debit',
                         'credit',
-                        'running_balance'
-                    ]
-                ]
+                        'running_balance',
+                    ],
+                ],
             ]);
     });
 });

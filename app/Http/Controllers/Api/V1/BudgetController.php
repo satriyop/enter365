@@ -28,6 +28,8 @@ class BudgetController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
+        $this->authorize('viewAny', Budget::class);
+
         $query = Budget::query()->with(['fiscalPeriod'])->withCount('lines');
 
         // Filter by fiscal period
@@ -62,6 +64,8 @@ class BudgetController extends Controller
      */
     public function store(StoreBudgetRequest $request): JsonResponse
     {
+        $this->authorize('create', Budget::class);
+
         $data = $request->validated();
         $lines = $data['lines'] ?? [];
         unset($data['lines']);
@@ -78,6 +82,8 @@ class BudgetController extends Controller
      */
     public function show(Budget $budget): BudgetResource
     {
+        $this->authorize('view', $budget);
+
         return new BudgetResource(
             $budget->load(['lines.account', 'fiscalPeriod', 'approvedByUser'])
         );
@@ -88,6 +94,8 @@ class BudgetController extends Controller
      */
     public function update(UpdateBudgetRequest $request, Budget $budget): JsonResponse
     {
+        $this->authorize('update', $budget);
+
         if (! $budget->isEditable()) {
             return response()->json([
                 'message' => 'Anggaran yang sudah disetujui atau ditutup tidak bisa diubah.',
@@ -107,6 +115,8 @@ class BudgetController extends Controller
      */
     public function destroy(Budget $budget): JsonResponse
     {
+        $this->authorize('delete', $budget);
+
         if (! $budget->isEditable()) {
             return response()->json([
                 'message' => 'Anggaran yang sudah disetujui atau ditutup tidak bisa dihapus.',
@@ -126,6 +136,8 @@ class BudgetController extends Controller
      */
     public function addLine(StoreBudgetLineRequest $request, Budget $budget): JsonResponse
     {
+        $this->authorize('update', $budget);
+
         if (! $budget->isEditable()) {
             return response()->json([
                 'message' => 'Anggaran yang sudah disetujui tidak bisa diubah.',
@@ -153,6 +165,8 @@ class BudgetController extends Controller
      */
     public function updateLine(UpdateBudgetLineRequest $request, Budget $budget, BudgetLine $line): JsonResponse
     {
+        $this->authorize('update', $budget);
+
         if ($line->budget_id !== $budget->id) {
             return response()->json(['message' => 'Baris tidak ditemukan.'], 404);
         }
@@ -176,6 +190,8 @@ class BudgetController extends Controller
      */
     public function deleteLine(Budget $budget, BudgetLine $line): JsonResponse
     {
+        $this->authorize('update', $budget);
+
         if ($line->budget_id !== $budget->id) {
             return response()->json(['message' => 'Baris tidak ditemukan.'], 404);
         }
@@ -199,6 +215,8 @@ class BudgetController extends Controller
      */
     public function approve(Budget $budget): JsonResponse
     {
+        $this->authorize('approve', $budget);
+
         if (! $budget->isEditable()) {
             return response()->json([
                 'message' => 'Anggaran ini sudah disetujui atau ditutup.',
@@ -224,6 +242,8 @@ class BudgetController extends Controller
      */
     public function reopen(Budget $budget): JsonResponse
     {
+        $this->authorize('update', $budget);
+
         if ($budget->isClosed()) {
             return response()->json([
                 'message' => 'Anggaran yang sudah ditutup tidak bisa dibuka kembali.',
@@ -243,6 +263,8 @@ class BudgetController extends Controller
      */
     public function close(Budget $budget): JsonResponse
     {
+        $this->authorize('update', $budget);
+
         if (! $budget->isApproved()) {
             return response()->json([
                 'message' => 'Hanya anggaran yang sudah disetujui yang bisa ditutup.',
@@ -262,6 +284,8 @@ class BudgetController extends Controller
      */
     public function copy(Request $request, Budget $budget): JsonResponse
     {
+        $this->authorize('update', $budget);
+
         $request->validate([
             'fiscal_period_id' => 'required|exists:fiscal_periods,id',
             'name' => 'nullable|string|max:100',
@@ -293,6 +317,8 @@ class BudgetController extends Controller
      */
     public function comparison(Request $request, Budget $budget): JsonResponse
     {
+        $this->authorize('view', $budget);
+
         $month = $request->has('month') ? (int) $request->input('month') : null;
 
         $comparison = $this->budgetService->getBudgetVsActual($budget, $month);
@@ -313,6 +339,8 @@ class BudgetController extends Controller
      */
     public function monthlyBreakdown(Budget $budget): JsonResponse
     {
+        $this->authorize('view', $budget);
+
         $breakdown = $this->budgetService->getMonthlyBreakdown($budget);
 
         return response()->json([
@@ -330,6 +358,8 @@ class BudgetController extends Controller
      */
     public function summary(Budget $budget): JsonResponse
     {
+        $this->authorize('view', $budget);
+
         $summary = $this->budgetService->getBudgetSummary($budget);
 
         return response()->json($summary);
@@ -340,6 +370,8 @@ class BudgetController extends Controller
      */
     public function overBudget(Request $request, Budget $budget): JsonResponse
     {
+        $this->authorize('view', $budget);
+
         $month = $request->has('month') ? (int) $request->input('month') : null;
 
         $overBudgetAccounts = $this->budgetService->getOverBudgetAccounts($budget, $month);

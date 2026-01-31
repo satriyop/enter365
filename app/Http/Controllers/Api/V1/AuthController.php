@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\LoginRequest;
 use App\Http\Resources\Api\V1\UserResource;
 use App\Models\User;
@@ -50,9 +49,7 @@ class AuthController extends Controller
     {
         $request->user()->currentAccessToken()->delete();
 
-        return response()->json([
-            'message' => 'Logout berhasil.',
-        ]);
+        return $this->success(message: 'Logout berhasil.');
     }
 
     /**
@@ -62,21 +59,15 @@ class AuthController extends Controller
     {
         $request->user()->tokens()->delete();
 
-        return response()->json([
-            'message' => 'Logout dari semua perangkat berhasil.',
-        ]);
+        return $this->success(message: 'Logout dari semua perangkat berhasil.');
     }
 
     /**
      * Get authenticated user info.
      */
-    public function me(Request $request): JsonResponse
+    public function me(Request $request): UserResource
     {
-        $user = $request->user()->load('roles');
-
-        return response()->json([
-            'user' => new UserResource($user),
-        ]);
+        return new UserResource($request->user()->load('roles'));
     }
 
     /**

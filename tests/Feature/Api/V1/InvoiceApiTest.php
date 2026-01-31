@@ -5,7 +5,6 @@ use App\Models\Sales\Invoice;
 use App\Models\Sales\InvoiceItem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
@@ -13,9 +12,8 @@ beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\ChartOfAccountsSeeder']);
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\FiscalPeriodSeeder']);
 
-    // Authenticate user
-    $user = User::factory()->create();
-    Sanctum::actingAs($user);
+    // Authenticate as admin user (has all permissions via admin bypass)
+    authenticatedAdmin();
 });
 
 describe('Invoice API', function () {
@@ -33,11 +31,21 @@ describe('Invoice API', function () {
             ->assertJsonStructure([
                 'data' => [
                     '*' => [
+                        'id',
+                        'invoice_number',
+                        'total_amount', // Contract standard: use total_amount
                         'status' => ['value', 'label', 'color', 'is_terminal', 'is_editable'],
                         'formatted' => ['total_amount', 'paid_amount', 'outstanding_amount'],
-                    ]
-                ]
+                    ],
+                ],
             ]);
+
+        // Validate contract structure for first item
+        if (count($response->json('data')) > 0) {
+            $firstItem = $response->json('data')[0];
+            expect($firstItem)->toHaveKey('total_amount'); // Contract validation
+            expect($firstItem['total_amount'])->toBeInt();
+        }
     });
 
     it('can filter invoices by status', function () {

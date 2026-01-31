@@ -13,7 +13,6 @@ class QuotationResource extends JsonResource
     /**
      * Transform the resource into an array.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return array{
      *   id: int,
      *   quotation_number: string,
@@ -44,7 +43,7 @@ class QuotationResource extends JsonResource
      *   discount_amount: int,
      *   tax_rate: float,
      *   tax_amount: int,
-     *   total: int,
+     *   total_amount: int,
      *   base_currency_total: int,
      *   notes: string|null,
      *   terms_conditions: string|null,
@@ -128,7 +127,7 @@ class QuotationResource extends JsonResource
             'discount_amount' => $this->discount_amount,
             'tax_rate' => (float) $this->tax_rate,
             'tax_amount' => $this->tax_amount,
-            'total' => $this->total_amount,
+            'total_amount' => $this->total_amount,
             'base_currency_total' => $this->base_currency_total,
 
             'notes' => $this->notes,

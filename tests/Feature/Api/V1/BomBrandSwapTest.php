@@ -6,15 +6,12 @@ use App\Models\Manufacturing\BomItem;
 use App\Models\Manufacturing\BomVariantGroup;
 use App\Models\Manufacturing\ComponentBrandMapping;
 use App\Models\Manufacturing\ComponentStandard;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $user = User::factory()->create();
-    Sanctum::actingAs($user);
+    authenticatedAdmin();
 
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\ChartOfAccountsSeeder']);
 });

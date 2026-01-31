@@ -21,7 +21,7 @@ use Laravel\Sanctum\Sanctum;
 |
 */
 
-uses(Tests\TestCase::class)->in('Feature', 'Unit');
+uses(Tests\TestCase::class)->in('Feature', 'Unit', 'Contract');
 
 /*
 |--------------------------------------------------------------------------

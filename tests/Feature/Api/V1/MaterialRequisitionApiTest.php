@@ -7,15 +7,12 @@ use App\Models\Manufacturing\MaterialRequisition;
 use App\Models\Manufacturing\MaterialRequisitionItem;
 use App\Models\Manufacturing\WorkOrder;
 use App\Models\Manufacturing\WorkOrderItem;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $user = User::factory()->create();
-    Sanctum::actingAs($user);
+    authenticatedAdmin();
 
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\ChartOfAccountsSeeder']);
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\FiscalPeriodSeeder']);

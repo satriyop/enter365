@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\DocumentStatus;
 use App\Filters\ProjectFilter;
-use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreProjectRequest;
 use App\Http\Requests\Api\V1\UpdateProjectRequest;
 use App\Http\Resources\Api\V1\ProjectCostResource;
@@ -32,6 +31,8 @@ class ProjectController extends Controller
      */
     public function index(ProjectFilter $filter): AnonymousResourceCollection
     {
+        $this->authorize('viewAny', Project::class);
+
         $projects = Project::query()
             ->with(['contact', 'manager']) // Default eager loads
             ->filter($filter)
@@ -45,6 +46,8 @@ class ProjectController extends Controller
      */
     public function store(StoreProjectRequest $request): JsonResponse
     {
+        $this->authorize('create', Project::class);
+
         $project = $this->projectService->create($request->validated());
 
         return (new ProjectResource($project))
@@ -57,6 +60,8 @@ class ProjectController extends Controller
      */
     public function show(Project $project, ProjectFilter $filter): ProjectResource
     {
+        $this->authorize('view', $project);
+
         $filter->apply($project->newQuery());
 
         $project->loadMissing(['contact', 'manager', 'quotation', 'costs', 'revenues', 'creator']);
@@ -69,6 +74,8 @@ class ProjectController extends Controller
      */
     public function update(UpdateProjectRequest $request, Project $project): ProjectResource
     {
+        $this->authorize('update', $project);
+
         $project = $this->projectService->update($project, $request->validated());
 
         return new ProjectResource($project);
@@ -79,6 +86,8 @@ class ProjectController extends Controller
      */
     public function destroy(Project $project): JsonResponse
     {
+        $this->authorize('delete', $project);
+
         $this->projectService->delete($project);
 
         return response()->json(['message' => 'Proyek berhasil dihapus.']);
@@ -89,6 +98,8 @@ class ProjectController extends Controller
      */
     public function createFromQuotation(Request $request, Quotation $quotation): JsonResponse
     {
+        $this->authorize('create', Project::class);
+
         $request->validate([
             'name' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],
@@ -120,6 +131,8 @@ class ProjectController extends Controller
      */
     public function start(Project $project): ProjectResource|JsonResponse
     {
+        $this->authorize('update', $project);
+
         try {
             $project = $this->projectService->start($project);
 
@@ -134,6 +147,8 @@ class ProjectController extends Controller
      */
     public function hold(Request $request, Project $project): ProjectResource
     {
+        $this->authorize('update', $project);
+
         $request->validate([
             'reason' => ['nullable', 'string', 'max:500'],
         ]);
@@ -148,6 +163,8 @@ class ProjectController extends Controller
      */
     public function resume(Project $project): ProjectResource
     {
+        $this->authorize('update', $project);
+
         $project = $this->projectService->resume($project);
 
         return new ProjectResource($project);
@@ -158,6 +175,8 @@ class ProjectController extends Controller
      */
     public function complete(Project $project): ProjectResource
     {
+        $this->authorize('update', $project);
+
         $project = $this->projectService->complete($project);
 
         return new ProjectResource($project);
@@ -168,6 +187,8 @@ class ProjectController extends Controller
      */
     public function cancel(Request $request, Project $project): ProjectResource
     {
+        $this->authorize('update', $project);
+
         $request->validate([
             'reason' => ['nullable', 'string', 'max:500'],
         ]);
@@ -182,6 +203,8 @@ class ProjectController extends Controller
      */
     public function updateProgress(Request $request, Project $project): ProjectResource
     {
+        $this->authorize('update', $project);
+
         $request->validate([
             'progress' => ['required', 'numeric', 'min:0', 'max:100'],
         ], [
@@ -200,6 +223,8 @@ class ProjectController extends Controller
      */
     public function addCost(Request $request, Project $project): JsonResponse
     {
+        $this->authorize('update', $project);
+
         $request->validate([
             'type' => ['required', 'string', Rule::in(array_keys(ProjectCost::getCostTypes()))],
             'description' => ['required', 'string', 'max:255'],
@@ -232,6 +257,8 @@ class ProjectController extends Controller
      */
     public function updateCost(Request $request, Project $project, ProjectCost $cost): JsonResponse
     {
+        $this->authorize('update', $project);
+
         if ($cost->project_id !== $project->id) {
             return response()->json(['message' => 'Biaya tidak ditemukan untuk proyek ini.'], 404);
         }
@@ -268,6 +295,8 @@ class ProjectController extends Controller
      */
     public function deleteCost(Project $project, ProjectCost $cost): JsonResponse
     {
+        $this->authorize('update', $project);
+
         if ($cost->project_id !== $project->id) {
             return response()->json(['message' => 'Biaya tidak ditemukan untuk proyek ini.'], 404);
         }
@@ -282,6 +311,8 @@ class ProjectController extends Controller
      */
     public function addRevenue(Request $request, Project $project): JsonResponse
     {
+        $this->authorize('update', $project);
+
         $request->validate([
             'type' => ['required', 'string', Rule::in(array_keys(ProjectRevenue::getRevenueTypes()))],
             'description' => ['required', 'string', 'max:255'],
@@ -312,6 +343,8 @@ class ProjectController extends Controller
      */
     public function updateRevenue(Request $request, Project $project, ProjectRevenue $revenue): JsonResponse
     {
+        $this->authorize('update', $project);
+
         if ($revenue->project_id !== $project->id) {
             return response()->json(['message' => 'Pendapatan tidak ditemukan untuk proyek ini.'], 404);
         }
@@ -346,6 +379,8 @@ class ProjectController extends Controller
      */
     public function deleteRevenue(Project $project, ProjectRevenue $revenue): JsonResponse
     {
+        $this->authorize('update', $project);
+
         if ($revenue->project_id !== $project->id) {
             return response()->json(['message' => 'Pendapatan tidak ditemukan untuk proyek ini.'], 404);
         }
@@ -360,6 +395,8 @@ class ProjectController extends Controller
      */
     public function summary(Project $project): JsonResponse
     {
+        $this->authorize('view', $project);
+
         $summary = $this->projectService->getSummary($project->load(['costs', 'revenues']));
 
         return response()->json(['data' => $summary]);
@@ -370,6 +407,8 @@ class ProjectController extends Controller
      */
     public function statistics(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Project::class);
+
         $statistics = $this->projectService->getStatistics(
             $request->input('start_date'),
             $request->input('end_date')

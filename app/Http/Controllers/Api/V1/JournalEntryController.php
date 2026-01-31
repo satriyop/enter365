@@ -21,6 +21,8 @@ class JournalEntryController extends Controller
 
     public function index(JournalEntryFilter $filter): AnonymousResourceCollection
     {
+        $this->authorize('viewAny', JournalEntry::class);
+
         $entries = JournalEntry::query()
             ->withCount(['lines'])
             ->withSum('lines as total_debit', 'debit')
@@ -35,6 +37,8 @@ class JournalEntryController extends Controller
 
     public function store(StoreJournalEntryRequest $request): JsonResponse
     {
+        $this->authorize('create', JournalEntry::class);
+
         $entry = $this->journalService->createEntry(
             $request->validated(),
             $request->boolean('auto_post')
@@ -47,6 +51,8 @@ class JournalEntryController extends Controller
 
     public function show(JournalEntry $journalEntry, JournalEntryFilter $filter): JournalEntryResource
     {
+        $this->authorize('view', $journalEntry);
+
         $filter->apply($journalEntry->newQuery());
 
         $journalEntry->loadMissing(['lines.account', 'fiscalPeriod', 'reversedBy', 'reversalOf']);
@@ -56,6 +62,8 @@ class JournalEntryController extends Controller
 
     public function post(JournalEntry $journalEntry): JournalEntryResource|JsonResponse
     {
+        $this->authorize('post', $journalEntry);
+
         try {
             $entry = $this->journalService->postEntry($journalEntry);
 
@@ -69,6 +77,8 @@ class JournalEntryController extends Controller
 
     public function reverse(JournalEntry $journalEntry, Request $request): JournalEntryResource|JsonResponse
     {
+        $this->authorize('reverse', $journalEntry);
+
         try {
             $reversalEntry = $this->journalService->reverseEntry(
                 $journalEntry,

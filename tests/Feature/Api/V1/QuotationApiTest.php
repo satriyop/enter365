@@ -6,15 +6,12 @@ use App\Models\Inventory\Product;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\Quotation;
 use App\Models\Sales\QuotationItem;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $user = User::factory()->create();
-    Sanctum::actingAs($user);
+    authenticatedAdmin();
 
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\ChartOfAccountsSeeder']);
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\FiscalPeriodSeeder']);
@@ -423,7 +420,7 @@ describe('Quotation Conversion', function () {
         $response = $this->postJson("/api/v1/quotations/{$quotation->id}/convert-to-invoice");
 
         $response->assertCreated()
-            ->assertJsonStructure(['message', 'invoice', 'quotation']);
+            ->assertJsonStructure(['success', 'message', 'data' => ['invoice', 'quotation']]);
 
         $quotation->refresh();
         expect($quotation->status)->toBe(DocumentStatus::Converted);
@@ -450,7 +447,7 @@ describe('Quotation Conversion', function () {
 
         $response->assertCreated();
 
-        $invoice = Invoice::find($response->json('invoice.id'));
+        $invoice = Invoice::find($response->json('data.invoice.id'));
         expect($invoice->description)->toBe('Panel Listrik 100A');
         expect($invoice->reference)->toBe($quotation->getFullNumber());
         expect($invoice->total_amount)->toBe(5550000);
@@ -684,7 +681,8 @@ describe('Quotation PDF', function () {
         $response = $this->getJson("/api/v1/quotations/{$quotation->id}/pdf");
 
         $response->assertStatus(501)
-            ->assertJsonPath('quotation_number', $quotation->getFullNumber());
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('message', 'Fitur PDF belum tersedia.');
     });
 });
 
