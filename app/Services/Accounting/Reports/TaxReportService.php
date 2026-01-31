@@ -5,6 +5,7 @@ namespace App\Services\Accounting\Reports;
 use App\Enums\DocumentStatus;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 class TaxReportService
@@ -20,8 +21,11 @@ class TaxReportService
      *     details: array{invoices: Collection, bills: Collection}
      * }
      */
-    public function getPpnSummary(\DateTimeInterface $startDate, \DateTimeInterface $endDate): array
+    public function getPpnSummary(?string $startDate = null, ?string $endDate = null): array
     {
+        $startDate = $startDate ?? now()->startOfMonth()->toDateString();
+        $endDate = $endDate ?? now()->endOfMonth()->toDateString();
+
         // PPN Keluaran (Output Tax) - From posted invoices
         $invoices = Invoice::query()
             ->whereIn('status', [
@@ -30,7 +34,7 @@ class TaxReportService
                 DocumentStatus::Paid,
                 DocumentStatus::Overdue,
             ])
-            ->whereBetween('invoice_date', [$startDate, $endDate])
+            ->whereBetween('invoice_date', [$startDate, $endDate.' 23:59:59'])
             ->where('tax_amount', '>', 0)
             ->with('contact')
             ->get();
@@ -49,7 +53,7 @@ class TaxReportService
                 DocumentStatus::Paid,
                 DocumentStatus::Overdue,
             ])
-            ->whereBetween('bill_date', [$startDate, $endDate])
+            ->whereBetween('bill_date', [$startDate, $endDate.' 23:59:59'])
             ->where('tax_amount', '>', 0)
             ->with('contact')
             ->get();
@@ -65,8 +69,8 @@ class TaxReportService
 
         return [
             'period' => [
-                'start' => $startDate->format('Y-m-d'),
-                'end' => $endDate->format('Y-m-d'),
+                'start' => $startDate,
+                'end' => $endDate,
             ],
             'output_tax' => $outputTax,
             'input_tax' => $inputTax,
@@ -106,10 +110,10 @@ class TaxReportService
         $months = collect();
 
         for ($month = 1; $month <= 12; $month++) {
-            $startDate = \Carbon\Carbon::create($year, $month, 1)->startOfMonth();
+            $startDate = Carbon::create($year, $month, 1)->startOfMonth();
             $endDate = $startDate->copy()->endOfMonth();
 
-            $summary = $this->getPpnSummary($startDate, $endDate);
+            $summary = $this->getPpnSummary($startDate->toDateString(), $endDate->toDateString());
 
             $months->push([
                 'month' => $startDate->format('Y-m'),
@@ -128,8 +132,11 @@ class TaxReportService
      *
      * @return Collection<int, array>
      */
-    public function getTaxInvoiceList(\DateTimeInterface $startDate, \DateTimeInterface $endDate): Collection
+    public function getTaxInvoiceList(?string $startDate = null, ?string $endDate = null): Collection
     {
+        $startDate = $startDate ?? now()->startOfMonth()->toDateString();
+        $endDate = $endDate ?? now()->endOfMonth()->toDateString();
+
         return Invoice::query()
             ->whereIn('status', [
                 DocumentStatus::Sent,
@@ -137,7 +144,7 @@ class TaxReportService
                 DocumentStatus::Paid,
                 DocumentStatus::Overdue,
             ])
-            ->whereBetween('invoice_date', [$startDate, $endDate])
+            ->whereBetween('invoice_date', [$startDate, $endDate.' 23:59:59'])
             ->where('tax_amount', '>', 0)
             ->with('contact')
             ->orderBy('invoice_date')
@@ -159,8 +166,11 @@ class TaxReportService
      *
      * @return Collection<int, array>
      */
-    public function getInputTaxList(\DateTimeInterface $startDate, \DateTimeInterface $endDate): Collection
+    public function getInputTaxList(?string $startDate = null, ?string $endDate = null): Collection
     {
+        $startDate = $startDate ?? now()->startOfMonth()->toDateString();
+        $endDate = $endDate ?? now()->endOfMonth()->toDateString();
+
         return Bill::query()
             ->whereIn('status', [
                 DocumentStatus::Received,
@@ -168,7 +178,7 @@ class TaxReportService
                 DocumentStatus::Paid,
                 DocumentStatus::Overdue,
             ])
-            ->whereBetween('bill_date', [$startDate, $endDate])
+            ->whereBetween('bill_date', [$startDate, $endDate.' 23:59:59'])
             ->where('tax_amount', '>', 0)
             ->with('contact')
             ->orderBy('bill_date')
@@ -196,7 +206,7 @@ class TaxReportService
      */
     public function getMonthlyPpn(int $month, int $year): array
     {
-        $startDate = \Carbon\Carbon::create($year, $month, 1)->startOfMonth();
+        $startDate = Carbon::create($year, $month, 1)->startOfMonth();
         $endDate = $startDate->copy()->endOfMonth();
 
         // PPN Keluaran (Output Tax) - From posted invoices
@@ -207,7 +217,7 @@ class TaxReportService
                 DocumentStatus::Paid,
                 DocumentStatus::Overdue,
             ])
-            ->whereBetween('invoice_date', [$startDate, $endDate])
+            ->whereBetween('invoice_date', [$startDate->toDateString(), $endDate->toDateString().' 23:59:59'])
             ->where('tax_amount', '>', 0)
             ->with('contact')
             ->orderBy('invoice_date')
@@ -229,7 +239,7 @@ class TaxReportService
                 DocumentStatus::Paid,
                 DocumentStatus::Overdue,
             ])
-            ->whereBetween('bill_date', [$startDate, $endDate])
+            ->whereBetween('bill_date', [$startDate->toDateString(), $endDate->toDateString().' 23:59:59'])
             ->where('tax_amount', '>', 0)
             ->with('contact')
             ->orderBy('bill_date')

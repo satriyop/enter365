@@ -171,12 +171,8 @@ class ReportController extends Controller
      */
     public function ppnSummary(Request $request): JsonResponse
     {
-        $startDate = $request->input('start_date')
-            ? Carbon::parse($request->input('start_date'))
-            : now()->startOfMonth();
-        $endDate = $request->input('end_date')
-            ? Carbon::parse($request->input('end_date'))
-            : now()->endOfMonth();
+        $startDate = $request->input('start_date') ?? now()->startOfMonth()->toDateString();
+        $endDate = $request->input('end_date') ?? now()->endOfMonth()->toDateString();
 
         $report = $this->reports->tax()->getPpnSummary($startDate, $endDate);
 
@@ -210,20 +206,16 @@ class ReportController extends Controller
      */
     public function taxInvoiceList(Request $request): JsonResponse
     {
-        $startDate = $request->input('start_date')
-            ? Carbon::parse($request->input('start_date'))
-            : now()->startOfMonth();
-        $endDate = $request->input('end_date')
-            ? Carbon::parse($request->input('end_date'))
-            : now()->endOfMonth();
+        $startDate = $request->input('start_date') ?? now()->startOfMonth()->toDateString();
+        $endDate = $request->input('end_date') ?? now()->endOfMonth()->toDateString();
 
         $invoices = $this->reports->tax()->getTaxInvoiceList($startDate, $endDate);
 
         return response()->json([
             'report_name' => 'Daftar Faktur Pajak Keluaran',
             'period' => [
-                'start' => $startDate->format('Y-m-d'),
-                'end' => $endDate->format('Y-m-d'),
+                'start' => $startDate,
+                'end' => $endDate,
             ],
             'invoices' => $invoices,
             'total_dpp' => $invoices->sum('dpp'),
@@ -236,20 +228,16 @@ class ReportController extends Controller
      */
     public function inputTaxList(Request $request): JsonResponse
     {
-        $startDate = $request->input('start_date')
-            ? Carbon::parse($request->input('start_date'))
-            : now()->startOfMonth();
-        $endDate = $request->input('end_date')
-            ? Carbon::parse($request->input('end_date'))
-            : now()->endOfMonth();
+        $startDate = $request->input('start_date') ?? now()->startOfMonth()->toDateString();
+        $endDate = $request->input('end_date') ?? now()->endOfMonth()->toDateString();
 
         $bills = $this->reports->tax()->getInputTaxList($startDate, $endDate);
 
         return response()->json([
             'report_name' => 'Daftar Faktur Pajak Masukan',
             'period' => [
-                'start' => $startDate->format('Y-m-d'),
-                'end' => $endDate->format('Y-m-d'),
+                'start' => $startDate,
+                'end' => $endDate,
             ],
             'bills' => $bills,
             'total_dpp' => $bills->sum('dpp'),
@@ -262,12 +250,8 @@ class ReportController extends Controller
      */
     public function cashFlow(Request $request): JsonResponse
     {
-        $startDate = $request->input('start_date')
-            ? Carbon::parse($request->input('start_date'))
-            : now()->startOfMonth();
-        $endDate = $request->input('end_date')
-            ? Carbon::parse($request->input('end_date'))
-            : now()->endOfMonth();
+        $startDate = $request->input('start_date') ?? now()->startOfMonth()->toDateString();
+        $endDate = $request->input('end_date') ?? now()->endOfMonth()->toDateString();
 
         $report = $this->reports->cashFlow()->generateCashFlow($startDate, $endDate);
 
@@ -282,20 +266,16 @@ class ReportController extends Controller
      */
     public function dailyCashMovement(Request $request): JsonResponse
     {
-        $startDate = $request->input('start_date')
-            ? Carbon::parse($request->input('start_date'))
-            : now()->startOfMonth();
-        $endDate = $request->input('end_date')
-            ? Carbon::parse($request->input('end_date'))
-            : now()->endOfMonth();
+        $startDate = $request->input('start_date') ?? now()->startOfMonth()->toDateString();
+        $endDate = $request->input('end_date') ?? now()->endOfMonth()->toDateString();
 
         $movements = $this->reports->cashFlow()->getDailyCashMovement($startDate, $endDate);
 
         return response()->json([
             'report_name' => 'Pergerakan Kas Harian',
             'period' => [
-                'start' => $startDate->format('Y-m-d'),
-                'end' => $endDate->format('Y-m-d'),
+                'start' => $startDate,
+                'end' => $endDate,
             ],
             'movements' => $movements,
             'total_receipts' => $movements->sum('receipts'),

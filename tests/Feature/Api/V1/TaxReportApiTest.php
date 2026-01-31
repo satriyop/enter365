@@ -117,13 +117,13 @@ describe('Tax Report API (PPN)', function () {
 
         // Invoice this month
         Invoice::factory()->forContact($customer)->sent()->create([
-            'invoice_date' => now(),
+            'invoice_date' => now()->toDateString(),
             'tax_amount' => 110000,
         ]);
 
         // Invoice last month
         Invoice::factory()->forContact($customer)->sent()->create([
-            'invoice_date' => now()->subMonth(),
+            'invoice_date' => now()->subMonth()->toDateString(),
             'tax_amount' => 220000,
         ]);
 

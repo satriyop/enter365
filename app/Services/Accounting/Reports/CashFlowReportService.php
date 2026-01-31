@@ -6,6 +6,7 @@ use App\Models\Accounting\Account;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Accounting\JournalEntryLine;
 use App\Models\Shared\Payment;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 class CashFlowReportService
@@ -23,10 +24,13 @@ class CashFlowReportService
      *     ending_cash: int
      * }
      */
-    public function generateCashFlow(\DateTimeInterface $startDate, \DateTimeInterface $endDate): array
+    public function generateCashFlow(?string $startDate = null, ?string $endDate = null): array
     {
+        $startDate = $startDate ?? now()->startOfMonth()->toDateString();
+        $endDate = $endDate ?? now()->endOfMonth()->toDateString();
+
         // Get beginning cash balance
-        $beginningCash = $this->getCashBalance($startDate->copy()->subDay());
+        $beginningCash = $this->getCashBalance(Carbon::parse($startDate)->subDay());
 
         // Operating activities
         $operating = $this->getOperatingActivities($startDate, $endDate);
@@ -42,8 +46,8 @@ class CashFlowReportService
 
         return [
             'period' => [
-                'start' => $startDate->format('Y-m-d'),
-                'end' => $endDate->format('Y-m-d'),
+                'start' => $startDate,
+                'end' => $endDate,
             ],
             'operating' => $operating,
             'investing' => $investing,
@@ -80,7 +84,7 @@ class CashFlowReportService
      *
      * @return array{items: Collection, subtotal: int}
      */
-    protected function getOperatingActivities(\DateTimeInterface $startDate, \DateTimeInterface $endDate): array
+    protected function getOperatingActivities(string $startDate, string $endDate): array
     {
         $items = collect();
 
@@ -88,7 +92,7 @@ class CashFlowReportService
         $customerReceipts = Payment::query()
             ->where('type', Payment::TYPE_RECEIVE)
             ->where('is_voided', false)
-            ->whereBetween('payment_date', [$startDate, $endDate])
+            ->whereBetween('payment_date', [$startDate, $endDate.' 23:59:59'])
             ->sum('amount');
         $items->push([
             'description' => 'Penerimaan dari pelanggan',
@@ -99,7 +103,7 @@ class CashFlowReportService
         $supplierPayments = Payment::query()
             ->where('type', Payment::TYPE_SEND)
             ->where('is_voided', false)
-            ->whereBetween('payment_date', [$startDate, $endDate])
+            ->whereBetween('payment_date', [$startDate, $endDate.' 23:59:59'])
             ->sum('amount');
         $items->push([
             'description' => 'Pembayaran ke pemasok',
@@ -125,7 +129,7 @@ class CashFlowReportService
      *
      * @return array{items: Collection, subtotal: int}
      */
-    protected function getInvestingActivities(\DateTimeInterface $startDate, \DateTimeInterface $endDate): array
+    protected function getInvestingActivities(string $startDate, string $endDate): array
     {
         $items = collect();
 
@@ -155,7 +159,7 @@ class CashFlowReportService
      *
      * @return array{items: Collection, subtotal: int}
      */
-    protected function getFinancingActivities(\DateTimeInterface $startDate, \DateTimeInterface $endDate): array
+    protected function getFinancingActivities(string $startDate, string $endDate): array
     {
         $items = collect();
 
@@ -185,7 +189,7 @@ class CashFlowReportService
      *
      * @return Collection<int, array{description: string, amount: int}>
      */
-    protected function getJournalCashFlows(\DateTimeInterface $startDate, \DateTimeInterface $endDate, string $category): Collection
+    protected function getJournalCashFlows(string $startDate, string $endDate, string $category): Collection
     {
         $cashAccounts = Account::query()
             ->whereIn('code', ['1-1001', '1-1002', '1-1003', '1-1004', '1-1005'])
@@ -207,7 +211,7 @@ class CashFlowReportService
         $entries = JournalEntry::query()
             ->where('is_posted', true)
             ->where('source_type', JournalEntry::SOURCE_MANUAL) // Only manual entries
-            ->whereBetween('entry_date', [$startDate, $endDate])
+            ->whereBetween('entry_date', [$startDate, $endDate.' 23:59:59'])
             ->whereHas('lines', function ($q) use ($cashAccounts) {
                 $q->whereIn('account_id', $cashAccounts);
             })
@@ -251,14 +255,17 @@ class CashFlowReportService
      *
      * @return Collection<int, array{date: string, receipts: int, payments: int, net: int, balance: int}>
      */
-    public function getDailyCashMovement(\DateTimeInterface $startDate, \DateTimeInterface $endDate): Collection
+    public function getDailyCashMovement(?string $startDate = null, ?string $endDate = null): Collection
     {
-        $beginningBalance = $this->getCashBalance($startDate->copy()->subDay());
+        $startDate = $startDate ?? now()->startOfMonth()->toDateString();
+        $endDate = $endDate ?? now()->endOfMonth()->toDateString();
+
+        $beginningBalance = $this->getCashBalance(Carbon::parse($startDate)->subDay());
         $runningBalance = $beginningBalance;
 
         $movements = collect();
-        $current = \Carbon\Carbon::parse($startDate)->copy();
-        $end = \Carbon\Carbon::parse($endDate);
+        $current = Carbon::parse($startDate)->copy();
+        $end = Carbon::parse($endDate);
 
         while ($current->lte($end)) {
             $receipts = Payment::query()

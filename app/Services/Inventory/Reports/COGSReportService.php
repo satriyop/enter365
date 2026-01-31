@@ -27,20 +27,20 @@ class COGSReportService
      */
     public function getCOGSSummary(?string $startDate = null, ?string $endDate = null): array
     {
-        $startDate = $startDate ? Carbon::parse($startDate) : now()->startOfMonth();
-        $endDate = $endDate ? Carbon::parse($endDate) : now()->endOfMonth();
+        $startDate = $startDate ?? now()->startOfMonth()->toDateString();
+        $endDate = $endDate ?? now()->endOfMonth()->toDateString();
 
         // Beginning inventory value (sum of all product costs at start)
-        $beginningInventory = $this->getInventoryValueAtDate($startDate->copy()->subDay());
+        $beginningInventory = $this->getInventoryValueAtDate(Carbon::parse($startDate)->subDay());
 
         // Purchases during period (inventory IN movements)
         $purchases = InventoryMovement::query()
             ->where('type', InventoryMovement::TYPE_IN)
-            ->whereBetween('movement_date', [$startDate, $endDate])
+            ->whereBetween('movement_date', [$startDate, $endDate.' 23:59:59'])
             ->sum('total_cost');
 
         // Ending inventory value
-        $endingInventory = $this->getInventoryValueAtDate($endDate);
+        $endingInventory = $this->getInventoryValueAtDate(Carbon::parse($endDate));
 
         // COGS = Beginning + Purchases - Ending
         $cogs = $beginningInventory + (int) $purchases - $endingInventory;
@@ -48,7 +48,7 @@ class COGSReportService
         // Alternative: Sum of all OUT movements with cost tracking
         $cogsFromMovements = InventoryMovement::query()
             ->where('type', InventoryMovement::TYPE_OUT)
-            ->whereBetween('movement_date', [$startDate, $endDate])
+            ->whereBetween('movement_date', [$startDate, $endDate.' 23:59:59'])
             ->sum('total_cost');
 
         // Use movement-based COGS as it's more accurate in perpetual inventory
@@ -56,8 +56,8 @@ class COGSReportService
 
         return [
             'period' => [
-                'start' => $startDate->format('Y-m-d'),
-                'end' => $endDate->format('Y-m-d'),
+                'start' => $startDate,
+                'end' => $endDate,
             ],
             'beginning_inventory' => $beginningInventory,
             'purchases' => (int) $purchases,
@@ -84,14 +84,14 @@ class COGSReportService
      */
     public function getCOGSByProduct(?string $startDate = null, ?string $endDate = null): Collection
     {
-        $startDate = $startDate ? Carbon::parse($startDate) : now()->startOfMonth();
-        $endDate = $endDate ? Carbon::parse($endDate) : now()->endOfMonth();
+        $startDate = $startDate ?? now()->startOfMonth()->toDateString();
+        $endDate = $endDate ?? now()->endOfMonth()->toDateString();
 
         $results = DB::table('inventory_movements as m')
             ->join('products as p', 'm.product_id', '=', 'p.id')
             ->leftJoin('product_categories as c', 'p.category_id', '=', 'c.id')
             ->where('m.type', InventoryMovement::TYPE_OUT)
-            ->whereBetween('m.movement_date', [$startDate, $endDate])
+            ->whereBetween('m.movement_date', [$startDate, $endDate.' 23:59:59'])
             ->groupBy('p.id', 'p.sku', 'p.name', 'c.name')
             ->select([
                 'p.id as product_id',
@@ -135,14 +135,14 @@ class COGSReportService
      */
     public function getCOGSByCategory(?string $startDate = null, ?string $endDate = null): Collection
     {
-        $startDate = $startDate ? Carbon::parse($startDate) : now()->startOfMonth();
-        $endDate = $endDate ? Carbon::parse($endDate) : now()->endOfMonth();
+        $startDate = $startDate ?? now()->startOfMonth()->toDateString();
+        $endDate = $endDate ?? now()->endOfMonth()->toDateString();
 
         $results = DB::table('inventory_movements as m')
             ->join('products as p', 'm.product_id', '=', 'p.id')
             ->leftJoin('product_categories as c', 'p.category_id', '=', 'c.id')
             ->where('m.type', InventoryMovement::TYPE_OUT)
-            ->whereBetween('m.movement_date', [$startDate, $endDate])
+            ->whereBetween('m.movement_date', [$startDate, $endDate.' 23:59:59'])
             ->groupBy('c.id', 'c.name')
             ->select([
                 'c.id as category_id',
@@ -226,13 +226,13 @@ class COGSReportService
      */
     public function getTopProductsByCOGS(?string $startDate = null, ?string $endDate = null, int $limit = 10): Collection
     {
-        $startDate = $startDate ? Carbon::parse($startDate) : now()->startOfMonth();
-        $endDate = $endDate ? Carbon::parse($endDate) : now()->endOfMonth();
+        $startDate = $startDate ?? now()->startOfMonth()->toDateString();
+        $endDate = $endDate ?? now()->endOfMonth()->toDateString();
 
         return DB::table('inventory_movements as m')
             ->join('products as p', 'm.product_id', '=', 'p.id')
             ->where('m.type', InventoryMovement::TYPE_OUT)
-            ->whereBetween('m.movement_date', [$startDate, $endDate])
+            ->whereBetween('m.movement_date', [$startDate, $endDate.' 23:59:59'])
             ->groupBy('p.id', 'p.sku', 'p.name', 'p.selling_price')
             ->select([
                 'p.id as product_id',
@@ -347,13 +347,13 @@ class COGSReportService
      */
     public function getProductCOGSDetail(Product $product, ?string $startDate = null, ?string $endDate = null): Collection
     {
-        $startDate = $startDate ? Carbon::parse($startDate) : now()->startOfMonth();
-        $endDate = $endDate ? Carbon::parse($endDate) : now()->endOfMonth();
+        $startDate = $startDate ?? now()->startOfMonth()->toDateString();
+        $endDate = $endDate ?? now()->endOfMonth()->toDateString();
 
         return InventoryMovement::query()
             ->where('product_id', $product->id)
             ->where('type', InventoryMovement::TYPE_OUT)
-            ->whereBetween('movement_date', [$startDate, $endDate])
+            ->whereBetween('movement_date', [$startDate, $endDate.' 23:59:59'])
             ->orderBy('movement_date')
             ->get()
             ->map(fn (InventoryMovement $m) => [

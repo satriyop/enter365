@@ -386,7 +386,7 @@ class InventoryService extends BaseService implements InventoryServiceInterface
     public function getMovementSummary(string $startDate, string $endDate, ?Warehouse $warehouse = null): array
     {
         $query = InventoryMovement::query()
-            ->whereBetween('movement_date', [$startDate, $endDate]);
+            ->whereBetween('movement_date', [$startDate, $endDate.' 23:59:59']);
 
         if ($warehouse) {
             $query->where('warehouse_id', $warehouse->id);
