@@ -35,9 +35,9 @@ describe('Permission API', function () {
     });
 
     it('can search permissions', function () {
-        Permission::factory()->create(['name' => 'invoices.view', 'display_name' => 'View Invoices']);
-        Permission::factory()->create(['name' => 'invoices.create', 'display_name' => 'Create Invoices']);
-        Permission::factory()->create(['name' => 'bills.view', 'display_name' => 'View Bills']);
+        Permission::factory()->create(['name' => 'invoices.view', 'display_name' => 'View Invoices', 'group' => 'invoices', 'description' => null]);
+        Permission::factory()->create(['name' => 'invoices.create', 'display_name' => 'Create Invoices', 'group' => 'invoices', 'description' => null]);
+        Permission::factory()->create(['name' => 'bills.view', 'display_name' => 'View Bills', 'group' => 'bills', 'description' => null]);
 
         $response = $this->getJson('/api/v1/permissions?search=invoice');
 
