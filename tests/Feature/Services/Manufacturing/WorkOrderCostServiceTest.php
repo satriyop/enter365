@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
+use App\Contracts\Manufacturing\WorkOrderCostServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Manufacturing\WorkOrder;
 use App\Models\Projects\Project;
-use App\Services\Manufacturing\WorkOrderCostService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->service = new WorkOrderCostService;
+    $this->service = app(WorkOrderCostServiceInterface::class);
 });
 
 describe('getCostSummary', function () {

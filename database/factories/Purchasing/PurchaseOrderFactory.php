@@ -69,7 +69,7 @@ class PurchaseOrderFactory extends Factory
             'converted_to_bill_id' => null,
             'converted_at' => null,
             'original_po_id' => null,
-            'created_by' => null,
+            'created_by' => User::factory(),
         ];
     }
 

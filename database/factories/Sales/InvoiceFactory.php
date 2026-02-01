@@ -48,7 +48,7 @@ class InvoiceFactory extends Factory
             'status' => DocumentStatus::Draft,
             'journal_entry_id' => null,
             'receivable_account_id' => null,
-            'created_by' => null,
+            'created_by' => User::factory(),
         ];
     }
 

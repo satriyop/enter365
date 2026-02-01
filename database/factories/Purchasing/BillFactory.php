@@ -51,7 +51,7 @@ class BillFactory extends Factory
             'status' => DocumentStatus::Draft,
             'journal_entry_id' => null,
             'payable_account_id' => null,
-            'created_by' => null,
+            'created_by' => User::factory(),
         ];
     }
 

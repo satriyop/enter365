@@ -8,6 +8,7 @@ use App\Models\Inventory\Warehouse;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\WorkOrder;
 use App\Models\Projects\Project;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -56,6 +57,7 @@ class WorkOrderFactory extends Factory
             'cost_variance' => 0,
             'warehouse_id' => null,
             'notes' => $this->faker->optional()->sentence(),
+            'created_by' => User::factory(),
         ];
     }
 

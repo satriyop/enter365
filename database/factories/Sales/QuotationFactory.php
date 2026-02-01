@@ -67,7 +67,7 @@ class QuotationFactory extends Factory
             'converted_to_invoice_id' => null,
             'converted_at' => null,
             'original_quotation_id' => null,
-            'created_by' => null,
+            'created_by' => User::factory(),
         ];
     }
 

@@ -52,7 +52,7 @@ class RecurringTemplateFactory extends Factory
             'is_active' => true,
             'auto_post' => false,
             'auto_send' => false,
-            'created_by' => null,
+            'created_by' => \App\Models\User::factory(),
         ];
     }
 
