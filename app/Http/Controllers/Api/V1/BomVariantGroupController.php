@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\AddBomToVariantGroupRequest;
+use App\Http\Requests\Api\V1\CreateVariantFromBomRequest;
+use App\Http\Requests\Api\V1\ReorderVariantsRequest;
 use App\Http\Requests\Api\V1\StoreBomVariantGroupRequest;
 use App\Http\Requests\Api\V1\UpdateBomVariantGroupRequest;
 use App\Http\Resources\Api\V1\BomResource;
@@ -26,6 +29,8 @@ class BomVariantGroupController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
+        $this->authorize('viewAny', BomVariantGroup::class);
+
         $query = BomVariantGroup::query()->with(['product', 'boms']);
 
         if ($request->has('product_id')) {
@@ -55,6 +60,8 @@ class BomVariantGroupController extends Controller
      */
     public function store(StoreBomVariantGroupRequest $request): JsonResponse
     {
+        $this->authorize('create', BomVariantGroup::class);
+
         $group = $this->service->create($request->validated());
 
         return (new BomVariantGroupResource($group))
@@ -67,6 +74,8 @@ class BomVariantGroupController extends Controller
      */
     public function show(BomVariantGroup $bomVariantGroup): BomVariantGroupResource
     {
+        $this->authorize('view', $bomVariantGroup);
+
         return new BomVariantGroupResource(
             $bomVariantGroup->load(['product', 'boms.items', 'creator'])
         );
@@ -79,6 +88,8 @@ class BomVariantGroupController extends Controller
         UpdateBomVariantGroupRequest $request,
         BomVariantGroup $bomVariantGroup
     ): BomVariantGroupResource {
+        $this->authorize('update', $bomVariantGroup);
+
         $group = $this->service->update($bomVariantGroup, $request->validated());
 
         return new BomVariantGroupResource($group);
@@ -89,6 +100,8 @@ class BomVariantGroupController extends Controller
      */
     public function destroy(BomVariantGroup $bomVariantGroup): JsonResponse
     {
+        $this->authorize('delete', $bomVariantGroup);
+
         $this->service->delete($bomVariantGroup);
 
         return response()->json(['message' => 'Variant group berhasil dihapus.']);
@@ -99,6 +112,8 @@ class BomVariantGroupController extends Controller
      */
     public function compare(BomVariantGroup $bomVariantGroup): JsonResponse
     {
+        $this->authorize('view', $bomVariantGroup);
+
         $comparison = $this->service->getComparisonData($bomVariantGroup);
 
         return response()->json(['data' => $comparison]);
@@ -109,6 +124,8 @@ class BomVariantGroupController extends Controller
      */
     public function compareDetailed(BomVariantGroup $bomVariantGroup): JsonResponse
     {
+        $this->authorize('view', $bomVariantGroup);
+
         $comparison = $this->service->getDetailedComparison($bomVariantGroup);
 
         return response()->json(['data' => $comparison]);
@@ -117,17 +134,9 @@ class BomVariantGroupController extends Controller
     /**
      * Add a BOM to the variant group.
      */
-    public function addBom(Request $request, BomVariantGroup $bomVariantGroup): JsonResponse
+    public function addBom(AddBomToVariantGroupRequest $request, BomVariantGroup $bomVariantGroup): JsonResponse
     {
-        $request->validate([
-            'bom_id' => ['required', 'integer', 'exists:boms,id'],
-            'variant_name' => ['nullable', 'string', 'max:100'],
-            'variant_label' => ['nullable', 'string', 'max:255'],
-            'is_primary_variant' => ['nullable', 'boolean'],
-        ], [
-            'bom_id.required' => 'BOM harus dipilih.',
-            'bom_id.exists' => 'BOM tidak ditemukan.',
-        ]);
+        $this->authorize('update', $bomVariantGroup);
 
         try {
             $bom = Bom::findOrFail($request->input('bom_id'));
@@ -151,6 +160,8 @@ class BomVariantGroupController extends Controller
      */
     public function removeBom(BomVariantGroup $bomVariantGroup, Bom $bom): JsonResponse
     {
+        $this->authorize('update', $bomVariantGroup);
+
         try {
             $this->service->removeBom($bomVariantGroup, $bom);
 
@@ -165,6 +176,8 @@ class BomVariantGroupController extends Controller
      */
     public function setPrimary(BomVariantGroup $bomVariantGroup, Bom $bom): JsonResponse
     {
+        $this->authorize('update', $bomVariantGroup);
+
         try {
             $updatedBom = $this->service->setPrimaryVariant($bomVariantGroup, $bom);
 
@@ -180,13 +193,9 @@ class BomVariantGroupController extends Controller
     /**
      * Reorder variants.
      */
-    public function reorder(Request $request, BomVariantGroup $bomVariantGroup): JsonResponse
+    public function reorder(ReorderVariantsRequest $request, BomVariantGroup $bomVariantGroup): JsonResponse
     {
-        $request->validate([
-            'order' => ['required', 'array'],
-            'order.*.bom_id' => ['required', 'integer', 'exists:boms,id'],
-            'order.*.sort_order' => ['required', 'integer', 'min:0'],
-        ]);
+        $this->authorize('update', $bomVariantGroup);
 
         $orderMap = collect($request->input('order'))
             ->pluck('sort_order', 'bom_id')
@@ -203,18 +212,9 @@ class BomVariantGroupController extends Controller
     /**
      * Create a new variant from existing BOM.
      */
-    public function createVariant(Request $request, BomVariantGroup $bomVariantGroup): JsonResponse
+    public function createVariant(CreateVariantFromBomRequest $request, BomVariantGroup $bomVariantGroup): JsonResponse
     {
-        $request->validate([
-            'source_bom_id' => ['required', 'integer', 'exists:boms,id'],
-            'variant_name' => ['required', 'string', 'max:100'],
-            'variant_label' => ['nullable', 'string', 'max:255'],
-            'name' => ['nullable', 'string', 'max:255'],
-            'is_primary_variant' => ['nullable', 'boolean'],
-        ], [
-            'source_bom_id.required' => 'BOM sumber harus dipilih.',
-            'variant_name.required' => 'Nama variant harus diisi.',
-        ]);
+        $this->authorize('update', $bomVariantGroup);
 
         try {
             $sourceBom = Bom::findOrFail($request->input('source_bom_id'));

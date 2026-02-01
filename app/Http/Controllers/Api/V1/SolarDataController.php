@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\SolarCitiesRequest;
+use App\Http\Requests\Api\V1\SolarLookupRequest;
 use App\Http\Resources\Api\V1\IndonesiaSolarDataResource;
 use App\Http\Resources\Api\V1\PlnTariffResource;
 use App\Models\Solar\IndonesiaSolarData;
@@ -22,15 +24,10 @@ class SolarDataController extends Controller
      *
      * @operationId lookupSolarData
      */
-    public function lookup(Request $request): JsonResponse
+    public function lookup(SolarLookupRequest $request): JsonResponse
     {
         // Lookup by coordinates
-        if ($request->has('latitude') && $request->has('longitude')) {
-            $request->validate([
-                'latitude' => ['required', 'numeric', 'between:-90,90'],
-                'longitude' => ['required', 'numeric', 'between:-180,180'],
-            ]);
-
+        if ($request->isCoordinateLookup()) {
             $solarData = IndonesiaSolarData::findNearest(
                 $request->input('latitude'),
                 $request->input('longitude'),
@@ -50,33 +47,21 @@ class SolarDataController extends Controller
         }
 
         // Lookup by province and city
-        if ($request->has('province') && $request->has('city')) {
-            $request->validate([
-                'province' => ['required', 'string', 'max:100'],
-                'city' => ['required', 'string', 'max:100'],
-            ]);
+        $solarData = IndonesiaSolarData::findByLocation(
+            $request->input('province'),
+            $request->input('city')
+        );
 
-            $solarData = IndonesiaSolarData::findByLocation(
-                $request->input('province'),
-                $request->input('city')
-            );
-
-            if (! $solarData) {
-                // Try to find nearest in the same province
-                return response()->json([
-                    'message' => 'Tidak ada data untuk kota ini. Gunakan koordinat untuk mencari lokasi terdekat.',
-                    'data' => null,
-                ], 404);
-            }
-
+        if (! $solarData) {
             return response()->json([
-                'data' => new IndonesiaSolarDataResource($solarData),
-            ]);
+                'message' => 'Tidak ada data untuk kota ini. Gunakan koordinat untuk mencari lokasi terdekat.',
+                'data' => null,
+            ], 404);
         }
 
         return response()->json([
-            'message' => 'Harap berikan province+city atau latitude+longitude.',
-        ], 400);
+            'data' => new IndonesiaSolarDataResource($solarData),
+        ]);
     }
 
     /**
@@ -98,12 +83,8 @@ class SolarDataController extends Controller
      *
      * @operationId getSolarCities
      */
-    public function cities(Request $request): JsonResponse
+    public function cities(SolarCitiesRequest $request): JsonResponse
     {
-        $request->validate([
-            'province' => ['required', 'string', 'max:100'],
-        ]);
-
         $cities = IndonesiaSolarData::getCitiesInProvince($request->input('province'));
 
         return response()->json([

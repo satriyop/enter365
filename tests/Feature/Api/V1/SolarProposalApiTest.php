@@ -512,7 +512,8 @@ describe('Solar Data Lookup', function () {
     it('validates lookup parameters', function () {
         $response = $this->getJson('/api/v1/solar-data/lookup');
 
-        $response->assertBadRequest();
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['province']);
     });
 
     it('can list available provinces', function () {

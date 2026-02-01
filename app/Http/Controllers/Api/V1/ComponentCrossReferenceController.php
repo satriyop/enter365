@@ -3,6 +3,16 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\AcceptMappingSuggestionRequest;
+use App\Http\Requests\Api\V1\ApplyCostOptimizationRequest;
+use App\Http\Requests\Api\V1\BulkAcceptSuggestionsRequest;
+use App\Http\Requests\Api\V1\GenerateBrandVariantsRequest;
+use App\Http\Requests\Api\V1\ParseProductNameRequest;
+use App\Http\Requests\Api\V1\PreviewSwapBrandRequest;
+use App\Http\Requests\Api\V1\QuickSwapItemRequest;
+use App\Http\Requests\Api\V1\SearchComponentRequest;
+use App\Http\Requests\Api\V1\SuggestMappingsBatchRequest;
+use App\Http\Requests\Api\V1\SwapBrandRequest;
 use App\Http\Resources\Api\V1\BomResource;
 use App\Http\Resources\Api\V1\BomVariantGroupResource;
 use App\Http\Resources\Api\V1\ComponentBrandMappingResource;
@@ -34,6 +44,8 @@ class ComponentCrossReferenceController extends Controller
      */
     public function productEquivalents(Request $request, Product $product): JsonResponse
     {
+        $this->authorize('viewAny', Bom::class);
+
         $targetBrand = $request->input('brand');
         $equivalents = $this->equivalenceService->findEquivalents($product, $targetBrand);
 
@@ -51,13 +63,9 @@ class ComponentCrossReferenceController extends Controller
     /**
      * Search components by specifications.
      */
-    public function search(Request $request): JsonResponse
+    public function search(SearchComponentRequest $request): JsonResponse
     {
-        $request->validate([
-            'category' => 'required|string',
-            'specs' => 'nullable|array',
-            'brand' => 'nullable|string',
-        ]);
+        $this->authorize('viewAny', Bom::class);
 
         $results = $this->equivalenceService->searchBySpecs(
             $request->input('category'),
@@ -76,6 +84,8 @@ class ComponentCrossReferenceController extends Controller
      */
     public function compareBrands(Bom $bom): JsonResponse
     {
+        $this->authorize('view', $bom);
+
         $comparison = $this->brandSwapService->compareBrands($bom);
 
         return response()->json([
@@ -87,11 +97,9 @@ class ComponentCrossReferenceController extends Controller
      * Preview swap without creating a new BOM.
      * Returns estimated costs and item-by-item breakdown.
      */
-    public function previewSwapBrand(Request $request, Bom $bom): JsonResponse
+    public function previewSwapBrand(PreviewSwapBrandRequest $request, Bom $bom): JsonResponse
     {
-        $request->validate([
-            'target_brand' => 'required|string',
-        ]);
+        $this->authorize('view', $bom);
 
         $preview = $this->brandSwapService->previewSwapBrand(
             $bom,
@@ -106,13 +114,9 @@ class ComponentCrossReferenceController extends Controller
     /**
      * Swap BOM to a different brand.
      */
-    public function swapBrand(Request $request, Bom $bom): JsonResponse
+    public function swapBrand(SwapBrandRequest $request, Bom $bom): JsonResponse
     {
-        $request->validate([
-            'target_brand' => 'required|string',
-            'create_variant' => 'nullable|boolean',
-            'variant_group_id' => 'nullable|integer|exists:bom_variant_groups,id',
-        ]);
+        $this->authorize('create', Bom::class);
 
         $variantGroup = null;
         if ($request->has('variant_group_id')) {
@@ -140,13 +144,9 @@ class ComponentCrossReferenceController extends Controller
     /**
      * Generate all brand variants for a BOM.
      */
-    public function generateBrandVariants(Request $request, Bom $bom): JsonResponse
+    public function generateBrandVariants(GenerateBrandVariantsRequest $request, Bom $bom): JsonResponse
     {
-        $request->validate([
-            'brands' => 'required|array|min:1',
-            'brands.*' => 'string',
-            'group_name' => 'nullable|string|max:255',
-        ]);
+        $this->authorize('create', Bom::class);
 
         $result = $this->brandSwapService->generateBrandVariants(
             $bom,
@@ -170,6 +170,8 @@ class ComponentCrossReferenceController extends Controller
      */
     public function previewCostOptimization(Bom $bom): JsonResponse
     {
+        $this->authorize('view', $bom);
+
         $preview = $this->costOptimizationService->previewOptimization($bom);
 
         return response()->json([
@@ -180,12 +182,9 @@ class ComponentCrossReferenceController extends Controller
     /**
      * Apply cost optimization to create a new BOM with cheapest alternatives.
      */
-    public function applyCostOptimization(Request $request, Bom $bom): JsonResponse
+    public function applyCostOptimization(ApplyCostOptimizationRequest $request, Bom $bom): JsonResponse
     {
-        $request->validate([
-            'item_ids' => 'nullable|array',
-            'item_ids.*' => 'integer|exists:bom_items,id',
-        ]);
+        $this->authorize('create', Bom::class);
 
         $result = $this->costOptimizationService->applyOptimization(
             $bom,
@@ -206,6 +205,8 @@ class ComponentCrossReferenceController extends Controller
      */
     public function availableBrands(): JsonResponse
     {
+        $this->authorize('viewAny', Bom::class);
+
         $brands = ComponentBrandMapping::query()
             ->select('brand')
             ->distinct()
@@ -228,6 +229,8 @@ class ComponentCrossReferenceController extends Controller
      */
     public function getItemAlternatives(Bom $bom, BomItem $item): JsonResponse
     {
+        $this->authorize('view', $bom);
+
         // Verify item belongs to BOM
         if ($item->bom_id !== $bom->id) {
             return response()->json(['message' => 'Item does not belong to this BOM'], 404);
@@ -241,17 +244,14 @@ class ComponentCrossReferenceController extends Controller
     /**
      * Quick swap a BOM item to a different product.
      */
-    public function quickSwapItem(Request $request, Bom $bom, BomItem $item): JsonResponse
+    public function quickSwapItem(QuickSwapItemRequest $request, Bom $bom, BomItem $item): JsonResponse
     {
+        $this->authorize('update', $bom);
+
         // Verify item belongs to BOM
         if ($item->bom_id !== $bom->id) {
             return response()->json(['message' => 'Item does not belong to this BOM'], 404);
         }
-
-        $request->validate([
-            'product_id' => ['required', 'integer', 'exists:products,id'],
-            'reason' => ['nullable', 'string', 'max:255'],
-        ]);
 
         $newProduct = Product::findOrFail($request->product_id);
 
@@ -290,6 +290,8 @@ class ComponentCrossReferenceController extends Controller
      */
     public function getUnmappedProducts(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Bom::class);
+
         $brand = $request->input('brand');
         $limit = min($request->input('limit', 50), 200);
 
@@ -316,6 +318,8 @@ class ComponentCrossReferenceController extends Controller
      */
     public function suggestMapping(Product $product): JsonResponse
     {
+        $this->authorize('viewAny', Bom::class);
+
         $suggestion = $this->mappingService->suggestMappingForProduct($product);
 
         return response()->json([
@@ -326,12 +330,9 @@ class ComponentCrossReferenceController extends Controller
     /**
      * Get mapping suggestions for multiple products.
      */
-    public function suggestMappingsBatch(Request $request): JsonResponse
+    public function suggestMappingsBatch(SuggestMappingsBatchRequest $request): JsonResponse
     {
-        $request->validate([
-            'product_ids' => ['required', 'array', 'min:1', 'max:50'],
-            'product_ids.*' => ['integer', 'exists:products,id'],
-        ]);
+        $this->authorize('viewAny', Bom::class);
 
         $products = Product::whereIn('id', $request->product_ids)->get();
         $suggestions = $this->mappingService->suggestMappingsForProducts($products);
@@ -344,13 +345,9 @@ class ComponentCrossReferenceController extends Controller
     /**
      * Accept a single mapping suggestion.
      */
-    public function acceptSuggestion(Request $request, Product $product): JsonResponse
+    public function acceptSuggestion(AcceptMappingSuggestionRequest $request, Product $product): JsonResponse
     {
-        $request->validate([
-            'component_standard_id' => ['required', 'integer', 'exists:component_standards,id'],
-            'brand_sku' => ['nullable', 'string', 'max:100'],
-            'is_preferred' => ['nullable', 'boolean'],
-        ]);
+        $this->authorize('create', Bom::class);
 
         // Check if mapping already exists
         $exists = ComponentBrandMapping::query()
@@ -382,15 +379,9 @@ class ComponentCrossReferenceController extends Controller
     /**
      * Bulk accept mapping suggestions.
      */
-    public function bulkAcceptSuggestions(Request $request): JsonResponse
+    public function bulkAcceptSuggestions(BulkAcceptSuggestionsRequest $request): JsonResponse
     {
-        $request->validate([
-            'mappings' => ['required', 'array', 'min:1', 'max:100'],
-            'mappings.*.product_id' => ['required', 'integer', 'exists:products,id'],
-            'mappings.*.component_standard_id' => ['required', 'integer', 'exists:component_standards,id'],
-            'mappings.*.brand_sku' => ['nullable', 'string', 'max:100'],
-            'mappings.*.is_preferred' => ['nullable', 'boolean'],
-        ]);
+        $this->authorize('create', Bom::class);
 
         $result = $this->mappingService->bulkAcceptMappingSuggestions($request->mappings);
 
@@ -405,11 +396,9 @@ class ComponentCrossReferenceController extends Controller
     /**
      * Parse a product name to extract specs (debug/preview endpoint).
      */
-    public function parseProductName(Request $request): JsonResponse
+    public function parseProductName(ParseProductNameRequest $request): JsonResponse
     {
-        $request->validate([
-            'name' => ['required', 'string', 'min:3', 'max:255'],
-        ]);
+        $this->authorize('viewAny', Bom::class);
 
         $parsed = $this->mappingService->parseProductName($request->name);
 
