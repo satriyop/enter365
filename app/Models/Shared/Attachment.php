@@ -52,7 +52,7 @@ class Attachment extends Model
      */
     public function attachable(): MorphTo
     {
-        return $this->morphTo();
+        return $this->morphTo()->withTrashed();
     }
 
     /**

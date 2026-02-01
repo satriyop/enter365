@@ -100,7 +100,7 @@ class Payment extends Model
      */
     public function payable(): MorphTo
     {
-        return $this->morphTo();
+        return $this->morphTo()->withTrashed();
     }
 
     /**

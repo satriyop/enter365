@@ -53,7 +53,7 @@ class ValidationRules
     // Financial values
     public const CURRENCY_OPTIONAL = ['nullable', 'string', 'size:3'];
 
-    public const EXCHANGE_RATE_OPTIONAL = ['nullable', 'numeric', 'min:0'];
+    public const EXCHANGE_RATE_OPTIONAL = ['nullable', 'numeric', 'min:0', 'max:100000'];
 
     // Tax and discount
     public const TAX_RATE_NULLABLE = ['nullable', 'numeric', 'min:0', 'max:100'];
@@ -62,18 +62,18 @@ class ValidationRules
 
     public const DISCOUNT_TYPE_OPTIONAL = ['nullable', 'in:percentage,fixed'];
 
-    public const DISCOUNT_VALUE_OPTIONAL = ['nullable', 'numeric', 'min:0'];
+    public const DISCOUNT_VALUE_OPTIONAL = ['nullable', 'numeric', 'min:0', 'max:2000000000'];
 
-    // Quantities and prices
-    public const QUANTITY_REQUIRED = ['required', 'numeric', 'min:0.0001'];
+    // Quantities and prices (max ~Rp 2 trillion for monetary, 999999 for quantities)
+    public const QUANTITY_REQUIRED = ['required', 'numeric', 'min:0.0001', 'max:999999'];
 
-    public const QUANTITY_OPTIONAL = ['nullable', 'numeric', 'min:0'];
+    public const QUANTITY_OPTIONAL = ['nullable', 'numeric', 'min:0', 'max:999999'];
 
-    public const UNIT_PRICE_REQUIRED = ['required', 'integer', 'min:0'];
+    public const UNIT_PRICE_REQUIRED = ['required', 'integer', 'min:0', 'max:2000000000'];
 
-    public const UNIT_PRICE_OPTIONAL = ['nullable', 'integer', 'min:0'];
+    public const UNIT_PRICE_OPTIONAL = ['nullable', 'integer', 'min:0', 'max:2000000000'];
 
-    public const TOTAL_AMOUNT_OPTIONAL = ['nullable', 'integer', 'min:0'];
+    public const TOTAL_AMOUNT_OPTIONAL = ['nullable', 'integer', 'min:0', 'max:2000000000'];
 
     // Percentages
     public const RETENTION_PERCENT = ['nullable', 'numeric', 'min:0', 'max:100'];
@@ -84,11 +84,11 @@ class ValidationRules
     // DATE PATTERNS
     // ========================================
 
-    public const DATE_REQUIRED = ['required', 'date'];
+    public const DATE_REQUIRED = ['required', 'date', 'before:+5 years'];
 
-    public const DATE_OPTIONAL = ['nullable', 'date'];
+    public const DATE_OPTIONAL = ['nullable', 'date', 'before:+5 years'];
 
-    public const DATE_FUTURE = ['nullable', 'date', 'after:today'];
+    public const DATE_FUTURE = ['nullable', 'date', 'after:today', 'before:+5 years'];
 
     // ========================================
     // ARRAY PATTERNS
