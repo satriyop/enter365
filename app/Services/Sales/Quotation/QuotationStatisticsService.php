@@ -6,6 +6,7 @@ namespace App\Services\Sales\Quotation;
 
 use App\Domain\Sales\Quotations\Enums\QuotationOutcome;
 use App\Domain\Sales\Quotations\QuotationStatistics;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -20,6 +21,10 @@ use Illuminate\Support\Facades\DB;
  */
 class QuotationStatisticsService
 {
+    private const CACHE_TTL_MINUTES = 10;
+
+    private const CACHE_PREFIX = 'quotation_stats:';
+
     public function __construct(
         private QuotationStatistics $statistics,
     ) {}
@@ -31,7 +36,11 @@ class QuotationStatisticsService
      */
     public function get(?string $startDate = null, ?string $endDate = null): array
     {
-        return $this->statistics->get($startDate, $endDate);
+        $cacheKey = self::CACHE_PREFIX.'overview:'.md5(($startDate ?? 'null').':'.($endDate ?? 'null'));
+
+        return Cache::remember($cacheKey, now()->addMinutes(self::CACHE_TTL_MINUTES), function () use ($startDate, $endDate) {
+            return $this->statistics->get($startDate, $endDate);
+        });
     }
 
     /**
@@ -41,7 +50,9 @@ class QuotationStatisticsService
      */
     public function getWinLoss(): array
     {
-        return $this->statistics->getWinLoss();
+        return Cache::remember(self::CACHE_PREFIX.'win_loss', now()->addMinutes(self::CACHE_TTL_MINUTES), function () {
+            return $this->statistics->getWinLoss();
+        });
     }
 
     /**
@@ -51,7 +62,9 @@ class QuotationStatisticsService
      */
     public function getFollowUpSummary(): array
     {
-        return $this->statistics->getFollowUpSummary();
+        return Cache::remember(self::CACHE_PREFIX.'follow_up', now()->addMinutes(self::CACHE_TTL_MINUTES), function () {
+            return $this->statistics->getFollowUpSummary();
+        });
     }
 
     /**
@@ -61,11 +74,15 @@ class QuotationStatisticsService
      */
     public function getDashboardData(?string $startDate = null, ?string $endDate = null): array
     {
-        return [
-            'overview' => $this->statistics->get($startDate, $endDate),
-            'win_loss' => $this->statistics->getWinLoss(),
-            'follow_up' => $this->statistics->getFollowUpSummary(),
-        ];
+        $cacheKey = self::CACHE_PREFIX.'dashboard:'.md5(($startDate ?? 'null').':'.($endDate ?? 'null'));
+
+        return Cache::remember($cacheKey, now()->addMinutes(self::CACHE_TTL_MINUTES), function () use ($startDate, $endDate) {
+            return [
+                'overview' => $this->statistics->get($startDate, $endDate),
+                'win_loss' => $this->statistics->getWinLoss(),
+                'follow_up' => $this->statistics->getFollowUpSummary(),
+            ];
+        });
     }
 
     /**
@@ -85,6 +102,18 @@ class QuotationStatisticsService
      * }
      */
     public function getOutcomeStatistics(string $startDate, string $endDate): object
+    {
+        $cacheKey = self::CACHE_PREFIX.'outcomes:'.md5($startDate.':'.$endDate);
+
+        return Cache::remember($cacheKey, now()->addMinutes(self::CACHE_TTL_MINUTES), function () use ($startDate, $endDate) {
+            return $this->computeOutcomeStatistics($startDate, $endDate);
+        });
+    }
+
+    /**
+     * Compute outcome statistics from database.
+     */
+    private function computeOutcomeStatistics(string $startDate, string $endDate): object
     {
         $stats = DB::table('quotations')
             ->whereBetween('quotation_date', [$startDate, $endDate])
@@ -119,25 +148,29 @@ class QuotationStatisticsService
      */
     public function getLostReasonsBreakdown(string $startDate, string $endDate): array
     {
-        $results = DB::table('quotations')
-            ->whereBetween('quotation_date', [$startDate, $endDate])
-            ->where('outcome', 'lost')
-            ->whereNotNull('lost_reason')
-            ->whereNull('deleted_at')
-            ->groupBy('lost_reason')
-            ->select([
-                'lost_reason',
-                DB::raw('COUNT(*) as count'),
-                DB::raw('SUM(total_amount) as value'),
-            ])
-            ->get();
+        $cacheKey = self::CACHE_PREFIX.'lost_reasons:'.md5($startDate.':'.$endDate);
 
-        return $results->map(fn ($row) => [
-            'reason' => $row->lost_reason,
-            'label' => QuotationOutcome::LOST_REASONS[$row->lost_reason] ?? $row->lost_reason,
-            'count' => (int) $row->count,
-            'value' => (int) $row->value,
-        ])->toArray();
+        return Cache::remember($cacheKey, now()->addMinutes(self::CACHE_TTL_MINUTES), function () use ($startDate, $endDate) {
+            $results = DB::table('quotations')
+                ->whereBetween('quotation_date', [$startDate, $endDate])
+                ->where('outcome', 'lost')
+                ->whereNotNull('lost_reason')
+                ->whereNull('deleted_at')
+                ->groupBy('lost_reason')
+                ->select([
+                    'lost_reason',
+                    DB::raw('COUNT(*) as count'),
+                    DB::raw('SUM(total_amount) as value'),
+                ])
+                ->get();
+
+            return $results->map(fn ($row) => [
+                'reason' => $row->lost_reason,
+                'label' => QuotationOutcome::LOST_REASONS[$row->lost_reason] ?? $row->lost_reason,
+                'count' => (int) $row->count,
+                'value' => (int) $row->value,
+            ])->toArray();
+        });
     }
 
     /**
@@ -147,24 +180,48 @@ class QuotationStatisticsService
      */
     public function getWonReasonsBreakdown(string $startDate, string $endDate): array
     {
-        $results = DB::table('quotations')
-            ->whereBetween('quotation_date', [$startDate, $endDate])
-            ->where('outcome', 'won')
-            ->whereNotNull('won_reason')
-            ->whereNull('deleted_at')
-            ->groupBy('won_reason')
-            ->select([
-                'won_reason',
-                DB::raw('COUNT(*) as count'),
-                DB::raw('SUM(total_amount) as value'),
-            ])
-            ->get();
+        $cacheKey = self::CACHE_PREFIX.'won_reasons:'.md5($startDate.':'.$endDate);
 
-        return $results->map(fn ($row) => [
-            'reason' => $row->won_reason,
-            'label' => QuotationOutcome::WON_REASONS[$row->won_reason] ?? $row->won_reason,
-            'count' => (int) $row->count,
-            'value' => (int) $row->value,
-        ])->toArray();
+        return Cache::remember($cacheKey, now()->addMinutes(self::CACHE_TTL_MINUTES), function () use ($startDate, $endDate) {
+            $results = DB::table('quotations')
+                ->whereBetween('quotation_date', [$startDate, $endDate])
+                ->where('outcome', 'won')
+                ->whereNotNull('won_reason')
+                ->whereNull('deleted_at')
+                ->groupBy('won_reason')
+                ->select([
+                    'won_reason',
+                    DB::raw('COUNT(*) as count'),
+                    DB::raw('SUM(total_amount) as value'),
+                ])
+                ->get();
+
+            return $results->map(fn ($row) => [
+                'reason' => $row->won_reason,
+                'label' => QuotationOutcome::WON_REASONS[$row->won_reason] ?? $row->won_reason,
+                'count' => (int) $row->count,
+                'value' => (int) $row->value,
+            ])->toArray();
+        });
+    }
+
+    /**
+     * Flush all quotation statistics cache entries.
+     */
+    public static function flushCache(): void
+    {
+        $patterns = [
+            self::CACHE_PREFIX.'overview:',
+            self::CACHE_PREFIX.'win_loss',
+            self::CACHE_PREFIX.'follow_up',
+            self::CACHE_PREFIX.'dashboard:',
+            self::CACHE_PREFIX.'outcomes:',
+            self::CACHE_PREFIX.'lost_reasons:',
+            self::CACHE_PREFIX.'won_reasons:',
+        ];
+
+        foreach ($patterns as $key) {
+            Cache::forget($key);
+        }
     }
 }

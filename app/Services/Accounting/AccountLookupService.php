@@ -8,15 +8,20 @@ use App\Contracts\Accounting\AccountLookupServiceInterface;
 use App\Exceptions\Domain\MissingAccountException;
 use App\Models\Accounting\Account;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 /**
- * Validated account lookups with request-level caching.
+ * Validated account lookups with two-layer caching.
  *
- * Provides fail-fast behavior to prevent incomplete journal entries.
- * Caches lookups within the same request to avoid repeated queries.
+ * Layer 1: Request-level in-memory cache (fastest, no serialization)
+ * Layer 2: Persistent cache via Cache::forever (survives between requests)
+ *
+ * Cache is invalidated via Account model events (saved/deleted).
  */
 class AccountLookupService implements AccountLookupServiceInterface
 {
+    private const CACHE_PREFIX = 'accounting:account:';
+
     /** @var array<string, Account> Request-level cache by code */
     private array $cacheByCode = [];
 
@@ -29,14 +34,13 @@ class AccountLookupService implements AccountLookupServiceInterface
             return $this->cacheByCode[$code];
         }
 
-        $account = Account::where('code', $code)->first();
+        $account = $this->resolveByCode($code);
 
         if (! $account) {
             throw MissingAccountException::forCode($code, $purpose);
         }
 
-        $this->cacheByCode[$code] = $account;
-        $this->cacheById[$account->id] = $account;
+        $this->populateRequestCache($account);
 
         return $account;
     }
@@ -46,27 +50,32 @@ class AccountLookupService implements AccountLookupServiceInterface
         $result = collect();
         $uncachedCodes = [];
 
-        // Check cache first
         foreach ($codes as $code) {
             if (isset($this->cacheByCode[$code])) {
                 $result[$code] = $this->cacheByCode[$code];
             } else {
-                $uncachedCodes[] = $code;
+                $attributes = Cache::get(self::CACHE_PREFIX."code:{$code}");
+
+                if ($attributes !== null) {
+                    $account = (new Account)->newFromBuilder($attributes);
+                    $this->populateRequestCache($account);
+                    $result[$code] = $account;
+                } else {
+                    $uncachedCodes[] = $code;
+                }
             }
         }
 
-        // Batch fetch uncached
         if (! empty($uncachedCodes)) {
             $accounts = Account::whereIn('code', $uncachedCodes)->get();
 
             foreach ($accounts as $account) {
-                $this->cacheByCode[$account->code] = $account;
-                $this->cacheById[$account->id] = $account;
+                $this->populateRequestCache($account);
+                $this->storePersistentCache($account);
                 $result[$account->code] = $account;
             }
         }
 
-        // Check for missing codes (fail-fast with ALL missing codes)
         $foundCodes = $result->keys()->toArray();
         $missingCodes = array_diff($codes, $foundCodes);
 
@@ -83,14 +92,13 @@ class AccountLookupService implements AccountLookupServiceInterface
             return $this->cacheById[$id];
         }
 
-        $account = Account::find($id);
+        $account = $this->resolveById($id);
 
         if (! $account) {
             throw MissingAccountException::forId($id, $purpose);
         }
 
-        $this->cacheById[$id] = $account;
-        $this->cacheByCode[$account->code] = $account;
+        $this->populateRequestCache($account);
 
         return $account;
     }
@@ -102,8 +110,19 @@ class AccountLookupService implements AccountLookupServiceInterface
     }
 
     /**
-     * Get the retained earnings account.
+     * Flush persistent cache for a specific account.
+     * Called by Account model events on save/delete.
      */
+    public static function flushPersistentCache(Account $account): void
+    {
+        Cache::forget(self::CACHE_PREFIX."code:{$account->code}");
+        Cache::forget(self::CACHE_PREFIX."id:{$account->id}");
+
+        if ($account->isDirty('code') && $account->getOriginal('code')) {
+            Cache::forget(self::CACHE_PREFIX."code:{$account->getOriginal('code')}");
+        }
+    }
+
     public function getRetainedEarningsAccount(): Account
     {
         $code = config('accounting.default_accounts.retained_earnings', '3-2000');
@@ -111,9 +130,6 @@ class AccountLookupService implements AccountLookupServiceInterface
         return $this->findByCodeOrFail($code, 'Laba Ditahan');
     }
 
-    /**
-     * Get the dividends/withdrawals account (optional).
-     */
     public function getDividendsAccount(): ?Account
     {
         $code = config('accounting.default_accounts.dividends');
@@ -129,13 +145,56 @@ class AccountLookupService implements AccountLookupServiceInterface
         }
     }
 
-    /**
-     * Get the income summary account (for closing).
-     */
     public function getIncomeSummaryAccount(): Account
     {
         $code = config('accounting.default_accounts.income_summary', '3-9000');
 
         return $this->findByCodeOrFail($code, 'Ikhtisar Laba/Rugi');
+    }
+
+    private function resolveByCode(string $code): ?Account
+    {
+        $attributes = Cache::get(self::CACHE_PREFIX."code:{$code}");
+
+        if ($attributes !== null) {
+            return (new Account)->newFromBuilder($attributes);
+        }
+
+        $account = Account::where('code', $code)->first();
+
+        if ($account) {
+            $this->storePersistentCache($account);
+        }
+
+        return $account;
+    }
+
+    private function resolveById(int $id): ?Account
+    {
+        $attributes = Cache::get(self::CACHE_PREFIX."id:{$id}");
+
+        if ($attributes !== null) {
+            return (new Account)->newFromBuilder($attributes);
+        }
+
+        $account = Account::find($id);
+
+        if ($account) {
+            $this->storePersistentCache($account);
+        }
+
+        return $account;
+    }
+
+    private function populateRequestCache(Account $account): void
+    {
+        $this->cacheByCode[$account->code] = $account;
+        $this->cacheById[$account->id] = $account;
+    }
+
+    private function storePersistentCache(Account $account): void
+    {
+        Cache::forever(self::CACHE_PREFIX."code:{$account->code}", $account->getAttributes());
+        Cache::forever(self::CACHE_PREFIX."id:{$account->id}", $account->getAttributes());
     }
 }

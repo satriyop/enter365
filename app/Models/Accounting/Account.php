@@ -2,6 +2,7 @@
 
 namespace App\Models\Accounting;
 
+use App\Services\Accounting\AccountLookupService;
 use App\Traits\Filterable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,6 +12,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Account extends Model
 {
     use Filterable, HasFactory;
+
+    protected static function booted(): void
+    {
+        static::saved(fn (Account $account) => AccountLookupService::flushPersistentCache($account));
+        static::deleted(fn (Account $account) => AccountLookupService::flushPersistentCache($account));
+    }
 
     public const TYPE_ASSET = 'asset';
 
@@ -103,7 +110,7 @@ class Account extends Model
 
     /**
      * Get the detailed balance of this account.
-     * 
+     *
      * @return array{balance: int, total_debit: int, total_credit: int}
      */
     public function getBalanceDetails(?string $asOfDate = null): array
