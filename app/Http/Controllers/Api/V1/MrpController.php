@@ -30,6 +30,8 @@ class MrpController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
+        $this->authorize('viewAny', MrpRun::class);
+
         $query = MrpRun::query()
             ->with(['warehouse'])
             ->when($request->status, fn ($q, $s) => $q->where('status', $s))
@@ -48,6 +50,8 @@ class MrpController extends Controller
      */
     public function store(StoreMrpRunRequest $request): JsonResponse
     {
+        $this->authorize('create', MrpRun::class);
+
         $run = $this->mrpService->create($request->validated());
 
         return (new MrpRunResource($run))
@@ -60,6 +64,8 @@ class MrpController extends Controller
      */
     public function show(MrpRun $mrpRun): MrpRunResource
     {
+        $this->authorize('view', $mrpRun);
+
         $mrpRun->load(['warehouse', 'demands.product', 'suggestions.product']);
 
         return new MrpRunResource($mrpRun);
@@ -70,6 +76,8 @@ class MrpController extends Controller
      */
     public function update(StoreMrpRunRequest $request, MrpRun $mrpRun): MrpRunResource
     {
+        $this->authorize('update', $mrpRun);
+
         $run = $this->mrpService->update($mrpRun, $request->validated());
 
         return new MrpRunResource($run);
@@ -80,6 +88,8 @@ class MrpController extends Controller
      */
     public function destroy(MrpRun $mrpRun): JsonResponse
     {
+        $this->authorize('delete', $mrpRun);
+
         $this->mrpService->delete($mrpRun);
 
         return response()->json(['message' => 'MRP run berhasil dihapus.']);
@@ -90,6 +100,8 @@ class MrpController extends Controller
      */
     public function execute(MrpRun $mrpRun): MrpRunResource
     {
+        $this->authorize('execute', $mrpRun);
+
         $run = $this->mrpService->executeRun($mrpRun);
 
         return new MrpRunResource($run->load(['demands.product', 'suggestions.product']));
@@ -100,6 +112,8 @@ class MrpController extends Controller
      */
     public function demands(MrpRun $mrpRun): AnonymousResourceCollection
     {
+        $this->authorize('view', $mrpRun);
+
         $demands = $mrpRun->demands()
             ->with(['product', 'warehouse'])
             ->orderBy('required_date')
@@ -113,6 +127,8 @@ class MrpController extends Controller
      */
     public function suggestions(Request $request, MrpRun $mrpRun): AnonymousResourceCollection
     {
+        $this->authorize('view', $mrpRun);
+
         $suggestions = $mrpRun->suggestions()
             ->with(['product', 'suggestedSupplier', 'suggestedWarehouse'])
             ->when($request->type, fn ($q, $t) => $q->where('suggestion_type', $t))
@@ -130,6 +146,8 @@ class MrpController extends Controller
      */
     public function acceptSuggestion(MrpSuggestion $suggestion): MrpSuggestionResource
     {
+        $this->authorize('update', $suggestion->mrpRun);
+
         $suggestion = $this->suggestionService->acceptSuggestion($suggestion);
 
         return new MrpSuggestionResource($suggestion->load('product'));
@@ -140,6 +158,8 @@ class MrpController extends Controller
      */
     public function rejectSuggestion(Request $request, MrpSuggestion $suggestion): MrpSuggestionResource
     {
+        $this->authorize('update', $suggestion->mrpRun);
+
         $suggestion = $this->suggestionService->rejectSuggestion(
             $suggestion,
             $request->input('reason')
@@ -155,6 +175,8 @@ class MrpController extends Controller
         UpdateMrpSuggestionRequest $request,
         MrpSuggestion $suggestion
     ): MrpSuggestionResource {
+        $this->authorize('update', $suggestion->mrpRun);
+
         if ($request->has('adjusted_quantity')) {
             $suggestion = $this->suggestionService->updateSuggestionQuantity(
                 $suggestion,
@@ -179,6 +201,8 @@ class MrpController extends Controller
      */
     public function convertToPurchaseOrder(MrpSuggestion $suggestion): JsonResponse
     {
+        $this->authorize('execute', $suggestion->mrpRun);
+
         $po = $this->suggestionService->convertToPurchaseOrder($suggestion);
 
         return response()->json([
@@ -195,6 +219,8 @@ class MrpController extends Controller
      */
     public function convertToWorkOrder(MrpSuggestion $suggestion): JsonResponse
     {
+        $this->authorize('execute', $suggestion->mrpRun);
+
         $wo = $this->suggestionService->convertToWorkOrder($suggestion);
 
         return response()->json([
@@ -213,6 +239,8 @@ class MrpController extends Controller
         Request $request,
         MrpSuggestion $suggestion
     ): JsonResponse {
+        $this->authorize('execute', $suggestion->mrpRun);
+
         $request->validate([
             'subcontractor_id' => ['required', 'integer', 'exists:contacts,id'],
         ]);
@@ -236,6 +264,8 @@ class MrpController extends Controller
      */
     public function bulkAccept(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', MrpRun::class);
+
         $request->validate([
             'suggestion_ids' => ['required', 'array'],
             'suggestion_ids.*' => ['integer', 'exists:mrp_suggestions,id'],
@@ -254,6 +284,8 @@ class MrpController extends Controller
      */
     public function bulkReject(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', MrpRun::class);
+
         $request->validate([
             'suggestion_ids' => ['required', 'array'],
             'suggestion_ids.*' => ['integer', 'exists:mrp_suggestions,id'],
@@ -276,6 +308,8 @@ class MrpController extends Controller
      */
     public function shortageReport(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', MrpRun::class);
+
         $request->validate([
             'horizon_start' => ['required', 'date'],
             'horizon_end' => ['required', 'date', 'after:horizon_start'],
@@ -296,6 +330,8 @@ class MrpController extends Controller
      */
     public function statistics(): JsonResponse
     {
+        $this->authorize('viewAny', MrpRun::class);
+
         $stats = $this->mrpService->getStatistics();
 
         return response()->json($stats);

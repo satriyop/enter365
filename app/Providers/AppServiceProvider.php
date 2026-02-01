@@ -308,6 +308,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(\App\Models\Inventory\StockOpname::class, \App\Policies\StockOpnamePolicy::class);
         Gate::policy(\App\Models\Accounting\FiscalPeriod::class, \App\Policies\FiscalPeriodPolicy::class);
         Gate::policy(\App\Models\Inventory\Warehouse::class, \App\Policies\WarehousePolicy::class);
+        Gate::policy(\App\Models\Manufacturing\BomVariantGroup::class, \App\Policies\BomVariantGroupPolicy::class);
+        Gate::policy(\App\Models\Manufacturing\MrpRun::class, \App\Policies\MrpRunPolicy::class);
 
         // Dashboard Gates (non-model based)
         Gate::define('dashboard.view', [\App\Policies\DashboardPolicy::class, 'view']);

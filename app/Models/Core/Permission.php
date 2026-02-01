@@ -66,6 +66,8 @@ class Permission extends Model
 
     public const GROUP_WAREHOUSES = 'warehouses';
 
+    public const GROUP_MRP = 'mrp';
+
     protected $fillable = [
         'name',
         'display_name',
@@ -286,6 +288,13 @@ class Permission extends Model
             ['name' => 'warehouses.create', 'display_name' => 'Buat Gudang', 'group' => self::GROUP_WAREHOUSES, 'description' => 'Membuat gudang baru'],
             ['name' => 'warehouses.edit', 'display_name' => 'Edit Gudang', 'group' => self::GROUP_WAREHOUSES, 'description' => 'Mengubah gudang'],
             ['name' => 'warehouses.delete', 'display_name' => 'Hapus Gudang', 'group' => self::GROUP_WAREHOUSES, 'description' => 'Menghapus gudang'],
+
+            // MRP
+            ['name' => 'mrp.view', 'display_name' => 'Lihat MRP', 'group' => self::GROUP_MRP, 'description' => 'Melihat daftar MRP run'],
+            ['name' => 'mrp.create', 'display_name' => 'Buat MRP', 'group' => self::GROUP_MRP, 'description' => 'Membuat MRP run baru'],
+            ['name' => 'mrp.edit', 'display_name' => 'Edit MRP', 'group' => self::GROUP_MRP, 'description' => 'Mengubah MRP run'],
+            ['name' => 'mrp.delete', 'display_name' => 'Hapus MRP', 'group' => self::GROUP_MRP, 'description' => 'Menghapus MRP run'],
+            ['name' => 'mrp.execute', 'display_name' => 'Eksekusi MRP', 'group' => self::GROUP_MRP, 'description' => 'Menjalankan kalkulasi MRP'],
         ];
     }
 
