@@ -9,6 +9,7 @@ use App\Models\Sales\Invoice;
 use App\Models\Shared\SubcontractorInvoice;
 use App\Models\User;
 use App\Traits\Auditable;
+use App\Traits\CascadesSoftDeletes;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -57,7 +58,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class SubcontractorWorkOrder extends Model
 {
-    use Auditable, HasFactory, SoftDeletes;
+    use Auditable, CascadesSoftDeletes, HasFactory, SoftDeletes;
+
+    /** @var array<int, string> */
+    protected array $cascadeSoftDeletes = ['invoices'];
 
     public const DEFAULT_RETENTION_PERCENT = 5.00;
 

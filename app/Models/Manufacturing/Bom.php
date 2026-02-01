@@ -5,6 +5,7 @@ namespace App\Models\Manufacturing;
 use App\Enums\DocumentStatus;
 use App\Models\Inventory\Product;
 use App\Models\User;
+use App\Traits\CascadesSoftDeletes;
 use App\Traits\Filterable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,7 +15,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Bom extends Model
 {
-    use Filterable, HasFactory, SoftDeletes;
+    use CascadesSoftDeletes, Filterable, HasFactory, SoftDeletes;
+
+    /** @var array<int, string> */
+    protected array $cascadeSoftDeletes = ['childBoms'];
 
     protected $fillable = [
         'bom_number',

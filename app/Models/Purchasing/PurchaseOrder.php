@@ -5,6 +5,7 @@ namespace App\Models\Purchasing;
 use App\Contracts\Purchasing\PurchaseOrderCalculatorInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Contacts\Contact;
+use App\Models\Projects\Project;
 use App\Models\Shared\Attachment;
 use App\Models\User;
 use App\Traits\Auditable;
@@ -58,6 +59,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int|null $converted_to_bill_id
  * @property Carbon|null $converted_at
  * @property int|null $original_po_id
+ * @property int|null $project_id
  * @property int|null $created_by
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -120,6 +122,7 @@ class PurchaseOrder extends Model
         'converted_to_bill_id',
         'converted_at',
         'original_po_id',
+        'project_id',
         'created_by',
     ];
 
@@ -162,6 +165,14 @@ class PurchaseOrder extends Model
     public function items(): HasMany
     {
         return $this->hasMany(PurchaseOrderItem::class)->orderBy('sort_order');
+    }
+
+    /**
+     * @return BelongsTo<Project, $this>
+     */
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
     }
 
     /**

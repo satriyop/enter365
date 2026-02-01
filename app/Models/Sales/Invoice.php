@@ -7,12 +7,14 @@ use App\Enums\DocumentStatus;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Contacts\Contact;
+use App\Models\Projects\Project;
 use App\Models\Shared\Attachment;
 use App\Models\Shared\Payment;
 use App\Models\Shared\PaymentReminder;
 use App\Models\Shared\RecurringTemplate;
 use App\Models\User;
 use App\Traits\Auditable;
+use App\Traits\CascadesSoftDeletes;
 use App\Traits\Filterable;
 use App\Traits\HasDocumentDiscount;
 use App\Traits\HasStatusHistory;
@@ -50,6 +52,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property Carbon|null $last_reminder_at
  * @property int|null $journal_entry_id
  * @property int|null $receivable_account_id
+ * @property int|null $project_id
  * @property int|null $recurring_template_id
  * @property int|null $created_by
  * @property Carbon|null $created_at
@@ -58,7 +61,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class Invoice extends Model
 {
-    use Auditable, Filterable, HasDocumentDiscount, HasFactory, HasStatusHistory, SoftDeletes;
+    use Auditable, CascadesSoftDeletes, Filterable, HasDocumentDiscount, HasFactory, HasStatusHistory, SoftDeletes;
+
+    /** @var array<int, string> */
+    protected array $cascadeSoftDeletes = ['payments'];
 
     protected static function boot(): void
     {
@@ -101,6 +107,7 @@ class Invoice extends Model
         'last_reminder_at',
         'journal_entry_id',
         'receivable_account_id',
+        'project_id',
         'recurring_template_id',
         'created_by',
     ];
@@ -156,6 +163,14 @@ class Invoice extends Model
     public function receivableAccount(): BelongsTo
     {
         return $this->belongsTo(Account::class, 'receivable_account_id');
+    }
+
+    /**
+     * @return BelongsTo<Project, $this>
+     */
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
     }
 
     /**

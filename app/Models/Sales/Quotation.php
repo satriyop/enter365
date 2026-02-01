@@ -10,6 +10,7 @@ use App\Enums\DocumentStatus;
 use App\Models\Contacts\Contact;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomVariantGroup;
+use App\Models\Projects\Project;
 use App\Models\Shared\Attachment;
 use App\Models\User;
 use App\Traits\Auditable;
@@ -199,6 +200,14 @@ class Quotation extends Model
     public function items(): HasMany
     {
         return $this->hasMany(QuotationItem::class)->orderBy('sort_order');
+    }
+
+    /**
+     * @return BelongsTo<Project, $this>
+     */
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
     }
 
     /**

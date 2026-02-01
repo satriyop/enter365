@@ -2,6 +2,7 @@
 
 namespace App\Models\Inventory;
 
+use App\Traits\CascadesSoftDeletes;
 use App\Traits\Filterable;
 use App\Traits\HasActiveStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,7 +13,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ProductCategory extends Model
 {
-    use Filterable, HasActiveStatus, HasFactory, SoftDeletes;
+    use CascadesSoftDeletes, Filterable, HasActiveStatus, HasFactory, SoftDeletes;
+
+    /** @var array<int, string> */
+    protected array $cascadeSoftDeletes = ['children'];
 
     protected $fillable = [
         'code',
