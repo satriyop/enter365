@@ -3,6 +3,7 @@
 namespace App\Models\Accounting;
 
 use App\Models\User;
+use App\Traits\Auditable;
 use App\Traits\Filterable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class JournalEntry extends Model
 {
-    use Filterable, HasFactory;
+    use Auditable, Filterable, HasFactory;
 
     public const SOURCE_MANUAL = 'manual';
 

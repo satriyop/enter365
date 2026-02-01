@@ -8,6 +8,7 @@ use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Services\Base\Traits\WithEventDispatching;
 use App\Services\Base\Traits\WithOperationContext;
+use App\Services\Base\Traits\WithRequestCache;
 use App\Services\Base\Traits\WithTransaction;
 
 /**
@@ -45,6 +46,7 @@ abstract class BaseService
 {
     use WithEventDispatching;
     use WithOperationContext;
+    use WithRequestCache;
     use WithTransaction;
 
     protected EventDispatcherInterface $eventDispatcher;

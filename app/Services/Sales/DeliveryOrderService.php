@@ -8,6 +8,10 @@ use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Inventory\InventoryServiceInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Sales\DeliveryOrderServiceInterface;
+use App\Domain\Sales\DeliveryOrders\Events\DeliveryOrderCancelled;
+use App\Domain\Sales\DeliveryOrders\Events\DeliveryOrderConfirmed;
+use App\Domain\Sales\DeliveryOrders\Events\DeliveryOrderDelivered;
+use App\Domain\Sales\DeliveryOrders\Events\DeliveryOrderShipped;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\DeliveryOrder;
 use App\Models\Sales\DeliveryOrderItem;
@@ -159,6 +163,14 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
 
         $deliveryOrder->transitionTo(DocumentStatus::Confirmed, $userId);
 
+        $this->dispatch(new DeliveryOrderConfirmed(
+            deliveryOrderId: $deliveryOrder->id,
+            doNumber: $deliveryOrder->do_number,
+            customerId: $deliveryOrder->contact_id,
+            userId: $userId,
+            confirmedAt: now(),
+        ));
+
         return $deliveryOrder->fresh(['items', 'contact', 'invoice']);
     }
 
@@ -192,6 +204,16 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
                 $this->deductInventory($deliveryOrder);
             }
 
+            $this->dispatch(new DeliveryOrderShipped(
+                deliveryOrderId: $deliveryOrder->id,
+                doNumber: $deliveryOrder->do_number,
+                customerId: $deliveryOrder->contact_id,
+                shippingMethod: $data['shipping_method'] ?? $deliveryOrder->shipping_method ?? '',
+                trackingNumber: $data['tracking_number'] ?? $deliveryOrder->tracking_number,
+                userId: $userId,
+                shippedAt: now(),
+            ));
+
             return $deliveryOrder->fresh(['items', 'contact', 'invoice']);
         }, ['delivery_order_id' => $deliveryOrder->id]);
     }
@@ -224,6 +246,14 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
                 'received_date' => $data['received_date'] ?? now()->toDateString(),
             ]);
 
+            $this->dispatch(new DeliveryOrderDelivered(
+                deliveryOrderId: $deliveryOrder->id,
+                doNumber: $deliveryOrder->do_number,
+                customerId: $deliveryOrder->contact_id,
+                userId: $userId,
+                deliveredAt: now(),
+            ));
+
             return $deliveryOrder->fresh(['items']);
         }, ['delivery_order_id' => $deliveryOrder->id]);
     }
@@ -245,6 +275,15 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
         $deliveryOrder->transitionTo(DocumentStatus::Cancelled, $userId, [
             'cancellation_reason' => $reason,
         ]);
+
+        $this->dispatch(new DeliveryOrderCancelled(
+            deliveryOrderId: $deliveryOrder->id,
+            doNumber: $deliveryOrder->do_number,
+            customerId: $deliveryOrder->contact_id,
+            reason: $reason ?? '',
+            userId: $userId,
+            cancelledAt: now(),
+        ));
 
         return $deliveryOrder->fresh(['items', 'contact', 'invoice']);
     }

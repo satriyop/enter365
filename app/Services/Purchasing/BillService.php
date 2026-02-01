@@ -13,6 +13,7 @@ use App\Domain\Purchasing\Bills\Events\BillOverdue;
 use App\Domain\Purchasing\Bills\Events\BillPartiallyPaid;
 use App\Enums\DocumentStatus;
 use App\Exceptions\Domain\StateTransitionException;
+use App\Models\Core\AuditLog;
 use App\Models\Purchasing\Bill;
 use App\Models\Purchasing\BillItem;
 use App\Services\Base\Traits\WithDocuments;
@@ -180,6 +181,11 @@ class BillService implements BillServiceInterface
         $this->journalService->postBill($bill);
 
         $bill->transitionTo(DocumentStatus::Received, $this->getUserId());
+
+        AuditLog::log(AuditLog::ACTION_POSTED, $bill, null, [
+            'status' => DocumentStatus::Received->value,
+            'total_amount' => $bill->total_amount,
+        ]);
 
         return $bill->fresh(['contact', 'items', 'journalEntry.lines.account']);
     }

@@ -12,6 +12,7 @@ use App\Models\Shared\Payment;
 use App\Models\Shared\PaymentReminder;
 use App\Models\Shared\RecurringTemplate;
 use App\Models\User;
+use App\Traits\Auditable;
 use App\Traits\Filterable;
 use App\Traits\HasDocumentDiscount;
 use App\Traits\HasStatusHistory;
@@ -58,7 +59,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class Bill extends Model
 {
-    use Filterable, HasDocumentDiscount, HasFactory, HasStatusHistory, SoftDeletes;
+    use Auditable, Filterable, HasDocumentDiscount, HasFactory, HasStatusHistory, SoftDeletes;
 
     protected static function boot(): void
     {

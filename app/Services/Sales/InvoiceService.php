@@ -18,6 +18,7 @@ use App\Domain\Sales\Invoices\InvoiceDomainFactory;
 use App\Enums\DocumentStatus;
 use App\Exceptions\Domain\DocumentLockedException;
 use App\Exceptions\Domain\StateTransitionException;
+use App\Models\Core\AuditLog;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\InvoiceItem;
 use App\Services\Base\Traits\WithDocuments;
@@ -207,6 +208,11 @@ class InvoiceService implements InvoiceServiceInterface
             // Dispatch event
             $this->dispatch(InvoiceSent::fromInvoice($invoice, $this->getUserId()));
 
+            AuditLog::log(AuditLog::ACTION_POSTED, $invoice, null, [
+                'status' => DocumentStatus::Sent->value,
+                'total_amount' => $invoice->total_amount,
+            ]);
+
             return $this->loadRelations($invoice);
         }, ['invoice_id' => $invoice->id, 'total_amount' => $invoice->total_amount]);
     }
@@ -236,6 +242,11 @@ class InvoiceService implements InvoiceServiceInterface
 
             // Dispatch event
             $this->dispatch(InvoiceVoided::fromInvoice($invoice, $this->getUserId(), $reason));
+
+            AuditLog::log(AuditLog::ACTION_VOIDED, $invoice, null, [
+                'status' => DocumentStatus::Cancelled->value,
+                'reason' => $reason,
+            ]);
 
             return $this->loadRelations($invoice);
         }, ['invoice_id' => $invoice->id, 'reason' => $reason]);
