@@ -34,40 +34,43 @@ class WorkOrderMaterialService extends BaseService
      */
     public function reserveMaterials(WorkOrder $wo): void
     {
-        foreach ($wo->materialItems as $item) {
-            if (! $item->product_id) {
-                continue;
+        $this->executeInTransaction('reserve_materials', function () use ($wo) {
+            foreach ($wo->materialItems as $item) {
+                if (! $item->product_id) {
+                    continue;
+                }
+
+                $warehouseId = $wo->warehouse_id;
+
+                // Lock the stock row to prevent concurrent reservation
+                $stock = ProductStock::where('product_id', $item->product_id)
+                    ->where('warehouse_id', $warehouseId)
+                    ->lockForUpdate()
+                    ->first();
+
+                $availableQty = $stock
+                    ? $stock->quantity - $stock->reserved_quantity
+                    : 0;
+
+                if ($availableQty < (int) $item->quantity_required) {
+                    $product = $item->product;
+                    throw \App\Exceptions\Domain\BusinessRuleException::insufficientStock(
+                        $product->name,
+                        (float) $item->quantity_required,
+                        $availableQty
+                    );
+                }
+
+                // Reserve the stock
+                if ($stock) {
+                    $stock->reserved_quantity = $stock->reserved_quantity + (int) $item->quantity_required;
+                    $stock->save();
+                }
+
+                $item->quantity_reserved = $item->quantity_required;
+                $item->save();
             }
-
-            $warehouseId = $wo->warehouse_id;
-
-            // Check available stock
-            $stock = ProductStock::where('product_id', $item->product_id)
-                ->where('warehouse_id', $warehouseId)
-                ->first();
-
-            $availableQty = $stock
-                ? (float) $stock->quantity - (float) $stock->reserved_quantity
-                : 0;
-
-            if ($availableQty < (float) $item->quantity_required) {
-                $product = $item->product;
-                throw \App\Exceptions\Domain\BusinessRuleException::insufficientStock(
-                    $product->name,
-                    (float) $item->quantity_required,
-                    $availableQty
-                );
-            }
-
-            // Reserve the stock
-            if ($stock) {
-                $stock->reserved_quantity = (float) $stock->reserved_quantity + (float) $item->quantity_required;
-                $stock->save();
-            }
-
-            $item->quantity_reserved = $item->quantity_required;
-            $item->save();
-        }
+        }, ['work_order_id' => $wo->id]);
     }
 
     /**
@@ -75,23 +78,27 @@ class WorkOrderMaterialService extends BaseService
      */
     public function releaseMaterials(WorkOrder $wo): void
     {
-        foreach ($wo->materialItems as $item) {
-            if (! $item->product_id || $item->quantity_reserved <= 0) {
-                continue;
+        $this->executeInTransaction('release_materials', function () use ($wo) {
+            foreach ($wo->materialItems as $item) {
+                if (! $item->product_id || $item->quantity_reserved <= 0) {
+                    continue;
+                }
+
+                // Lock the stock row to prevent concurrent modification
+                $stock = ProductStock::where('product_id', $item->product_id)
+                    ->where('warehouse_id', $wo->warehouse_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($stock) {
+                    $stock->reserved_quantity = max(0, $stock->reserved_quantity - (int) $item->quantity_reserved);
+                    $stock->save();
+                }
+
+                $item->quantity_reserved = 0;
+                $item->save();
             }
-
-            $stock = ProductStock::where('product_id', $item->product_id)
-                ->where('warehouse_id', $wo->warehouse_id)
-                ->first();
-
-            if ($stock) {
-                $stock->reserved_quantity = max(0, (float) $stock->reserved_quantity - (float) $item->quantity_reserved);
-                $stock->save();
-            }
-
-            $item->quantity_reserved = 0;
-            $item->save();
-        }
+        }, ['work_order_id' => $wo->id]);
     }
 
     /**
@@ -99,47 +106,52 @@ class WorkOrderMaterialService extends BaseService
      */
     public function consumeMaterials(WorkOrder $wo): void
     {
-        foreach ($wo->materialItems as $item) {
-            if (! $item->product_id) {
-                continue;
+        $this->executeInTransaction('consume_materials', function () use ($wo) {
+            foreach ($wo->materialItems as $item) {
+                if (! $item->product_id) {
+                    continue;
+                }
+
+                $quantityToConsume = (int) $item->quantity_required;
+
+                // Lock the stock row to prevent concurrent modification
+                $stock = ProductStock::where('product_id', $item->product_id)
+                    ->where('warehouse_id', $wo->warehouse_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($stock) {
+                    // Release from reserved and deduct from quantity
+                    $stock->reserved_quantity = max(0, $stock->reserved_quantity - (int) $item->quantity_reserved);
+                    $stock->quantity = max(0, $stock->quantity - $quantityToConsume);
+                    $stock->total_value = $stock->quantity * $stock->average_cost;
+                    $stock->save();
+
+                    // Create inventory movement
+                    InventoryMovement::create([
+                        'movement_number' => InventoryMovement::generateMovementNumber(InventoryMovement::TYPE_OUT),
+                        'product_id' => $item->product_id,
+                        'warehouse_id' => $wo->warehouse_id,
+                        'type' => InventoryMovement::TYPE_OUT,
+                        'quantity' => $quantityToConsume,
+                        'quantity_before' => $stock->quantity + $quantityToConsume,
+                        'quantity_after' => $stock->quantity,
+                        'unit_cost' => $item->unit_cost,
+                        'total_cost' => (int) round($quantityToConsume * $item->unit_cost),
+                        'reference_type' => WorkOrder::class,
+                        'reference_id' => $wo->id,
+                        'notes' => "Konsumsi untuk WO: {$wo->wo_number}",
+                        'movement_date' => now(),
+                    ]);
+                }
+
+                // Update item as consumed
+                $item->quantity_consumed = $quantityToConsume;
+                $item->actual_unit_cost = $item->unit_cost;
+                $item->total_actual_cost = (int) round($quantityToConsume * $item->unit_cost);
+                $item->save();
             }
-
-            $quantityToConsume = (float) $item->quantity_required;
-
-            $stock = ProductStock::where('product_id', $item->product_id)
-                ->where('warehouse_id', $wo->warehouse_id)
-                ->first();
-
-            if ($stock) {
-                // Release from reserved and deduct from quantity
-                $stock->reserved_quantity = max(0, (float) $stock->reserved_quantity - (float) $item->quantity_reserved);
-                $stock->quantity = max(0, (float) $stock->quantity - $quantityToConsume);
-                $stock->save();
-
-                // Create inventory movement
-                InventoryMovement::create([
-                    'movement_number' => InventoryMovement::generateMovementNumber(InventoryMovement::TYPE_OUT),
-                    'product_id' => $item->product_id,
-                    'warehouse_id' => $wo->warehouse_id,
-                    'type' => InventoryMovement::TYPE_OUT,
-                    'quantity' => (int) $quantityToConsume,
-                    'quantity_before' => (int) ($stock->quantity + $quantityToConsume),
-                    'quantity_after' => (int) $stock->quantity,
-                    'unit_cost' => $item->unit_cost,
-                    'total_cost' => (int) round($quantityToConsume * $item->unit_cost),
-                    'reference_type' => WorkOrder::class,
-                    'reference_id' => $wo->id,
-                    'notes' => "Konsumsi untuk WO: {$wo->wo_number}",
-                    'movement_date' => now(),
-                ]);
-            }
-
-            // Update item as consumed
-            $item->quantity_consumed = $quantityToConsume;
-            $item->actual_unit_cost = $item->unit_cost;
-            $item->total_actual_cost = (int) round($quantityToConsume * $item->unit_cost);
-            $item->save();
-        }
+        }, ['work_order_id' => $wo->id]);
     }
 
     /**

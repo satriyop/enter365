@@ -116,4 +116,21 @@ class ProductStock extends Model
             ]
         );
     }
+
+    /**
+     * Get or create stock record with pessimistic lock for concurrent safety.
+     *
+     * Must be called within a database transaction.
+     */
+    public static function lockForStock(Product $product, Warehouse $warehouse): self
+    {
+        // First ensure the record exists
+        $stock = static::getOrCreate($product, $warehouse);
+
+        // Then re-fetch with a pessimistic lock to prevent race conditions
+        return static::where('product_id', $product->id)
+            ->where('warehouse_id', $warehouse->id)
+            ->lockForUpdate()
+            ->first();
+    }
 }

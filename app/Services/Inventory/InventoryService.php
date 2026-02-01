@@ -7,6 +7,10 @@ namespace App\Services\Inventory;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Inventory\InventoryServiceInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
+use App\Domain\Inventory\Movements\Events\InventoryAdjusted;
+use App\Domain\Inventory\Movements\Events\InventoryIssued;
+use App\Domain\Inventory\Movements\Events\InventoryReceived;
+use App\Domain\Inventory\Movements\Events\InventoryTransferred;
 use App\Exceptions\Domain\InsufficientStockException;
 use App\Models\Inventory\InventoryMovement;
 use App\Models\Inventory\Product;
@@ -39,7 +43,7 @@ class InventoryService extends BaseService implements InventoryServiceInterface
         ?int $referenceId = null
     ): InventoryMovement {
         return $this->executeInTransaction('stock_in', function () use ($product, $warehouse, $quantity, $unitCost, $notes, $referenceType, $referenceId) {
-            $stock = ProductStock::getOrCreate($product, $warehouse);
+            $stock = ProductStock::lockForStock($product, $warehouse);
             $quantityBefore = $stock->quantity;
 
             // Add stock with weighted average cost
@@ -66,6 +70,14 @@ class InventoryService extends BaseService implements InventoryServiceInterface
             // Sync product's current_stock
             $product->syncCurrentStock();
 
+            $this->dispatch(new InventoryReceived(
+                productId: $product->id,
+                warehouseId: $warehouse->id,
+                quantity: $quantity,
+                movementId: $movement->id,
+                userId: $this->getUserId(),
+            ));
+
             return $movement;
         }, ['product_id' => $product->id, 'warehouse_id' => $warehouse->id, 'quantity' => $quantity]);
     }
@@ -82,7 +94,7 @@ class InventoryService extends BaseService implements InventoryServiceInterface
         ?int $referenceId = null
     ): InventoryMovement {
         return $this->executeInTransaction('stock_out', function () use ($product, $warehouse, $quantity, $notes, $referenceType, $referenceId) {
-            $stock = ProductStock::getOrCreate($product, $warehouse);
+            $stock = ProductStock::lockForStock($product, $warehouse);
             $quantityBefore = $stock->quantity;
 
             // Get unit cost before removing
@@ -112,6 +124,14 @@ class InventoryService extends BaseService implements InventoryServiceInterface
             // Sync product's current_stock
             $product->syncCurrentStock();
 
+            $this->dispatch(new InventoryIssued(
+                productId: $product->id,
+                warehouseId: $warehouse->id,
+                quantity: $quantity,
+                movementId: $movement->id,
+                userId: $this->getUserId(),
+            ));
+
             return $movement;
         }, ['product_id' => $product->id, 'warehouse_id' => $warehouse->id, 'quantity' => $quantity]);
     }
@@ -129,7 +149,7 @@ class InventoryService extends BaseService implements InventoryServiceInterface
         ?int $referenceId = null
     ): InventoryMovement {
         return $this->executeInTransaction('adjust', function () use ($product, $warehouse, $newQuantity, $newUnitCost, $notes, $referenceType, $referenceId) {
-            $stock = ProductStock::getOrCreate($product, $warehouse);
+            $stock = ProductStock::lockForStock($product, $warehouse);
             $quantityBefore = $stock->quantity;
             $quantityDiff = $newQuantity - $quantityBefore;
 
@@ -162,6 +182,16 @@ class InventoryService extends BaseService implements InventoryServiceInterface
             // Sync product's current_stock
             $product->syncCurrentStock();
 
+            $this->dispatch(new InventoryAdjusted(
+                productId: $product->id,
+                warehouseId: $warehouse->id,
+                adjustmentQuantity: $quantityDiff,
+                previousQuantity: $quantityBefore,
+                newQuantity: $newQuantity,
+                movementId: $movement->id,
+                userId: $this->getUserId(),
+            ));
+
             return $movement;
         }, ['product_id' => $product->id, 'warehouse_id' => $warehouse->id, 'new_quantity' => $newQuantity]);
     }
@@ -179,7 +209,7 @@ class InventoryService extends BaseService implements InventoryServiceInterface
         ?string $notes = null
     ): array {
         return $this->executeInTransaction('transfer', function () use ($product, $fromWarehouse, $toWarehouse, $quantity, $notes) {
-            $fromStock = ProductStock::getOrCreate($product, $fromWarehouse);
+            $fromStock = ProductStock::lockForStock($product, $fromWarehouse);
 
             if ($fromStock->quantity < $quantity) {
                 throw InsufficientStockException::forTransfer(
@@ -196,8 +226,8 @@ class InventoryService extends BaseService implements InventoryServiceInterface
             // Remove from source warehouse
             $fromStock->removeStock($quantity);
 
-            // Add to destination warehouse
-            $toStock = ProductStock::getOrCreate($product, $toWarehouse);
+            // Add to destination warehouse (also locked)
+            $toStock = ProductStock::lockForStock($product, $toWarehouse);
             $toQuantityBefore = $toStock->quantity;
             $toStock->addStock($quantity, $unitCost);
 
@@ -239,6 +269,16 @@ class InventoryService extends BaseService implements InventoryServiceInterface
 
             // Sync product's current_stock
             $product->syncCurrentStock();
+
+            $this->dispatch(new InventoryTransferred(
+                productId: $product->id,
+                fromWarehouseId: $fromWarehouse->id,
+                toWarehouseId: $toWarehouse->id,
+                quantity: $quantity,
+                outMovementId: $outMovement->id,
+                inMovementId: $inMovement->id,
+                userId: $this->getUserId(),
+            ));
 
             return ['out' => $outMovement, 'in' => $inMovement];
         }, ['product_id' => $product->id, 'from_warehouse_id' => $fromWarehouse->id, 'to_warehouse_id' => $toWarehouse->id]);

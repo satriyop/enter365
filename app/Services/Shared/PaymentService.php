@@ -13,6 +13,7 @@ use App\Domain\Sales\Events\PaymentReceived;
 use App\Domain\Sales\Events\PaymentVoided;
 use App\Domain\Sales\Invoices\Events\InvoiceFullyPaid;
 use App\Enums\DocumentStatus;
+use App\Models\Core\AuditLog;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
 use App\Models\Shared\Payment;
@@ -38,9 +39,9 @@ class PaymentService extends BaseService implements PaymentServiceInterface
             $payableId = null;
             $payable = null;
 
-            // Handle invoice allocation
+            // Handle invoice allocation (with pessimistic lock)
             if (isset($data['invoice_id'])) {
-                $invoice = Invoice::findOrFail($data['invoice_id']);
+                $invoice = Invoice::lockForUpdate()->findOrFail($data['invoice_id']);
                 $this->validateInvoicePayment($invoice, $data['amount']);
                 $payableType = Invoice::class;
                 $payableId = $invoice->id;
@@ -48,9 +49,9 @@ class PaymentService extends BaseService implements PaymentServiceInterface
                 unset($data['invoice_id']);
             }
 
-            // Handle bill allocation
+            // Handle bill allocation (with pessimistic lock)
             if (isset($data['bill_id'])) {
-                $bill = Bill::findOrFail($data['bill_id']);
+                $bill = Bill::lockForUpdate()->findOrFail($data['bill_id']);
                 $this->validateBillPayment($bill, $data['amount']);
                 $payableType = Bill::class;
                 $payableId = $bill->id;
@@ -110,7 +111,12 @@ class PaymentService extends BaseService implements PaymentServiceInterface
         }
 
         return $this->executeInTransaction('void', function () use ($payment, $reason) {
+            // Lock the payable to prevent concurrent payment modifications
             $payable = $payment->payable;
+            if ($payable) {
+                /** @var \App\Models\Sales\Invoice|\App\Models\Purchasing\Bill $payable */
+                $payable = $payable::lockForUpdate()->find($payable->getKey());
+            }
             $previousPaidAmount = $payable?->paid_amount ?? 0;
 
             // Reverse journal entry
@@ -133,6 +139,11 @@ class PaymentService extends BaseService implements PaymentServiceInterface
             if ($payable) {
                 $this->updatePayableAfterVoid($payable, $payment, $previousPaidAmount);
             }
+
+            AuditLog::log(AuditLog::ACTION_VOIDED, $payment, null, [
+                'void_reason' => $reason,
+                'amount' => $payment->amount,
+            ]);
 
             // Dispatch void event for all voided payments
             Event::dispatch(new PaymentVoided(
