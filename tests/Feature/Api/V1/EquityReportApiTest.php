@@ -22,21 +22,25 @@ describe('Statement of Changes in Equity', function () {
 
         $response->assertOk()
             ->assertJsonStructure([
-                'report_name',
-                'period_start',
-                'period_end',
-                'opening_equity' => ['items', 'total'],
-                'changes' => [
-                    'capital_additions',
-                    'capital_withdrawals',
-                    'net_income',
-                    'dividends',
-                    'other_adjustments',
-                    'total_changes',
+                'success',
+                'message',
+                'data' => [
+                    'report_name',
+                    'period_start',
+                    'period_end',
+                    'opening_equity' => ['items', 'total'],
+                    'changes' => [
+                        'capital_additions',
+                        'capital_withdrawals',
+                        'net_income',
+                        'dividends',
+                        'other_adjustments',
+                        'total_changes',
+                    ],
+                    'closing_equity' => ['items', 'total'],
                 ],
-                'closing_equity' => ['items', 'total'],
             ])
-            ->assertJsonPath('report_name', 'Laporan Perubahan Ekuitas');
+            ->assertJsonPath('data.report_name', 'Laporan Perubahan Ekuitas');
     });
 
     it('can filter by date range', function () {
@@ -46,8 +50,8 @@ describe('Statement of Changes in Equity', function () {
         $response = $this->getJson("/api/v1/reports/changes-in-equity?start_date={$startDate}&end_date={$endDate}");
 
         $response->assertOk()
-            ->assertJsonPath('period_start', $startDate)
-            ->assertJsonPath('period_end', $endDate);
+            ->assertJsonPath('data.period_start', $startDate)
+            ->assertJsonPath('data.period_end', $endDate);
     });
 
     it('shows opening equity from previous period', function () {
@@ -65,7 +69,7 @@ describe('Statement of Changes in Equity', function () {
 
         $response->assertOk();
 
-        $openingEquity = $response->json('opening_equity.total');
+        $openingEquity = $response->json('data.opening_equity.total');
         expect($openingEquity)->toBeGreaterThanOrEqual(10000000);
     });
 
@@ -86,7 +90,7 @@ describe('Statement of Changes in Equity', function () {
 
         $response->assertOk();
 
-        $changes = $response->json('changes');
+        $changes = $response->json('data.changes');
         expect($changes['capital_additions'])->toBeGreaterThanOrEqual(5000000);
     });
 
@@ -114,7 +118,7 @@ describe('Statement of Changes in Equity', function () {
 
         $response->assertOk();
 
-        $changes = $response->json('changes');
+        $changes = $response->json('data.changes');
         expect($changes['capital_withdrawals'])->toBeGreaterThanOrEqual(2000000);
     });
 
@@ -141,7 +145,7 @@ describe('Statement of Changes in Equity', function () {
 
         $response->assertOk();
 
-        $changes = $response->json('changes');
+        $changes = $response->json('data.changes');
         // Net income should be revenue - expense = 8M - 3M = 5M
         expect($changes['net_income'])->toBe(5000000);
     });
@@ -177,10 +181,10 @@ describe('Statement of Changes in Equity', function () {
 
         $response->assertOk();
 
-        $openingEquity = $response->json('opening_equity.total');
-        $changes = $response->json('changes');
-        $closingEquity = $response->json('closing_equity.total');
-        $totalChanges = $response->json('changes.total_changes');
+        $openingEquity = $response->json('data.opening_equity.total');
+        $changes = $response->json('data.changes');
+        $closingEquity = $response->json('data.closing_equity.total');
+        $totalChanges = $response->json('data.changes.total_changes');
 
         // Verify that total changes = closing - opening
         expect($totalChanges)->toBe($closingEquity - $openingEquity);
@@ -197,7 +201,7 @@ describe('Statement of Changes in Equity', function () {
 
         $response->assertOk();
 
-        $changes = $response->json('changes');
+        $changes = $response->json('data.changes');
         expect($changes['capital_additions'])->toBe(0);
         expect($changes['capital_withdrawals'])->toBe(0);
         expect($changes['net_income'])->toBe(0);
@@ -209,8 +213,8 @@ describe('Statement of Changes in Equity', function () {
 
         $response->assertOk();
 
-        $periodStart = $response->json('period_start');
-        $periodEnd = $response->json('period_end');
+        $periodStart = $response->json('data.period_start');
+        $periodEnd = $response->json('data.period_end');
         expect($periodStart)->not->toBeEmpty();
         expect($periodEnd)->not->toBeEmpty();
     });
@@ -232,7 +236,7 @@ describe('Statement of Changes in Equity', function () {
 
         $response->assertOk();
 
-        $changes = $response->json('changes');
+        $changes = $response->json('data.changes');
         expect($changes['dividends'])->toBeGreaterThanOrEqual(0);
     });
 

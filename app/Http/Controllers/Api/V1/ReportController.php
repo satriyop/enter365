@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Http\Controllers\Controller;
 use App\Models\Accounting\Account;
 use App\Models\Contacts\Contact;
 use App\Models\Inventory\Product;
@@ -12,6 +11,7 @@ use App\Services\Accounting\Reports\ReportServiceFactory;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class ReportController extends Controller
 {
@@ -24,13 +24,15 @@ class ReportController extends Controller
      */
     public function trialBalance(Request $request): JsonResponse
     {
+        Gate::authorize('reports.financial');
+
         $asOfDate = $request->input('as_of_date');
         $trialBalance = $this->reports->balance()->getTrialBalance($asOfDate);
 
         $totalDebit = $trialBalance->sum('debit_balance');
         $totalCredit = $trialBalance->sum('credit_balance');
 
-        return response()->json([
+        return $this->success([
             'report_name' => 'Neraca Saldo',
             'as_of_date' => $asOfDate ?? now()->toDateString(),
             'accounts' => $trialBalance->values(),
@@ -45,19 +47,20 @@ class ReportController extends Controller
      */
     public function balanceSheet(Request $request): JsonResponse
     {
+        Gate::authorize('reports.financial');
+
         $asOfDate = $request->input('as_of_date');
         $compareTo = $request->input('compare_to');
 
-        // If compare_to is provided, return comparative report
         if ($compareTo) {
             $comparative = $this->reports->financial()->getComparativeBalanceSheet($asOfDate, $compareTo);
 
-            return response()->json($comparative);
+            return $this->success($comparative);
         }
 
         $balanceSheet = $this->reports->financial()->getBalanceSheet($asOfDate);
 
-        return response()->json([
+        return $this->success([
             'report_name' => 'Laporan Posisi Keuangan',
             ...$balanceSheet,
         ]);
@@ -68,11 +71,12 @@ class ReportController extends Controller
      */
     public function incomeStatement(Request $request): JsonResponse
     {
+        Gate::authorize('reports.financial');
+
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
         $comparePreviousPeriod = $request->boolean('compare_previous_period', false);
 
-        // If compare_previous_period is true, return comparative report
         if ($comparePreviousPeriod) {
             $comparative = $this->reports->financial()->getComparativeIncomeStatement(
                 $startDate,
@@ -81,12 +85,12 @@ class ReportController extends Controller
                 $request->input('previous_end_date')
             );
 
-            return response()->json($comparative);
+            return $this->success($comparative);
         }
 
         $incomeStatement = $this->reports->financial()->getIncomeStatement($startDate, $endDate);
 
-        return response()->json([
+        return $this->success([
             'report_name' => 'Laporan Laba Rugi',
             ...$incomeStatement,
         ]);
@@ -97,11 +101,13 @@ class ReportController extends Controller
      */
     public function generalLedger(Request $request): JsonResponse
     {
+        Gate::authorize('reports.financial');
+
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
         $generalLedger = $this->reports->financial()->getGeneralLedger($startDate, $endDate);
 
-        return response()->json([
+        return $this->success([
             'report_name' => 'Buku Besar',
             'start_date' => $startDate,
             'end_date' => $endDate,
@@ -114,13 +120,15 @@ class ReportController extends Controller
      */
     public function receivableAging(Request $request): JsonResponse
     {
+        Gate::authorize('reports.aging');
+
         $asOfDate = $request->input('as_of_date')
             ? Carbon::parse($request->input('as_of_date'))
             : null;
 
         $report = $this->reports->aging()->getReceivableAging($asOfDate);
 
-        return response()->json([
+        return $this->success([
             'report_name' => 'Laporan Umur Piutang',
             ...$report,
         ]);
@@ -131,13 +139,15 @@ class ReportController extends Controller
      */
     public function payableAging(Request $request): JsonResponse
     {
+        Gate::authorize('reports.aging');
+
         $asOfDate = $request->input('as_of_date')
             ? Carbon::parse($request->input('as_of_date'))
             : null;
 
         $report = $this->reports->aging()->getPayableAging($asOfDate);
 
-        return response()->json([
+        return $this->success([
             'report_name' => 'Laporan Umur Hutang',
             ...$report,
         ]);
@@ -148,13 +158,15 @@ class ReportController extends Controller
      */
     public function contactAging(Request $request, Contact $contact): JsonResponse
     {
+        Gate::authorize('reports.aging');
+
         $asOfDate = $request->input('as_of_date')
             ? Carbon::parse($request->input('as_of_date'))
             : null;
 
         $report = $this->reports->aging()->getContactAging($contact, $asOfDate);
 
-        return response()->json([
+        return $this->success([
             'report_name' => 'Laporan Umur - '.$contact->name,
             'contact' => [
                 'id' => $contact->id,
@@ -171,12 +183,14 @@ class ReportController extends Controller
      */
     public function ppnSummary(Request $request): JsonResponse
     {
+        Gate::authorize('reports.tax');
+
         $startDate = $request->input('start_date') ?? now()->startOfMonth()->toDateString();
         $endDate = $request->input('end_date') ?? now()->endOfMonth()->toDateString();
 
         $report = $this->reports->tax()->getPpnSummary($startDate, $endDate);
 
-        return response()->json([
+        return $this->success([
             'report_name' => 'Laporan PPN',
             ...$report,
         ]);
@@ -187,11 +201,13 @@ class ReportController extends Controller
      */
     public function ppnMonthly(Request $request): JsonResponse
     {
+        Gate::authorize('reports.tax');
+
         $year = (int) $request->input('year', now()->year);
 
         $report = $this->reports->tax()->getMonthlyPpnSummary($year);
 
-        return response()->json([
+        return $this->success([
             'report_name' => "Laporan PPN Tahun {$year}",
             'year' => $year,
             'months' => $report,
@@ -206,12 +222,14 @@ class ReportController extends Controller
      */
     public function taxInvoiceList(Request $request): JsonResponse
     {
+        Gate::authorize('reports.tax');
+
         $startDate = $request->input('start_date') ?? now()->startOfMonth()->toDateString();
         $endDate = $request->input('end_date') ?? now()->endOfMonth()->toDateString();
 
         $invoices = $this->reports->tax()->getTaxInvoiceList($startDate, $endDate);
 
-        return response()->json([
+        return $this->success([
             'report_name' => 'Daftar Faktur Pajak Keluaran',
             'period' => [
                 'start' => $startDate,
@@ -228,12 +246,14 @@ class ReportController extends Controller
      */
     public function inputTaxList(Request $request): JsonResponse
     {
+        Gate::authorize('reports.tax');
+
         $startDate = $request->input('start_date') ?? now()->startOfMonth()->toDateString();
         $endDate = $request->input('end_date') ?? now()->endOfMonth()->toDateString();
 
         $bills = $this->reports->tax()->getInputTaxList($startDate, $endDate);
 
-        return response()->json([
+        return $this->success([
             'report_name' => 'Daftar Faktur Pajak Masukan',
             'period' => [
                 'start' => $startDate,
@@ -250,12 +270,14 @@ class ReportController extends Controller
      */
     public function cashFlow(Request $request): JsonResponse
     {
+        Gate::authorize('reports.cash_flow');
+
         $startDate = $request->input('start_date') ?? now()->startOfMonth()->toDateString();
         $endDate = $request->input('end_date') ?? now()->endOfMonth()->toDateString();
 
         $report = $this->reports->cashFlow()->generateCashFlow($startDate, $endDate);
 
-        return response()->json([
+        return $this->success([
             'report_name' => 'Laporan Arus Kas',
             ...$report,
         ]);
@@ -266,12 +288,14 @@ class ReportController extends Controller
      */
     public function dailyCashMovement(Request $request): JsonResponse
     {
+        Gate::authorize('reports.cash_flow');
+
         $startDate = $request->input('start_date') ?? now()->startOfMonth()->toDateString();
         $endDate = $request->input('end_date') ?? now()->endOfMonth()->toDateString();
 
         $movements = $this->reports->cashFlow()->getDailyCashMovement($startDate, $endDate);
 
-        return response()->json([
+        return $this->success([
             'report_name' => 'Pergerakan Kas Harian',
             'period' => [
                 'start' => $startDate,
@@ -289,13 +313,15 @@ class ReportController extends Controller
      */
     public function projectProfitability(Request $request): JsonResponse
     {
+        Gate::authorize('reports.project');
+
         $report = $this->reports->project()->getProjectProfitabilitySummary(
             $request->input('start_date'),
             $request->input('end_date'),
             $request->input('status')
         );
 
-        return response()->json($report);
+        return $this->success($report);
     }
 
     /**
@@ -303,9 +329,11 @@ class ReportController extends Controller
      */
     public function projectProfitabilityDetail(Project $project): JsonResponse
     {
+        Gate::authorize('reports.project');
+
         $report = $this->reports->project()->getProjectProfitabilityDetail($project);
 
-        return response()->json($report);
+        return $this->success($report);
     }
 
     /**
@@ -313,12 +341,14 @@ class ReportController extends Controller
      */
     public function projectCostAnalysis(Request $request): JsonResponse
     {
+        Gate::authorize('reports.project');
+
         $report = $this->reports->project()->getProjectCostAnalysis(
             $request->input('start_date'),
             $request->input('end_date')
         );
 
-        return response()->json($report);
+        return $this->success($report);
     }
 
     /**
@@ -326,6 +356,8 @@ class ReportController extends Controller
      */
     public function workOrderCosts(Request $request): JsonResponse
     {
+        Gate::authorize('reports.manufacturing');
+
         $report = $this->reports->workOrder()->getWorkOrderCostSummary(
             $request->input('start_date'),
             $request->input('end_date'),
@@ -333,7 +365,7 @@ class ReportController extends Controller
             $request->input('project_id')
         );
 
-        return response()->json($report);
+        return $this->success($report);
     }
 
     /**
@@ -341,9 +373,11 @@ class ReportController extends Controller
      */
     public function workOrderCostDetail(WorkOrder $workOrder): JsonResponse
     {
+        Gate::authorize('reports.manufacturing');
+
         $report = $this->reports->workOrder()->getWorkOrderCostDetail($workOrder);
 
-        return response()->json($report);
+        return $this->success($report);
     }
 
     /**
@@ -351,12 +385,14 @@ class ReportController extends Controller
      */
     public function costVariance(Request $request): JsonResponse
     {
+        Gate::authorize('reports.manufacturing');
+
         $report = $this->reports->workOrder()->getCostVarianceReport(
             $request->input('start_date'),
             $request->input('end_date')
         );
 
-        return response()->json($report);
+        return $this->success($report);
     }
 
     /**
@@ -364,12 +400,14 @@ class ReportController extends Controller
      */
     public function subcontractorSummary(Request $request): JsonResponse
     {
+        Gate::authorize('reports.manufacturing');
+
         $report = $this->reports->subcontractor()->getSubcontractorSummary(
             $request->input('start_date'),
             $request->input('end_date')
         );
 
-        return response()->json($report);
+        return $this->success($report);
     }
 
     /**
@@ -377,13 +415,15 @@ class ReportController extends Controller
      */
     public function subcontractorDetail(Request $request, Contact $contact): JsonResponse
     {
+        Gate::authorize('reports.manufacturing');
+
         $report = $this->reports->subcontractor()->getSubcontractorDetail(
             $contact,
             $request->input('start_date'),
             $request->input('end_date')
         );
 
-        return response()->json($report);
+        return $this->success($report);
     }
 
     /**
@@ -391,9 +431,11 @@ class ReportController extends Controller
      */
     public function subcontractorRetention(): JsonResponse
     {
+        Gate::authorize('reports.manufacturing');
+
         $report = $this->reports->subcontractor()->getRetentionSummary();
 
-        return response()->json($report);
+        return $this->success($report);
     }
 
     /**
@@ -401,12 +443,14 @@ class ReportController extends Controller
      */
     public function changesInEquity(Request $request): JsonResponse
     {
+        Gate::authorize('reports.financial');
+
         $report = $this->reports->financial()->getStatementOfChangesInEquity(
             $request->input('start_date'),
             $request->input('end_date')
         );
 
-        return response()->json([
+        return $this->success([
             'report_name' => 'Laporan Perubahan Ekuitas',
             ...$report,
         ]);
@@ -417,12 +461,14 @@ class ReportController extends Controller
      */
     public function bankReconciliation(Request $request, Account $account): JsonResponse
     {
+        Gate::authorize('reports.financial');
+
         $report = $this->reports->bankReconciliation()->getReconciliationReport(
             $account,
             $request->input('as_of_date')
         );
 
-        return response()->json([
+        return $this->success([
             'report_name' => 'Laporan Rekonsiliasi Bank',
             ...$report,
         ]);
@@ -433,12 +479,14 @@ class ReportController extends Controller
      */
     public function bankReconciliationOutstanding(Request $request, Account $account): JsonResponse
     {
+        Gate::authorize('reports.financial');
+
         $report = $this->reports->bankReconciliation()->getOutstandingItems(
             $account,
             $request->input('as_of_date')
         );
 
-        return response()->json([
+        return $this->success([
             'report_name' => 'Item Outstanding Rekonsiliasi',
             'account' => [
                 'id' => $account->id,
@@ -455,12 +503,14 @@ class ReportController extends Controller
      */
     public function cogsSummary(Request $request): JsonResponse
     {
+        Gate::authorize('reports.cogs');
+
         $report = $this->reports->cogs()->getCOGSSummary(
             $request->input('start_date'),
             $request->input('end_date')
         );
 
-        return response()->json([
+        return $this->success([
             'report_name' => 'Laporan Harga Pokok Penjualan',
             ...$report,
         ]);
@@ -471,6 +521,8 @@ class ReportController extends Controller
      */
     public function cogsByProduct(Request $request): JsonResponse
     {
+        Gate::authorize('reports.cogs');
+
         $products = $this->reports->cogs()->getCOGSByProduct(
             $request->input('start_date'),
             $request->input('end_date')
@@ -479,7 +531,7 @@ class ReportController extends Controller
         $startDate = $request->input('start_date') ?? now()->startOfMonth()->toDateString();
         $endDate = $request->input('end_date') ?? now()->endOfMonth()->toDateString();
 
-        return response()->json([
+        return $this->success([
             'report_name' => 'Laporan HPP per Produk',
             'period' => [
                 'start' => $startDate,
@@ -495,6 +547,8 @@ class ReportController extends Controller
      */
     public function cogsByCategory(Request $request): JsonResponse
     {
+        Gate::authorize('reports.cogs');
+
         $categories = $this->reports->cogs()->getCOGSByCategory(
             $request->input('start_date'),
             $request->input('end_date')
@@ -503,7 +557,7 @@ class ReportController extends Controller
         $startDate = $request->input('start_date') ?? now()->startOfMonth()->toDateString();
         $endDate = $request->input('end_date') ?? now()->endOfMonth()->toDateString();
 
-        return response()->json([
+        return $this->success([
             'report_name' => 'Laporan HPP per Kategori',
             'period' => [
                 'start' => $startDate,
@@ -519,10 +573,12 @@ class ReportController extends Controller
      */
     public function cogsMonthlyTrend(Request $request): JsonResponse
     {
+        Gate::authorize('reports.cogs');
+
         $year = (int) $request->input('year', now()->year);
         $months = $this->reports->cogs()->getMonthlyCOGSTrend($year);
 
-        return response()->json([
+        return $this->success([
             'report_name' => "Trend HPP Tahun {$year}",
             'year' => $year,
             'months' => $months,
@@ -535,6 +591,8 @@ class ReportController extends Controller
      */
     public function productCOGSDetail(Request $request, Product $product): JsonResponse
     {
+        Gate::authorize('reports.cogs');
+
         $details = $this->reports->cogs()->getProductCOGSDetail(
             $product,
             $request->input('start_date'),
@@ -544,7 +602,7 @@ class ReportController extends Controller
         $startDate = $request->input('start_date') ?? now()->startOfMonth()->toDateString();
         $endDate = $request->input('end_date') ?? now()->endOfMonth()->toDateString();
 
-        return response()->json([
+        return $this->success([
             'report_name' => 'Detail HPP Produk',
             'product' => [
                 'id' => $product->id,

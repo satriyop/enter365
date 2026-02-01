@@ -13,6 +13,7 @@ use App\Services\Accounting\Reports\AgingReportService;
 use App\Services\Shared\DashboardQueryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class DashboardController extends Controller
 {
@@ -24,6 +25,8 @@ class DashboardController extends Controller
 
     public function summary(Request $request): JsonResponse
     {
+        Gate::authorize('dashboard.view');
+
         $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->input('end_date', now()->toDateString());
 
@@ -42,6 +45,8 @@ class DashboardController extends Controller
 
     public function receivables(): JsonResponse
     {
+        Gate::authorize('dashboard.financials');
+
         $invoices = Invoice::query()
             ->whereIn('status', [DocumentStatus::Sent, DocumentStatus::Partial, DocumentStatus::Overdue])
             ->with('contact')
@@ -63,6 +68,8 @@ class DashboardController extends Controller
 
     public function payables(): JsonResponse
     {
+        Gate::authorize('dashboard.financials');
+
         $bills = Bill::query()
             ->whereIn('status', [DocumentStatus::Received, DocumentStatus::Partial, DocumentStatus::Overdue])
             ->with('contact')
@@ -84,6 +91,8 @@ class DashboardController extends Controller
 
     public function cashFlow(Request $request): JsonResponse
     {
+        Gate::authorize('dashboard.financials');
+
         $days = (int) $request->input('days', 30);
         $startDate = now()->subDays($days);
         $endDate = now();
@@ -109,6 +118,8 @@ class DashboardController extends Controller
 
     public function profitLoss(Request $request): JsonResponse
     {
+        Gate::authorize('dashboard.financials');
+
         $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->input('end_date', now()->toDateString());
 
@@ -134,6 +145,8 @@ class DashboardController extends Controller
 
     public function kpis(): JsonResponse
     {
+        Gate::authorize('dashboard.kpis');
+
         $currentMonth = now()->startOfMonth();
         $lastMonth = now()->subMonth()->startOfMonth();
 

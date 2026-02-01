@@ -33,19 +33,23 @@ describe('Subcontractor Summary Report', function () {
         $response = $this->getJson('/api/v1/reports/subcontractor-summary');
         $response->assertOk()
             ->assertJsonStructure([
-                'report_name',
-                'period' => ['start', 'end'],
-                'subcontractors',
-                'totals' => [
-                    'total_subcontractors',
-                    'total_agreed',
-                    'total_paid',
-                    'total_outstanding',
-                    'total_retention',
+                'success',
+                'message',
+                'data' => [
+                    'report_name',
+                    'period' => ['start', 'end'],
+                    'subcontractors',
+                    'totals' => [
+                        'total_subcontractors',
+                        'total_agreed',
+                        'total_paid',
+                        'total_outstanding',
+                        'total_retention',
+                    ],
                 ],
             ])
-            ->assertJsonPath('report_name', 'Laporan Subkontraktor')
-            ->assertJsonPath('totals.total_subcontractors', 1);
+            ->assertJsonPath('data.report_name', 'Laporan Subkontraktor')
+            ->assertJsonPath('data.totals.total_subcontractors', 1);
     });
 
     it('includes financial breakdown for each subcontractor', function () {
@@ -64,7 +68,7 @@ describe('Subcontractor Summary Report', function () {
 
         $response->assertOk();
 
-        $subcontractors = $response->json('subcontractors');
+        $subcontractors = $response->json('data.subcontractors');
         expect($subcontractors)->toHaveCount(1);
 
         $sub = $subcontractors[0];
@@ -85,7 +89,7 @@ describe('Subcontractor Summary Report', function () {
 
         $response->assertOk();
 
-        $subcontractors = $response->json('subcontractors');
+        $subcontractors = $response->json('data.subcontractors');
         $sub = $subcontractors[0];
 
         expect($sub['work_orders']['total'])->toBe(4);
@@ -114,10 +118,10 @@ describe('Subcontractor Summary Report', function () {
         $response = $this->getJson('/api/v1/reports/subcontractor-summary?start_date=2024-01-01&end_date=2024-12-31');
 
         $response->assertOk()
-            ->assertJsonPath('period.start', '2024-01-01')
-            ->assertJsonPath('period.end', '2024-12-31');
+            ->assertJsonPath('data.period.start', '2024-01-01')
+            ->assertJsonPath('data.period.end', '2024-12-31');
 
-        $subcontractors = $response->json('subcontractors');
+        $subcontractors = $response->json('data.subcontractors');
         $sub = $subcontractors[0];
         expect($sub['work_orders']['total'])->toBe(1);
     });
@@ -133,7 +137,7 @@ describe('Subcontractor Summary Report', function () {
         $response = $this->getJson('/api/v1/reports/subcontractor-summary');
 
         $response->assertOk()
-            ->assertJsonPath('totals.total_subcontractors', 1);
+            ->assertJsonPath('data.totals.total_subcontractors', 1);
     });
 
 });
@@ -155,34 +159,38 @@ describe('Subcontractor Detail Report', function () {
 
         $response->assertOk()
             ->assertJsonStructure([
-                'report_name',
-                'subcontractor' => [
-                    'id',
-                    'code',
-                    'name',
-                    'phone',
-                    'email',
-                    'hourly_rate',
-                    'daily_rate',
-                ],
-                'period' => ['start', 'end'],
-                'work_orders',
-                'invoices',
-                'summary' => [
-                    'total_work_orders',
-                    'completed_work_orders',
-                    'total_agreed',
-                    'total_actual',
-                    'total_invoiced',
-                    'total_paid',
-                    'outstanding',
-                    'retention_held',
+                'success',
+                'message',
+                'data' => [
+                    'report_name',
+                    'subcontractor' => [
+                        'id',
+                        'code',
+                        'name',
+                        'phone',
+                        'email',
+                        'hourly_rate',
+                        'daily_rate',
+                    ],
+                    'period' => ['start', 'end'],
+                    'work_orders',
+                    'invoices',
+                    'summary' => [
+                        'total_work_orders',
+                        'completed_work_orders',
+                        'total_agreed',
+                        'total_actual',
+                        'total_invoiced',
+                        'total_paid',
+                        'outstanding',
+                        'retention_held',
+                    ],
                 ],
             ])
-            ->assertJsonPath('report_name', 'Laporan Detail Subkontraktor')
-            ->assertJsonPath('subcontractor.name', 'PT Test Subkontraktor')
-            ->assertJsonPath('subcontractor.code', 'SUB-001')
-            ->assertJsonPath('summary.total_work_orders', 3);
+            ->assertJsonPath('data.report_name', 'Laporan Detail Subkontraktor')
+            ->assertJsonPath('data.subcontractor.name', 'PT Test Subkontraktor')
+            ->assertJsonPath('data.subcontractor.code', 'SUB-001')
+            ->assertJsonPath('data.summary.total_work_orders', 3);
     });
 
     it('includes project information in work orders', function () {
@@ -202,7 +210,7 @@ describe('Subcontractor Detail Report', function () {
 
         $response->assertOk();
 
-        $workOrders = $response->json('work_orders');
+        $workOrders = $response->json('data.work_orders');
         expect($workOrders)->toHaveCount(1);
         expect($workOrders[0]['project_number'])->toBe('PRJ-TEST-001');
         expect($workOrders[0]['project_name'])->toBe('Test Project');
@@ -226,7 +234,7 @@ describe('Subcontractor Detail Report', function () {
         $response = $this->getJson("/api/v1/reports/subcontractors/{$subcontractor->id}/summary?start_date=2024-01-01&end_date=2024-12-31");
 
         $response->assertOk()
-            ->assertJsonPath('summary.total_work_orders', 1);
+            ->assertJsonPath('data.summary.total_work_orders', 1);
     });
 
 });
@@ -247,18 +255,22 @@ describe('Subcontractor Retention Report', function () {
 
         $response->assertOk()
             ->assertJsonStructure([
-                'report_name',
-                'retentions',
-                'by_subcontractor',
-                'totals' => [
-                    'total_retention_held',
-                    'releasable_amount',
-                    'pending_amount',
-                    'work_orders_count',
+                'success',
+                'message',
+                'data' => [
+                    'report_name',
+                    'retentions',
+                    'by_subcontractor',
+                    'totals' => [
+                        'total_retention_held',
+                        'releasable_amount',
+                        'pending_amount',
+                        'work_orders_count',
+                    ],
                 ],
             ])
-            ->assertJsonPath('report_name', 'Laporan Retensi Subkontraktor')
-            ->assertJsonPath('totals.work_orders_count', 2);
+            ->assertJsonPath('data.report_name', 'Laporan Retensi Subkontraktor')
+            ->assertJsonPath('data.totals.work_orders_count', 2);
     });
 
     it('calculates releasable vs pending retention', function () {
@@ -284,7 +296,7 @@ describe('Subcontractor Retention Report', function () {
 
         $response->assertOk();
 
-        $totals = $response->json('totals');
+        $totals = $response->json('data.totals');
         // 50M * 10% = 5M retention each
         expect($totals['total_retention_held'])->toBe(10000000);
         expect($totals['releasable_amount'])->toBeGreaterThan(0); // Completed WO
@@ -312,7 +324,7 @@ describe('Subcontractor Retention Report', function () {
 
         $response->assertOk();
 
-        $bySubcontractor = $response->json('by_subcontractor');
+        $bySubcontractor = $response->json('data.by_subcontractor');
         expect($bySubcontractor)->toHaveCount(2);
 
         $subA = collect($bySubcontractor)->firstWhere('subcontractor', 'Subkontraktor A');
@@ -339,7 +351,7 @@ describe('Subcontractor Retention Report', function () {
         $response = $this->getJson('/api/v1/reports/subcontractor-retention');
 
         $response->assertOk()
-            ->assertJsonPath('totals.work_orders_count', 1);
+            ->assertJsonPath('data.totals.work_orders_count', 1);
     });
 
 });

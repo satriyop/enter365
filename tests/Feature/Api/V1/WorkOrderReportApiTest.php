@@ -31,21 +31,25 @@ describe('Work Order Cost Summary Report', function () {
         $response = $this->getJson('/api/v1/reports/work-order-costs');
         $response->assertOk()
             ->assertJsonStructure([
-                'report_name',
-                'period' => ['start', 'end'],
-                'work_orders',
-                'totals' => [
-                    'work_orders_count',
-                    'total_estimated',
-                    'total_actual',
-                    'total_variance',
-                    'variance_percent',
-                    'completed_count',
-                    'in_progress_count',
+                'success',
+                'message',
+                'data' => [
+                    'report_name',
+                    'period' => ['start', 'end'],
+                    'work_orders',
+                    'totals' => [
+                        'work_orders_count',
+                        'total_estimated',
+                        'total_actual',
+                        'total_variance',
+                        'variance_percent',
+                        'completed_count',
+                        'in_progress_count',
+                    ],
                 ],
             ])
-            ->assertJsonPath('report_name', 'Laporan Biaya Work Order')
-            ->assertJsonPath('totals.work_orders_count', 10);
+            ->assertJsonPath('data.report_name', 'Laporan Biaya Work Order')
+            ->assertJsonPath('data.totals.work_orders_count', 10);
     });
 
     it('can filter by status', function () {
@@ -56,7 +60,7 @@ describe('Work Order Cost Summary Report', function () {
         $response = $this->getJson('/api/v1/reports/work-order-costs?status=in_progress');
 
         $response->assertOk()
-            ->assertJsonPath('totals.work_orders_count', 2);
+            ->assertJsonPath('data.totals.work_orders_count', 2);
     });
 
     it('can filter by project', function () {
@@ -69,7 +73,7 @@ describe('Work Order Cost Summary Report', function () {
         $response = $this->getJson("/api/v1/reports/work-order-costs?project_id={$project->id}");
 
         $response->assertOk()
-            ->assertJsonPath('totals.work_orders_count', 2);
+            ->assertJsonPath('data.totals.work_orders_count', 2);
     });
 
     it('can filter by date range', function () {
@@ -89,9 +93,9 @@ describe('Work Order Cost Summary Report', function () {
         $response = $this->getJson('/api/v1/reports/work-order-costs?start_date=2024-01-01&end_date=2024-12-31');
 
         $response->assertOk()
-            ->assertJsonPath('totals.work_orders_count', 2)
-            ->assertJsonPath('period.start', '2024-01-01')
-            ->assertJsonPath('period.end', '2024-12-31');
+            ->assertJsonPath('data.totals.work_orders_count', 2)
+            ->assertJsonPath('data.period.start', '2024-01-01')
+            ->assertJsonPath('data.period.end', '2024-12-31');
     });
 
     it('includes estimated and actual costs breakdown', function () {
@@ -104,7 +108,7 @@ describe('Work Order Cost Summary Report', function () {
 
         $response->assertOk();
 
-        $workOrders = $response->json('work_orders');
+        $workOrders = $response->json('data.work_orders');
         expect($workOrders)->toHaveCount(1);
 
         $wo = $workOrders[0];
@@ -129,7 +133,7 @@ describe('Work Order Cost Summary Report', function () {
 
         $response->assertOk();
 
-        $workOrders = $response->json('work_orders');
+        $workOrders = $response->json('data.work_orders');
         $wo = $workOrders[0];
 
         // Variance = estimated - actual (negative means over budget)
@@ -152,31 +156,35 @@ describe('Work Order Cost Detail Report', function () {
 
         $response->assertOk()
             ->assertJsonStructure([
-                'report_name',
-                'work_order' => [
-                    'id',
-                    'wo_number',
-                    'name',
-                    'type',
-                    'status',
-                    'project',
-                    'product',
-                    'quantity_ordered',
-                    'quantity_completed',
-                    'quantity_scrapped',
-                    'completion_percentage',
+                'success',
+                'message',
+                'data' => [
+                    'report_name',
+                    'work_order' => [
+                        'id',
+                        'wo_number',
+                        'name',
+                        'type',
+                        'status',
+                        'project',
+                        'product',
+                        'quantity_ordered',
+                        'quantity_completed',
+                        'quantity_scrapped',
+                        'completion_percentage',
+                    ],
+                    'cost_summary' => [
+                        'estimated',
+                        'actual',
+                        'variance',
+                        'cost_per_unit',
+                    ],
+                    'item_breakdown',
+                    'timeline',
                 ],
-                'cost_summary' => [
-                    'estimated',
-                    'actual',
-                    'variance',
-                    'cost_per_unit',
-                ],
-                'item_breakdown',
-                'timeline',
             ])
-            ->assertJsonPath('report_name', 'Laporan Detail Biaya Work Order')
-            ->assertJsonPath('work_order.id', $workOrder->id);
+            ->assertJsonPath('data.report_name', 'Laporan Detail Biaya Work Order')
+            ->assertJsonPath('data.work_order.id', $workOrder->id);
     });
 
     it('includes project information when available', function () {
@@ -191,8 +199,8 @@ describe('Work Order Cost Detail Report', function () {
         $response = $this->getJson("/api/v1/reports/work-orders/{$workOrder->id}/costs");
 
         $response->assertOk()
-            ->assertJsonPath('work_order.project.project_number', 'PRJ-TEST-001')
-            ->assertJsonPath('work_order.project.name', 'Test Project');
+            ->assertJsonPath('data.work_order.project.project_number', 'PRJ-TEST-001')
+            ->assertJsonPath('data.work_order.project.name', 'Test Project');
     });
 
     it('includes timeline information', function () {
@@ -204,8 +212,8 @@ describe('Work Order Cost Detail Report', function () {
         $response = $this->getJson("/api/v1/reports/work-orders/{$workOrder->id}/costs");
 
         $response->assertOk()
-            ->assertJsonPath('timeline.planned_start', '2024-01-15')
-            ->assertJsonPath('timeline.planned_end', '2024-02-15');
+            ->assertJsonPath('data.timeline.planned_start', '2024-01-15')
+            ->assertJsonPath('data.timeline.planned_end', '2024-02-15');
     });
 
     it('calculates cost per unit for completed work orders', function () {
@@ -222,7 +230,7 @@ describe('Work Order Cost Detail Report', function () {
         $response->assertOk();
 
         // Total actual = 5,000,000 / 5 units = 1,000,000 per unit
-        $costPerUnit = $response->json('cost_summary.cost_per_unit');
+        $costPerUnit = $response->json('data.cost_summary.cost_per_unit');
         expect($costPerUnit)->toBe(1000000);
     });
 
@@ -249,23 +257,27 @@ describe('Cost Variance Report', function () {
 
         $response->assertOk()
             ->assertJsonStructure([
-                'report_name',
-                'period' => ['start', 'end'],
-                'over_budget',
-                'under_budget',
-                'on_budget',
-                'summary' => [
-                    'total_work_orders',
-                    'over_budget_count',
-                    'under_budget_count',
-                    'on_budget_count',
-                    'total_estimated',
-                    'total_actual',
-                    'total_variance',
-                    'overall_variance_percent',
+                'success',
+                'message',
+                'data' => [
+                    'report_name',
+                    'period' => ['start', 'end'],
+                    'over_budget',
+                    'under_budget',
+                    'on_budget',
+                    'summary' => [
+                        'total_work_orders',
+                        'over_budget_count',
+                        'under_budget_count',
+                        'on_budget_count',
+                        'total_estimated',
+                        'total_actual',
+                        'total_variance',
+                        'overall_variance_percent',
+                    ],
                 ],
             ])
-            ->assertJsonPath('report_name', 'Laporan Variansi Biaya');
+            ->assertJsonPath('data.report_name', 'Laporan Variansi Biaya');
     });
 
     it('categorizes work orders by variance threshold', function () {
@@ -293,9 +305,9 @@ describe('Cost Variance Report', function () {
         $response = $this->getJson('/api/v1/reports/cost-variance');
 
         $response->assertOk()
-            ->assertJsonPath('summary.over_budget_count', 1)
-            ->assertJsonPath('summary.under_budget_count', 1)
-            ->assertJsonPath('summary.on_budget_count', 1);
+            ->assertJsonPath('data.summary.over_budget_count', 1)
+            ->assertJsonPath('data.summary.under_budget_count', 1)
+            ->assertJsonPath('data.summary.on_budget_count', 1);
     });
 
     it('can filter by date range', function () {
@@ -318,9 +330,9 @@ describe('Cost Variance Report', function () {
         $response = $this->getJson('/api/v1/reports/cost-variance?start_date=2024-01-01&end_date=2024-12-31');
 
         $response->assertOk()
-            ->assertJsonPath('summary.total_work_orders', 1)
-            ->assertJsonPath('period.start', '2024-01-01')
-            ->assertJsonPath('period.end', '2024-12-31');
+            ->assertJsonPath('data.summary.total_work_orders', 1)
+            ->assertJsonPath('data.period.start', '2024-01-01')
+            ->assertJsonPath('data.period.end', '2024-12-31');
     });
 
     it('only includes in progress and completed work orders', function () {
@@ -347,7 +359,7 @@ describe('Cost Variance Report', function () {
         $response = $this->getJson('/api/v1/reports/cost-variance');
 
         $response->assertOk()
-            ->assertJsonPath('summary.total_work_orders', 2);
+            ->assertJsonPath('data.summary.total_work_orders', 2);
     });
 
 });

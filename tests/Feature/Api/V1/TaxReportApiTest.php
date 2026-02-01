@@ -44,18 +44,22 @@ describe('Tax Report API (PPN)', function () {
         $response = $this->getJson('/api/v1/reports/ppn-summary');
         $response->assertOk()
             ->assertJsonStructure([
-                'period',
-                'output_tax',
-                'input_tax',
-                'net_tax',
+                'success',
+                'message',
+                'data' => [
+                    'period',
+                    'output_tax',
+                    'input_tax',
+                    'net_tax',
+                ],
             ]);
 
         // Output tax (PPN Keluaran) from invoices
-        expect($response->json('output_tax.tax'))->toBe(1100000);
+        expect($response->json('data.output_tax.tax'))->toBe(1100000);
         // Input tax (PPN Masukan) from bills
-        expect($response->json('input_tax.tax'))->toBe(550000);
+        expect($response->json('data.input_tax.tax'))->toBe(550000);
         // Net = 1,100,000 - 550,000 = 550,000
-        expect($response->json('net_tax'))->toBe(550000);
+        expect($response->json('data.net_tax'))->toBe(550000);
     });
 
     it('can get monthly PPN report', function () {
@@ -71,12 +75,16 @@ describe('Tax Report API (PPN)', function () {
 
         $response->assertOk()
             ->assertJsonStructure([
-                'report_name',
-                'year',
-                'months',
-                'total_output',
-                'total_input',
-                'total_net',
+                'success',
+                'message',
+                'data' => [
+                    'report_name',
+                    'year',
+                    'months',
+                    'total_output',
+                    'total_input',
+                    'total_net',
+                ],
             ]);
     });
 
@@ -91,7 +99,7 @@ describe('Tax Report API (PPN)', function () {
         $response = $this->getJson('/api/v1/reports/tax-invoice-list');
 
         $response->assertOk()
-            ->assertJsonCount(3, 'invoices');
+            ->assertJsonCount(3, 'data.invoices');
     });
 
     it('can get input tax list (Faktur Masukan)', function () {
@@ -106,7 +114,7 @@ describe('Tax Report API (PPN)', function () {
         $response = $this->getJson('/api/v1/reports/input-tax-list');
 
         $response->assertOk()
-            ->assertJsonCount(3, 'bills');
+            ->assertJsonCount(3, 'data.bills');
     });
 
     it('filters tax reports by date range', function () {
@@ -127,7 +135,7 @@ describe('Tax Report API (PPN)', function () {
         $response = $this->getJson('/api/v1/reports/ppn-summary?start_date='.now()->startOfMonth()->toDateString().'&end_date='.now()->endOfMonth()->toDateString());
 
         $response->assertOk()
-            ->assertJsonPath('output_tax.tax', 110000);
+            ->assertJsonPath('data.output_tax.tax', 110000);
     });
 
     it('excludes draft invoices from tax reports', function () {
@@ -148,7 +156,7 @@ describe('Tax Report API (PPN)', function () {
         $response = $this->getJson('/api/v1/reports/ppn-summary');
 
         $response->assertOk()
-            ->assertJsonPath('output_tax.tax', 220000);
+            ->assertJsonPath('data.output_tax.tax', 220000);
     });
 
     it('includes NPWP in tax invoice list', function () {
@@ -165,7 +173,7 @@ describe('Tax Report API (PPN)', function () {
 
         $response->assertOk();
 
-        $invoice = $response->json('invoices.0');
+        $invoice = $response->json('data.invoices.0');
         expect($invoice['npwp_pembeli'])->toBe('12.345.678.9-012.345');
     });
 
@@ -184,6 +192,6 @@ describe('Tax Report API (PPN)', function () {
         $response = $this->getJson('/api/v1/reports/ppn-summary');
 
         $response->assertOk()
-            ->assertJsonPath('output_tax.tax', 1100000);
+            ->assertJsonPath('data.output_tax.tax', 1100000);
     });
 });

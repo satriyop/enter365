@@ -35,24 +35,28 @@ describe('Report API', function () {
         $response = $this->getJson('/api/v1/reports/trial-balance');
         $response->assertOk()
             ->assertJsonStructure([
-                'report_name',
-                'as_of_date',
-                'accounts' => [
-                    '*' => ['account_id', 'code', 'name', 'type', 'debit_balance', 'credit_balance'],
+                'success',
+                'message',
+                'data' => [
+                    'report_name',
+                    'as_of_date',
+                    'accounts' => [
+                        '*' => ['account_id', 'code', 'name', 'type', 'debit_balance', 'credit_balance'],
+                    ],
+                    'total_debit',
+                    'total_credit',
+                    'is_balanced',
                 ],
-                'total_debit',
-                'total_credit',
-                'is_balanced',
             ])
-            ->assertJsonPath('report_name', 'Neraca Saldo')
-            ->assertJsonPath('is_balanced', true);
+            ->assertJsonPath('data.report_name', 'Neraca Saldo')
+            ->assertJsonPath('data.is_balanced', true);
     });
 
     it('can generate trial balance for specific date', function () {
         $response = $this->getJson('/api/v1/reports/trial-balance?as_of_date=2024-12-31');
 
         $response->assertOk()
-            ->assertJsonPath('as_of_date', '2024-12-31');
+            ->assertJsonPath('data.as_of_date', '2024-12-31');
     });
 
     it('can generate balance sheet', function () {
@@ -64,14 +68,18 @@ describe('Report API', function () {
         $response = $this->getJson('/api/v1/reports/balance-sheet');
         $response->assertOk()
             ->assertJsonStructure([
-                'report_name',
-                'as_of_date',
-                'assets' => ['current', 'fixed', 'total'],
-                'liabilities' => ['current', 'long_term', 'total'],
-                'equity' => ['items', 'total'],
-                'total_liabilities_equity',
+                'success',
+                'message',
+                'data' => [
+                    'report_name',
+                    'as_of_date',
+                    'assets' => ['current', 'fixed', 'total'],
+                    'liabilities' => ['current', 'long_term', 'total'],
+                    'equity' => ['items', 'total'],
+                    'total_liabilities_equity',
+                ],
             ])
-            ->assertJsonPath('report_name', 'Laporan Posisi Keuangan');
+            ->assertJsonPath('data.report_name', 'Laporan Posisi Keuangan');
     });
 
     it('can generate income statement', function () {
@@ -98,19 +106,23 @@ describe('Report API', function () {
         $response = $this->getJson('/api/v1/reports/income-statement');
         $response->assertOk()
             ->assertJsonStructure([
-                'report_name',
-                'period_start',
-                'period_end',
-                'revenue' => ['operating', 'other', 'total'],
-                'expenses' => ['cost_of_goods', 'operating', 'other', 'total'],
-                'gross_profit',
-                'operating_income',
-                'net_income',
+                'success',
+                'message',
+                'data' => [
+                    'report_name',
+                    'period_start',
+                    'period_end',
+                    'revenue' => ['operating', 'other', 'total'],
+                    'expenses' => ['cost_of_goods', 'operating', 'other', 'total'],
+                    'gross_profit',
+                    'operating_income',
+                    'net_income',
+                ],
             ])
-            ->assertJsonPath('report_name', 'Laporan Laba Rugi');
+            ->assertJsonPath('data.report_name', 'Laporan Laba Rugi');
 
         // Verify net income is calculated (revenue - expenses)
-        $netIncome = $response->json('net_income');
+        $netIncome = $response->json('data.net_income');
         expect($netIncome)->toBeGreaterThanOrEqual(0);
     });
 
@@ -118,8 +130,8 @@ describe('Report API', function () {
         $response = $this->getJson('/api/v1/reports/income-statement?start_date=2024-01-01&end_date=2024-12-31');
 
         $response->assertOk()
-            ->assertJsonPath('period_start', '2024-01-01')
-            ->assertJsonPath('period_end', '2024-12-31');
+            ->assertJsonPath('data.period_start', '2024-01-01')
+            ->assertJsonPath('data.period_end', '2024-12-31');
     });
 
     it('can generate general ledger', function () {
@@ -139,30 +151,34 @@ describe('Report API', function () {
         $response = $this->getJson('/api/v1/reports/general-ledger');
         $response->assertOk()
             ->assertJsonStructure([
-                'report_name',
-                'start_date',
-                'end_date',
-                'accounts' => [
-                    '*' => [
-                        'account_id',
-                        'code',
-                        'name',
-                        'type',
-                        'opening_balance',
-                        'entries',
-                        'closing_balance',
+                'success',
+                'message',
+                'data' => [
+                    'report_name',
+                    'start_date',
+                    'end_date',
+                    'accounts' => [
+                        '*' => [
+                            'account_id',
+                            'code',
+                            'name',
+                            'type',
+                            'opening_balance',
+                            'entries',
+                            'closing_balance',
+                        ],
                     ],
                 ],
             ])
-            ->assertJsonPath('report_name', 'Buku Besar');
+            ->assertJsonPath('data.report_name', 'Buku Besar');
     });
 
     it('can generate general ledger for date range', function () {
         $response = $this->getJson('/api/v1/reports/general-ledger?start_date=2024-01-01&end_date=2024-12-31');
 
         $response->assertOk()
-            ->assertJsonPath('start_date', '2024-01-01')
-            ->assertJsonPath('end_date', '2024-12-31');
+            ->assertJsonPath('data.start_date', '2024-01-01')
+            ->assertJsonPath('data.end_date', '2024-12-31');
     });
 });
 
@@ -193,29 +209,33 @@ describe('Comparative Reports', function () {
 
         $response->assertOk()
             ->assertJsonStructure([
-                'report_name',
-                'current_period' => [
-                    'as_of_date',
-                    'assets' => ['current', 'fixed', 'total'],
-                    'liabilities' => ['current', 'long_term', 'total'],
-                    'equity' => ['items', 'total'],
-                ],
-                'previous_period' => [
-                    'as_of_date',
-                    'assets',
-                    'liabilities',
-                    'equity',
-                ],
-                'variance' => [
-                    'assets_change',
-                    'assets_change_percent',
-                    'liabilities_change',
-                    'liabilities_change_percent',
-                    'equity_change',
-                    'equity_change_percent',
+                'success',
+                'message',
+                'data' => [
+                    'report_name',
+                    'current_period' => [
+                        'as_of_date',
+                        'assets' => ['current', 'fixed', 'total'],
+                        'liabilities' => ['current', 'long_term', 'total'],
+                        'equity' => ['items', 'total'],
+                    ],
+                    'previous_period' => [
+                        'as_of_date',
+                        'assets',
+                        'liabilities',
+                        'equity',
+                    ],
+                    'variance' => [
+                        'assets_change',
+                        'assets_change_percent',
+                        'liabilities_change',
+                        'liabilities_change_percent',
+                        'equity_change',
+                        'equity_change_percent',
+                    ],
                 ],
             ])
-            ->assertJsonPath('report_name', 'Laporan Posisi Keuangan Komparatif');
+            ->assertJsonPath('data.report_name', 'Laporan Posisi Keuangan Komparatif');
     });
 
     it('calculates balance sheet variance correctly', function () {
@@ -241,9 +261,9 @@ describe('Comparative Reports', function () {
 
         $response->assertOk();
 
-        $currentAssets = $response->json('current_period.assets.total');
-        $previousAssets = $response->json('previous_period.assets.total');
-        $variance = $response->json('variance');
+        $currentAssets = $response->json('data.current_period.assets.total');
+        $previousAssets = $response->json('data.previous_period.assets.total');
+        $variance = $response->json('data.variance');
 
         // Current should have assets from the entry, previous should have less/none
         expect($currentAssets)->toBeGreaterThanOrEqual($previousAssets);
@@ -273,31 +293,35 @@ describe('Comparative Reports', function () {
 
         $response->assertOk()
             ->assertJsonStructure([
-                'report_name',
-                'current_period' => [
-                    'period_start',
-                    'period_end',
-                    'revenue' => ['operating', 'other', 'total'],
-                    'expenses',
-                    'net_income',
-                ],
-                'previous_period' => [
-                    'period_start',
-                    'period_end',
-                    'revenue',
-                    'expenses',
-                    'net_income',
-                ],
-                'variance' => [
-                    'revenue_change',
-                    'revenue_change_percent',
-                    'expenses_change',
-                    'expenses_change_percent',
-                    'net_income_change',
-                    'net_income_change_percent',
+                'success',
+                'message',
+                'data' => [
+                    'report_name',
+                    'current_period' => [
+                        'period_start',
+                        'period_end',
+                        'revenue' => ['operating', 'other', 'total'],
+                        'expenses',
+                        'net_income',
+                    ],
+                    'previous_period' => [
+                        'period_start',
+                        'period_end',
+                        'revenue',
+                        'expenses',
+                        'net_income',
+                    ],
+                    'variance' => [
+                        'revenue_change',
+                        'revenue_change_percent',
+                        'expenses_change',
+                        'expenses_change_percent',
+                        'net_income_change',
+                        'net_income_change_percent',
+                    ],
                 ],
             ])
-            ->assertJsonPath('report_name', 'Laporan Laba Rugi Komparatif');
+            ->assertJsonPath('data.report_name', 'Laporan Laba Rugi Komparatif');
     });
 
     it('calculates income statement variance correctly', function () {
@@ -328,7 +352,7 @@ describe('Comparative Reports', function () {
 
         $response->assertOk();
 
-        $variance = $response->json('variance');
+        $variance = $response->json('data.variance');
         // Revenue increased by 15M (from 10M to 25M) = 150% increase
         expect($variance['revenue_change'])->toBe(15000000);
         expect((float) $variance['revenue_change_percent'])->toBe(150.0);
@@ -338,9 +362,9 @@ describe('Comparative Reports', function () {
         $response = $this->getJson('/api/v1/reports/income-statement?start_date=2024-01-01&end_date=2024-06-30&compare_previous_period=true&previous_start_date=2023-01-01&previous_end_date=2023-06-30');
 
         $response->assertOk()
-            ->assertJsonPath('current_period.period_start', '2024-01-01')
-            ->assertJsonPath('current_period.period_end', '2024-06-30')
-            ->assertJsonPath('previous_period.period_start', '2023-01-01')
-            ->assertJsonPath('previous_period.period_end', '2023-06-30');
+            ->assertJsonPath('data.current_period.period_start', '2024-01-01')
+            ->assertJsonPath('data.current_period.period_end', '2024-06-30')
+            ->assertJsonPath('data.previous_period.period_start', '2023-01-01')
+            ->assertJsonPath('data.previous_period.period_end', '2023-06-30');
     });
 });

@@ -28,14 +28,18 @@ describe('COGS Summary Report', function () {
         $response = $this->getJson('/api/v1/reports/cogs-summary');
         $response->assertOk()
             ->assertJsonStructure([
-                'report_name',
-                'period' => ['start', 'end'],
-                'beginning_inventory',
-                'purchases',
-                'ending_inventory',
-                'cogs',
+                'success',
+                'message',
+                'data' => [
+                    'report_name',
+                    'period' => ['start', 'end'],
+                    'beginning_inventory',
+                    'purchases',
+                    'ending_inventory',
+                    'cogs',
+                ],
             ])
-            ->assertJsonPath('report_name', 'Laporan Harga Pokok Penjualan');
+            ->assertJsonPath('data.report_name', 'Laporan Harga Pokok Penjualan');
     });
 
     it('can filter COGS summary by date range', function () {
@@ -45,8 +49,8 @@ describe('COGS Summary Report', function () {
         $response = $this->getJson("/api/v1/reports/cogs-summary?start_date={$startDate}&end_date={$endDate}");
 
         $response->assertOk()
-            ->assertJsonPath('period.start', $startDate)
-            ->assertJsonPath('period.end', $endDate);
+            ->assertJsonPath('data.period.start', $startDate)
+            ->assertJsonPath('data.period.end', $endDate);
     });
 
     it('calculates COGS correctly', function () {
@@ -100,7 +104,7 @@ describe('COGS Summary Report', function () {
         $response->assertOk();
 
         // COGS = Beginning Inventory + Purchases - Ending Inventory
-        $cogs = $response->json('cogs');
+        $cogs = $response->json('data.cogs');
         expect($cogs)->toBeGreaterThan(0);
     });
 
@@ -110,10 +114,10 @@ describe('COGS Summary Report', function () {
         $response = $this->getJson("/api/v1/reports/cogs-summary?start_date={$futureDate}&end_date={$futureDate}");
 
         $response->assertOk()
-            ->assertJsonPath('beginning_inventory', 0)
-            ->assertJsonPath('purchases', 0)
-            ->assertJsonPath('ending_inventory', 0)
-            ->assertJsonPath('cogs', 0);
+            ->assertJsonPath('data.beginning_inventory', 0)
+            ->assertJsonPath('data.purchases', 0)
+            ->assertJsonPath('data.ending_inventory', 0)
+            ->assertJsonPath('data.cogs', 0);
     });
 
 });
@@ -125,12 +129,16 @@ describe('COGS by Product Report', function () {
 
         $response->assertOk()
             ->assertJsonStructure([
-                'report_name',
-                'period' => ['start', 'end'],
-                'products',
-                'total_cogs',
+                'success',
+                'message',
+                'data' => [
+                    'report_name',
+                    'period' => ['start', 'end'],
+                    'products',
+                    'total_cogs',
+                ],
             ])
-            ->assertJsonPath('report_name', 'Laporan HPP per Produk');
+            ->assertJsonPath('data.report_name', 'Laporan HPP per Produk');
     });
 
     it('can filter by date range', function () {
@@ -140,8 +148,8 @@ describe('COGS by Product Report', function () {
         $response = $this->getJson("/api/v1/reports/cogs-by-product?start_date={$startDate}&end_date={$endDate}");
 
         $response->assertOk()
-            ->assertJsonPath('period.start', $startDate)
-            ->assertJsonPath('period.end', $endDate);
+            ->assertJsonPath('data.period.start', $startDate)
+            ->assertJsonPath('data.period.end', $endDate);
     });
 
     it('shows COGS breakdown by product', function () {
@@ -181,10 +189,10 @@ describe('COGS by Product Report', function () {
 
         $response->assertOk();
 
-        $products = collect($response->json('products'));
+        $products = collect($response->json('data.products'));
         expect($products->count())->toBeGreaterThanOrEqual(2);
 
-        $totalCogs = $response->json('total_cogs');
+        $totalCogs = $response->json('data.total_cogs');
         expect($totalCogs)->toBeGreaterThan(0);
     });
 
@@ -194,7 +202,7 @@ describe('COGS by Product Report', function () {
         $response = $this->getJson("/api/v1/reports/cogs-by-product?start_date={$futureDate}&end_date={$futureDate}");
 
         $response->assertOk()
-            ->assertJsonPath('total_cogs', 0);
+            ->assertJsonPath('data.total_cogs', 0);
     });
 
 });
@@ -206,12 +214,16 @@ describe('COGS by Category Report', function () {
 
         $response->assertOk()
             ->assertJsonStructure([
-                'report_name',
-                'period' => ['start', 'end'],
-                'categories',
-                'total_cogs',
+                'success',
+                'message',
+                'data' => [
+                    'report_name',
+                    'period' => ['start', 'end'],
+                    'categories',
+                    'total_cogs',
+                ],
             ])
-            ->assertJsonPath('report_name', 'Laporan HPP per Kategori');
+            ->assertJsonPath('data.report_name', 'Laporan HPP per Kategori');
     });
 
     it('can filter by date range', function () {
@@ -221,8 +233,8 @@ describe('COGS by Category Report', function () {
         $response = $this->getJson("/api/v1/reports/cogs-by-category?start_date={$startDate}&end_date={$endDate}");
 
         $response->assertOk()
-            ->assertJsonPath('period.start', $startDate)
-            ->assertJsonPath('period.end', $endDate);
+            ->assertJsonPath('data.period.start', $startDate)
+            ->assertJsonPath('data.period.end', $endDate);
     });
 
     it('shows COGS breakdown by category', function () {
@@ -265,10 +277,10 @@ describe('COGS by Category Report', function () {
 
         $response->assertOk();
 
-        $categories = collect($response->json('categories'));
+        $categories = collect($response->json('data.categories'));
         expect($categories->count())->toBeGreaterThanOrEqual(1);
 
-        $totalCogs = $response->json('total_cogs');
+        $totalCogs = $response->json('data.total_cogs');
         expect($totalCogs)->toBeGreaterThan(0);
     });
 
@@ -281,10 +293,14 @@ describe('COGS Monthly Trend Report', function () {
 
         $response->assertOk()
             ->assertJsonStructure([
-                'report_name',
-                'year',
-                'months',
-                'total_cogs',
+                'success',
+                'message',
+                'data' => [
+                    'report_name',
+                    'year',
+                    'months',
+                    'total_cogs',
+                ],
             ]);
     });
 
@@ -294,8 +310,8 @@ describe('COGS Monthly Trend Report', function () {
         $response = $this->getJson("/api/v1/reports/cogs-monthly-trend?year={$year}");
 
         $response->assertOk()
-            ->assertJsonPath('year', $year)
-            ->assertJsonPath('report_name', "Trend HPP Tahun {$year}");
+            ->assertJsonPath('data.year', $year)
+            ->assertJsonPath('data.report_name', "Trend HPP Tahun {$year}");
     });
 
     it('shows monthly breakdown of COGS', function () {
@@ -336,10 +352,10 @@ describe('COGS Monthly Trend Report', function () {
 
         $response->assertOk();
 
-        $months = collect($response->json('months'));
+        $months = collect($response->json('data.months'));
         expect($months->count())->toBe(12);
 
-        $totalCogs = $response->json('total_cogs');
+        $totalCogs = $response->json('data.total_cogs');
         expect($totalCogs)->toBeGreaterThanOrEqual(0);
     });
 
@@ -347,7 +363,7 @@ describe('COGS Monthly Trend Report', function () {
         $response = $this->getJson('/api/v1/reports/cogs-monthly-trend');
 
         $response->assertOk()
-            ->assertJsonPath('year', now()->year);
+            ->assertJsonPath('data.year', now()->year);
     });
 
 });
@@ -361,17 +377,21 @@ describe('Product COGS Detail Report', function () {
 
         $response->assertOk()
             ->assertJsonStructure([
-                'report_name',
-                'product' => ['id', 'sku', 'name'],
-                'period' => ['start', 'end'],
-                'movements',
-                'total_quantity',
-                'total_cogs',
+                'success',
+                'message',
+                'data' => [
+                    'report_name',
+                    'product' => ['id', 'sku', 'name'],
+                    'period' => ['start', 'end'],
+                    'movements',
+                    'total_quantity',
+                    'total_cogs',
+                ],
             ])
-            ->assertJsonPath('report_name', 'Detail HPP Produk')
-            ->assertJsonPath('product.id', $product->id)
-            ->assertJsonPath('product.sku', $product->sku)
-            ->assertJsonPath('product.name', $product->name);
+            ->assertJsonPath('data.report_name', 'Detail HPP Produk')
+            ->assertJsonPath('data.product.id', $product->id)
+            ->assertJsonPath('data.product.sku', $product->sku)
+            ->assertJsonPath('data.product.name', $product->name);
     });
 
     it('can filter product COGS detail by date range', function () {
@@ -382,8 +402,8 @@ describe('Product COGS Detail Report', function () {
         $response = $this->getJson("/api/v1/reports/products/{$product->id}/cogs?start_date={$startDate}&end_date={$endDate}");
 
         $response->assertOk()
-            ->assertJsonPath('period.start', $startDate)
-            ->assertJsonPath('period.end', $endDate);
+            ->assertJsonPath('data.period.start', $startDate)
+            ->assertJsonPath('data.period.end', $endDate);
     });
 
     it('shows detailed inventory movements affecting COGS', function () {
@@ -422,10 +442,10 @@ describe('Product COGS Detail Report', function () {
 
         $response->assertOk();
 
-        $movements = collect($response->json('movements'));
+        $movements = collect($response->json('data.movements'));
         expect($movements->count())->toBeGreaterThan(0);
 
-        $totalCogs = $response->json('total_cogs');
+        $totalCogs = $response->json('data.total_cogs');
         expect($totalCogs)->toBeGreaterThanOrEqual(600000);
     });
 
@@ -441,8 +461,8 @@ describe('Product COGS Detail Report', function () {
         $response = $this->getJson("/api/v1/reports/products/{$product->id}/cogs");
 
         $response->assertOk()
-            ->assertJsonPath('total_quantity', 0)
-            ->assertJsonPath('total_cogs', 0);
+            ->assertJsonPath('data.total_quantity', 0)
+            ->assertJsonPath('data.total_cogs', 0);
     });
 
     it('calculates total quantity and cost correctly', function () {
@@ -480,8 +500,8 @@ describe('Product COGS Detail Report', function () {
 
         $response->assertOk();
 
-        $totalQuantity = $response->json('total_quantity');
-        $totalCogs = $response->json('total_cogs');
+        $totalQuantity = $response->json('data.total_quantity');
+        $totalCogs = $response->json('data.total_cogs');
 
         // Total quantity sold: abs(-5) + abs(-3) = 8 (or -8 if summed directly)
         // Total COGS: 500k + 300k = 800k

@@ -33,22 +33,26 @@ describe('Project Profitability Report', function () {
         $response = $this->getJson('/api/v1/reports/project-profitability');
         $response->assertOk()
             ->assertJsonStructure([
-                'report_name',
-                'period' => ['start', 'end'],
-                'projects',
-                'totals' => [
-                    'total_contract',
-                    'total_revenue',
-                    'total_costs',
-                    'total_profit',
-                    'average_margin',
-                    'projects_count',
-                    'profitable_count',
-                    'loss_count',
+                'success',
+                'message',
+                'data' => [
+                    'report_name',
+                    'period' => ['start', 'end'],
+                    'projects',
+                    'totals' => [
+                        'total_contract',
+                        'total_revenue',
+                        'total_costs',
+                        'total_profit',
+                        'average_margin',
+                        'projects_count',
+                        'profitable_count',
+                        'loss_count',
+                    ],
                 ],
             ])
-            ->assertJsonPath('report_name', 'Laporan Profitabilitas Proyek')
-            ->assertJsonPath('totals.projects_count', 10);
+            ->assertJsonPath('data.report_name', 'Laporan Profitabilitas Proyek')
+            ->assertJsonPath('data.totals.projects_count', 10);
     });
 
     it('can filter by status', function () {
@@ -60,7 +64,7 @@ describe('Project Profitability Report', function () {
         $response = $this->getJson('/api/v1/reports/project-profitability?status=in_progress');
 
         $response->assertOk()
-            ->assertJsonPath('totals.projects_count', 2);
+            ->assertJsonPath('data.totals.projects_count', 2);
     });
 
     it('can filter by date range', function () {
@@ -82,9 +86,9 @@ describe('Project Profitability Report', function () {
         $response = $this->getJson('/api/v1/reports/project-profitability?start_date=2024-01-01&end_date=2024-12-31');
 
         $response->assertOk()
-            ->assertJsonPath('totals.projects_count', 2)
-            ->assertJsonPath('period.start', '2024-01-01')
-            ->assertJsonPath('period.end', '2024-12-31');
+            ->assertJsonPath('data.totals.projects_count', 2)
+            ->assertJsonPath('data.period.start', '2024-01-01')
+            ->assertJsonPath('data.period.end', '2024-12-31');
     });
 
     it('includes cost breakdown for each project', function () {
@@ -105,7 +109,7 @@ describe('Project Profitability Report', function () {
 
         $response->assertOk();
 
-        $projects = $response->json('projects');
+        $projects = $response->json('data.projects');
         expect($projects)->toHaveCount(1);
 
         $projectData = $projects[0];
@@ -134,12 +138,12 @@ describe('Project Profitability Report', function () {
         $response = $this->getJson('/api/v1/reports/project-profitability');
 
         $response->assertOk()
-            ->assertJsonPath('totals.total_contract', 150000000)
-            ->assertJsonPath('totals.total_revenue', 120000000)
-            ->assertJsonPath('totals.total_costs', 95000000)
-            ->assertJsonPath('totals.total_profit', 25000000)
-            ->assertJsonPath('totals.profitable_count', 2)
-            ->assertJsonPath('totals.loss_count', 0);
+            ->assertJsonPath('data.totals.total_contract', 150000000)
+            ->assertJsonPath('data.totals.total_revenue', 120000000)
+            ->assertJsonPath('data.totals.total_costs', 95000000)
+            ->assertJsonPath('data.totals.total_profit', 25000000)
+            ->assertJsonPath('data.totals.profitable_count', 2)
+            ->assertJsonPath('data.totals.loss_count', 0);
     });
 
 });
@@ -154,34 +158,38 @@ describe('Project Profitability Detail', function () {
 
         $response->assertOk()
             ->assertJsonStructure([
-                'report_name',
-                'project' => [
-                    'id',
-                    'project_number',
-                    'name',
-                    'customer',
-                    'status',
+                'success',
+                'message',
+                'data' => [
+                    'report_name',
+                    'project' => [
+                        'id',
+                        'project_number',
+                        'name',
+                        'customer',
+                        'status',
+                    ],
+                    'financials' => [
+                        'contract_amount',
+                        'budget_amount',
+                        'total_revenue',
+                        'total_cost',
+                        'gross_profit',
+                        'profit_margin',
+                        'budget_variance',
+                        'budget_utilization',
+                        'is_over_budget',
+                    ],
+                    'cost_breakdown',
+                    'revenue_breakdown',
+                    'timeline',
+                    'progress',
+                    'monthly_costs',
+                    'kpis',
                 ],
-                'financials' => [
-                    'contract_amount',
-                    'budget_amount',
-                    'total_revenue',
-                    'total_cost',
-                    'gross_profit',
-                    'profit_margin',
-                    'budget_variance',
-                    'budget_utilization',
-                    'is_over_budget',
-                ],
-                'cost_breakdown',
-                'revenue_breakdown',
-                'timeline',
-                'progress',
-                'monthly_costs',
-                'kpis',
             ])
-            ->assertJsonPath('report_name', 'Laporan Detail Profitabilitas Proyek')
-            ->assertJsonPath('project.id', $project->id);
+            ->assertJsonPath('data.report_name', 'Laporan Detail Profitabilitas Proyek')
+            ->assertJsonPath('data.project.id', $project->id);
     });
 
     it('includes customer information', function () {
@@ -194,8 +202,8 @@ describe('Project Profitability Detail', function () {
         $response = $this->getJson("/api/v1/reports/projects/{$project->id}/profitability");
 
         $response->assertOk()
-            ->assertJsonPath('project.customer.name', 'PT Test Customer')
-            ->assertJsonPath('project.customer.code', 'CUST-001');
+            ->assertJsonPath('data.project.customer.name', 'PT Test Customer')
+            ->assertJsonPath('data.project.customer.code', 'CUST-001');
     });
 
     it('includes cost breakdown by type', function () {
@@ -215,7 +223,7 @@ describe('Project Profitability Detail', function () {
 
         $response->assertOk();
 
-        $costBreakdown = $response->json('cost_breakdown');
+        $costBreakdown = $response->json('data.cost_breakdown');
         expect($costBreakdown['material'])->toBe(10000000);
         expect($costBreakdown['subcontractor'])->toBe(8000000);
     });
@@ -231,9 +239,9 @@ describe('Project Profitability Detail', function () {
         $response = $this->getJson("/api/v1/reports/projects/{$project->id}/profitability");
 
         $response->assertOk()
-            ->assertJsonPath('timeline.planned_start', '2024-01-01')
-            ->assertJsonPath('timeline.planned_end', '2024-06-30')
-            ->assertJsonPath('timeline.actual_start', '2024-01-15');
+            ->assertJsonPath('data.timeline.planned_start', '2024-01-01')
+            ->assertJsonPath('data.timeline.planned_end', '2024-06-30')
+            ->assertJsonPath('data.timeline.actual_start', '2024-01-15');
     });
 
     it('includes progress metrics', function () {
@@ -249,9 +257,9 @@ describe('Project Profitability Detail', function () {
         $response = $this->getJson("/api/v1/reports/projects/{$project->id}/profitability");
 
         $response->assertOk()
-            ->assertJsonPath('progress.percentage', 75.5)
-            ->assertJsonPath('progress.work_orders_count', 3)
-            ->assertJsonPath('progress.work_orders_completed', 2);
+            ->assertJsonPath('data.progress.percentage', 75.5)
+            ->assertJsonPath('data.progress.work_orders_count', 3)
+            ->assertJsonPath('data.progress.work_orders_completed', 2);
     });
 
 });
@@ -268,17 +276,21 @@ describe('Project Cost Analysis Report', function () {
 
         $response->assertOk()
             ->assertJsonStructure([
-                'report_name',
-                'period' => ['start', 'end'],
-                'by_type',
-                'by_project',
-                'totals' => [
-                    'grand_total',
-                    'cost_types_count',
-                    'projects_count',
+                'success',
+                'message',
+                'data' => [
+                    'report_name',
+                    'period' => ['start', 'end'],
+                    'by_type',
+                    'by_project',
+                    'totals' => [
+                        'grand_total',
+                        'cost_types_count',
+                        'projects_count',
+                    ],
                 ],
             ])
-            ->assertJsonPath('report_name', 'Laporan Analisis Biaya Proyek');
+            ->assertJsonPath('data.report_name', 'Laporan Analisis Biaya Proyek');
     });
 
     it('groups costs by type', function () {
@@ -302,7 +314,7 @@ describe('Project Cost Analysis Report', function () {
 
         $response->assertOk();
 
-        $byType = $response->json('by_type');
+        $byType = $response->json('data.by_type');
         expect($byType['material']['total'])->toBe(15000000);
         expect($byType['material']['count'])->toBe(2);
         expect($byType['labor']['total'])->toBe(7000000);
@@ -326,10 +338,10 @@ describe('Project Cost Analysis Report', function () {
         $response = $this->getJson('/api/v1/reports/project-cost-analysis');
 
         $response->assertOk()
-            ->assertJsonPath('totals.projects_count', 2)
-            ->assertJsonPath('totals.grand_total', 18000000);
+            ->assertJsonPath('data.totals.projects_count', 2)
+            ->assertJsonPath('data.totals.grand_total', 18000000);
 
-        $byProject = collect($response->json('by_project'));
+        $byProject = collect($response->json('data.by_project'));
         $prj1 = $byProject->firstWhere('project_number', 'PRJ-001');
         $prj2 = $byProject->firstWhere('project_number', 'PRJ-002');
 
@@ -356,9 +368,9 @@ describe('Project Cost Analysis Report', function () {
         $response = $this->getJson('/api/v1/reports/project-cost-analysis?start_date=2024-01-01&end_date=2024-12-31');
 
         $response->assertOk()
-            ->assertJsonPath('totals.grand_total', 10000000)
-            ->assertJsonPath('period.start', '2024-01-01')
-            ->assertJsonPath('period.end', '2024-12-31');
+            ->assertJsonPath('data.totals.grand_total', 10000000)
+            ->assertJsonPath('data.period.start', '2024-01-01')
+            ->assertJsonPath('data.period.end', '2024-12-31');
     });
 
 });

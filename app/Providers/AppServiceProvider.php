@@ -248,6 +248,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureMorphMap();
         $this->configureRateLimiting();
         $this->configurePolicies();
+        $this->registerObservers();
 
         // Events are now handled by EventServiceProvider via subscribers
         // See: app/Providers/EventServiceProvider.php
@@ -291,6 +292,21 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(\App\Models\Inventory\StockOpname::class, \App\Policies\StockOpnamePolicy::class);
         Gate::policy(\App\Models\Accounting\FiscalPeriod::class, \App\Policies\FiscalPeriodPolicy::class);
         Gate::policy(\App\Models\Inventory\Warehouse::class, \App\Policies\WarehousePolicy::class);
+
+        // Dashboard Gates (non-model based)
+        Gate::define('dashboard.view', [\App\Policies\DashboardPolicy::class, 'view']);
+        Gate::define('dashboard.financials', [\App\Policies\DashboardPolicy::class, 'viewFinancials']);
+        Gate::define('dashboard.kpis', [\App\Policies\DashboardPolicy::class, 'viewKpis']);
+
+        // Report Gates (non-model based)
+        Gate::define('reports.financial', [\App\Policies\ReportPolicy::class, 'viewFinancial']);
+        Gate::define('reports.tax', [\App\Policies\ReportPolicy::class, 'viewTax']);
+        Gate::define('reports.aging', [\App\Policies\ReportPolicy::class, 'viewAging']);
+        Gate::define('reports.cash_flow', [\App\Policies\ReportPolicy::class, 'viewCashFlow']);
+        Gate::define('reports.project', [\App\Policies\ReportPolicy::class, 'viewProject']);
+        Gate::define('reports.manufacturing', [\App\Policies\ReportPolicy::class, 'viewManufacturing']);
+        Gate::define('reports.cogs', [\App\Policies\ReportPolicy::class, 'viewCogs']);
+        Gate::define('reports.export', [\App\Policies\ReportPolicy::class, 'export']);
     }
 
     /**
@@ -385,5 +401,19 @@ class AppServiceProvider extends ServiceProvider
             // Core Domain
             'user' => \App\Models\User::class,
         ]);
+    }
+
+    /**
+     * Register model observers for cache invalidation.
+     */
+    private function registerObservers(): void
+    {
+        $observer = \App\Observers\DashboardCacheObserver::class;
+
+        \App\Models\Sales\Invoice::observe($observer);
+        \App\Models\Purchasing\Bill::observe($observer);
+        \App\Models\Shared\Payment::observe($observer);
+        \App\Models\Accounting\JournalEntry::observe($observer);
+        \App\Models\Sales\Quotation::observe($observer);
     }
 }

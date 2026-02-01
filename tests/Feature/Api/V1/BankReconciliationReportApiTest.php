@@ -32,20 +32,24 @@ describe('Bank Reconciliation Report', function () {
         $response = $this->getJson("/api/v1/reports/accounts/{$bankAccount->id}/bank-reconciliation");
         $response->assertOk()
             ->assertJsonStructure([
-                'report_name',
-                'account' => ['id', 'code', 'name'],
-                'as_of_date',
-                'book_balance',
-                'bank_balance',
-                'adjustments_to_book' => ['items', 'total'],
-                'adjustments_to_bank' => ['items', 'total'],
-                'adjusted_book_balance',
-                'adjusted_bank_balance',
-                'difference',
-                'is_reconciled',
-                'reconciliation_summary' => ['total', 'reconciled', 'unmatched', 'matched'],
+                'success',
+                'message',
+                'data' => [
+                    'report_name',
+                    'account' => ['id', 'code', 'name'],
+                    'as_of_date',
+                    'book_balance',
+                    'bank_balance',
+                    'adjustments_to_book' => ['items', 'total'],
+                    'adjustments_to_bank' => ['items', 'total'],
+                    'adjusted_book_balance',
+                    'adjusted_bank_balance',
+                    'difference',
+                    'is_reconciled',
+                    'reconciliation_summary' => ['total', 'reconciled', 'unmatched', 'matched'],
+                ],
             ])
-            ->assertJsonPath('report_name', 'Laporan Rekonsiliasi Bank');
+            ->assertJsonPath('data.report_name', 'Laporan Rekonsiliasi Bank');
     });
 
     it('can filter reconciliation by date', function () {
@@ -55,7 +59,7 @@ describe('Bank Reconciliation Report', function () {
         $response = $this->getJson("/api/v1/reports/accounts/{$bankAccount->id}/bank-reconciliation?as_of_date={$asOfDate}");
 
         $response->assertOk()
-            ->assertJsonPath('as_of_date', $asOfDate);
+            ->assertJsonPath('data.as_of_date', $asOfDate);
     });
 
     it('shows book balance from journal entries', function () {
@@ -73,7 +77,7 @@ describe('Bank Reconciliation Report', function () {
 
         $response->assertOk();
 
-        $bookBalance = $response->json('book_balance');
+        $bookBalance = $response->json('data.book_balance');
         expect($bookBalance)->toBeGreaterThan(0);
     });
 
@@ -93,7 +97,7 @@ describe('Bank Reconciliation Report', function () {
 
         $response->assertOk();
 
-        $bankBalance = $response->json('bank_balance');
+        $bankBalance = $response->json('data.bank_balance');
         expect($bankBalance)->toBe(5000000);
     });
 
@@ -114,7 +118,7 @@ describe('Bank Reconciliation Report', function () {
 
         $response->assertOk();
 
-        $adjustmentsToBook = $response->json('adjustments_to_book');
+        $adjustmentsToBook = $response->json('data.adjustments_to_book');
         expect($adjustmentsToBook['items'])->not->toBeEmpty();
         expect($adjustmentsToBook['total'])->toBeGreaterThan(0);
     });
@@ -140,7 +144,7 @@ describe('Bank Reconciliation Report', function () {
 
         $response->assertOk();
 
-        $adjustmentsToBank = $response->json('adjustments_to_bank');
+        $adjustmentsToBank = $response->json('data.adjustments_to_bank');
         // Adjustments to bank should be defined
         expect($adjustmentsToBank)->toHaveKey('items');
         expect($adjustmentsToBank)->toHaveKey('total');
@@ -171,10 +175,10 @@ describe('Bank Reconciliation Report', function () {
 
         $response->assertOk();
 
-        $bookBalance = $response->json('book_balance');
-        $bankBalance = $response->json('bank_balance');
-        $adjustedBookBalance = $response->json('adjusted_book_balance');
-        $adjustedBankBalance = $response->json('adjusted_bank_balance');
+        $bookBalance = $response->json('data.book_balance');
+        $bankBalance = $response->json('data.bank_balance');
+        $adjustedBookBalance = $response->json('data.adjusted_book_balance');
+        $adjustedBankBalance = $response->json('data.adjusted_bank_balance');
 
         expect($adjustedBookBalance)->toBeInt();
         expect($adjustedBankBalance)->toBeInt();
@@ -207,7 +211,7 @@ describe('Bank Reconciliation Report', function () {
 
         $response->assertOk();
 
-        $isReconciled = $response->json('is_reconciled');
+        $isReconciled = $response->json('data.is_reconciled');
         expect($isReconciled)->toBeBool();
     });
 
@@ -223,7 +227,7 @@ describe('Bank Reconciliation Report', function () {
 
         $response->assertOk();
 
-        $summary = $response->json('reconciliation_summary');
+        $summary = $response->json('data.reconciliation_summary');
         expect($summary['total'])->toBe(3);
         expect($summary['reconciled'])->toBeGreaterThanOrEqual(1);
         expect($summary['matched'])->toBeGreaterThanOrEqual(1);
@@ -251,15 +255,19 @@ describe('Bank Reconciliation Outstanding Items', function () {
 
         $response->assertOk()
             ->assertJsonStructure([
-                'report_name',
-                'account' => ['id', 'code', 'name'],
-                'as_of_date',
-                'outstanding_deposits',
-                'outstanding_checks',
-                'unmatched_bank_transactions',
-                'unmatched_book_entries',
+                'success',
+                'message',
+                'data' => [
+                    'report_name',
+                    'account' => ['id', 'code', 'name'],
+                    'as_of_date',
+                    'outstanding_deposits',
+                    'outstanding_checks',
+                    'unmatched_bank_transactions',
+                    'unmatched_book_entries',
+                ],
             ])
-            ->assertJsonPath('report_name', 'Item Outstanding Rekonsiliasi');
+            ->assertJsonPath('data.report_name', 'Item Outstanding Rekonsiliasi');
     });
 
     it('can filter outstanding items by date', function () {
@@ -269,7 +277,7 @@ describe('Bank Reconciliation Outstanding Items', function () {
         $response = $this->getJson("/api/v1/reports/accounts/{$bankAccount->id}/bank-reconciliation/outstanding?as_of_date={$asOfDate}");
 
         $response->assertOk()
-            ->assertJsonPath('as_of_date', $asOfDate);
+            ->assertJsonPath('data.as_of_date', $asOfDate);
     });
 
     it('shows outstanding deposits', function () {
@@ -294,7 +302,7 @@ describe('Bank Reconciliation Outstanding Items', function () {
 
         $response->assertOk();
 
-        $outstandingDeposits = $response->json('outstanding_deposits');
+        $outstandingDeposits = $response->json('data.outstanding_deposits');
         // Outstanding deposits should be defined as an array
         expect($outstandingDeposits)->toBeArray();
     });
@@ -318,7 +326,7 @@ describe('Bank Reconciliation Outstanding Items', function () {
 
         $response->assertOk();
 
-        $outstandingChecks = $response->json('outstanding_checks');
+        $outstandingChecks = $response->json('data.outstanding_checks');
         // Outstanding checks should be defined as an array
         expect($outstandingChecks)->toBeArray();
     });
@@ -340,7 +348,7 @@ describe('Bank Reconciliation Outstanding Items', function () {
 
         $response->assertOk();
 
-        $unmatchedBankTxns = collect($response->json('unmatched_bank_transactions'));
+        $unmatchedBankTxns = collect($response->json('data.unmatched_bank_transactions'));
         expect($unmatchedBankTxns->count())->toBeGreaterThan(0);
 
         $txn = $unmatchedBankTxns->first();
@@ -364,7 +372,7 @@ describe('Bank Reconciliation Outstanding Items', function () {
 
         $response->assertOk();
 
-        $unmatchedBookEntries = $response->json('unmatched_book_entries');
+        $unmatchedBookEntries = $response->json('data.unmatched_book_entries');
         // Note: Service tracks journal lines, so this should return an array
         expect(is_array($unmatchedBookEntries))->toBeTrue();
     });
@@ -376,10 +384,10 @@ describe('Bank Reconciliation Outstanding Items', function () {
 
         $response->assertOk();
 
-        expect($response->json('outstanding_deposits'))->toBeArray();
-        expect($response->json('outstanding_checks'))->toBeArray();
-        expect($response->json('unmatched_bank_transactions'))->toBeArray();
-        expect($response->json('unmatched_book_entries'))->toBeArray();
+        expect($response->json('data.outstanding_deposits'))->toBeArray();
+        expect($response->json('data.outstanding_checks'))->toBeArray();
+        expect($response->json('data.unmatched_bank_transactions'))->toBeArray();
+        expect($response->json('data.unmatched_book_entries'))->toBeArray();
     });
 
     it('filters outstanding items by date correctly', function () {
@@ -419,7 +427,7 @@ describe('Bank Reconciliation Outstanding Items', function () {
 
         $response->assertOk();
 
-        $outstandingDeposits = $response->json('outstanding_deposits');
+        $outstandingDeposits = $response->json('data.outstanding_deposits');
         // Should be an array (may or may not have items depending on relationship implementation)
         expect($outstandingDeposits)->toBeArray();
     });

@@ -35,13 +35,17 @@ describe('Aging Report API', function () {
         $response = $this->getJson('/api/v1/reports/receivable-aging');
         $response->assertOk()
             ->assertJsonStructure([
-                'report_name',
-                'as_of_date',
-                'buckets',
-                'contacts' => [
-                    '*' => ['contact_id', 'contact_name', 'buckets' => ['total']],
+                'success',
+                'message',
+                'data' => [
+                    'report_name',
+                    'as_of_date',
+                    'buckets',
+                    'contacts' => [
+                        '*' => ['contact_id', 'contact_name', 'buckets' => ['total']],
+                    ],
+                    'totals',
                 ],
-                'totals',
             ]);
     });
 
@@ -63,13 +67,17 @@ describe('Aging Report API', function () {
         $response = $this->getJson('/api/v1/reports/payable-aging');
         $response->assertOk()
             ->assertJsonStructure([
-                'report_name',
-                'as_of_date',
-                'buckets',
-                'contacts' => [
-                    '*' => ['contact_id', 'contact_name', 'buckets' => ['total']],
+                'success',
+                'message',
+                'data' => [
+                    'report_name',
+                    'as_of_date',
+                    'buckets',
+                    'contacts' => [
+                        '*' => ['contact_id', 'contact_name', 'buckets' => ['total']],
+                    ],
+                    'totals',
                 ],
-                'totals',
             ]);
     });
 
@@ -101,7 +109,7 @@ describe('Aging Report API', function () {
 
         $response->assertOk();
 
-        $totals = $response->json('totals');
+        $totals = $response->json('data.totals');
         // bucket_0 = current, bucket_1 = 1-30, bucket_2 = 31-60
         expect($totals['bucket_0'])->toBe(1000000);
         expect($totals['bucket_1'])->toBe(2000000);
@@ -129,7 +137,7 @@ describe('Aging Report API', function () {
 
         $response->assertOk();
 
-        $contacts = $response->json('contacts');
+        $contacts = $response->json('data.contacts');
         expect($contacts)->toHaveCount(2);
     });
 
@@ -145,11 +153,15 @@ describe('Aging Report API', function () {
 
         $response->assertOk()
             ->assertJsonStructure([
-                'report_name',
-                'contact',
-                'as_of_date',
-                'receivable',
-                'payable',
+                'success',
+                'message',
+                'data' => [
+                    'report_name',
+                    'contact',
+                    'as_of_date',
+                    'receivable',
+                    'payable',
+                ],
             ]);
     });
 
@@ -172,7 +184,7 @@ describe('Aging Report API', function () {
         $response = $this->getJson('/api/v1/reports/receivable-aging');
 
         $response->assertOk()
-            ->assertJsonPath('totals.total', 1000000);
+            ->assertJsonPath('data.totals.total', 1000000);
     });
 
     it('handles partial payments in aging', function () {
@@ -187,6 +199,6 @@ describe('Aging Report API', function () {
         $response = $this->getJson('/api/v1/reports/receivable-aging');
 
         $response->assertOk()
-            ->assertJsonPath('totals.total', 3000000);
+            ->assertJsonPath('data.totals.total', 3000000);
     });
 });

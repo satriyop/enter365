@@ -12,6 +12,8 @@ class Permission extends Model
     use Filterable, HasFactory;
 
     // Permission groups
+    public const GROUP_DASHBOARD = 'dashboard';
+
     public const GROUP_ACCOUNTS = 'accounts';
 
     public const GROUP_CONTACTS = 'contacts';
@@ -201,10 +203,19 @@ class Permission extends Model
             ['name' => 'budgets.delete', 'display_name' => 'Hapus Anggaran', 'group' => self::GROUP_BUDGETS, 'description' => 'Menghapus anggaran'],
             ['name' => 'budgets.approve', 'display_name' => 'Setujui Anggaran', 'group' => self::GROUP_BUDGETS, 'description' => 'Menyetujui anggaran'],
 
+            // Dashboard
+            ['name' => 'dashboard.view', 'display_name' => 'Lihat Dashboard', 'group' => self::GROUP_DASHBOARD, 'description' => 'Melihat ringkasan dashboard'],
+            ['name' => 'dashboard.financials', 'display_name' => 'Dashboard Keuangan', 'group' => self::GROUP_DASHBOARD, 'description' => 'Melihat data keuangan di dashboard'],
+            ['name' => 'dashboard.kpis', 'display_name' => 'Dashboard KPI', 'group' => self::GROUP_DASHBOARD, 'description' => 'Melihat indikator kinerja di dashboard'],
+
             // Reports
             ['name' => 'reports.financial', 'display_name' => 'Laporan Keuangan', 'group' => self::GROUP_REPORTS, 'description' => 'Melihat laporan keuangan'],
             ['name' => 'reports.tax', 'display_name' => 'Laporan Pajak', 'group' => self::GROUP_REPORTS, 'description' => 'Melihat laporan pajak'],
             ['name' => 'reports.aging', 'display_name' => 'Laporan Aging', 'group' => self::GROUP_REPORTS, 'description' => 'Melihat laporan aging'],
+            ['name' => 'reports.cash_flow', 'display_name' => 'Laporan Arus Kas', 'group' => self::GROUP_REPORTS, 'description' => 'Melihat laporan arus kas'],
+            ['name' => 'reports.project', 'display_name' => 'Laporan Proyek', 'group' => self::GROUP_REPORTS, 'description' => 'Melihat laporan profitabilitas proyek'],
+            ['name' => 'reports.manufacturing', 'display_name' => 'Laporan Manufaktur', 'group' => self::GROUP_REPORTS, 'description' => 'Melihat laporan biaya work order dan subkontraktor'],
+            ['name' => 'reports.cogs', 'display_name' => 'Laporan HPP', 'group' => self::GROUP_REPORTS, 'description' => 'Melihat laporan harga pokok penjualan'],
             ['name' => 'reports.export', 'display_name' => 'Export Laporan', 'group' => self::GROUP_REPORTS, 'description' => 'Export laporan'],
 
             // Settings

@@ -27,24 +27,28 @@ describe('Cash Flow Statement', function () {
 
         $response->assertOk()
             ->assertJsonStructure([
-                'report_name',
-                'period' => ['start', 'end'],
-                'operating' => ['items', 'subtotal'],
-                'investing' => ['items', 'subtotal'],
-                'financing' => ['items', 'subtotal'],
-                'net_cash_flow',
-                'beginning_cash',
-                'ending_cash',
+                'success',
+                'message',
+                'data' => [
+                    'report_name',
+                    'period' => ['start', 'end'],
+                    'operating' => ['items', 'subtotal'],
+                    'investing' => ['items', 'subtotal'],
+                    'financing' => ['items', 'subtotal'],
+                    'net_cash_flow',
+                    'beginning_cash',
+                    'ending_cash',
+                ],
             ])
-            ->assertJsonPath('report_name', 'Laporan Arus Kas');
+            ->assertJsonPath('data.report_name', 'Laporan Arus Kas');
     });
 
     it('can filter by date range', function () {
         $response = $this->getJson('/api/v1/reports/cash-flow?start_date=2024-01-01&end_date=2024-12-31');
 
         $response->assertOk()
-            ->assertJsonPath('period.start', '2024-01-01')
-            ->assertJsonPath('period.end', '2024-12-31');
+            ->assertJsonPath('data.period.start', '2024-01-01')
+            ->assertJsonPath('data.period.end', '2024-12-31');
     });
 
     it('shows operating activities from customer payments', function () {
@@ -72,7 +76,7 @@ describe('Cash Flow Statement', function () {
 
         $response->assertOk();
 
-        $operating = $response->json('operating');
+        $operating = $response->json('data.operating');
         expect($operating['subtotal'])->toBeGreaterThan(0);
 
         // Should have customer receipts
@@ -106,7 +110,7 @@ describe('Cash Flow Statement', function () {
 
         $response->assertOk();
 
-        $operating = $response->json('operating');
+        $operating = $response->json('data.operating');
 
         // Should have supplier payments (negative)
         $supplierPayments = collect($operating['items'])->firstWhere('description', 'Pembayaran ke pemasok');
@@ -144,8 +148,8 @@ describe('Cash Flow Statement', function () {
 
         $response->assertOk();
 
-        $netCashFlow = $response->json('net_cash_flow');
-        $operating = $response->json('operating.subtotal');
+        $netCashFlow = $response->json('data.net_cash_flow');
+        $operating = $response->json('data.operating.subtotal');
 
         // Net should be receipts - payments = 10M - 3M = 7M
         expect($operating)->toBe(7000000);
@@ -166,9 +170,9 @@ describe('Cash Flow Statement', function () {
 
         $response->assertOk();
 
-        $beginningCash = $response->json('beginning_cash');
-        $endingCash = $response->json('ending_cash');
-        $netCashFlow = $response->json('net_cash_flow');
+        $beginningCash = $response->json('data.beginning_cash');
+        $endingCash = $response->json('data.ending_cash');
+        $netCashFlow = $response->json('data.net_cash_flow');
 
         // Beginning cash should include prior period
         expect($beginningCash)->toBe(5000000);
@@ -186,14 +190,18 @@ describe('Daily Cash Movement', function () {
 
         $response->assertOk()
             ->assertJsonStructure([
-                'report_name',
-                'period' => ['start', 'end'],
-                'movements',
-                'total_receipts',
-                'total_payments',
-                'net_movement',
+                'success',
+                'message',
+                'data' => [
+                    'report_name',
+                    'period' => ['start', 'end'],
+                    'movements',
+                    'total_receipts',
+                    'total_payments',
+                    'net_movement',
+                ],
             ])
-            ->assertJsonPath('report_name', 'Pergerakan Kas Harian');
+            ->assertJsonPath('data.report_name', 'Pergerakan Kas Harian');
     });
 
     it('can filter by date range', function () {
@@ -203,8 +211,8 @@ describe('Daily Cash Movement', function () {
         $response = $this->getJson("/api/v1/reports/daily-cash-movement?start_date={$startDate}&end_date={$endDate}");
 
         $response->assertOk()
-            ->assertJsonPath('period.start', $startDate)
-            ->assertJsonPath('period.end', $endDate);
+            ->assertJsonPath('data.period.start', $startDate)
+            ->assertJsonPath('data.period.end', $endDate);
     });
 
     it('shows daily running balance', function () {
@@ -237,7 +245,7 @@ describe('Daily Cash Movement', function () {
 
         $response->assertOk();
 
-        $movements = collect($response->json('movements'));
+        $movements = collect($response->json('data.movements'));
 
         // Find day 5 and day 10
         $day5 = $movements->firstWhere('date', now()->startOfMonth()->addDays(5)->toDateString());
@@ -255,7 +263,7 @@ describe('Daily Cash Movement', function () {
 
         $response->assertOk();
 
-        $movements = $response->json('movements');
+        $movements = $response->json('data.movements');
         expect($movements)->toHaveCount(1);
 
         $movement = $movements[0];
@@ -291,9 +299,9 @@ describe('Daily Cash Movement', function () {
         $response = $this->getJson('/api/v1/reports/daily-cash-movement?start_date='.now()->toDateString().'&end_date='.now()->toDateString());
 
         $response->assertOk()
-            ->assertJsonPath('total_receipts', 10000000)
-            ->assertJsonPath('total_payments', 4000000)
-            ->assertJsonPath('net_movement', 6000000);
+            ->assertJsonPath('data.total_receipts', 10000000)
+            ->assertJsonPath('data.total_payments', 4000000)
+            ->assertJsonPath('data.net_movement', 6000000);
     });
 
 });

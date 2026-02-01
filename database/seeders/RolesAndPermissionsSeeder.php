@@ -95,7 +95,9 @@ class RolesAndPermissionsSeeder extends Seeder
             'journals.view', 'journals.create', 'journals.post', 'journals.reverse',
             'budgets.view', 'budgets.create', 'budgets.edit',
             'projects.view',
-            'reports.financial', 'reports.tax', 'reports.aging', 'reports.export',
+            'dashboard.view', 'dashboard.financials', 'dashboard.kpis',
+            'reports.financial', 'reports.tax', 'reports.aging', 'reports.cash_flow',
+            'reports.project', 'reports.manufacturing', 'reports.cogs', 'reports.export',
             'settings.fiscal_periods',
             'fiscal_periods.view', 'fiscal_periods.create', 'fiscal_periods.edit', 'fiscal_periods.close', 'fiscal_periods.reopen',
             'sales_returns.view',
@@ -115,6 +117,7 @@ class RolesAndPermissionsSeeder extends Seeder
 
         // Assign permissions to Sales role
         $salesPermissions = Permission::whereIn('name', [
+            'dashboard.view',
             'contacts.view', 'contacts.create', 'contacts.edit',
             'products.view',
             'invoices.view', 'invoices.create', 'invoices.edit',
@@ -131,6 +134,7 @@ class RolesAndPermissionsSeeder extends Seeder
 
         // Assign permissions to Purchasing role
         $purchasingPermissions = Permission::whereIn('name', [
+            'dashboard.view',
             'contacts.view', 'contacts.create', 'contacts.edit',
             'products.view',
             'bills.view', 'bills.create', 'bills.edit',
@@ -161,6 +165,7 @@ class RolesAndPermissionsSeeder extends Seeder
 
         // Assign permissions to Viewer role
         $viewerPermissions = Permission::whereIn('name', [
+            'dashboard.view',
             'accounts.view',
             'contacts.view',
             'products.view',

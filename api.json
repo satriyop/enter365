@@ -11785,6 +11785,9 @@
                             }
                         }
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
                     }
@@ -11901,6 +11904,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -12019,6 +12025,9 @@
                             }
                         }
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
                     }
@@ -12084,6 +12093,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -12184,6 +12196,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -12291,6 +12306,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -24670,15 +24688,13 @@
                                             "integer",
                                             "null"
                                         ],
-                                        "description": "Min Rp 5 juta for B2B",
                                         "minimum": 5500
                                     },
                                     "pln_category": {
                                         "type": [
                                             "string",
                                             "null"
-                                        ],
-                                        "description": "Min 5.5 kVA for B2B"
+                                        ]
                                     },
                                     "target_savings": {
                                         "type": [
@@ -28071,86 +28087,7 @@
                                         },
                                         "data": {
                                             "type": "object",
-                                            "properties": {
-                                                "total": {
-                                                    "type": "string"
-                                                },
-                                                "by_status": {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "draft": {
-                                                            "type": "string"
-                                                        },
-                                                        "submitted": {
-                                                            "type": "string"
-                                                        },
-                                                        "approved": {
-                                                            "type": "string"
-                                                        },
-                                                        "rejected": {
-                                                            "type": "string"
-                                                        },
-                                                        "expired": {
-                                                            "type": "string"
-                                                        },
-                                                        "converted": {
-                                                            "type": "string"
-                                                        }
-                                                    },
-                                                    "required": [
-                                                        "draft",
-                                                        "submitted",
-                                                        "approved",
-                                                        "rejected",
-                                                        "expired",
-                                                        "converted"
-                                                    ]
-                                                },
-                                                "total_value": {
-                                                    "type": "string"
-                                                },
-                                                "approved_value": {
-                                                    "type": "string"
-                                                },
-                                                "converted_value": {
-                                                    "type": "string"
-                                                },
-                                                "approval_rate": {
-                                                    "anyOf": [
-                                                        {
-                                                            "type": "number"
-                                                        },
-                                                        {
-                                                            "type": "integer",
-                                                            "enum": [
-                                                                0
-                                                            ]
-                                                        }
-                                                    ]
-                                                },
-                                                "conversion_rate": {
-                                                    "anyOf": [
-                                                        {
-                                                            "type": "number"
-                                                        },
-                                                        {
-                                                            "type": "integer",
-                                                            "enum": [
-                                                                0
-                                                            ]
-                                                        }
-                                                    ]
-                                                }
-                                            },
-                                            "required": [
-                                                "total",
-                                                "by_status",
-                                                "total_value",
-                                                "approved_value",
-                                                "converted_value",
-                                                "approval_rate",
-                                                "conversion_rate"
-                                            ]
+                                            "additionalProperties": {}
                                         }
                                     },
                                     "required": [
@@ -30468,44 +30405,66 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "report_name": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
                                             "type": "string",
                                             "enum": [
-                                                "Neraca Saldo"
+                                                "Operasi berhasil."
                                             ]
                                         },
-                                        "as_of_date": {
-                                            "anyOf": [
-                                                {},
-                                                {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "report_name": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "Neraca Saldo"
+                                                    ]
+                                                },
+                                                "as_of_date": {
+                                                    "anyOf": [
+                                                        {},
+                                                        {
+                                                            "type": "string"
+                                                        }
+                                                    ]
+                                                },
+                                                "accounts": {
                                                     "type": "string"
+                                                },
+                                                "total_debit": {
+                                                    "type": "string"
+                                                },
+                                                "total_credit": {
+                                                    "type": "string"
+                                                },
+                                                "is_balanced": {
+                                                    "type": "boolean"
                                                 }
+                                            },
+                                            "required": [
+                                                "report_name",
+                                                "as_of_date",
+                                                "accounts",
+                                                "total_debit",
+                                                "total_credit",
+                                                "is_balanced"
                                             ]
-                                        },
-                                        "accounts": {
-                                            "type": "string"
-                                        },
-                                        "total_debit": {
-                                            "type": "string"
-                                        },
-                                        "total_credit": {
-                                            "type": "string"
-                                        },
-                                        "is_balanced": {
-                                            "type": "boolean"
                                         }
                                     },
                                     "required": [
-                                        "report_name",
-                                        "as_of_date",
-                                        "accounts",
-                                        "total_debit",
-                                        "total_credit",
-                                        "is_balanced"
+                                        "success",
+                                        "message",
+                                        "data"
                                     ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -30546,28 +30505,69 @@
                                         {
                                             "type": "object",
                                             "properties": {
-                                                "report_name": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
                                                     "type": "string",
                                                     "enum": [
-                                                        "Laporan Posisi Keuangan"
+                                                        "Operasi berhasil."
                                                     ]
                                                 },
-                                                "": {
+                                                "data": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "report_name": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "Laporan Posisi Keuangan"
+                                                            ]
+                                                        },
+                                                        "": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "report_name",
+                                                        null
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message",
+                                                "data"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "Operasi berhasil."
+                                                    ]
+                                                },
+                                                "data": {
                                                     "type": "string"
                                                 }
                                             },
                                             "required": [
-                                                "report_name",
-                                                null
+                                                "success",
+                                                "message",
+                                                "data"
                                             ]
-                                        },
-                                        {
-                                            "type": "string"
                                         }
                                     ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -30630,28 +30630,69 @@
                                         {
                                             "type": "object",
                                             "properties": {
-                                                "report_name": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
                                                     "type": "string",
                                                     "enum": [
-                                                        "Laporan Laba Rugi"
+                                                        "Operasi berhasil."
                                                     ]
                                                 },
-                                                "": {
+                                                "data": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "report_name": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "Laporan Laba Rugi"
+                                                            ]
+                                                        },
+                                                        "": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "report_name",
+                                                        null
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message",
+                                                "data"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "Operasi berhasil."
+                                                    ]
+                                                },
+                                                "data": {
                                                     "type": "string"
                                                 }
                                             },
                                             "required": [
-                                                "report_name",
-                                                null
+                                                "success",
+                                                "message",
+                                                "data"
                                             ]
-                                        },
-                                        {
-                                            "type": "string"
                                         }
                                     ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -30690,27 +30731,49 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "report_name": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
                                             "type": "string",
                                             "enum": [
-                                                "Buku Besar"
+                                                "Operasi berhasil."
                                             ]
                                         },
-                                        "start_date": {},
-                                        "end_date": {},
-                                        "accounts": {
-                                            "type": "string"
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "report_name": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "Buku Besar"
+                                                    ]
+                                                },
+                                                "start_date": {},
+                                                "end_date": {},
+                                                "accounts": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "report_name",
+                                                "start_date",
+                                                "end_date",
+                                                "accounts"
+                                            ]
                                         }
                                     },
                                     "required": [
-                                        "report_name",
-                                        "start_date",
-                                        "end_date",
-                                        "accounts"
+                                        "success",
+                                        "message",
+                                        "data"
                                     ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -30742,23 +30805,45 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "report_name": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
                                             "type": "string",
                                             "enum": [
-                                                "Laporan Umur Piutang"
+                                                "Operasi berhasil."
                                             ]
                                         },
-                                        "": {
-                                            "type": "string"
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "report_name": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "Laporan Umur Piutang"
+                                                    ]
+                                                },
+                                                "": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "report_name",
+                                                null
+                                            ]
                                         }
                                     },
                                     "required": [
-                                        "report_name",
-                                        null
+                                        "success",
+                                        "message",
+                                        "data"
                                     ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -30790,23 +30875,45 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "report_name": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
                                             "type": "string",
                                             "enum": [
-                                                "Laporan Umur Hutang"
+                                                "Operasi berhasil."
                                             ]
                                         },
-                                        "": {
-                                            "type": "string"
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "report_name": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "Laporan Umur Hutang"
+                                                    ]
+                                                },
+                                                "": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "report_name",
+                                                null
+                                            ]
                                         }
                                     },
                                     "required": [
-                                        "report_name",
-                                        null
+                                        "success",
+                                        "message",
+                                        "data"
                                     ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -30847,44 +30954,66 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "report_name": {
-                                            "type": "string"
+                                        "success": {
+                                            "type": "boolean"
                                         },
-                                        "contact": {
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Operasi berhasil."
+                                            ]
+                                        },
+                                        "data": {
                                             "type": "object",
                                             "properties": {
-                                                "id": {
-                                                    "type": "integer"
-                                                },
-                                                "code": {
+                                                "report_name": {
                                                     "type": "string"
                                                 },
-                                                "name": {
+                                                "contact": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer"
+                                                        },
+                                                        "code": {
+                                                            "type": "string"
+                                                        },
+                                                        "name": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "id",
+                                                        "code",
+                                                        "name"
+                                                    ]
+                                                },
+                                                "as_of_date": {
+                                                    "type": "string"
+                                                },
+                                                "": {
                                                     "type": "string"
                                                 }
                                             },
                                             "required": [
-                                                "id",
-                                                "code",
-                                                "name"
+                                                "report_name",
+                                                "contact",
+                                                "as_of_date",
+                                                null
                                             ]
-                                        },
-                                        "as_of_date": {
-                                            "type": "string"
-                                        },
-                                        "": {
-                                            "type": "string"
                                         }
                                     },
                                     "required": [
-                                        "report_name",
-                                        "contact",
-                                        "as_of_date",
-                                        null
+                                        "success",
+                                        "message",
+                                        "data"
                                     ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
@@ -30910,23 +31039,45 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "report_name": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
                                             "type": "string",
                                             "enum": [
-                                                "Laporan PPN"
+                                                "Operasi berhasil."
                                             ]
                                         },
-                                        "": {
-                                            "type": "string"
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "report_name": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "Laporan PPN"
+                                                    ]
+                                                },
+                                                "": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "report_name",
+                                                null
+                                            ]
                                         }
                                     },
                                     "required": [
-                                        "report_name",
-                                        null
+                                        "success",
+                                        "message",
+                                        "data"
                                     ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -30949,36 +31100,58 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "report_name": {
-                                            "type": "string"
+                                        "success": {
+                                            "type": "boolean"
                                         },
-                                        "year": {
-                                            "type": "integer"
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Operasi berhasil."
+                                            ]
                                         },
-                                        "months": {
-                                            "type": "string"
-                                        },
-                                        "total_output": {
-                                            "type": "string"
-                                        },
-                                        "total_input": {
-                                            "type": "string"
-                                        },
-                                        "total_net": {
-                                            "type": "string"
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "report_name": {
+                                                    "type": "string"
+                                                },
+                                                "year": {
+                                                    "type": "integer"
+                                                },
+                                                "months": {
+                                                    "type": "string"
+                                                },
+                                                "total_output": {
+                                                    "type": "string"
+                                                },
+                                                "total_input": {
+                                                    "type": "string"
+                                                },
+                                                "total_net": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "report_name",
+                                                "year",
+                                                "months",
+                                                "total_output",
+                                                "total_input",
+                                                "total_net"
+                                            ]
                                         }
                                     },
                                     "required": [
-                                        "report_name",
-                                        "year",
-                                        "months",
-                                        "total_output",
-                                        "total_input",
-                                        "total_net"
+                                        "success",
+                                        "message",
+                                        "data"
                                     ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -31001,57 +31174,79 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "report_name": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
                                             "type": "string",
                                             "enum": [
-                                                "Daftar Faktur Pajak Keluaran"
+                                                "Operasi berhasil."
                                             ]
                                         },
-                                        "period": {
+                                        "data": {
                                             "type": "object",
                                             "properties": {
-                                                "start": {
-                                                    "anyOf": [
-                                                        {},
-                                                        {
-                                                            "type": "string"
-                                                        }
+                                                "report_name": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "Daftar Faktur Pajak Keluaran"
                                                     ]
                                                 },
-                                                "end": {
-                                                    "anyOf": [
-                                                        {},
-                                                        {
-                                                            "type": "string"
+                                                "period": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "start": {
+                                                            "anyOf": [
+                                                                {},
+                                                                {
+                                                                    "type": "string"
+                                                                }
+                                                            ]
+                                                        },
+                                                        "end": {
+                                                            "anyOf": [
+                                                                {},
+                                                                {
+                                                                    "type": "string"
+                                                                }
+                                                            ]
                                                         }
+                                                    },
+                                                    "required": [
+                                                        "start",
+                                                        "end"
                                                     ]
+                                                },
+                                                "invoices": {
+                                                    "type": "string"
+                                                },
+                                                "total_dpp": {
+                                                    "type": "string"
+                                                },
+                                                "total_ppn": {
+                                                    "type": "string"
                                                 }
                                             },
                                             "required": [
-                                                "start",
-                                                "end"
+                                                "report_name",
+                                                "period",
+                                                "invoices",
+                                                "total_dpp",
+                                                "total_ppn"
                                             ]
-                                        },
-                                        "invoices": {
-                                            "type": "string"
-                                        },
-                                        "total_dpp": {
-                                            "type": "string"
-                                        },
-                                        "total_ppn": {
-                                            "type": "string"
                                         }
                                     },
                                     "required": [
-                                        "report_name",
-                                        "period",
-                                        "invoices",
-                                        "total_dpp",
-                                        "total_ppn"
+                                        "success",
+                                        "message",
+                                        "data"
                                     ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -31074,57 +31269,79 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "report_name": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
                                             "type": "string",
                                             "enum": [
-                                                "Daftar Faktur Pajak Masukan"
+                                                "Operasi berhasil."
                                             ]
                                         },
-                                        "period": {
+                                        "data": {
                                             "type": "object",
                                             "properties": {
-                                                "start": {
-                                                    "anyOf": [
-                                                        {},
-                                                        {
-                                                            "type": "string"
-                                                        }
+                                                "report_name": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "Daftar Faktur Pajak Masukan"
                                                     ]
                                                 },
-                                                "end": {
-                                                    "anyOf": [
-                                                        {},
-                                                        {
-                                                            "type": "string"
+                                                "period": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "start": {
+                                                            "anyOf": [
+                                                                {},
+                                                                {
+                                                                    "type": "string"
+                                                                }
+                                                            ]
+                                                        },
+                                                        "end": {
+                                                            "anyOf": [
+                                                                {},
+                                                                {
+                                                                    "type": "string"
+                                                                }
+                                                            ]
                                                         }
+                                                    },
+                                                    "required": [
+                                                        "start",
+                                                        "end"
                                                     ]
+                                                },
+                                                "bills": {
+                                                    "type": "string"
+                                                },
+                                                "total_dpp": {
+                                                    "type": "string"
+                                                },
+                                                "total_ppn": {
+                                                    "type": "string"
                                                 }
                                             },
                                             "required": [
-                                                "start",
-                                                "end"
+                                                "report_name",
+                                                "period",
+                                                "bills",
+                                                "total_dpp",
+                                                "total_ppn"
                                             ]
-                                        },
-                                        "bills": {
-                                            "type": "string"
-                                        },
-                                        "total_dpp": {
-                                            "type": "string"
-                                        },
-                                        "total_ppn": {
-                                            "type": "string"
                                         }
                                     },
                                     "required": [
-                                        "report_name",
-                                        "period",
-                                        "bills",
-                                        "total_dpp",
-                                        "total_ppn"
+                                        "success",
+                                        "message",
+                                        "data"
                                     ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -31147,23 +31364,45 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "report_name": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
                                             "type": "string",
                                             "enum": [
-                                                "Laporan Arus Kas"
+                                                "Operasi berhasil."
                                             ]
                                         },
-                                        "": {
-                                            "type": "string"
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "report_name": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "Laporan Arus Kas"
+                                                    ]
+                                                },
+                                                "": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "report_name",
+                                                null
+                                            ]
                                         }
                                     },
                                     "required": [
-                                        "report_name",
-                                        null
+                                        "success",
+                                        "message",
+                                        "data"
                                     ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -31186,61 +31425,83 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "report_name": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
                                             "type": "string",
                                             "enum": [
-                                                "Pergerakan Kas Harian"
+                                                "Operasi berhasil."
                                             ]
                                         },
-                                        "period": {
+                                        "data": {
                                             "type": "object",
                                             "properties": {
-                                                "start": {
-                                                    "anyOf": [
-                                                        {},
-                                                        {
-                                                            "type": "string"
-                                                        }
+                                                "report_name": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "Pergerakan Kas Harian"
                                                     ]
                                                 },
-                                                "end": {
-                                                    "anyOf": [
-                                                        {},
-                                                        {
-                                                            "type": "string"
+                                                "period": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "start": {
+                                                            "anyOf": [
+                                                                {},
+                                                                {
+                                                                    "type": "string"
+                                                                }
+                                                            ]
+                                                        },
+                                                        "end": {
+                                                            "anyOf": [
+                                                                {},
+                                                                {
+                                                                    "type": "string"
+                                                                }
+                                                            ]
                                                         }
+                                                    },
+                                                    "required": [
+                                                        "start",
+                                                        "end"
                                                     ]
+                                                },
+                                                "movements": {
+                                                    "type": "string"
+                                                },
+                                                "total_receipts": {
+                                                    "type": "string"
+                                                },
+                                                "total_payments": {
+                                                    "type": "string"
+                                                },
+                                                "net_movement": {
+                                                    "type": "string"
                                                 }
                                             },
                                             "required": [
-                                                "start",
-                                                "end"
+                                                "report_name",
+                                                "period",
+                                                "movements",
+                                                "total_receipts",
+                                                "total_payments",
+                                                "net_movement"
                                             ]
-                                        },
-                                        "movements": {
-                                            "type": "string"
-                                        },
-                                        "total_receipts": {
-                                            "type": "string"
-                                        },
-                                        "total_payments": {
-                                            "type": "string"
-                                        },
-                                        "net_movement": {
-                                            "type": "string"
                                         }
                                     },
                                     "required": [
-                                        "report_name",
-                                        "period",
-                                        "movements",
-                                        "total_receipts",
-                                        "total_payments",
-                                        "net_movement"
+                                        "success",
+                                        "message",
+                                        "data"
                                     ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -31284,10 +31545,32 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "string"
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Operasi berhasil."
+                                            ]
+                                        },
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data"
+                                    ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -31319,10 +31602,32 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "string"
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Operasi berhasil."
+                                            ]
+                                        },
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data"
+                                    ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
@@ -31362,10 +31667,32 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "string"
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Operasi berhasil."
+                                            ]
+                                        },
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data"
+                                    ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -31416,10 +31743,32 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "string"
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Operasi berhasil."
+                                            ]
+                                        },
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data"
+                                    ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -31451,10 +31800,32 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "string"
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Operasi berhasil."
+                                            ]
+                                        },
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data"
+                                    ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
@@ -31494,10 +31865,32 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "string"
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Operasi berhasil."
+                                            ]
+                                        },
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data"
+                                    ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -31534,10 +31927,32 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "string"
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Operasi berhasil."
+                                            ]
+                                        },
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data"
+                                    ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -31583,10 +31998,32 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "string"
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Operasi berhasil."
+                                            ]
+                                        },
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data"
+                                    ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
@@ -31610,10 +32047,32 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "string"
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Operasi berhasil."
+                                            ]
+                                        },
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data"
+                                    ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -31652,23 +32111,45 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "report_name": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
                                             "type": "string",
                                             "enum": [
-                                                "Laporan Perubahan Ekuitas"
+                                                "Operasi berhasil."
                                             ]
                                         },
-                                        "": {
-                                            "type": "string"
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "report_name": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "Laporan Perubahan Ekuitas"
+                                                    ]
+                                                },
+                                                "": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "report_name",
+                                                null
+                                            ]
                                         }
                                     },
                                     "required": [
-                                        "report_name",
-                                        null
+                                        "success",
+                                        "message",
+                                        "data"
                                     ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -31709,23 +32190,45 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "report_name": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
                                             "type": "string",
                                             "enum": [
-                                                "Laporan Rekonsiliasi Bank"
+                                                "Operasi berhasil."
                                             ]
                                         },
-                                        "": {
-                                            "type": "string"
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "report_name": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "Laporan Rekonsiliasi Bank"
+                                                    ]
+                                                },
+                                                "": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "report_name",
+                                                null
+                                            ]
                                         }
                                     },
                                     "required": [
-                                        "report_name",
-                                        null
+                                        "success",
+                                        "message",
+                                        "data"
                                     ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
@@ -31769,52 +32272,74 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "report_name": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
                                             "type": "string",
                                             "enum": [
-                                                "Item Outstanding Rekonsiliasi"
+                                                "Operasi berhasil."
                                             ]
                                         },
-                                        "account": {
+                                        "data": {
                                             "type": "object",
                                             "properties": {
-                                                "id": {
-                                                    "type": "integer"
+                                                "report_name": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "Item Outstanding Rekonsiliasi"
+                                                    ]
                                                 },
-                                                "code": {
-                                                    "type": "string"
+                                                "account": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer"
+                                                        },
+                                                        "code": {
+                                                            "type": "string"
+                                                        },
+                                                        "name": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "id",
+                                                        "code",
+                                                        "name"
+                                                    ]
                                                 },
-                                                "name": {
+                                                "as_of_date": {
+                                                    "anyOf": [
+                                                        {},
+                                                        {
+                                                            "type": "string"
+                                                        }
+                                                    ]
+                                                },
+                                                "": {
                                                     "type": "string"
                                                 }
                                             },
                                             "required": [
-                                                "id",
-                                                "code",
-                                                "name"
+                                                "report_name",
+                                                "account",
+                                                "as_of_date",
+                                                null
                                             ]
-                                        },
-                                        "as_of_date": {
-                                            "anyOf": [
-                                                {},
-                                                {
-                                                    "type": "string"
-                                                }
-                                            ]
-                                        },
-                                        "": {
-                                            "type": "string"
                                         }
                                     },
                                     "required": [
-                                        "report_name",
-                                        "account",
-                                        "as_of_date",
-                                        null
+                                        "success",
+                                        "message",
+                                        "data"
                                     ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
@@ -31856,23 +32381,45 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "report_name": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
                                             "type": "string",
                                             "enum": [
-                                                "Laporan Harga Pokok Penjualan"
+                                                "Operasi berhasil."
                                             ]
                                         },
-                                        "": {
-                                            "type": "string"
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "report_name": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "Laporan Harga Pokok Penjualan"
+                                                    ]
+                                                },
+                                                "": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "report_name",
+                                                null
+                                            ]
                                         }
                                     },
                                     "required": [
-                                        "report_name",
-                                        null
+                                        "success",
+                                        "message",
+                                        "data"
                                     ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -31911,53 +32458,75 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "report_name": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
                                             "type": "string",
                                             "enum": [
-                                                "Laporan HPP per Produk"
+                                                "Operasi berhasil."
                                             ]
                                         },
-                                        "period": {
+                                        "data": {
                                             "type": "object",
                                             "properties": {
-                                                "start": {
-                                                    "anyOf": [
-                                                        {},
-                                                        {
-                                                            "type": "string"
-                                                        }
+                                                "report_name": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "Laporan HPP per Produk"
                                                     ]
                                                 },
-                                                "end": {
-                                                    "anyOf": [
-                                                        {},
-                                                        {
-                                                            "type": "string"
+                                                "period": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "start": {
+                                                            "anyOf": [
+                                                                {},
+                                                                {
+                                                                    "type": "string"
+                                                                }
+                                                            ]
+                                                        },
+                                                        "end": {
+                                                            "anyOf": [
+                                                                {},
+                                                                {
+                                                                    "type": "string"
+                                                                }
+                                                            ]
                                                         }
+                                                    },
+                                                    "required": [
+                                                        "start",
+                                                        "end"
                                                     ]
+                                                },
+                                                "products": {
+                                                    "type": "string"
+                                                },
+                                                "total_cogs": {
+                                                    "type": "string"
                                                 }
                                             },
                                             "required": [
-                                                "start",
-                                                "end"
+                                                "report_name",
+                                                "period",
+                                                "products",
+                                                "total_cogs"
                                             ]
-                                        },
-                                        "products": {
-                                            "type": "string"
-                                        },
-                                        "total_cogs": {
-                                            "type": "string"
                                         }
                                     },
                                     "required": [
-                                        "report_name",
-                                        "period",
-                                        "products",
-                                        "total_cogs"
+                                        "success",
+                                        "message",
+                                        "data"
                                     ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -31996,53 +32565,75 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "report_name": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
                                             "type": "string",
                                             "enum": [
-                                                "Laporan HPP per Kategori"
+                                                "Operasi berhasil."
                                             ]
                                         },
-                                        "period": {
+                                        "data": {
                                             "type": "object",
                                             "properties": {
-                                                "start": {
-                                                    "anyOf": [
-                                                        {},
-                                                        {
-                                                            "type": "string"
-                                                        }
+                                                "report_name": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "Laporan HPP per Kategori"
                                                     ]
                                                 },
-                                                "end": {
-                                                    "anyOf": [
-                                                        {},
-                                                        {
-                                                            "type": "string"
+                                                "period": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "start": {
+                                                            "anyOf": [
+                                                                {},
+                                                                {
+                                                                    "type": "string"
+                                                                }
+                                                            ]
+                                                        },
+                                                        "end": {
+                                                            "anyOf": [
+                                                                {},
+                                                                {
+                                                                    "type": "string"
+                                                                }
+                                                            ]
                                                         }
+                                                    },
+                                                    "required": [
+                                                        "start",
+                                                        "end"
                                                     ]
+                                                },
+                                                "categories": {
+                                                    "type": "string"
+                                                },
+                                                "total_cogs": {
+                                                    "type": "string"
                                                 }
                                             },
                                             "required": [
-                                                "start",
-                                                "end"
+                                                "report_name",
+                                                "period",
+                                                "categories",
+                                                "total_cogs"
                                             ]
-                                        },
-                                        "categories": {
-                                            "type": "string"
-                                        },
-                                        "total_cogs": {
-                                            "type": "string"
                                         }
                                     },
                                     "required": [
-                                        "report_name",
-                                        "period",
-                                        "categories",
-                                        "total_cogs"
+                                        "success",
+                                        "message",
+                                        "data"
                                     ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -32065,28 +32656,50 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "report_name": {
-                                            "type": "string"
+                                        "success": {
+                                            "type": "boolean"
                                         },
-                                        "year": {
-                                            "type": "integer"
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Operasi berhasil."
+                                            ]
                                         },
-                                        "months": {
-                                            "type": "string"
-                                        },
-                                        "total_cogs": {
-                                            "type": "string"
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "report_name": {
+                                                    "type": "string"
+                                                },
+                                                "year": {
+                                                    "type": "integer"
+                                                },
+                                                "months": {
+                                                    "type": "string"
+                                                },
+                                                "total_cogs": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "report_name",
+                                                "year",
+                                                "months",
+                                                "total_cogs"
+                                            ]
                                         }
                                     },
                                     "required": [
-                                        "report_name",
-                                        "year",
-                                        "months",
-                                        "total_cogs"
+                                        "success",
+                                        "message",
+                                        "data"
                                     ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -32134,77 +32747,99 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "report_name": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
                                             "type": "string",
                                             "enum": [
-                                                "Detail HPP Produk"
+                                                "Operasi berhasil."
                                             ]
                                         },
-                                        "product": {
+                                        "data": {
                                             "type": "object",
                                             "properties": {
-                                                "id": {
-                                                    "type": "integer"
+                                                "report_name": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "Detail HPP Produk"
+                                                    ]
                                                 },
-                                                "sku": {
+                                                "product": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer"
+                                                        },
+                                                        "sku": {
+                                                            "type": "string"
+                                                        },
+                                                        "name": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "id",
+                                                        "sku",
+                                                        "name"
+                                                    ]
+                                                },
+                                                "period": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "start": {
+                                                            "anyOf": [
+                                                                {},
+                                                                {
+                                                                    "type": "string"
+                                                                }
+                                                            ]
+                                                        },
+                                                        "end": {
+                                                            "anyOf": [
+                                                                {},
+                                                                {
+                                                                    "type": "string"
+                                                                }
+                                                            ]
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "start",
+                                                        "end"
+                                                    ]
+                                                },
+                                                "movements": {
                                                     "type": "string"
                                                 },
-                                                "name": {
+                                                "total_quantity": {
+                                                    "type": "string"
+                                                },
+                                                "total_cogs": {
                                                     "type": "string"
                                                 }
                                             },
                                             "required": [
-                                                "id",
-                                                "sku",
-                                                "name"
+                                                "report_name",
+                                                "product",
+                                                "period",
+                                                "movements",
+                                                "total_quantity",
+                                                "total_cogs"
                                             ]
-                                        },
-                                        "period": {
-                                            "type": "object",
-                                            "properties": {
-                                                "start": {
-                                                    "anyOf": [
-                                                        {},
-                                                        {
-                                                            "type": "string"
-                                                        }
-                                                    ]
-                                                },
-                                                "end": {
-                                                    "anyOf": [
-                                                        {},
-                                                        {
-                                                            "type": "string"
-                                                        }
-                                                    ]
-                                                }
-                                            },
-                                            "required": [
-                                                "start",
-                                                "end"
-                                            ]
-                                        },
-                                        "movements": {
-                                            "type": "string"
-                                        },
-                                        "total_quantity": {
-                                            "type": "string"
-                                        },
-                                        "total_cogs": {
-                                            "type": "string"
                                         }
                                     },
                                     "required": [
-                                        "report_name",
-                                        "product",
-                                        "period",
-                                        "movements",
-                                        "total_quantity",
-                                        "total_cogs"
+                                        "success",
+                                        "message",
+                                        "data"
                                     ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
