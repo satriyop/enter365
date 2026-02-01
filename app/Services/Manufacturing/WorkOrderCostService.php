@@ -4,18 +4,23 @@ declare(strict_types=1);
 
 namespace App\Services\Manufacturing;
 
+use App\Contracts\Manufacturing\WorkOrderCostServiceInterface;
+use App\Contracts\Sales\DeliveryOrderServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Manufacturing\WorkOrder;
 use App\Models\Sales\DeliveryOrder;
-use App\Services\Sales\DeliveryOrderService;
 
 /**
  * Service for work order cost calculations and reporting.
  *
  * Handles cost summaries, statistics, and project cost updates.
  */
-class WorkOrderCostService
+class WorkOrderCostService implements WorkOrderCostServiceInterface
 {
+    public function __construct(
+        private DeliveryOrderServiceInterface $deliveryOrderService
+    ) {}
+
     /**
      * Get cost summary.
      *
@@ -118,13 +123,6 @@ class WorkOrderCostService
             return null;
         }
 
-        // Check if DO service exists and create DO
-        if (! class_exists(DeliveryOrderService::class)) {
-            return null;
-        }
-
-        $doService = app(DeliveryOrderService::class);
-
-        return $doService->createFromWorkOrder($wo);
+        return $this->deliveryOrderService->createFromWorkOrder($wo);
     }
 }

@@ -6,10 +6,11 @@ namespace App\Services\Shared;
 
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
+use App\Contracts\Shared\ContactServiceInterface;
 use App\Models\Contacts\Contact;
 use App\Services\Base\BaseService;
 
-class ContactService extends BaseService
+class ContactService extends BaseService implements ContactServiceInterface
 {
     public function __construct(
         EventDispatcherInterface $eventDispatcher,

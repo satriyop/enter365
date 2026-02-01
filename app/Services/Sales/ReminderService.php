@@ -2,6 +2,7 @@
 
 namespace App\Services\Sales;
 
+use App\Contracts\Shared\ReminderServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
@@ -11,7 +12,7 @@ use App\Notifications\PaymentReminderNotification;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Notification;
 
-class ReminderService
+class ReminderService implements ReminderServiceInterface
 {
     /**
      * Create scheduled reminders for an invoice.

@@ -123,6 +123,13 @@ class AppServiceProvider extends ServiceProvider
             \App\Services\Accounting\AccountLookupService::class
         );
 
+        // Accounting Domain CRUD services
+        $this->app->bind(\App\Contracts\Accounting\AccountServiceInterface::class, \App\Services\Accounting\AccountService::class);
+        $this->app->bind(\App\Contracts\Accounting\BudgetServiceInterface::class, \App\Services\Accounting\BudgetService::class);
+        $this->app->bind(\App\Contracts\Accounting\FiscalPeriodServiceInterface::class, \App\Services\Accounting\FiscalPeriodService::class);
+        $this->app->bind(\App\Contracts\Accounting\BankReconciliationServiceInterface::class, \App\Services\Accounting\BankReconciliationService::class);
+        $this->app->bind(\App\Contracts\Accounting\YearEndCloseServiceInterface::class, \App\Services\Accounting\YearEndCloseService::class);
+
         // Register AccountingPolicyManager as singleton (reads config once)
         $this->app->singleton(AccountingPolicyManager::class);
 
@@ -169,6 +176,7 @@ class AppServiceProvider extends ServiceProvider
         );
 
         $this->app->bind(RecurringServiceInterface::class, RecurringService::class);
+        $this->app->bind(\App\Contracts\Sales\QuotationFollowUpServiceInterface::class, \App\Services\Sales\QuotationFollowUpService::class);
         $this->app->bind(\App\Contracts\Sales\QuotationCalculatorInterface::class, \App\Domain\Sales\Quotations\QuotationCalculator::class);
         $this->app->bind(\App\Contracts\Sales\QuotationConversionServiceInterface::class, \App\Services\Sales\QuotationConversionService::class);
 
@@ -224,10 +232,15 @@ class AppServiceProvider extends ServiceProvider
             }
         );
 
-        // Inventory Domain (3 services)
+        // Manufacturing Cost service
+        $this->app->bind(\App\Contracts\Manufacturing\WorkOrderCostServiceInterface::class, \App\Services\Manufacturing\WorkOrderCostService::class);
+
+        // Inventory Domain
         $this->app->bind(InventoryServiceInterface::class, InventoryService::class);
         $this->app->bind(StockOpnameServiceInterface::class, StockOpnameService::class);
         $this->app->bind(ProductServiceInterface::class, ProductService::class);
+        $this->app->bind(\App\Contracts\Inventory\WarehouseServiceInterface::class, \App\Services\Inventory\WarehouseService::class);
+        $this->app->bind(\App\Contracts\Inventory\ProductCategoryServiceInterface::class, \App\Services\Inventory\ProductCategoryService::class);
 
         // Projects Domain (1 service)
         $this->app->bind(ProjectServiceInterface::class, ProjectService::class);
@@ -236,8 +249,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(SolarProposalServiceInterface::class, SolarProposalService::class);
         $this->app->bind(SolarCalculationServiceInterface::class, SolarCalculationService::class);
 
-        // Shared Domain (1 service)
+        // Shared Domain
         $this->app->bind(\App\Contracts\Shared\PaymentServiceInterface::class, \App\Services\Shared\PaymentService::class);
+        $this->app->bind(\App\Contracts\Shared\ContactServiceInterface::class, \App\Services\Shared\ContactService::class);
+        $this->app->bind(\App\Contracts\Shared\ReminderServiceInterface::class, \App\Services\Sales\ReminderService::class);
+        $this->app->bind(\App\Contracts\Shared\OverdueServiceInterface::class, \App\Services\Sales\OverdueService::class);
     }
 
     /**
@@ -307,6 +323,15 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('reports.manufacturing', [\App\Policies\ReportPolicy::class, 'viewManufacturing']);
         Gate::define('reports.cogs', [\App\Policies\ReportPolicy::class, 'viewCogs']);
         Gate::define('reports.export', [\App\Policies\ReportPolicy::class, 'export']);
+
+        // Settings Gates (non-model based)
+        Gate::define('settings.features', fn (\App\Models\User $user): bool => $user->hasPermission('settings.features'));
+
+        // User management Gates (non-model based)
+        Gate::define('users.manage_roles', fn (\App\Models\User $user): bool => $user->hasPermission('users.manage_roles'));
+
+        // Attachment Policy
+        Gate::policy(\App\Models\Shared\Attachment::class, \App\Policies\AttachmentPolicy::class);
     }
 
     /**

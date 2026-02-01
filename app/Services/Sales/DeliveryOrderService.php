@@ -13,6 +13,7 @@ use App\Domain\Sales\DeliveryOrders\Events\DeliveryOrderConfirmed;
 use App\Domain\Sales\DeliveryOrders\Events\DeliveryOrderDelivered;
 use App\Domain\Sales\DeliveryOrders\Events\DeliveryOrderShipped;
 use App\Enums\DocumentStatus;
+use App\Models\Manufacturing\WorkOrder;
 use App\Models\Sales\DeliveryOrder;
 use App\Models\Sales\DeliveryOrderItem;
 use App\Models\Sales\Invoice;
@@ -145,6 +146,40 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
 
             return $deliveryOrder->fresh(['items', 'contact', 'invoice', 'warehouse']);
         }, ['invoice_id' => $invoice->id]);
+    }
+
+    /**
+     * Create delivery order from work order.
+     */
+    public function createFromWorkOrder(WorkOrder $workOrder): DeliveryOrder
+    {
+        return $this->executeInTransaction('create_from_work_order', function () use ($workOrder) {
+            $project = $workOrder->project;
+
+            $deliveryOrder = new DeliveryOrder([
+                'contact_id' => $project->contact_id,
+                'do_date' => now()->toDateString(),
+                'shipping_address' => $project->contact->address ?? null,
+                'warehouse_id' => $workOrder->warehouse_id,
+                'notes' => "From Work Order: {$workOrder->wo_number}",
+                'created_by' => $this->getUserId(),
+            ]);
+            $deliveryOrder->save();
+
+            if ($workOrder->product_id) {
+                $deliveryOrder->items()->create([
+                    'product_id' => $workOrder->product_id,
+                    'description' => $workOrder->name ?? $workOrder->product->name ?? '',
+                    'quantity' => $workOrder->quantity_completed > 0
+                        ? $workOrder->quantity_completed
+                        : $workOrder->quantity_ordered,
+                    'unit' => $workOrder->product->unit ?? 'pcs',
+                    'quantity_delivered' => 0,
+                ]);
+            }
+
+            return $deliveryOrder->fresh(['items', 'contact', 'warehouse']);
+        }, ['work_order_id' => $workOrder->id]);
     }
 
     /**

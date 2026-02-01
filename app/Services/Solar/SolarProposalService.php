@@ -6,6 +6,7 @@ namespace App\Services\Solar;
 
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
+use App\Contracts\Sales\QuotationServiceInterface;
 use App\Contracts\Solar\SolarProposalServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Manufacturing\Bom;
@@ -14,13 +15,12 @@ use App\Models\Sales\Quotation;
 use App\Models\Solar\IndonesiaSolarData;
 use App\Models\Solar\SolarProposal;
 use App\Services\Base\BaseService;
-use App\Services\Sales\QuotationService;
 
 class SolarProposalService extends BaseService implements SolarProposalServiceInterface
 {
     public function __construct(
         protected SolarCalculationService $calculator,
-        protected QuotationService $quotationService,
+        protected QuotationServiceInterface $quotationService,
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger
     ) {

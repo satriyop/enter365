@@ -2,12 +2,13 @@
 
 namespace App\Services\Sales;
 
+use App\Contracts\Shared\OverdueServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
 use Illuminate\Support\Collection;
 
-class OverdueService
+class OverdueService implements OverdueServiceInterface
 {
     /**
      * Mark all overdue invoices.

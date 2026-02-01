@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace App\Services\Accounting;
 
+use App\Contracts\Accounting\AccountServiceInterface;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Models\Accounting\Account;
 use App\Services\Base\BaseService;
 
-class AccountService extends BaseService
+class AccountService extends BaseService implements AccountServiceInterface
 {
     public function __construct(
         EventDispatcherInterface $eventDispatcher,

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Accounting;
 
+use App\Contracts\Accounting\YearEndCloseServiceInterface;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Domain\Accounting\FiscalPeriods\Enums\ClosingStep;
@@ -30,7 +31,7 @@ use App\Services\Base\BaseService;
  * 6. Create next period (optional)
  * 7. Populate opening balances (optional)
  */
-class YearEndCloseService extends BaseService
+class YearEndCloseService extends BaseService implements YearEndCloseServiceInterface
 {
     public function __construct(
         private AccountingPolicyManager $policyManager,

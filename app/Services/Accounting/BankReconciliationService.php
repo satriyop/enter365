@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Services\Accounting;
 
+use App\Contracts\Accounting\BankReconciliationServiceInterface;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Enums\BankTransactionStatus;
 use App\Models\Accounting\BankTransaction;
 use App\Services\Base\BaseService;
 
-class BankReconciliationService extends BaseService
+class BankReconciliationService extends BaseService implements BankReconciliationServiceInterface
 {
     public function __construct(
         EventDispatcherInterface $eventDispatcher,

@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\Inventory;
 
+use App\Contracts\Inventory\WarehouseServiceInterface;
 use App\Models\Inventory\Warehouse;
 
-class WarehouseService
+class WarehouseService implements WarehouseServiceInterface
 {
     /**
      * Create a new warehouse.

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Accounting;
 
+use App\Contracts\Accounting\BudgetServiceInterface;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Enums\BudgetStatus;
@@ -15,7 +16,7 @@ use App\Models\Accounting\JournalEntryLine;
 use App\Services\Base\BaseService;
 use Illuminate\Support\Collection;
 
-class BudgetService extends BaseService
+class BudgetService extends BaseService implements BudgetServiceInterface
 {
     public function __construct(
         EventDispatcherInterface $eventDispatcher,

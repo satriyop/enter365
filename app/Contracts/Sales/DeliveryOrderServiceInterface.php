@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Contracts\Sales;
 
+use App\Models\Manufacturing\WorkOrder;
 use App\Models\Sales\DeliveryOrder;
 use App\Models\Sales\Invoice;
 use Illuminate\Database\Eloquent\Collection;
@@ -74,6 +75,11 @@ interface DeliveryOrderServiceInterface
      * Duplicate a delivery order.
      */
     public function duplicate(DeliveryOrder $deliveryOrder): DeliveryOrder;
+
+    /**
+     * Create delivery order from work order.
+     */
+    public function createFromWorkOrder(WorkOrder $workOrder): DeliveryOrder;
 
     /**
      * Get delivery orders for an invoice.

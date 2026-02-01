@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Accounting;
 
+use App\Contracts\Accounting\FiscalPeriodServiceInterface;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Domain\Accounting\FiscalPeriods\ValueObjects\ClosingChecklist;
@@ -13,7 +14,7 @@ use App\Models\Accounting\JournalEntry;
 use App\Models\Accounting\JournalEntryLine;
 use App\Services\Base\BaseService;
 
-class FiscalPeriodService extends BaseService
+class FiscalPeriodService extends BaseService implements FiscalPeriodServiceInterface
 {
     public function __construct(
         EventDispatcherInterface $eventDispatcher,

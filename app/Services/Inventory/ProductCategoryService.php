@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\Inventory;
 
+use App\Contracts\Inventory\ProductCategoryServiceInterface;
 use App\Models\Inventory\ProductCategory;
 
-class ProductCategoryService
+class ProductCategoryService implements ProductCategoryServiceInterface
 {
     /**
      * Create a new product category.
