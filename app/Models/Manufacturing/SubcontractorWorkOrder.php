@@ -8,6 +8,7 @@ use App\Models\Projects\Project;
 use App\Models\Sales\Invoice;
 use App\Models\Shared\SubcontractorInvoice;
 use App\Models\User;
+use App\Traits\Auditable;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -56,7 +57,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class SubcontractorWorkOrder extends Model
 {
-    use HasFactory, SoftDeletes;
+    use Auditable, HasFactory, SoftDeletes;
 
     public const DEFAULT_RETENTION_PERCENT = 5.00;
 

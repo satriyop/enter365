@@ -7,6 +7,7 @@ use App\Enums\DocumentStatus;
 use App\Models\Contacts\Contact;
 use App\Models\Shared\Attachment;
 use App\Models\User;
+use App\Traits\Auditable;
 use App\Traits\Filterable;
 use App\Traits\HasDocumentDiscount;
 use App\Traits\HasStatusHistory;
@@ -64,7 +65,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class PurchaseOrder extends Model
 {
-    use Filterable, HasDocumentDiscount, HasFactory, HasStatusHistory, SoftDeletes;
+    use Auditable, Filterable, HasDocumentDiscount, HasFactory, HasStatusHistory, SoftDeletes;
 
     protected static function boot(): void
     {
@@ -380,6 +381,7 @@ class PurchaseOrder extends Model
         if (array_key_exists('total_quantity', $this->attributes) && array_key_exists('total_received', $this->attributes)) {
             $totalQty = (float) $this->attributes['total_quantity'];
             $receivedQty = (float) $this->attributes['total_received'];
+
             return $receivedQty >= $totalQty && $totalQty > 0;
         }
 
@@ -406,7 +408,7 @@ class PurchaseOrder extends Model
         $totalQty = array_key_exists('total_quantity', $this->attributes)
             ? (float) $this->attributes['total_quantity']
             : (float) $this->items()->sum('quantity');
-            
+
         $receivedQty = array_key_exists('total_received', $this->attributes)
             ? (float) $this->attributes['total_received']
             : (float) $this->items()->sum('quantity_received');

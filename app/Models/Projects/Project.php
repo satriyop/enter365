@@ -10,6 +10,7 @@ use App\Models\Purchasing\PurchaseOrder;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\Quotation;
 use App\Models\User;
+use App\Traits\Auditable;
 use App\Traits\Filterable;
 use App\Traits\HasStatusHistory;
 use Carbon\Carbon;
@@ -49,7 +50,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class Project extends Model
 {
-    use Filterable, HasFactory, HasStatusHistory, SoftDeletes;
+    use Auditable, Filterable, HasFactory, HasStatusHistory, SoftDeletes;
 
     public const PRIORITY_LOW = 'low';
 

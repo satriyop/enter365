@@ -9,6 +9,7 @@ use App\Models\Inventory\Product;
 use App\Models\Inventory\Warehouse;
 use App\Models\Projects\Project;
 use App\Models\User;
+use App\Traits\Auditable;
 use App\Traits\Filterable;
 use App\Traits\HasStatusHistory;
 use Carbon\Carbon;
@@ -65,7 +66,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class WorkOrder extends Model
 {
-    use Filterable, HasFactory, HasStatusHistory, SoftDeletes;
+    use Auditable, Filterable, HasFactory, HasStatusHistory, SoftDeletes;
 
     public const TYPE_PRODUCTION = 'production';
 

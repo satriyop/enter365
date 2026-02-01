@@ -5,6 +5,7 @@ namespace App\Models\Manufacturing;
 use App\Enums\DocumentStatus;
 use App\Models\Inventory\Warehouse;
 use App\Models\User;
+use App\Traits\Auditable;
 use App\Traits\Filterable;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -35,7 +36,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class MaterialRequisition extends Model
 {
-    use Filterable, HasFactory, SoftDeletes;
+    use Auditable, Filterable, HasFactory, SoftDeletes;
 
     protected $fillable = [
         'requisition_number',
