@@ -26,15 +26,10 @@ class DocumentNumbers
 
     private static function doGenerate(string $prefix, string $table, string $column): string
     {
-        // Skip lockForUpdate in test environment (causes issues with nested transactions)
         $query = DB::table($table)
             ->where($column, 'like', $prefix.'%')
-            ->orderBy($column, 'desc');
-
-        // Only use lock in production-like environments
-        if (app()->environment('production', 'staging')) {
-            $query->lockForUpdate();
-        }
+            ->orderBy($column, 'desc')
+            ->lockForUpdate();
 
         $last = $query->value($column);
 
