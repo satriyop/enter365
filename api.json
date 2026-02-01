@@ -793,6 +793,9 @@
                             }
                         }
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
                     }
@@ -831,6 +834,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -961,6 +967,9 @@
                             }
                         }
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
                     },
@@ -1007,6 +1016,9 @@
                             }
                         }
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
                     },
@@ -1043,6 +1055,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
@@ -1224,6 +1239,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
@@ -4894,6 +4912,9 @@
                             }
                         }
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
                     }
@@ -4933,6 +4954,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -4979,6 +5003,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
@@ -5033,6 +5060,9 @@
                             }
                         }
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
                     },
@@ -5082,6 +5112,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
@@ -5377,6 +5410,9 @@
                             }
                         }
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
                     },
@@ -5598,6 +5634,9 @@
                             }
                         }
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
                     },
@@ -5630,35 +5669,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "bom_id": {
-                                        "type": "integer"
-                                    },
-                                    "variant_name": {
-                                        "type": [
-                                            "string",
-                                            "null"
-                                        ],
-                                        "maxLength": 100
-                                    },
-                                    "variant_label": {
-                                        "type": [
-                                            "string",
-                                            "null"
-                                        ],
-                                        "maxLength": 255
-                                    },
-                                    "is_primary_variant": {
-                                        "type": [
-                                            "boolean",
-                                            "null"
-                                        ]
-                                    }
-                                },
-                                "required": [
-                                    "bom_id"
-                                ]
+                                "$ref": "#/components/schemas/AddBomToVariantGroupRequest"
                             }
                         }
                     }
@@ -5691,6 +5702,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
@@ -5767,6 +5781,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
@@ -5848,6 +5865,9 @@
                             }
                         }
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
                     },
@@ -5880,31 +5900,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "order": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "object",
-                                            "properties": {
-                                                "bom_id": {
-                                                    "type": "integer"
-                                                },
-                                                "sort_order": {
-                                                    "type": "integer",
-                                                    "minimum": 0
-                                                }
-                                            },
-                                            "required": [
-                                                "bom_id",
-                                                "sort_order"
-                                            ]
-                                        }
-                                    }
-                                },
-                                "required": [
-                                    "order"
-                                ]
+                                "$ref": "#/components/schemas/ReorderVariantsRequest"
                             }
                         }
                     }
@@ -5935,14 +5931,17 @@
                             }
                         }
                     },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     }
                 }
             }
@@ -5970,40 +5969,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "source_bom_id": {
-                                        "type": "integer"
-                                    },
-                                    "variant_name": {
-                                        "type": "string",
-                                        "maxLength": 100
-                                    },
-                                    "variant_label": {
-                                        "type": [
-                                            "string",
-                                            "null"
-                                        ],
-                                        "maxLength": 255
-                                    },
-                                    "name": {
-                                        "type": [
-                                            "string",
-                                            "null"
-                                        ],
-                                        "maxLength": 255
-                                    },
-                                    "is_primary_variant": {
-                                        "type": [
-                                            "boolean",
-                                            "null"
-                                        ]
-                                    }
-                                },
-                                "required": [
-                                    "source_bom_id",
-                                    "variant_name"
-                                ]
+                                "$ref": "#/components/schemas/CreateVariantFromBomRequest"
                             }
                         }
                     }
@@ -6036,6 +6002,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
@@ -8307,6 +8276,9 @@
                             }
                         }
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
                     },
@@ -8378,11 +8350,14 @@
                             }
                         }
                     },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     }
                 }
             }
@@ -8425,6 +8400,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -8573,6 +8551,9 @@
                             }
                         }
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
                     },
@@ -8605,15 +8586,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "target_brand": {
-                                        "type": "string"
-                                    }
-                                },
-                                "required": [
-                                    "target_brand"
-                                ]
+                                "$ref": "#/components/schemas/PreviewSwapBrandRequest"
                             }
                         }
                     }
@@ -8876,14 +8849,17 @@
                             }
                         }
                     },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     }
                 }
             }
@@ -8911,27 +8887,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "target_brand": {
-                                        "type": "string"
-                                    },
-                                    "create_variant": {
-                                        "type": [
-                                            "boolean",
-                                            "null"
-                                        ]
-                                    },
-                                    "variant_group_id": {
-                                        "type": [
-                                            "integer",
-                                            "null"
-                                        ]
-                                    }
-                                },
-                                "required": [
-                                    "target_brand"
-                                ]
+                                "$ref": "#/components/schemas/SwapBrandRequest"
                             }
                         }
                     }
@@ -8975,14 +8931,17 @@
                             }
                         }
                     },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     }
                 }
             }
@@ -9010,26 +8969,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "group_name": {
-                                        "type": [
-                                            "string",
-                                            "null"
-                                        ],
-                                        "maxLength": 255
-                                    },
-                                    "brands": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string"
-                                        },
-                                        "minItems": 1
-                                    }
-                                },
-                                "required": [
-                                    "brands"
-                                ]
+                                "$ref": "#/components/schemas/GenerateBrandVariantsRequest"
                             }
                         }
                     }
@@ -9080,14 +9020,17 @@
                             }
                         }
                     },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     }
                 }
             }
@@ -9280,6 +9223,9 @@
                             }
                         }
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
                     },
@@ -9311,18 +9257,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "item_ids": {
-                                        "type": [
-                                            "array",
-                                            "null"
-                                        ],
-                                        "items": {
-                                            "type": "integer"
-                                        }
-                                    }
-                                }
+                                "$ref": "#/components/schemas/ApplyCostOptimizationRequest"
                             }
                         }
                     }
@@ -9366,14 +9301,17 @@
                             }
                         }
                     },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     }
                 }
             }
@@ -9547,6 +9485,9 @@
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
                     }
@@ -9585,22 +9526,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "product_id": {
-                                        "type": "integer"
-                                    },
-                                    "reason": {
-                                        "type": [
-                                            "string",
-                                            "null"
-                                        ],
-                                        "maxLength": 255
-                                    }
-                                },
-                                "required": [
-                                    "product_id"
-                                ]
+                                "$ref": "#/components/schemas/QuickSwapItemRequest"
                             }
                         }
                     }
@@ -9657,6 +9583,9 @@
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -9758,6 +9687,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -9956,6 +9888,9 @@
                             }
                         }
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
                     },
@@ -9977,20 +9912,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "product_ids": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer"
-                                        },
-                                        "minItems": 1,
-                                        "maxItems": 50
-                                    }
-                                },
-                                "required": [
-                                    "product_ids"
-                                ]
+                                "$ref": "#/components/schemas/SuggestMappingsBatchRequest"
                             }
                         }
                     }
@@ -10015,11 +9937,14 @@
                             }
                         }
                     },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     }
                 }
             }
@@ -10047,28 +9972,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "component_standard_id": {
-                                        "type": "integer"
-                                    },
-                                    "brand_sku": {
-                                        "type": [
-                                            "string",
-                                            "null"
-                                        ],
-                                        "maxLength": 100
-                                    },
-                                    "is_preferred": {
-                                        "type": [
-                                            "boolean",
-                                            "null"
-                                        ]
-                                    }
-                                },
-                                "required": [
-                                    "component_standard_id"
-                                ]
+                                "$ref": "#/components/schemas/AcceptMappingSuggestionRequest"
                             }
                         }
                     }
@@ -10102,6 +10006,9 @@
                     "422": {
                         "$ref": "#/components/responses/ValidationException"
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
                     },
@@ -10123,45 +10030,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "mappings": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "object",
-                                            "properties": {
-                                                "product_id": {
-                                                    "type": "integer"
-                                                },
-                                                "component_standard_id": {
-                                                    "type": "integer"
-                                                },
-                                                "brand_sku": {
-                                                    "type": [
-                                                        "string",
-                                                        "null"
-                                                    ],
-                                                    "maxLength": 100
-                                                },
-                                                "is_preferred": {
-                                                    "type": [
-                                                        "boolean",
-                                                        "null"
-                                                    ]
-                                                }
-                                            },
-                                            "required": [
-                                                "product_id",
-                                                "component_standard_id"
-                                            ]
-                                        },
-                                        "minItems": 1,
-                                        "maxItems": 100
-                                    }
-                                },
-                                "required": [
-                                    "mappings"
-                                ]
+                                "$ref": "#/components/schemas/BulkAcceptSuggestionsRequest"
                             }
                         }
                     }
@@ -10177,11 +10046,14 @@
                             }
                         }
                     },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     }
                 }
             }
@@ -10299,11 +10171,14 @@
                             }
                         }
                     },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     }
                 }
             }
@@ -14416,6 +14291,9 @@
                             }
                         }
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
                     }
@@ -14594,6 +14472,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -14797,6 +14678,9 @@
                             }
                         }
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
                     }
@@ -14941,6 +14825,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -15152,6 +15039,9 @@
                             }
                         }
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
                     }
@@ -15362,6 +15252,9 @@
                             }
                         }
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
                     }
@@ -15513,6 +15406,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -15672,6 +15568,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -15898,6 +15797,9 @@
                             }
                         }
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
                     }
@@ -15966,6 +15868,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -19764,6 +19669,9 @@
                             }
                         }
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
                     }
@@ -19803,6 +19711,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -19849,6 +19760,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
@@ -19904,6 +19818,9 @@
                             }
                         }
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
                     },
@@ -19954,6 +19871,9 @@
                             }
                         }
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
                     },
@@ -19999,6 +19919,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
@@ -20049,6 +19972,9 @@
                             }
                         }
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
                     },
@@ -20098,6 +20024,9 @@
                             }
                         }
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
                     },
@@ -20143,6 +20072,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
@@ -20204,6 +20136,9 @@
                             }
                         }
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
                     },
@@ -20258,6 +20193,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
@@ -20327,6 +20265,9 @@
                             }
                         }
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
                     },
@@ -20391,6 +20332,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
@@ -20475,6 +20419,9 @@
                             }
                         }
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "422": {
                         "$ref": "#/components/responses/ValidationException"
                     },
@@ -20540,6 +20487,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationException"
@@ -20610,6 +20560,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationException"
@@ -20769,6 +20722,9 @@
                             }
                         }
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "422": {
                         "$ref": "#/components/responses/ValidationException"
                     },
@@ -20858,6 +20814,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -21346,6 +21305,9 @@
                             }
                         }
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
                     }
@@ -21400,6 +21362,9 @@
                             }
                         }
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
                     }
@@ -21447,6 +21412,9 @@
                             }
                         }
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
                     }
@@ -21489,6 +21457,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
@@ -24688,13 +24659,15 @@
                                             "integer",
                                             "null"
                                         ],
+                                        "description": "Min Rp 5 juta for B2B",
                                         "minimum": 5500
                                     },
                                     "pln_category": {
                                         "type": [
                                             "string",
                                             "null"
-                                        ]
+                                        ],
+                                        "description": "Min 5.5 kVA for B2B"
                                     },
                                     "target_savings": {
                                         "type": [
@@ -34308,9 +34281,11 @@
                     {
                         "name": "latitude",
                         "in": "query",
-                        "required": true,
                         "schema": {
-                            "type": "number",
+                            "type": [
+                                "number",
+                                "null"
+                            ],
                             "minimum": -90,
                             "maximum": 90
                         }
@@ -34318,9 +34293,11 @@
                     {
                         "name": "longitude",
                         "in": "query",
-                        "required": true,
                         "schema": {
-                            "type": "number",
+                            "type": [
+                                "number",
+                                "null"
+                            ],
                             "minimum": -180,
                             "maximum": 180
                         }
@@ -34329,47 +34306,37 @@
                         "name": "max_distance_km",
                         "in": "query",
                         "schema": {
-                            "type": "string",
-                            "default": 100
+                            "type": [
+                                "number",
+                                "null"
+                            ],
+                            "minimum": 1
                         }
                     },
                     {
                         "name": "province",
                         "in": "query",
                         "schema": {
-                            "type": "string"
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "maxLength": 100
                         }
                     },
                     {
                         "name": "city",
                         "in": "query",
                         "schema": {
-                            "type": "string"
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "maxLength": 100
                         }
                     }
                 ],
                 "responses": {
-                    "400": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "enum": [
-                                                "Harap berikan province+city atau latitude+longitude."
-                                            ]
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
                     "200": {
                         "description": "",
                         "content": {
@@ -34389,7 +34356,7 @@
                         }
                     },
                     "404": {
-                        "description": "Try to find nearest in the same province",
+                        "description": "",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -34435,11 +34402,11 @@
                             }
                         }
                     },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
-                    },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     }
                 }
             }
@@ -34515,11 +34482,11 @@
                             }
                         }
                     },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
-                    },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     }
                 }
             }
@@ -41476,6 +41443,31 @@
             }
         },
         "schemas": {
+            "AcceptMappingSuggestionRequest": {
+                "type": "object",
+                "properties": {
+                    "component_standard_id": {
+                        "type": "integer"
+                    },
+                    "brand_sku": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 100
+                    },
+                    "is_preferred": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "component_standard_id"
+                ],
+                "title": "AcceptMappingSuggestionRequest"
+            },
             "AcceptSolarProposalRequest": {
                 "type": "object",
                 "properties": {
@@ -41564,6 +41556,53 @@
                     "updated_at"
                 ],
                 "title": "AccountResource"
+            },
+            "AddBomToVariantGroupRequest": {
+                "type": "object",
+                "properties": {
+                    "bom_id": {
+                        "type": "integer"
+                    },
+                    "variant_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 100
+                    },
+                    "variant_label": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "is_primary_variant": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "bom_id"
+                ],
+                "title": "AddBomToVariantGroupRequest"
+            },
+            "ApplyCostOptimizationRequest": {
+                "type": "object",
+                "properties": {
+                    "item_ids": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "title": "ApplyCostOptimizationRequest"
             },
             "ApplyDownPaymentRequest": {
                 "type": "object",
@@ -42012,10 +42051,7 @@
                         }
                     },
                     "created_by": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "integer"
                     },
                     "created_at": {
                         "type": "string"
@@ -43126,6 +43162,48 @@
                 ],
                 "title": "BudgetStatus"
             },
+            "BulkAcceptSuggestionsRequest": {
+                "type": "object",
+                "properties": {
+                    "mappings": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "product_id": {
+                                    "type": "integer"
+                                },
+                                "component_standard_id": {
+                                    "type": "integer"
+                                },
+                                "brand_sku": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "maxLength": 100
+                                },
+                                "is_preferred": {
+                                    "type": [
+                                        "boolean",
+                                        "null"
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "product_id",
+                                "component_standard_id"
+                            ]
+                        },
+                        "minItems": 1,
+                        "maxItems": 100
+                    }
+                },
+                "required": [
+                    "mappings"
+                ],
+                "title": "BulkAcceptSuggestionsRequest"
+            },
             "CancelQuotationRequest": {
                 "type": "object",
                 "properties": {
@@ -43750,6 +43828,43 @@
                     "product_id"
                 ],
                 "title": "CreateBomFromTemplateRequest"
+            },
+            "CreateVariantFromBomRequest": {
+                "type": "object",
+                "properties": {
+                    "source_bom_id": {
+                        "type": "integer"
+                    },
+                    "variant_name": {
+                        "type": "string",
+                        "maxLength": 100
+                    },
+                    "variant_label": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "is_primary_variant": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "source_bom_id",
+                    "variant_name"
+                ],
+                "title": "CreateVariantFromBomRequest"
             },
             "DeliveryOrderItemResource": {
                 "type": "object",
@@ -44531,6 +44646,29 @@
                     "updated_at"
                 ],
                 "title": "FiscalPeriodResource"
+            },
+            "GenerateBrandVariantsRequest": {
+                "type": "object",
+                "properties": {
+                    "group_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "brands": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "minItems": 1
+                    }
+                },
+                "required": [
+                    "brands"
+                ],
+                "title": "GenerateBrandVariantsRequest"
             },
             "GoodsReceiptNoteItemResource": {
                 "type": "object",
@@ -45558,10 +45696,7 @@
                         "type": "string"
                     },
                     "created_by": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "integer"
                     },
                     "created_at": {
                         "type": "string"
@@ -47152,6 +47287,18 @@
                     "notes"
                 ],
                 "title": "PlnTariffResource"
+            },
+            "PreviewSwapBrandRequest": {
+                "type": "object",
+                "properties": {
+                    "target_brand": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "target_brand"
+                ],
+                "title": "PreviewSwapBrandRequest"
             },
             "Product": {
                 "type": "object",
@@ -48919,6 +49066,25 @@
                 ],
                 "title": "PurchaseReturnResource"
             },
+            "QuickSwapItemRequest": {
+                "type": "object",
+                "properties": {
+                    "product_id": {
+                        "type": "integer"
+                    },
+                    "reason": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    }
+                },
+                "required": [
+                    "product_id"
+                ],
+                "title": "QuickSwapItemRequest"
+            },
             "QuotationActivityResource": {
                 "type": "object",
                 "properties": {
@@ -49426,10 +49592,7 @@
                         ]
                     },
                     "created_by": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "integer"
                     },
                     "created_at": {
                         "type": "string"
@@ -49865,6 +50028,34 @@
                     }
                 },
                 "title": "RefundDownPaymentRequest"
+            },
+            "ReorderVariantsRequest": {
+                "type": "object",
+                "properties": {
+                    "order": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "bom_id": {
+                                    "type": "integer"
+                                },
+                                "sort_order": {
+                                    "type": "integer",
+                                    "minimum": 0
+                                }
+                            },
+                            "required": [
+                                "bom_id",
+                                "sort_order"
+                            ]
+                        }
+                    }
+                },
+                "required": [
+                    "order"
+                ],
+                "title": "ReorderVariantsRequest"
             },
             "RoleResource": {
                 "type": "object",
@@ -51624,7 +51815,8 @@
                             "number",
                             "null"
                         ],
-                        "minimum": 0
+                        "minimum": 0,
+                        "maximum": 100000
                     },
                     "discount_type": {
                         "type": [
@@ -51641,7 +51833,8 @@
                             "number",
                             "null"
                         ],
-                        "minimum": 0
+                        "minimum": 0,
+                        "maximum": 2000000000
                     },
                     "tax_rate": {
                         "type": [
@@ -51719,7 +51912,8 @@
                                 },
                                 "quantity": {
                                     "type": "number",
-                                    "minimum": 0.0001
+                                    "minimum": 0.0001,
+                                    "maximum": 999999
                                 },
                                 "unit": {
                                     "type": [
@@ -51730,7 +51924,8 @@
                                 },
                                 "unit_price": {
                                     "type": "integer",
-                                    "minimum": 0
+                                    "minimum": 0,
+                                    "maximum": 2000000000
                                 },
                                 "discount_percent": {
                                     "type": [
@@ -53143,7 +53338,8 @@
                             "number",
                             "null"
                         ],
-                        "minimum": 0
+                        "minimum": 0,
+                        "maximum": 100000
                     },
                     "discount_type": {
                         "type": [
@@ -53160,7 +53356,8 @@
                             "number",
                             "null"
                         ],
-                        "minimum": 0
+                        "minimum": 0,
+                        "maximum": 2000000000
                     },
                     "tax_rate": {
                         "type": [
@@ -53231,7 +53428,8 @@
                                 },
                                 "quantity": {
                                     "type": "number",
-                                    "minimum": 0.0001
+                                    "minimum": 0.0001,
+                                    "maximum": 999999
                                 },
                                 "unit": {
                                     "type": [
@@ -53242,7 +53440,8 @@
                                 },
                                 "unit_price": {
                                     "type": "integer",
-                                    "minimum": 0
+                                    "minimum": 0,
+                                    "maximum": 2000000000
                                 },
                                 "discount_percent": {
                                     "type": [
@@ -53862,7 +54061,8 @@
                             "number",
                             "null"
                         ],
-                        "minimum": 0
+                        "minimum": 0,
+                        "maximum": 100000
                     },
                     "discount_type": {
                         "type": [
@@ -53879,7 +54079,8 @@
                             "number",
                             "null"
                         ],
-                        "minimum": 0
+                        "minimum": 0,
+                        "maximum": 2000000000
                     },
                     "tax_rate": {
                         "type": [
@@ -53938,7 +54139,8 @@
                                 },
                                 "quantity": {
                                     "type": "number",
-                                    "minimum": 0.0001
+                                    "minimum": 0.0001,
+                                    "maximum": 999999
                                 },
                                 "unit": {
                                     "type": [
@@ -53949,7 +54151,8 @@
                                 },
                                 "unit_price": {
                                     "type": "integer",
-                                    "minimum": 0
+                                    "minimum": 0,
+                                    "maximum": 2000000000
                                 },
                                 "discount_percent": {
                                     "type": [
@@ -54359,7 +54562,8 @@
                             "number",
                             "null"
                         ],
-                        "minimum": 0
+                        "minimum": 0,
+                        "maximum": 100000
                     },
                     "discount_type": {
                         "type": [
@@ -54376,7 +54580,8 @@
                             "number",
                             "null"
                         ],
-                        "minimum": 0
+                        "minimum": 0,
+                        "maximum": 2000000000
                     },
                     "tax_rate": {
                         "type": [
@@ -54428,7 +54633,8 @@
                                 },
                                 "quantity": {
                                     "type": "number",
-                                    "minimum": 0.0001
+                                    "minimum": 0.0001,
+                                    "maximum": 999999
                                 },
                                 "unit": {
                                     "type": [
@@ -54439,7 +54645,8 @@
                                 },
                                 "unit_price": {
                                     "type": "integer",
-                                    "minimum": 0
+                                    "minimum": 0,
+                                    "maximum": 2000000000
                                 },
                                 "discount_percent": {
                                     "type": [
@@ -55955,6 +56162,47 @@
                 ],
                 "title": "SubcontractorWorkOrderResource"
             },
+            "SuggestMappingsBatchRequest": {
+                "type": "object",
+                "properties": {
+                    "product_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "minItems": 1,
+                        "maxItems": 50
+                    }
+                },
+                "required": [
+                    "product_ids"
+                ],
+                "title": "SuggestMappingsBatchRequest"
+            },
+            "SwapBrandRequest": {
+                "type": "object",
+                "properties": {
+                    "target_brand": {
+                        "type": "string"
+                    },
+                    "create_variant": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ]
+                    },
+                    "variant_group_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "target_brand"
+                ],
+                "title": "SwapBrandRequest"
+            },
             "UpdateAccountRequest": {
                 "type": "object",
                 "properties": {
@@ -56040,7 +56288,8 @@
                             "number",
                             "null"
                         ],
-                        "minimum": 0
+                        "minimum": 0,
+                        "maximum": 100000
                     },
                     "discount_type": {
                         "type": [
@@ -56057,7 +56306,8 @@
                             "number",
                             "null"
                         ],
-                        "minimum": 0
+                        "minimum": 0,
+                        "maximum": 2000000000
                     },
                     "tax_rate": {
                         "type": [
@@ -56133,7 +56383,8 @@
                                 },
                                 "quantity": {
                                     "type": "number",
-                                    "minimum": 0.0001
+                                    "minimum": 0.0001,
+                                    "maximum": 999999
                                 },
                                 "unit": {
                                     "type": [
@@ -56144,7 +56395,8 @@
                                 },
                                 "unit_price": {
                                     "type": "integer",
-                                    "minimum": 0
+                                    "minimum": 0,
+                                    "maximum": 2000000000
                                 },
                                 "discount_percent": {
                                     "type": [
@@ -57316,7 +57568,8 @@
                             "number",
                             "null"
                         ],
-                        "minimum": 0
+                        "minimum": 0,
+                        "maximum": 100000
                     },
                     "discount_type": {
                         "type": [
@@ -57333,7 +57586,8 @@
                             "number",
                             "null"
                         ],
-                        "minimum": 0
+                        "minimum": 0,
+                        "maximum": 2000000000
                     },
                     "tax_rate": {
                         "type": [
@@ -57402,7 +57656,8 @@
                                 },
                                 "quantity": {
                                     "type": "number",
-                                    "minimum": 0.0001
+                                    "minimum": 0.0001,
+                                    "maximum": 999999
                                 },
                                 "unit": {
                                     "type": [
@@ -57413,7 +57668,8 @@
                                 },
                                 "unit_price": {
                                     "type": "integer",
-                                    "minimum": 0
+                                    "minimum": 0,
+                                    "maximum": 2000000000
                                 },
                                 "discount_percent": {
                                     "type": [
@@ -57871,7 +58127,8 @@
                             "number",
                             "null"
                         ],
-                        "minimum": 0
+                        "minimum": 0,
+                        "maximum": 100000
                     },
                     "discount_type": {
                         "type": [
@@ -57888,7 +58145,8 @@
                             "number",
                             "null"
                         ],
-                        "minimum": 0
+                        "minimum": 0,
+                        "maximum": 2000000000
                     },
                     "tax_rate": {
                         "type": [
@@ -57944,7 +58202,8 @@
                                 },
                                 "quantity": {
                                     "type": "number",
-                                    "minimum": 0.0001
+                                    "minimum": 0.0001,
+                                    "maximum": 999999
                                 },
                                 "unit": {
                                     "type": [
@@ -57955,7 +58214,8 @@
                                 },
                                 "unit_price": {
                                     "type": "integer",
-                                    "minimum": 0
+                                    "minimum": 0,
+                                    "maximum": 2000000000
                                 },
                                 "discount_percent": {
                                     "type": [
@@ -58143,7 +58403,8 @@
                             "number",
                             "null"
                         ],
-                        "minimum": 0
+                        "minimum": 0,
+                        "maximum": 100000
                     },
                     "discount_type": {
                         "type": [
@@ -58160,7 +58421,8 @@
                             "number",
                             "null"
                         ],
-                        "minimum": 0
+                        "minimum": 0,
+                        "maximum": 2000000000
                     },
                     "tax_rate": {
                         "type": [
@@ -58209,7 +58471,8 @@
                                 },
                                 "quantity": {
                                     "type": "number",
-                                    "minimum": 0.0001
+                                    "minimum": 0.0001,
+                                    "maximum": 999999
                                 },
                                 "unit": {
                                     "type": [
@@ -58220,7 +58483,8 @@
                                 },
                                 "unit_price": {
                                     "type": "integer",
-                                    "minimum": 0
+                                    "minimum": 0,
+                                    "maximum": 2000000000
                                 },
                                 "discount_percent": {
                                     "type": [
