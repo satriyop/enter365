@@ -223,6 +223,7 @@ class Permission extends Model
             ['name' => 'settings.close_period', 'display_name' => 'Tutup Periode', 'group' => self::GROUP_SETTINGS, 'description' => 'Menutup periode fiskal'],
             ['name' => 'settings.warehouses', 'display_name' => 'Kelola Gudang', 'group' => self::GROUP_SETTINGS, 'description' => 'Mengelola gudang'],
             ['name' => 'settings.company_profile', 'display_name' => 'Kelola Profil Perusahaan', 'group' => self::GROUP_SETTINGS, 'description' => 'Mengelola profil perusahaan'],
+            ['name' => 'settings.features', 'display_name' => 'Lihat Fitur Modul', 'group' => self::GROUP_SETTINGS, 'description' => 'Melihat status modul fitur'],
 
             // Users
             ['name' => 'users.view', 'display_name' => 'Lihat Pengguna', 'group' => self::GROUP_USERS, 'description' => 'Melihat daftar pengguna'],

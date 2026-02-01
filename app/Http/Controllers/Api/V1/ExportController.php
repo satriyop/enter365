@@ -13,6 +13,7 @@ use App\Services\Accounting\Reports\TaxReportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Gate;
 
 class ExportController extends Controller
 {
@@ -25,6 +26,8 @@ class ExportController extends Controller
 
     public function trialBalance(Request $request): Response|JsonResponse
     {
+        Gate::authorize('reports.export');
+
         $date = $request->input('date', now()->toDateString());
         $format = $request->input('format', 'csv');
 
@@ -49,6 +52,8 @@ class ExportController extends Controller
 
     public function balanceSheet(Request $request): Response|JsonResponse
     {
+        Gate::authorize('reports.export');
+
         $date = $request->input('date', now()->toDateString());
         $format = $request->input('format', 'csv');
 
@@ -66,6 +71,8 @@ class ExportController extends Controller
 
     public function incomeStatement(Request $request): Response|JsonResponse
     {
+        Gate::authorize('reports.export');
+
         $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->input('end_date', now()->toDateString());
         $format = $request->input('format', 'csv');
@@ -84,6 +91,8 @@ class ExportController extends Controller
 
     public function generalLedger(Request $request): Response|JsonResponse
     {
+        Gate::authorize('reports.export');
+
         $accountId = $request->input('account_id');
         $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->input('end_date', now()->toDateString());
@@ -117,6 +126,8 @@ class ExportController extends Controller
 
     public function receivableAging(Request $request): Response|JsonResponse
     {
+        Gate::authorize('reports.export');
+
         $format = $request->input('format', 'csv');
         $data = $this->agingService->getReceivableAging();
 
@@ -146,6 +157,8 @@ class ExportController extends Controller
 
     public function payableAging(Request $request): Response|JsonResponse
     {
+        Gate::authorize('reports.export');
+
         $format = $request->input('format', 'csv');
         $data = $this->agingService->getPayableAging();
 
@@ -175,6 +188,8 @@ class ExportController extends Controller
 
     public function invoices(Request $request): Response|JsonResponse
     {
+        Gate::authorize('reports.export');
+
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
         $status = $request->input('status');
@@ -223,6 +238,8 @@ class ExportController extends Controller
 
     public function bills(Request $request): Response|JsonResponse
     {
+        Gate::authorize('reports.export');
+
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
         $status = $request->input('status');
@@ -273,6 +290,8 @@ class ExportController extends Controller
 
     public function taxReport(Request $request): Response|JsonResponse
     {
+        Gate::authorize('reports.export');
+
         $month = $request->input('month', now()->month);
         $year = $request->input('year', now()->year);
         $format = $request->input('format', 'csv');

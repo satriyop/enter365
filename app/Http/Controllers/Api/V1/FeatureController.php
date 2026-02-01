@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Support\Features;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Gate;
 
 class FeatureController extends Controller
 {
@@ -23,6 +24,8 @@ class FeatureController extends Controller
      */
     public function index(): JsonResponse
     {
+        Gate::authorize('settings.features');
+
         return $this->success([
             'modules' => Features::all(),
             'enabled' => Features::enabledModules(),

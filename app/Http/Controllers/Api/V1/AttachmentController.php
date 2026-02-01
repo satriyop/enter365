@@ -21,6 +21,8 @@ class AttachmentController extends Controller
 
     public function index(Request $request): AnonymousResourceCollection
     {
+        $this->authorize('viewAny', Attachment::class);
+
         $query = Attachment::query()->with('uploader');
 
         if ($request->has('attachable_type')) {
@@ -42,6 +44,8 @@ class AttachmentController extends Controller
 
     public function store(StoreAttachmentRequest $request): JsonResponse
     {
+        $this->authorize('create', Attachment::class);
+
         $attachment = $this->attachmentService->create(
             $request->file('file'),
             $request->validated()
@@ -54,11 +58,15 @@ class AttachmentController extends Controller
 
     public function show(Attachment $attachment): AttachmentResource
     {
+        $this->authorize('view', $attachment);
+
         return new AttachmentResource($attachment->load(['uploader', 'attachable']));
     }
 
     public function destroy(Attachment $attachment): JsonResponse
     {
+        $this->authorize('delete', $attachment);
+
         $this->attachmentService->delete($attachment);
 
         return response()->json(['message' => 'Lampiran berhasil dihapus.']);
@@ -66,6 +74,8 @@ class AttachmentController extends Controller
 
     public function download(Attachment $attachment): StreamedResponse|JsonResponse
     {
+        $this->authorize('view', $attachment);
+
         if (! $attachment->exists()) {
             return response()->json([
                 'message' => 'File tidak ditemukan.',
@@ -80,6 +90,8 @@ class AttachmentController extends Controller
 
     public function forModel(Request $request, string $type, int $id): AnonymousResourceCollection
     {
+        $this->authorize('viewAny', Attachment::class);
+
         $modelClass = $this->resolveModelClass($type);
 
         if (! $modelClass) {

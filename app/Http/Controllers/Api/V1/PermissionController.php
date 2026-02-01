@@ -7,8 +7,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\PermissionResource;
 use App\Models\Core\Permission;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Gate;
 
 class PermissionController extends Controller
 {
@@ -17,6 +17,8 @@ class PermissionController extends Controller
      */
     public function index(PermissionFilter $filter): AnonymousResourceCollection
     {
+        Gate::authorize('users.manage_roles');
+
         $permissions = Permission::query()
             ->filter($filter)
             ->orderBy('group')
@@ -28,11 +30,13 @@ class PermissionController extends Controller
 
     /**
      * Get permissions grouped by group.
-     * 
+     *
      * @response array{data: array<array{group: string, group_label: string, permissions: \Illuminate\Http\Resources\Json\AnonymousResourceCollection}>}
      */
     public function grouped(): JsonResponse
     {
+        Gate::authorize('users.manage_roles');
+
         $grouped = Permission::allGrouped();
 
         $result = $grouped->map(function ($permissions, $group) {
@@ -50,11 +54,13 @@ class PermissionController extends Controller
 
     /**
      * Get available permission groups.
-     * 
+     *
      * @response array{data: array<array{name: string, label: string}>}
      */
     public function groups(): JsonResponse
     {
+        Gate::authorize('users.manage_roles');
+
         $groups = Permission::select('group')
             ->distinct()
             ->orderBy('group')
@@ -74,6 +80,8 @@ class PermissionController extends Controller
      */
     public function show(Permission $permission): PermissionResource
     {
+        Gate::authorize('users.manage_roles');
+
         return new PermissionResource($permission);
     }
 
