@@ -7,6 +7,7 @@ namespace App\Services\Sales;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Sales\QuotationConversionServiceInterface;
+use App\Domain\Sales\Quotations\Enums\QuotationOutcome;
 use App\Domain\Sales\Quotations\QuotationDomainFactory;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\Invoice;
@@ -101,7 +102,7 @@ class QuotationConversionService extends BaseService implements QuotationConvers
 
             // Auto-mark as Won if outcome not already set
             if ($quotation->outcome === null) {
-                $quotation->outcome = 'won';
+                $quotation->outcome = QuotationOutcome::Won;
                 $quotation->won_reason = 'converted_to_invoice';
                 $quotation->outcome_at = now();
             }

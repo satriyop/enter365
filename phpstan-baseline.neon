@@ -301,6 +301,12 @@ parameters:
 			path: app/Http/Resources/Api/V1/BankTransactionResource.php
 
 		-
+			message: '#^Method App\\Http\\Resources\\Api\\V1\\BankTransactionResource\:\:toArray\(\) should return array\{id\: int, account_id\: int, account\?\: App\\Http\\Resources\\Api\\V1\\AccountResource, transaction_date\: string\|null, description\: string\|null, reference\: string\|null, debit\: int, credit\: int, \.\.\.\} but returns array\{id\: int, account_id\: int\<0, max\>, account\: App\\Http\\Resources\\Api\\V1\\AccountResource, transaction_date\: mixed, description\: string, reference\: string\|null, debit\: int, credit\: int, \.\.\.\}\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Resources/Api/V1/BankTransactionResource.php
+
+		-
 			message: '#^Using nullsafe method call on non\-nullable type string\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
@@ -331,8 +337,20 @@ parameters:
 			path: app/Http/Resources/Api/V1/BomResource.php
 
 		-
+			message: '#^Method App\\Http\\Resources\\Api\\V1\\BomVariantGroupResource\:\:toArray\(\) should return array\{id\: int, product_id\: int, product\?\: array\{id\: int, name\: string, sku\: string\}, name\: string, description\: string\|null, comparison_notes\: string\|null, status\: array\{value\: string, label\: string, color\: string, is_terminal\: bool, is_editable\: bool\}, created_by\: int\|null, \.\.\.\} but returns array\{id\: int, product_id\: int\<0, max\>, product\: mixed, name\: string, description\: string\|null, comparison_notes\: string\|null, status\: App\\Http\\Resources\\Api\\V1\\StatusResource, created_by\: int\<0, max\>\|null, \.\.\.\}\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Resources/Api/V1/BomVariantGroupResource.php
+
+		-
 			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
 			identifier: method.nonObject
+			count: 1
+			path: app/Http/Resources/Api/V1/BudgetResource.php
+
+		-
+			message: '#^Method App\\Http\\Resources\\Api\\V1\\BudgetResource\:\:toArray\(\) should return array\{id\: int, name\: string, description\: string\|null, fiscal_period_id\: int, fiscal_period\?\: array\{id\: int, name\: string, start_date\: string, end_date\: string\}, type\: string, type_label\: string, status\: array\{value\: string, label\: string, color\: string, is_terminal\: bool, is_editable\: bool\}, \.\.\.\} but returns array\{id\: int, name\: string, description\: string\|null, fiscal_period_id\: int\<0, max\>, fiscal_period\: mixed, type\: ''annual''\|''monthly''\|''quarterly'', type_label\: string, status\: App\\Http\\Resources\\Api\\V1\\StatusResource, \.\.\.\}\.$#'
+			identifier: return.type
 			count: 1
 			path: app/Http/Resources/Api/V1/BudgetResource.php
 
@@ -353,30 +371,6 @@ parameters:
 			identifier: return.type
 			count: 1
 			path: app/Http/Resources/Api/V1/ComponentStandardResource.php
-
-		-
-			message: '#^Method App\\Http\\Resources\\Api\\V1\\DeliveryOrderResource\:\:toArray\(\) should return array\{id\: int, do_number\: string, invoice_id\: int\|null, invoice\?\: array\{id\: int, invoice_number\: string, total_amount\: int\}, contact_id\: int, contact\?\: array\{id\: int, name\: string, address\: string\|null, phone\: string\|null\}, warehouse_id\: int, warehouse\?\: array\{id\: int, name\: string\}, \.\.\.\} but returns array\{id\: int, do_number\: string, invoice_id\: int\|null, invoice\: mixed, contact_id\: int, contact\: mixed, warehouse_id\: int, warehouse\: mixed, \.\.\.\}\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Resources/Api/V1/DeliveryOrderResource.php
-
-		-
-			message: '#^Cannot access property \$value on string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Http/Resources/Api/V1/DownPaymentResource.php
-
-		-
-			message: '#^Cannot call method color\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Http/Resources/Api/V1/DownPaymentResource.php
-
-		-
-			message: '#^Cannot call method label\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Http/Resources/Api/V1/DownPaymentResource.php
 
 		-
 			message: '#^Using nullsafe method call on non\-nullable type Carbon\\Carbon\. Use \-\> instead\.$#'
@@ -625,16 +619,16 @@ parameters:
 			path: app/Http/Resources/Api/V1/JournalEntryResource.php
 
 		-
-			message: '#^Method App\\Http\\Resources\\Api\\V1\\MaterialRequisitionResource\:\:toArray\(\) should return array\{id\: int, requisition_number\: string, status\: string, requested_date\: string\|null, required_date\: string\|null, total_items\: int, total_quantity\: float, notes\: string\|null, \.\.\.\} but returns array\{id\: int, requisition_number\: string, status\: App\\Enums\\DocumentStatus, requested_date\: string, required_date\: string\|null, total_items\: int, total_quantity\: float, notes\: string\|null, \.\.\.\}\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Resources/Api/V1/MaterialRequisitionResource.php
-
-		-
 			message: '#^Using nullsafe method call on non\-nullable type Carbon\\Carbon\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Http/Resources/Api/V1/MaterialRequisitionResource.php
+
+		-
+			message: '#^Method App\\Http\\Resources\\Api\\V1\\MrpSuggestionResource\:\:toArray\(\) should return array\{id\: int, mrp_run_id\: int, suggestion_type\: string, action\: string, status\: array\{value\: string, label\: string, color\: string, is_terminal\: bool, is_editable\: bool\}, priority\: string, product_id\: int, product\?\: array\{id\: int, sku\: string, name\: string, unit\: string, procurement_type\: string\}\|null, \.\.\.\} but returns array\{id\: int, mrp_run_id\: int\<0, max\>, suggestion_type\: string, action\: string, status\: App\\Http\\Resources\\Api\\V1\\StatusResource, priority\: string, product_id\: int\<0, max\>, product\: mixed, \.\.\.\}\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Resources/Api/V1/MrpSuggestionResource.php
 
 		-
 			message: '#^Cannot call method toDateString\(\) on string\.$#'
@@ -665,12 +659,6 @@ parameters:
 			identifier: method.nonObject
 			count: 1
 			path: app/Http/Resources/Api/V1/ProjectCostResource.php
-
-		-
-			message: '#^Method App\\Http\\Resources\\Api\\V1\\ProjectResource\:\:toArray\(\) should return array\{id\: int, project_number\: string, name\: string, description\: string\|null, contact_id\: int, contact\?\: array\{id\: int, name\: string, phone\: string\|null\}, quotation_id\: int\|null, quotation\?\: array\{id\: int, quotation_number\: string, total_amount\: int\}, \.\.\.\} but returns array\{id\: int, project_number\: string, name\: string, description\: string\|null, contact_id\: int\|null, contact\: mixed, quotation_id\: int\|null, quotation\: mixed, \.\.\.\}\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Resources/Api/V1/ProjectResource.php
 
 		-
 			message: '#^Access to property \$dp_number on an unknown class App\\Models\\Projects\\DownPayment\.$#'
@@ -1033,30 +1021,6 @@ parameters:
 			path: app/Http/Resources/Api/V1/SalesReturnResource.php
 
 		-
-			message: '#^Method App\\Http\\Resources\\Api\\V1\\SolarProposalResource\:\:toArray\(\) should return array\{id\: int, proposal_number\: string, status\: string, status_label\: string, contact_id\: int, contact\?\: array\{id\: int, name\: string\}, site_name\: string\|null, site_address\: string\|null, \.\.\.\} but returns array\{id\: int, proposal_number\: string, status\: App\\Enums\\DocumentStatus, status_label\: string, contact_id\: int, contact\: App\\Http\\Resources\\Api\\V1\\ContactResource, site_name\: string\|null, site_address\: string\|null, \.\.\.\}\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Resources/Api/V1/SolarProposalResource.php
-
-		-
-			message: '#^Cannot access property \$value on string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Http/Resources/Api/V1/StockOpnameResource.php
-
-		-
-			message: '#^Cannot call method color\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Http/Resources/Api/V1/StockOpnameResource.php
-
-		-
-			message: '#^Cannot call method label\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Http/Resources/Api/V1/StockOpnameResource.php
-
-		-
 			message: '#^Cannot call method toDateString\(\) on string\.$#'
 			identifier: method.nonObject
 			count: 1
@@ -1105,9 +1069,21 @@ parameters:
 			path: app/Models/Accounting/ExchangeRate.php
 
 		-
+			message: '#^PHPDoc tag @var for variable \$model contains unresolvable type\.$#'
+			identifier: varTag.unresolvableType
+			count: 3
+			path: app/Models/Accounting/FiscalPeriod.php
+
+		-
 			message: '#^Method App\\Models\\Accounting\\JournalEntry\:\:source\(\) has invalid return type App\\Models\\Accounting\\MorphTo\.$#'
 			identifier: class.notFound
 			count: 2
+			path: app/Models/Accounting/JournalEntry.php
+
+		-
+			message: '#^PHPDoc tag @var for variable \$model contains unresolvable type\.$#'
+			identifier: varTag.unresolvableType
+			count: 3
 			path: app/Models/Accounting/JournalEntry.php
 
 		-
@@ -1237,6 +1213,12 @@ parameters:
 			path: app/Models/Purchasing/Bill.php
 
 		-
+			message: '#^PHPDoc tag @var for variable \$model contains unresolvable type\.$#'
+			identifier: varTag.unresolvableType
+			count: 3
+			path: app/Models/Purchasing/Bill.php
+
+		-
 			message: '#^Parameter \#2 \$taxRate of method App\\Contracts\\Sales\\InvoiceCalculatorInterface\:\:calculate\(\) expects float, string given\.$#'
 			identifier: argument.type
 			count: 1
@@ -1321,6 +1303,12 @@ parameters:
 			path: app/Models/Sales/Invoice.php
 
 		-
+			message: '#^PHPDoc tag @var for variable \$model contains unresolvable type\.$#'
+			identifier: varTag.unresolvableType
+			count: 3
+			path: app/Models/Sales/Invoice.php
+
+		-
 			message: '#^Parameter \#2 \$taxRate of method App\\Contracts\\Sales\\InvoiceCalculatorInterface\:\:calculate\(\) expects float, string given\.$#'
 			identifier: argument.type
 			count: 1
@@ -1337,6 +1325,12 @@ parameters:
 			identifier: assign.propertyType
 			count: 1
 			path: app/Models/Sales/Invoice.php
+
+		-
+			message: '#^PHPDoc tag @var for variable \$model contains unresolvable type\.$#'
+			identifier: varTag.unresolvableType
+			count: 3
+			path: app/Models/Shared/Payment.php
 
 		-
 			message: '#^Cannot access property \$value on string\.$#'
@@ -1465,8 +1459,20 @@ parameters:
 			path: app/QueryServices/Sales/InvoiceQueryService.php
 
 		-
+			message: '#^Anonymous function should return object\{account_id\: int, code\: string, name\: string, type\: string, opening_balance\: int, entries\: Illuminate\\Support\\Collection\<int, array\{id\: int, journal_entry_id\: int, date\: string, entry_number\: string, description\: string, reference\: string\|null, debit\: int, credit\: int, \.\.\.\}\>, closing_balance\: int\}&stdClass but returns object\{account_id\: int, code\: string, name\: string, type\: string, opening_balance\: int, entries\: Illuminate\\Support\\Collection\<int, array\{id\: int, journal_entry_id\: int, date\: string, entry_number\: string, description\: string, reference\: string\|null, debit\: int, credit\: int, \.\.\.\}\>, closing_balance\: int\}&stdClass\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/Accounting/AccountBalanceService.php
+
+		-
 			message: '#^Method App\\Services\\Accounting\\AccountBalanceService\:\:getLedger\(\) should return Illuminate\\Support\\Collection\<int, array\{id\: int, journal_entry_id\: int, date\: string, entry_number\: string, description\: string, reference\: string\|null, debit\: int, credit\: int, \.\.\.\}\> but returns Illuminate\\Support\\Collection\<int, array\{id\: int, journal_entry_id\: int, date\: string, entry_number\: string, description\: string, reference\: string\|null, debit\: int, credit\: int, \.\.\.\}\>\.$#'
 			identifier: return.type
+			count: 1
+			path: app/Services/Accounting/AccountBalanceService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,App\\Models\\Accounting\\Account\>\:\:map\(\) expects callable\(App\\Models\\Accounting\\Account, int\)\: \(object\{account_id\: int, code\: string, name\: string, type\: string, opening_balance\: int, entries\: Illuminate\\Support\\Collection\<int, array\{id\: int, journal_entry_id\: int, date\: string, entry_number\: string, description\: string, reference\: string\|null, debit\: int, credit\: int, running_balance\: int\}\>, closing_balance\: int\}&stdClass\), Closure\(mixed\)\: \(object\{account_id\: int, code\: string, name\: string, type\: string, opening_balance\: int, entries\: Illuminate\\Support\\Collection\<int, array\{id\: int, journal_entry_id\: int, date\: string, entry_number\: string, description\: string, reference\: string\|null, debit\: int, credit\: int, running_balance\: int\}\>, closing_balance\: int\}&stdClass\) given\.$#'
+			identifier: argument.type
 			count: 1
 			path: app/Services/Accounting/AccountBalanceService.php
 
@@ -1517,24 +1523,6 @@ parameters:
 			identifier: argument.unresolvableType
 			count: 2
 			path: app/Services/Accounting/Reports/BankReconciliationReportService.php
-
-		-
-			message: '#^Call to an undefined method DateTimeInterface\:\:copy\(\)\.$#'
-			identifier: method.notFound
-			count: 2
-			path: app/Services/Accounting/Reports/CashFlowReportService.php
-
-		-
-			message: '#^Anonymous function should return object\{account_id\: int, code\: string, name\: string, type\: string, opening_balance\: int, entries\: Illuminate\\Support\\Collection\<int, array\{id\: int, journal_entry_id\: int, date\: string, entry_number\: string, description\: string, reference\: string\|null, debit\: int, credit\: int, \.\.\.\}\>, closing_balance\: int\}&stdClass but returns object\{account_id\: int, code\: string, name\: string, type\: string, opening_balance\: int, entries\: Illuminate\\Support\\Collection\<int, array\{id\: int, journal_entry_id\: int, date\: string, entry_number\: string, description\: string, reference\: string\|null, debit\: int, credit\: int, \.\.\.\}\>, closing_balance\: int\}&stdClass\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/Accounting/Reports/FinancialReportService.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Accounting\\Account\>\:\:map\(\) expects callable\(App\\Models\\Accounting\\Account, int\)\: \(object\{account_id\: mixed, code\: mixed, name\: mixed, type\: mixed, opening_balance\: mixed, entries\: Illuminate\\Support\\Collection\<int, array\{id\: int, journal_entry_id\: int, date\: string, entry_number\: string, description\: string, reference\: string\|null, debit\: int, credit\: int, running_balance\: int\}\>, closing_balance\: mixed\}&stdClass\), Closure\(mixed\)\: \(object\{account_id\: mixed, code\: mixed, name\: mixed, type\: mixed, opening_balance\: mixed, entries\: Illuminate\\Support\\Collection\<int, array\{id\: int, journal_entry_id\: int, date\: string, entry_number\: string, description\: string, reference\: string\|null, debit\: int, credit\: int, running_balance\: int\}\>, closing_balance\: mixed\}&stdClass\) given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Services/Accounting/Reports/FinancialReportService.php
 
 		-
 			message: '#^Parameter \#1 \.\.\.\$values of method Illuminate\\Support\\Collection\<int,object\{account_id\: int, code\: string, name\: string, type\: string, subtype\: string\|null, balance\: int\}&stdClass\>\:\:push\(\) expects object\{account_id\: int, code\: string, name\: string, type\: string, subtype\: string\|null, balance\: int\}&stdClass, object\{account_id\: null, code\: null, name\: string, type\: string, subtype\: string, balance\: int\}&stdClass given\.$#'
@@ -1622,12 +1610,6 @@ parameters:
 
 		-
 			message: '#^Method App\\Services\\Inventory\\Reports\\COGSReportService\:\:getCOGSByProduct\(\) should return Illuminate\\Support\\Collection\<int, array\{product_id\: int, sku\: string, name\: string, category\: string\|null, quantity_sold\: int, average_unit_cost\: int, total_cogs\: int, percentage\: float\}\> but returns Illuminate\\Support\\Collection\<int, array\{product_id\: mixed, sku\: mixed, name\: mixed, category\: mixed, quantity_sold\: int, average_unit_cost\: int, total_cogs\: int, percentage\: float\|int\}\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/Inventory/Reports/COGSReportService.php
-
-		-
-			message: '#^Method App\\Services\\Inventory\\Reports\\COGSReportService\:\:getCOGSSummary\(\) should return array\{period\: array\{start\: string, end\: string\}, beginning_inventory\: int, purchases\: int, goods_available\: int, ending_inventory\: int, cogs\: int, gross_profit_contribution\: int\} but returns array\{period\: array\{start\: non\-falsy\-string, end\: non\-falsy\-string\}, beginning_inventory\: int, purchases\: int, goods_available\: int, ending_inventory\: int, cogs\: int, cogs_from_movements\: int\}\.$#'
 			identifier: return.type
 			count: 1
 			path: app/Services/Inventory/Reports/COGSReportService.php
@@ -1757,12 +1739,6 @@ parameters:
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Services/Manufacturing/MrpDemandService.php
-
-		-
-			message: '#^Cannot access property \$value on string\.$#'
-			identifier: property.nonObject
-			count: 3
-			path: app/Services/Manufacturing/MrpSuggestionService.php
 
 		-
 			message: '#^Comparison operation "\>" between int\<3, max\> and 0 is always true\.$#'
@@ -2175,7 +2151,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$paid_amount\.$#'
 			identifier: property.notFound
-			count: 7
+			count: 6
 			path: app/Services/Shared/PaymentService.php
 
 		-
@@ -2227,121 +2203,121 @@ parameters:
 			path: database/factories/Inventory/ProductFactory.php
 
 		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Inventory\\StockOpnameFactory\:\:definition\(\) should be compatible with return type \(array\<model property of App\\Models\\Inventory\\StockOpname, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Inventory\\StockOpname\>\:\:definition\(\)$#'
+			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Inventory\\StockOpnameFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Inventory\\StockOpname\>\:\:definition\(\)$#'
 			identifier: method.childReturnType
 			count: 1
 			path: database/factories/Inventory/StockOpnameFactory.php
 
 		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Inventory\\StockOpnameItemFactory\:\:definition\(\) should be compatible with return type \(array\<model property of App\\Models\\Inventory\\StockOpnameItem, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Inventory\\StockOpnameItem\>\:\:definition\(\)$#'
+			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Inventory\\StockOpnameItemFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Inventory\\StockOpnameItem\>\:\:definition\(\)$#'
 			identifier: method.childReturnType
 			count: 1
 			path: database/factories/Inventory/StockOpnameItemFactory.php
 
 		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\BomFactory\:\:definition\(\) should be compatible with return type \(array\<model property of App\\Models\\Manufacturing\\Bom, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\Bom\>\:\:definition\(\)$#'
+			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\BomFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\Bom\>\:\:definition\(\)$#'
 			identifier: method.childReturnType
 			count: 1
 			path: database/factories/Manufacturing/BomFactory.php
 
 		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\BomItemFactory\:\:definition\(\) should be compatible with return type \(array\<model property of App\\Models\\Manufacturing\\BomItem, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\BomItem\>\:\:definition\(\)$#'
+			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\BomItemFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\BomItem\>\:\:definition\(\)$#'
 			identifier: method.childReturnType
 			count: 1
 			path: database/factories/Manufacturing/BomItemFactory.php
 
 		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\BomVariantGroupFactory\:\:definition\(\) should be compatible with return type \(array\<model property of App\\Models\\Manufacturing\\BomVariantGroup, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\BomVariantGroup\>\:\:definition\(\)$#'
+			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\BomVariantGroupFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\BomVariantGroup\>\:\:definition\(\)$#'
 			identifier: method.childReturnType
 			count: 1
 			path: database/factories/Manufacturing/BomVariantGroupFactory.php
 
 		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\MaterialConsumptionFactory\:\:definition\(\) should be compatible with return type \(array\<model property of App\\Models\\Manufacturing\\MaterialConsumption, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\MaterialConsumption\>\:\:definition\(\)$#'
+			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\MaterialConsumptionFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\MaterialConsumption\>\:\:definition\(\)$#'
 			identifier: method.childReturnType
 			count: 1
 			path: database/factories/Manufacturing/MaterialConsumptionFactory.php
 
 		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\MaterialRequisitionFactory\:\:definition\(\) should be compatible with return type \(array\<model property of App\\Models\\Manufacturing\\MaterialRequisition, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\MaterialRequisition\>\:\:definition\(\)$#'
+			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\MaterialRequisitionFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\MaterialRequisition\>\:\:definition\(\)$#'
 			identifier: method.childReturnType
 			count: 1
 			path: database/factories/Manufacturing/MaterialRequisitionFactory.php
 
 		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\MaterialRequisitionItemFactory\:\:definition\(\) should be compatible with return type \(array\<model property of App\\Models\\Manufacturing\\MaterialRequisitionItem, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\MaterialRequisitionItem\>\:\:definition\(\)$#'
+			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\MaterialRequisitionItemFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\MaterialRequisitionItem\>\:\:definition\(\)$#'
 			identifier: method.childReturnType
 			count: 1
 			path: database/factories/Manufacturing/MaterialRequisitionItemFactory.php
 
 		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\MrpDemandFactory\:\:definition\(\) should be compatible with return type \(array\<model property of App\\Models\\Manufacturing\\MrpDemand, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\MrpDemand\>\:\:definition\(\)$#'
+			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\MrpDemandFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\MrpDemand\>\:\:definition\(\)$#'
 			identifier: method.childReturnType
 			count: 1
 			path: database/factories/Manufacturing/MrpDemandFactory.php
 
 		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\MrpRunFactory\:\:definition\(\) should be compatible with return type \(array\<model property of App\\Models\\Manufacturing\\MrpRun, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\MrpRun\>\:\:definition\(\)$#'
+			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\MrpRunFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\MrpRun\>\:\:definition\(\)$#'
 			identifier: method.childReturnType
 			count: 1
 			path: database/factories/Manufacturing/MrpRunFactory.php
 
 		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\MrpSuggestionFactory\:\:definition\(\) should be compatible with return type \(array\<model property of App\\Models\\Manufacturing\\MrpSuggestion, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\MrpSuggestion\>\:\:definition\(\)$#'
+			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\MrpSuggestionFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\MrpSuggestion\>\:\:definition\(\)$#'
 			identifier: method.childReturnType
 			count: 1
 			path: database/factories/Manufacturing/MrpSuggestionFactory.php
 
 		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\SubcontractorWorkOrderFactory\:\:definition\(\) should be compatible with return type \(array\<model property of App\\Models\\Manufacturing\\SubcontractorWorkOrder, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\SubcontractorWorkOrder\>\:\:definition\(\)$#'
+			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\SubcontractorWorkOrderFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\SubcontractorWorkOrder\>\:\:definition\(\)$#'
 			identifier: method.childReturnType
 			count: 1
 			path: database/factories/Manufacturing/SubcontractorWorkOrderFactory.php
 
 		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\WorkOrderFactory\:\:definition\(\) should be compatible with return type \(array\<model property of App\\Models\\Manufacturing\\WorkOrder, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\WorkOrder\>\:\:definition\(\)$#'
+			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\WorkOrderFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\WorkOrder\>\:\:definition\(\)$#'
 			identifier: method.childReturnType
 			count: 1
 			path: database/factories/Manufacturing/WorkOrderFactory.php
 
 		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\WorkOrderItemFactory\:\:definition\(\) should be compatible with return type \(array\<model property of App\\Models\\Manufacturing\\WorkOrderItem, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\WorkOrderItem\>\:\:definition\(\)$#'
+			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\WorkOrderItemFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\WorkOrderItem\>\:\:definition\(\)$#'
 			identifier: method.childReturnType
 			count: 1
 			path: database/factories/Manufacturing/WorkOrderItemFactory.php
 
 		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Projects\\ProjectCostFactory\:\:definition\(\) should be compatible with return type \(array\<model property of App\\Models\\Projects\\ProjectCost, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Projects\\ProjectCost\>\:\:definition\(\)$#'
+			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Projects\\ProjectCostFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Projects\\ProjectCost\>\:\:definition\(\)$#'
 			identifier: method.childReturnType
 			count: 1
 			path: database/factories/Projects/ProjectCostFactory.php
 
 		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Projects\\ProjectFactory\:\:definition\(\) should be compatible with return type \(array\<model property of App\\Models\\Projects\\Project, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Projects\\Project\>\:\:definition\(\)$#'
+			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Projects\\ProjectFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Projects\\Project\>\:\:definition\(\)$#'
 			identifier: method.childReturnType
 			count: 1
 			path: database/factories/Projects/ProjectFactory.php
 
 		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Projects\\ProjectRevenueFactory\:\:definition\(\) should be compatible with return type \(array\<model property of App\\Models\\Projects\\ProjectRevenue, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Projects\\ProjectRevenue\>\:\:definition\(\)$#'
+			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Projects\\ProjectRevenueFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Projects\\ProjectRevenue\>\:\:definition\(\)$#'
 			identifier: method.childReturnType
 			count: 1
 			path: database/factories/Projects/ProjectRevenueFactory.php
 
 		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Purchasing\\GoodsReceiptNoteFactory\:\:definition\(\) should be compatible with return type \(array\<model property of App\\Models\\Purchasing\\GoodsReceiptNote, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Purchasing\\GoodsReceiptNote\>\:\:definition\(\)$#'
+			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Purchasing\\GoodsReceiptNoteFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Purchasing\\GoodsReceiptNote\>\:\:definition\(\)$#'
 			identifier: method.childReturnType
 			count: 1
 			path: database/factories/Purchasing/GoodsReceiptNoteFactory.php
 
 		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Purchasing\\GoodsReceiptNoteItemFactory\:\:definition\(\) should be compatible with return type \(array\<model property of App\\Models\\Purchasing\\GoodsReceiptNoteItem, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Purchasing\\GoodsReceiptNoteItem\>\:\:definition\(\)$#'
+			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Purchasing\\GoodsReceiptNoteItemFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Purchasing\\GoodsReceiptNoteItem\>\:\:definition\(\)$#'
 			identifier: method.childReturnType
 			count: 1
 			path: database/factories/Purchasing/GoodsReceiptNoteItemFactory.php
 
 		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Purchasing\\PurchaseReturnFactory\:\:definition\(\) should be compatible with return type \(array\<model property of App\\Models\\Purchasing\\PurchaseReturn, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Purchasing\\PurchaseReturn\>\:\:definition\(\)$#'
+			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Purchasing\\PurchaseReturnFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Purchasing\\PurchaseReturn\>\:\:definition\(\)$#'
 			identifier: method.childReturnType
 			count: 1
 			path: database/factories/Purchasing/PurchaseReturnFactory.php
@@ -2353,13 +2329,13 @@ parameters:
 			path: database/factories/Purchasing/PurchaseReturnFactory.php
 
 		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Purchasing\\PurchaseReturnItemFactory\:\:definition\(\) should be compatible with return type \(array\<model property of App\\Models\\Purchasing\\PurchaseReturnItem, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Purchasing\\PurchaseReturnItem\>\:\:definition\(\)$#'
+			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Purchasing\\PurchaseReturnItemFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Purchasing\\PurchaseReturnItem\>\:\:definition\(\)$#'
 			identifier: method.childReturnType
 			count: 1
 			path: database/factories/Purchasing/PurchaseReturnItemFactory.php
 
 		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Sales\\DeliveryOrderFactory\:\:definition\(\) should be compatible with return type \(array\<model property of App\\Models\\Sales\\DeliveryOrder, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Sales\\DeliveryOrder\>\:\:definition\(\)$#'
+			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Sales\\DeliveryOrderFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Sales\\DeliveryOrder\>\:\:definition\(\)$#'
 			identifier: method.childReturnType
 			count: 1
 			path: database/factories/Sales/DeliveryOrderFactory.php
@@ -2371,19 +2347,19 @@ parameters:
 			path: database/factories/Sales/DeliveryOrderFactory.php
 
 		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Sales\\DeliveryOrderItemFactory\:\:definition\(\) should be compatible with return type \(array\<model property of App\\Models\\Sales\\DeliveryOrderItem, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Sales\\DeliveryOrderItem\>\:\:definition\(\)$#'
+			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Sales\\DeliveryOrderItemFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Sales\\DeliveryOrderItem\>\:\:definition\(\)$#'
 			identifier: method.childReturnType
 			count: 1
 			path: database/factories/Sales/DeliveryOrderItemFactory.php
 
 		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Sales\\DownPaymentApplicationFactory\:\:definition\(\) should be compatible with return type \(array\<model property of App\\Models\\Sales\\DownPaymentApplication, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Sales\\DownPaymentApplication\>\:\:definition\(\)$#'
+			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Sales\\DownPaymentApplicationFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Sales\\DownPaymentApplication\>\:\:definition\(\)$#'
 			identifier: method.childReturnType
 			count: 1
 			path: database/factories/Sales/DownPaymentApplicationFactory.php
 
 		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Sales\\DownPaymentFactory\:\:definition\(\) should be compatible with return type \(array\<model property of App\\Models\\Sales\\DownPayment, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Sales\\DownPayment\>\:\:definition\(\)$#'
+			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Sales\\DownPaymentFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Sales\\DownPayment\>\:\:definition\(\)$#'
 			identifier: method.childReturnType
 			count: 1
 			path: database/factories/Sales/DownPaymentFactory.php
@@ -2395,13 +2371,13 @@ parameters:
 			path: database/factories/Sales/QuotationFactory.php
 
 		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Sales\\QuotationVariantOptionFactory\:\:definition\(\) should be compatible with return type \(array\<model property of App\\Models\\Sales\\QuotationVariantOption, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Sales\\QuotationVariantOption\>\:\:definition\(\)$#'
+			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Sales\\QuotationVariantOptionFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Sales\\QuotationVariantOption\>\:\:definition\(\)$#'
 			identifier: method.childReturnType
 			count: 1
 			path: database/factories/Sales/QuotationVariantOptionFactory.php
 
 		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Sales\\SalesReturnFactory\:\:definition\(\) should be compatible with return type \(array\<model property of App\\Models\\Sales\\SalesReturn, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Sales\\SalesReturn\>\:\:definition\(\)$#'
+			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Sales\\SalesReturnFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Sales\\SalesReturn\>\:\:definition\(\)$#'
 			identifier: method.childReturnType
 			count: 1
 			path: database/factories/Sales/SalesReturnFactory.php
@@ -2413,22 +2389,28 @@ parameters:
 			path: database/factories/Sales/SalesReturnFactory.php
 
 		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Sales\\SalesReturnItemFactory\:\:definition\(\) should be compatible with return type \(array\<model property of App\\Models\\Sales\\SalesReturnItem, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Sales\\SalesReturnItem\>\:\:definition\(\)$#'
+			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Sales\\SalesReturnItemFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Sales\\SalesReturnItem\>\:\:definition\(\)$#'
 			identifier: method.childReturnType
 			count: 1
 			path: database/factories/Sales/SalesReturnItemFactory.php
 
 		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Shared\\SubcontractorInvoiceFactory\:\:definition\(\) should be compatible with return type \(array\<model property of App\\Models\\Shared\\SubcontractorInvoice, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Shared\\SubcontractorInvoice\>\:\:definition\(\)$#'
+			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Shared\\SubcontractorInvoiceFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Shared\\SubcontractorInvoice\>\:\:definition\(\)$#'
 			identifier: method.childReturnType
 			count: 1
 			path: database/factories/Shared/SubcontractorInvoiceFactory.php
 
 		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\UserFactory\:\:definition\(\) should be compatible with return type \(array\<model property of App\\Models\\User, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\User\>\:\:definition\(\)$#'
+			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\UserFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\User\>\:\:definition\(\)$#'
 			identifier: method.childReturnType
 			count: 1
 			path: database/factories/UserFactory.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Schema\\ForeignKeyDefinition\:\:after\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: database/migrations/2026_01_31_193251_add_void_fields_to_payments_table.php
 
 		-
 			message: '#^Match arm comparison between ''Advanced'' and ''Advanced'' is always true\.$#'

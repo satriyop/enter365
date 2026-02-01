@@ -12,6 +12,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
+/**
+ * @property MrpSuggestionStatus $status
+ */
 class MrpSuggestion extends Model
 {
     use HasFactory;

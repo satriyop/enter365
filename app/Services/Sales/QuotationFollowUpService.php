@@ -6,6 +6,7 @@ namespace App\Services\Sales;
 
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
+use App\Domain\Sales\Quotations\Enums\QuotationPriority;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\Quotation;
 use App\Services\Base\BaseService;
@@ -126,7 +127,7 @@ class QuotationFollowUpService extends BaseService
      */
     public function updatePriority(Quotation $quotation, string $priority): Quotation
     {
-        $quotation->priority = $priority;
+        $quotation->priority = QuotationPriority::from($priority);
         $quotation->save();
 
         return $quotation->fresh();

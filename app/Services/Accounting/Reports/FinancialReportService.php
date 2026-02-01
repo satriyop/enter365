@@ -245,28 +245,6 @@ class FinancialReportService
     }
 
     /**
-     * Get account balance for a specific period.
-     */
-    private function getAccountBalanceForPeriod(Account $account, string $startDate, string $endDate): int
-    {
-        $movements = DB::table('journal_entry_lines as jel')
-            ->join('journal_entries as je', 'je.id', '=', 'jel.journal_entry_id')
-            ->where('jel.account_id', $account->id)
-            ->where('je.is_posted', true)
-            ->whereBetween('je.entry_date', [$startDate, $endDate.' 23:59:59'])
-            ->whereNull('je.deleted_at')
-            ->selectRaw('COALESCE(SUM(jel.debit), 0) as total_debit, COALESCE(SUM(jel.credit), 0) as total_credit')
-            ->first();
-
-        $totalDebit = (int) ($movements->total_debit ?? 0);
-        $totalCredit = (int) ($movements->total_credit ?? 0);
-
-        return $account->isDebitNormal()
-            ? $totalDebit - $totalCredit
-            : $totalCredit - $totalDebit;
-    }
-
-    /**
      * Generate Comparative Balance Sheet.
      *
      * @return array{

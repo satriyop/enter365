@@ -22,7 +22,7 @@ class COGSReportService
      *     goods_available: int,
      *     ending_inventory: int,
      *     cogs: int,
-     *     gross_profit_contribution: int
+     *     cogs_from_movements: int
      * }
      */
     public function getCOGSSummary(?string $startDate = null, ?string $endDate = null): array

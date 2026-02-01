@@ -11,7 +11,7 @@ readonly class OutcomeManager
 {
     public function markAsWon(Quotation $quotation, array $data = []): void
     {
-        $quotation->outcome = QuotationOutcome::Won->value;
+        $quotation->outcome = QuotationOutcome::Won;
         $quotation->won_reason = $data['won_reason'] ?? null;
         $quotation->outcome_notes = $data['outcome_notes'] ?? null;
         $quotation->outcome_at = now();
@@ -21,7 +21,7 @@ readonly class OutcomeManager
 
     public function markAsLost(Quotation $quotation, array $data = []): void
     {
-        $quotation->outcome = QuotationOutcome::Lost->value;
+        $quotation->outcome = QuotationOutcome::Lost;
         $quotation->lost_reason = $data['lost_reason'] ?? null;
         $quotation->lost_to_competitor = $data['lost_to_competitor'] ?? null;
         $quotation->outcome_notes = $data['outcome_notes'] ?? null;

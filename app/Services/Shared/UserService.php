@@ -111,7 +111,7 @@ class UserService extends BaseService
             ]);
 
             // Optionally revoke all tokens except current if user is changing own password
-            if ($user->id === $currentUserId && $currentTokenId && is_int($currentTokenId)) {
+            if ($user->id === $currentUserId && $currentTokenId) {
                 $user->tokens()->where('id', '!=', $currentTokenId)->delete();
             } else {
                 // Admin changing other user's password - revoke all their tokens

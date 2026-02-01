@@ -19,7 +19,7 @@ class UserPolicy extends BaseResourcePolicy
      */
     public function view(User $user, Model $model): bool
     {
-        if ($user->id === $model->id) {
+        if ($user->getKey() === $model->getKey()) {
             return true;
         }
 
@@ -31,7 +31,7 @@ class UserPolicy extends BaseResourcePolicy
      */
     public function update(User $user, Model $model): bool
     {
-        if ($user->id === $model->id) {
+        if ($user->getKey() === $model->getKey()) {
             return true;
         }
 

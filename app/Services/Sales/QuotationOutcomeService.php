@@ -55,7 +55,7 @@ class QuotationOutcomeService extends BaseService
         }
 
         return $this->executeInTransaction('mark_as_won', function () use ($quotation, $data) {
-            $quotation->outcome = QuotationOutcome::Won->value;
+            $quotation->outcome = QuotationOutcome::Won;
             $quotation->won_reason = $data['won_reason'] ?? null;
             $quotation->outcome_notes = $data['outcome_notes'] ?? null;
             $quotation->outcome_at = now();
@@ -92,7 +92,7 @@ class QuotationOutcomeService extends BaseService
         }
 
         return $this->executeInTransaction('mark_as_lost', function () use ($quotation, $data) {
-            $quotation->outcome = QuotationOutcome::Lost->value;
+            $quotation->outcome = QuotationOutcome::Lost;
             $quotation->lost_reason = $data['lost_reason'] ?? null;
             $quotation->lost_to_competitor = $data['lost_to_competitor'] ?? null;
             $quotation->outcome_notes = $data['outcome_notes'] ?? null;

@@ -43,7 +43,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property Carbon|null $last_contacted_at
  * @property int|null $assigned_to
  * @property int $follow_up_count
- * @property string|null $priority
+ * @property QuotationPriority|null $priority
  * @property string $currency
  * @property string $exchange_rate
  * @property int $subtotal
@@ -67,7 +67,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property Carbon|null $rejected_at
  * @property int|null $rejected_by
  * @property string|null $rejection_reason
- * @property string|null $outcome
+ * @property QuotationOutcome|null $outcome
  * @property string|null $won_reason
  * @property string|null $lost_reason
  * @property string|null $lost_to_competitor
