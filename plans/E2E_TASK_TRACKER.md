@@ -38,12 +38,12 @@
   - [x] Protected route redirect → login page
   - [x] Logout → token cleared
 
-- [ ] **SALES-PEST-01**: Quotation CRUD + workflow
-  - [ ] Create quotation with line items via SPA form
-  - [ ] Verify quotation appears in list
-  - [ ] Submit quotation → status changes in UI
-  - [ ] Approve quotation → status changes in UI
-  - [ ] Convert to invoice → invoice created (verify DB)
+- [x] **SALES-PEST-01**: Quotation CRUD + workflow
+  - [x] Create quotation with line items via SPA form
+  - [x] Verify quotation appears in list
+  - [x] Submit quotation → status changes in UI
+  - [x] Approve quotation → status changes in UI
+  - [x] Convert to invoice → invoice created
 
 - [ ] **SALES-PEST-02**: Invoice post + payment
   - [ ] Create invoice → verify in list
@@ -196,11 +196,11 @@
 | Phase | Total Tasks | Done | Remaining |
 |-------|:-----------:|:----:|:---------:|
 | 1. Foundation | 2 | 2 | 0 |
-| 2. Auth & Sales | 4 | 1 | 3 |
+| 2. Auth & Sales | 4 | 2 | 2 |
 | 3. Purchasing | 4 | 0 | 4 |
 | 4. Inventory | 2 | 0 | 2 |
 | 5. Accounting & Reports | 4 | 0 | 4 |
 | 6. Payments | 2 | 0 | 2 |
 | 7. Manufacturing & Projects | 3 | 0 | 3 |
 | 8. Chain Tests | 5 | 0 | 5 |
-| **Total** | **26** | **3** | **23** |
+| **Total** | **26** | **4** | **22** |
