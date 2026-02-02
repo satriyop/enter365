@@ -32,11 +32,11 @@
 
 ## Phase 2: Core Business — Auth & Sales
 
-- [ ] **AUTH-PEST-01**: Login/Logout browser tests
-  - [ ] Login with valid credentials → dashboard redirect
-  - [ ] Login with invalid credentials → error message
-  - [ ] Protected route redirect → login page
-  - [ ] Logout → token cleared
+- [x] **AUTH-PEST-01**: Login/Logout browser tests
+  - [x] Login with valid credentials → dashboard redirect
+  - [x] Login with invalid credentials → error message
+  - [x] Protected route redirect → login page
+  - [x] Logout → token cleared
 
 - [ ] **SALES-PEST-01**: Quotation CRUD + workflow
   - [ ] Create quotation with line items via SPA form
@@ -196,11 +196,11 @@
 | Phase | Total Tasks | Done | Remaining |
 |-------|:-----------:|:----:|:---------:|
 | 1. Foundation | 2 | 2 | 0 |
-| 2. Auth & Sales | 4 | 0 | 4 |
+| 2. Auth & Sales | 4 | 1 | 3 |
 | 3. Purchasing | 4 | 0 | 4 |
 | 4. Inventory | 2 | 0 | 2 |
 | 5. Accounting & Reports | 4 | 0 | 4 |
 | 6. Payments | 2 | 0 | 2 |
 | 7. Manufacturing & Projects | 3 | 0 | 3 |
 | 8. Chain Tests | 5 | 0 | 5 |
-| **Total** | **26** | **2** | **24** |
+| **Total** | **26** | **3** | **23** |

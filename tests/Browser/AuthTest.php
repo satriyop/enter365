@@ -33,3 +33,19 @@ it('redirects to login when accessing protected route unauthenticated', function
 
     $page->assertPathIs('/login');
 });
+
+it('can logout and token is cleared', function () {
+    // Login first
+    $page = visit(env('SPA_URL', 'http://localhost:3000').'/login');
+
+    $page->fill('input[type="email"]', 'admin@example.com')
+        ->fill('input[type="password"]', 'password')
+        ->click('button[type="submit"]')
+        ->assertPathIs('/')
+        ->assertSee('Dashboard');
+
+    // Open user dropdown in header and click Logout
+    $page->click('button.flex.items-center.gap-2.p-2.rounded-lg')
+        ->click('Logout')
+        ->assertPathIs('/login');
+});
