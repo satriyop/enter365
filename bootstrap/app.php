@@ -30,12 +30,12 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\RequestIdMiddleware::class,
         ]);
 
-        // Add API response validation (only if enabled in config)
-        if (config('api.response_validation.enabled', false)) {
-            $middleware->api(append: [
-                \App\Http\Middleware\ValidateApiResponse::class,
-            ]);
-        }
+        // API response validation — the middleware itself checks config to decide
+        // whether to validate. Cannot call config() here as it runs before
+        // the config repository is bound to the container.
+        $middleware->api(append: [
+            \App\Http\Middleware\ValidateApiResponse::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Handle domain exceptions with structured JSON response

@@ -625,7 +625,14 @@ This is a **full-stack application** with separate frontend and backend:
 | **Backend (API)** | `/Users/satriyo/dev/laravel-project/enter365` | Laravel 12, Livewire 3, Volt |
 | **Frontend (SPA)** | `/Users/satriyo/dev/laravel-project/front-end-enter365` | Vue.js, TypeScript |
 
-When working on frontend features or debugging API integration, reference the Vue SPA at the frontend directory.
+### Working Directory Aliases
+
+| Alias | Path |
+|-------|------|
+| `$BE` | `/Users/satriyo/dev/laravel-project/enter365` |
+| `$FE` | `/Users/satriyo/dev/laravel-project/front-end-enter365` |
+
+When working on frontend features or debugging API integration, read/edit files directly in the frontend directory. Both repos can be worked on simultaneously in a single session.
 
 ---
 
@@ -903,7 +910,7 @@ The project uses a baseline file (`phpstan-baseline.neon`) to track existing err
 If you fix baselined errors, regenerate the baseline:
 
 ```bash
-vendor/bin/phpstan analyse --generate-baseline=phpstan-baseline.neon
+vendor/bin/phpstan analyse --generate-baseline=phpstan-baseline.neon --memory-limit=2G
 ```
 
 ### Adding PHPDoc for Better Analysis
@@ -966,6 +973,13 @@ Before committing code, ensure:
    ```bash
    ./scripts/check-api-integration.sh
    ```
+
+5. **App boots cleanly (web smoke test):**
+   ```bash
+   curl -s -o /dev/null -w "%{http_code}" https://enter365.test
+   ```
+   Must return `200` or `301` (redirect). **Do NOT rely on `php artisan` commands alone** — CLI and web server can behave differently (different bootstrap paths, PHP-FPM vs CLI).
+   Always run this after modifying `bootstrap/app.php`, service providers, or config files.
 
 ### Automated Validation
 
