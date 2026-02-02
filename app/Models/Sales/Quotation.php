@@ -13,7 +13,6 @@ use App\Models\Manufacturing\BomVariantGroup;
 use App\Models\Projects\Project;
 use App\Models\Shared\Attachment;
 use App\Models\User;
-use App\Traits\Auditable;
 use App\Traits\Filterable;
 use App\Traits\HasDocumentDiscount;
 use App\Traits\HasStatusHistory;
@@ -88,7 +87,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class Quotation extends Model
 {
-    use Auditable, Filterable, HasDocumentDiscount, HasFactory, HasStatusHistory, SoftDeletes;
+    use Filterable, HasDocumentDiscount, HasFactory, HasStatusHistory, SoftDeletes;
 
     protected $fillable = [
         'quotation_number',

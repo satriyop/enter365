@@ -8,7 +8,6 @@ use App\Models\Contacts\Contact;
 use App\Models\Projects\Project;
 use App\Models\Shared\Attachment;
 use App\Models\User;
-use App\Traits\Auditable;
 use App\Traits\Filterable;
 use App\Traits\HasDocumentDiscount;
 use App\Traits\HasStatusHistory;
@@ -67,7 +66,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class PurchaseOrder extends Model
 {
-    use Auditable, Filterable, HasDocumentDiscount, HasFactory, HasStatusHistory, SoftDeletes;
+    use Filterable, HasDocumentDiscount, HasFactory, HasStatusHistory, SoftDeletes;
 
     protected static function boot(): void
     {

@@ -7,7 +7,6 @@ use App\Models\Accounting\Account;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Contacts\Contact;
 use App\Models\User;
-use App\Traits\Auditable;
 use App\Traits\CascadesSoftDeletes;
 use App\Traits\Filterable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -18,7 +17,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class DownPayment extends Model
 {
-    use Auditable, CascadesSoftDeletes, Filterable, HasFactory, SoftDeletes;
+    use CascadesSoftDeletes, Filterable, HasFactory, SoftDeletes;
 
     /** @var array<int, string> */
     protected array $cascadeSoftDeletes = ['applications'];

@@ -6,7 +6,6 @@ use App\Enums\DocumentStatus;
 use App\Models\Contacts\Contact;
 use App\Models\Inventory\Warehouse;
 use App\Models\User;
-use App\Traits\Auditable;
 use App\Traits\Filterable;
 use App\Traits\HasStatusHistory;
 use Carbon\Carbon;
@@ -47,7 +46,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class DeliveryOrder extends Model
 {
-    use Auditable, Filterable, HasFactory, HasStatusHistory, SoftDeletes;
+    use Filterable, HasFactory, HasStatusHistory, SoftDeletes;
 
     public const SHIPPING_METHODS = [
         'courier',

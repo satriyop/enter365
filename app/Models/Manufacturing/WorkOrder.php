@@ -9,7 +9,6 @@ use App\Models\Inventory\Product;
 use App\Models\Inventory\Warehouse;
 use App\Models\Projects\Project;
 use App\Models\User;
-use App\Traits\Auditable;
 use App\Traits\CascadesSoftDeletes;
 use App\Traits\Filterable;
 use App\Traits\HasStatusHistory;
@@ -67,7 +66,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class WorkOrder extends Model
 {
-    use Auditable, CascadesSoftDeletes, Filterable, HasFactory, HasStatusHistory, SoftDeletes;
+    use CascadesSoftDeletes, Filterable, HasFactory, HasStatusHistory, SoftDeletes;
 
     /** @var array<int, string> */
     protected array $cascadeSoftDeletes = ['subWorkOrders'];

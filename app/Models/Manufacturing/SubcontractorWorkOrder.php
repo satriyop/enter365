@@ -8,7 +8,6 @@ use App\Models\Projects\Project;
 use App\Models\Sales\Invoice;
 use App\Models\Shared\SubcontractorInvoice;
 use App\Models\User;
-use App\Traits\Auditable;
 use App\Traits\CascadesSoftDeletes;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -58,7 +57,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class SubcontractorWorkOrder extends Model
 {
-    use Auditable, CascadesSoftDeletes, HasFactory, SoftDeletes;
+    use CascadesSoftDeletes, HasFactory, SoftDeletes;
 
     /** @var array<int, string> */
     protected array $cascadeSoftDeletes = ['invoices'];

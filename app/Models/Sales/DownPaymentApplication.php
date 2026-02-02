@@ -5,7 +5,6 @@ namespace App\Models\Sales;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Purchasing\Bill;
 use App\Models\User;
-use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,7 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class DownPaymentApplication extends Model
 {
-    use Auditable, HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'down_payment_id',

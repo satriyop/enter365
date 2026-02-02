@@ -431,16 +431,40 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Register model observers for cache invalidation.
+     * Register model observers.
      */
     private function registerObservers(): void
     {
-        $observer = \App\Observers\DashboardCacheObserver::class;
+        // Dashboard cache invalidation
+        $dashboardObserver = \App\Observers\DashboardCacheObserver::class;
 
-        \App\Models\Sales\Invoice::observe($observer);
-        \App\Models\Purchasing\Bill::observe($observer);
-        \App\Models\Shared\Payment::observe($observer);
-        \App\Models\Accounting\JournalEntry::observe($observer);
-        \App\Models\Sales\Quotation::observe($observer);
+        \App\Models\Sales\Invoice::observe($dashboardObserver);
+        \App\Models\Purchasing\Bill::observe($dashboardObserver);
+        \App\Models\Shared\Payment::observe($dashboardObserver);
+        \App\Models\Accounting\JournalEntry::observe($dashboardObserver);
+        \App\Models\Sales\Quotation::observe($dashboardObserver);
+
+        // Audit logging for financial and operational models
+        $auditObserver = \App\Observers\AuditObserver::class;
+
+        \App\Models\Accounting\JournalEntry::observe($auditObserver);
+        \App\Models\Accounting\FiscalPeriod::observe($auditObserver);
+        \App\Models\Accounting\Budget::observe($auditObserver);
+        \App\Models\Sales\SalesReturn::observe($auditObserver);
+        \App\Models\Sales\Quotation::observe($auditObserver);
+        \App\Models\Sales\DownPaymentApplication::observe($auditObserver);
+        \App\Models\Sales\Invoice::observe($auditObserver);
+        \App\Models\Sales\DeliveryOrder::observe($auditObserver);
+        \App\Models\Sales\DownPayment::observe($auditObserver);
+        \App\Models\Purchasing\PurchaseReturn::observe($auditObserver);
+        \App\Models\Purchasing\PurchaseOrder::observe($auditObserver);
+        \App\Models\Purchasing\GoodsReceiptNote::observe($auditObserver);
+        \App\Models\Purchasing\Bill::observe($auditObserver);
+        \App\Models\Projects\Project::observe($auditObserver);
+        \App\Models\Shared\Payment::observe($auditObserver);
+        \App\Models\Manufacturing\SubcontractorWorkOrder::observe($auditObserver);
+        \App\Models\Manufacturing\MaterialRequisition::observe($auditObserver);
+        \App\Models\Manufacturing\WorkOrder::observe($auditObserver);
+        \App\Models\Inventory\InventoryMovement::observe($auditObserver);
     }
 }

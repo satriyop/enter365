@@ -13,7 +13,6 @@ use App\Models\Shared\Payment;
 use App\Models\Shared\PaymentReminder;
 use App\Models\Shared\RecurringTemplate;
 use App\Models\User;
-use App\Traits\Auditable;
 use App\Traits\CascadesSoftDeletes;
 use App\Traits\Filterable;
 use App\Traits\HasDocumentDiscount;
@@ -62,7 +61,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class Bill extends Model
 {
-    use Auditable, CascadesSoftDeletes, Filterable, HasDocumentDiscount, HasFactory, HasStatusHistory, SoftDeletes;
+    use CascadesSoftDeletes, Filterable, HasDocumentDiscount, HasFactory, HasStatusHistory, SoftDeletes;
 
     /** @var array<int, string> */
     protected array $cascadeSoftDeletes = ['payments'];

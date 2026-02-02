@@ -7,7 +7,6 @@ use App\Models\Accounting\BankTransaction;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Contacts\Contact;
 use App\Models\User;
-use App\Traits\Auditable;
 use App\Traits\Filterable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,7 +16,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Payment extends Model
 {
-    use Auditable, Filterable, HasFactory, SoftDeletes;
+    use Filterable, HasFactory, SoftDeletes;
 
     public const TYPE_RECEIVE = 'receive'; // Payment received from customer
 
