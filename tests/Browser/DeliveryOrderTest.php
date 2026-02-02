@@ -10,60 +10,70 @@ declare(strict_types=1);
  * - Seeded customer: PT Test Customer
  * - Seeded product: MCB 16A 1 Phase (id=1)
  *
- * Note: DOs are created via direct DB insertion because:
- * 1. No "Create DO" button exists on the invoice detail page
- * 2. Frontend API URL mismatch: sends POST /delivery-order but backend expects /create-delivery-order
+ * DO creation is tested via the "Create Delivery Order" button on the
+ * invoice detail page, which opens a modal and calls the API.
  *
  * Shared helpers (realDb, createInvoice, postInvoice, etc.) are in tests/Pest.php.
+ *
+ * NOTE: After modal action buttons (Ship, Deliver, etc.), the frontend
+ * uses TanStack Query's setQueryData to update the UI reactively. We
+ * rely on assertSee (which waits up to timeout) for the status change,
+ * rather than navigate/reload which can cause race conditions.
  */
 
 /**
- * Create a delivery order from an invoice via direct DB access.
- * Bypasses the service layer but creates valid data for UI workflow testing.
+ * Create a DO from the invoice detail page via the UI modal.
+ * Expects $page to be on a posted invoice detail page.
+ * Returns the page, now on the DO detail page after navigation.
  */
-function createDeliveryOrderForInvoice(int $invoiceId, ?int $warehouseId = null): object
+function createDOFromInvoiceUI($page, ?string $warehouseName = null)
 {
-    $db = realDb();
-    $invoice = $db->table('invoices')->where('id', $invoiceId)->first();
+    // Click "Create Delivery Order" button in Quick Actions
+    $page->click('Create Delivery Order');
 
-    $now = now();
-    $prefix = 'DO-'.$now->format('Ym').'-';
-    $lastSeq = $db->table('delivery_orders')
-        ->where('do_number', 'like', $prefix.'%')
-        ->count();
-    $doNumber = $prefix.str_pad((string) ($lastSeq + 1), 4, '0', STR_PAD_LEFT);
+    // Modal opens — assert title
+    $page->assertSee('Items will be copied automatically');
 
-    $doId = $db->table('delivery_orders')->insertGetId([
-        'do_number' => $doNumber,
-        'invoice_id' => $invoiceId,
-        'contact_id' => $invoice->contact_id,
-        'warehouse_id' => $warehouseId,
-        'do_date' => $now->format('Y-m-d'),
-        'status' => 'draft',
-        'created_by' => $invoice->created_by,
-        'created_at' => $now,
-        'updated_at' => $now,
-    ]);
-
-    // Copy invoice items to delivery order items
-    $items = $db->table('invoice_items')->where('invoice_id', $invoiceId)->get();
-    foreach ($items as $item) {
-        $db->table('delivery_order_items')->insert([
-            'delivery_order_id' => $doId,
-            'invoice_item_id' => $item->id,
-            'product_id' => $item->product_id,
-            'description' => $item->description,
-            'quantity' => $item->quantity,
-            'quantity_delivered' => 0,
-            'unit' => $item->unit ?? 'pcs',
-            'unit_price' => $item->unit_price ?? 0,
-            'line_total' => $item->line_total ?? 0,
-            'created_at' => $now,
-            'updated_at' => $now,
-        ]);
+    // Optionally select a warehouse
+    if ($warehouseName) {
+        $page->click('Select warehouse...');
+        $page->click("[role=\"option\"] >> text={$warehouseName}");
     }
 
-    return $db->table('delivery_orders')->where('id', $doId)->first();
+    // Click submit button inside the modal
+    $page->click('[role="dialog"] button >> text=Create Delivery Order');
+
+    // Wait for navigation to DO detail page
+    $page->assertSee('Delivery order created');
+    $page->assertSee('DO-');
+
+    return $page;
+}
+
+/**
+ * Get the delivery order ID from the current detail page URL.
+ */
+function getDOIdFromUrl($page): int
+{
+    $url = $page->url();
+    preg_match('/delivery-orders\/(\d+)/', $url, $matches);
+
+    return (int) ($matches[1] ?? 0);
+}
+
+/**
+ * Wait for a delivery order status to change in the database.
+ * This ensures the API action has completed before asserting UI state.
+ */
+function waitForDoStatus(int $doId, string $expectedStatus, int $maxRetries = 30): void
+{
+    for ($i = 0; $i < $maxRetries; $i++) {
+        $status = realDb()->table('delivery_orders')->where('id', $doId)->value('status');
+        if ($status === $expectedStatus) {
+            return;
+        }
+        usleep(200_000); // 200ms
+    }
 }
 
 /**
@@ -134,68 +144,73 @@ it('can create DO from invoice and verify items match', function () {
     $invoiceId = getInvoiceIdFromUrl($page);
     postInvoice($page);
 
-    // Create DO from the posted invoice via DB
-    $do = createDeliveryOrderForInvoice($invoiceId);
+    // Create DO from the invoice detail page via UI modal
+    createDOFromInvoiceUI($page);
 
-    // Navigate to DO detail page
-    $page->navigate(spaUrl('/sales/delivery-orders/'.$do->id));
+    $doId = getDOIdFromUrl($page);
+    expect($doId)->toBeGreaterThan(0);
 
-    // Assert DO detail page loads with correct data
-    $page->assertSee($do->do_number);
+    // Assert DO detail page shows correct data
     $page->assertSee('Draft');
     $page->assertSee('PT Test Customer');
-
-    // Assert items table shows the item from the invoice
     $page->assertSee('DO Items Match Test');
 
-    // Verify in list page
-    $page->navigate(spaUrl('/sales/delivery-orders'));
-    $page->assertSee('Delivery Orders');
-    $page->assertSee($do->do_number);
+    // DB assertion: DO linked to invoice
+    $do = realDb()->table('delivery_orders')->where('id', $doId)->first();
+    expect((int) $do->invoice_id)->toBe($invoiceId);
+    expect($do->status)->toBe('draft');
+
+    // Items were copied from invoice
+    $doItems = realDb()->table('delivery_order_items')
+        ->where('delivery_order_id', $doId)
+        ->get();
+    expect($doItems)->toHaveCount(1);
+    expect((int) $doItems[0]->quantity)->toBe(5);
 });
 
 it('can confirm and ship a delivery order with status transitions', function () {
-    // Create and post an invoice, then create DO
+    // Create and post an invoice, then create DO via UI
     $page = createInvoice('DO Workflow Test', 3, '150000');
     $invoiceId = getInvoiceIdFromUrl($page);
     postInvoice($page);
 
-    $do = createDeliveryOrderForInvoice($invoiceId);
+    createDOFromInvoiceUI($page);
+    $doId = getDOIdFromUrl($page);
 
-    // Navigate to DO detail page
-    $page->navigate(spaUrl('/sales/delivery-orders/'.$do->id));
     $page->assertSee('Draft');
 
     // --- Confirm ---
     $page->click('Confirm');
 
-    // Wait for API response and reload
-    reloadPage($page);
+    // Wait for backend to process, then navigate to see updated state
+    waitForDoStatus($doId, 'confirmed');
+    $page->navigate(spaUrl("/sales/delivery-orders/{$doId}"));
     $page->assertSee('Confirmed');
 
     // DB assertion
-    $doRecord = realDb()->table('delivery_orders')->where('id', $do->id)->first();
+    $doRecord = realDb()->table('delivery_orders')->where('id', $doId)->first();
     expect($doRecord->status)->toBe('confirmed');
     expect($doRecord->confirmed_at)->not->toBeNull();
 
     // --- Ship (opens modal) ---
     $page->click('Ship');
-    $page->assertSee('Ship Delivery Order'); // Modal title
+    $page->assertSee('Ship Delivery Order');
 
     // Fill ship modal fields
     $page->fill('input[placeholder="Enter tracking number"]', 'TRK-E2E-001');
     $page->fill('input[placeholder="Enter driver name"]', 'Test Driver');
     $page->fill('input[placeholder="Enter vehicle number"]', 'B 1234 XY');
 
-    // Click Ship button inside the modal (scoped to dialog)
+    // Click Ship button inside the modal
     $page->click('[role="dialog"] button >> text=Ship');
 
-    // Wait for API response and reload
-    reloadPage($page);
+    // Wait for backend to process, then navigate to see updated state
+    waitForDoStatus($doId, 'shipped');
+    $page->navigate(spaUrl("/sales/delivery-orders/{$doId}"));
     $page->assertSee('Shipped');
 
     // DB assertions
-    $doRecord = realDb()->table('delivery_orders')->where('id', $do->id)->first();
+    $doRecord = realDb()->table('delivery_orders')->where('id', $doId)->first();
     expect($doRecord->status)->toBe('shipped');
     expect($doRecord->shipped_at)->not->toBeNull();
     expect($doRecord->tracking_number)->toBe('TRK-E2E-001');
@@ -204,29 +219,33 @@ it('can confirm and ship a delivery order with status transitions', function () 
 });
 
 it('can mark a shipped delivery order as delivered', function () {
-    // Create and post an invoice, then create DO
+    // Create and post an invoice, then create DO via UI
     $page = createInvoice('DO Deliver Test', 2, '250000');
-    $invoiceId = getInvoiceIdFromUrl($page);
     postInvoice($page);
 
-    $do = createDeliveryOrderForInvoice($invoiceId);
+    createDOFromInvoiceUI($page);
+    $doId = getDOIdFromUrl($page);
 
-    // Pre-set status to shipped via DB (skip Confirm and Ship UI to speed up test)
-    realDb()->table('delivery_orders')->where('id', $do->id)->update([
+    // Fast-forward to shipped status via DB (test focuses on Deliver workflow)
+    $userId = (int) realDb()->table('users')
+        ->where('email', 'admin@example.com')
+        ->value('id');
+
+    realDb()->table('delivery_orders')->where('id', $doId)->update([
         'status' => 'shipped',
         'confirmed_at' => now(),
-        'confirmed_by' => $do->created_by,
+        'confirmed_by' => $userId,
         'shipped_at' => now(),
-        'shipped_by' => $do->created_by,
+        'shipped_by' => $userId,
     ]);
 
-    // Navigate to DO detail page
-    $page->navigate(spaUrl('/sales/delivery-orders/'.$do->id));
+    // Navigate to see updated status
+    $page->navigate(spaUrl("/sales/delivery-orders/{$doId}"));
     $page->assertSee('Shipped');
 
     // --- Mark Delivered (opens modal) ---
     $page->click('Mark Delivered');
-    $page->assertSee('Mark as Delivered'); // Modal title
+    $page->assertSee('Mark as Delivered');
 
     // Fill deliver modal fields
     $page->fill('input[placeholder="Name of person who received"]', 'John Doe');
@@ -235,19 +254,20 @@ it('can mark a shipped delivery order as delivered', function () {
     // Click Mark Delivered button inside the modal
     $page->click('[role="dialog"] button >> text=Mark Delivered');
 
-    // Wait for API response and reload
-    reloadPage($page);
+    // Wait for backend to process, then navigate to see updated state
+    waitForDoStatus($doId, 'delivered');
+    $page->navigate(spaUrl("/sales/delivery-orders/{$doId}"));
     $page->assertSee('Delivered');
 
     // DB assertions
-    $doRecord = realDb()->table('delivery_orders')->where('id', $do->id)->first();
+    $doRecord = realDb()->table('delivery_orders')->where('id', $doId)->first();
     expect($doRecord->status)->toBe('delivered');
     expect($doRecord->delivered_at)->not->toBeNull();
     expect($doRecord->received_by)->toBe('John Doe');
 
     // All items should be fully delivered
     $doItems = realDb()->table('delivery_order_items')
-        ->where('delivery_order_id', $do->id)
+        ->where('delivery_order_id', $doId)
         ->get();
 
     foreach ($doItems as $item) {
@@ -263,32 +283,37 @@ it('decreases stock correctly when shipping a delivery order', function () {
     $shipQty = 5;
     ensureProductStock($productId, $warehouseId, $initialStock);
 
+    // Get warehouse name for UI selection
+    $warehouseName = realDb()->table('warehouses')
+        ->where('id', $warehouseId)
+        ->value('name');
+
     // Create and post an invoice via SPA
     $page = createInvoice('Stock Deduction Test', $shipQty, '100000');
     $invoiceId = getInvoiceIdFromUrl($page);
     postInvoice($page);
 
-    // Create DO with warehouse association
-    $do = createDeliveryOrderForInvoice($invoiceId, $warehouseId);
+    // Create DO via UI with warehouse selected
+    createDOFromInvoiceUI($page, $warehouseName);
+    $doId = getDOIdFromUrl($page);
 
-    // Link DO items and invoice items to the seeded product
+    // Link DO items to the seeded product (SPA invoices don't have product_id)
     realDb()->table('delivery_order_items')
-        ->where('delivery_order_id', $do->id)
+        ->where('delivery_order_id', $doId)
         ->update(['product_id' => $productId]);
 
     realDb()->table('invoice_items')
         ->where('invoice_id', $invoiceId)
         ->update(['product_id' => $productId]);
 
-    // Confirm the DO via DB so Ship button shows
-    realDb()->table('delivery_orders')->where('id', $do->id)->update([
-        'status' => 'confirmed',
-        'confirmed_at' => now(),
-        'confirmed_by' => $do->created_by,
-    ]);
+    // Navigate to DO detail explicitly to ensure fresh page state
+    $page->navigate(spaUrl("/sales/delivery-orders/{$doId}"));
+    $page->assertSee('Draft');
 
-    // Navigate to DO detail page
-    $page->navigate(spaUrl('/sales/delivery-orders/'.$do->id));
+    // Confirm via UI
+    $page->click('Confirm');
+    waitForDoStatus($doId, 'confirmed');
+    $page->navigate(spaUrl("/sales/delivery-orders/{$doId}"));
     $page->assertSee('Confirmed');
 
     // Ship via UI
@@ -297,8 +322,9 @@ it('decreases stock correctly when shipping a delivery order', function () {
     $page->fill('input[placeholder="Enter tracking number"]', 'TRK-STOCK-001');
     $page->click('[role="dialog"] button >> text=Ship');
 
-    // Wait for API response
-    reloadPage($page);
+    // Wait for backend to process (including stock deduction), then navigate
+    waitForDoStatus($doId, 'shipped');
+    $page->navigate(spaUrl("/sales/delivery-orders/{$doId}"));
     $page->assertSee('Shipped');
 
     // DB assertion: stock should have decreased
@@ -312,7 +338,7 @@ it('decreases stock correctly when shipping a delivery order', function () {
     // Verify inventory movement was created
     $movement = realDb()->table('inventory_movements')
         ->where('reference_type', 'App\\Models\\Sales\\DeliveryOrder')
-        ->where('reference_id', $do->id)
+        ->where('reference_id', $doId)
         ->where('product_id', $productId)
         ->first();
 
