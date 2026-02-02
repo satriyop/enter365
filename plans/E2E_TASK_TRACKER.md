@@ -52,10 +52,10 @@
   - [x] Record 40% payment → status = Paid (assert DB: AR = 0)
   - [x] **Assert trial balance holds after each step**
 
-- [ ] **SALES-PEST-03**: Delivery order from invoice
-  - [ ] Create DO from invoice → items match
-  - [ ] Confirm → Ship → status transitions
-  - [ ] **Assert stock decreased correctly**
+- [x] **SALES-PEST-03**: Delivery order from invoice
+  - [x] Create DO from invoice → items match
+  - [x] Confirm → Ship → status transitions
+  - [x] **Assert stock decreased correctly**
 
 - [ ] **SALES-PEST-04**: Sales return from invoice
   - [ ] Create return → verify in list
@@ -196,11 +196,11 @@
 | Phase | Total Tasks | Done | Remaining |
 |-------|:-----------:|:----:|:---------:|
 | 1. Foundation | 2 | 2 | 0 |
-| 2. Auth & Sales | 4 | 3 | 1 |
+| 2. Auth & Sales | 4 | 4 | 0 |
 | 3. Purchasing | 4 | 0 | 4 |
 | 4. Inventory | 2 | 0 | 2 |
 | 5. Accounting & Reports | 4 | 0 | 4 |
 | 6. Payments | 2 | 0 | 2 |
 | 7. Manufacturing & Projects | 3 | 0 | 3 |
 | 8. Chain Tests | 5 | 0 | 5 |
-| **Total** | **26** | **5** | **21** |
+| **Total** | **26** | **6** | **20** |

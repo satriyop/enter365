@@ -159,6 +159,78 @@ function reloadPage($page)
     return $page;
 }
 
+/**
+ * Get a database connection to the real PostgreSQL used by the API server.
+ * phpunit.xml overrides DB_DATABASE to :memory: for sqlite, so we configure
+ * a separate connection with the real database name.
+ */
+function realDb(): \Illuminate\Database\ConnectionInterface
+{
+    if (! config()->has('database.connections.browser_pgsql')) {
+        config(['database.connections.browser_pgsql' => array_merge(
+            config('database.connections.pgsql'),
+            ['database' => env('BROWSER_DB_DATABASE', 'akuntansi')]
+        )]);
+    }
+
+    return \Illuminate\Support\Facades\DB::connection('browser_pgsql');
+}
+
+/**
+ * Create an invoice via the SPA form and return the page on the detail view.
+ */
+function createInvoice(string $description = 'E2E Test Item', int $qty = 10, string $price = '100000')
+{
+    $page = loginAndVisit('/invoices/new');
+
+    $page->assertSee('New Invoice');
+
+    // Select customer — Radix-Vue Select
+    $page->click('Select customer...');
+    $page->click('[role="option"] >> text=PT Test Customer');
+
+    // Fill line item description
+    $page->fill('input[placeholder="Item description"]', $description);
+
+    // Fill quantity
+    $page->fill('table input[type="number"][min="1"]', (string) $qty);
+
+    // Fill unit price (CurrencyInput in the table row, not the discount field below)
+    $page->click('td input[inputmode="numeric"]');
+    $page->type('td input[inputmode="numeric"]', $price);
+
+    // Submit the form
+    $page->click('Create Invoice');
+
+    // Wait for navigation to detail page
+    $page->assertSee('INV-');
+
+    return $page;
+}
+
+/**
+ * Post an invoice from its detail page and reload.
+ */
+function postInvoice($page): void
+{
+    $page->click('Post Invoice');
+    $page->assertSee('posted successfully');
+
+    // Reload to get updated status (SPA may not auto-refresh)
+    reloadPage($page);
+}
+
+/**
+ * Get the invoice ID from the current detail page URL.
+ */
+function getInvoiceIdFromUrl($page): int
+{
+    $url = $page->url();
+    preg_match('/\/invoices\/(\d+)/', $url, $matches);
+
+    return (int) ($matches[1] ?? 0);
+}
+
 /*
 |--------------------------------------------------------------------------
 | Domain Test Helpers

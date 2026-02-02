@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-use Illuminate\Support\Facades\DB;
-
 /**
  * SALES-PEST-02: Invoice post + payment browser tests.
  *
@@ -13,83 +11,9 @@ use Illuminate\Support\Facades\DB;
  * - Seeded accounts: 1-1100 (AR), 4-1001 (Revenue), 2-1200 (PPN), 1-1010 (Bank BCA)
  *
  * Note: Browser tests hit the real API + PostgreSQL database.
- * DB assertions use a dedicated 'browser_pgsql' connection to bypass
- * the phpunit.xml sqlite override.
+ * Shared helpers (realDb, createInvoice, postInvoice, getInvoiceIdFromUrl)
+ * are defined in tests/Pest.php.
  */
-
-/**
- * Get a database connection to the real PostgreSQL used by the API server.
- * phpunit.xml overrides DB_DATABASE to :memory: for sqlite, so we configure
- * a separate connection with the real database name.
- */
-function realDb(): \Illuminate\Database\ConnectionInterface
-{
-    if (! config()->has('database.connections.browser_pgsql')) {
-        config(['database.connections.browser_pgsql' => array_merge(
-            config('database.connections.pgsql'),
-            ['database' => env('BROWSER_DB_DATABASE', 'akuntansi')]
-        )]);
-    }
-
-    return DB::connection('browser_pgsql');
-}
-
-/**
- * Helper: create an invoice via the SPA and return the page on the detail view.
- */
-function createInvoice(string $description = 'E2E Test Item', int $qty = 10, string $price = '100000')
-{
-    $page = loginAndVisit('/invoices/new');
-
-    $page->assertSee('New Invoice');
-
-    // Select customer — Radix-Vue Select
-    $page->click('Select customer...');
-    $page->click('[role="option"] >> text=PT Test Customer');
-
-    // Fill line item description
-    $page->fill('input[placeholder="Item description"]', $description);
-
-    // Fill quantity
-    $page->fill('table input[type="number"][min="1"]', (string) $qty);
-
-    // Fill unit price (CurrencyInput in the table row, not the discount field below)
-    // Triple-click to select all text, then type the raw number
-    $page->click('td input[inputmode="numeric"]');
-    $page->type('td input[inputmode="numeric"]', $price);
-
-    // Submit the form
-    $page->click('Create Invoice');
-
-    // Wait for navigation to detail page
-    $page->assertSee('INV-');
-
-    return $page;
-}
-
-/**
- * Helper: post an invoice from its detail page and reload.
- */
-function postInvoice($page): void
-{
-    $page->click('Post Invoice');
-    $page->assertSee('posted successfully');
-
-    // Reload to get updated status (SPA may not auto-refresh)
-    reloadPage($page);
-}
-
-/**
- * Get the invoice ID from the current detail page URL.
- */
-function getInvoiceIdFromUrl($page): int
-{
-    $url = $page->url();
-    preg_match('/\/invoices\/(\d+)/', $url, $matches);
-
-    return (int) ($matches[1] ?? 0);
-}
-
 it('can create an invoice and verify it in the list', function () {
     $page = createInvoice('Invoice Create Test');
 
