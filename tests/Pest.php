@@ -21,7 +21,19 @@ use Laravel\Sanctum\Sanctum;
 |
 */
 
-uses(Tests\TestCase::class)->in('Feature', 'Unit', 'Contract');
+uses(Tests\TestCase::class)->in('Feature', 'Unit', 'Contract', 'Browser');
+
+/*
+|--------------------------------------------------------------------------
+| Browser Test Configuration
+|--------------------------------------------------------------------------
+|
+| Pest v4 browser tests use Playwright under the hood. This configures
+| the default timeout for browser interactions (waiting for elements, etc).
+|
+*/
+
+pest()->browser()->timeout(10000);
 
 /*
 |--------------------------------------------------------------------------

@@ -16,12 +16,12 @@
 
 ## Phase 1: Foundation
 
-- [ ] **SETUP-01**: Install and configure Pest v4 Browser Testing
-  - [ ] Verify `pestphp/pest` v4 is installed
-  - [ ] Configure browser test environment (`.env.testing`)
-  - [ ] Create `tests/Browser/` directory structure
-  - [ ] Write a smoke test that visits the SPA login page
-  - [ ] Verify `RefreshDatabase` works with browser tests
+- [x] **SETUP-01**: Install and configure Pest v4 Browser Testing
+  - [x] Verify `pestphp/pest` v4 is installed
+  - [x] Configure browser test environment (`phpunit.xml` + `tests/Pest.php`)
+  - [x] Create `tests/Browser/` directory structure
+  - [x] Write a smoke test that visits the SPA login page
+  - [x] Write auth browser tests (login, error, redirect)
 
 - [x] **AUDIT-01**: Browser audit of all SPA modules
   - [x] Visit every module in the SPA via browser (31 pages audited)
@@ -195,7 +195,7 @@
 
 | Phase | Total Tasks | Done | Remaining |
 |-------|:-----------:|:----:|:---------:|
-| 1. Foundation | 2 | 1 | 1 |
+| 1. Foundation | 2 | 2 | 0 |
 | 2. Auth & Sales | 4 | 0 | 4 |
 | 3. Purchasing | 4 | 0 | 4 |
 | 4. Inventory | 2 | 0 | 2 |
@@ -203,4 +203,4 @@
 | 6. Payments | 2 | 0 | 2 |
 | 7. Manufacturing & Projects | 3 | 0 | 3 |
 | 8. Chain Tests | 5 | 0 | 5 |
-| **Total** | **26** | **1** | **25** |
+| **Total** | **26** | **2** | **24** |
