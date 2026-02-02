@@ -14239,8 +14239,8 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "type": "object",
-                                            "additionalProperties": {}
+                                            "type": "array",
+                                            "items": {}
                                         },
                                         "headers": {
                                             "type": "object",
@@ -24668,15 +24668,13 @@
                                             "integer",
                                             "null"
                                         ],
-                                        "description": "Min Rp 5 juta for B2B",
                                         "minimum": 5500
                                     },
                                     "pln_category": {
                                         "type": [
                                             "string",
                                             "null"
-                                        ],
-                                        "description": "Min 5.5 kVA for B2B"
+                                        ]
                                     },
                                     "target_savings": {
                                         "type": [
@@ -41758,10 +41756,7 @@
                         "$ref": "#/components/schemas/AccountResource"
                     },
                     "transaction_date": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "description": {
                         "type": "string"
@@ -41806,10 +41801,7 @@
                         ]
                     },
                     "reconciled_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "reconciled_by": {
                         "type": [
@@ -41830,10 +41822,7 @@
                         ]
                     },
                     "created_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "updated_at": {
                         "type": "string"
@@ -41962,16 +41951,10 @@
                         "type": "integer"
                     },
                     "bill_date": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "due_date": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "description": {
                         "type": [
@@ -42078,10 +42061,7 @@
                         "type": "integer"
                     },
                     "created_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "updated_at": {
                         "type": "string"
@@ -43667,16 +43647,10 @@
                         ]
                     },
                     "created_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "updated_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     }
                 },
                 "required": [
@@ -45079,7 +45053,7 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "province": {
                         "type": "string"
@@ -45218,10 +45192,7 @@
                         "$ref": "#/components/schemas/WarehouseResource"
                     },
                     "movement_date": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "notes": {
                         "type": [
@@ -45252,16 +45223,10 @@
                         ]
                     },
                     "created_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "updated_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     }
                 },
                 "required": [
@@ -45291,10 +45256,10 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "invoice_id": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "description": {
                         "type": "string"
@@ -45306,31 +45271,37 @@
                         "type": "string"
                     },
                     "unit_price": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "discount_percent": {
                         "type": "number"
                     },
                     "discount_amount": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "tax_rate": {
                         "type": "number"
                     },
                     "tax_amount": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "line_total": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "sort_order": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "notes": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "revenue_account_id": {
-                        "type": "string"
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
                     },
                     "revenue_account": {
                         "$ref": "#/components/schemas/AccountResource"
@@ -45391,17 +45362,11 @@
                         "$ref": "#/components/schemas/ContactResource"
                     },
                     "invoice_date": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
+                        "type": "string",
                         "description": "Dates"
                     },
                     "due_date": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "days_until_due": {
                         "type": "integer"
@@ -45409,8 +45374,29 @@
                     "is_overdue": {
                         "type": "boolean"
                     },
-                    "days_overdue": {
-                        "type": "integer"
+                    "": {
+                        "anyOf": [
+                            {
+                                "type": "object",
+                                "properties": {
+                                    "days_overdue": {
+                                        "type": "integer"
+                                    }
+                                },
+                                "required": [
+                                    "days_overdue"
+                                ]
+                            },
+                            {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "minItems": 0,
+                                "maxItems": 0,
+                                "additionalItems": false
+                            }
+                        ]
                     },
                     "currency": {
                         "type": "string",
@@ -45741,25 +45727,16 @@
                         "description": "Metadata"
                     },
                     "last_reminder_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "created_by": {
                         "type": "integer"
                     },
                     "created_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "updated_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "links": {
                         "type": "object",
@@ -45784,6 +45761,7 @@
                     "due_date",
                     "days_until_due",
                     "is_overdue",
+                    null,
                     "currency",
                     "exchange_rate",
                     "subtotal",
@@ -45865,10 +45843,7 @@
                         "type": "string"
                     },
                     "entry_date": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "description": {
                         "type": "string"
@@ -45934,16 +45909,10 @@
                         ]
                     },
                     "created_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "updated_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     }
                 },
                 "required": [
@@ -46995,10 +46964,7 @@
                         "type": "integer"
                     },
                     "payment_date": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "amount": {
                         "type": "integer"
@@ -47058,16 +47024,10 @@
                         ]
                     },
                     "created_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "updated_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     }
                 },
                 "required": [
@@ -48314,7 +48274,7 @@
                         "type": "object",
                         "properties": {
                             "id": {
-                                "type": "string"
+                                "type": "integer"
                             },
                             "dp_number": {
                                 "type": "string"
@@ -48493,19 +48453,19 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "po_number": {
                         "type": "string"
                     },
                     "revision": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "full_number": {
                         "type": "string"
                     },
                     "contact_id": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "contact": {
                         "$ref": "#/components/schemas/ContactResource"
@@ -48517,10 +48477,16 @@
                         "type": "string"
                     },
                     "reference": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "subject": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "status": {
                         "$ref": "#/components/schemas/StatusResource"
@@ -48535,47 +48501,59 @@
                         "type": "number"
                     },
                     "subtotal": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "discount_type": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "discount_value": {
                         "type": "number"
                     },
                     "discount_amount": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "tax_rate": {
                         "type": "number"
                     },
                     "tax_amount": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "total_amount": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "base_currency_total": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "notes": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "terms_conditions": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "shipping_address": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "receiving_progress": {
-                        "type": "string",
+                        "type": "number",
                         "description": "Receiving info"
                     },
                     "is_fully_received": {
-                        "type": "string"
+                        "type": "boolean"
                     },
                     "has_received_items": {
-                        "type": "string"
+                        "type": "boolean"
                     },
                     "first_received_at": {
                         "type": "string"
@@ -48588,65 +48566,89 @@
                         "description": "Workflow info"
                     },
                     "submitted_by": {
-                        "type": "string"
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
                     },
                     "approved_at": {
                         "type": "string"
                     },
                     "approved_by": {
-                        "type": "string"
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
                     },
                     "rejected_at": {
                         "type": "string"
                     },
                     "rejected_by": {
-                        "type": "string"
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
                     },
                     "rejection_reason": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "cancelled_at": {
                         "type": "string"
                     },
                     "cancelled_by": {
-                        "type": "string"
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
                     },
                     "cancellation_reason": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "converted_to_bill_id": {
-                        "type": "string"
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
                     },
                     "converted_at": {
                         "type": "string"
                     },
                     "original_po_id": {
-                        "type": "string"
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
                     },
                     "can_edit": {
-                        "type": "string",
+                        "type": "boolean",
                         "description": "Permissions"
                     },
                     "can_submit": {
-                        "type": "string"
+                        "type": "boolean"
                     },
                     "can_approve": {
-                        "type": "string"
+                        "type": "boolean"
                     },
                     "can_reject": {
-                        "type": "string"
+                        "type": "boolean"
                     },
                     "can_cancel": {
-                        "type": "string"
+                        "type": "boolean"
                     },
                     "can_receive": {
-                        "type": "string"
+                        "type": "boolean"
                     },
                     "can_convert": {
-                        "type": "string"
+                        "type": "boolean"
                     },
                     "can_revise": {
-                        "type": "string"
+                        "type": "boolean"
                     },
                     "items": {
                         "type": "array",
@@ -48665,7 +48667,7 @@
                         "$ref": "#/components/schemas/BillResource"
                     },
                     "created_by": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "created_at": {
                         "type": "string"
