@@ -68,7 +68,10 @@ class PurchaseOrderBillConverter
                     'quantity' => $item->quantity_received,
                     'unit' => $item->unit,
                     'unit_price' => $item->unit_price,
-                    'amount' => $lineTotal,
+                    'tax_rate' => $item->tax_rate,
+                    'tax_amount' => (int) round($item->tax_amount * $receivedRatio),
+                    'line_total' => $lineTotal,
+                    'expense_account_id' => $item->expense_account_id,
                 ]);
             }
         }
