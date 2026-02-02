@@ -50,8 +50,11 @@ trait CascadesSoftDeletes
         });
     }
 
+    /**
+     * @return list<string>
+     */
     protected function getCascadeSoftDeletes(): array
     {
-        return property_exists($this, 'cascadeSoftDeletes') ? $this->cascadeSoftDeletes : [];
+        return $this->cascadeSoftDeletes;
     }
 }

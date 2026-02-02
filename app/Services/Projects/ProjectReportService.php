@@ -178,10 +178,10 @@ class ProjectReportService
             'monthly_costs' => $monthlyCosts,
             'kpis' => [
                 'cost_per_progress' => ($project->progress_percentage ?? 0) > 0
-                    ? round(($project->total_cost ?? 0) / $project->progress_percentage, 2)
+                    ? round(($project->total_cost ?? 0) / (float) $project->progress_percentage, 2)
                     : 0,
                 'revenue_per_progress' => ($project->progress_percentage ?? 0) > 0
-                    ? round(($project->total_revenue ?? 0) / $project->progress_percentage, 2)
+                    ? round(($project->total_revenue ?? 0) / (float) $project->progress_percentage, 2)
                     : 0,
                 'burn_rate' => $this->calculateBurnRate($project),
             ],
@@ -235,8 +235,8 @@ class ProjectReportService
             ->get()
             ->map(fn ($item) => [
                 'project_id' => $item->project_id,
-                'project_number' => $item->project?->project_number,
-                'project_name' => $item->project?->name,
+                'project_number' => $item->project->project_number ?? null,
+                'project_name' => $item->project->name ?? null,
                 'total_cost' => (int) $item->total,
             ])
             ->sortByDesc('total_cost')

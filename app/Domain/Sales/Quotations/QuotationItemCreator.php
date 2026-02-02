@@ -92,7 +92,7 @@ class QuotationItemCreator
                 'discount_percent' => 0,
                 'discount_amount' => 0,
                 'tax_rate' => $quotation->tax_rate,
-                'tax_amount' => (int) round($lineTotal * ($quotation->tax_rate / 100)),
+                'tax_amount' => (int) round($lineTotal * ((float) $quotation->tax_rate / 100)),
                 'line_total' => $lineTotal,
                 'sort_order' => $sortOrder++,
                 'notes' => $bomItem->notes,
@@ -115,7 +115,7 @@ class QuotationItemCreator
             $description .= ' ('.$bom->variant_name.')';
         }
 
-        $taxAmount = (int) round($sellingPrice * ($quotation->tax_rate / 100));
+        $taxAmount = (int) round($sellingPrice * ((float) $quotation->tax_rate / 100));
 
         QuotationItem::create([
             'quotation_id' => $quotation->id,

@@ -68,7 +68,7 @@ class PurchaseOrderReceivingService extends BaseService
     /**
      * Get receiving summary for a purchase order.
      *
-     * @return array{status: string, progress: float, is_fully_received: bool, has_received_items: bool, first_received_at: string|null, fully_received_at: string|null}
+     * @return array{status: \App\Enums\DocumentStatus, progress: float, is_fully_received: bool, has_received_items: bool, first_received_at: string|null, fully_received_at: string|null}
      */
     public function getReceivingSummary(PurchaseOrder $po): array
     {

@@ -52,7 +52,7 @@ interface BudgetServiceInterface
     /**
      * Get monthly breakdown for a budget.
      *
-     * @return array<string, mixed>
+     * @return array<int, array<string, mixed>>
      */
     public function getMonthlyBreakdown(Budget $budget): array;
 
