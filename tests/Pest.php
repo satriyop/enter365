@@ -116,6 +116,51 @@ function withoutFeatures(array $features): void
 
 /*
 |--------------------------------------------------------------------------
+| Browser Test Helpers
+|--------------------------------------------------------------------------
+|
+| Shared helpers for Pest v4 browser tests. These functions are used by
+| all tests in tests/Browser/ to interact with the SPA.
+|
+*/
+
+/**
+ * Build a full SPA URL from a relative path.
+ */
+function spaUrl(string $path = ''): string
+{
+    return env('SPA_URL', 'http://localhost:3000').$path;
+}
+
+/**
+ * Login to the SPA and navigate to a given path.
+ */
+function loginAndVisit(string $path = '/')
+{
+    $page = visit(spaUrl('/login'));
+
+    $page->fill('input[type="email"]', 'admin@example.com')
+        ->fill('input[type="password"]', 'password')
+        ->click('button[type="submit"]')
+        ->assertPathIs('/');
+
+    return $page->navigate(spaUrl($path));
+}
+
+/**
+ * Reload the current page. Needed because the SPA doesn't auto-refresh
+ * after workflow actions (submit, approve, post, etc).
+ */
+function reloadPage($page)
+{
+    $currentUrl = $page->url();
+    $page->navigate($currentUrl);
+
+    return $page;
+}
+
+/*
+|--------------------------------------------------------------------------
 | Domain Test Helpers
 |--------------------------------------------------------------------------
 |

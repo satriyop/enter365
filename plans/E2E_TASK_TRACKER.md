@@ -45,12 +45,12 @@
   - [x] Approve quotation → status changes in UI
   - [x] Convert to invoice → invoice created
 
-- [ ] **SALES-PEST-02**: Invoice post + payment
-  - [ ] Create invoice → verify in list
-  - [ ] Post invoice → journal entry created (assert DB: AR debit, Revenue credit)
-  - [ ] Record 60% payment → status = Partial (assert DB: paid_amount)
-  - [ ] Record 40% payment → status = Paid (assert DB: AR = 0)
-  - [ ] **Assert trial balance holds after each step**
+- [x] **SALES-PEST-02**: Invoice post + payment
+  - [x] Create invoice → verify in list
+  - [x] Post invoice → journal entry created (assert DB: AR debit, Revenue credit)
+  - [x] Record 60% payment → status = Partial (assert DB: paid_amount)
+  - [x] Record 40% payment → status = Paid (assert DB: AR = 0)
+  - [x] **Assert trial balance holds after each step**
 
 - [ ] **SALES-PEST-03**: Delivery order from invoice
   - [ ] Create DO from invoice → items match
@@ -196,11 +196,11 @@
 | Phase | Total Tasks | Done | Remaining |
 |-------|:-----------:|:----:|:---------:|
 | 1. Foundation | 2 | 2 | 0 |
-| 2. Auth & Sales | 4 | 2 | 2 |
+| 2. Auth & Sales | 4 | 3 | 1 |
 | 3. Purchasing | 4 | 0 | 4 |
 | 4. Inventory | 2 | 0 | 2 |
 | 5. Accounting & Reports | 4 | 0 | 4 |
 | 6. Payments | 2 | 0 | 2 |
 | 7. Manufacturing & Projects | 3 | 0 | 3 |
 | 8. Chain Tests | 5 | 0 | 5 |
-| **Total** | **26** | **4** | **22** |
+| **Total** | **26** | **5** | **21** |

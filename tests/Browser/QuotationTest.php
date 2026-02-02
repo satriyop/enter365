@@ -15,23 +15,6 @@ declare(strict_types=1);
  * updated status.
  */
 
-function spaUrl(string $path = ''): string
-{
-    return env('SPA_URL', 'http://localhost:3000').$path;
-}
-
-function loginAndVisit(string $path = '/')
-{
-    $page = visit(spaUrl('/login'));
-
-    $page->fill('input[type="email"]', 'admin@example.com')
-        ->fill('input[type="password"]', 'password')
-        ->click('button[type="submit"]')
-        ->assertPathIs('/');
-
-    return $page->navigate(spaUrl($path));
-}
-
 /**
  * Helper: fill and submit the quotation form, returning the page on the detail view.
  */
@@ -61,18 +44,6 @@ function createQuotation(string $subject = 'E2E Test Quotation')
 
     // Wait for navigation to detail page — QUO- prefix appears in the quotation number
     $page->assertSee('QUO-');
-
-    return $page;
-}
-
-/**
- * Helper: reload the current page to pick up status changes from the API.
- * The SPA doesn't auto-refetch after workflow actions.
- */
-function reloadPage($page)
-{
-    $currentUrl = $page->url();
-    $page->navigate($currentUrl);
 
     return $page;
 }
