@@ -11,14 +11,15 @@
 
 | Category | Count |
 |----------|:-----:|
-| Pages audited (complete pass) | 80+ |
-| List pages | 31 |
+| Pages audited (complete pass) | 116 routes (100%) |
+| List pages | 34 |
 | Create/new form pages | 26 |
-| Detail pages | 8 |
-| Edit pages | 3 |
+| Detail pages | 28 |
+| Edit pages | 16 |
 | Report pages | 13 |
 | Public pages | 3 |
-| Bugs found | 4 (4 fixed, 0 open) |
+| Utility pages | 3 |
+| Bugs found | 5 (4 fixed, 1 open) |
 | False positives | 3 |
 | Vite warnings | 1 |
 
@@ -130,6 +131,18 @@
 
 ---
 
+### BUG-08: Sales Return Detail Page — Vue Compiler Error (OPEN)
+
+- **Severity:** High
+- **URL:** `/sales/sales-returns/:id`
+- **Symptom:** Vite error overlay: `[plugin:vite:vue] Invalid end tag` — page cannot render
+- **Error:** `SalesReturnDetailPage.vue:257:7` — `</Card>` closing tag but the opening tag at line 250 is `<Alert>`
+- **Root Cause:** Template mismatch — an `<Alert>` component is opened on line 250 but closed with `</Card>` on line 257
+- **Impact:** Cannot view any sales return detail page
+- **Status:** Open
+
+---
+
 ### ~~BUG-02: Quotation Create Page — Blank~~ (FALSE POSITIVE)
 
 - **URL tested:** `/quotations/create` (wrong URL)
@@ -191,11 +204,22 @@
 | Sales Return create | `/sales/sales-returns/new` | OK | List-page with modal (created from invoices) |
 | Contact create | `/contacts/new` | OK | Code, Type, Name, Email, Phone, Address, Tax, Payment Terms |
 
-### Sales Module — Detail & Edit Pages
+### Sales Module — Detail Pages
 
 | Page | URL | Status | Notes |
 |------|-----|:------:|-------|
+| Quotation detail | `/quotations/999` | 404-OK | "Endpoint tidak ditemukan" — graceful handling |
+| Invoice detail | `/invoices/999` | 404-OK | "Failed to load invoice" — graceful error |
+| DO detail | `/sales/delivery-orders/999` | 404-OK | Graceful not-found |
+| Sales Return detail | `/sales/sales-returns/999` | **BUG** | BUG-08: Vue compiler error — `</Card>` mismatched with `<Alert>` |
 | Contact detail | `/contacts/1` | OK | Full profile: badges, Contact Info, Payment Terms, Address, Tax Info |
+
+### Sales Module — Edit Pages
+
+| Page | URL | Status | Notes |
+|------|-----|:------:|-------|
+| Quotation edit | `/quotations/999/edit` | OK | Form renders with defaults (no data for ID 999) |
+| Invoice edit | `/invoices/999/edit` | OK | Form renders with defaults |
 | Contact edit | `/contacts/1/edit` | OK | Pre-populated form, Ctrl+S to save. Note: Phone validation fires on factory data |
 
 ### Purchasing Module — List Pages
@@ -211,6 +235,15 @@
 | Page | URL | Status | Notes |
 |------|-----|:------:|-------|
 | PO create | `/purchasing/purchase-orders/new` | OK | Vendor, Reference, Subject, PO Date, Expected Delivery, Shipping, Line Items |
+
+### Purchasing Module — Detail & Edit Pages
+
+| Page | URL | Status | Notes |
+|------|-----|:------:|-------|
+| PO detail | `/purchasing/purchase-orders/999` | OK | Renders page (no data for ID 999) |
+| GRN detail | `/purchasing/goods-receipt-notes/999` | OK | Renders page |
+| Purchase Return detail | `/purchasing/purchase-returns/999` | OK | Renders page |
+| PO edit | `/purchasing/purchase-orders/999/edit` | OK | Form renders with defaults |
 
 ### Inventory Module — List Pages
 
@@ -230,6 +263,18 @@
 | BOM create | `/boms/new` | OK | BOM Name, Output Product, Quantity, Unit, BOM Items |
 | BOM from template | `/boms/from-template` | OK | 4-step wizard, empty state "No templates available" |
 | Product create | `/products/new` | OK | Full form with product details |
+
+### Inventory Module — Detail & Edit Pages
+
+| Page | URL | Status | Notes |
+|------|-----|:------:|-------|
+| Inventory main | `/inventory` | OK | Redirects to Stock page |
+| Stock Movements | `/inventory/movements` | OK | Type filter, date range, empty state |
+| Stock Opname detail | `/inventory/opnames/999` | 404-OK | Graceful not-found |
+| Product detail | `/products/999` | OK | Renders page |
+| BOM detail | `/boms/999` | 404-OK | Graceful not-found |
+| Product edit | `/products/999/edit` | OK | Form renders with defaults |
+| BOM edit | `/boms/999/edit` | OK | Form renders with defaults |
 
 ### Accounting Module — List Pages
 
@@ -298,6 +343,7 @@
 | Bill detail | `/bills/1` | OK | BILL-202602-0001, Summary, Line Items (empty — "No data available"), Post/Edit/Delete |
 | Bill edit | `/bills/1/edit` | OK | Pre-populated form with Line Items |
 | Payment detail | `/payments/1` | OK | PAY-TEST (Paid), Amount Rp 100.000, Void Payment button |
+| Down Payment detail | `/finance/down-payments/999` | 404-OK | Graceful not-found |
 
 ### Manufacturing Module — List Pages
 
@@ -316,12 +362,25 @@
 | Material Req create | `/manufacturing/material-requisitions/new` | OK | Work Order, Warehouse, Date, Notes, Requested Items |
 | Subcontractor WO create | `/manufacturing/subcontractor-work-orders/new` | OK | Name, Related WO, Related Project, Description, Scope |
 
+### Manufacturing Module — Detail & Edit Pages
+
+| Page | URL | Status | Notes |
+|------|-----|:------:|-------|
+| Work Order detail | `/work-orders/999` | OK | Renders page |
+| Material Req detail | `/manufacturing/material-requisitions/999` | OK | Renders page |
+| Subcontractor WO detail | `/manufacturing/subcontractor-work-orders/999` | OK | Renders page |
+| Subcontractor Invoice detail | `/manufacturing/subcontractor-invoices/999` | OK | Renders page |
+| Work Order edit | `/work-orders/999/edit` | OK | Form renders with defaults |
+| Subcontractor WO edit | `/manufacturing/subcontractor-work-orders/999/edit` | OK | Form renders with defaults |
+
 ### Projects Module
 
 | Page | URL | Status | Notes |
 |------|-----|:------:|-------|
 | Projects list | `/projects` | OK | Search, filter, empty state |
 | Project create | `/projects/new` | OK | Name, Customer, Priority, Location, Description, Timeline, Budget & Contract |
+| Project detail | `/projects/999` | OK | Renders page |
+| Project edit | `/projects/999/edit` | OK | Form renders with defaults |
 
 ### Solar Module
 
@@ -330,6 +389,9 @@
 | Solar Proposals | `/solar-proposals` | OK | Status cards, search, filter |
 | Solar Calculator | `/solar-calculator` | OK | Public page, kVA options, Indonesian language |
 | Solar Proposal create | `/solar-proposals/new` | OK | 4-step wizard (Site Info → Electricity → System → Review) |
+| Solar Analytics | `/solar-proposals/analytics` | OK | KPI cards, Pipeline, Monthly Trends, Sales Funnel |
+| Solar Proposal detail | `/solar-proposals/999` | OK | Renders page |
+| Solar Proposal edit | `/solar-proposals/999/edit` | OK | Form renders with defaults |
 
 ### Settings & Admin — List Pages
 
@@ -351,6 +413,18 @@
 | Component Standard create | `/settings/component-library/new` | OK | Code, IEC Standard, Name, Category, Subcategory, Unit, Specs |
 | Rule Set create | `/settings/rule-sets/new` | OK | Name, Code (Generate), Description, Active toggle |
 | BOM Template create | `/settings/bom-templates/new` | OK | Name, Code (Generate), Category, Description, Defaults |
+
+### Settings & Admin — Detail & Edit Pages
+
+| Page | URL | Status | Notes |
+|------|-----|:------:|-------|
+| Component Standard detail | `/settings/component-library/999` | 404-OK | Graceful not-found |
+| Rule Set detail | `/settings/rule-sets/999` | 404-OK | Graceful not-found |
+| BOM Template detail | `/settings/bom-templates/999` | 404-OK | Graceful not-found |
+| Company Profile edit | `/company-profiles/999/edit` | OK | Form renders (Ctrl+S to save) |
+| Component Standard edit | `/settings/component-library/999/edit` | OK | Form renders |
+| Rule Set edit | `/settings/rule-sets/999/edit` | OK | Form renders |
+| BOM Template edit | `/settings/bom-templates/999/edit` | OK | Form renders |
 
 ### Public Pages
 
@@ -399,15 +473,17 @@
 | 2 | BUG-05: Account form crash | Cannot create/edit accounts | FIXED |
 | 3 | BUG-07: RpNaN on reports | Financial reports unusable | FIXED |
 | 4 | BUG-06: Settings form empty | Confusing UX on settings | FIXED |
-| 5 | WARN-01: HTML nesting | May cause hydration issues | Open — Low priority |
+| 5 | **BUG-08: Sales Return detail crash** | Cannot view sales returns | **OPEN** — fix `</Card>` → `</Alert>` |
+| 6 | WARN-01: HTML nesting | May cause hydration issues | Open — Low priority |
 
 ---
 
 ## Remaining Issues
 
-1. **WARN-01** — Wrap `<tr>` elements in `<tbody>` in PrintableDocument.vue (low priority)
-2. **Report date headers** — Several reports show empty "As of" or "Period: to" without dates (cosmetic)
-3. **Stock Opname warehouse dropdown** shows "0" instead of warehouse name (minor)
+1. **BUG-08** — `SalesReturnDetailPage.vue:257` has `</Card>` but should be `</Alert>` (blocks sales return detail view)
+2. **WARN-01** — Wrap `<tr>` elements in `<tbody>` in PrintableDocument.vue (low priority)
+3. **Report date headers** — Several reports show empty "As of" or "Period: to" without dates (cosmetic)
+4. **Stock Opname warehouse dropdown** shows "0" instead of warehouse name (minor)
 
 ---
 
