@@ -11,11 +11,10 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class JournalEntryResource extends JsonResource
 {
     /**
-     * @param  \Illuminate\Http\Request  $request
      * @return array{
      *   id: int,
      *   entry_number: string,
-     *   entry_date: string|null,
+     *   entry_date: string,
      *   description: string,
      *   reference: string|null,
      *   source_type: string|null,
@@ -40,7 +39,7 @@ class JournalEntryResource extends JsonResource
         return [
             'id' => $this->id,
             'entry_number' => $this->entry_number,
-            'entry_date' => $this->entry_date?->toDateString(),
+            'entry_date' => $this->entry_date->toDateString(),
             'description' => $this->description,
             'reference' => $this->reference,
             'source_type' => $this->source_type,

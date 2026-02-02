@@ -54,7 +54,7 @@ class SolarProposalDetailsSheet implements FromArray, ShouldAutoSize, WithStyles
             [''],
             ['SELECTED SYSTEM'],
             [''],
-            ['BOM/Package', $p->selectedBom?->name ?? 'Auto-select'],
+            ['BOM/Package', $p->selectedBom->name ?? 'Auto-select'],
             ['System Cost', 'Rp '.number_format((float) ($p->getSystemCost() ?? 0), 0, ',', '.')],
             ['Cost per kWp', $p->system_capacity_kwp && $p->getSystemCost()
                 ? 'Rp '.number_format((float) ($p->getSystemCost() ?? 0) / (float) $p->system_capacity_kwp, 0, ',', '.')

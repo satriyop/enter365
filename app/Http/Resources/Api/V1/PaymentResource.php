@@ -11,13 +11,12 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class PaymentResource extends JsonResource
 {
     /**
-     * @param  \Illuminate\Http\Request  $request
      * @return array{
      *   id: int,
      *   payment_number: string,
      *   type: string,
      *   contact_id: int,
-     *   payment_date: string|null,
+     *   payment_date: string,
      *   amount: int,
      *   payment_method: string,
      *   reference: string|null,
@@ -42,7 +41,7 @@ class PaymentResource extends JsonResource
             'payment_number' => $this->payment_number,
             'type' => $this->type,
             'contact_id' => $this->contact_id,
-            'payment_date' => $this->payment_date?->toDateString(),
+            'payment_date' => $this->payment_date->toDateString(),
             'amount' => $this->amount,
             'payment_method' => $this->payment_method,
             'reference' => $this->reference,

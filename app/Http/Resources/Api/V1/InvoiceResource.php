@@ -21,7 +21,6 @@ class InvoiceResource extends JsonResource
     /**
      * Transform the resource into an array.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return array{
      *   id: int,
      *   invoice_number: string,
@@ -29,8 +28,8 @@ class InvoiceResource extends JsonResource
      *   description: string|null,
      *   contact_id: int,
      *   contact?: array{id: int, name: string, email: string|null},
-     *   invoice_date: string|null,
-     *   due_date: string|null,
+     *   invoice_date: string,
+     *   due_date: string,
      *   days_until_due: int,
      *   is_overdue: bool,
      *   days_overdue?: int,
@@ -96,8 +95,8 @@ class InvoiceResource extends JsonResource
             'contact' => new ContactResource($this->whenLoaded('contact')),
 
             // Dates
-            'invoice_date' => $this->invoice_date?->toDateString(),
-            'due_date' => $this->due_date?->toDateString(),
+            'invoice_date' => $this->invoice_date->toDateString(),
+            'due_date' => $this->due_date->toDateString(),
             'days_until_due' => $this->getDaysUntilDue(),
             'is_overdue' => $this->isOverdue(),
             $this->mergeWhen($this->isOverdue(), [

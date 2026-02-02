@@ -11,14 +11,13 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class BillResource extends JsonResource
 {
     /**
-     * @param  \Illuminate\Http\Request  $request
      * @return array{
      *   id: int,
      *   bill_number: string,
      *   vendor_invoice_number: string|null,
      *   contact_id: int,
-     *   bill_date: string|null,
-     *   due_date: string|null,
+     *   bill_date: string,
+     *   due_date: string,
      *   description: string|null,
      *   reference: string|null,
      *   subtotal: int,
@@ -48,8 +47,8 @@ class BillResource extends JsonResource
             'bill_number' => $this->bill_number,
             'vendor_invoice_number' => $this->vendor_invoice_number,
             'contact_id' => $this->contact_id,
-            'bill_date' => $this->bill_date?->toDateString(),
-            'due_date' => $this->due_date?->toDateString(),
+            'bill_date' => $this->bill_date->toDateString(),
+            'due_date' => $this->due_date->toDateString(),
             'description' => $this->description,
             'reference' => $this->reference,
             'subtotal' => $this->subtotal,

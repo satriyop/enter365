@@ -171,8 +171,8 @@ class BrandSwapExecutionService extends BaseService
             // Store previous state for audit
             $previous = [
                 'product_id' => $item->product_id,
-                'product_name' => $item->product?->name ?? $item->description,
-                'product_sku' => $item->product?->sku,
+                'product_name' => $item->product->name ?? $item->description,
+                'product_sku' => $item->product->sku ?? null,
                 'unit_cost' => $item->unit_cost,
             ];
 

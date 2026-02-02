@@ -132,7 +132,7 @@ class PurchaseReturnFactory extends Factory
     {
         return $this->state(function (array $attributes) use ($warehouse) {
             return [
-                'warehouse_id' => $warehouse?->id ?? Warehouse::factory(),
+                'warehouse_id' => $warehouse->id ?? Warehouse::factory(),
             ];
         });
     }

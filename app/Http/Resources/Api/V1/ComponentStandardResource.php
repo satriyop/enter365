@@ -12,7 +12,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class ComponentStandardResource extends JsonResource
 {
     /**
-     * @param  \Illuminate\Http\Request  $request
      * @return array{
      *   id: int,
      *   code: string,

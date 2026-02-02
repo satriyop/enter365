@@ -158,7 +158,7 @@ class MrpDemandService
 
                 // Get lead time for component
                 $componentProduct = $bomItem->product;
-                $leadTime = $componentProduct?->lead_time_days ?? 0;
+                $leadTime = $componentProduct->lead_time_days ?? 0;
                 $requiredDate = $demand->required_date->copy()->subDays($leadTime);
 
                 // Create child demand

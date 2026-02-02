@@ -237,8 +237,8 @@ class BrandSwapPreviewService
     {
         $current = [
             'product_id' => $item->product_id,
-            'product_name' => $item->product?->name ?? $item->description,
-            'product_sku' => $item->product?->sku,
+            'product_name' => $item->product->name ?? $item->description,
+            'product_sku' => $item->product->sku ?? null,
             'unit_cost' => $item->unit_cost,
             'brand' => null,
             'component_standard_id' => $item->component_standard_id,
@@ -262,7 +262,7 @@ class BrandSwapPreviewService
                 ->first();
         }
 
-        $current['brand'] = $currentMapping?->brand;
+        $current['brand'] = $currentMapping->brand ?? null;
         $current['brand_label'] = $currentMapping
             ? (ComponentBrandMapping::getBrands()[$currentMapping->brand] ?? ucfirst($currentMapping->brand))
             : null;

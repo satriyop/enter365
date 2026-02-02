@@ -11,7 +11,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class InventoryMovementResource extends JsonResource
 {
     /**
-     * @param  \Illuminate\Http\Request  $request
      * @return array{
      *   id: int,
      *   movement_number: string,
@@ -30,7 +29,7 @@ class InventoryMovementResource extends JsonResource
      *   reference_id: int|null,
      *   transfer_warehouse_id: int|null,
      *   transfer_warehouse?: WarehouseResource,
-     *   movement_date: string|null,
+     *   movement_date: string,
      *   notes: string|null,
      *   created_by: int|null,
      *   created_by_user?: array{id: int, name: string},
@@ -63,7 +62,7 @@ class InventoryMovementResource extends JsonResource
             'transfer_warehouse_id' => $this->transfer_warehouse_id,
             'transfer_warehouse' => new WarehouseResource($this->whenLoaded('transferWarehouse')),
 
-            'movement_date' => $this->movement_date?->toDateString(),
+            'movement_date' => $this->movement_date->toDateString(),
             'notes' => $this->notes,
 
             // Audit

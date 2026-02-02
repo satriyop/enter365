@@ -19,7 +19,7 @@ class UpdateBomTemplateRequest extends FormRequest
     public function rules(): array
     {
         $template = $this->route('bom_template') ?? $this->route('bomTemplate');
-        $templateId = $template?->id;
+        $templateId = $template->id ?? null;
 
         return [
             'code' => [

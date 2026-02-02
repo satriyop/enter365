@@ -146,8 +146,8 @@ class SubcontractorReportService
             'id' => $wo->id,
             'sc_wo_number' => $wo->sc_wo_number,
             'name' => $wo->name,
-            'project_number' => $wo->project?->project_number,
-            'project_name' => $wo->project?->name,
+            'project_number' => $wo->project->project_number ?? null,
+            'project_name' => $wo->project->name ?? null,
             'status' => $wo->status,
             'agreed_amount' => $wo->agreed_amount,
             'actual_amount' => $wo->actual_amount,
@@ -169,10 +169,10 @@ class SubcontractorReportService
             ->map(fn ($inv) => [
                 'id' => $inv->id,
                 'invoice_number' => $inv->invoice_number,
-                'invoice_date' => $inv->invoice_date?->format('Y-m-d'),
+                'invoice_date' => $inv->invoice_date->format('Y-m-d') ?? null,
                 'amount' => $inv->amount,
                 'status' => $inv->status,
-                'sc_wo_number' => $inv->subcontractorWorkOrder?->sc_wo_number,
+                'sc_wo_number' => $inv->subcontractorWorkOrder->sc_wo_number ?? null,
             ]);
 
         $totalAgreed = $workOrders->sum('agreed_amount');
@@ -232,8 +232,8 @@ class SubcontractorReportService
             'id' => $wo->id,
             'sc_wo_number' => $wo->sc_wo_number,
             'name' => $wo->name,
-            'subcontractor_name' => $wo->subcontractor?->name,
-            'project_number' => $wo->project?->project_number,
+            'subcontractor_name' => $wo->subcontractor->name ?? null,
+            'project_number' => $wo->project->project_number ?? null,
             'status' => $wo->status,
             'agreed_amount' => $wo->agreed_amount,
             'retention_percent' => (float) $wo->retention_percent,

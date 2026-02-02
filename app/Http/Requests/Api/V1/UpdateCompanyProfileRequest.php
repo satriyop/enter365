@@ -15,7 +15,7 @@ class UpdateCompanyProfileRequest extends FormRequest
     public function rules(): array
     {
         $profile = $this->route('company_profile');
-        $profileId = $profile?->id ?? $profile;
+        $profileId = $profile->id ?? $profile;
 
         return [
             'name' => ['sometimes', 'string', 'max:255'],

@@ -15,7 +15,7 @@ class UpdatePasswordRequest extends FormRequest
         $targetUser = $this->route('user');
 
         // Admin can change any user's password
-        if ($this->user()?->isAdmin()) {
+        if ($this->user()->isAdmin() ?? false) {
             return true;
         }
 

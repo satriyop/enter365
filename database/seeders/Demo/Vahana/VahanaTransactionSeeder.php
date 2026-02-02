@@ -661,9 +661,9 @@ class VahanaTransactionSeeder extends Seeder
             }
 
             $items[] = [
-                'description' => $grnItem->product?->name ?? 'Item',
+                'description' => $grnItem->product->name ?? 'Item',
                 'quantity' => $grnItem->quantity_received,
-                'unit' => $grnItem->product?->unit ?? 'unit',
+                'unit' => $grnItem->product->unit ?? 'unit',
                 'unit_price' => $grnItem->unit_price,
             ];
         }

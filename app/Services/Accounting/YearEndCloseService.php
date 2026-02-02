@@ -392,7 +392,7 @@ class YearEndCloseService extends BaseService implements YearEndCloseServiceInte
             $period->update(['closing_entry_id' => $incomeSummaryEntry->id]);
         } elseif ($revenueEntry || $expenseEntry) {
             // For direct strategy, use the revenue entry as the main closing entry
-            $period->update(['closing_entry_id' => $revenueEntry?->id ?? $expenseEntry?->id]);
+            $period->update(['closing_entry_id' => $revenueEntry->id ?? $expenseEntry->id ?? null]);
         }
 
         // Return progress with the last journal ID for rollback tracking
@@ -413,7 +413,7 @@ class YearEndCloseService extends BaseService implements YearEndCloseServiceInte
 
         return $progress->completeStep(
             ClosingStep::CloseDividends,
-            $dividendEntry?->id
+            $dividendEntry->id ?? null
         );
     }
 
@@ -462,7 +462,7 @@ class YearEndCloseService extends BaseService implements YearEndCloseServiceInte
 
         return $progress->completeStep(
             ClosingStep::PopulateOpeningBalances,
-            $openingEntry?->id
+            $openingEntry->id ?? null
         );
     }
 

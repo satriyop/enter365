@@ -15,7 +15,7 @@ class UpdateUserRequest extends FormRequest
         $targetUser = $this->route('user');
 
         // Admin can update any user
-        if ($this->user()?->isAdmin()) {
+        if ($this->user()->isAdmin() ?? false) {
             return true;
         }
 
@@ -44,7 +44,7 @@ class UpdateUserRequest extends FormRequest
         ];
 
         // Only admin can change is_active and roles
-        if ($this->user()?->isAdmin()) {
+        if ($this->user()->isAdmin() ?? false) {
             $rules['is_active'] = ['sometimes', 'boolean'];
             $rules['roles'] = ['sometimes', 'array'];
             $rules['roles.*'] = ['integer', 'exists:roles,id'];
