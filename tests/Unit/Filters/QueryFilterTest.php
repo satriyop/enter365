@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use App\Filters\QueryFilter;
 use App\Filters\Traits\HasDateRangeFilter;
-use App\Filters\Traits\HasRelationFilter;
 use App\Filters\Traits\HasSearchFilter;
 use App\Filters\Traits\HasStatusFilter;
 use Illuminate\Database\Eloquent\Builder;
@@ -14,7 +13,6 @@ use Illuminate\Http\Request;
 class TestProductFilter extends QueryFilter
 {
     use HasDateRangeFilter;
-    use HasRelationFilter;
     use HasSearchFilter;
     use HasStatusFilter;
 
@@ -26,6 +24,11 @@ class TestProductFilter extends QueryFilter
     protected function getAllowedSortFields(): array
     {
         return ['id', 'name', 'created_at', 'price'];
+    }
+
+    public function categoryId(int|string $value): void
+    {
+        $this->builder->where('category_id', $value);
     }
 
     public function type(string $value): void
@@ -231,36 +234,6 @@ describe('HasSearchFilter Trait', function () {
         $builder = mock(Builder::class);
         $builder->shouldReceive('where')
             ->with(\Mockery::type('Closure'))
-            ->once()
-            ->andReturnSelf();
-        $builder->shouldReceive('orderBy')->andReturnSelf();
-
-        $filter->apply($builder);
-    });
-});
-
-describe('HasRelationFilter Trait', function () {
-    it('filters by contact_id', function () {
-        $request = Request::create('/', 'GET', ['contact_id' => 5]);
-        $filter = new TestProductFilter($request);
-
-        $builder = mock(Builder::class);
-        $builder->shouldReceive('where')
-            ->with('contact_id', 5)
-            ->once()
-            ->andReturnSelf();
-        $builder->shouldReceive('orderBy')->andReturnSelf();
-
-        $filter->apply($builder);
-    });
-
-    it('filters by project_id', function () {
-        $request = Request::create('/', 'GET', ['project_id' => 10]);
-        $filter = new TestProductFilter($request);
-
-        $builder = mock(Builder::class);
-        $builder->shouldReceive('where')
-            ->with('project_id', 10)
             ->once()
             ->andReturnSelf();
         $builder->shouldReceive('orderBy')->andReturnSelf();
