@@ -9369,13 +9369,19 @@
                                                                     "type": "string"
                                                                 },
                                                                 "product_sku": {
-                                                                    "type": "string"
+                                                                    "type": [
+                                                                        "string",
+                                                                        "null"
+                                                                    ]
                                                                 },
                                                                 "unit_cost": {
                                                                     "type": "integer"
                                                                 },
                                                                 "brand": {
-                                                                    "type": "string"
+                                                                    "type": [
+                                                                        "string",
+                                                                        "null"
+                                                                    ]
                                                                 },
                                                                 "component_standard_id": {
                                                                     "type": [
@@ -9429,7 +9435,10 @@
                                                                     "type": "string"
                                                                 },
                                                                 "product_sku": {
-                                                                    "type": "string"
+                                                                    "type": [
+                                                                        "string",
+                                                                        "null"
+                                                                    ]
                                                                 },
                                                                 "unit_cost": {
                                                                     "type": "integer"
@@ -41749,7 +41758,10 @@
                         "$ref": "#/components/schemas/AccountResource"
                     },
                     "transaction_date": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "description": {
                         "type": "string"
@@ -41794,7 +41806,10 @@
                         ]
                     },
                     "reconciled_at": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "reconciled_by": {
                         "type": [
@@ -41815,7 +41830,10 @@
                         ]
                     },
                     "created_at": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "updated_at": {
                         "type": "string"
@@ -41944,10 +41962,16 @@
                         "type": "integer"
                     },
                     "bill_date": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "due_date": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "description": {
                         "type": [
@@ -42054,7 +42078,10 @@
                         "type": "integer"
                     },
                     "created_at": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "updated_at": {
                         "type": "string"
@@ -43640,10 +43667,16 @@
                         ]
                     },
                     "created_at": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "updated_at": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     }
                 },
                 "required": [
@@ -45185,7 +45218,10 @@
                         "$ref": "#/components/schemas/WarehouseResource"
                     },
                     "movement_date": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "notes": {
                         "type": [
@@ -45216,10 +45252,16 @@
                         ]
                     },
                     "created_at": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "updated_at": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     }
                 },
                 "required": [
@@ -45349,11 +45391,17 @@
                         "$ref": "#/components/schemas/ContactResource"
                     },
                     "invoice_date": {
-                        "type": "string",
+                        "type": [
+                            "string",
+                            "null"
+                        ],
                         "description": "Dates"
                     },
                     "due_date": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "days_until_due": {
                         "type": "integer"
@@ -45693,16 +45741,25 @@
                         "description": "Metadata"
                     },
                     "last_reminder_at": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "created_by": {
                         "type": "integer"
                     },
                     "created_at": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "updated_at": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "links": {
                         "type": "object",
@@ -45808,7 +45865,10 @@
                         "type": "string"
                     },
                     "entry_date": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "description": {
                         "type": "string"
@@ -45874,10 +45934,16 @@
                         ]
                     },
                     "created_at": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "updated_at": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     }
                 },
                 "required": [
@@ -46929,7 +46995,10 @@
                         "type": "integer"
                     },
                     "payment_date": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "amount": {
                         "type": "integer"
@@ -46989,10 +47058,16 @@
                         ]
                     },
                     "created_at": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "updated_at": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     }
                 },
                 "required": [

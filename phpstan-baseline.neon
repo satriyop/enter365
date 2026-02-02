@@ -13,12 +13,6 @@ parameters:
 			path: app/Domain/Inventory/StockOpname/StockOpnameStateMachine.php
 
 		-
-			message: '#^Binary operation "/" between string and 100 results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 2
-			path: app/Domain/Sales/Quotations/QuotationItemCreator.php
-
-		-
 			message: '#^Cannot call method count\(\) on bool\.$#'
 			identifier: method.nonObject
 			count: 1
@@ -57,12 +51,6 @@ parameters:
 		-
 			message: '#^Expression on left side of \?\? is not nullable\.$#'
 			identifier: nullCoalesce.expr
-			count: 1
-			path: app/Exports/Sheets/SolarProposalDetailsSheet.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Exports/Sheets/SolarProposalDetailsSheet.php
 
@@ -235,48 +223,6 @@ parameters:
 			path: app/Http/Middleware/BindOperationContext.php
 
 		-
-			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Http/Requests/Api/V1/StoreSpecValidationRuleRequest.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Http/Requests/Api/V1/UpdateAccountRequest.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Http/Requests/Api/V1/UpdateCompanyProfileRequest.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Http/Requests/Api/V1/UpdateComponentStandardRequest.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Http/Requests/Api/V1/UpdateContactRequest.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Http/Requests/Api/V1/UpdateProductCategoryRequest.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Http/Requests/Api/V1/UpdateSpecValidationRuleRequest.php
-
-		-
 			message: '#^Method App\\Http\\Resources\\Api\\V1\\AccountResource\:\:toArray\(\) should return array\{id\: int, code\: string, name\: string, type\: string, subtype\: string\|null, description\: string\|null, parent_id\: int\|null, is_active\: bool, \.\.\.\} but returns array\{id\: int, code\: string, name\: string, type\: string, subtype\: string\|null, description\: string\|null, parent_id\: int\<0, max\>\|null, is_active\: bool, \.\.\.\}\.$#'
 			identifier: return.type
 			count: 1
@@ -301,27 +247,15 @@ parameters:
 			path: app/Http/Resources/Api/V1/BankTransactionResource.php
 
 		-
-			message: '#^Method App\\Http\\Resources\\Api\\V1\\BankTransactionResource\:\:toArray\(\) should return array\{id\: int, account_id\: int, account\?\: App\\Http\\Resources\\Api\\V1\\AccountResource, transaction_date\: string\|null, description\: string\|null, reference\: string\|null, debit\: int, credit\: int, \.\.\.\} but returns array\{id\: int, account_id\: int\<0, max\>, account\: App\\Http\\Resources\\Api\\V1\\AccountResource, transaction_date\: mixed, description\: string, reference\: string\|null, debit\: int, credit\: int, \.\.\.\}\.$#'
+			message: '#^Method App\\Http\\Resources\\Api\\V1\\BankTransactionResource\:\:toArray\(\) should return array\{id\: int, account_id\: int, account\?\: App\\Http\\Resources\\Api\\V1\\AccountResource, transaction_date\: string, description\: string\|null, reference\: string\|null, debit\: int, credit\: int, \.\.\.\} but returns array\{id\: int, account_id\: int\<0, max\>, account\: App\\Http\\Resources\\Api\\V1\\AccountResource, transaction_date\: mixed, description\: string, reference\: string\|null, debit\: int, credit\: int, \.\.\.\}\.$#'
 			identifier: return.type
 			count: 1
 			path: app/Http/Resources/Api/V1/BankTransactionResource.php
 
 		-
-			message: '#^Using nullsafe method call on non\-nullable type string\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Http/Resources/Api/V1/BankTransactionResource.php
-
-		-
-			message: '#^Method App\\Http\\Resources\\Api\\V1\\BillResource\:\:toArray\(\) should return array\{id\: int, bill_number\: string, vendor_invoice_number\: string\|null, contact_id\: int, bill_date\: string\|null, due_date\: string\|null, description\: string\|null, reference\: string\|null, \.\.\.\} but returns array\{id\: int, bill_number\: string, vendor_invoice_number\: string\|null, contact_id\: int, bill_date\: string, due_date\: string, description\: string\|null, reference\: string\|null, \.\.\.\}\.$#'
+			message: '#^Method App\\Http\\Resources\\Api\\V1\\BillResource\:\:toArray\(\) should return array\{id\: int, bill_number\: string, vendor_invoice_number\: string\|null, contact_id\: int, bill_date\: string, due_date\: string, description\: string\|null, reference\: string\|null, \.\.\.\} but returns array\{id\: int, bill_number\: string, vendor_invoice_number\: string\|null, contact_id\: int, bill_date\: string, due_date\: string, description\: string\|null, reference\: string\|null, \.\.\.\}\.$#'
 			identifier: return.type
 			count: 1
-			path: app/Http/Resources/Api/V1/BillResource.php
-
-		-
-			message: '#^Using nullsafe method call on non\-nullable type Carbon\\Carbon\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 2
 			path: app/Http/Resources/Api/V1/BillResource.php
 
 		-
@@ -475,12 +409,6 @@ parameters:
 			path: app/Http/Resources/Api/V1/InventoryMovementResource.php
 
 		-
-			message: '#^Using nullsafe method call on non\-nullable type string\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Http/Resources/Api/V1/InventoryMovementResource.php
-
-		-
 			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\InvoiceItemResource\:\:\$created_at\.$#'
 			identifier: property.notFound
 			count: 1
@@ -589,15 +517,9 @@ parameters:
 			path: app/Http/Resources/Api/V1/InvoiceItemResource.php
 
 		-
-			message: '#^Method App\\Http\\Resources\\Api\\V1\\InvoiceResource\:\:toArray\(\) should return array\{id\: int, invoice_number\: string, reference\: string\|null, description\: string\|null, contact_id\: int, contact\?\: array\{id\: int, name\: string, email\: string\|null\}, invoice_date\: string\|null, due_date\: string\|null, \.\.\.\} but returns array\{id\: int, invoice_number\: string, reference\: string\|null, description\: string\|null, contact_id\: int, contact\: App\\Http\\Resources\\Api\\V1\\ContactResource, invoice_date\: string, due_date\: string, \.\.\.\}\.$#'
+			message: '#^Method App\\Http\\Resources\\Api\\V1\\InvoiceResource\:\:toArray\(\) should return array\{id\: int, invoice_number\: string, reference\: string\|null, description\: string\|null, contact_id\: int, contact\?\: array\{id\: int, name\: string, email\: string\|null\}, invoice_date\: string, due_date\: string, \.\.\.\} but returns array\{id\: int, invoice_number\: string, reference\: string\|null, description\: string\|null, contact_id\: int, contact\: App\\Http\\Resources\\Api\\V1\\ContactResource, invoice_date\: string, due_date\: string, \.\.\.\}\.$#'
 			identifier: return.type
 			count: 1
-			path: app/Http/Resources/Api/V1/InvoiceResource.php
-
-		-
-			message: '#^Using nullsafe method call on non\-nullable type Carbon\\Carbon\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 2
 			path: app/Http/Resources/Api/V1/InvoiceResource.php
 
 		-
@@ -607,14 +529,8 @@ parameters:
 			path: app/Http/Resources/Api/V1/JournalEntryResource.php
 
 		-
-			message: '#^Method App\\Http\\Resources\\Api\\V1\\JournalEntryResource\:\:toArray\(\) should return array\{id\: int, entry_number\: string, entry_date\: string\|null, description\: string, reference\: string\|null, source_type\: string\|null, source_id\: int\|null, fiscal_period_id\: int, \.\.\.\} but returns array\{id\: int, entry_number\: string, entry_date\: mixed, description\: string, reference\: string\|null, source_type\: string\|null, source_id\: int\<0, max\>\|null, fiscal_period_id\: int\<0, max\>\|null, \.\.\.\}\.$#'
+			message: '#^Method App\\Http\\Resources\\Api\\V1\\JournalEntryResource\:\:toArray\(\) should return array\{id\: int, entry_number\: string, entry_date\: string, description\: string, reference\: string\|null, source_type\: string\|null, source_id\: int\|null, fiscal_period_id\: int, \.\.\.\} but returns array\{id\: int, entry_number\: string, entry_date\: mixed, description\: string, reference\: string\|null, source_type\: string\|null, source_id\: int\<0, max\>\|null, fiscal_period_id\: int\<0, max\>\|null, \.\.\.\}\.$#'
 			identifier: return.type
-			count: 1
-			path: app/Http/Resources/Api/V1/JournalEntryResource.php
-
-		-
-			message: '#^Using nullsafe method call on non\-nullable type string\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Http/Resources/Api/V1/JournalEntryResource.php
 
@@ -637,14 +553,8 @@ parameters:
 			path: app/Http/Resources/Api/V1/PaymentResource.php
 
 		-
-			message: '#^Method App\\Http\\Resources\\Api\\V1\\PaymentResource\:\:toArray\(\) should return array\{id\: int, payment_number\: string, type\: string, contact_id\: int, payment_date\: string\|null, amount\: int, payment_method\: string, reference\: string\|null, \.\.\.\} but returns array\{id\: int, payment_number\: string, type\: string, contact_id\: int\<0, max\>, payment_date\: mixed, amount\: int, payment_method\: string, reference\: string\|null, \.\.\.\}\.$#'
+			message: '#^Method App\\Http\\Resources\\Api\\V1\\PaymentResource\:\:toArray\(\) should return array\{id\: int, payment_number\: string, type\: string, contact_id\: int, payment_date\: string, amount\: int, payment_method\: string, reference\: string\|null, \.\.\.\} but returns array\{id\: int, payment_number\: string, type\: string, contact_id\: int\<0, max\>, payment_date\: mixed, amount\: int, payment_method\: string, reference\: string\|null, \.\.\.\}\.$#'
 			identifier: return.type
-			count: 1
-			path: app/Http/Resources/Api/V1/PaymentResource.php
-
-		-
-			message: '#^Using nullsafe method call on non\-nullable type string\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Http/Resources/Api/V1/PaymentResource.php
 
@@ -1069,21 +979,9 @@ parameters:
 			path: app/Models/Accounting/ExchangeRate.php
 
 		-
-			message: '#^PHPDoc tag @var for variable \$model contains unresolvable type\.$#'
-			identifier: varTag.unresolvableType
-			count: 3
-			path: app/Models/Accounting/FiscalPeriod.php
-
-		-
 			message: '#^Method App\\Models\\Accounting\\JournalEntry\:\:source\(\) has invalid return type App\\Models\\Accounting\\MorphTo\.$#'
 			identifier: class.notFound
 			count: 2
-			path: app/Models/Accounting/JournalEntry.php
-
-		-
-			message: '#^PHPDoc tag @var for variable \$model contains unresolvable type\.$#'
-			identifier: varTag.unresolvableType
-			count: 3
 			path: app/Models/Accounting/JournalEntry.php
 
 		-
@@ -1131,12 +1029,6 @@ parameters:
 		-
 			message: '#^Class App\\Models\\Sales\\Payment not found\.$#'
 			identifier: class.notFound
-			count: 1
-			path: app/Models/Core/AuditLog.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Models/Core/AuditLog.php
 
@@ -1210,12 +1102,6 @@ parameters:
 			message: '#^Binary operation "\*" between int and string results in an error\.$#'
 			identifier: binaryOp.invalid
 			count: 1
-			path: app/Models/Purchasing/Bill.php
-
-		-
-			message: '#^PHPDoc tag @var for variable \$model contains unresolvable type\.$#'
-			identifier: varTag.unresolvableType
-			count: 3
 			path: app/Models/Purchasing/Bill.php
 
 		-
@@ -1303,12 +1189,6 @@ parameters:
 			path: app/Models/Sales/Invoice.php
 
 		-
-			message: '#^PHPDoc tag @var for variable \$model contains unresolvable type\.$#'
-			identifier: varTag.unresolvableType
-			count: 3
-			path: app/Models/Sales/Invoice.php
-
-		-
 			message: '#^Parameter \#2 \$taxRate of method App\\Contracts\\Sales\\InvoiceCalculatorInterface\:\:calculate\(\) expects float, string given\.$#'
 			identifier: argument.type
 			count: 1
@@ -1325,12 +1205,6 @@ parameters:
 			identifier: assign.propertyType
 			count: 1
 			path: app/Models/Sales/Invoice.php
-
-		-
-			message: '#^PHPDoc tag @var for variable \$model contains unresolvable type\.$#'
-			identifier: varTag.unresolvableType
-			count: 3
-			path: app/Models/Shared/Payment.php
 
 		-
 			message: '#^Cannot access property \$value on string\.$#'
@@ -1585,12 +1459,6 @@ parameters:
 			path: app/Services/Accounting/YearEndCloseService.php
 
 		-
-			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Services/Accounting/YearEndCloseService.php
-
-		-
 			message: '#^Method App\\Services\\Inventory\\InventoryService\:\:getStockValuation\(\) should return Illuminate\\Support\\Collection\<int, object\> but returns Illuminate\\Support\\Collection\<int, object\{product_id\: int\<0, max\>, product_sku\: string, product_name\: string, warehouse_id\: int\<0, max\>, warehouse_name\: string, quantity\: int, average_cost\: int, total_value\: int\}&stdClass\>\.$#'
 			identifier: return.type
 			count: 1
@@ -1687,20 +1555,8 @@ parameters:
 			path: app/Services/Manufacturing/BrandSwap/BrandSwapExecutionService.php
 
 		-
-			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Services/Manufacturing/BrandSwap/BrandSwapExecutionService.php
-
-		-
 			message: '#^Method App\\Services\\Manufacturing\\BrandSwap\\BrandSwapPreviewService\:\:compareBrands\(\) should return array\{current\: array, brands\: array, best_value\: string\|null, best_coverage\: string\|null\} but returns array\{current\: array\{total\: float, total_items\: int\<0, max\>\}, brands\: list\<array\{brand\: mixed, brand_label\: string, estimated_total\: float, savings\: float, savings_percentage\: float, coverage_percentage\: mixed, swappable_items\: mixed, no_mapping_items\: mixed\}\>, recommendations\: array\{best_value\: mixed, best_coverage\: mixed\}\}\.$#'
 			identifier: return.type
-			count: 1
-			path: app/Services/Manufacturing/BrandSwap/BrandSwapPreviewService.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Services/Manufacturing/BrandSwap/BrandSwapPreviewService.php
 
@@ -1735,12 +1591,6 @@ parameters:
 			path: app/Services/Manufacturing/MrpDemandService.php
 
 		-
-			message: '#^Using nullsafe property access "\?\-\>lead_time_days" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Services/Manufacturing/MrpDemandService.php
-
-		-
 			message: '#^Comparison operation "\>" between int\<3, max\> and 0 is always true\.$#'
 			identifier: greater.alwaysTrue
 			count: 1
@@ -1765,20 +1615,8 @@ parameters:
 			path: app/Services/Manufacturing/Reports/SubcontractorReportService.php
 
 		-
-			message: '#^Using nullsafe method call on non\-nullable type string\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Services/Manufacturing/Reports/SubcontractorReportService.php
-
-		-
 			message: '#^Method App\\Services\\Manufacturing\\Reports\\WorkOrderReportService\:\:getWorkOrderCostDetail\(\) should return array\{report_name\: string, work_order\: array, cost_breakdown\: array, material_details\: Illuminate\\Support\\Collection, timeline\: array\} but returns array\{report_name\: ''Laporan Detail…'', work_order\: array\{id\: int, wo_number\: string, name\: string, type\: string, status\: App\\Enums\\DocumentStatus, project\: array\{id\: int, project_number\: string, name\: string\}\|null, product\: array\{id\: int, sku\: string, name\: string\}\|null, quantity_ordered\: float, \.\.\.\}, cost_summary\: array\{estimated\: array\{material\: int, labor\: int, overhead\: int, total\: int\}, actual\: array\{material\: int, labor\: int, overhead\: int, total\: int\}, variance\: array\{material\: int, labor\: int, overhead\: int, total\: int\}, cost_per_unit\: int\}, item_breakdown\: Illuminate\\Support\\Collection\<int, array\{id\: int, type\: string, product_name\: string, quantity_required\: float, quantity_consumed\: float, unit\: string\|null, estimated_cost\: int, actual_cost\: int, \.\.\.\}\>, timeline\: array\{planned_start\: non\-falsy\-string\|null, planned_end\: non\-falsy\-string\|null, actual_start\: non\-falsy\-string\|null, actual_end\: non\-falsy\-string\|null, confirmed_at\: non\-falsy\-string\|null, started_at\: non\-falsy\-string\|null, completed_at\: non\-falsy\-string\|null\}\}\.$#'
 			identifier: return.type
-			count: 1
-			path: app/Services/Manufacturing/Reports/WorkOrderReportService.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Services/Manufacturing/Reports/WorkOrderReportService.php
 
@@ -1817,12 +1655,6 @@ parameters:
 			identifier: assign.propertyType
 			count: 1
 			path: app/Services/Manufacturing/SubcontractorService.php
-
-		-
-			message: '#^Call to an undefined method App\\Services\\Sales\\DeliveryOrderService\:\:createFromWorkOrder\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Services/Manufacturing/WorkOrderCostService.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
@@ -1864,12 +1696,6 @@ parameters:
 			message: '#^Access to an undefined property App\\Models\\Projects\\ProjectRevenue\:\:\$total\.$#'
 			identifier: property.notFound
 			count: 1
-			path: app/Services/Projects/ProjectReportService.php
-
-		-
-			message: '#^Binary operation "/" between int and string results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 2
 			path: app/Services/Projects/ProjectReportService.php
 
 		-
@@ -1919,12 +1745,6 @@ parameters:
 			identifier: throws.notThrowable
 			count: 2
 			path: app/Services/Purchasing/BillService.php
-
-		-
-			message: '#^Method App\\Services\\Purchasing\\PurchaseOrderReceivingService\:\:getReceivingSummary\(\) should return array\{status\: string, progress\: float, is_fully_received\: bool, has_received_items\: bool, first_received_at\: string\|null, fully_received_at\: string\|null\} but returns array\{status\: App\\Enums\\DocumentStatus, progress\: float, is_fully_received\: bool, has_received_items\: bool, first_received_at\: string\|null, fully_received_at\: string\|null\}\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/Purchasing/PurchaseOrderReceivingService.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
@@ -2173,12 +1993,6 @@ parameters:
 			path: app/Services/Shared/PaymentService.php
 
 		-
-			message: '#^Using nullsafe property access "\?\-\>paid_amount" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Services/Shared/PaymentService.php
-
-		-
 			message: '#^Using nullsafe method call on non\-nullable type Illuminate\\Http\\Request\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
@@ -2323,12 +2137,6 @@ parameters:
 			path: database/factories/Purchasing/PurchaseReturnFactory.php
 
 		-
-			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: database/factories/Purchasing/PurchaseReturnFactory.php
-
-		-
 			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Purchasing\\PurchaseReturnItemFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Purchasing\\PurchaseReturnItem\>\:\:definition\(\)$#'
 			identifier: method.childReturnType
 			count: 1
@@ -2337,12 +2145,6 @@ parameters:
 		-
 			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Sales\\DeliveryOrderFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Sales\\DeliveryOrder\>\:\:definition\(\)$#'
 			identifier: method.childReturnType
-			count: 1
-			path: database/factories/Sales/DeliveryOrderFactory.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
 			count: 1
 			path: database/factories/Sales/DeliveryOrderFactory.php
 
@@ -2379,12 +2181,6 @@ parameters:
 		-
 			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Sales\\SalesReturnFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Sales\\SalesReturn\>\:\:definition\(\)$#'
 			identifier: method.childReturnType
-			count: 1
-			path: database/factories/Sales/SalesReturnFactory.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
 			count: 1
 			path: database/factories/Sales/SalesReturnFactory.php
 
@@ -2473,18 +2269,6 @@ parameters:
 			path: database/seeders/Demo/Nex/NexTransactionSeeder.php
 
 		-
-			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: database/seeders/Demo/Nex/NexTransactionSeeder.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>unit" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: database/seeders/Demo/Nex/NexTransactionSeeder.php
-
-		-
 			message: '#^Call to an undefined method App\\Contracts\\Purchasing\\GoodsReceiptNoteServiceInterface\:\:updateItem\(\)\.$#'
 			identifier: method.notFound
 			count: 1
@@ -2505,17 +2289,5 @@ parameters:
 		-
 			message: '#^Property Database\\Seeders\\Demo\\Vahana\\VahanaTransactionSeeder\:\:\$cashAccount is never read, only written\.$#'
 			identifier: property.onlyWritten
-			count: 1
-			path: database/seeders/Demo/Vahana/VahanaTransactionSeeder.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: database/seeders/Demo/Vahana/VahanaTransactionSeeder.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>unit" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
 			count: 1
 			path: database/seeders/Demo/Vahana/VahanaTransactionSeeder.php
