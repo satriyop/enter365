@@ -18,19 +18,25 @@ use App\Models\Manufacturing\WorkOrderItem;
 use App\Models\Purchasing\Bill;
 use App\Models\Purchasing\PurchaseOrder;
 use App\Models\Purchasing\PurchaseOrderItem;
+use App\Models\Purchasing\PurchaseReturn;
 use App\Models\Sales\Invoice;
+use App\Models\Sales\InvoiceItem;
 use App\Models\Sales\Quotation;
 use App\Models\Sales\QuotationItem;
+use App\Models\Sales\SalesReturn;
 use App\Models\Shared\Payment;
 use App\Models\User;
 use App\Services\Inventory\StockOpnameService;
 use App\Services\Manufacturing\MaterialRequisitionService;
 use App\Services\Manufacturing\WorkOrderService;
+use App\Services\Purchasing\BillService;
 use App\Services\Purchasing\GoodsReceiptNoteService;
 use App\Services\Purchasing\PurchaseOrderService;
+use App\Services\Purchasing\PurchaseReturnService;
 use App\Services\Sales\DeliveryOrderService;
 use App\Services\Sales\InvoiceService;
 use App\Services\Sales\QuotationService;
+use App\Services\Sales\SalesReturnService;
 use App\Services\Shared\PaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -59,7 +65,9 @@ function createRequiredAccounts(array $codes = []): array
         '2-1200' => ['name' => 'PPN Keluaran', 'type' => Account::TYPE_LIABILITY, 'factory' => 'taxPayable'],
         '4-1001' => ['name' => 'Pendapatan Penjualan', 'type' => Account::TYPE_REVENUE, 'factory' => 'salesRevenue'],
         '5-1001' => ['name' => 'Harga Pokok Penjualan', 'type' => Account::TYPE_EXPENSE, 'subtype' => Account::SUBTYPE_OPERATING_EXPENSE],
+        '4-2001' => ['name' => 'Retur Penjualan', 'type' => Account::TYPE_REVENUE, 'subtype' => Account::SUBTYPE_OPERATING_REVENUE],
         '5-1002' => ['name' => 'Pembelian', 'type' => Account::TYPE_EXPENSE, 'subtype' => Account::SUBTYPE_OPERATING_EXPENSE],
+        '5-2001' => ['name' => 'Retur Pembelian', 'type' => Account::TYPE_EXPENSE, 'subtype' => Account::SUBTYPE_OPERATING_EXPENSE],
         '5-2900' => ['name' => 'Penyesuaian Persediaan', 'type' => Account::TYPE_EXPENSE, 'subtype' => Account::SUBTYPE_OPERATING_EXPENSE],
     ];
 
@@ -859,5 +867,476 @@ describe('Complete Manufacturing Cycle: BOM → WO → MR → Completion', funct
             ->and($movementA->quantity)->toBe(6)
             ->and($movementB->type)->toBe(InventoryMovement::TYPE_OUT)
             ->and($movementB->quantity)->toBe(15);
+    });
+});
+
+describe('Sales Return Cycle: Invoice → Return → Inventory Reversal', function () {
+    test('full sales return workflow with inventory restoration and journal entries', function () {
+        // Setup accounts needed: AR, Revenue, Tax, Inventory, COGS, Bank
+        $accounts = createRequiredAccounts(['1-1002', '1-1100', '1-1400', '2-1200', '4-1001', '4-2001', '5-1001']);
+
+        $customer = Contact::factory()->customer()->create();
+        $warehouse = Warehouse::factory()->create();
+
+        $product = Product::factory()->create([
+            'track_inventory' => true,
+            'purchase_price' => 100000,
+            'selling_price' => 200000,
+        ]);
+
+        // Seed stock
+        ProductStock::factory()->create([
+            'product_id' => $product->id,
+            'warehouse_id' => $warehouse->id,
+            'quantity' => 50,
+            'average_cost' => 100000,
+            'total_value' => 5000000,
+        ]);
+
+        // Create and post an invoice first
+        $invoiceService = app(InvoiceService::class);
+        $invoice = Invoice::factory()->draft()->forContact($customer)->create([
+            'subtotal' => 1000000,  // 5 x 200000
+            'tax_rate' => 11.00,
+            'tax_amount' => 110000,
+            'total_amount' => 1110000,
+            'base_currency_total' => 1110000,
+        ]);
+
+        InvoiceItem::factory()->create([
+            'invoice_id' => $invoice->id,
+            'product_id' => $product->id,
+            'description' => $product->name,
+            'quantity' => 5,
+            'unit_price' => 200000,
+            'tax_rate' => 11.00,
+            'tax_amount' => 110000,
+            'line_total' => 1000000,
+        ]);
+
+        $invoice = $invoiceService->post($invoice);
+        expect($invoice->status)->toBe(DocumentStatus::Sent);
+
+        // Ship goods (deducts inventory)
+        $doService = app(DeliveryOrderService::class);
+        $do = $doService->createFromInvoice($invoice, ['warehouse_id' => $warehouse->id]);
+        $do = $doService->confirm($do, $this->user->id);
+        $do = $doService->ship($do, [], $this->user->id);
+
+        // Verify stock decreased
+        $stock = ProductStock::where('product_id', $product->id)
+            ->where('warehouse_id', $warehouse->id)->first();
+        expect($stock->quantity)->toBe(45); // 50 - 5
+
+        $stockBeforeReturn = $stock->quantity;
+
+        // --- Sales Return ---
+        $returnService = app(SalesReturnService::class);
+
+        $salesReturn = $returnService->createFromInvoice($invoice, [
+            'warehouse_id' => $warehouse->id,
+        ]);
+
+        expect($salesReturn)->toBeInstanceOf(SalesReturn::class)
+            ->and($salesReturn->status)->toBe(DocumentStatus::Draft)
+            ->and($salesReturn->invoice_id)->toBe($invoice->id)
+            ->and($salesReturn->contact_id)->toBe($customer->id);
+
+        // Submit
+        $salesReturn = $returnService->submit($salesReturn, $this->user->id);
+        expect($salesReturn->status)->toBe(DocumentStatus::Submitted);
+
+        // Approve (triggers inventory return + journal entry)
+        $salesReturn = $returnService->approve($salesReturn, $this->user->id);
+        expect($salesReturn->status)->toBe(DocumentStatus::Approved)
+            ->and($salesReturn->journal_entry_id)->not->toBeNull();
+
+        // Complete
+        $salesReturn = $returnService->complete($salesReturn, $this->user->id);
+        expect($salesReturn->status)->toBe(DocumentStatus::Completed);
+
+        // Assert: Inventory increased (stock returned)
+        $stock->refresh();
+        expect($stock->quantity)->toBeGreaterThanOrEqual($stockBeforeReturn);
+
+        // Assert: Journal entry balanced
+        $returnJournal = JournalEntry::find($salesReturn->journal_entry_id);
+        $returnJournal->load('lines.account');
+        $totalDebit = $returnJournal->lines->sum('debit');
+        $totalCredit = $returnJournal->lines->sum('credit');
+        expect($totalDebit)->toBe($totalCredit)
+            ->and($totalDebit)->toBeGreaterThan(0);
+
+        // Assert: Global trial balance holds
+        $totalDebits = DB::table('journal_entry_lines')
+            ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
+            ->where('journal_entries.is_posted', true)
+            ->sum('journal_entry_lines.debit');
+        $totalCredits = DB::table('journal_entry_lines')
+            ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
+            ->where('journal_entries.is_posted', true)
+            ->sum('journal_entry_lines.credit');
+        expect($totalDebits)->toBe($totalCredits, 'Trial balance must hold after sales return');
+    });
+});
+
+describe('Purchase Return Cycle: Bill → Return → Inventory Adjustment', function () {
+    test('full purchase return workflow with inventory reduction and journal entries', function () {
+        $accounts = createRequiredAccounts(['1-1002', '1-1300', '1-1400', '2-1100', '5-1002', '5-2001']);
+
+        $vendor = Contact::factory()->vendor()->create();
+        $warehouse = Warehouse::factory()->create();
+
+        $product = Product::factory()->create([
+            'track_inventory' => true,
+            'purchase_price' => 100000,
+        ]);
+
+        // Create initial stock (from previous GRN)
+        ProductStock::factory()->create([
+            'product_id' => $product->id,
+            'warehouse_id' => $warehouse->id,
+            'quantity' => 20,
+            'average_cost' => 100000,
+            'total_value' => 2000000,
+        ]);
+
+        // Create PO → GRN → Bill chain first
+        $poService = app(PurchaseOrderService::class);
+        $po = PurchaseOrder::factory()->draft()->forContact($vendor)->create([
+            'subtotal' => 1000000,
+            'tax_rate' => 11.00,
+            'tax_amount' => 110000,
+            'total_amount' => 1110000,
+            'base_currency_total' => 1110000,
+        ]);
+        PurchaseOrderItem::factory()->create([
+            'purchase_order_id' => $po->id,
+            'product_id' => $product->id,
+            'description' => $product->name,
+            'quantity' => 10,
+            'unit_price' => 100000,
+            'tax_rate' => 11.00,
+            'tax_amount' => 110000,
+            'line_total' => 1000000,
+        ]);
+
+        $po = $poService->submit($po, $this->user->id);
+        $po = $poService->approve($po, $this->user->id);
+
+        // Receive goods
+        $grnService = app(GoodsReceiptNoteService::class);
+        $grn = $grnService->createFromPurchaseOrder($po, ['warehouse_id' => $warehouse->id]);
+        $grn = $grnService->startReceiving($grn, $this->user->id);
+        foreach ($grn->items as $grnItem) {
+            $grnService->updateItem($grnItem, ['quantity_received' => $grnItem->quantity_ordered]);
+        }
+        $grn = $grnService->complete($grn, $this->user->id);
+
+        // Convert to bill and post
+        $po->refresh();
+        $bill = $poService->convertToBill($po);
+        $billService = app(BillService::class);
+        $bill = $billService->post($bill);
+        expect($bill->status)->toBe(DocumentStatus::Received);
+
+        $stock = ProductStock::where('product_id', $product->id)
+            ->where('warehouse_id', $warehouse->id)->first();
+        $stockBeforeReturn = $stock->quantity;
+
+        // --- Purchase Return ---
+        $returnService = app(PurchaseReturnService::class);
+
+        $purchaseReturn = $returnService->createFromBill($bill, [
+            'warehouse_id' => $warehouse->id,
+        ]);
+
+        expect($purchaseReturn)->toBeInstanceOf(PurchaseReturn::class)
+            ->and($purchaseReturn->status)->toBe(DocumentStatus::Draft)
+            ->and($purchaseReturn->bill_id)->toBe($bill->id);
+
+        // Submit
+        $purchaseReturn = $returnService->submit($purchaseReturn, $this->user->id);
+        expect($purchaseReturn->status)->toBe(DocumentStatus::Submitted);
+
+        // Approve (triggers inventory removal + journal entry)
+        $purchaseReturn = $returnService->approve($purchaseReturn, $this->user->id);
+        expect($purchaseReturn->status)->toBe(DocumentStatus::Approved)
+            ->and($purchaseReturn->journal_entry_id)->not->toBeNull();
+
+        // Complete
+        $purchaseReturn = $returnService->complete($purchaseReturn, $this->user->id);
+        expect($purchaseReturn->status)->toBe(DocumentStatus::Completed);
+
+        // Assert: Inventory decreased (returned to vendor)
+        $stock->refresh();
+        expect($stock->quantity)->toBeLessThanOrEqual($stockBeforeReturn);
+
+        // Assert: Journal entry balanced
+        $returnJournal = JournalEntry::find($purchaseReturn->journal_entry_id);
+        $returnJournal->load('lines.account');
+        $totalDebit = $returnJournal->lines->sum('debit');
+        $totalCredit = $returnJournal->lines->sum('credit');
+        expect($totalDebit)->toBe($totalCredit)
+            ->and($totalDebit)->toBeGreaterThan(0);
+
+        // Assert: Global trial balance
+        $totalDebits = DB::table('journal_entry_lines')
+            ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
+            ->where('journal_entries.is_posted', true)
+            ->sum('journal_entry_lines.debit');
+        $totalCredits = DB::table('journal_entry_lines')
+            ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
+            ->where('journal_entries.is_posted', true)
+            ->sum('journal_entry_lines.credit');
+        expect($totalDebits)->toBe($totalCredits, 'Trial balance must hold after purchase return');
+    });
+});
+
+describe('Partial Payment Cycle: Invoice → 60% → 40% → Paid', function () {
+    test('partial payments transition invoice through Sent → Partial → Paid', function () {
+        $accounts = createRequiredAccounts(['1-1002', '1-1100', '2-1100', '2-1200', '4-1001']);
+
+        $customer = Contact::factory()->customer()->create();
+
+        // Create and post invoice
+        $invoiceService = app(InvoiceService::class);
+        $invoice = Invoice::factory()->draft()->forContact($customer)->create([
+            'subtotal' => 1000000,
+            'tax_rate' => 11.00,
+            'tax_amount' => 110000,
+            'total_amount' => 1110000,
+            'base_currency_total' => 1110000,
+        ]);
+
+        InvoiceItem::factory()->create([
+            'invoice_id' => $invoice->id,
+            'quantity' => 5,
+            'unit_price' => 200000,
+            'tax_rate' => 11.00,
+            'tax_amount' => 110000,
+            'line_total' => 1000000,
+        ]);
+
+        $invoice = $invoiceService->post($invoice);
+        expect($invoice->status)->toBe(DocumentStatus::Sent)
+            ->and($invoice->paid_amount)->toBe(0);
+
+        $totalAmount = $invoice->total_amount;
+        $firstPayment = (int) round($totalAmount * 0.6);
+        $secondPayment = $totalAmount - $firstPayment;
+
+        // --- First Payment (60%) ---
+        $paymentService = app(PaymentService::class);
+
+        $payment1 = $paymentService->createForInvoice($invoice->fresh(), [
+            'amount' => $firstPayment,
+            'payment_date' => now()->toDateString(),
+            'cash_account_id' => $accounts['1-1002']->id,
+            'payment_method' => Payment::METHOD_TRANSFER,
+        ]);
+
+        $invoice->refresh();
+        expect($invoice->status)->toBe(DocumentStatus::Partial)
+            ->and($invoice->paid_amount)->toBe($firstPayment);
+
+        // Assert: AR still has remaining balance
+        $accounts['1-1100']->refresh();
+        $arBalance = $accounts['1-1100']->getBalance();
+        expect($arBalance)->toBeGreaterThan(0, 'AR should still have outstanding balance');
+
+        // Assert: First payment journal is balanced
+        expect($payment1->journal_entry_id)->not->toBeNull();
+        $journal1 = $payment1->journalEntry->load('lines');
+        expect($journal1->lines->sum('debit'))->toBe($journal1->lines->sum('credit'));
+
+        // --- Second Payment (remaining 40%) ---
+        $payment2 = $paymentService->createForInvoice($invoice->fresh(), [
+            'amount' => $secondPayment,
+            'payment_date' => now()->toDateString(),
+            'cash_account_id' => $accounts['1-1002']->id,
+            'payment_method' => Payment::METHOD_TRANSFER,
+        ]);
+
+        $invoice->refresh();
+        expect($invoice->status)->toBe(DocumentStatus::Paid)
+            ->and($invoice->paid_amount)->toBe($totalAmount);
+
+        // Assert: AR zeroed out
+        $accounts['1-1100']->refresh();
+        expect($accounts['1-1100']->getBalance())->toBe(0, 'AR must zero out after full payment');
+
+        // Assert: Bank received full amount
+        $accounts['1-1002']->refresh();
+        expect($accounts['1-1002']->getBalance())->toBe($totalAmount, 'Bank must reflect full amount received');
+
+        // Assert: Global trial balance
+        $totalDebits = DB::table('journal_entry_lines')
+            ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
+            ->where('journal_entries.is_posted', true)
+            ->sum('journal_entry_lines.debit');
+        $totalCredits = DB::table('journal_entry_lines')
+            ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
+            ->where('journal_entries.is_posted', true)
+            ->sum('journal_entry_lines.credit');
+        expect($totalDebits)->toBe($totalCredits, 'Trial balance must hold across all payment journals')
+            ->and($totalDebits)->toBeGreaterThan(0);
+    });
+});
+
+describe('Partial GRN Cycle: PO → Partial Receive → Full Receive → Bill', function () {
+    test('multi-receipt receiving transitions PO through Approved → Partial → Received', function () {
+        $accounts = createRequiredAccounts(['1-1002', '1-1300', '1-1400', '2-1100', '5-1002']);
+
+        $vendor = Contact::factory()->vendor()->create();
+        $warehouse = Warehouse::factory()->create();
+
+        $productA = Product::factory()->create([
+            'track_inventory' => true,
+            'purchase_price' => 100000,
+        ]);
+        $productB = Product::factory()->create([
+            'track_inventory' => true,
+            'purchase_price' => 50000,
+        ]);
+
+        // Initial stock at zero
+        ProductStock::factory()->create([
+            'product_id' => $productA->id,
+            'warehouse_id' => $warehouse->id,
+            'quantity' => 0, 'average_cost' => 0, 'total_value' => 0,
+        ]);
+        ProductStock::factory()->create([
+            'product_id' => $productB->id,
+            'warehouse_id' => $warehouse->id,
+            'quantity' => 0, 'average_cost' => 0, 'total_value' => 0,
+        ]);
+
+        // Create PO with 2 items (qty 10 each)
+        $poService = app(PurchaseOrderService::class);
+        $po = PurchaseOrder::factory()->draft()->forContact($vendor)->create([
+            'subtotal' => 1500000,
+            'tax_rate' => 11.00,
+            'tax_amount' => 165000,
+            'total_amount' => 1665000,
+            'base_currency_total' => 1665000,
+        ]);
+
+        $poItemA = PurchaseOrderItem::factory()->create([
+            'purchase_order_id' => $po->id,
+            'product_id' => $productA->id,
+            'description' => $productA->name,
+            'quantity' => 10,
+            'unit_price' => 100000,
+            'tax_rate' => 11.00,
+            'tax_amount' => 110000,
+            'line_total' => 1000000,
+        ]);
+        $poItemB = PurchaseOrderItem::factory()->create([
+            'purchase_order_id' => $po->id,
+            'product_id' => $productB->id,
+            'description' => $productB->name,
+            'quantity' => 10,
+            'unit_price' => 50000,
+            'tax_rate' => 11.00,
+            'tax_amount' => 55000,
+            'line_total' => 500000,
+        ]);
+
+        $po = $poService->submit($po, $this->user->id);
+        $po = $poService->approve($po, $this->user->id);
+        expect($po->status)->toBe(DocumentStatus::Approved);
+
+        // --- First GRN: Partial receive (A: 6, B: 3) ---
+        $grnService = app(GoodsReceiptNoteService::class);
+
+        $grn1 = $grnService->createFromPurchaseOrder($po, ['warehouse_id' => $warehouse->id]);
+        $grn1 = $grnService->startReceiving($grn1, $this->user->id);
+
+        // Set partial quantities
+        $grn1Items = $grn1->items->sortBy('product_id');
+        foreach ($grn1->items as $grnItem) {
+            if ($grnItem->product_id === $productA->id) {
+                $grnService->updateItem($grnItem, ['quantity_received' => 6]);
+            } elseif ($grnItem->product_id === $productB->id) {
+                $grnService->updateItem($grnItem, ['quantity_received' => 3]);
+            }
+        }
+
+        $grn1 = $grnService->complete($grn1, $this->user->id);
+        expect($grn1->status)->toBe(DocumentStatus::Completed);
+
+        // Assert: PO shows partial received
+        $po->refresh();
+        expect($po->status)->toBe(DocumentStatus::Partial);
+
+        $poItemA->refresh();
+        $poItemB->refresh();
+        expect((float) $poItemA->quantity_received)->toBe(6.0)
+            ->and((float) $poItemB->quantity_received)->toBe(3.0);
+
+        // Assert: Stock partially increased
+        $stockA = ProductStock::where('product_id', $productA->id)
+            ->where('warehouse_id', $warehouse->id)->first();
+        $stockB = ProductStock::where('product_id', $productB->id)
+            ->where('warehouse_id', $warehouse->id)->first();
+        expect($stockA->quantity)->toBe(6)
+            ->and($stockB->quantity)->toBe(3);
+
+        // --- Second GRN: Receive remaining (A: 4, B: 7) ---
+        $grn2 = $grnService->createFromPurchaseOrder($po->fresh(), ['warehouse_id' => $warehouse->id]);
+        $grn2 = $grnService->startReceiving($grn2, $this->user->id);
+
+        foreach ($grn2->items as $grnItem) {
+            if ($grnItem->product_id === $productA->id) {
+                $grnService->updateItem($grnItem, ['quantity_received' => 4]);
+            } elseif ($grnItem->product_id === $productB->id) {
+                $grnService->updateItem($grnItem, ['quantity_received' => 7]);
+            }
+        }
+
+        $grn2 = $grnService->complete($grn2, $this->user->id);
+        expect($grn2->status)->toBe(DocumentStatus::Completed);
+
+        // Assert: PO fully received
+        $po->refresh();
+        expect($po->status)->toBe(DocumentStatus::Received);
+
+        $poItemA->refresh();
+        $poItemB->refresh();
+        expect((float) $poItemA->quantity_received)->toBe(10.0)
+            ->and((float) $poItemB->quantity_received)->toBe(10.0);
+
+        // Assert: Stock matches full ordered quantities
+        $stockA->refresh();
+        $stockB->refresh();
+        expect($stockA->quantity)->toBe(10)
+            ->and($stockB->quantity)->toBe(10);
+
+        // --- Convert to Bill and verify ---
+        $po->refresh();
+        $bill = $poService->convertToBill($po);
+        $billService = app(BillService::class);
+        $bill = $billService->post($bill);
+
+        expect($bill->status)->toBe(DocumentStatus::Received)
+            ->and($bill->journal_entry_id)->not->toBeNull();
+
+        // Assert: Bill journal entry balanced
+        $billJournal = $bill->journalEntry->load('lines');
+        expect($billJournal->lines->sum('debit'))->toBe($billJournal->lines->sum('credit'))
+            ->and($billJournal->lines->sum('debit'))->toBeGreaterThan(0);
+
+        // Assert: Global trial balance
+        $totalDebits = DB::table('journal_entry_lines')
+            ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
+            ->where('journal_entries.is_posted', true)
+            ->sum('journal_entry_lines.debit');
+        $totalCredits = DB::table('journal_entry_lines')
+            ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
+            ->where('journal_entries.is_posted', true)
+            ->sum('journal_entry_lines.credit');
+        expect($totalDebits)->toBe($totalCredits, 'Trial balance must hold after multi-receipt + bill')
+            ->and($totalDebits)->toBeGreaterThan(0);
     });
 });
