@@ -70,8 +70,11 @@ class FullReturnJournalStrategy implements ReturnAccountingStrategy
             'description' => "Pengurangan piutang: {$salesReturn->return_number}",
         ];
 
+        /** @var \Carbon\Carbon $returnDate */
+        $returnDate = $salesReturn->return_date;
+
         return $this->journalService->createEntry([
-            'entry_date' => $salesReturn->return_date->toDateString(),
+            'entry_date' => $returnDate->toDateString(),
             'description' => "Retur penjualan: {$salesReturn->return_number}",
             'reference' => $salesReturn->return_number,
             'source_type' => SalesReturn::class,
@@ -128,8 +131,11 @@ class FullReturnJournalStrategy implements ReturnAccountingStrategy
             ];
         }
 
+        /** @var \Carbon\Carbon $returnDate */
+        $returnDate = $purchaseReturn->return_date;
+
         return $this->journalService->createEntry([
-            'entry_date' => $purchaseReturn->return_date->toDateString(),
+            'entry_date' => $returnDate->toDateString(),
             'description' => "Retur pembelian: {$purchaseReturn->return_number}",
             'reference' => $purchaseReturn->return_number,
             'source_type' => PurchaseReturn::class,

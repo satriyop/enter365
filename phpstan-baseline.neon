@@ -43,12 +43,6 @@ parameters:
 			path: app/Domain/Shared/DocumentNumbers.php
 
 		-
-			message: '#^Using nullsafe property access "\?\-\>value" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 2
-			path: app/Exceptions/Domain/DocumentLockedException.php
-
-		-
 			message: '#^Expression on left side of \?\? is not nullable\.$#'
 			identifier: nullCoalesce.expr
 			count: 1
@@ -97,20 +91,8 @@ parameters:
 			path: app/Filters/SolarProposalFilter.php
 
 		-
-			message: '#^Trait App\\Filters\\Traits\\HasRelationFilter is used zero times and is not analysed\.$#'
-			identifier: trait.unused
-			count: 1
-			path: app/Filters/Traits/HasRelationFilter.php
-
-		-
 			message: '#^Access to an undefined property App\\Models\\Shared\\Payment\:\:\$description\.$#'
 			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/V1/BankReconciliationController.php
-
-		-
-			message: '#^Cannot call method toDateString\(\) on string\.$#'
-			identifier: method.nonObject
 			count: 1
 			path: app/Http/Controllers/Api/V1/BankReconciliationController.php
 
@@ -131,12 +113,6 @@ parameters:
 			identifier: argument.unresolvableType
 			count: 1
 			path: app/Http/Controllers/Api/V1/ComponentStandardController.php
-
-		-
-			message: '#^Cannot call method toDateString\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Http/Controllers/Api/V1/ContactController.php
 
 		-
 			message: '#^Property App\\Http\\Controllers\\Api\\V1\\DashboardController\:\:\$balanceService is never read, only written\.$#'
@@ -247,18 +223,6 @@ parameters:
 			path: app/Http/Resources/Api/V1/BankTransactionResource.php
 
 		-
-			message: '#^Method App\\Http\\Resources\\Api\\V1\\BankTransactionResource\:\:toArray\(\) should return array\{id\: int, account_id\: int, account\?\: App\\Http\\Resources\\Api\\V1\\AccountResource, transaction_date\: string, description\: string\|null, reference\: string\|null, debit\: int, credit\: int, \.\.\.\} but returns array\{id\: int, account_id\: int\<0, max\>, account\: App\\Http\\Resources\\Api\\V1\\AccountResource, transaction_date\: mixed, description\: string, reference\: string\|null, debit\: int, credit\: int, \.\.\.\}\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Resources/Api/V1/BankTransactionResource.php
-
-		-
-			message: '#^Method App\\Http\\Resources\\Api\\V1\\BillResource\:\:toArray\(\) should return array\{id\: int, bill_number\: string, vendor_invoice_number\: string\|null, contact_id\: int, bill_date\: string, due_date\: string, description\: string\|null, reference\: string\|null, \.\.\.\} but returns array\{id\: int, bill_number\: string, vendor_invoice_number\: string\|null, contact_id\: int, bill_date\: string, due_date\: string, description\: string\|null, reference\: string\|null, \.\.\.\}\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Resources/Api/V1/BillResource.php
-
-		-
 			message: '#^Cannot call method format\(\) on string\.$#'
 			identifier: method.nonObject
 			count: 1
@@ -283,12 +247,6 @@ parameters:
 			path: app/Http/Resources/Api/V1/BudgetResource.php
 
 		-
-			message: '#^Method App\\Http\\Resources\\Api\\V1\\BudgetResource\:\:toArray\(\) should return array\{id\: int, name\: string, description\: string\|null, fiscal_period_id\: int, fiscal_period\?\: array\{id\: int, name\: string, start_date\: string, end_date\: string\}, type\: string, type_label\: string, status\: array\{value\: string, label\: string, color\: string, is_terminal\: bool, is_editable\: bool\}, \.\.\.\} but returns array\{id\: int, name\: string, description\: string\|null, fiscal_period_id\: int\<0, max\>, fiscal_period\: mixed, type\: ''annual''\|''monthly''\|''quarterly'', type_label\: string, status\: App\\Http\\Resources\\Api\\V1\\StatusResource, \.\.\.\}\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Resources/Api/V1/BudgetResource.php
-
-		-
 			message: '#^Method App\\Http\\Resources\\Api\\V1\\CompanyProfileResource\:\:toArray\(\) should return array\{id\: int, name\: string, slug\: string, tagline\: string\|null, description\: string\|null, founded_year\: int\|null, employees_count\: int\|null, logo_path\: string\|null, \.\.\.\} but returns array\{id\: int, name\: string, slug\: string, tagline\: string\|null, description\: string\|null, founded_year\: int\<0, max\>\|null, employees_count\: string\|null, logo_path\: string\|null, \.\.\.\}\.$#'
 			identifier: return.type
 			count: 1
@@ -307,230 +265,14 @@ parameters:
 			path: app/Http/Resources/Api/V1/ComponentStandardResource.php
 
 		-
-			message: '#^Using nullsafe method call on non\-nullable type Carbon\\Carbon\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 2
-			path: app/Http/Resources/Api/V1/FiscalPeriodResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\IndonesiaSolarDataResource\:\:\$city\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/IndonesiaSolarDataResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\IndonesiaSolarDataResource\:\:\$dhi_annual\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/IndonesiaSolarDataResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\IndonesiaSolarDataResource\:\:\$dni_annual\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/IndonesiaSolarDataResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\IndonesiaSolarDataResource\:\:\$ghi_annual\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/IndonesiaSolarDataResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\IndonesiaSolarDataResource\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/IndonesiaSolarDataResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\IndonesiaSolarDataResource\:\:\$latitude\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/IndonesiaSolarDataResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\IndonesiaSolarDataResource\:\:\$longitude\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/IndonesiaSolarDataResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\IndonesiaSolarDataResource\:\:\$optimal_tilt_angle\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/IndonesiaSolarDataResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\IndonesiaSolarDataResource\:\:\$peak_sun_hours\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/IndonesiaSolarDataResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\IndonesiaSolarDataResource\:\:\$province\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/IndonesiaSolarDataResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\IndonesiaSolarDataResource\:\:\$solar_irradiance_kwh_m2_day\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/IndonesiaSolarDataResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\IndonesiaSolarDataResource\:\:\$temperature_avg\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/IndonesiaSolarDataResource.php
-
-		-
-			message: '#^Call to an undefined method App\\Http\\Resources\\Api\\V1\\IndonesiaSolarDataResource\:\:getIrradianceRating\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/IndonesiaSolarDataResource.php
-
-		-
-			message: '#^Call to an undefined method App\\Http\\Resources\\Api\\V1\\IndonesiaSolarDataResource\:\:getIrradianceRatingLabel\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/IndonesiaSolarDataResource.php
-
-		-
-			message: '#^PHPDoc tag @mixin contains unknown class App\\Models\\Accounting\\IndonesiaSolarData\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/IndonesiaSolarDataResource.php
-
-		-
 			message: '#^Cannot call method toDateString\(\) on string\.$#'
 			identifier: method.nonObject
 			count: 1
 			path: app/Http/Resources/Api/V1/InventoryMovementResource.php
 
 		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\InvoiceItemResource\:\:\$created_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/InvoiceItemResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\InvoiceItemResource\:\:\$description\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/InvoiceItemResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\InvoiceItemResource\:\:\$discount_amount\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/InvoiceItemResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\InvoiceItemResource\:\:\$discount_percent\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/InvoiceItemResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\InvoiceItemResource\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/InvoiceItemResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\InvoiceItemResource\:\:\$invoice_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/InvoiceItemResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\InvoiceItemResource\:\:\$line_total\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/InvoiceItemResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\InvoiceItemResource\:\:\$notes\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/InvoiceItemResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\InvoiceItemResource\:\:\$quantity\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/InvoiceItemResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\InvoiceItemResource\:\:\$revenue_account_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/InvoiceItemResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\InvoiceItemResource\:\:\$sort_order\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/InvoiceItemResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\InvoiceItemResource\:\:\$tax_amount\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/InvoiceItemResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\InvoiceItemResource\:\:\$tax_rate\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/InvoiceItemResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\InvoiceItemResource\:\:\$unit\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/InvoiceItemResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\InvoiceItemResource\:\:\$unit_price\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/InvoiceItemResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\InvoiceItemResource\:\:\$updated_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/InvoiceItemResource.php
-
-		-
-			message: '#^Method App\\Http\\Resources\\Api\\V1\\InvoiceItemResource\:\:toArray\(\) should return array\{id\: int, invoice_id\: int, description\: string, quantity\: float, unit\: string, unit_price\: int, discount_percent\: float, discount_amount\: int, \.\.\.\} but returns array\{id\: mixed, invoice_id\: mixed, description\: mixed, quantity\: float, unit\: mixed, unit_price\: mixed, discount_percent\: float, discount_amount\: mixed, \.\.\.\}\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Resources/Api/V1/InvoiceItemResource.php
-
-		-
-			message: '#^PHPDoc tag @mixin contains unknown class App\\Models\\Accounting\\InvoiceItem\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/InvoiceItemResource.php
-
-		-
-			message: '#^Method App\\Http\\Resources\\Api\\V1\\InvoiceResource\:\:toArray\(\) should return array\{id\: int, invoice_number\: string, reference\: string\|null, description\: string\|null, contact_id\: int, contact\?\: array\{id\: int, name\: string, email\: string\|null\}, invoice_date\: string, due_date\: string, \.\.\.\} but returns array\{id\: int, invoice_number\: string, reference\: string\|null, description\: string\|null, contact_id\: int, contact\: App\\Http\\Resources\\Api\\V1\\ContactResource, invoice_date\: string, due_date\: string, \.\.\.\}\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Resources/Api/V1/InvoiceResource.php
-
-		-
 			message: '#^Cannot call method toDateString\(\) on string\.$#'
 			identifier: method.nonObject
-			count: 1
-			path: app/Http/Resources/Api/V1/JournalEntryResource.php
-
-		-
-			message: '#^Method App\\Http\\Resources\\Api\\V1\\JournalEntryResource\:\:toArray\(\) should return array\{id\: int, entry_number\: string, entry_date\: string, description\: string, reference\: string\|null, source_type\: string\|null, source_id\: int\|null, fiscal_period_id\: int, \.\.\.\} but returns array\{id\: int, entry_number\: string, entry_date\: mixed, description\: string, reference\: string\|null, source_type\: string\|null, source_id\: int\<0, max\>\|null, fiscal_period_id\: int\<0, max\>\|null, \.\.\.\}\.$#'
-			identifier: return.type
 			count: 1
 			path: app/Http/Resources/Api/V1/JournalEntryResource.php
 
@@ -553,12 +295,6 @@ parameters:
 			path: app/Http/Resources/Api/V1/PaymentResource.php
 
 		-
-			message: '#^Method App\\Http\\Resources\\Api\\V1\\PaymentResource\:\:toArray\(\) should return array\{id\: int, payment_number\: string, type\: string, contact_id\: int, payment_date\: string, amount\: int, payment_method\: string, reference\: string\|null, \.\.\.\} but returns array\{id\: int, payment_number\: string, type\: string, contact_id\: int\<0, max\>, payment_date\: mixed, amount\: int, payment_method\: string, reference\: string\|null, \.\.\.\}\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Resources/Api/V1/PaymentResource.php
-
-		-
 			message: '#^Method App\\Http\\Resources\\Api\\V1\\ProductResource\:\:toArray\(\) should return array\{id\: int, sku\: string, name\: string, description\: string\|null, type\: string, type_label\: string, category_id\: int\|null, category\?\: App\\Http\\Resources\\Api\\V1\\ProductCategoryResource, \.\.\.\} but returns array\{id\: int, sku\: string, name\: string, description\: string\|null, type\: string, type_label\: ''Jasa''\|''Produk'', category_id\: int\<0, max\>\|null, category\: App\\Http\\Resources\\Api\\V1\\ProductCategoryResource, \.\.\.\}\.$#'
 			identifier: return.type
 			count: 1
@@ -571,358 +307,10 @@ parameters:
 			path: app/Http/Resources/Api/V1/ProjectCostResource.php
 
 		-
-			message: '#^Access to property \$dp_number on an unknown class App\\Models\\Projects\\DownPayment\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/ProjectRevenueResource.php
-
-		-
-			message: '#^Access to property \$id on an unknown class App\\Models\\Projects\\DownPayment\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/ProjectRevenueResource.php
-
-		-
 			message: '#^Cannot call method format\(\) on string\.$#'
 			identifier: method.nonObject
 			count: 1
 			path: app/Http/Resources/Api/V1/ProjectRevenueResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$approved_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$approved_by\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$base_currency_total\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$cancellation_reason\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$cancelled_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$cancelled_by\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$contact_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$converted_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$converted_to_bill_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$created_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$created_by\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$currency\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$discount_amount\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$discount_type\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$discount_value\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$exchange_rate\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$expected_date\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$first_received_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$fully_received_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$notes\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$original_po_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$po_date\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$po_number\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$reference\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$rejected_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$rejected_by\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$rejection_reason\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$revision\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$shipping_address\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$subject\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$submitted_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$submitted_by\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$subtotal\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$tax_amount\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$tax_rate\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$terms_conditions\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$total_amount\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:\$updated_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Call to an undefined method App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:canApprove\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Call to an undefined method App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:canCancel\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Call to an undefined method App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:canConvert\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Call to an undefined method App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:canReceive\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Call to an undefined method App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:canReject\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Call to an undefined method App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:canRevise\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Call to an undefined method App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:canSubmit\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Call to an undefined method App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:getFullNumber\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Call to an undefined method App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:getReceivingProgress\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Call to an undefined method App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:getStatusLabel\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Call to an undefined method App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:hasReceivedItems\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Call to an undefined method App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:isEditable\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Call to an undefined method App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:isFullyReceived\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Method App\\Http\\Resources\\Api\\V1\\PurchaseOrderResource\:\:toArray\(\) should return array\{id\: int, po_number\: string, revision\: int, full_number\: string, contact_id\: int, contact\?\: array\{id\: int, name\: string\}, po_date\: string, expected_date\: string\|null, \.\.\.\} but returns array\{id\: mixed, po_number\: mixed, revision\: mixed, full_number\: mixed, contact_id\: mixed, contact\: App\\Http\\Resources\\Api\\V1\\ContactResource, po_date\: mixed, expected_date\: mixed, \.\.\.\}\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^PHPDoc tag @mixin contains unknown class App\\Models\\Accounting\\PurchaseOrder\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Http/Resources/Api/V1/PurchaseOrderResource.php
-
-		-
-			message: '#^Method App\\Http\\Resources\\Api\\V1\\QuotationResource\:\:toArray\(\) should return array\{id\: int, quotation_number\: string, revision\: int, full_number\: string, contact_id\: int, contact\?\: array\{id\: int, name\: string\}, quotation_date\: string, valid_until\: string, \.\.\.\} but returns array\{id\: int, quotation_number\: string, revision\: int, full_number\: string, contact_id\: int, contact\: App\\Http\\Resources\\Api\\V1\\ContactResource, quotation_date\: string, valid_until\: string, \.\.\.\}\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Resources/Api/V1/QuotationResource.php
 
 		-
 			message: '#^Cannot call method format\(\) on string\.$#'
@@ -991,48 +379,6 @@ parameters:
 			path: app/Models/Accounting/JournalEntry.php
 
 		-
-			message: '#^Class App\\Models\\Contacts\\RecurringTemplate not found\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Models/Contacts/Contact.php
-
-		-
-			message: '#^Method App\\Models\\Contacts\\Contact\:\:recurringTemplates\(\) has invalid return type App\\Models\\Contacts\\RecurringTemplate\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Models/Contacts/Contact.php
-
-		-
-			message: '#^Method App\\Models\\Contacts\\Contact\:\:recurringTemplates\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\Contacts\\RecurringTemplate, \$this\(App\\Models\\Contacts\\Contact\)\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<Illuminate\\Database\\Eloquent\\Model, \$this\(App\\Models\\Contacts\\Contact\)\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Models/Contacts/Contact.php
-
-		-
-			message: '#^Parameter \#1 \$related of method Illuminate\\Database\\Eloquent\\Model\:\:hasMany\(\) expects class\-string\<Illuminate\\Database\\Eloquent\\Model\>, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Models/Contacts/Contact.php
-
-		-
-			message: '#^Type App\\Models\\Contacts\\RecurringTemplate in generic type Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\Contacts\\RecurringTemplate, \$this\(App\\Models\\Contacts\\Contact\)\> in PHPDoc tag @return is not subtype of template type TRelatedModel of Illuminate\\Database\\Eloquent\\Model of class Illuminate\\Database\\Eloquent\\Relations\\HasMany\.$#'
-			identifier: generics.notSubtype
-			count: 1
-			path: app/Models/Contacts/Contact.php
-
-		-
-			message: '#^Access to property \$payment_number on an unknown class App\\Models\\Sales\\Payment\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Models/Core/AuditLog.php
-
-		-
-			message: '#^Class App\\Models\\Sales\\Payment not found\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Models/Core/AuditLog.php
-
-		-
 			message: '#^Method App\\Models\\Core\\Permission\:\:allGrouped\(\) should return Illuminate\\Support\\Collection\<string, Illuminate\\Support\\Collection\<int, App\\Models\\Core\\Permission\>\> but returns Illuminate\\Database\\Eloquent\\Collection\<\(int\|string\), Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Core\\Permission\>\>\.$#'
 			identifier: return.type
 			count: 1
@@ -1067,36 +413,6 @@ parameters:
 			identifier: assign.propertyType
 			count: 1
 			path: app/Models/Projects/Project.php
-
-		-
-			message: '#^Class App\\Models\\Projects\\DownPayment not found\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Models/Projects/ProjectRevenue.php
-
-		-
-			message: '#^Method App\\Models\\Projects\\ProjectRevenue\:\:downPayment\(\) has invalid return type App\\Models\\Projects\\DownPayment\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Models/Projects/ProjectRevenue.php
-
-		-
-			message: '#^Method App\\Models\\Projects\\ProjectRevenue\:\:downPayment\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\Projects\\DownPayment, \$this\(App\\Models\\Projects\\ProjectRevenue\)\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<Illuminate\\Database\\Eloquent\\Model, \$this\(App\\Models\\Projects\\ProjectRevenue\)\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Models/Projects/ProjectRevenue.php
-
-		-
-			message: '#^Parameter \#1 \$related of method Illuminate\\Database\\Eloquent\\Model\:\:belongsTo\(\) expects class\-string\<Illuminate\\Database\\Eloquent\\Model\>, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Models/Projects/ProjectRevenue.php
-
-		-
-			message: '#^Type App\\Models\\Projects\\DownPayment in generic type Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\Projects\\DownPayment, \$this\(App\\Models\\Projects\\ProjectRevenue\)\> in PHPDoc tag @return is not subtype of template type TRelatedModel of Illuminate\\Database\\Eloquent\\Model of class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\.$#'
-			identifier: generics.notSubtype
-			count: 1
-			path: app/Models/Projects/ProjectRevenue.php
 
 		-
 			message: '#^Binary operation "\*" between int and string results in an error\.$#'
@@ -1141,30 +457,6 @@ parameters:
 			path: app/Models/Purchasing/PurchaseOrder.php
 
 		-
-			message: '#^Class App\\Models\\Sales\\Payment not found\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Models/Sales/DownPayment.php
-
-		-
-			message: '#^Method App\\Models\\Sales\\DownPayment\:\:refundPayment\(\) has invalid return type App\\Models\\Sales\\Payment\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Models/Sales/DownPayment.php
-
-		-
-			message: '#^Method App\\Models\\Sales\\DownPayment\:\:refundPayment\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\Sales\\Payment, \$this\(App\\Models\\Sales\\DownPayment\)\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<Illuminate\\Database\\Eloquent\\Model, \$this\(App\\Models\\Sales\\DownPayment\)\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Models/Sales/DownPayment.php
-
-		-
-			message: '#^Parameter \#1 \$related of method Illuminate\\Database\\Eloquent\\Model\:\:belongsTo\(\) expects class\-string\<Illuminate\\Database\\Eloquent\\Model\>, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Models/Sales/DownPayment.php
-
-		-
 			message: '#^Property App\\Models\\Sales\\DownPayment\:\:\$status \(string\) does not accept App\\Enums\\DocumentStatus\:\:Active\.$#'
 			identifier: assign.propertyType
 			count: 1
@@ -1173,12 +465,6 @@ parameters:
 		-
 			message: '#^Property App\\Models\\Sales\\DownPayment\:\:\$status \(string\) does not accept App\\Enums\\DocumentStatus\:\:FullyApplied\.$#'
 			identifier: assign.propertyType
-			count: 1
-			path: app/Models/Sales/DownPayment.php
-
-		-
-			message: '#^Type App\\Models\\Sales\\Payment in generic type Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\Sales\\Payment, \$this\(App\\Models\\Sales\\DownPayment\)\> in PHPDoc tag @return is not subtype of template type TRelatedModel of Illuminate\\Database\\Eloquent\\Model of class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\.$#'
-			identifier: generics.notSubtype
 			count: 1
 			path: app/Models/Sales/DownPayment.php
 
@@ -1429,12 +715,6 @@ parameters:
 			path: app/Services/Accounting/Strategies/Closing/IncomeSummaryStrategy.php
 
 		-
-			message: '#^Cannot call method toDateString\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Services/Accounting/Strategies/Returns/FullReturnJournalStrategy.php
-
-		-
 			message: '#^Access to an undefined property App\\Models\\Accounting\\JournalEntryLine\:\:\$total_credit\.$#'
 			identifier: property.notFound
 			count: 1
@@ -1471,30 +751,6 @@ parameters:
 			path: app/Services/Inventory/Reports/COGSReportService.php
 
 		-
-			message: '#^Method App\\Services\\Inventory\\Reports\\COGSReportService\:\:getCOGSByCategory\(\) should return Illuminate\\Support\\Collection\<int, array\{category_id\: int\|null, category_name\: string, product_count\: int, quantity_sold\: int, total_cogs\: int, percentage\: float\}\> but returns Illuminate\\Support\\Collection\<int, array\{category_id\: mixed, category_name\: mixed, product_count\: int, quantity_sold\: int, total_cogs\: int, percentage\: float\|int\}\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/Inventory/Reports/COGSReportService.php
-
-		-
-			message: '#^Method App\\Services\\Inventory\\Reports\\COGSReportService\:\:getCOGSByProduct\(\) should return Illuminate\\Support\\Collection\<int, array\{product_id\: int, sku\: string, name\: string, category\: string\|null, quantity_sold\: int, average_unit_cost\: int, total_cogs\: int, percentage\: float\}\> but returns Illuminate\\Support\\Collection\<int, array\{product_id\: mixed, sku\: mixed, name\: mixed, category\: mixed, quantity_sold\: int, average_unit_cost\: int, total_cogs\: int, percentage\: float\|int\}\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/Inventory/Reports/COGSReportService.php
-
-		-
-			message: '#^Method App\\Services\\Inventory\\Reports\\COGSReportService\:\:getProductCOGSDetail\(\) should return Illuminate\\Support\\Collection\<int, array\{id\: int, date\: string, reference\: string\|null, quantity\: int, unit_cost\: int, total_cost\: int, notes\: string\|null\}\> but returns Illuminate\\Support\\Collection\<int, array\{id\: int, date\: mixed, movement_number\: string, reference_type\: string\|null, reference_id\: int\|null, quantity\: int, unit_cost\: int, total_cost\: int, \.\.\.\}\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/Inventory/Reports/COGSReportService.php
-
-		-
-			message: '#^Method App\\Services\\Inventory\\Reports\\COGSReportService\:\:getTopProductsByCOGS\(\) should return Illuminate\\Support\\Collection\<int, array\{product_id\: int, sku\: string, name\: string, quantity_sold\: int, total_cogs\: int, average_selling_price\: int, estimated_gross_profit\: int, gross_margin_percent\: float\}\> but returns Illuminate\\Support\\Collection\<int, array\{product_id\: mixed, sku\: mixed, name\: mixed, quantity_sold\: int, total_cogs\: int, average_selling_price\: int, estimated_revenue\: int, estimated_gross_profit\: int, \.\.\.\}\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/Inventory/Reports/COGSReportService.php
-
-		-
 			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Inventory\\InventoryMovement\>\:\:map\(\) contains unresolvable type\.$#'
 			identifier: argument.unresolvableType
 			count: 1
@@ -1504,12 +760,6 @@ parameters:
 			message: '#^Cannot access property \$value on string\.$#'
 			identifier: property.nonObject
 			count: 7
-			path: app/Services/Inventory/StockOpnameService.php
-
-		-
-			message: '#^Cannot call method toDateString\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
 			path: app/Services/Inventory/StockOpnameService.php
 
 		-
@@ -1991,24 +1241,6 @@ parameters:
 			identifier: method.notFound
 			count: 4
 			path: app/Services/Shared/PaymentService.php
-
-		-
-			message: '#^Using nullsafe method call on non\-nullable type Illuminate\\Http\\Request\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Support/OperationContext.php
-
-		-
-			message: '#^Trait App\\Traits\\HasEditableStatus is used zero times and is not analysed\.$#'
-			identifier: trait.unused
-			count: 1
-			path: app/Traits/HasEditableStatus.php
-
-		-
-			message: '#^Trait App\\Traits\\LogsPerformance is used zero times and is not analysed\.$#'
-			identifier: trait.unused
-			count: 1
-			path: app/Traits/LogsPerformance.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'

@@ -15,15 +15,7 @@ class COGSReportService
      *
      * Uses perpetual inventory method where COGS is tracked via inventory movements.
      *
-     * @return array{
-     *     period: array{start: string, end: string},
-     *     beginning_inventory: int,
-     *     purchases: int,
-     *     goods_available: int,
-     *     ending_inventory: int,
-     *     cogs: int,
-     *     cogs_from_movements: int
-     * }
+     * @return array<string, mixed>
      */
     public function getCOGSSummary(?string $startDate = null, ?string $endDate = null): array
     {
@@ -70,17 +62,6 @@ class COGSReportService
 
     /**
      * Get COGS breakdown by product.
-     *
-     * @return Collection<int, array{
-     *     product_id: int,
-     *     sku: string,
-     *     name: string,
-     *     category: string|null,
-     *     quantity_sold: int,
-     *     average_unit_cost: int,
-     *     total_cogs: int,
-     *     percentage: float
-     * }>
      */
     public function getCOGSByProduct(?string $startDate = null, ?string $endDate = null): Collection
     {
@@ -123,15 +104,6 @@ class COGSReportService
 
     /**
      * Get COGS breakdown by category.
-     *
-     * @return Collection<int, array{
-     *     category_id: int|null,
-     *     category_name: string,
-     *     product_count: int,
-     *     quantity_sold: int,
-     *     total_cogs: int,
-     *     percentage: float
-     * }>
      */
     public function getCOGSByCategory(?string $startDate = null, ?string $endDate = null): Collection
     {
@@ -171,13 +143,7 @@ class COGSReportService
     /**
      * Get monthly COGS trend.
      *
-     * @return Collection<int, array{
-     *     month: string,
-     *     beginning_inventory: int,
-     *     purchases: int,
-     *     ending_inventory: int,
-     *     cogs: int
-     * }>
+     * @return Collection<int, array<string, mixed>>
      */
     public function getMonthlyCOGSTrend(int $year): Collection
     {
@@ -212,17 +178,6 @@ class COGSReportService
 
     /**
      * Get top products by COGS.
-     *
-     * @return Collection<int, array{
-     *     product_id: int,
-     *     sku: string,
-     *     name: string,
-     *     quantity_sold: int,
-     *     total_cogs: int,
-     *     average_selling_price: int,
-     *     estimated_gross_profit: int,
-     *     gross_margin_percent: float
-     * }>
      */
     public function getTopProductsByCOGS(?string $startDate = null, ?string $endDate = null, int $limit = 10): Collection
     {
@@ -334,16 +289,6 @@ class COGSReportService
 
     /**
      * Get COGS detail movements for a specific product.
-     *
-     * @return Collection<int, array{
-     *     id: int,
-     *     date: string,
-     *     reference: string|null,
-     *     quantity: int,
-     *     unit_cost: int,
-     *     total_cost: int,
-     *     notes: string|null
-     * }>
      */
     public function getProductCOGSDetail(Product $product, ?string $startDate = null, ?string $endDate = null): Collection
     {

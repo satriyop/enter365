@@ -6,6 +6,7 @@ use App\Enums\DocumentStatus;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Contacts\Contact;
+use App\Models\Shared\Payment;
 use App\Models\User;
 use App\Traits\CascadesSoftDeletes;
 use App\Traits\Filterable;

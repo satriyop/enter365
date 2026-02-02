@@ -60,11 +60,11 @@ class ProjectRevenue extends Model
     }
 
     /**
-     * @return BelongsTo<DownPayment, $this>
+     * @return BelongsTo<\App\Models\Sales\DownPayment, $this>
      */
     public function downPayment(): BelongsTo
     {
-        return $this->belongsTo(DownPayment::class);
+        return $this->belongsTo(\App\Models\Sales\DownPayment::class);
     }
 
     /**

@@ -205,14 +205,19 @@ class BankReconciliationController extends Controller
             ->limit(10)
             ->get();
 
-        $suggestions = $payments->map(fn ($payment) => [
-            'type' => 'payment',
-            'id' => $payment->id,
-            'number' => $payment->payment_number,
-            'amount' => $payment->amount,
-            'date' => $payment->payment_date->toDateString(),
-            'description' => $payment->description,
-        ]);
+        $suggestions = $payments->map(function ($payment) {
+            /** @var \Carbon\Carbon $paymentDate */
+            $paymentDate = $payment->payment_date;
+
+            return [
+                'type' => 'payment',
+                'id' => $payment->id,
+                'number' => $payment->payment_number,
+                'amount' => $payment->amount,
+                'date' => $paymentDate->toDateString(),
+                'description' => $payment->description,
+            ];
+        });
 
         return response()->json([
             'transaction' => new BankTransactionResource($bankTransaction),

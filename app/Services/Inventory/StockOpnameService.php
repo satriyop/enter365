@@ -423,12 +423,15 @@ class StockOpnameService extends BaseService implements StockOpnameServiceInterf
             ->values()
             ->toArray();
 
+        /** @var \Carbon\Carbon $opnameDate */
+        $opnameDate = $opname->opname_date;
+
         return [
             'stock_opname' => [
                 'id' => $opname->id,
                 'opname_number' => $opname->opname_number,
                 'warehouse' => $opname->warehouse->name,
-                'opname_date' => $opname->opname_date->toDateString(),
+                'opname_date' => $opnameDate->toDateString(),
                 'status' => $opname->status,
             ],
             'summary' => $summary,

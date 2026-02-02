@@ -95,6 +95,9 @@ class ContactController extends Controller
         $availableCredit = $contact->getAvailableCredit();
         $utilization = $contact->getCreditUtilization();
 
+        /** @var \Carbon\Carbon|null $lastTransactionDate */
+        $lastTransactionDate = $contact->last_transaction_date;
+
         return $this->success([
             'contact_id' => $contact->id,
             'name' => $contact->name,
@@ -105,7 +108,7 @@ class ContactController extends Controller
             'is_exceeded' => $contact->isCreditLimitExceeded(),
             'is_warning' => $contact->isCreditLimitWarning(),
             'can_create_invoice' => $contact->canCreateInvoice(),
-            'last_transaction_date' => $contact->last_transaction_date?->toDateString(),
+            'last_transaction_date' => $lastTransactionDate?->toDateString(),
         ]);
     }
 }

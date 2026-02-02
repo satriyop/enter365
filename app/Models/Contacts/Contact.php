@@ -97,11 +97,11 @@ class Contact extends Model
     }
 
     /**
-     * @return HasMany<RecurringTemplate, $this>
+     * @return HasMany<\App\Models\Shared\RecurringTemplate, $this>
      */
     public function recurringTemplates(): HasMany
     {
-        return $this->hasMany(RecurringTemplate::class);
+        return $this->hasMany(\App\Models\Shared\RecurringTemplate::class);
     }
 
     /**

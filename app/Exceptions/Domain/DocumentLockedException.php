@@ -35,7 +35,7 @@ class DocumentLockedException extends DomainException
                 'document_type' => $type,
                 'document_id' => $document->getKey(),
                 'document_number' => $number,
-                'status' => $document->status?->value ?? $document->status ?? null,
+                'status' => $document->status->value ?? $document->status ?? null,
             ]
         );
     }
@@ -55,7 +55,7 @@ class DocumentLockedException extends DomainException
                 'document_type' => $type,
                 'document_id' => $document->getKey(),
                 'document_number' => $number,
-                'status' => $document->status?->value ?? $document->status ?? null,
+                'status' => $document->status->value ?? $document->status ?? null,
             ]
         );
     }

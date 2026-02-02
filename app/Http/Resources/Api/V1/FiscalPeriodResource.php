@@ -11,7 +11,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class FiscalPeriodResource extends JsonResource
 {
     /**
-     * @param  \Illuminate\Http\Request  $request
      * @return array{
      *   id: int,
      *   name: string,
@@ -35,8 +34,8 @@ class FiscalPeriodResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'start_date' => $this->start_date?->toDateString(),
-            'end_date' => $this->end_date?->toDateString(),
+            'start_date' => $this->start_date->toDateString(),
+            'end_date' => $this->end_date->toDateString(),
             'is_closed' => $this->is_closed,
             'is_locked' => $this->is_locked,
             'is_open' => $this->isOpen(),

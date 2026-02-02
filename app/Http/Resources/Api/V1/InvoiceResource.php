@@ -19,65 +19,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class InvoiceResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
-     *
-     * @return array{
-     *   id: int,
-     *   invoice_number: string,
-     *   reference: string|null,
-     *   description: string|null,
-     *   contact_id: int,
-     *   contact?: array{id: int, name: string, email: string|null},
-     *   invoice_date: string,
-     *   due_date: string,
-     *   days_until_due: int,
-     *   is_overdue: bool,
-     *   days_overdue?: int,
-     *   currency: string,
-     *   exchange_rate: float,
-     *   subtotal: int,
-     *   discount_amount: int,
-     *   tax_rate: float,
-     *   tax_amount: int,
-     *   total_amount: int,
-     *   paid_amount: int,
-     *   outstanding_amount: int,
-     *   base_currency_total: int,
-     *   formatted: array{
-     *     subtotal: string,
-     *     discount_amount: string,
-     *     tax_amount: string,
-     *     total_amount: string,
-     *     paid_amount: string,
-     *     outstanding_amount: string
-     *   },
-     *   status: StatusResource,
-     *   status_label: string,
-     *   journal_entry_id: int|null,
-     *   has_journal_entry: bool,
-     *   journal_entry?: array{id: int, entry_number: string},
-     *   receivable_account_id: int|null,
-     *   items?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
-     *   item_count?: int,
-     *   payments?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
-     *   payment_count?: int,
-     *   workflow?: array<string, mixed>,
-     *   status_history?: array<int, mixed>,
-     *   actions: array{
-     *     can_edit: bool,
-     *     can_post: bool,
-     *     can_cancel: bool,
-     *     can_delete: bool,
-     *     can_mark_as_paid: bool,
-     *     can_mark_as_partial: bool
-     *   },
-     *   reminder_count: int,
-     *   last_reminder_at: string|null,
-     *   created_by: int|null,
-     *   created_at: string|null,
-     *   updated_at: string|null,
-     *   links?: array<string, string>
-     * }
+     * @return array<string, mixed>
      */
     public function toArray(Request $request): array
     {
@@ -99,9 +41,7 @@ class InvoiceResource extends JsonResource
             'due_date' => $this->due_date->toDateString(),
             'days_until_due' => $this->getDaysUntilDue(),
             'is_overdue' => $this->isOverdue(),
-            $this->mergeWhen($this->isOverdue(), [
-                'days_overdue' => $this->getDaysOverdue(),
-            ]),
+            ...($this->isOverdue() ? ['days_overdue' => $this->getDaysOverdue()] : []),
 
             // Currency
             'currency' => $this->currency,

@@ -11,28 +11,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class PaymentResource extends JsonResource
 {
     /**
-     * @return array{
-     *   id: int,
-     *   payment_number: string,
-     *   type: string,
-     *   contact_id: int,
-     *   payment_date: string,
-     *   amount: int,
-     *   payment_method: string,
-     *   reference: string|null,
-     *   notes: string|null,
-     *   cash_account_id: int,
-     *   journal_entry_id: int|null,
-     *   payable_type: string|null,
-     *   payable_id: int|null,
-     *   is_voided: bool,
-     *   contact?: array{id: int, name: string},
-     *   cash_account?: array{id: int, name: string, code: string},
-     *   journal_entry?: array{id: int, entry_number: string},
-     *   created_by: int|null,
-     *   created_at: string|null,
-     *   updated_at: string|null
-     * }
+     * @return array<string, mixed>
      */
     public function toArray(Request $request): array
     {

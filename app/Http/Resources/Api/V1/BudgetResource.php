@@ -11,28 +11,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class BudgetResource extends JsonResource
 {
     /**
-     * @return array{
-     *   id: int,
-     *   name: string,
-     *   description: string|null,
-     *   fiscal_period_id: int,
-     *   fiscal_period?: array{id: int, name: string, start_date: string, end_date: string},
-     *   type: string,
-     *   type_label: string,
-     *   status: array{value: string, label: string, color: string, is_terminal: bool, is_editable: bool},
-     *   is_editable: bool,
-     *   total_revenue: int,
-     *   total_expense: int,
-     *   net_budget: int,
-     *   approved_by: int|null,
-     *   approved_by_user?: array{id: int, name: string},
-     *   approved_at: string|null,
-     *   notes: string|null,
-     *   lines?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
-     *   lines_count?: int,
-     *   created_at: string|null,
-     *   updated_at: string|null
-     * }
+     * @return array<string, mixed>
      */
     public function toArray(Request $request): array
     {

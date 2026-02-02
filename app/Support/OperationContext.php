@@ -53,7 +53,7 @@ final class OperationContext
         return new self(
             userId: auth()->id(),
             tenantId: null, // TODO: auth()->user()?->tenant_id when multi-tenant ready
-            ipAddress: request()?->ip(),
+            ipAddress: request()->ip(),
             timestamp: now(),
             metadata: ['source' => 'auth'],
         );

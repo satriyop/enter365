@@ -15,19 +15,7 @@ class BankReconciliationReportService
     /**
      * Get reconciliation report comparing book balance vs bank balance.
      *
-     * @return array{
-     *     account: array{id: int, code: string, name: string},
-     *     as_of_date: string,
-     *     book_balance: int,
-     *     bank_balance: int,
-     *     adjustments_to_book: array{items: Collection, total: int},
-     *     adjustments_to_bank: array{items: Collection, total: int},
-     *     adjusted_book_balance: int,
-     *     adjusted_bank_balance: int,
-     *     difference: int,
-     *     is_reconciled: bool,
-     *     reconciliation_summary: array{total: int, reconciled: int, unmatched: int, matched: int}
-     * }
+     * @return array<string, mixed>
      */
     public function getReconciliationReport(Account $account, ?string $asOfDate = null): array
     {
@@ -75,12 +63,7 @@ class BankReconciliationReportService
     /**
      * Get outstanding items that need attention.
      *
-     * @return array{
-     *     outstanding_deposits: Collection,
-     *     outstanding_checks: Collection,
-     *     unmatched_bank_transactions: Collection,
-     *     unmatched_book_entries: Collection
-     * }
+     * @return array<string, Collection>
      */
     public function getOutstandingItems(Account $account, ?string $asOfDate = null): array
     {
@@ -147,7 +130,7 @@ class BankReconciliationReportService
      * Get adjustments needed to reconcile book balance to bank.
      * These are items in bank but not yet in books.
      *
-     * @return array{items: Collection, total: int}
+     * @return array<string, mixed>
      */
     protected function getAdjustmentsToBook(Account $account, Carbon $asOfDate): array
     {
@@ -182,7 +165,7 @@ class BankReconciliationReportService
      * Get adjustments needed to reconcile bank balance to book.
      * These are items in books but not yet cleared by bank.
      *
-     * @return array{items: Collection, total: int}
+     * @return array<string, mixed>
      */
     protected function getAdjustmentsToBank(Account $account, Carbon $asOfDate): array
     {
@@ -226,7 +209,7 @@ class BankReconciliationReportService
     /**
      * Get reconciliation summary statistics.
      *
-     * @return array{total: int, reconciled: int, unmatched: int, matched: int}
+     * @return array<string, int>
      */
     protected function getReconciliationSummary(Account $account, Carbon $asOfDate): array
     {

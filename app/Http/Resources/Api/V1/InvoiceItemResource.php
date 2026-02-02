@@ -6,31 +6,12 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Models\Accounting\InvoiceItem
+ * @mixin \App\Models\Sales\InvoiceItem
  */
 class InvoiceItemResource extends JsonResource
 {
     /**
-     * @param  \Illuminate\Http\Request  $request
-     * @return array{
-     *   id: int,
-     *   invoice_id: int,
-     *   description: string,
-     *   quantity: float,
-     *   unit: string,
-     *   unit_price: int,
-     *   discount_percent: float,
-     *   discount_amount: int,
-     *   tax_rate: float,
-     *   tax_amount: int,
-     *   line_total: int,
-     *   sort_order: int,
-     *   notes: string|null,
-     *   revenue_account_id: int|null,
-     *   revenue_account?: array{id: int, name: string, code: string},
-     *   created_at: string|null,
-     *   updated_at: string|null
-     * }
+     * @return array<string, mixed>
      */
     public function toArray(Request $request): array
     {

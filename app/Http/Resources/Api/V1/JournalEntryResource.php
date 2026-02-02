@@ -11,28 +11,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class JournalEntryResource extends JsonResource
 {
     /**
-     * @return array{
-     *   id: int,
-     *   entry_number: string,
-     *   entry_date: string,
-     *   description: string,
-     *   reference: string|null,
-     *   source_type: string|null,
-     *   source_id: int|null,
-     *   fiscal_period_id: int,
-     *   is_posted: bool,
-     *   is_reversed: bool,
-     *   total_debit: int,
-     *   total_credit: int,
-     *   is_balanced: bool,
-     *   lines?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
-     *   fiscal_period?: array{id: int, name: string},
-     *   reversed_by?: array{id: int, entry_number: string},
-     *   reversal_of?: array{id: int, entry_number: string},
-     *   created_by: int|null,
-     *   created_at: string|null,
-     *   updated_at: string|null
-     * }
+     * @return array<string, mixed>
      */
     public function toArray(Request $request): array
     {

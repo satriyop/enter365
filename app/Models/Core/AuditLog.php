@@ -8,7 +8,7 @@ use App\Models\Accounting\JournalEntry;
 use App\Models\Contacts\Contact;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
-use App\Models\Sales\Payment;
+use App\Models\Shared\Payment;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -88,7 +88,7 @@ class AuditLog extends Model
 
         return static::create([
             'user_id' => $user?->id,
-            'user_name' => $user?->name ?? 'System',
+            'user_name' => $user->name ?? 'System',
             'action' => $action,
             'auditable_type' => $model::class,
             'auditable_id' => $model->getKey(),

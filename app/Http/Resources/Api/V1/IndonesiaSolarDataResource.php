@@ -6,14 +6,13 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Models\Accounting\IndonesiaSolarData
+ * @mixin \App\Models\Solar\IndonesiaSolarData
  */
 class IndonesiaSolarDataResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return array{
      *   id: int,
      *   province: string,

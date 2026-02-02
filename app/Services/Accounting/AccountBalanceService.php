@@ -122,8 +122,8 @@ class AccountBalanceService
 
     /**
      * Get ledger entries for multiple accounts.
-     * 
-     * @param Collection<int, Account> $accounts
+     *
+     * @param  Collection<int, Account>  $accounts
      */
     public function getLedgers(Collection $accounts, ?string $startDate = null, ?string $endDate = null): Collection
     {
@@ -175,10 +175,12 @@ class AccountBalanceService
 
             foreach ($accounts as $account) {
                 $movement = $priorMovements->get($account->id);
+                $totalDebit = $movement ? (int) $movement->total_debit : 0;
+                $totalCredit = $movement ? (int) $movement->total_credit : 0;
                 $priorBalance = $account->isDebitNormal()
-                    ? ((int) ($movement->total_debit ?? 0) - (int) ($movement->total_credit ?? 0))
-                    : ((int) ($movement->total_credit ?? 0) - (int) ($movement->total_debit ?? 0));
-                
+                    ? ($totalDebit - $totalCredit)
+                    : ($totalCredit - $totalDebit);
+
                 $openingBalances[$account->id] = (int) $account->opening_balance + $priorBalance;
             }
         } else {
@@ -222,6 +224,12 @@ class AccountBalanceService
             ];
         });
     }
+
+    /**
+     * Get trial balance for all active accounts.
+     *
+     * @return Collection<int, array{account_id: int, code: string, name: string, type: string, debit_balance: int, credit_balance: int}>
+     */
     public function getTrialBalance(?string $asOfDate = null): Collection
     {
         $asOfDate = $asOfDate ?? now()->toDateString();
@@ -247,8 +255,8 @@ class AccountBalanceService
             $totalDebit = (int) ($movement->total_debit ?? 0);
             $totalCredit = (int) ($movement->total_credit ?? 0);
 
-            $balance = (int) $account->opening_balance + ($account->isDebitNormal() 
-                ? $totalDebit - $totalCredit 
+            $balance = (int) $account->opening_balance + ($account->isDebitNormal()
+                ? $totalDebit - $totalCredit
                 : $totalCredit - $totalDebit);
 
             return [

@@ -11,34 +11,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class BillResource extends JsonResource
 {
     /**
-     * @return array{
-     *   id: int,
-     *   bill_number: string,
-     *   vendor_invoice_number: string|null,
-     *   contact_id: int,
-     *   bill_date: string,
-     *   due_date: string,
-     *   description: string|null,
-     *   reference: string|null,
-     *   subtotal: int,
-     *   tax_amount: int,
-     *   tax_rate: float,
-     *   discount_amount: int,
-     *   total_amount: int,
-     *   paid_amount: int,
-     *   outstanding_amount: int,
-     *   status: StatusResource,
-     *   status_label: string,
-     *   journal_entry_id: int|null,
-     *   payable_account_id: int|null,
-     *   contact?: array{id: int, name: string},
-     *   items?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
-     *   journal_entry?: array{id: int, entry_number: string},
-     *   payments?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
-     *   created_by: int|null,
-     *   created_at: string|null,
-     *   updated_at: string|null
-     * }
+     * @return array<string, mixed>
      */
     public function toArray(Request $request): array
     {
