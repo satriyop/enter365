@@ -289,8 +289,8 @@ return [
         'inventory_adjustment' => '5-2900', // Penyesuaian Persediaan (Beban Operasional Lainnya)
         'sales_returns' => '4-1004', // Retur Penjualan
         'purchase_returns' => '5-1004', // Retur Pembelian
-        'dp_receivable' => '2-2100', // Uang Muka Penjualan (liability)
-        'dp_payable' => '1-1500', // Uang Muka Pembelian (asset)
+        'dp_receivable' => '2-1700', // Uang Muka Penjualan (current liability)
+        'dp_payable' => '1-1700', // Uang Muka Pembelian (current asset)
 
         // Year-end closing accounts
         'retained_earnings' => '3-2000', // Laba Ditahan

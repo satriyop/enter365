@@ -265,6 +265,17 @@ it('can reverse a posted journal entry', function () {
     $netDebit = $originalLines->sum('debit') + $reversingLines->sum('debit');
     $netCredit = $originalLines->sum('credit') + $reversingLines->sum('credit');
     expect($netDebit)->toBe($netCredit);
+
+    // Trial balance should remain balanced after reversal
+    $trialBalance = realDb()->table('journal_entry_lines as jel')
+        ->join('journal_entries as je', 'je.id', '=', 'jel.journal_entry_id')
+        ->where('je.is_posted', true)
+        ->where('je.deleted_at', null)
+        ->where('je.is_reversed', false)
+        ->selectRaw('COALESCE(SUM(jel.debit), 0) as total_debit, COALESCE(SUM(jel.credit), 0) as total_credit')
+        ->first();
+
+    expect((int) $trialBalance->total_debit)->toBe((int) $trialBalance->total_credit);
 });
 
 it('shows journal entries in the list page', function () {

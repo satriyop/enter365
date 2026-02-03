@@ -164,6 +164,131 @@ it('voiding a payment reverses JE and restores invoice status', function () {
     expect((int) $invoice->paid_amount)->toBe(0);
 });
 
+it('recording a payment creates correct journal entry lines', function () {
+    // Create and post an invoice
+    $page = createInvoice('Payment JE Lines Test', 10, '100000');
+    $invoiceId = getInvoiceIdFromUrl($page);
+    postInvoice($page);
+
+    $invoice = realDb()->table('invoices')->where('id', $invoiceId)->first();
+    $totalAmount = (int) $invoice->total_amount;
+
+    // Record full payment
+    $page->navigate(spaUrl("/payments/new?invoice_id={$invoiceId}"));
+    $page->assertSee('Record Payment');
+    $page->click('Select customer');
+    $page->click('[role="option"] >> text=PT Test Customer');
+    $page->fill('input[type="number"][step="1000"]', (string) $totalAmount);
+    $page->click('Select account');
+    $page->click('[role="option"] >> text=Bank BCA');
+    $page->click('button[type="submit"]');
+    $page->assertSee('Payment recorded successfully');
+
+    // Find the payment and verify JE lines
+    $payment = realDb()->table('payments')
+        ->where('payable_type', 'App\\Models\\Sales\\Invoice')
+        ->where('payable_id', $invoiceId)
+        ->where('is_voided', false)
+        ->first();
+    expect($payment->journal_entry_id)->not->toBeNull();
+
+    $jeLines = realDb()->table('journal_entry_lines')
+        ->where('journal_entry_id', $payment->journal_entry_id)
+        ->get();
+
+    // JE must balance
+    expect($jeLines->sum('debit'))->toBe($jeLines->sum('credit'));
+
+    // Debit: Bank BCA (1-1010, id=1001) for total amount
+    $cashLine = $jeLines->first(fn ($l) => $l->account_id === 1001);
+    expect($cashLine)->not->toBeNull();
+    expect((int) $cashLine->debit)->toBe($totalAmount);
+
+    // Credit: Piutang Usaha / AR (1-1100, id=1004) for total amount
+    $arLine = $jeLines->first(fn ($l) => $l->account_id === 1004);
+    expect($arLine)->not->toBeNull();
+    expect((int) $arLine->credit)->toBe($totalAmount);
+
+    // Trial balance check
+    $trialBalance = realDb()->table('journal_entry_lines as jel')
+        ->join('journal_entries as je', 'je.id', '=', 'jel.journal_entry_id')
+        ->where('je.is_posted', true)
+        ->where('je.deleted_at', null)
+        ->where('je.is_reversed', false)
+        ->selectRaw('COALESCE(SUM(jel.debit), 0) as total_debit, COALESCE(SUM(jel.credit), 0) as total_credit')
+        ->first();
+
+    expect((int) $trialBalance->total_debit)->toBe((int) $trialBalance->total_credit);
+});
+
+it('voiding a payment creates correct reversal journal entry lines', function () {
+    // Create and post an invoice, record payment
+    $page = createInvoice('Void JE Lines Test', 5, '200000');
+    $invoiceId = getInvoiceIdFromUrl($page);
+    postInvoice($page);
+
+    $invoice = realDb()->table('invoices')->where('id', $invoiceId)->first();
+    $totalAmount = (int) $invoice->total_amount;
+
+    $page->navigate(spaUrl("/payments/new?invoice_id={$invoiceId}"));
+    $page->assertSee('Record Payment');
+    $page->click('Select customer');
+    $page->click('[role="option"] >> text=PT Test Customer');
+    $page->fill('input[type="number"][step="1000"]', (string) $totalAmount);
+    $page->click('Select account');
+    $page->click('[role="option"] >> text=Bank BCA');
+    $page->click('button[type="submit"]');
+    $page->assertSee('Payment recorded successfully');
+
+    // Get the payment
+    $payment = realDb()->table('payments')
+        ->where('payable_type', 'App\\Models\\Sales\\Invoice')
+        ->where('payable_id', $invoiceId)
+        ->where('is_voided', false)
+        ->first();
+    $paymentId = (int) $payment->id;
+    $originalJeId = (int) $payment->journal_entry_id;
+
+    // Void the payment
+    $page->navigate(spaUrl("/payments/{$paymentId}"));
+    $page->assertSee($payment->payment_number);
+    $page->script('window.confirm = () => true');
+    $page->click('Void Payment');
+    waitForPaymentVoided($paymentId);
+
+    // Verify reversal JE lines
+    $originalJe = realDb()->table('journal_entries')->where('id', $originalJeId)->first();
+    expect($originalJe->reversed_by_id)->not->toBeNull();
+
+    $reversalLines = realDb()->table('journal_entry_lines')
+        ->where('journal_entry_id', $originalJe->reversed_by_id)
+        ->get();
+
+    // Reversal JE must balance
+    expect($reversalLines->sum('debit'))->toBe($reversalLines->sum('credit'));
+
+    // Reversal: Debit AR (1-1100, id=1004) — opposite of original
+    $arLine = $reversalLines->first(fn ($l) => $l->account_id === 1004);
+    expect($arLine)->not->toBeNull();
+    expect((int) $arLine->debit)->toBe($totalAmount);
+
+    // Reversal: Credit Cash (1-1010, id=1001) — opposite of original
+    $cashLine = $reversalLines->first(fn ($l) => $l->account_id === 1001);
+    expect($cashLine)->not->toBeNull();
+    expect((int) $cashLine->credit)->toBe($totalAmount);
+
+    // Trial balance should still be balanced after void
+    $trialBalance = realDb()->table('journal_entry_lines as jel')
+        ->join('journal_entries as je', 'je.id', '=', 'jel.journal_entry_id')
+        ->where('je.is_posted', true)
+        ->where('je.deleted_at', null)
+        ->where('je.is_reversed', false)
+        ->selectRaw('COALESCE(SUM(jel.debit), 0) as total_debit, COALESCE(SUM(jel.credit), 0) as total_credit')
+        ->first();
+
+    expect((int) $trialBalance->total_debit)->toBe((int) $trialBalance->total_credit);
+});
+
 it('shows payments in the list page', function () {
     // Create a payment first (via invoice workflow)
     $page = createInvoice('List Payment Test', 5, '50000');

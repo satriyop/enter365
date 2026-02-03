@@ -419,8 +419,7 @@ class DownPaymentService extends BaseService implements DownPaymentServiceInterf
         $dpAccount = Account::where('code', $dpAccountCode)->first();
 
         if (! $dpAccount) {
-            // Fallback: create or find default account
-            $dpAccount = $downPayment->cashAccount; // Simplified
+            throw new \RuntimeException("DP account not found: {$dpAccountCode}. Please seed the chart of accounts.");
         }
 
         $lines = [];
@@ -482,14 +481,14 @@ class DownPaymentService extends BaseService implements DownPaymentServiceInterf
         $dpAccount = Account::where('code', $dpAccountCode)->first();
 
         if (! $dpAccount) {
-            $dpAccount = $downPayment->cashAccount;
+            throw new \RuntimeException("DP account not found: {$dpAccountCode}. Please seed the chart of accounts.");
         }
 
         $lines = [];
 
         if ($downPayment->isReceivable() && $applicable instanceof Invoice) {
             // Apply to invoice: Dr Uang Muka Penjualan, Cr Piutang
-            $receivableAccount = $applicable->receivableAccount ?? Account::where('code', '1130')->first();
+            $receivableAccount = $applicable->receivableAccount ?? Account::where('code', '1-1100')->first();
 
             $lines = [
                 [
@@ -507,7 +506,7 @@ class DownPaymentService extends BaseService implements DownPaymentServiceInterf
             ];
         } elseif ($downPayment->isPayable() && $applicable instanceof Bill) {
             // Apply to bill: Dr Hutang, Cr Uang Muka Pembelian
-            $payableAccount = $applicable->payableAccount ?? Account::where('code', '2110')->first();
+            $payableAccount = $applicable->payableAccount ?? Account::where('code', '2-1100')->first();
 
             $lines = [
                 [
@@ -548,7 +547,7 @@ class DownPaymentService extends BaseService implements DownPaymentServiceInterf
         $dpAccount = Account::where('code', $dpAccountCode)->first();
 
         if (! $dpAccount) {
-            $dpAccount = $downPayment->cashAccount;
+            throw new \RuntimeException("DP account not found: {$dpAccountCode}. Please seed the chart of accounts.");
         }
 
         $lines = [];

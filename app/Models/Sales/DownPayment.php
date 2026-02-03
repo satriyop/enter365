@@ -192,7 +192,9 @@ class DownPayment extends Model
      */
     public function getDpAccountCode(): string
     {
-        return $this->isReceivable() ? '2130' : '1140'; // Default codes, can be configured
+        return $this->isReceivable()
+            ? config('accounting.default_accounts.dp_receivable', '2-1700')
+            : config('accounting.default_accounts.dp_payable', '1-1700');
     }
 
     /**
