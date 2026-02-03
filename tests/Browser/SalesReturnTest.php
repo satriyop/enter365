@@ -10,15 +10,8 @@ declare(strict_types=1);
  * - Seeded customer: PT Test Customer (contact_id=4)
  * - Feature flag `sales_returns` enabled
  *
- * Since no create/edit form page exists in the frontend (route maps to
- * list page), sales returns are created via direct DB insertion and the
- * API is tested through the detail page workflow buttons.
- *
- * Known frontend bugs (documented, not fixed here):
- * - canApprove/canReject check 'pending' instead of 'submitted' —
- *   Approve/Reject buttons never appear after Submit.
- * - useCreateSalesReturnFromInvoice calls wrong URL (/invoices/{id}/return
- *   instead of /invoices/{id}/create-sales-return).
+ * Workflow transition tests (submit, cancel) create SRs via the SPA form
+ * at /sales/sales-returns/new. Read-only display tests use DB insertion.
  *
  * Shared helpers (realDb, loginAndVisit, spaUrl, etc.) are in tests/Pest.php.
  */
@@ -158,6 +151,76 @@ function getSrIdFromUrl($page): int
     return (int) ($matches[1] ?? 0);
 }
 
+/**
+ * Create a sales return via the SPA form and return the page on the detail view.
+ */
+function createSalesReturnViaUi(
+    string $description = 'E2E SR Item',
+    int $qty = 2,
+    string $price = '100000',
+) {
+    $page = loginAndVisit('/sales/sales-returns/new');
+
+    $page->assertSee('New Sales Return');
+
+    // Select customer — Radix-Vue Select
+    $page->click('Select customer...');
+    $page->click('[role="option"] >> text=PT Test Customer');
+
+    // Fill line item description
+    $page->fill('input[placeholder="Item description"]', $description);
+
+    // Fill quantity (step="any" allows fractional quantities)
+    $page->fill('table input[type="number"][step="any"]', (string) $qty);
+
+    // Fill unit price (CurrencyInput)
+    $page->click('td input[inputmode="numeric"]');
+    $page->type('td input[inputmode="numeric"]', $price);
+
+    // Submit the form
+    $page->click('button >> text=Create Sales Return');
+
+    // Wait for success message and navigation to detail page
+    $page->assertSee('created successfully');
+    $page->assertSee('SR-');
+
+    return $page;
+}
+
+/**
+ * Submit a draft SR from its detail page and return the SR ID.
+ */
+function submitSalesReturn($page): int
+{
+    $srId = getSrIdFromUrl($page);
+
+    $page->click('Submit');
+
+    waitForSrStatus($srId, 'submitted');
+    $page->navigate(spaUrl("/sales/sales-returns/{$srId}"));
+
+    $page->assertSee('Diajukan');
+
+    return $srId;
+}
+
+/**
+ * Approve a submitted SR from its detail page and return the SR ID.
+ */
+function approveSalesReturn($page): int
+{
+    $srId = getSrIdFromUrl($page);
+
+    $page->click('Approve');
+
+    waitForSrStatus($srId, 'approved');
+    $page->navigate(spaUrl("/sales/sales-returns/{$srId}"));
+
+    $page->assertSee('Disetujui');
+
+    return $srId;
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -192,9 +255,8 @@ it('can view a draft sales return detail page', function () {
 });
 
 it('can submit a draft sales return via UI', function () {
-    $srId = createSalesReturnInDb('draft', 'Submit Workflow Test');
-
-    $page = loginAndVisit("/sales/sales-returns/{$srId}");
+    $page = createSalesReturnViaUi('Submit Workflow Test');
+    $srId = getSrIdFromUrl($page);
 
     $page->assertSee('Draft');
     $page->assertSee('Submit');
@@ -216,17 +278,25 @@ it('can submit a draft sales return via UI', function () {
     expect($sr->submitted_by)->toBe(getAdminUserId());
 });
 
-it('can verify approved status displays correctly on detail page', function () {
-    // Fast-forward to approved via DB (UI Approve button is broken —
-    // checks 'pending' instead of 'submitted')
-    $srId = createSalesReturnInDb('approved', 'Approved Status Test');
+it('can approve a submitted sales return via UI', function () {
+    $page = createSalesReturnViaUi('Approve Workflow Test');
+    $srId = submitSalesReturn($page);
 
-    $page = loginAndVisit("/sales/sales-returns/{$srId}");
+    $page->assertSee('Approve');
 
-    // Should display Indonesian label for approved
+    // Click the Approve button
+    $page->click('Approve');
+
+    // Wait for the API to process
+    waitForSrStatus($srId, 'approved');
+
+    // Navigate to see updated state
+    $page->navigate(spaUrl("/sales/sales-returns/{$srId}"));
+
+    // Status label should show Indonesian "Disetujui"
     $page->assertSee('Disetujui');
     $page->assertSee('PT Test Customer');
-    $page->assertSee('Approved Status Test');
+    $page->assertSee('Approve Workflow Test');
 
     // Complete button should be visible for approved status
     $page->assertSee('Complete');
@@ -235,15 +305,14 @@ it('can verify approved status displays correctly on detail page', function () {
     $sr = realDb()->table('sales_returns')->where('id', $srId)->first();
     expect($sr->status)->toBe('approved');
     expect($sr->approved_at)->not->toBeNull();
+    expect($sr->approved_by)->toBe(getAdminUserId());
 });
 
 it('can complete an approved sales return via UI', function () {
-    // Start from approved status (fast-forwarded via DB)
-    $srId = createSalesReturnInDb('approved', 'Complete Workflow Test');
+    $page = createSalesReturnViaUi('Complete Workflow Test');
+    submitSalesReturn($page);
+    $srId = approveSalesReturn($page);
 
-    $page = loginAndVisit("/sales/sales-returns/{$srId}");
-
-    $page->assertSee('Disetujui');
     $page->assertSee('Complete');
 
     // Click the Complete button
@@ -266,9 +335,8 @@ it('can complete an approved sales return via UI', function () {
 });
 
 it('can cancel a draft sales return via dropdown menu', function () {
-    $srId = createSalesReturnInDb('draft', 'Cancel Workflow Test');
-
-    $page = loginAndVisit("/sales/sales-returns/{$srId}");
+    $page = createSalesReturnViaUi('Cancel Workflow Test');
+    $srId = getSrIdFromUrl($page);
 
     $page->assertSee('Draft');
 

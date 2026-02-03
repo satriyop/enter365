@@ -226,20 +226,23 @@ it('can mark a shipped delivery order as delivered', function () {
     createDOFromInvoiceUI($page);
     $doId = getDOIdFromUrl($page);
 
-    // Fast-forward to shipped status via DB (test focuses on Deliver workflow)
-    $userId = (int) realDb()->table('users')
-        ->where('email', 'admin@example.com')
-        ->value('id');
+    $page->assertSee('Draft');
 
-    realDb()->table('delivery_orders')->where('id', $doId)->update([
-        'status' => 'shipped',
-        'confirmed_at' => now(),
-        'confirmed_by' => $userId,
-        'shipped_at' => now(),
-        'shipped_by' => $userId,
-    ]);
+    // --- Confirm ---
+    $page->click('Confirm');
+    waitForDoStatus($doId, 'confirmed');
+    $page->navigate(spaUrl("/sales/delivery-orders/{$doId}"));
+    $page->assertSee('Confirmed');
 
-    // Navigate to see updated status
+    // --- Ship (opens modal) ---
+    $page->click('Ship');
+    $page->assertSee('Ship Delivery Order');
+    $page->fill('input[placeholder="Enter tracking number"]', 'TRK-DELIVER-001');
+    $page->fill('input[placeholder="Enter driver name"]', 'Test Driver');
+    $page->fill('input[placeholder="Enter vehicle number"]', 'B 5678 AB');
+    $page->click('[role="dialog"] button >> text=Ship');
+
+    waitForDoStatus($doId, 'shipped');
     $page->navigate(spaUrl("/sales/delivery-orders/{$doId}"));
     $page->assertSee('Shipped');
 
