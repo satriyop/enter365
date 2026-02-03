@@ -22,191 +22,205 @@ declare(strict_types=1);
 // Helpers
 // ---------------------------------------------------------------------------
 
-/**
- * Get a seeded supplier name for PO tests.
- */
-function getTestSupplierName(): string
-{
-    $name = realDb()->table('contacts')
-        ->where('type', 'supplier')
-        ->orderBy('id')
-        ->value('name');
+if (! function_exists('getTestSupplierName')) {
+    /**
+     * Get a seeded supplier name for PO tests.
+     */
+    function getTestSupplierName(): string
+    {
+        $name = realDb()->table('contacts')
+            ->where('type', 'supplier')
+            ->orderBy('id')
+            ->value('name');
 
-    return $name ?: 'Rohan-Predovic';
+        return $name ?: 'Rohan-Predovic';
+    }
 }
 
-/**
- * Get the PO ID from the current detail page URL.
- */
-function getPoIdFromUrl($page): int
-{
-    $url = $page->url();
-    preg_match('/purchase-orders\/(\d+)/', $url, $matches);
+if (! function_exists('getPoIdFromUrl')) {
+    /**
+     * Get the PO ID from the current detail page URL.
+     */
+    function getPoIdFromUrl($page): int
+    {
+        $url = $page->url();
+        preg_match('/purchase-orders\/(\d+)/', $url, $matches);
 
-    return (int) ($matches[1] ?? 0);
+        return (int) ($matches[1] ?? 0);
+    }
 }
 
-/**
- * Wait for a PO status to change in the database.
- */
-function waitForPoStatus(int $poId, string $expectedStatus, int $maxRetries = 30): void
-{
-    for ($i = 0; $i < $maxRetries; $i++) {
-        $status = realDb()->table('purchase_orders')->where('id', $poId)->value('status');
-        if ($status === $expectedStatus) {
-            return;
+if (! function_exists('waitForPoStatus')) {
+    /**
+     * Wait for a PO status to change in the database.
+     */
+    function waitForPoStatus(int $poId, string $expectedStatus, int $maxRetries = 30): void
+    {
+        for ($i = 0; $i < $maxRetries; $i++) {
+            $status = realDb()->table('purchase_orders')->where('id', $poId)->value('status');
+            if ($status === $expectedStatus) {
+                return;
+            }
+            usleep(200_000); // 200ms
         }
-        usleep(200_000); // 200ms
     }
 }
 
-/**
- * Generate a unique PO number for DB insertion.
- */
-function generatePoNumber(): string
-{
-    $prefix = 'PO-'.now()->format('Ym').'-';
-    $lastNumber = realDb()->table('purchase_orders')
-        ->where('po_number', 'like', $prefix.'%')
-        ->orderByDesc('po_number')
-        ->value('po_number');
+if (! function_exists('generatePoNumber')) {
+    /**
+     * Generate a unique PO number for DB insertion.
+     */
+    function generatePoNumber(): string
+    {
+        $prefix = 'PO-'.now()->format('Ym').'-';
+        $lastNumber = realDb()->table('purchase_orders')
+            ->where('po_number', 'like', $prefix.'%')
+            ->orderByDesc('po_number')
+            ->value('po_number');
 
-    if ($lastNumber) {
-        $seq = (int) substr($lastNumber, strlen($prefix)) + 1;
-    } else {
-        $seq = 1;
+        if ($lastNumber) {
+            $seq = (int) substr($lastNumber, strlen($prefix)) + 1;
+        } else {
+            $seq = 1;
+        }
+
+        return $prefix.str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
     }
-
-    return $prefix.str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
 }
 
-/**
- * Create a PO via DB insertion with one item.
- * Used to fast-forward to specific statuses for workflow tests.
- */
-function createPurchaseOrderInDb(
-    string $status = 'draft',
-    string $description = 'E2E PO Item',
-    int $qty = 5,
-    int $unitPrice = 50000,
-): int {
-    $db = realDb();
-    $userId = (int) $db->table('users')->where('email', 'admin@example.com')->value('id');
-    $contactId = (int) $db->table('contacts')->where('type', 'supplier')->orderBy('id')->value('id');
+if (! function_exists('createPurchaseOrderInDb')) {
+    /**
+     * Create a PO via DB insertion with one item.
+     * Used to fast-forward to specific statuses for workflow tests.
+     */
+    function createPurchaseOrderInDb(
+        string $status = 'draft',
+        string $description = 'E2E PO Item',
+        int $qty = 5,
+        int $unitPrice = 50000,
+    ): int {
+        $db = realDb();
+        $userId = (int) $db->table('users')->where('email', 'admin@example.com')->value('id');
+        $contactId = (int) $db->table('contacts')->where('type', 'supplier')->orderBy('id')->value('id');
 
-    $lineTotal = $qty * $unitPrice;
-    $taxAmount = (int) round($lineTotal * 0.11);
-    $totalAmount = $lineTotal + $taxAmount;
+        $lineTotal = $qty * $unitPrice;
+        $taxAmount = (int) round($lineTotal * 0.11);
+        $totalAmount = $lineTotal + $taxAmount;
 
-    $poId = (int) $db->table('purchase_orders')->insertGetId([
-        'po_number' => generatePoNumber(),
-        'revision' => 0,
-        'contact_id' => $contactId,
-        'po_date' => now()->toDateString(),
-        'expected_date' => now()->addDays(7)->toDateString(),
-        'reference' => null,
-        'subject' => $description,
-        'status' => $status,
-        'currency' => 'IDR',
-        'exchange_rate' => 1,
-        'subtotal' => $lineTotal,
-        'discount_type' => 'percentage',
-        'discount_value' => 0,
-        'discount_amount' => 0,
-        'tax_rate' => 11,
-        'tax_amount' => $taxAmount,
-        'total_amount' => $totalAmount,
-        'base_currency_total' => $totalAmount,
-        'notes' => null,
-        'terms_conditions' => null,
-        'shipping_address' => null,
-        'created_by' => $userId,
-        'submitted_by' => $status !== 'draft' ? $userId : null,
-        'submitted_at' => $status !== 'draft' ? now() : null,
-        'approved_by' => in_array($status, ['approved', 'partial', 'received']) ? $userId : null,
-        'approved_at' => in_array($status, ['approved', 'partial', 'received']) ? now() : null,
-        'rejected_by' => $status === 'rejected' ? $userId : null,
-        'rejected_at' => $status === 'rejected' ? now() : null,
-        'rejection_reason' => $status === 'rejected' ? 'Test rejection' : null,
-        'created_at' => now(),
-        'updated_at' => now(),
-    ]);
+        $poId = (int) $db->table('purchase_orders')->insertGetId([
+            'po_number' => generatePoNumber(),
+            'revision' => 0,
+            'contact_id' => $contactId,
+            'po_date' => now()->toDateString(),
+            'expected_date' => now()->addDays(7)->toDateString(),
+            'reference' => null,
+            'subject' => $description,
+            'status' => $status,
+            'currency' => 'IDR',
+            'exchange_rate' => 1,
+            'subtotal' => $lineTotal,
+            'discount_type' => 'percentage',
+            'discount_value' => 0,
+            'discount_amount' => 0,
+            'tax_rate' => 11,
+            'tax_amount' => $taxAmount,
+            'total_amount' => $totalAmount,
+            'base_currency_total' => $totalAmount,
+            'notes' => null,
+            'terms_conditions' => null,
+            'shipping_address' => null,
+            'created_by' => $userId,
+            'submitted_by' => $status !== 'draft' ? $userId : null,
+            'submitted_at' => $status !== 'draft' ? now() : null,
+            'approved_by' => in_array($status, ['approved', 'partial', 'received']) ? $userId : null,
+            'approved_at' => in_array($status, ['approved', 'partial', 'received']) ? now() : null,
+            'rejected_by' => $status === 'rejected' ? $userId : null,
+            'rejected_at' => $status === 'rejected' ? now() : null,
+            'rejection_reason' => $status === 'rejected' ? 'Test rejection' : null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
 
-    $db->table('purchase_order_items')->insert([
-        'purchase_order_id' => $poId,
-        'product_id' => 1,
-        'description' => $description,
-        'quantity' => $qty,
-        'quantity_received' => 0,
-        'unit' => 'pcs',
-        'unit_price' => $unitPrice,
-        'discount_percent' => 0,
-        'discount_amount' => 0,
-        'tax_rate' => 11,
-        'tax_amount' => $taxAmount,
-        'line_total' => $lineTotal,
-        'sort_order' => 0,
-        'notes' => null,
-        'created_at' => now(),
-        'updated_at' => now(),
-    ]);
+        $db->table('purchase_order_items')->insert([
+            'purchase_order_id' => $poId,
+            'product_id' => 1,
+            'description' => $description,
+            'quantity' => $qty,
+            'quantity_received' => 0,
+            'unit' => 'pcs',
+            'unit_price' => $unitPrice,
+            'discount_percent' => 0,
+            'discount_amount' => 0,
+            'tax_rate' => 11,
+            'tax_amount' => $taxAmount,
+            'line_total' => $lineTotal,
+            'sort_order' => 0,
+            'notes' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
 
-    return $poId;
+        return $poId;
+    }
 }
 
-/**
- * Create a PO via the SPA form and return the page on the detail view.
- */
-function createPurchaseOrderViaUi(
-    string $description = 'E2E PO Item',
-    int $qty = 5,
-    string $price = '50000',
-) {
-    $supplierName = getTestSupplierName();
-    $page = loginAndVisit('/purchasing/purchase-orders/new');
+if (! function_exists('createPurchaseOrderViaUi')) {
+    /**
+     * Create a PO via the SPA form and return the page on the detail view.
+     */
+    function createPurchaseOrderViaUi(
+        string $description = 'E2E PO Item',
+        int $qty = 5,
+        string $price = '50000',
+    ) {
+        $supplierName = getTestSupplierName();
+        $page = loginAndVisit('/purchasing/purchase-orders/new');
 
-    $page->assertSee('New Purchase Order');
+        $page->assertSee('New Purchase Order');
 
-    // Select vendor — Radix-Vue Select (same pattern as createInvoice)
-    $page->click('Select vendor...');
-    $page->click('[role="option"] >> text='.$supplierName);
+        // Select vendor — Radix-Vue Select (same pattern as createInvoice)
+        $page->click('Select vendor...');
+        $page->click('[role="option"] >> text='.$supplierName);
 
-    // Fill line item description
-    $page->fill('input[placeholder="Item description"]', $description);
+        // Fill line item description
+        $page->fill('input[placeholder="Item description"]', $description);
 
-    // Fill quantity (step="any" allows fractional quantities)
-    $page->fill('table input[type="number"][step="any"]', (string) $qty);
+        // Fill quantity (step="any" allows fractional quantities)
+        $page->fill('table input[type="number"][step="any"]', (string) $qty);
 
-    // Fill unit price (CurrencyInput — same pattern as invoice form)
-    $page->click('td input[inputmode="numeric"]');
-    $page->type('td input[inputmode="numeric"]', $price);
+        // Fill unit price (CurrencyInput — same pattern as invoice form)
+        $page->click('td input[inputmode="numeric"]');
+        $page->type('td input[inputmode="numeric"]', $price);
 
-    // Submit the form
-    $page->click('button >> text=Create Purchase Order');
+        // Submit the form
+        $page->click('button >> text=Create Purchase Order');
 
-    // Wait for success message and navigation to detail page
-    $page->assertSee('created successfully');
-    $page->assertSee('PO-');
+        // Wait for success message and navigation to detail page
+        $page->assertSee('created successfully');
+        $page->assertSee('PO-');
 
-    return $page;
+        return $page;
+    }
 }
 
-/**
- * Submit a draft PO from its detail page and return the PO ID.
- * Mirrors the manual flow: click Submit → wait for status → reload.
- */
-function submitPurchaseOrder($page): int
-{
-    $poId = getPoIdFromUrl($page);
+if (! function_exists('submitPurchaseOrder')) {
+    /**
+     * Submit a draft PO from its detail page and return the PO ID.
+     * Mirrors the manual flow: click Submit → wait for status → reload.
+     */
+    function submitPurchaseOrder($page): int
+    {
+        $poId = getPoIdFromUrl($page);
 
-    $page->click('Submit');
+        $page->click('Submit');
 
-    waitForPoStatus($poId, 'submitted');
-    $page->navigate(spaUrl("/purchasing/purchase-orders/{$poId}"));
+        waitForPoStatus($poId, 'submitted');
+        $page->navigate(spaUrl("/purchasing/purchase-orders/{$poId}"));
 
-    $page->assertSee('Diajukan');
+        $page->assertSee('Diajukan');
 
-    return $poId;
+        return $poId;
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -282,8 +296,8 @@ it('can approve a submitted purchase order', function () {
     // Status should show "Disetujui" (Indonesian for Approved)
     $page->assertSee('Disetujui');
 
-    // Receive Items button should now be visible
-    $page->assertSee('Receive Items');
+    // Create GRN button should now be visible
+    $page->assertSee('Create GRN');
 
     // DB assertions
     $po = realDb()->table('purchase_orders')->where('id', $poId)->first();
@@ -371,13 +385,13 @@ it('can cancel a draft purchase order with reason', function () {
 });
 
 it('displays correct workflow buttons at each status', function () {
-    // Approved PO should show Receive Items and Cancel, not Submit/Approve/Reject
+    // Approved PO should show Create GRN and Cancel, not Submit/Approve/Reject
     $poId = createPurchaseOrderInDb('approved', 'Button Visibility Test');
 
     $page = loginAndVisit("/purchasing/purchase-orders/{$poId}");
 
     $page->assertSee('Disetujui');
-    $page->assertSee('Receive Items');
+    $page->assertSee('Create GRN');
     $page->assertSee('Cancel');
 
     // DB assertion

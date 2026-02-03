@@ -48,13 +48,6 @@ interface PurchaseOrderServiceInterface
     public function cancel(PurchaseOrder $purchaseOrder, string $reason, ?int $userId = null): PurchaseOrder;
 
     /**
-     * Receive items for a purchase order.
-     *
-     * @param  array<string, mixed>  $receivedItems
-     */
-    public function receive(PurchaseOrder $purchaseOrder, array $receivedItems): PurchaseOrder;
-
-    /**
      * Convert a purchase order to a bill.
      */
     public function convertToBill(PurchaseOrder $purchaseOrder): Bill;

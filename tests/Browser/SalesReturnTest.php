@@ -400,6 +400,62 @@ it('displays sales returns in the list page', function () {
     $page->assertSee('PT Test Customer');
 });
 
+it('approving a sales return creates correct journal entries', function () {
+    $page = createSalesReturnViaUi('Approve JE Test', 5, '100000');
+    $srId = submitSalesReturn($page);
+    approveSalesReturn($page);
+
+    // DB assertions: verify journal entry was created
+    $sr = realDb()->table('sales_returns')->where('id', $srId)->first();
+    expect($sr->status)->toBe('approved');
+    expect($sr->journal_entry_id)->not->toBeNull();
+
+    // Verify journal entry lines balance
+    $journalLines = realDb()->table('journal_entry_lines')
+        ->where('journal_entry_id', $sr->journal_entry_id)
+        ->get();
+
+    $totalDebit = $journalLines->sum('debit');
+    $totalCredit = $journalLines->sum('credit');
+
+    // Journal must balance
+    expect($totalDebit)->toBe($totalCredit);
+
+    // Sales Returns account (4-1004, id=1047) should be debited for subtotal
+    $returnLine = $journalLines->first(fn ($l) => $l->account_id === 1047);
+    expect($returnLine)->not->toBeNull();
+    expect((int) $returnLine->debit)->toBe((int) $sr->subtotal);
+
+    // PPN Keluaran account (2-1200, id=1025) should be debited for tax_amount
+    if ((int) $sr->tax_amount > 0) {
+        $taxLine = $journalLines->first(fn ($l) => $l->account_id === 1025);
+        expect($taxLine)->not->toBeNull();
+        expect((int) $taxLine->debit)->toBe((int) $sr->tax_amount);
+    }
+
+    // AR account (1-1100, id=1004) should be credited for total_amount
+    $arLine = $journalLines->first(fn ($l) => $l->account_id === 1004);
+    expect($arLine)->not->toBeNull();
+    expect($arLine->credit)->toBe($sr->total_amount);
+});
+
+it('trial balance remains balanced after sales return', function () {
+    $page = createSalesReturnViaUi('Trial Balance SR Test', 3, '200000');
+    submitSalesReturn($page);
+    approveSalesReturn($page);
+
+    // Global trial balance check: total debits = total credits across ALL posted journal entries
+    $trialBalance = realDb()->table('journal_entry_lines as jel')
+        ->join('journal_entries as je', 'je.id', '=', 'jel.journal_entry_id')
+        ->where('je.is_posted', true)
+        ->where('je.deleted_at', null)
+        ->where('je.is_reversed', false)
+        ->selectRaw('COALESCE(SUM(jel.debit), 0) as total_debit, COALESCE(SUM(jel.credit), 0) as total_credit')
+        ->first();
+
+    expect((int) $trialBalance->total_debit)->toBe((int) $trialBalance->total_credit);
+});
+
 it('can create sales return from invoice via API and verify link', function () {
     // Create and post an invoice first
     $page = createInvoice('SR From Invoice Test', 3, '200000');

@@ -30,7 +30,7 @@ class JournalEntryHandler implements ApprovalHandlerInterface
     public function handle(PurchaseReturn $purchaseReturn): void
     {
         // Determine required account codes upfront
-        $requiredCodes = ['2-1100', '5-2001']; // Accounts Payable, Purchase Returns
+        $requiredCodes = ['2-1100', '5-1004']; // Accounts Payable, Purchase Returns
         if ($purchaseReturn->tax_amount > 0) {
             $requiredCodes[] = '1-1300'; // PPN Masukan
         }
@@ -63,7 +63,7 @@ class JournalEntryHandler implements ApprovalHandlerInterface
 
         // Credit: Purchase Returns (contra expense)
         $lines[] = [
-            'account_id' => $accounts->get('5-2001')->id,
+            'account_id' => $accounts->get('5-1004')->id,
             'description' => 'Retur pembelian: '.$purchaseReturn->return_number,
             'debit' => 0,
             'credit' => $purchaseReturn->subtotal,

@@ -30,7 +30,7 @@ class JournalEntryHandler implements ApprovalHandlerInterface
     public function handle(SalesReturn $salesReturn): void
     {
         // Determine required account codes upfront
-        $requiredCodes = ['4-2001', '1-1100']; // Sales Returns, Accounts Receivable
+        $requiredCodes = ['4-1004', '1-1100']; // Sales Returns, Accounts Receivable
         if ($salesReturn->tax_amount > 0) {
             $requiredCodes[] = '2-1200'; // PPN Keluaran
         }
@@ -55,7 +55,7 @@ class JournalEntryHandler implements ApprovalHandlerInterface
 
         // Debit: Sales Returns
         $lines[] = [
-            'account_id' => $accounts->get('4-2001')->id,
+            'account_id' => $accounts->get('4-1004')->id,
             'description' => 'Retur penjualan: '.$salesReturn->return_number,
             'debit' => $salesReturn->subtotal,
             'credit' => 0,

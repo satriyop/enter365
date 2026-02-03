@@ -20,118 +20,127 @@ declare(strict_types=1);
  * rely on assertSee (which waits up to timeout) for the status change,
  * rather than navigate/reload which can cause race conditions.
  */
+if (! function_exists('createDOFromInvoiceUI')) {
+    /**
+     * Create a DO from the invoice detail page via the UI modal.
+     * Expects $page to be on a posted invoice detail page.
+     * Returns the page, now on the DO detail page after navigation.
+     */
+    function createDOFromInvoiceUI($page, ?string $warehouseName = null)
+    {
+        // Click "Create Delivery Order" button in Quick Actions
+        $page->click('Create Delivery Order');
 
-/**
- * Create a DO from the invoice detail page via the UI modal.
- * Expects $page to be on a posted invoice detail page.
- * Returns the page, now on the DO detail page after navigation.
- */
-function createDOFromInvoiceUI($page, ?string $warehouseName = null)
-{
-    // Click "Create Delivery Order" button in Quick Actions
-    $page->click('Create Delivery Order');
+        // Modal opens — assert title
+        $page->assertSee('Items will be copied automatically');
 
-    // Modal opens — assert title
-    $page->assertSee('Items will be copied automatically');
+        // Optionally select a warehouse
+        if ($warehouseName) {
+            $page->click('Select warehouse...');
+            $page->click("[role=\"option\"] >> text={$warehouseName}");
+        }
 
-    // Optionally select a warehouse
-    if ($warehouseName) {
-        $page->click('Select warehouse...');
-        $page->click("[role=\"option\"] >> text={$warehouseName}");
+        // Click submit button inside the modal
+        $page->click('[role="dialog"] button >> text=Create Delivery Order');
+
+        // Wait for navigation to DO detail page
+        $page->assertSee('Delivery order created');
+        $page->assertSee('DO-');
+
+        return $page;
     }
-
-    // Click submit button inside the modal
-    $page->click('[role="dialog"] button >> text=Create Delivery Order');
-
-    // Wait for navigation to DO detail page
-    $page->assertSee('Delivery order created');
-    $page->assertSee('DO-');
-
-    return $page;
 }
 
-/**
- * Get the delivery order ID from the current detail page URL.
- */
-function getDOIdFromUrl($page): int
-{
-    $url = $page->url();
-    preg_match('/delivery-orders\/(\d+)/', $url, $matches);
+if (! function_exists('getDOIdFromUrl')) {
+    /**
+     * Get the delivery order ID from the current detail page URL.
+     */
+    function getDOIdFromUrl($page): int
+    {
+        $url = $page->url();
+        preg_match('/delivery-orders\/(\d+)/', $url, $matches);
 
-    return (int) ($matches[1] ?? 0);
+        return (int) ($matches[1] ?? 0);
+    }
 }
 
-/**
- * Wait for a delivery order status to change in the database.
- * This ensures the API action has completed before asserting UI state.
- */
-function waitForDoStatus(int $doId, string $expectedStatus, int $maxRetries = 30): void
-{
-    for ($i = 0; $i < $maxRetries; $i++) {
-        $status = realDb()->table('delivery_orders')->where('id', $doId)->value('status');
-        if ($status === $expectedStatus) {
+if (! function_exists('waitForDoStatus')) {
+    /**
+     * Wait for a delivery order status to change in the database.
+     * This ensures the API action has completed before asserting UI state.
+     */
+    function waitForDoStatus(int $doId, string $expectedStatus, int $maxRetries = 30): void
+    {
+        for ($i = 0; $i < $maxRetries; $i++) {
+            $status = realDb()->table('delivery_orders')->where('id', $doId)->value('status');
+            if ($status === $expectedStatus) {
+                return;
+            }
+            usleep(200_000); // 200ms
+        }
+    }
+}
+
+if (! function_exists('ensureWarehouse')) {
+    /**
+     * Ensure a warehouse exists in the database, creating one if needed.
+     */
+    function ensureWarehouse(): int
+    {
+        $db = realDb();
+        $warehouse = $db->table('warehouses')->where('is_active', true)->first();
+
+        if ($warehouse) {
+            return (int) $warehouse->id;
+        }
+
+        return (int) $db->table('warehouses')->insertGetId([
+            'name' => 'Gudang Utama',
+            'code' => 'WH-001',
+            'address' => 'Jl. Test No. 1',
+            'is_active' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+}
+
+if (! function_exists('ensureProductStock')) {
+    /**
+     * Ensure product stock exists for a given product and warehouse.
+     */
+    function ensureProductStock(int $productId, int $warehouseId, int $quantity = 100): void
+    {
+        $db = realDb();
+
+        $existing = $db->table('product_stocks')
+            ->where('product_id', $productId)
+            ->where('warehouse_id', $warehouseId)
+            ->first();
+
+        if ($existing) {
+            $db->table('product_stocks')
+                ->where('id', $existing->id)
+                ->update([
+                    'quantity' => $quantity,
+                    'total_value' => $quantity * ((int) ($existing->average_cost ?: 50000)),
+                    'updated_at' => now(),
+                ]);
+
             return;
         }
-        usleep(200_000); // 200ms
+
+        $db->table('product_stocks')->insert([
+            'product_id' => $productId,
+            'warehouse_id' => $warehouseId,
+            'quantity' => $quantity,
+            'reserved_quantity' => 0,
+            'average_cost' => 50000,
+            'total_value' => $quantity * 50000,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
-}
-
-/**
- * Ensure a warehouse exists in the database, creating one if needed.
- */
-function ensureWarehouse(): int
-{
-    $db = realDb();
-    $warehouse = $db->table('warehouses')->where('is_active', true)->first();
-
-    if ($warehouse) {
-        return (int) $warehouse->id;
-    }
-
-    return (int) $db->table('warehouses')->insertGetId([
-        'name' => 'Gudang Utama',
-        'code' => 'WH-001',
-        'address' => 'Jl. Test No. 1',
-        'is_active' => true,
-        'created_at' => now(),
-        'updated_at' => now(),
-    ]);
-}
-
-/**
- * Ensure product stock exists for a given product and warehouse.
- */
-function ensureProductStock(int $productId, int $warehouseId, int $quantity = 100): void
-{
-    $db = realDb();
-
-    $existing = $db->table('product_stocks')
-        ->where('product_id', $productId)
-        ->where('warehouse_id', $warehouseId)
-        ->first();
-
-    if ($existing) {
-        $db->table('product_stocks')
-            ->where('id', $existing->id)
-            ->update([
-                'quantity' => $quantity,
-                'total_value' => $quantity * ((int) ($existing->average_cost ?: 50000)),
-                'updated_at' => now(),
-            ]);
-
-        return;
-    }
-
-    $db->table('product_stocks')->insert([
-        'product_id' => $productId,
-        'warehouse_id' => $warehouseId,
-        'quantity' => $quantity,
-        'reserved_quantity' => 0,
-        'average_cost' => 50000,
-        'total_value' => $quantity * 50000,
-        'created_at' => now(),
-        'updated_at' => now(),
-    ]);
 }
 
 // ---------------------------------------------------------------------------
