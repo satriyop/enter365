@@ -152,30 +152,6 @@ class PurchaseOrderController extends Controller
     }
 
     /**
-     * Receive items for a PO.
-     */
-    public function receive(Request $request, PurchaseOrder $purchaseOrder): PurchaseOrderResource|JsonResponse
-    {
-        $this->authorize('manage', $purchaseOrder);
-
-        $request->validate([
-            'items' => ['required', 'array', 'min:1'],
-            'items.*.item_id' => ['required', 'integer', 'exists:purchase_order_items,id'],
-            'items.*.quantity' => ['required', 'numeric', 'min:0.0001'],
-        ], [
-            'items.required' => 'Item yang diterima harus diisi.',
-            'items.*.item_id.required' => 'ID item harus diisi.',
-            'items.*.item_id.exists' => 'Item tidak ditemukan.',
-            'items.*.quantity.required' => 'Jumlah terima harus diisi.',
-            'items.*.quantity.min' => 'Jumlah terima harus lebih dari 0.',
-        ]);
-
-        $purchaseOrder = $this->purchaseOrderService->receive($purchaseOrder, $request->input('items'));
-
-        return new PurchaseOrderResource($purchaseOrder);
-    }
-
-    /**
      * Convert PO to bill.
      */
     public function convertToBill(PurchaseOrder $purchaseOrder): JsonResponse

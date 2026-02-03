@@ -31,8 +31,6 @@ class PurchaseOrderService implements PurchaseOrderServiceInterface
 
     protected ContextualLoggerInterface $logger;
 
-    private PurchaseOrderReceivingService $receivingService;
-
     private PurchaseOrderBillConverter $billConverter;
 
     private PurchaseOrderStatistics $statistics;
@@ -42,7 +40,6 @@ class PurchaseOrderService implements PurchaseOrderServiceInterface
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger,
-        PurchaseOrderReceivingService $receivingService,
         PurchaseOrderBillConverter $billConverter,
         PurchaseOrderStatistics $statistics,
         PurchaseOrderDomainFactory $domainFactory
@@ -50,7 +47,6 @@ class PurchaseOrderService implements PurchaseOrderServiceInterface
         $this->eventDispatcher = $eventDispatcher;
         $this->logger = $logger;
 
-        $this->receivingService = $receivingService;
         $this->billConverter = $billConverter;
         $this->statistics = $statistics;
         $this->domainFactory = $domainFactory;
@@ -211,43 +207,6 @@ class PurchaseOrderService implements PurchaseOrderServiceInterface
         $purchaseOrder->transitionTo(DocumentStatus::Cancelled, $userId, ['cancellation_reason' => $reason]);
 
         return $purchaseOrder->fresh(['items', 'contact']);
-    }
-
-    public function receive(PurchaseOrder $purchaseOrder, array $receivedItems): PurchaseOrder
-    {
-        if (! $purchaseOrder->canReceive()) {
-            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation('PO', 'menerima barang', $purchaseOrder->status->value, 'disetujui');
-        }
-
-        return $this->executeInTransaction('receive', function () use ($purchaseOrder, $receivedItems) {
-            foreach ($receivedItems as $received) {
-                $item = $purchaseOrder->items()->find($received['item_id']);
-
-                if (! $item) {
-                    throw new \App\Exceptions\Domain\EntityNotFoundException('PurchaseOrderItem', $received['item_id']);
-                }
-
-                $newQty = $received['quantity'];
-                $remaining = $item->getQuantityRemaining();
-
-                if ($newQty > $remaining) {
-                    throw \App\Exceptions\Domain\BusinessRuleException::quantityValidation(
-                        "Jumlah terima untuk {$item->description}",
-                        $newQty,
-                        $remaining,
-                        'exceeds'
-                    );
-                }
-
-                $item->receive($newQty);
-                $item->save();
-            }
-
-            $purchaseOrder->refresh();
-            $this->receivingService->updateReceivingStatus($purchaseOrder);
-
-            return $purchaseOrder->fresh(['items', 'contact']);
-        }, ['purchase_order_id' => $purchaseOrder->id, 'items_count' => count($receivedItems)]);
     }
 
     public function convertToBill(PurchaseOrder $purchaseOrder): \App\Models\Purchasing\Bill

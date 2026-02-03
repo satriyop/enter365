@@ -238,7 +238,6 @@ Route::prefix('v1')->group(function () {
             Route::post('purchase-orders/{purchase_order}/approve', [PurchaseOrderController::class, 'approve']);
             Route::post('purchase-orders/{purchase_order}/reject', [PurchaseOrderController::class, 'reject']);
             Route::post('purchase-orders/{purchase_order}/cancel', [PurchaseOrderController::class, 'cancel']);
-            Route::post('purchase-orders/{purchase_order}/receive', [PurchaseOrderController::class, 'receive']);
             Route::post('purchase-orders/{purchase_order}/convert-to-bill', [PurchaseOrderController::class, 'convertToBill']);
             Route::post('purchase-orders/{purchase_order}/duplicate', [PurchaseOrderController::class, 'duplicate']);
             Route::get('purchase-orders-outstanding', [PurchaseOrderController::class, 'outstanding']);
