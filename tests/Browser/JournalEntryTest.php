@@ -278,6 +278,47 @@ it('can reverse a posted journal entry', function () {
     expect((int) $trialBalance->total_debit)->toBe((int) $trialBalance->total_credit);
 });
 
+it('rejects creation of unbalanced journal entry', function () {
+    $page = loginAndVisit('/accounting/journal-entries/new');
+
+    $page->assertSee('New Journal Entry');
+
+    // Fill description
+    $page->fill('input[placeholder="Describe this journal entry"]', 'E2E Unbalanced JE Test');
+
+    // Line 1: Select account (Bank BCA), debit 500000
+    $page->click('table button[role="combobox"] >> nth=0');
+    $page->click('[role="option"] >> text=Bank BCA');
+
+    $debitInputs = 'input[inputmode="numeric"]';
+    $page->click("{$debitInputs} >> nth=0");
+    $page->type("{$debitInputs} >> nth=0", '500000');
+
+    // Line 2: Select account (Pembelian), credit 300000 — intentionally unbalanced
+    $page->click('table button[role="combobox"] >> nth=1');
+    $page->click('[role="option"] >> text=5-1002 - Pembelian');
+
+    $page->click("{$debitInputs} >> nth=3");
+    $page->type("{$debitInputs} >> nth=3", '300000');
+
+    // Should show "Entry is not balanced" indicator (frontend validation)
+    $page->assertSee('Entry is not balanced');
+
+    // Submit the form — frontend should show validation error and stay on page
+    $page->script('document.querySelector("button[type=submit], button.bg-primary")?.click()');
+    usleep(1_500_000); // 1.5s for any async validation
+
+    // Should still be on the same page with validation error
+    $page->assertSee('New Journal Entry');
+    $page->assertSee('Entry is not balanced');
+
+    // DB: no new JE created with this description
+    $je = realDb()->table('journal_entries')
+        ->where('description', 'E2E Unbalanced JE Test')
+        ->first();
+    expect($je)->toBeNull();
+});
+
 it('shows journal entries in the list page', function () {
     // Create a JE so the list is not empty
     createJournalEntryInDb('List Page JE Test');
