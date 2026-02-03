@@ -22,6 +22,84 @@ declare(strict_types=1);
  */
 
 // ---------------------------------------------------------------------------
+// Bill Helpers (shared with BillTest.php, guarded to prevent redefinition)
+// ---------------------------------------------------------------------------
+
+if (! function_exists('getTestSupplierName')) {
+    function getTestSupplierName(): string
+    {
+        $name = realDb()->table('contacts')
+            ->where('type', 'supplier')
+            ->orderBy('id')
+            ->value('name');
+
+        return $name ?: 'Rohan-Predovic';
+    }
+}
+
+if (! function_exists('getBillIdFromUrl')) {
+    function getBillIdFromUrl($page): int
+    {
+        $url = $page->url();
+        preg_match('/\/bills\/(\d+)/', $url, $matches);
+
+        return (int) ($matches[1] ?? 0);
+    }
+}
+
+if (! function_exists('waitForBillStatus')) {
+    function waitForBillStatus(int $billId, string $expectedStatus, int $maxRetries = 30): void
+    {
+        for ($i = 0; $i < $maxRetries; $i++) {
+            $status = realDb()->table('bills')->where('id', $billId)->value('status');
+            if ($status === $expectedStatus) {
+                return;
+            }
+            usleep(200_000);
+        }
+    }
+}
+
+if (! function_exists('createBillViaUi')) {
+    function createBillViaUi(
+        string $description = 'E2E Bill Item',
+        int $qty = 5,
+        string $price = '50000',
+    ) {
+        $supplierName = getTestSupplierName();
+        $page = loginAndVisit('/bills/new');
+
+        $page->assertSee('New Bill');
+
+        $page->click('Select vendor');
+        $page->click('[role="option"] >> text='.$supplierName);
+        $page->fill('input[placeholder="Item description"]', $description);
+        $page->fill('input[type="number"][min="1"]', (string) $qty);
+        $page->click('input[inputmode="numeric"]');
+        $page->type('input[inputmode="numeric"]', $price);
+        $page->click('Create Bill');
+        $page->assertSee('BL-');
+
+        return $page;
+    }
+}
+
+if (! function_exists('postBill')) {
+    function postBill($page): int
+    {
+        $billId = getBillIdFromUrl($page);
+
+        $page->script('window.confirm = () => true');
+        $page->click('Post Bill');
+
+        waitForBillStatus($billId, 'received');
+        $page->navigate(spaUrl('/bills/'.$billId));
+
+        return $billId;
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
@@ -33,18 +111,20 @@ declare(strict_types=1);
  * on the default connection), we temporarily swap the default to
  * `browser_pgsql` so that all queries hit the real database.
  */
-function withRealDb(callable $callback): mixed
-{
-    // Ensure the browser_pgsql connection config exists
-    realDb();
+if (! function_exists('withRealDb')) {
+    function withRealDb(callable $callback): mixed
+    {
+        // Ensure the browser_pgsql connection config exists
+        realDb();
 
-    $original = config('database.default');
-    config(['database.default' => 'browser_pgsql']);
+        $original = config('database.default');
+        config(['database.default' => 'browser_pgsql']);
 
-    try {
-        return $callback();
-    } finally {
-        config(['database.default' => $original]);
+        try {
+            return $callback();
+        } finally {
+            config(['database.default' => $original]);
+        }
     }
 }
 
@@ -366,6 +446,139 @@ it('cancelling a down payment reverses the journal entry', function () {
     $cashLine = $reversalLines->first(fn ($l) => $l->account_id === 1001);
     expect($cashLine)->not->toBeNull();
     expect((int) $cashLine->credit)->toBe(2000000);
+});
+
+it('applying a payable down payment to bill creates correct journal entry', function () {
+    // Create payable DP via service (amount=3000000)
+    $dpId = createDownPaymentViaService('payable', 3000000);
+
+    // Create and post a bill
+    $page = createBillViaUi('DP Apply Bill Test', 5, '200000');
+    $billId = getBillIdFromUrl($page);
+    postBill($page);
+
+    $bill = realDb()->table('bills')->where('id', $billId)->first();
+    $billTotalAmount = (int) $bill->total_amount;
+
+    // Apply DP to bill — apply min(dp_amount, bill_outstanding)
+    $applyAmount = min(3000000, $billTotalAmount);
+
+    // Wrap in withRealDb so Eloquent models and service use PostgreSQL
+    $applicationJeId = withRealDb(function () use ($dpId, $billId, $applyAmount) {
+        $dp = \App\Models\Sales\DownPayment::find($dpId);
+        $bill = \App\Models\Purchasing\Bill::find($billId);
+
+        $service = app(\App\Contracts\Sales\DownPaymentServiceInterface::class);
+        $application = $service->applyToBill($dp, $bill, [
+            'amount' => $applyAmount,
+            'applied_date' => now()->toDateString(),
+        ]);
+
+        return (int) $application->journal_entry_id;
+    });
+
+    expect($applicationJeId)->toBeGreaterThan(0);
+
+    // Verify application JE lines
+    $jeLines = realDb()->table('journal_entry_lines')
+        ->where('journal_entry_id', $applicationJeId)
+        ->get();
+
+    // JE must balance
+    expect($jeLines->sum('debit'))->toBe($jeLines->sum('credit'));
+
+    // Debit: AP (2-1100, id=1024) — reducing payable
+    $apLine = $jeLines->first(fn ($l) => $l->account_id === 1024);
+    expect($apLine)->not->toBeNull();
+    expect((int) $apLine->debit)->toBe($applyAmount);
+
+    // Credit: Uang Muka Pembelian (1-1700, id=1083) — reducing DP asset
+    $dpLine = $jeLines->first(fn ($l) => $l->account_id === 1083);
+    expect($dpLine)->not->toBeNull();
+    expect((int) $dpLine->credit)->toBe($applyAmount);
+
+    // Trial balance check
+    $trialBalance = realDb()->table('journal_entry_lines as jel')
+        ->join('journal_entries as je', 'je.id', '=', 'jel.journal_entry_id')
+        ->where('je.is_posted', true)
+        ->where('je.deleted_at', null)
+        ->where('je.is_reversed', false)
+        ->selectRaw('COALESCE(SUM(jel.debit), 0) as total_debit, COALESCE(SUM(jel.credit), 0) as total_credit')
+        ->first();
+
+    expect((int) $trialBalance->total_debit)->toBe((int) $trialBalance->total_credit);
+});
+
+it('refunding a receivable down payment creates correct journal entry', function () {
+    // Create receivable DP via service (amount=2000000)
+    $dpId = createDownPaymentViaService('receivable', 2000000);
+
+    $dp = realDb()->table('down_payments')->where('id', $dpId)->first();
+    expect($dp->status)->toBe('active');
+
+    // Navigate to DP detail page
+    $page = loginAndVisit("/finance/down-payments/{$dpId}");
+
+    // Assert "Aktif" status and "Refund" button visible
+    $page->assertSee('Aktif');
+    $page->assertSee('Refund');
+
+    // Click "Refund" → modal opens
+    $page->click('button >> text=Refund');
+    $page->assertSee('Refund Down Payment');
+
+    // Fill refund amount (leave as remaining_amount — fill it to be sure)
+    $page->fill('input[type="number"]', '2000000');
+
+    // Fill refund date (should be pre-filled, but ensure it's set)
+    $dateInput = 'input[type="date"]';
+    $page->fill($dateInput, now()->toDateString());
+
+    // Click the confirm "Refund" button in the modal footer
+    $page->click('[role="dialog"] button >> text=Refund');
+
+    // Wait for DB: status = 'refunded'
+    waitForDpStatus($dpId, 'refunded');
+
+    // Verify refund payment exists with JE
+    $dp = realDb()->table('down_payments')->where('id', $dpId)->first();
+    expect($dp->status)->toBe('refunded');
+    expect($dp->refund_payment_id)->not->toBeNull();
+
+    // Get the refund payment's JE
+    $refundPayment = realDb()->table('payments')
+        ->where('id', $dp->refund_payment_id)
+        ->first();
+    expect($refundPayment)->not->toBeNull();
+    expect($refundPayment->journal_entry_id)->not->toBeNull();
+
+    $jeLines = realDb()->table('journal_entry_lines')
+        ->where('journal_entry_id', $refundPayment->journal_entry_id)
+        ->get();
+
+    // JE must balance
+    expect($jeLines->sum('debit'))->toBe($jeLines->sum('credit'));
+
+    // Debit: DP Liability (2-1700, id=1082) — reducing the liability
+    $dpLiabLine = $jeLines->first(fn ($l) => $l->account_id === 1082);
+    expect($dpLiabLine)->not->toBeNull();
+    expect((int) $dpLiabLine->debit)->toBe(2000000);
+
+    // Credit: Cash (1-1010, id=1001) — cash out for refund
+    $cashLine = $jeLines->first(fn ($l) => $l->account_id === 1001);
+    expect($cashLine)->not->toBeNull();
+    expect((int) $cashLine->credit)->toBe(2000000);
+
+    // Trial balance check
+    $trialBalance = realDb()->table('journal_entry_lines as jel')
+        ->join('journal_entries as je', 'je.id', '=', 'jel.journal_entry_id')
+        ->where('je.is_posted', true)
+        ->where('je.deleted_at', null)
+        ->where('je.is_reversed', false)
+        ->selectRaw('COALESCE(SUM(jel.debit), 0) as total_debit, COALESCE(SUM(jel.credit), 0) as total_credit')
+        ->first();
+
+    expect((int) $trialBalance->total_debit)->toBe((int) $trialBalance->total_credit);
 });
 
 it('shows down payments in the list page', function () {
