@@ -24668,13 +24668,15 @@
                                             "integer",
                                             "null"
                                         ],
+                                        "description": "Min Rp 5 juta for B2B",
                                         "minimum": 5500
                                     },
                                     "pln_category": {
                                         "type": [
                                             "string",
                                             "null"
-                                        ]
+                                        ],
+                                        "description": "Min 5.5 kVA for B2B"
                                     },
                                     "target_savings": {
                                         "type": [
@@ -25901,93 +25903,6 @@
                                 },
                                 "required": [
                                     "reason"
-                                ]
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "`PurchaseOrderResource`",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/components/schemas/PurchaseOrderResource"
-                                        }
-                                    },
-                                    "required": [
-                                        "data"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "$ref": "#/components/responses/AuthorizationException"
-                    },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
-                    },
-                    "404": {
-                        "$ref": "#/components/responses/ModelNotFoundException"
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/AuthenticationException"
-                    }
-                }
-            }
-        },
-        "/purchase-orders/{purchaseOrder}/receive": {
-            "post": {
-                "operationId": "purchaseOrder.receive",
-                "summary": "Receive items for a PO",
-                "tags": [
-                    "PurchaseOrder"
-                ],
-                "parameters": [
-                    {
-                        "name": "purchaseOrder",
-                        "in": "path",
-                        "required": true,
-                        "description": "The purchase order ID",
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "items": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "object",
-                                            "properties": {
-                                                "item_id": {
-                                                    "type": "integer"
-                                                },
-                                                "quantity": {
-                                                    "type": "number",
-                                                    "minimum": 0.0001
-                                                }
-                                            },
-                                            "required": [
-                                                "item_id",
-                                                "quantity"
-                                            ]
-                                        },
-                                        "minItems": 1
-                                    }
-                                },
-                                "required": [
-                                    "items"
                                 ]
                             }
                         }
@@ -43734,10 +43649,68 @@
                         ]
                     },
                     "credit_limit": {
-                        "type": "integer"
+                        "type": "integer",
+                        "description": "Payment terms"
+                    },
+                    "currency": {
+                        "type": "string"
                     },
                     "payment_term_days": {
                         "type": "integer"
+                    },
+                    "early_discount_percent": {
+                        "type": "string"
+                    },
+                    "early_discount_days": {
+                        "type": "integer"
+                    },
+                    "bank_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Bank account details"
+                    },
+                    "bank_account_number": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "bank_account_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "is_subcontractor": {
+                        "type": "boolean",
+                        "description": "Subcontractor fields"
+                    },
+                    "subcontractor_services": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {}
+                    },
+                    "hourly_rate": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "daily_rate": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "notes": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "is_active": {
                         "type": "boolean"
@@ -43769,7 +43742,18 @@
                     "npwp",
                     "nik",
                     "credit_limit",
+                    "currency",
                     "payment_term_days",
+                    "early_discount_percent",
+                    "early_discount_days",
+                    "bank_name",
+                    "bank_account_number",
+                    "bank_account_name",
+                    "is_subcontractor",
+                    "subcontractor_services",
+                    "hourly_rate",
+                    "daily_rate",
+                    "notes",
                     "is_active",
                     "created_at",
                     "updated_at"
@@ -53104,15 +53088,93 @@
                     },
                     "credit_limit": {
                         "type": "integer",
+                        "description": "Payment terms",
                         "minimum": 0
+                    },
+                    "currency": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 3
                     },
                     "payment_term_days": {
                         "type": "integer",
                         "minimum": 0,
                         "maximum": 365
                     },
+                    "early_discount_percent": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 0,
+                        "maximum": 100
+                    },
+                    "early_discount_days": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 0,
+                        "maximum": 365
+                    },
+                    "bank_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Bank account details",
+                        "maxLength": 100
+                    },
+                    "bank_account_number": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 30
+                    },
+                    "bank_account_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 100
+                    },
+                    "is_subcontractor": {
+                        "type": "boolean",
+                        "description": "Subcontractor fields"
+                    },
+                    "hourly_rate": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 0
+                    },
+                    "daily_rate": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 0
+                    },
+                    "notes": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
                     "is_active": {
                         "type": "boolean"
+                    },
+                    "subcontractor_services": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "string",
+                            "maxLength": 100
+                        }
                     }
                 },
                 "required": [
@@ -57401,15 +57463,93 @@
                     },
                     "credit_limit": {
                         "type": "integer",
+                        "description": "Payment terms",
                         "minimum": 0
+                    },
+                    "currency": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 3
                     },
                     "payment_term_days": {
                         "type": "integer",
                         "minimum": 0,
                         "maximum": 365
                     },
+                    "early_discount_percent": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 0,
+                        "maximum": 100
+                    },
+                    "early_discount_days": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 0,
+                        "maximum": 365
+                    },
+                    "bank_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Bank account details",
+                        "maxLength": 100
+                    },
+                    "bank_account_number": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 30
+                    },
+                    "bank_account_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 100
+                    },
+                    "is_subcontractor": {
+                        "type": "boolean",
+                        "description": "Subcontractor fields"
+                    },
+                    "hourly_rate": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 0
+                    },
+                    "daily_rate": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 0
+                    },
+                    "notes": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
                     "is_active": {
                         "type": "boolean"
+                    },
+                    "subcontractor_services": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "string",
+                            "maxLength": 100
+                        }
                     }
                 },
                 "title": "UpdateContactRequest"
