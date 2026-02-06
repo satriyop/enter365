@@ -229,6 +229,7 @@ Route::prefix('v1')->group(function () {
         // Invoices - Sales (Faktur Penjualan)
         Route::apiResource('invoices', InvoiceController::class);
         Route::post('invoices/{invoice}/post', [InvoiceController::class, 'post']);
+        Route::post('invoices/{invoice}/void', [InvoiceController::class, 'void']);
         Route::post('invoices/{invoice}/make-recurring', [InvoiceController::class, 'makeRecurring']);
 
         // Purchase Orders (Pesanan Pembelian)
@@ -247,6 +248,7 @@ Route::prefix('v1')->group(function () {
         // Bills - Purchases (Faktur Pembelian)
         Route::apiResource('bills', BillController::class);
         Route::post('bills/{bill}/post', [BillController::class, 'post']);
+        Route::post('bills/{bill}/void', [BillController::class, 'void']);
         Route::post('bills/{bill}/make-recurring', [BillController::class, 'makeRecurring']);
 
         // Down Payments (Uang Muka)

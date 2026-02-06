@@ -18,4 +18,9 @@ class BillPolicy extends BaseResourcePolicy
     {
         return $this->check($user, 'post');
     }
+
+    public function void(User $user, Bill $bill): bool
+    {
+        return $this->check($user, 'void');
+    }
 }

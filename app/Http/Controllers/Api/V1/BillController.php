@@ -7,6 +7,7 @@ use App\Filters\BillFilter;
 use App\Http\Requests\Api\V1\MakeRecurringRequest;
 use App\Http\Requests\Api\V1\StoreBillRequest;
 use App\Http\Requests\Api\V1\UpdateBillRequest;
+use App\Http\Requests\Api\V1\VoidBillRequest;
 use App\Http\Resources\Api\V1\BillResource;
 use App\Http\Resources\Api\V1\RecurringTemplateResource;
 use App\Models\Purchasing\Bill;
@@ -92,6 +93,24 @@ class BillController extends Controller
 
             return new BillResource($bill);
         } catch (InvalidArgumentException $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+    }
+
+    /**
+     * Void/cancel a posted bill.
+     *
+     * Cancels the bill and reverses any associated journal entries.
+     */
+    public function void(VoidBillRequest $request, Bill $bill): JsonResponse
+    {
+        $this->authorize('void', $bill);
+
+        try {
+            $bill = $this->billService->void($bill, $request->validated('reason'));
+
+            return $this->success(new BillResource($bill), 'Tagihan berhasil dibatalkan.');
+        } catch (\App\Exceptions\Domain\StateTransitionException $e) {
             return $this->error($e->getMessage(), 422);
         }
     }
