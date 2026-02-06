@@ -36,8 +36,9 @@ class GoodsReceiptNoteService extends BaseService implements GoodsReceiptNoteSer
         return $this->executeInTransaction('create', function () use ($data) {
             $grn = GoodsReceiptNote::create([
                 'grn_number' => $this->numberGenerator->generate(),
-                'purchase_order_id' => $data['purchase_order_id'],
+                'purchase_order_id' => $data['purchase_order_id'] ?? null,
                 'warehouse_id' => $data['warehouse_id'],
+                'contact_id' => $data['contact_id'] ?? null,
                 'receipt_date' => $data['receipt_date'] ?? now()->toDateString(),
                 'status' => DocumentStatus::Draft,
                 'supplier_do_number' => $data['supplier_do_number'] ?? null,
@@ -48,8 +49,24 @@ class GoodsReceiptNoteService extends BaseService implements GoodsReceiptNoteSer
                 'created_by' => $data['created_by'] ?? $this->getUserId(),
             ]);
 
+            // Create items for standalone GRN (no PO)
+            if (! empty($data['items']) && empty($data['purchase_order_id'])) {
+                foreach ($data['items'] as $itemData) {
+                    GoodsReceiptNoteItem::create([
+                        'goods_receipt_note_id' => $grn->id,
+                        'purchase_order_item_id' => null,
+                        'product_id' => $itemData['product_id'],
+                        'quantity_ordered' => $itemData['quantity_ordered'],
+                        'quantity_received' => 0,
+                        'quantity_rejected' => 0,
+                        'unit_price' => $itemData['unit_price'] ?? 0,
+                    ]);
+                }
+                $grn->updateTotals();
+            }
+
             return $grn;
-        }, ['purchase_order_id' => $data['purchase_order_id'], 'warehouse_id' => $data['warehouse_id']]);
+        }, ['purchase_order_id' => $data['purchase_order_id'] ?? null, 'warehouse_id' => $data['warehouse_id']]);
     }
 
     /**
@@ -255,8 +272,10 @@ class GoodsReceiptNoteService extends BaseService implements GoodsReceiptNoteSer
                 }
             }
 
-            // Update PO receiving status
-            $this->receivingService->updateReceivingStatus($purchaseOrder);
+            // Update PO receiving status (only for PO-based GRN)
+            if ($purchaseOrder) {
+                $this->receivingService->updateReceivingStatus($purchaseOrder);
+            }
 
             // Use state machine for status transition
             $grn->transitionTo(DocumentStatus::Completed, $userId);

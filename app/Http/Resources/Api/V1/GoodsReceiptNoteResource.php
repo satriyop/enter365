@@ -61,6 +61,11 @@ class GoodsReceiptNoteResource extends JsonResource
                     'name' => $this->purchaseOrder->contact->name,
                 ] : null,
             ]),
+            'contact_id' => $this->contact_id,
+            'contact' => $this->whenLoaded('contact', fn () => $this->contact ? [
+                'id' => $this->contact->id,
+                'name' => $this->contact->name,
+            ] : null),
             'warehouse_id' => $this->warehouse_id,
             'warehouse' => $this->whenLoaded('warehouse', fn () => [
                 'id' => $this->warehouse->id,

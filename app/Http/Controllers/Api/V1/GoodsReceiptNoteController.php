@@ -27,7 +27,7 @@ class GoodsReceiptNoteController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $query = GoodsReceiptNote::query()
-            ->with(['warehouse', 'purchaseOrder.contact', 'receivedByUser']);
+            ->with(['warehouse', 'purchaseOrder.contact', 'contact', 'receivedByUser']);
 
         // Filter by status
         if ($request->has('status')) {
@@ -77,7 +77,7 @@ class GoodsReceiptNoteController extends Controller
 
         return response()->json([
             'message' => 'GRN berhasil dibuat.',
-            'data' => new GoodsReceiptNoteResource($grn->load(['warehouse', 'purchaseOrder', 'items'])),
+            'data' => new GoodsReceiptNoteResource($grn->load(['warehouse', 'purchaseOrder', 'contact', 'items.product'])),
         ], 201);
     }
 
@@ -87,7 +87,7 @@ class GoodsReceiptNoteController extends Controller
     public function show(GoodsReceiptNote $goodsReceiptNote): GoodsReceiptNoteResource
     {
         return new GoodsReceiptNoteResource(
-            $goodsReceiptNote->load(['warehouse', 'purchaseOrder.contact', 'items.product', 'receivedByUser', 'checkedByUser', 'createdByUser'])
+            $goodsReceiptNote->load(['warehouse', 'purchaseOrder.contact', 'contact', 'items.product', 'receivedByUser', 'checkedByUser', 'createdByUser'])
         );
     }
 

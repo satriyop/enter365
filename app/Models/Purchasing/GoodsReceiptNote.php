@@ -3,6 +3,7 @@
 namespace App\Models\Purchasing;
 
 use App\Enums\DocumentStatus;
+use App\Models\Contact;
 use App\Models\Inventory\Warehouse;
 use App\Models\User;
 use Carbon\Carbon;
@@ -14,8 +15,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * @property int $id
  * @property string $grn_number
- * @property int $purchase_order_id
+ * @property int|null $purchase_order_id
  * @property int $warehouse_id
+ * @property int|null $contact_id
  * @property Carbon $receipt_date
  * @property DocumentStatus $status
  * @property string|null $supplier_do_number
@@ -43,6 +45,7 @@ class GoodsReceiptNote extends Model
         'grn_number',
         'purchase_order_id',
         'warehouse_id',
+        'contact_id',
         'receipt_date',
         'status',
         'supplier_do_number',
@@ -104,6 +107,14 @@ class GoodsReceiptNote extends Model
     public function warehouse(): BelongsTo
     {
         return $this->belongsTo(Warehouse::class);
+    }
+
+    /**
+     * @return BelongsTo<Contact, $this>
+     */
+    public function contact(): BelongsTo
+    {
+        return $this->belongsTo(Contact::class);
     }
 
     /**
