@@ -2769,6 +2769,80 @@
                 }
             }
         },
+        "/bills/{bill}/void": {
+            "post": {
+                "operationId": "bill.void",
+                "description": "Cancels the bill and reverses any associated journal entries.",
+                "summary": "Void/cancel a posted bill",
+                "tags": [
+                    "Bill"
+                ],
+                "parameters": [
+                    {
+                        "name": "bill",
+                        "in": "path",
+                        "required": true,
+                        "description": "The bill ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/VoidBillRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Tagihan berhasil dibatalkan."
+                                            ]
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/BillResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/bills/{bill}/make-recurring": {
             "post": {
                 "operationId": "bill.makeRecurring",
@@ -18656,6 +18730,80 @@
                 }
             }
         },
+        "/invoices/{invoice}/void": {
+            "post": {
+                "operationId": "invoice.void",
+                "description": "Cancels the invoice and reverses journal entry if exists.\nInvoice must not be in terminal status (Paid/Cancelled).",
+                "summary": "Void/cancel invoice",
+                "tags": [
+                    "Invoice"
+                ],
+                "parameters": [
+                    {
+                        "name": "invoice",
+                        "in": "path",
+                        "required": true,
+                        "description": "The invoice ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/VoidInvoiceRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Operasi berhasil."
+                                            ]
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/InvoiceResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
         "/invoices/{invoice}/make-recurring": {
             "post": {
                 "operationId": "invoice.makeRecurring",
@@ -27882,8 +28030,8 @@
         },
         "/quotations/{quotation}/pdf": {
             "get": {
-                "operationId": "quotation.pdf",
-                "summary": "Generate PDF (placeholder)",
+                "operationId": "downloadQuotationPdf",
+                "summary": "Generate and download quotation PDF",
                 "tags": [
                     "Quotation"
                 ],
@@ -27899,31 +28047,12 @@
                     }
                 ],
                 "responses": {
-                    "501": {
+                    "200": {
                         "description": "",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "enum": [
-                                                "Fitur PDF belum tersedia."
-                                            ]
-                                        },
-                                        "errors": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "required": [
-                                        "success",
-                                        "message",
-                                        "errors"
-                                    ]
+                                    "type": "object"
                                 }
                             }
                         }
@@ -59742,6 +59871,36 @@
                     "updated_at"
                 ],
                 "title": "UserResource"
+            },
+            "VoidBillRequest": {
+                "type": "object",
+                "description": "Request validation for voiding/cancelling a bill.",
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "minLength": 10,
+                        "maxLength": 500
+                    }
+                },
+                "required": [
+                    "reason"
+                ],
+                "title": "VoidBillRequest"
+            },
+            "VoidInvoiceRequest": {
+                "type": "object",
+                "description": "Request validation for voiding/cancelling an invoice.",
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "minLength": 10,
+                        "maxLength": 500
+                    }
+                },
+                "required": [
+                    "reason"
+                ],
+                "title": "VoidInvoiceRequest"
             },
             "WarehouseResource": {
                 "type": "object",
