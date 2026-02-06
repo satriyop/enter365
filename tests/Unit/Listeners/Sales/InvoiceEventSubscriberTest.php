@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Contracts\Logging\ContextualLoggerInterface;
+use App\Contracts\Shared\ReminderServiceInterface;
 use App\Domain\Sales\Invoices\Events\InvoiceFullyPaid;
 use App\Domain\Sales\Invoices\Events\InvoiceOverdue;
 use App\Domain\Sales\Invoices\Events\InvoiceSent;
@@ -16,7 +17,8 @@ use Illuminate\Events\Dispatcher;
 describe('InvoiceEventSubscriber', function () {
     beforeEach(function () {
         $this->logger = Mockery::mock(ContextualLoggerInterface::class);
-        $this->subscriber = new InvoiceEventSubscriber($this->logger);
+        $this->reminderService = Mockery::mock(ReminderServiceInterface::class);
+        $this->subscriber = new InvoiceEventSubscriber($this->logger, $this->reminderService);
     });
 
     describe('subscribe', function () {
@@ -81,6 +83,11 @@ describe('InvoiceEventSubscriber', function () {
                     'user_id' => 10,
                 ]);
 
+            // Allow error logging from reminder scheduling (no DB in unit test)
+            $this->logger->shouldReceive('logOperation')
+                ->zeroOrMoreTimes()
+                ->with('invoice.reminder_scheduling_failed', Mockery::type('array'));
+
             $this->subscriber->handleSent($event);
         });
     });
@@ -108,6 +115,11 @@ describe('InvoiceEventSubscriber', function () {
                     'paid_at' => $paidAt->toIso8601String(),
                     'user_id' => 10,
                 ]);
+
+            // Allow error logging from reminder cancellation (no DB in unit test)
+            $this->logger->shouldReceive('logOperation')
+                ->zeroOrMoreTimes()
+                ->with('invoice.reminder_cancellation_failed', Mockery::type('array'));
 
             $this->subscriber->handleFullyPaid($event);
         });
@@ -165,6 +177,11 @@ describe('InvoiceEventSubscriber', function () {
                     'voided_at' => $voidedAt->toIso8601String(),
                     'user_id' => 10,
                 ]);
+
+            // Allow error logging from reminder cancellation (no DB in unit test)
+            $this->logger->shouldReceive('logOperation')
+                ->zeroOrMoreTimes()
+                ->with('invoice.reminder_cancellation_failed', Mockery::type('array'));
 
             $this->subscriber->handleVoided($event);
         });

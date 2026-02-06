@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Resources\Api\V1;
 
 use App\Domain\Sales\Invoices\InvoiceStateMachine;
+use App\Enums\DocumentStatus;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -107,6 +108,11 @@ class InvoiceResource extends JsonResource
                 'can_delete' => $stateMachine->canDelete(),
                 'can_mark_as_paid' => $stateMachine->canMarkAsPaid(),
                 'can_mark_as_partial' => $stateMachine->canMarkAsPartial(),
+                'can_send_reminder' => in_array($this->status, [
+                    DocumentStatus::Sent,
+                    DocumentStatus::Partial,
+                    DocumentStatus::Overdue,
+                ]),
             ],
 
             // Metadata

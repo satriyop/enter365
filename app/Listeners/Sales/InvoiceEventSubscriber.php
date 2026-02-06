@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Listeners\Sales;
 
 use App\Contracts\Logging\ContextualLoggerInterface;
+use App\Contracts\Shared\ReminderServiceInterface;
 use App\Domain\Sales\Invoices\Events\InvoiceFullyPaid;
 use App\Domain\Sales\Invoices\Events\InvoiceOverdue;
 use App\Domain\Sales\Invoices\Events\InvoiceSent;
 use App\Domain\Sales\Invoices\Events\InvoiceStatusChanged;
 use App\Domain\Sales\Invoices\Events\InvoiceVoided;
+use App\Models\Sales\Invoice;
 use Illuminate\Events\Dispatcher;
 
 /**
@@ -20,7 +22,8 @@ use Illuminate\Events\Dispatcher;
 class InvoiceEventSubscriber
 {
     public function __construct(
-        private ContextualLoggerInterface $logger
+        private ContextualLoggerInterface $logger,
+        private ReminderServiceInterface $reminderService
     ) {}
 
     public function handleStatusChanged(InvoiceStatusChanged $event): void
@@ -43,6 +46,18 @@ class InvoiceEventSubscriber
             'sent_at' => $event->sentAt->toIso8601String(),
             'user_id' => $event->userId,
         ]);
+
+        try {
+            $invoice = Invoice::find($event->invoiceId);
+            if ($invoice) {
+                $this->reminderService->scheduleInvoiceReminders($invoice);
+            }
+        } catch (\Throwable $e) {
+            $this->logger->logOperation('invoice.reminder_scheduling_failed', [
+                'invoice_id' => $event->invoiceId,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     public function handleFullyPaid(InvoiceFullyPaid $event): void
@@ -54,6 +69,18 @@ class InvoiceEventSubscriber
             'paid_at' => $event->paidAt->toIso8601String(),
             'user_id' => $event->userId,
         ]);
+
+        try {
+            $invoice = Invoice::find($event->invoiceId);
+            if ($invoice) {
+                $this->reminderService->cancelReminders($invoice);
+            }
+        } catch (\Throwable $e) {
+            $this->logger->logOperation('invoice.reminder_cancellation_failed', [
+                'invoice_id' => $event->invoiceId,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     public function handleOverdue(InvoiceOverdue $event): void
@@ -76,6 +103,18 @@ class InvoiceEventSubscriber
             'voided_at' => $event->voidedAt->toIso8601String(),
             'user_id' => $event->userId,
         ]);
+
+        try {
+            $invoice = Invoice::find($event->invoiceId);
+            if ($invoice) {
+                $this->reminderService->cancelReminders($invoice);
+            }
+        } catch (\Throwable $e) {
+            $this->logger->logOperation('invoice.reminder_cancellation_failed', [
+                'invoice_id' => $event->invoiceId,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
