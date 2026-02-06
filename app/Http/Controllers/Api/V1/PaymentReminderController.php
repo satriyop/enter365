@@ -1,0 +1,213 @@
+<?php
+
+namespace App\Http\Controllers\Api\V1;
+
+use App\Enums\DocumentStatus;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\StorePaymentReminderRequest;
+use App\Http\Resources\Api\V1\PaymentReminderResource;
+use App\Models\Purchasing\Bill;
+use App\Models\Sales\Invoice;
+use App\Models\Shared\PaymentReminder;
+use App\Services\Sales\ReminderService;
+use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+
+class PaymentReminderController extends Controller
+{
+    public function __construct(
+        private ReminderService $reminderService
+    ) {}
+
+    /**
+     * List all payment reminders with filters.
+     */
+    public function index(Request $request): AnonymousResourceCollection
+    {
+        $query = PaymentReminder::query()->with(['remindable', 'contact']);
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        if ($request->filled('type')) {
+            $query->where('type', $request->input('type'));
+        }
+
+        if ($request->filled('remindable_type')) {
+            $morphClass = match ($request->input('remindable_type')) {
+                'invoice' => Invoice::class,
+                'bill' => Bill::class,
+                default => null,
+            };
+            if ($morphClass) {
+                $query->where('remindable_type', $morphClass);
+            }
+        }
+
+        if ($request->filled('contact_id')) {
+            $query->where('contact_id', $request->integer('contact_id'));
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('scheduled_date', '>=', $request->input('date_from'));
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('scheduled_date', '<=', $request->input('date_to'));
+        }
+
+        $query->orderBy(
+            $request->input('sort_by', 'scheduled_date'),
+            $request->input('sort_dir', 'asc')
+        );
+
+        $reminders = $query->paginate($request->input('per_page', 25));
+
+        return PaymentReminderResource::collection($reminders);
+    }
+
+    /**
+     * Get summary counts for the reminder dashboard.
+     */
+    public function summary(): JsonResponse
+    {
+        return response()->json([
+            'pending' => PaymentReminder::where('status', PaymentReminder::STATUS_PENDING)->count(),
+            'due_today' => PaymentReminder::where('status', PaymentReminder::STATUS_PENDING)
+                ->whereDate('scheduled_date', '<=', today())->count(),
+            'sent_this_week' => PaymentReminder::where('status', PaymentReminder::STATUS_SENT)
+                ->whereDate('sent_date', '>=', now()->startOfWeek())->count(),
+            'failed' => PaymentReminder::where('status', PaymentReminder::STATUS_FAILED)->count(),
+            'total_overdue_invoices' => Invoice::where('status', DocumentStatus::Sent)
+                ->whereDate('due_date', '<', today())->count(),
+        ]);
+    }
+
+    /**
+     * Show a single payment reminder.
+     */
+    public function show(PaymentReminder $paymentReminder): PaymentReminderResource
+    {
+        $paymentReminder->load(['remindable', 'contact', 'creator']);
+
+        return new PaymentReminderResource($paymentReminder);
+    }
+
+    /**
+     * List reminders for a specific invoice.
+     */
+    public function forInvoice(Request $request, Invoice $invoice): AnonymousResourceCollection
+    {
+        $reminders = PaymentReminder::query()
+            ->where('remindable_type', Invoice::class)
+            ->where('remindable_id', $invoice->id)
+            ->with('contact')
+            ->orderBy('scheduled_date')
+            ->get();
+
+        return PaymentReminderResource::collection($reminders);
+    }
+
+    /**
+     * Manually schedule a custom reminder for an invoice.
+     */
+    public function store(StorePaymentReminderRequest $request, Invoice $invoice): JsonResponse
+    {
+        $scheduledDate = Carbon::parse($request->validated('scheduled_date'));
+        $daysOffset = $invoice->due_date->diffInDays($scheduledDate, false);
+
+        $reminder = PaymentReminder::create([
+            'remindable_type' => Invoice::class,
+            'remindable_id' => $invoice->id,
+            'contact_id' => $invoice->contact_id,
+            'type' => $request->validated('type'),
+            'days_offset' => $daysOffset,
+            'scheduled_date' => $scheduledDate,
+            'status' => PaymentReminder::STATUS_PENDING,
+            'channel' => $request->validated('channel'),
+            'message' => $request->validated('message'),
+            'created_by' => $request->user()->id,
+        ]);
+
+        return (new PaymentReminderResource($reminder->load('contact')))
+            ->response()
+            ->setStatusCode(201);
+    }
+
+    /**
+     * Manually send a pending reminder.
+     */
+    public function send(PaymentReminder $paymentReminder): PaymentReminderResource|JsonResponse
+    {
+        if (! $paymentReminder->isPending()) {
+            return response()->json([
+                'message' => 'Hanya pengingat dengan status pending yang dapat dikirim.',
+            ], 422);
+        }
+
+        $success = $this->reminderService->sendReminder($paymentReminder);
+
+        if (! $success) {
+            return response()->json([
+                'message' => 'Gagal mengirim pengingat. Dokumen mungkin sudah dibayar atau dibatalkan.',
+            ], 422);
+        }
+
+        return new PaymentReminderResource($paymentReminder->fresh(['remindable', 'contact']));
+    }
+
+    /**
+     * Cancel a pending reminder.
+     */
+    public function cancel(PaymentReminder $paymentReminder): PaymentReminderResource|JsonResponse
+    {
+        if (! $paymentReminder->isPending()) {
+            return response()->json([
+                'message' => 'Hanya pengingat dengan status pending yang dapat dibatalkan.',
+            ], 422);
+        }
+
+        $paymentReminder->cancel();
+
+        return new PaymentReminderResource($paymentReminder->fresh(['remindable', 'contact']));
+    }
+
+    /**
+     * Quick action: create and send an immediate reminder for an invoice.
+     */
+    public function sendImmediate(Request $request, Invoice $invoice): PaymentReminderResource|JsonResponse
+    {
+        $validated = $request->validate([
+            'message' => ['nullable', 'string', 'max:2000'],
+            'channel' => ['nullable', 'string', 'in:email,whatsapp'],
+        ]);
+
+        $reminder = PaymentReminder::create([
+            'remindable_type' => Invoice::class,
+            'remindable_id' => $invoice->id,
+            'contact_id' => $invoice->contact_id,
+            'type' => $invoice->isOverdue()
+                ? PaymentReminder::TYPE_OVERDUE
+                : PaymentReminder::TYPE_UPCOMING,
+            'days_offset' => 0,
+            'scheduled_date' => today(),
+            'status' => PaymentReminder::STATUS_PENDING,
+            'channel' => $validated['channel'] ?? PaymentReminder::CHANNEL_EMAIL,
+            'message' => $validated['message'] ?? null,
+            'created_by' => $request->user()->id,
+        ]);
+
+        $success = $this->reminderService->sendReminder($reminder);
+
+        if (! $success) {
+            return response()->json([
+                'message' => 'Gagal mengirim pengingat.',
+            ], 422);
+        }
+
+        return new PaymentReminderResource($reminder->fresh(['remindable', 'contact']));
+    }
+}

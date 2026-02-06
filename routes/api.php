@@ -32,6 +32,7 @@ use App\Http\Controllers\Api\V1\JournalEntryController;
 use App\Http\Controllers\Api\V1\MaterialRequisitionController;
 use App\Http\Controllers\Api\V1\MrpController;
 use App\Http\Controllers\Api\V1\PaymentController;
+use App\Http\Controllers\Api\V1\PaymentReminderController;
 use App\Http\Controllers\Api\V1\PermissionController;
 use App\Http\Controllers\Api\V1\ProductCategoryController;
 use App\Http\Controllers\Api\V1\ProductController;
@@ -231,6 +232,18 @@ Route::prefix('v1')->group(function () {
         Route::post('invoices/{invoice}/post', [InvoiceController::class, 'post']);
         Route::post('invoices/{invoice}/void', [InvoiceController::class, 'void']);
         Route::post('invoices/{invoice}/make-recurring', [InvoiceController::class, 'makeRecurring']);
+
+        // Payment Reminders (Pengingat Pembayaran)
+        Route::prefix('payment-reminders')->group(function () {
+            Route::get('/', [PaymentReminderController::class, 'index']);
+            Route::get('/summary', [PaymentReminderController::class, 'summary']);
+            Route::get('/{payment_reminder}', [PaymentReminderController::class, 'show']);
+            Route::post('/{payment_reminder}/send', [PaymentReminderController::class, 'send']);
+            Route::post('/{payment_reminder}/cancel', [PaymentReminderController::class, 'cancel']);
+        });
+        Route::get('invoices/{invoice}/reminders', [PaymentReminderController::class, 'forInvoice']);
+        Route::post('invoices/{invoice}/reminders', [PaymentReminderController::class, 'store']);
+        Route::post('invoices/{invoice}/send-reminder', [PaymentReminderController::class, 'sendImmediate']);
 
         // Purchase Orders (Pesanan Pembelian)
         Route::middleware('feature:purchase_orders')->group(function () {
