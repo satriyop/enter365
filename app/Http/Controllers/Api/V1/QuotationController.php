@@ -12,9 +12,11 @@ use App\Http\Resources\Api\V1\QuotationResource;
 use App\Http\Resources\Api\V1\QuotationVariantOptionResource;
 use App\Models\Sales\Quotation;
 use App\Services\Sales\QuotationService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Symfony\Component\HttpFoundation\Response;
 
 class QuotationController extends Controller
 {
@@ -267,13 +269,26 @@ class QuotationController extends Controller
     }
 
     /**
-     * Generate PDF (placeholder).
+     * Generate and download quotation PDF.
+     *
+     * @operationId downloadQuotationPdf
      */
-    public function pdf(Quotation $quotation): JsonResponse
+    public function pdf(Quotation $quotation): Response
     {
         $this->authorize('view', $quotation);
 
-        return $this->error('Fitur PDF belum tersedia.', 501);
+        // Load relationships needed for the PDF
+        $quotation->load(['contact', 'items.product']);
+
+        $pdf = Pdf::loadView('pdf.quotation', [
+            'quotation' => $quotation,
+        ]);
+
+        $pdf->setPaper('a4', 'portrait');
+
+        $filename = $quotation->quotation_number.'.pdf';
+
+        return $pdf->download($filename);
     }
 
     /**
