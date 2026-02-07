@@ -8,6 +8,8 @@ use App\Enums\DocumentStatus;
 use App\Exceptions\Domain\BusinessRuleException;
 use App\Exceptions\Domain\DocumentLockedException;
 use App\Exceptions\Domain\StateTransitionException;
+use App\Models\Accounting\AccountingPolicy;
+use App\Models\Accounting\JournalEntry;
 use App\Models\Contacts\Contact;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\Warehouse;
@@ -17,6 +19,7 @@ use App\Models\Purchasing\PurchaseOrder;
 use App\Models\Purchasing\PurchaseOrderItem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Once;
 
 uses(RefreshDatabase::class);
 
@@ -356,5 +359,114 @@ describe('Query Methods', function () {
         $results = $this->service->getForPurchaseOrder($po);
 
         expect($results)->toHaveCount(3);
+    });
+});
+
+describe('Inventory Accounting Strategy', function () {
+    test('complete in perpetual mode triggers inventory accounting strategy', function () {
+        // Seed chart of accounts (required for PerpetualInventoryStrategy JE creation)
+        $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\ChartOfAccountsSeeder']);
+        $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\FiscalPeriodSeeder']);
+
+        // Flush once() cache to pick up new policy
+        Once::flush();
+
+        // Set to perpetual inventory mode
+        AccountingPolicy::query()->update(['inventory_method' => 'perpetual']);
+
+        $product = Product::factory()->create([
+            'track_inventory' => true,
+            'purchase_price' => 100000,
+        ]);
+
+        $po = PurchaseOrder::factory()
+            ->has(PurchaseOrderItem::factory()->state([
+                'product_id' => $product->id,
+                'quantity' => 50,
+                'quantity_received' => 0,
+            ]), 'items')
+            ->create(['status' => DocumentStatus::Approved]);
+
+        $grn = GoodsReceiptNote::factory()
+            ->for($po, 'purchaseOrder')
+            ->has(GoodsReceiptNoteItem::factory()->state([
+                'purchase_order_item_id' => $po->items->first()->id,
+                'product_id' => $product->id,
+                'quantity_ordered' => 50,
+                'quantity_received' => 50,
+                'unit_price' => 100000,
+            ]), 'items')
+            ->create([
+                'status' => DocumentStatus::Receiving,
+                'warehouse_id' => $this->warehouse->id,
+            ]);
+
+        // Mock inventory service so stock-in doesn't fail
+        $inventoryService = $this->mock(InventoryServiceInterface::class);
+        $inventoryService->shouldReceive('stockIn')->once();
+
+        $service = app(GoodsReceiptNoteServiceInterface::class);
+        $service->complete($grn, $this->user->id);
+
+        // Verify the inventory accounting JE was created (Dr Inventory / Cr GRNI)
+        $journalEntry = JournalEntry::where('source_type', GoodsReceiptNote::class)
+            ->where('source_id', $grn->id)
+            ->first();
+
+        expect($journalEntry)->not->toBeNull()
+            ->and($journalEntry->is_posted)->toBeTrue()
+            ->and($journalEntry->isBalanced())->toBeTrue()
+            ->and($journalEntry->getTotalDebit())->toBe(5_000_000); // 50 * 100,000
+    });
+
+    test('complete in hybrid mode does not create GRNI journal entry', function () {
+        // Seed chart of accounts
+        $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\ChartOfAccountsSeeder']);
+        $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\FiscalPeriodSeeder']);
+
+        Once::flush();
+
+        // Default is hybrid — no GRNI JE should be created
+        AccountingPolicy::query()->update(['inventory_method' => 'hybrid']);
+
+        $product = Product::factory()->create([
+            'track_inventory' => true,
+            'purchase_price' => 100000,
+        ]);
+
+        $po = PurchaseOrder::factory()
+            ->has(PurchaseOrderItem::factory()->state([
+                'product_id' => $product->id,
+                'quantity' => 50,
+                'quantity_received' => 0,
+            ]), 'items')
+            ->create(['status' => DocumentStatus::Approved]);
+
+        $grn = GoodsReceiptNote::factory()
+            ->for($po, 'purchaseOrder')
+            ->has(GoodsReceiptNoteItem::factory()->state([
+                'purchase_order_item_id' => $po->items->first()->id,
+                'product_id' => $product->id,
+                'quantity_ordered' => 50,
+                'quantity_received' => 50,
+                'unit_price' => 100000,
+            ]), 'items')
+            ->create([
+                'status' => DocumentStatus::Receiving,
+                'warehouse_id' => $this->warehouse->id,
+            ]);
+
+        $inventoryService = $this->mock(InventoryServiceInterface::class);
+        $inventoryService->shouldReceive('stockIn')->once();
+
+        $service = app(GoodsReceiptNoteServiceInterface::class);
+        $service->complete($grn, $this->user->id);
+
+        // No JE should be created for hybrid mode
+        $journalEntry = JournalEntry::where('source_type', GoodsReceiptNote::class)
+            ->where('source_id', $grn->id)
+            ->first();
+
+        expect($journalEntry)->toBeNull();
     });
 });

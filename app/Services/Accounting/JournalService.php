@@ -205,7 +205,22 @@ class JournalService extends BaseService implements JournalServiceInterface
     }
 
     /**
+     * Convert a foreign currency amount to base currency (IDR).
+     */
+    private function toBaseCurrency(int $amount, string $currency, float $exchangeRate): int
+    {
+        if ($currency === 'IDR' || $exchangeRate <= 0) {
+            return $amount;
+        }
+
+        return (int) round($amount * $exchangeRate);
+    }
+
+    /**
      * Create journal entry for an invoice when posted.
+     *
+     * All JE amounts are recorded in base currency (IDR).
+     * AR is derived as the balancing figure to guarantee DR == CR.
      */
     public function postInvoice(Invoice $invoice): JournalEntry
     {
@@ -227,24 +242,23 @@ class JournalService extends BaseService implements JournalServiceInterface
         $taxPayableAccount = $accounts->get('2-1200'); // PPN Keluaran
         $defaultRevenueAccount = $accounts->get('4-1001'); // Pendapatan Penjualan
 
-        $lines = [];
+        $currency = $invoice->currency ?? 'IDR';
+        $exchangeRate = (float) ($invoice->exchange_rate ?? 1);
 
-        // Debit: Accounts Receivable (total amount = subtotal - discount + tax)
-        $lines[] = [
-            'account_id' => $receivableAccount->id,
-            'description' => 'Piutang '.$invoice->contact->name,
-            'debit' => $invoice->total_amount,
-            'credit' => 0,
-        ];
+        $lines = [];
+        $totalCredits = 0;
+        $totalDebits = 0;
 
         // Debit: Sales Discount contra-revenue (if discount exists)
         if ($invoice->discount_amount > 0) {
+            $discountBase = $this->toBaseCurrency($invoice->discount_amount, $currency, $exchangeRate);
             $lines[] = [
                 'account_id' => $accounts->get('4-1003')->id,
                 'description' => 'Diskon penjualan '.$invoice->invoice_number,
-                'debit' => $invoice->discount_amount,
+                'debit' => $discountBase,
                 'credit' => 0,
             ];
+            $totalDebits += $discountBase;
         }
 
         // Credit: Revenue accounts (subtotal per item or single entry)
@@ -258,23 +272,36 @@ class JournalService extends BaseService implements JournalServiceInterface
         }
 
         foreach ($revenueByAccount as $accountId => $amount) {
+            $revenueBase = $this->toBaseCurrency($amount, $currency, $exchangeRate);
             $lines[] = [
                 'account_id' => $accountId,
                 'description' => 'Pendapatan '.$invoice->invoice_number,
                 'debit' => 0,
-                'credit' => $amount,
+                'credit' => $revenueBase,
             ];
+            $totalCredits += $revenueBase;
         }
 
         // Credit: Tax Payable (if tax exists)
         if ($invoice->tax_amount > 0 && $taxPayableAccount) {
+            $taxBase = $this->toBaseCurrency($invoice->tax_amount, $currency, $exchangeRate);
             $lines[] = [
                 'account_id' => $taxPayableAccount->id,
                 'description' => 'PPN Keluaran '.$invoice->invoice_number,
                 'debit' => 0,
-                'credit' => $invoice->tax_amount,
+                'credit' => $taxBase,
             ];
+            $totalCredits += $taxBase;
         }
+
+        // Debit: AR as balancing figure (guarantees DR == CR despite rounding)
+        $arAmount = $totalCredits - $totalDebits;
+        array_unshift($lines, [
+            'account_id' => $receivableAccount->id,
+            'description' => 'Piutang '.$invoice->contact->name,
+            'debit' => $arAmount,
+            'credit' => 0,
+        ]);
 
         $entryDate = $invoice->invoice_date;
         $entry = $this->createEntry([
@@ -331,7 +358,12 @@ class JournalService extends BaseService implements JournalServiceInterface
         $defaultExpenseAccount = $accounts->get('5-1002'); // Pembelian
         $grniAccount = $usesGrni ? $accounts->get('2-1300') : null; // GRNI
 
+        $currency = $bill->currency ?? 'IDR';
+        $exchangeRate = (float) ($bill->exchange_rate ?? 1);
+
         $lines = [];
+        $totalDebits = 0;
+        $totalCredits = 0;
 
         // Debit: Expense or GRNI accounts (per item)
         $debitByAccount = [];
@@ -353,40 +385,47 @@ class JournalService extends BaseService implements JournalServiceInterface
         }
 
         foreach ($debitByAccount as $accountId => $amount) {
+            $amountBase = $this->toBaseCurrency($amount, $currency, $exchangeRate);
             $lines[] = [
                 'account_id' => $accountId,
                 'description' => 'Pembelian '.$bill->bill_number,
-                'debit' => $amount,
+                'debit' => $amountBase,
                 'credit' => 0,
             ];
+            $totalDebits += $amountBase;
         }
 
         // Debit: Tax Receivable (if tax exists)
         if ($bill->tax_amount > 0 && $taxReceivableAccount) {
+            $taxBase = $this->toBaseCurrency($bill->tax_amount, $currency, $exchangeRate);
             $lines[] = [
                 'account_id' => $taxReceivableAccount->id,
                 'description' => 'PPN Masukan '.$bill->bill_number,
-                'debit' => $bill->tax_amount,
+                'debit' => $taxBase,
                 'credit' => 0,
             ];
+            $totalDebits += $taxBase;
         }
 
         // Credit: Purchase Discount contra-expense (if discount exists)
         if ($bill->discount_amount > 0) {
+            $discountBase = $this->toBaseCurrency($bill->discount_amount, $currency, $exchangeRate);
             $lines[] = [
                 'account_id' => $accounts->get('5-1003')->id,
                 'description' => 'Diskon pembelian '.$bill->bill_number,
                 'debit' => 0,
-                'credit' => $bill->discount_amount,
+                'credit' => $discountBase,
             ];
+            $totalCredits += $discountBase;
         }
 
-        // Credit: Accounts Payable (total amount = subtotal - discount + tax)
+        // Credit: AP as balancing figure (guarantees DR == CR despite rounding)
+        $apAmount = $totalDebits - $totalCredits;
         $lines[] = [
             'account_id' => $payableAccount->id,
             'description' => 'Utang '.$bill->contact->name,
             'debit' => 0,
-            'credit' => $bill->total_amount,
+            'credit' => $apAmount,
         ];
 
         $entryDate = $bill->bill_date;
@@ -411,6 +450,9 @@ class JournalService extends BaseService implements JournalServiceInterface
     /**
      * Create journal entry for a payment.
      *
+     * All JE amounts are recorded in base currency (IDR).
+     * Uses payment's base_currency_amount when available.
+     *
      * Note: This method ONLY creates the journal entry. Payment status updates,
      * payable amount tracking, and event dispatching are handled by PaymentService.
      */
@@ -421,6 +463,14 @@ class JournalService extends BaseService implements JournalServiceInterface
             ['1-1100', '2-1100'],
             'posting payment'
         );
+
+        // Use pre-computed base currency amount, or convert on the fly
+        $baseAmount = $payment->base_currency_amount
+            ?? $this->toBaseCurrency(
+                $payment->amount,
+                $payment->currency ?? 'IDR',
+                (float) ($payment->exchange_rate ?? 1)
+            );
 
         $lines = [];
 
@@ -437,7 +487,7 @@ class JournalService extends BaseService implements JournalServiceInterface
             $lines[] = [
                 'account_id' => $payment->cash_account_id,
                 'description' => 'Penerimaan dari '.$payment->contact->name,
-                'debit' => $payment->amount,
+                'debit' => $baseAmount,
                 'credit' => 0,
             ];
 
@@ -446,7 +496,7 @@ class JournalService extends BaseService implements JournalServiceInterface
                 'account_id' => $receivableAccount->id,
                 'description' => 'Pelunasan piutang '.$payment->contact->name,
                 'debit' => 0,
-                'credit' => $payment->amount,
+                'credit' => $baseAmount,
             ];
         } else {
             // Sending payment to supplier
@@ -461,7 +511,7 @@ class JournalService extends BaseService implements JournalServiceInterface
             $lines[] = [
                 'account_id' => $payableAccount->id,
                 'description' => 'Pembayaran utang '.$payment->contact->name,
-                'debit' => $payment->amount,
+                'debit' => $baseAmount,
                 'credit' => 0,
             ];
 
@@ -470,7 +520,7 @@ class JournalService extends BaseService implements JournalServiceInterface
                 'account_id' => $payment->cash_account_id,
                 'description' => 'Pembayaran ke '.$payment->contact->name,
                 'debit' => 0,
-                'credit' => $payment->amount,
+                'credit' => $baseAmount,
             ];
         }
 

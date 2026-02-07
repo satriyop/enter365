@@ -36,6 +36,9 @@ class Payment extends Model
         'contact_id',
         'payment_date',
         'amount',
+        'currency',
+        'exchange_rate',
+        'base_currency_amount',
         'payment_method',
         'reference',
         'notes',
@@ -55,6 +58,8 @@ class Payment extends Model
         return [
             'payment_date' => 'date',
             'amount' => 'integer',
+            'exchange_rate' => 'decimal:4',
+            'base_currency_amount' => 'integer',
             'is_voided' => 'boolean',
             'voided_at' => 'datetime',
         ];

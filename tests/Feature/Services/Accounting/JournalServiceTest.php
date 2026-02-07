@@ -700,3 +700,191 @@ describe('JournalService - postPayment', function () {
     });
 
 });
+
+describe('JournalService - Multi-Currency', function () {
+
+    it('postInvoice with IDR invoice creates JE in IDR (regression)', function () {
+        $invoice = Invoice::factory()->create([
+            'currency' => 'IDR',
+            'exchange_rate' => 1,
+        ]);
+
+        InvoiceItem::factory()->create([
+            'invoice_id' => $invoice->id,
+            'quantity' => 1,
+            'unit_price' => 1000000,
+            'line_total' => 1000000,
+        ]);
+
+        $invoice->update([
+            'subtotal' => 1000000,
+            'tax_amount' => 110000,
+            'total_amount' => 1110000,
+        ]);
+
+        $entry = $this->service->postInvoice($invoice);
+
+        $receivableAccount = Account::where('code', '1-1100')->first();
+        $receivableLine = $entry->lines->firstWhere('account_id', $receivableAccount->id);
+
+        expect($entry->isBalanced())->toBeTrue()
+            ->and($receivableLine->debit)->toBe(1110000);
+    });
+
+    it('postInvoice with USD invoice creates JE in base currency IDR', function () {
+        $exchangeRate = 15000;
+        $invoice = Invoice::factory()->create([
+            'currency' => 'USD',
+            'exchange_rate' => $exchangeRate,
+        ]);
+
+        // $500 USD item
+        InvoiceItem::factory()->create([
+            'invoice_id' => $invoice->id,
+            'quantity' => 1,
+            'unit_price' => 500,
+            'line_total' => 500,
+        ]);
+
+        // $300 USD item
+        InvoiceItem::factory()->create([
+            'invoice_id' => $invoice->id,
+            'quantity' => 1,
+            'unit_price' => 300,
+            'line_total' => 300,
+        ]);
+
+        $invoice->update([
+            'subtotal' => 800,          // $800 USD
+            'tax_amount' => 88,          // 11% of $800
+            'discount_amount' => 0,
+            'total_amount' => 888,       // $888 USD
+        ]);
+
+        $entry = $this->service->postInvoice($invoice);
+
+        // All amounts should be in IDR
+        $receivableAccount = Account::where('code', '1-1100')->first();
+        $revenueAccount = Account::where('code', '4-1001')->first();
+        $taxAccount = Account::where('code', '2-1200')->first();
+
+        $receivableLine = $entry->lines->firstWhere('account_id', $receivableAccount->id);
+        $revenueLine = $entry->lines->firstWhere('account_id', $revenueAccount->id);
+        $taxLine = $entry->lines->firstWhere('account_id', $taxAccount->id);
+
+        // Revenue: ($500 + $300) * 15000 = 12,000,000
+        expect($revenueLine->credit)->toBe(12_000_000)
+            // Tax: $88 * 15000 = 1,320,000
+            ->and($taxLine->credit)->toBe(1_320_000)
+            // AR should be balancing figure: 12,000,000 + 1,320,000 = 13,320,000
+            ->and($receivableLine->debit)->toBe(13_320_000)
+            // JE must be balanced
+            ->and($entry->isBalanced())->toBeTrue();
+    });
+
+    it('postBill with USD bill creates JE in base currency IDR', function () {
+        $exchangeRate = 15000;
+        $bill = Bill::factory()->create([
+            'currency' => 'USD',
+            'exchange_rate' => $exchangeRate,
+        ]);
+
+        \App\Models\Purchasing\BillItem::factory()->create([
+            'bill_id' => $bill->id,
+            'quantity' => 1,
+            'unit_price' => 1000,
+            'line_total' => 1000,
+        ]);
+
+        $bill->update([
+            'subtotal' => 1000,           // $1,000 USD
+            'tax_amount' => 110,           // $110 USD
+            'discount_amount' => 0,
+            'total_amount' => 1110,        // $1,110 USD
+        ]);
+
+        $entry = $this->service->postBill($bill);
+
+        $payableAccount = Account::where('code', '2-1100')->first();
+        $expenseAccount = Account::where('code', '5-1002')->first();
+        $taxAccount = Account::where('code', '1-1300')->first();
+
+        $payableLine = $entry->lines->firstWhere('account_id', $payableAccount->id);
+        $expenseLine = $entry->lines->firstWhere('account_id', $expenseAccount->id);
+        $taxLine = $entry->lines->firstWhere('account_id', $taxAccount->id);
+
+        // Expense: $1000 * 15000 = 15,000,000
+        expect($expenseLine->debit)->toBe(15_000_000)
+            // Tax: $110 * 15000 = 1,650,000
+            ->and($taxLine->debit)->toBe(1_650_000)
+            // AP should be balancing figure: 15,000,000 + 1,650,000 = 16,650,000
+            ->and($payableLine->credit)->toBe(16_650_000)
+            ->and($entry->isBalanced())->toBeTrue();
+    });
+
+    it('postPayment for USD invoice creates JE in base currency IDR', function () {
+        $invoice = Invoice::factory()->sent()->create([
+            'currency' => 'USD',
+            'exchange_rate' => 15000,
+        ]);
+        $cashAccount = Account::where('code', '1-1000')->first();
+        $receivableAccount = Account::where('code', '1-1100')->first();
+
+        $payment = \App\Models\Shared\Payment::factory()->create([
+            'type' => \App\Models\Shared\Payment::TYPE_RECEIVE,
+            'amount' => 500,              // $500 USD
+            'currency' => 'USD',
+            'exchange_rate' => 15000,
+            'base_currency_amount' => 7_500_000, // $500 * 15000
+            'cash_account_id' => $cashAccount->id,
+            'payable_type' => Invoice::class,
+            'payable_id' => $invoice->id,
+        ]);
+
+        $entry = $this->service->postPayment($payment);
+
+        $cashLine = $entry->lines->firstWhere('account_id', $cashAccount->id);
+        $receivableLine = $entry->lines->firstWhere('account_id', $receivableAccount->id);
+
+        // Amount should be in IDR (7,500,000), not USD (500)
+        expect($cashLine->debit)->toBe(7_500_000)
+            ->and($receivableLine->credit)->toBe(7_500_000)
+            ->and($entry->isBalanced())->toBeTrue();
+    });
+
+    it('multi-currency JE is always balanced even with rounding', function () {
+        $exchangeRate = 14_853.7; // Awkward rate that causes rounding
+        $invoice = Invoice::factory()->create([
+            'currency' => 'USD',
+            'exchange_rate' => $exchangeRate,
+        ]);
+
+        InvoiceItem::factory()->create([
+            'invoice_id' => $invoice->id,
+            'quantity' => 1,
+            'unit_price' => 333,
+            'line_total' => 333,
+        ]);
+
+        InvoiceItem::factory()->create([
+            'invoice_id' => $invoice->id,
+            'quantity' => 1,
+            'unit_price' => 667,
+            'line_total' => 667,
+        ]);
+
+        $invoice->update([
+            'subtotal' => 1000,
+            'tax_amount' => 110,
+            'discount_amount' => 50,
+            'total_amount' => 1060,
+        ]);
+
+        $entry = $this->service->postInvoice($invoice);
+
+        // Regardless of rounding, JE must balance
+        expect($entry->isBalanced())->toBeTrue()
+            ->and($entry->getTotalDebit())->toBeGreaterThan(0);
+    });
+
+});

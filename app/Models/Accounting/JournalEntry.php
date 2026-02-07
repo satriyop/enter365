@@ -59,6 +59,15 @@ class JournalEntry extends Model
                 );
             }
         });
+
+        static::deleting(function (JournalEntry $entry) {
+            if ($entry->is_posted) {
+                throw \App\Exceptions\Domain\DocumentLockedException::cannotDelete(
+                    $entry,
+                    'Jurnal yang sudah diposting tidak dapat dihapus. Gunakan pembalikan untuk mengoreksi.'
+                );
+            }
+        });
     }
 
     protected function casts(): array

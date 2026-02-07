@@ -13,6 +13,7 @@ use App\Models\Inventory\Warehouse;
 use App\Models\Purchasing\GoodsReceiptNote;
 use App\Models\Purchasing\GoodsReceiptNoteItem;
 use App\Models\Purchasing\PurchaseOrder;
+use App\Services\Accounting\AccountingPolicyManager;
 use App\Services\Base\BaseService;
 use Illuminate\Support\Collection;
 
@@ -22,6 +23,7 @@ class GoodsReceiptNoteService extends BaseService implements GoodsReceiptNoteSer
         private InventoryServiceInterface $inventoryService,
         private PurchaseOrderReceivingService $receivingService,
         private GoodsReceiptNoteNumberGenerator $numberGenerator,
+        private AccountingPolicyManager $policyManager,
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger
     ) {
@@ -271,6 +273,9 @@ class GoodsReceiptNoteService extends BaseService implements GoodsReceiptNoteSer
                     $poItem->receive($item->quantity_received);
                 }
             }
+
+            // Trigger inventory accounting strategy (perpetual: Dr Inventory / Cr GRNI)
+            $this->policyManager->inventory()->onGoodsReceived($grn);
 
             // Update PO receiving status (only for PO-based GRN)
             if ($purchaseOrder) {

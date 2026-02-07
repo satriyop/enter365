@@ -60,12 +60,29 @@ class PaymentService extends BaseService implements PaymentServiceInterface
                 unset($data['bill_id']);
             }
 
+            // Capture currency info from payable (Invoice/Bill)
+            $currency = $data['currency'] ?? 'IDR';
+            $exchangeRate = $data['exchange_rate'] ?? 1;
+            if ($payable) {
+                /** @var Invoice|Bill $payable */
+                $currency = $payable->currency ?? 'IDR';
+                $exchangeRate = (float) ($payable->exchange_rate ?? 1);
+            }
+
+            $amount = $data['amount'];
+            $baseCurrencyAmount = ($currency !== 'IDR' && $exchangeRate > 0)
+                ? (int) round($amount * $exchangeRate)
+                : $amount;
+
             // Create payment record
             $payment = Payment::create([
                 ...$data,
                 'payment_number' => Payment::generatePaymentNumber($data['type']),
                 'payable_type' => $payableType,
                 'payable_id' => $payableId,
+                'currency' => $currency,
+                'exchange_rate' => $exchangeRate,
+                'base_currency_amount' => $baseCurrencyAmount,
                 'created_by' => $this->getUserId(),
             ]);
 
