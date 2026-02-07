@@ -8,7 +8,7 @@
 
 ## Verdict: 4/5 Architecture, 4/5 Production-Readiness
 
-The architecture is excellent — Strategy Pattern, fail-fast validation, transaction safety, double-entry enforcement. All 6 critical issues and all 6 high-severity issues have been resolved. Remaining gaps are 12 medium-severity items.
+The architecture is excellent — Strategy Pattern, fail-fast validation, transaction safety, double-entry enforcement. All 6 critical issues, all 6 high-severity issues, and all 12 medium-severity items have been resolved.
 
 ---
 
@@ -244,10 +244,10 @@ The architecture is excellent — Strategy Pattern, fail-fast validation, transa
 | M6 | ~~FiscalPeriod dual state tracking~~ | **FIXED** — `status` enum is now canonical; `isOpen()`, `canPost()`, `lock()`, `unlock()` use enum; JournalService uses `getStatus()`; booleans kept as sync'd copies |
 | M7 | ~~Deprecated methods on Invoice/Bill still present~~ | **FIXED** — routed OverdueService and DownPaymentService through service layer; removed deprecated `updatePaymentStatus()` and `markAsOverdue()` from both models |
 | M8 | ~~No tests for COGS strategies, inventory strategies, closing strategies, return strategies~~ | **FALSE POSITIVE** — 74 strategy tests already exist (COGS: 22, Inventory: 23, Closing: 20, Returns: 9) |
-| M9 | Manufacturing WIP strategy uses `->get()->sum()` instead of DB aggregation | N+1 risk in `WIPAccountingStrategy` |
-| M10 | Fiscal period overlap validation in controller instead of FormRequest | Business logic leak |
-| M11 | `StoreAccountRequest` doesn't validate parent account type compatibility | Can set Revenue as parent of Asset |
-| M12 | Accounting routes not named (can't use `route()` helper) | `routes/api.php` |
+| M9 | ~~Manufacturing WIP strategy uses `->get()->sum()` instead of DB aggregation~~ | **FIXED** — replaced PHP-side `->get()->sum()` with DB-level `->sum('total_cost')` in both `WIPAccountingStrategy` and `JobCostingStrategy` |
+| M10 | ~~Fiscal period overlap validation in controller instead of FormRequest~~ | **FIXED** — moved overlap validation to `StoreFiscalPeriodRequest::withValidator()`; controller lock/unlock/reopen now use `getStatus()` enum |
+| M11 | ~~`StoreAccountRequest` doesn't validate parent account type compatibility~~ | **FIXED** — added `withValidator()` to both `StoreAccountRequest` and `UpdateAccountRequest` to reject mismatched parent account types |
+| M12 | ~~Accounting routes not named (can't use `route()` helper)~~ | **FIXED** — named all 69 unnamed accounting routes in `routes/api.php` |
 
 ---
 
@@ -326,9 +326,13 @@ Every point where JEs are created in the system:
 11. ~~**H5** — Implement FIFO/Standard Cost valuation~~ — FIXED
 12. ~~**H6** — Fix N+1 in COGS report~~ — FIXED
 
-### Backlog
+### ~~Backlog~~ — ALL DONE
 
-13. **M1-M12** — Medium-severity items
+13. ~~**M1-M4** — Medium-severity items (batch 1)~~ — FIXED `ea29f35`
+14. ~~**M5-M8** — Medium-severity items (batch 2)~~ — FIXED `e299203`
+15. ~~**M9-M12** — Medium-severity items (batch 3)~~ — FIXED
+
+**Bonus fix:** `FiscalPeriodService::reopenPeriod()` — reordered to update period status to Open BEFORE reversing closing entry (previously blocked by closed-period JE creation check)
 
 ---
 

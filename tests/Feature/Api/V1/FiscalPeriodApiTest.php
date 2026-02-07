@@ -86,7 +86,7 @@ describe('Fiscal Period API', function () {
     });
 
     it('cannot lock already locked period', function () {
-        $period = FiscalPeriod::factory()->create(['is_locked' => true]);
+        $period = FiscalPeriod::factory()->locked()->create();
 
         $response = $this->postJson("/api/v1/fiscal-periods/{$period->id}/lock");
 
@@ -94,7 +94,7 @@ describe('Fiscal Period API', function () {
     });
 
     it('can unlock a fiscal period', function () {
-        $period = FiscalPeriod::factory()->create(['is_locked' => true, 'is_closed' => false]);
+        $period = FiscalPeriod::factory()->locked()->create();
 
         $response = $this->postJson("/api/v1/fiscal-periods/{$period->id}/unlock");
 
@@ -103,7 +103,7 @@ describe('Fiscal Period API', function () {
     });
 
     it('cannot unlock closed period', function () {
-        $period = FiscalPeriod::factory()->create(['is_locked' => true, 'is_closed' => true]);
+        $period = FiscalPeriod::factory()->closed()->create();
 
         $response = $this->postJson("/api/v1/fiscal-periods/{$period->id}/unlock");
 

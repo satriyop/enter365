@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Domain\Accounting\FiscalPeriods\Enums\FiscalPeriodStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreFiscalPeriodRequest;
 use App\Http\Resources\Api\V1\FiscalPeriodResource;
@@ -45,24 +46,6 @@ class FiscalPeriodController extends Controller
     {
         $this->authorize('create', FiscalPeriod::class);
 
-        // Check for overlapping periods
-        $overlap = FiscalPeriod::query()
-            ->where(function ($q) use ($request) {
-                $q->whereBetween('start_date', [$request->start_date, $request->end_date])
-                    ->orWhereBetween('end_date', [$request->start_date, $request->end_date])
-                    ->orWhere(function ($q) use ($request) {
-                        $q->where('start_date', '<=', $request->start_date)
-                            ->where('end_date', '>=', $request->end_date);
-                    });
-            })
-            ->exists();
-
-        if ($overlap) {
-            return response()->json([
-                'message' => 'Periode fiskal bertumpang tindih dengan periode yang sudah ada.',
-            ], 422);
-        }
-
         $period = $this->fiscalPeriodService->create($request->validated());
 
         return (new FiscalPeriodResource($period))
@@ -81,13 +64,15 @@ class FiscalPeriodController extends Controller
     {
         $this->authorize('lock', $fiscalPeriod);
 
-        if ($fiscalPeriod->is_closed) {
+        $status = $fiscalPeriod->getStatus();
+
+        if ($status === FiscalPeriodStatus::Closed) {
             return response()->json([
                 'message' => 'Periode yang sudah ditutup tidak bisa dikunci.',
             ], 422);
         }
 
-        if ($fiscalPeriod->is_locked) {
+        if ($status === FiscalPeriodStatus::Locked) {
             return response()->json([
                 'message' => 'Periode sudah dikunci.',
             ], 422);
@@ -105,13 +90,15 @@ class FiscalPeriodController extends Controller
     {
         $this->authorize('unlock', $fiscalPeriod);
 
-        if ($fiscalPeriod->is_closed) {
+        $status = $fiscalPeriod->getStatus();
+
+        if ($status === FiscalPeriodStatus::Closed) {
             return response()->json([
                 'message' => 'Periode yang sudah ditutup tidak bisa dibuka kuncinya.',
             ], 422);
         }
 
-        if (! $fiscalPeriod->is_locked) {
+        if ($status !== FiscalPeriodStatus::Locked) {
             return response()->json([
                 'message' => 'Periode tidak dalam keadaan terkunci.',
             ], 422);
@@ -151,7 +138,7 @@ class FiscalPeriodController extends Controller
     {
         $this->authorize('reopen', $fiscalPeriod);
 
-        if (! $fiscalPeriod->is_closed) {
+        if ($fiscalPeriod->getStatus() !== FiscalPeriodStatus::Closed) {
             return response()->json([
                 'message' => 'Periode belum ditutup.',
             ], 422);

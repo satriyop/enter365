@@ -75,10 +75,8 @@ class WIPAccountingStrategy implements ManufacturingCostStrategy
 
     public function onWorkOrderComplete(WorkOrder $workOrder): ?JournalEntry
     {
-        // Calculate total WIP accumulated for this work order
-        $totalWIP = $workOrder->consumptions()
-            ->get()
-            ->sum(fn ($c) => $c->total_cost);
+        // Calculate total WIP accumulated for this work order (DB aggregation)
+        $totalWIP = (int) $workOrder->consumptions()->sum('total_cost');
 
         if ($totalWIP <= 0) {
             return null;
@@ -116,9 +114,7 @@ class WIPAccountingStrategy implements ManufacturingCostStrategy
 
     public function calculateTotalCost(WorkOrder $workOrder): int
     {
-        $workOrder->loadMissing(['consumptions']);
-
-        return (int) $workOrder->consumptions->sum('total_cost');
+        return (int) $workOrder->consumptions()->sum('total_cost');
     }
 
     public function getIdentifier(): string

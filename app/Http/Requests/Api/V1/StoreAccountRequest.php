@@ -5,6 +5,7 @@ namespace App\Http\Requests\Api\V1;
 use App\Models\Accounting\Account;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StoreAccountRequest extends FormRequest
 {
@@ -25,6 +26,35 @@ class StoreAccountRequest extends FormRequest
             'is_active' => ['boolean'],
             'opening_balance' => ['integer'],
         ];
+    }
+
+    /**
+     * Validate parent account type compatibility.
+     */
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            if ($validator->errors()->isNotEmpty()) {
+                return;
+            }
+
+            $parentId = $this->input('parent_id');
+            if (! $parentId) {
+                return;
+            }
+
+            $parent = Account::find($parentId);
+            if (! $parent) {
+                return;
+            }
+
+            if ($parent->type !== $this->input('type')) {
+                $validator->errors()->add(
+                    'parent_id',
+                    'Tipe akun induk harus sama dengan tipe akun yang dibuat.'
+                );
+            }
+        });
     }
 
     public function messages(): array

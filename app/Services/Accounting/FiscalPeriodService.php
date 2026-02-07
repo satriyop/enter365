@@ -230,15 +230,11 @@ class FiscalPeriodService extends BaseService implements FiscalPeriodServiceInte
         }
 
         return $this->executeInTransaction('reopen_period', function () use ($period) {
-            // Reverse the closing entry if exists
-            if ($period->closingEntry) {
-                $this->journalService->reverseEntry(
-                    $period->closingEntry,
-                    'Pembatalan penutupan periode '.$period->name
-                );
-            }
+            // Save closing entry reference before clearing metadata
+            $closingEntry = $period->closingEntry;
 
-            // Reopen the period
+            // Reopen the period FIRST so reversal JE can be created
+            // (createEntry blocks JEs in closed periods)
             $period->update([
                 'status' => FiscalPeriodStatus::Open,
                 'is_closed' => false,
@@ -249,6 +245,14 @@ class FiscalPeriodService extends BaseService implements FiscalPeriodServiceInte
                 'retained_earnings_amount' => null,
                 'closing_notes' => null,
             ]);
+
+            // Reverse the closing entry if exists
+            if ($closingEntry) {
+                $this->journalService->reverseEntry(
+                    $closingEntry,
+                    'Pembatalan penutupan periode '.$period->name
+                );
+            }
 
             return true;
         }, ['period_id' => $period->id]);

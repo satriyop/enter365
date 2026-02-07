@@ -70,9 +70,7 @@ class JobCostingStrategy implements ManufacturingCostStrategy
 
     public function onWorkOrderComplete(WorkOrder $workOrder): ?JournalEntry
     {
-        $workOrder->loadMissing(['consumptions.product']);
-
-        $totalWIP = $workOrder->consumptions->sum('total_cost');
+        $totalWIP = (int) $workOrder->consumptions()->sum('total_cost');
 
         if ($totalWIP <= 0) {
             return null;
@@ -110,9 +108,7 @@ class JobCostingStrategy implements ManufacturingCostStrategy
 
     public function calculateTotalCost(WorkOrder $workOrder): int
     {
-        $workOrder->loadMissing(['consumptions']);
-
-        return (int) $workOrder->consumptions->sum('total_cost');
+        return (int) $workOrder->consumptions()->sum('total_cost');
     }
 
     public function getIdentifier(): string

@@ -104,7 +104,7 @@ describe('FiscalPeriodService - closePeriod', function () {
     });
 
     it('returns error when closing already closed period', function () {
-        $period = FiscalPeriod::factory()->create(['is_closed' => true]);
+        $period = FiscalPeriod::factory()->closed()->create();
 
         $result = $this->service->closePeriodLegacy($period);
 
@@ -176,11 +176,7 @@ describe('FiscalPeriodService - closePeriod', function () {
 describe('FiscalPeriodService - reopenPeriod', function () {
 
     it('reopens a closed fiscal period', function () {
-        $period = FiscalPeriod::factory()->create([
-            'is_closed' => true,
-            'is_locked' => true,
-            'closed_at' => now(),
-        ]);
+        $period = FiscalPeriod::factory()->closed()->create();
 
         $result = $this->service->reopenPeriod($period);
 
@@ -193,11 +189,10 @@ describe('FiscalPeriodService - reopenPeriod', function () {
     });
 
     it('reverses closing entry when reopening', function () {
-        // Create period with closing entry
+        // Use dates that don't overlap with seeder periods (2025/2026)
         $period = FiscalPeriod::factory()->create([
-            'start_date' => now()->subMonth()->startOfMonth(),
-            'end_date' => now()->subMonth()->endOfMonth(),
-            'is_closed' => false,
+            'start_date' => '2023-07-01',
+            'end_date' => '2023-12-31',
         ]);
 
         // Create some activity
@@ -207,6 +202,7 @@ describe('FiscalPeriodService - reopenPeriod', function () {
         $entry = JournalEntry::factory()->create([
             'is_posted' => true,
             'fiscal_period_id' => $period->id,
+            'entry_date' => '2023-09-15',
         ]);
 
         JournalEntryLine::factory()->create([
@@ -265,8 +261,7 @@ describe('FiscalPeriodService - reopenPeriod', function () {
             'credit' => 500000,
         ]);
 
-        $period = FiscalPeriod::factory()->create([
-            'is_closed' => true,
+        $period = FiscalPeriod::factory()->closed()->create([
             'closing_entry_id' => $closingEntry->id,
             'retained_earnings_amount' => 500000,
             'closing_notes' => 'Year end close',
@@ -316,7 +311,7 @@ describe('FiscalPeriodService - getClosingChecklist', function () {
 describe('FiscalPeriodService - business rules', function () {
 
     it('cannot post to closed fiscal period', function () {
-        $closedPeriod = FiscalPeriod::factory()->create(['is_closed' => true]);
+        $closedPeriod = FiscalPeriod::factory()->closed()->create();
 
         $entry = JournalEntry::factory()->create([
             'is_posted' => false,
@@ -329,7 +324,7 @@ describe('FiscalPeriodService - business rules', function () {
 
         $journalService = app(\App\Services\Accounting\JournalService::class);
         $journalService->postEntry($entry);
-    })->throws(BusinessRuleException::class, 'closed fiscal period');
+    })->throws(BusinessRuleException::class, 'sudah ditutup');
 
     it('period dates must be sequential', function () {
         FiscalPeriod::factory()->create([

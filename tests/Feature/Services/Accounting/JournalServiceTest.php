@@ -226,7 +226,7 @@ describe('JournalService - postEntry', function () {
     })->throws(BusinessRuleException::class, 'at least two lines');
 
     it('throws exception when posting to closed fiscal period', function () {
-        $closedPeriod = FiscalPeriod::factory()->create(['is_closed' => true]);
+        $closedPeriod = FiscalPeriod::factory()->closed()->create();
         $cashAccount = Account::where('code', '1-1000')->first();
         $revenueAccount = Account::where('code', '4-1001')->first();
 
@@ -250,7 +250,7 @@ describe('JournalService - postEntry', function () {
         ]);
 
         $this->service->postEntry($entry);
-    })->throws(BusinessRuleException::class, 'closed fiscal period');
+    })->throws(BusinessRuleException::class, 'sudah ditutup');
 
 });
 

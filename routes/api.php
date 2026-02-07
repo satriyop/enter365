@@ -138,8 +138,8 @@ Route::prefix('v1')->group(function () {
 
         // Chart of Accounts (Bagan Akun)
         Route::apiResource('accounts', AccountController::class);
-        Route::get('accounts/{account}/balance', [AccountController::class, 'balance']);
-        Route::get('accounts/{account}/ledger', [AccountController::class, 'ledger']);
+        Route::get('accounts/{account}/balance', [AccountController::class, 'balance'])->name('accounts.balance');
+        Route::get('accounts/{account}/ledger', [AccountController::class, 'ledger'])->name('accounts.ledger');
 
         // Contacts (Pelanggan & Supplier)
         Route::apiResource('contacts', ContactController::class);
@@ -185,11 +185,11 @@ Route::prefix('v1')->group(function () {
         });
 
         // Journal Entries (Jurnal Umum)
-        Route::get('journal-entries', [JournalEntryController::class, 'index']);
-        Route::post('journal-entries', [JournalEntryController::class, 'store']);
-        Route::get('journal-entries/{journal_entry}', [JournalEntryController::class, 'show']);
-        Route::post('journal-entries/{journal_entry}/post', [JournalEntryController::class, 'post']);
-        Route::post('journal-entries/{journal_entry}/reverse', [JournalEntryController::class, 'reverse']);
+        Route::get('journal-entries', [JournalEntryController::class, 'index'])->name('journal-entries.index');
+        Route::post('journal-entries', [JournalEntryController::class, 'store'])->name('journal-entries.store');
+        Route::get('journal-entries/{journal_entry}', [JournalEntryController::class, 'show'])->name('journal-entries.show');
+        Route::post('journal-entries/{journal_entry}/post', [JournalEntryController::class, 'post'])->name('journal-entries.post');
+        Route::post('journal-entries/{journal_entry}/reverse', [JournalEntryController::class, 'reverse'])->name('journal-entries.reverse');
 
         // Quotations (Penawaran)
         Route::middleware('feature:quotations')->group(function () {
@@ -528,10 +528,10 @@ Route::prefix('v1')->group(function () {
         });
 
         // Payments (Pembayaran)
-        Route::get('payments', [PaymentController::class, 'index']);
-        Route::post('payments', [PaymentController::class, 'store']);
-        Route::get('payments/{payment}', [PaymentController::class, 'show']);
-        Route::post('payments/{payment}/void', [PaymentController::class, 'void']);
+        Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
+        Route::post('payments', [PaymentController::class, 'store'])->name('payments.store');
+        Route::get('payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
+        Route::post('payments/{payment}/void', [PaymentController::class, 'void'])->name('payments.void');
 
         // Recurring Templates (Template Berulang)
         Route::middleware('feature:recurring')->group(function () {
@@ -543,40 +543,40 @@ Route::prefix('v1')->group(function () {
 
         // Fiscal Periods (Periode Fiskal)
         Route::apiResource('fiscal-periods', FiscalPeriodController::class)->only(['index', 'show', 'store']);
-        Route::post('fiscal-periods/{fiscal_period}/lock', [FiscalPeriodController::class, 'lock']);
-        Route::post('fiscal-periods/{fiscal_period}/unlock', [FiscalPeriodController::class, 'unlock']);
-        Route::post('fiscal-periods/{fiscal_period}/close', [FiscalPeriodController::class, 'close']);
-        Route::post('fiscal-periods/{fiscal_period}/reopen', [FiscalPeriodController::class, 'reopen']);
-        Route::get('fiscal-periods/{fiscal_period}/closing-checklist', [FiscalPeriodController::class, 'closingChecklist']);
+        Route::post('fiscal-periods/{fiscal_period}/lock', [FiscalPeriodController::class, 'lock'])->name('fiscal-periods.lock');
+        Route::post('fiscal-periods/{fiscal_period}/unlock', [FiscalPeriodController::class, 'unlock'])->name('fiscal-periods.unlock');
+        Route::post('fiscal-periods/{fiscal_period}/close', [FiscalPeriodController::class, 'close'])->name('fiscal-periods.close');
+        Route::post('fiscal-periods/{fiscal_period}/reopen', [FiscalPeriodController::class, 'reopen'])->name('fiscal-periods.reopen');
+        Route::get('fiscal-periods/{fiscal_period}/closing-checklist', [FiscalPeriodController::class, 'closingChecklist'])->name('fiscal-periods.closing-checklist');
 
         // Budgets (Anggaran)
         Route::middleware('feature:budgeting')->group(function () {
             Route::apiResource('budgets', BudgetController::class);
-            Route::post('budgets/{budget}/lines', [BudgetController::class, 'addLine']);
-            Route::put('budgets/{budget}/lines/{line}', [BudgetController::class, 'updateLine']);
-            Route::delete('budgets/{budget}/lines/{line}', [BudgetController::class, 'deleteLine']);
-            Route::post('budgets/{budget}/approve', [BudgetController::class, 'approve']);
-            Route::post('budgets/{budget}/reopen', [BudgetController::class, 'reopen']);
-            Route::post('budgets/{budget}/close', [BudgetController::class, 'close']);
-            Route::post('budgets/{budget}/copy', [BudgetController::class, 'copy']);
-            Route::get('budgets/{budget}/comparison', [BudgetController::class, 'comparison']);
-            Route::get('budgets/{budget}/monthly-breakdown', [BudgetController::class, 'monthlyBreakdown']);
-            Route::get('budgets/{budget}/summary', [BudgetController::class, 'summary']);
-            Route::get('budgets/{budget}/over-budget', [BudgetController::class, 'overBudget']);
+            Route::post('budgets/{budget}/lines', [BudgetController::class, 'addLine'])->name('budgets.lines.store');
+            Route::put('budgets/{budget}/lines/{line}', [BudgetController::class, 'updateLine'])->name('budgets.lines.update');
+            Route::delete('budgets/{budget}/lines/{line}', [BudgetController::class, 'deleteLine'])->name('budgets.lines.destroy');
+            Route::post('budgets/{budget}/approve', [BudgetController::class, 'approve'])->name('budgets.approve');
+            Route::post('budgets/{budget}/reopen', [BudgetController::class, 'reopen'])->name('budgets.reopen');
+            Route::post('budgets/{budget}/close', [BudgetController::class, 'close'])->name('budgets.close');
+            Route::post('budgets/{budget}/copy', [BudgetController::class, 'copy'])->name('budgets.copy');
+            Route::get('budgets/{budget}/comparison', [BudgetController::class, 'comparison'])->name('budgets.comparison');
+            Route::get('budgets/{budget}/monthly-breakdown', [BudgetController::class, 'monthlyBreakdown'])->name('budgets.monthly-breakdown');
+            Route::get('budgets/{budget}/summary', [BudgetController::class, 'summary'])->name('budgets.summary');
+            Route::get('budgets/{budget}/over-budget', [BudgetController::class, 'overBudget'])->name('budgets.over-budget');
         });
 
         // Bank Reconciliation (Rekonsiliasi Bank)
         Route::middleware('feature:bank_reconciliation')->prefix('bank-transactions')->group(function () {
-            Route::get('/', [BankReconciliationController::class, 'index']);
-            Route::post('/', [BankReconciliationController::class, 'store']);
-            Route::get('/summary', [BankReconciliationController::class, 'summary']);
-            Route::post('/bulk-reconcile', [BankReconciliationController::class, 'bulkReconcile']);
-            Route::get('/{bank_transaction}', [BankReconciliationController::class, 'show']);
-            Route::delete('/{bank_transaction}', [BankReconciliationController::class, 'destroy']);
-            Route::post('/{bank_transaction}/match-payment/{payment}', [BankReconciliationController::class, 'matchToPayment']);
-            Route::post('/{bank_transaction}/unmatch', [BankReconciliationController::class, 'unmatch']);
-            Route::post('/{bank_transaction}/reconcile', [BankReconciliationController::class, 'reconcile']);
-            Route::get('/{bank_transaction}/suggest-matches', [BankReconciliationController::class, 'suggestMatches']);
+            Route::get('/', [BankReconciliationController::class, 'index'])->name('bank-transactions.index');
+            Route::post('/', [BankReconciliationController::class, 'store'])->name('bank-transactions.store');
+            Route::get('/summary', [BankReconciliationController::class, 'summary'])->name('bank-transactions.summary');
+            Route::post('/bulk-reconcile', [BankReconciliationController::class, 'bulkReconcile'])->name('bank-transactions.bulk-reconcile');
+            Route::get('/{bank_transaction}', [BankReconciliationController::class, 'show'])->name('bank-transactions.show');
+            Route::delete('/{bank_transaction}', [BankReconciliationController::class, 'destroy'])->name('bank-transactions.destroy');
+            Route::post('/{bank_transaction}/match-payment/{payment}', [BankReconciliationController::class, 'matchToPayment'])->name('bank-transactions.match-payment');
+            Route::post('/{bank_transaction}/unmatch', [BankReconciliationController::class, 'unmatch'])->name('bank-transactions.unmatch');
+            Route::post('/{bank_transaction}/reconcile', [BankReconciliationController::class, 'reconcile'])->name('bank-transactions.reconcile');
+            Route::get('/{bank_transaction}/suggest-matches', [BankReconciliationController::class, 'suggestMatches'])->name('bank-transactions.suggest-matches');
         });
 
         // Attachments (Lampiran)
@@ -603,54 +603,54 @@ Route::prefix('v1')->group(function () {
         // Financial Reports (Laporan Keuangan)
         Route::prefix('reports')->group(function () {
             // Basic Reports
-            Route::get('trial-balance', [ReportController::class, 'trialBalance']);
-            Route::get('balance-sheet', [ReportController::class, 'balanceSheet']);
-            Route::get('income-statement', [ReportController::class, 'incomeStatement']);
-            Route::get('general-ledger', [ReportController::class, 'generalLedger']);
+            Route::get('trial-balance', [ReportController::class, 'trialBalance'])->name('reports.trial-balance');
+            Route::get('balance-sheet', [ReportController::class, 'balanceSheet'])->name('reports.balance-sheet');
+            Route::get('income-statement', [ReportController::class, 'incomeStatement'])->name('reports.income-statement');
+            Route::get('general-ledger', [ReportController::class, 'generalLedger'])->name('reports.general-ledger');
 
             // Aging Reports
-            Route::get('receivable-aging', [ReportController::class, 'receivableAging']);
-            Route::get('payable-aging', [ReportController::class, 'payableAging']);
-            Route::get('contacts/{contact}/aging', [ReportController::class, 'contactAging']);
+            Route::get('receivable-aging', [ReportController::class, 'receivableAging'])->name('reports.receivable-aging');
+            Route::get('payable-aging', [ReportController::class, 'payableAging'])->name('reports.payable-aging');
+            Route::get('contacts/{contact}/aging', [ReportController::class, 'contactAging'])->name('reports.contact-aging');
 
             // Tax Reports (PPN)
-            Route::get('ppn-summary', [ReportController::class, 'ppnSummary']);
-            Route::get('ppn-monthly', [ReportController::class, 'ppnMonthly']);
-            Route::get('tax-invoice-list', [ReportController::class, 'taxInvoiceList']);
-            Route::get('input-tax-list', [ReportController::class, 'inputTaxList']);
+            Route::get('ppn-summary', [ReportController::class, 'ppnSummary'])->name('reports.ppn-summary');
+            Route::get('ppn-monthly', [ReportController::class, 'ppnMonthly'])->name('reports.ppn-monthly');
+            Route::get('tax-invoice-list', [ReportController::class, 'taxInvoiceList'])->name('reports.tax-invoice-list');
+            Route::get('input-tax-list', [ReportController::class, 'inputTaxList'])->name('reports.input-tax-list');
 
             // Cash Flow Reports
-            Route::get('cash-flow', [ReportController::class, 'cashFlow']);
-            Route::get('daily-cash-movement', [ReportController::class, 'dailyCashMovement']);
+            Route::get('cash-flow', [ReportController::class, 'cashFlow'])->name('reports.cash-flow');
+            Route::get('daily-cash-movement', [ReportController::class, 'dailyCashMovement'])->name('reports.daily-cash-movement');
 
             // Project Reports
-            Route::get('project-profitability', [ReportController::class, 'projectProfitability']);
-            Route::get('projects/{project}/profitability', [ReportController::class, 'projectProfitabilityDetail']);
-            Route::get('project-cost-analysis', [ReportController::class, 'projectCostAnalysis']);
+            Route::get('project-profitability', [ReportController::class, 'projectProfitability'])->name('reports.project-profitability');
+            Route::get('projects/{project}/profitability', [ReportController::class, 'projectProfitabilityDetail'])->name('reports.project-profitability-detail');
+            Route::get('project-cost-analysis', [ReportController::class, 'projectCostAnalysis'])->name('reports.project-cost-analysis');
 
             // Work Order Reports
-            Route::get('work-order-costs', [ReportController::class, 'workOrderCosts']);
-            Route::get('work-orders/{workOrder}/costs', [ReportController::class, 'workOrderCostDetail']);
-            Route::get('cost-variance', [ReportController::class, 'costVariance']);
+            Route::get('work-order-costs', [ReportController::class, 'workOrderCosts'])->name('reports.work-order-costs');
+            Route::get('work-orders/{workOrder}/costs', [ReportController::class, 'workOrderCostDetail'])->name('reports.work-order-cost-detail');
+            Route::get('cost-variance', [ReportController::class, 'costVariance'])->name('reports.cost-variance');
 
             // Subcontractor Reports
-            Route::get('subcontractor-summary', [ReportController::class, 'subcontractorSummary']);
-            Route::get('subcontractors/{contact}/summary', [ReportController::class, 'subcontractorDetail']);
-            Route::get('subcontractor-retention', [ReportController::class, 'subcontractorRetention']);
+            Route::get('subcontractor-summary', [ReportController::class, 'subcontractorSummary'])->name('reports.subcontractor-summary');
+            Route::get('subcontractors/{contact}/summary', [ReportController::class, 'subcontractorDetail'])->name('reports.subcontractor-detail');
+            Route::get('subcontractor-retention', [ReportController::class, 'subcontractorRetention'])->name('reports.subcontractor-retention');
 
             // Equity Reports
-            Route::get('changes-in-equity', [ReportController::class, 'changesInEquity']);
+            Route::get('changes-in-equity', [ReportController::class, 'changesInEquity'])->name('reports.changes-in-equity');
 
             // Bank Reconciliation Reports
-            Route::get('accounts/{account}/bank-reconciliation', [ReportController::class, 'bankReconciliation']);
-            Route::get('accounts/{account}/bank-reconciliation/outstanding', [ReportController::class, 'bankReconciliationOutstanding']);
+            Route::get('accounts/{account}/bank-reconciliation', [ReportController::class, 'bankReconciliation'])->name('reports.bank-reconciliation');
+            Route::get('accounts/{account}/bank-reconciliation/outstanding', [ReportController::class, 'bankReconciliationOutstanding'])->name('reports.bank-reconciliation-outstanding');
 
             // COGS Reports (Harga Pokok Penjualan)
-            Route::get('cogs-summary', [ReportController::class, 'cogsSummary']);
-            Route::get('cogs-by-product', [ReportController::class, 'cogsByProduct']);
-            Route::get('cogs-by-category', [ReportController::class, 'cogsByCategory']);
-            Route::get('cogs-monthly-trend', [ReportController::class, 'cogsMonthlyTrend']);
-            Route::get('products/{product}/cogs', [ReportController::class, 'productCOGSDetail']);
+            Route::get('cogs-summary', [ReportController::class, 'cogsSummary'])->name('reports.cogs-summary');
+            Route::get('cogs-by-product', [ReportController::class, 'cogsByProduct'])->name('reports.cogs-by-product');
+            Route::get('cogs-by-category', [ReportController::class, 'cogsByCategory'])->name('reports.cogs-by-category');
+            Route::get('cogs-monthly-trend', [ReportController::class, 'cogsMonthlyTrend'])->name('reports.cogs-monthly-trend');
+            Route::get('products/{product}/cogs', [ReportController::class, 'productCOGSDetail'])->name('reports.product-cogs-detail');
         });
 
         // Export Reports (Ekspor Laporan)
@@ -746,8 +746,8 @@ Route::prefix('v1')->group(function () {
         });
 
         // Accounting Policies (Kebijakan Akuntansi)
-        Route::get('accounting-policies', [AccountingPolicyController::class, 'show']);
-        Route::put('accounting-policies', [AccountingPolicyController::class, 'update']);
+        Route::get('accounting-policies', [AccountingPolicyController::class, 'show'])->name('accounting-policies.show');
+        Route::put('accounting-policies', [AccountingPolicyController::class, 'update'])->name('accounting-policies.update');
 
     }); // End of auth:sanctum middleware group
 

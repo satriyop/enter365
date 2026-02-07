@@ -5,6 +5,7 @@ namespace App\Http\Requests\Api\V1;
 use App\Models\Accounting\Account;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class UpdateAccountRequest extends FormRequest
 {
@@ -28,5 +29,37 @@ class UpdateAccountRequest extends FormRequest
             'is_active' => ['boolean'],
             'opening_balance' => ['integer'],
         ];
+    }
+
+    /**
+     * Validate parent account type compatibility.
+     */
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            if ($validator->errors()->isNotEmpty()) {
+                return;
+            }
+
+            $parentId = $this->input('parent_id');
+            if (! $parentId) {
+                return;
+            }
+
+            $parent = Account::find($parentId);
+            if (! $parent) {
+                return;
+            }
+
+            $account = $this->route('account');
+            $type = $this->input('type', $account->type ?? null);
+
+            if ($type && $parent->type !== $type) {
+                $validator->errors()->add(
+                    'parent_id',
+                    'Tipe akun induk harus sama dengan tipe akun.'
+                );
+            }
+        });
     }
 }
