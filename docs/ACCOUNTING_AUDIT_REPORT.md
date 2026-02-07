@@ -128,11 +128,16 @@ The architecture is excellent — Strategy Pattern, fail-fast validation, transa
 
 ## High-Severity Issues
 
-### H1. No Pessimistic Locking on Invoice/Bill Posting
+### H1. No Pessimistic Locking on Invoice/Bill Posting — FIXED
+
+**Status:** FIXED in commit `TBD`
 
 **Impact:** Two concurrent requests can both pass state machine check and create duplicate journal entries.
 
-`PaymentService` correctly uses `lockForUpdate()`. `InvoiceService` and `BillService` do **not**.
+**Fix:**
+- `InvoiceService::post()`: Added `Invoice::lockForUpdate()->findOrFail()` inside existing transaction
+- `BillService::post()`: Wrapped in `executeInTransaction()` AND added `Bill::lockForUpdate()->findOrFail()` — previously had no transaction at all
+- Matches the pattern used by `PaymentService` which correctly uses `lockForUpdate()`
 
 **Files:**
 - `app/Services/Sales/InvoiceService.php`
@@ -140,16 +145,17 @@ The architecture is excellent — Strategy Pattern, fail-fast validation, transa
 
 ---
 
-### H2. Down Payment Application — No Journal Entry
+### H2. Down Payment Application — False Positive (Already Implemented)
 
-When a down payment is applied to an invoice, no JE is created. Expected:
+**Status:** Already implemented — audit finding was incorrect.
 
-```
-Dr: Down Payment Receivable
-Cr: Accounts Receivable
-```
+`DownPaymentService::createApplicationJournalEntry()` exists and IS called from both `applyToInvoice()` and `applyToBill()`:
+- Receivable DP → Invoice: `Dr Uang Muka Penjualan (2-1700), Cr Piutang (1-1100)`
+- Payable DP → Bill: `Dr Hutang (2-1100), Cr Uang Muka Pembelian (1-1700)`
 
-**File:** `app/Services/Sales/DownPaymentService.php` ~line 117-171
+**Tests added:** `DownPaymentServiceTest` now covers `applyToInvoice` and `applyToBill` with JE line verification.
+
+**File:** `app/Services/Sales/DownPaymentService.php` lines 475-539
 
 ---
 
@@ -266,10 +272,13 @@ Every point where JEs are created in the system:
 5. ~~**C5** — Fix weighted average COGS across all warehouses in `COGSOnInvoiceStrategy`~~ — FIXED `1f95cfd`
 6. ~~**C6** — Implement GRNI clearing in `JournalService::postBill()` for perpetual mode~~ — FIXED `1f95cfd`
 
-### Next Priority (High Severity)
+### ~~Next Priority (High Severity — H1/H2)~~ — DONE
 
-7. **H1** — Add `lockForUpdate()` in `InvoiceService::post()` and `BillService::post()`
-8. **H2** — Create JE for down payment application
+7. ~~**H1** — Add `lockForUpdate()` in `InvoiceService::post()` and `BillService::post()`~~ — FIXED
+8. ~~**H2** — DP application JE already existed (false positive) — tests added~~ — VERIFIED
+
+### Next Priority (High Severity — H3-H6)
+
 9. **H3** — Add discount contra accounts
 10. **H4** — Validate cash account type in `StorePaymentRequest`
 

@@ -169,25 +169,30 @@ class BillService implements BillServiceInterface
      */
     public function post(Bill $bill): Bill
     {
-        if (! $bill->stateMachine()->canPost()) {
-            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
-                'Bill',
-                'diposting',
-                $bill->status->value,
-                'draft'
-            );
-        }
+        return $this->executeInTransaction('post', function () use ($bill) {
+            // Pessimistic lock to prevent duplicate posting from concurrent requests
+            $bill = Bill::lockForUpdate()->findOrFail($bill->id);
 
-        $this->journalService->postBill($bill);
+            if (! $bill->stateMachine()->canPost()) {
+                throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                    'Bill',
+                    'diposting',
+                    $bill->status->value,
+                    'draft'
+                );
+            }
 
-        $bill->transitionTo(DocumentStatus::Received, $this->getUserId());
+            $this->journalService->postBill($bill);
 
-        AuditLog::log(AuditLog::ACTION_POSTED, $bill, null, [
-            'status' => DocumentStatus::Received->value,
-            'total_amount' => $bill->total_amount,
-        ]);
+            $bill->transitionTo(DocumentStatus::Received, $this->getUserId());
 
-        return $bill->fresh(['contact', 'items', 'journalEntry.lines.account']);
+            AuditLog::log(AuditLog::ACTION_POSTED, $bill, null, [
+                'status' => DocumentStatus::Received->value,
+                'total_amount' => $bill->total_amount,
+            ]);
+
+            return $bill->fresh(['contact', 'items', 'journalEntry.lines.account']);
+        }, ['bill_id' => $bill->id, 'total_amount' => $bill->total_amount]);
     }
 
     /**

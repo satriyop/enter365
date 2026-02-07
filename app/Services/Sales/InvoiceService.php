@@ -189,6 +189,9 @@ class InvoiceService implements InvoiceServiceInterface
     public function post(Invoice $invoice): Invoice
     {
         return $this->executeInTransaction('post', function () use ($invoice) {
+            // Pessimistic lock to prevent duplicate posting from concurrent requests
+            $invoice = Invoice::lockForUpdate()->findOrFail($invoice->id);
+
             if (! $this->domainFactory->stateMachine($invoice)->canPost()) {
                 throw StateTransitionException::actionNotAvailable(
                     'posting',
