@@ -30,6 +30,8 @@ class JournalEntry extends Model
 
     public const SOURCE_SALES_RETURN = 'sales_return';
 
+    public const SOURCE_FX_REVALUATION = 'fx_revaluation';
+
     protected $fillable = [
         'entry_number',
         'entry_date',

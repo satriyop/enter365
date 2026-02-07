@@ -14,6 +14,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $debit
  * @property int $credit
  * @property int|null $balance
+ * @property string|null $currency_code
+ * @property int|null $amount_currency
+ * @property float|null $exchange_rate
  * @property-read \App\Models\Accounting\JournalEntry $journalEntry
  * @property-read \App\Models\Accounting\Account $account
  */
@@ -27,6 +30,9 @@ class JournalEntryLine extends Model
         'description',
         'debit',
         'credit',
+        'currency_code',
+        'amount_currency',
+        'exchange_rate',
     ];
 
     protected function casts(): array
@@ -34,6 +40,8 @@ class JournalEntryLine extends Model
         return [
             'debit' => 'integer',
             'credit' => 'integer',
+            'amount_currency' => 'integer',
+            'exchange_rate' => 'decimal:4',
         ];
     }
 

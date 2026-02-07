@@ -37,7 +37,7 @@ class JournalService extends BaseService implements JournalServiceInterface
      *     reference?: string,
      *     source_type?: string,
      *     source_id?: int,
-     *     lines: array<array{account_id: int, debit?: int, credit?: int, description?: string}>
+     *     lines: array<array{account_id: int, debit?: int, credit?: int, description?: string, currency_code?: string|null, amount_currency?: int|null, exchange_rate?: float|null}>
      * } $data
      */
     public function createEntry(array $data, bool $autoPost = false): JournalEntry
@@ -94,6 +94,9 @@ class JournalService extends BaseService implements JournalServiceInterface
                     'description' => $lineData['description'] ?? null,
                     'debit' => $lineData['debit'] ?? 0,
                     'credit' => $lineData['credit'] ?? 0,
+                    'currency_code' => $lineData['currency_code'] ?? null,
+                    'amount_currency' => $lineData['amount_currency'] ?? null,
+                    'exchange_rate' => $lineData['exchange_rate'] ?? null,
                 ]);
             }
 
@@ -178,6 +181,9 @@ class JournalService extends BaseService implements JournalServiceInterface
                     'description' => $line->description,
                     'debit' => $line->credit, // Swap
                     'credit' => $line->debit, // Swap
+                    'currency_code' => $line->currency_code,
+                    'amount_currency' => $line->amount_currency,
+                    'exchange_rate' => $line->exchange_rate,
                 ];
             }
 
@@ -214,6 +220,26 @@ class JournalService extends BaseService implements JournalServiceInterface
         }
 
         return (int) round($amount * $exchangeRate);
+    }
+
+    /**
+     * Build currency metadata fields for a JE line (IS-M1 audit trail).
+     *
+     * Returns empty array for IDR transactions (columns stay NULL).
+     *
+     * @return array{currency_code?: string, amount_currency?: int, exchange_rate?: float}
+     */
+    private function currencyMeta(string $currency, int $originalAmount, float $exchangeRate): array
+    {
+        if ($currency === 'IDR') {
+            return [];
+        }
+
+        return [
+            'currency_code' => $currency,
+            'amount_currency' => $originalAmount,
+            'exchange_rate' => $exchangeRate,
+        ];
     }
 
     /**
@@ -257,6 +283,7 @@ class JournalService extends BaseService implements JournalServiceInterface
                 'description' => 'Diskon penjualan '.$invoice->invoice_number,
                 'debit' => $discountBase,
                 'credit' => 0,
+                ...$this->currencyMeta($currency, $invoice->discount_amount, $exchangeRate),
             ];
             $totalDebits += $discountBase;
         }
@@ -278,6 +305,7 @@ class JournalService extends BaseService implements JournalServiceInterface
                 'description' => 'Pendapatan '.$invoice->invoice_number,
                 'debit' => 0,
                 'credit' => $revenueBase,
+                ...$this->currencyMeta($currency, $amount, $exchangeRate),
             ];
             $totalCredits += $revenueBase;
         }
@@ -290,6 +318,7 @@ class JournalService extends BaseService implements JournalServiceInterface
                 'description' => 'PPN Keluaran '.$invoice->invoice_number,
                 'debit' => 0,
                 'credit' => $taxBase,
+                ...$this->currencyMeta($currency, $invoice->tax_amount, $exchangeRate),
             ];
             $totalCredits += $taxBase;
         }
@@ -301,6 +330,7 @@ class JournalService extends BaseService implements JournalServiceInterface
             'description' => 'Piutang '.$invoice->contact->name,
             'debit' => $arAmount,
             'credit' => 0,
+            ...$this->currencyMeta($currency, $invoice->total_amount, $exchangeRate),
         ]);
 
         $entryDate = $invoice->invoice_date;
@@ -391,6 +421,7 @@ class JournalService extends BaseService implements JournalServiceInterface
                 'description' => 'Pembelian '.$bill->bill_number,
                 'debit' => $amountBase,
                 'credit' => 0,
+                ...$this->currencyMeta($currency, $amount, $exchangeRate),
             ];
             $totalDebits += $amountBase;
         }
@@ -403,6 +434,7 @@ class JournalService extends BaseService implements JournalServiceInterface
                 'description' => 'PPN Masukan '.$bill->bill_number,
                 'debit' => $taxBase,
                 'credit' => 0,
+                ...$this->currencyMeta($currency, $bill->tax_amount, $exchangeRate),
             ];
             $totalDebits += $taxBase;
         }
@@ -415,6 +447,7 @@ class JournalService extends BaseService implements JournalServiceInterface
                 'description' => 'Diskon pembelian '.$bill->bill_number,
                 'debit' => 0,
                 'credit' => $discountBase,
+                ...$this->currencyMeta($currency, $bill->discount_amount, $exchangeRate),
             ];
             $totalCredits += $discountBase;
         }
@@ -426,6 +459,7 @@ class JournalService extends BaseService implements JournalServiceInterface
             'description' => 'Utang '.$bill->contact->name,
             'debit' => 0,
             'credit' => $apAmount,
+            ...$this->currencyMeta($currency, $bill->total_amount, $exchangeRate),
         ];
 
         $entryDate = $bill->bill_date;
@@ -458,70 +492,127 @@ class JournalService extends BaseService implements JournalServiceInterface
      */
     public function postPayment(Payment $payment): JournalEntry
     {
-        // Fail-fast: validate default accounts exist
+        $currency = $payment->currency ?? 'IDR';
+        $paymentRate = (float) ($payment->exchange_rate ?? 1);
+
+        // Determine if there is a payable with a different rate (IS-H4: realized FX)
+        $payable = $payment->payable;
+        $invoiceRate = $paymentRate;
+        if ($payable && $currency !== 'IDR') {
+            $invoiceRate = (float) ($payable->exchange_rate ?? 1);
+        }
+
+        // Fail-fast: validate required accounts
+        $requiredCodes = ['1-1100', '2-1100'];
+        $hasFx = $currency !== 'IDR' && abs($paymentRate - $invoiceRate) > 0.0001;
+        if ($hasFx) {
+            $requiredCodes[] = config('accounting.default_accounts.foreign_exchange_gain');
+            $requiredCodes[] = config('accounting.default_accounts.foreign_exchange_loss');
+        }
         $defaultAccounts = $this->accountLookup->findByCodesOrFail(
-            ['1-1100', '2-1100'],
+            array_unique($requiredCodes),
             'posting payment'
         );
 
-        // Use pre-computed base currency amount, or convert on the fly
-        $baseAmount = $payment->base_currency_amount
-            ?? $this->toBaseCurrency(
-                $payment->amount,
-                $payment->currency ?? 'IDR',
-                (float) ($payment->exchange_rate ?? 1)
-            );
+        // Cash amount at payment rate, AR/AP amount at invoice rate
+        $cashBase = $this->toBaseCurrency($payment->amount, $currency, $paymentRate);
+        $arApBase = $this->toBaseCurrency($payment->amount, $currency, $invoiceRate);
+        $fxDiff = $cashBase - $arApBase; // positive = gain for receive, loss for send
+
+        $currencyMetaPaymentRate = $this->currencyMeta($currency, $payment->amount, $paymentRate);
+        $currencyMetaInvoiceRate = $this->currencyMeta($currency, $payment->amount, $invoiceRate);
 
         $lines = [];
 
         if ($payment->type === Payment::TYPE_RECEIVE) {
-            // Receiving payment from customer
             $receivableAccount = $defaultAccounts->get('1-1100');
-
-            // Get the invoice's receivable account if linked
-            if ($payment->payable_type === Invoice::class && $payment->payable) {
-                $receivableAccount = $payment->payable->receivableAccount ?? $receivableAccount;
+            if ($payment->payable_type === Invoice::class && $payable) {
+                $receivableAccount = $payable->receivableAccount ?? $receivableAccount;
             }
 
-            // Debit: Cash/Bank
+            // Dr Cash/Bank at payment rate
             $lines[] = [
                 'account_id' => $payment->cash_account_id,
                 'description' => 'Penerimaan dari '.$payment->contact->name,
-                'debit' => $baseAmount,
+                'debit' => $cashBase,
                 'credit' => 0,
+                ...$currencyMetaPaymentRate,
             ];
 
-            // Credit: Accounts Receivable
+            // Cr AR at invoice rate
             $lines[] = [
                 'account_id' => $receivableAccount->id,
                 'description' => 'Pelunasan piutang '.$payment->contact->name,
                 'debit' => 0,
-                'credit' => $baseAmount,
+                'credit' => $arApBase,
+                ...$currencyMetaInvoiceRate,
             ];
-        } else {
-            // Sending payment to supplier
-            $payableAccount = $defaultAccounts->get('2-1100');
 
-            // Get the bill's payable account if linked
-            if ($payment->payable_type === Bill::class && $payment->payable) {
-                $payableAccount = $payment->payable->payableAccount ?? $payableAccount;
+            // FX gain/loss line (IS-H4)
+            if ($hasFx) {
+                if ($fxDiff > 0) {
+                    // FX Gain: Cash > AR → credit gain account
+                    $lines[] = [
+                        'account_id' => $defaultAccounts->get(config('accounting.default_accounts.foreign_exchange_gain'))->id,
+                        'description' => 'Keuntungan selisih kurs '.$payment->payment_number,
+                        'debit' => 0,
+                        'credit' => abs($fxDiff),
+                    ];
+                } else {
+                    // FX Loss: Cash < AR → debit loss account
+                    $lines[] = [
+                        'account_id' => $defaultAccounts->get(config('accounting.default_accounts.foreign_exchange_loss'))->id,
+                        'description' => 'Kerugian selisih kurs '.$payment->payment_number,
+                        'debit' => abs($fxDiff),
+                        'credit' => 0,
+                    ];
+                }
+            }
+        } else {
+            $payableAccount = $defaultAccounts->get('2-1100');
+            if ($payment->payable_type === Bill::class && $payable) {
+                $payableAccount = $payable->payableAccount ?? $payableAccount;
             }
 
-            // Debit: Accounts Payable
+            // Dr AP at invoice rate
             $lines[] = [
                 'account_id' => $payableAccount->id,
                 'description' => 'Pembayaran utang '.$payment->contact->name,
-                'debit' => $baseAmount,
+                'debit' => $arApBase,
                 'credit' => 0,
+                ...$currencyMetaInvoiceRate,
             ];
 
-            // Credit: Cash/Bank
+            // Cr Cash/Bank at payment rate
             $lines[] = [
                 'account_id' => $payment->cash_account_id,
                 'description' => 'Pembayaran ke '.$payment->contact->name,
                 'debit' => 0,
-                'credit' => $baseAmount,
+                'credit' => $cashBase,
+                ...$currencyMetaPaymentRate,
             ];
+
+            // FX gain/loss for bill payment (mirrored from receive)
+            // For TYPE_SEND: if payment rate > invoice rate, we pay MORE cash → FX Loss
+            if ($hasFx) {
+                if ($fxDiff > 0) {
+                    // Cash > AP → paying more → FX Loss for sender
+                    $lines[] = [
+                        'account_id' => $defaultAccounts->get(config('accounting.default_accounts.foreign_exchange_loss'))->id,
+                        'description' => 'Kerugian selisih kurs '.$payment->payment_number,
+                        'debit' => abs($fxDiff),
+                        'credit' => 0,
+                    ];
+                } else {
+                    // Cash < AP → paying less → FX Gain for sender
+                    $lines[] = [
+                        'account_id' => $defaultAccounts->get(config('accounting.default_accounts.foreign_exchange_gain'))->id,
+                        'description' => 'Keuntungan selisih kurs '.$payment->payment_number,
+                        'debit' => 0,
+                        'credit' => abs($fxDiff),
+                    ];
+                }
+            }
         }
 
         $entryDate = $payment->payment_date;

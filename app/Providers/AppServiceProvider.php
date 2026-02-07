@@ -129,6 +129,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(\App\Contracts\Accounting\FiscalPeriodServiceInterface::class, \App\Services\Accounting\FiscalPeriodService::class);
         $this->app->bind(\App\Contracts\Accounting\BankReconciliationServiceInterface::class, \App\Services\Accounting\BankReconciliationService::class);
         $this->app->bind(\App\Contracts\Accounting\YearEndCloseServiceInterface::class, \App\Services\Accounting\YearEndCloseService::class);
+        $this->app->bind(\App\Contracts\Accounting\FxRevaluationServiceInterface::class, \App\Services\Accounting\FxRevaluationService::class);
 
         // Register AccountingPolicyManager as singleton (reads config once)
         $this->app->singleton(AccountingPolicyManager::class);
@@ -250,6 +251,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(SolarProposalServiceInterface::class, SolarProposalService::class);
         $this->app->bind(SolarCalculationServiceInterface::class, SolarCalculationService::class);
 
+        // Tax Domain
+        $this->app->bind(\App\Contracts\Tax\NsfpServiceInterface::class, \App\Services\Tax\NsfpService::class);
+
         // Shared Domain
         $this->app->bind(\App\Contracts\Shared\PaymentServiceInterface::class, \App\Services\Shared\PaymentService::class);
         $this->app->bind(\App\Contracts\Shared\ContactServiceInterface::class, \App\Services\Shared\ContactService::class);
@@ -312,6 +316,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(\App\Models\Inventory\Warehouse::class, \App\Policies\WarehousePolicy::class);
         Gate::policy(\App\Models\Manufacturing\BomVariantGroup::class, \App\Policies\BomVariantGroupPolicy::class);
         Gate::policy(\App\Models\Manufacturing\MrpRun::class, \App\Policies\MrpRunPolicy::class);
+        Gate::policy(\App\Models\Tax\NsfpRange::class, \App\Policies\NsfpRangePolicy::class);
 
         // Dashboard Gates (non-model based)
         Gate::define('dashboard.view', [\App\Policies\DashboardPolicy::class, 'view']);
@@ -424,6 +429,9 @@ class AppServiceProvider extends ServiceProvider
 
             // Solar Domain
             'solar_proposal' => \App\Models\Solar\SolarProposal::class,
+
+            // Tax Domain
+            'nsfp_range' => \App\Models\Tax\NsfpRange::class,
 
             // Shared Domain
             'payment' => \App\Models\Shared\Payment::class,

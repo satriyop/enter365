@@ -888,3 +888,149 @@ describe('JournalService - Multi-Currency', function () {
     });
 
 });
+
+describe('IS-M1: Currency tracking on JE lines', function () {
+
+    it('IDR invoice JE lines have NULL currency fields', function () {
+        $invoice = Invoice::factory()->create([
+            'currency' => 'IDR',
+            'exchange_rate' => 1,
+        ]);
+
+        InvoiceItem::factory()->create([
+            'invoice_id' => $invoice->id,
+            'quantity' => 1,
+            'unit_price' => 1000000,
+            'line_total' => 1000000,
+        ]);
+
+        $invoice->update([
+            'subtotal' => 1000000,
+            'tax_amount' => 0,
+            'total_amount' => 1000000,
+        ]);
+
+        $entry = $this->service->postInvoice($invoice);
+
+        foreach ($entry->lines as $line) {
+            expect($line->currency_code)->toBeNull()
+                ->and($line->amount_currency)->toBeNull()
+                ->and($line->exchange_rate)->toBeNull();
+        }
+    });
+
+    it('USD invoice JE lines have correct currency metadata', function () {
+        $exchangeRate = 15000;
+        $invoice = Invoice::factory()->create([
+            'currency' => 'USD',
+            'exchange_rate' => $exchangeRate,
+        ]);
+
+        InvoiceItem::factory()->create([
+            'invoice_id' => $invoice->id,
+            'quantity' => 1,
+            'unit_price' => 800,
+            'line_total' => 800,
+        ]);
+
+        $invoice->update([
+            'subtotal' => 800,
+            'tax_amount' => 88,
+            'discount_amount' => 0,
+            'total_amount' => 888,
+        ]);
+
+        $entry = $this->service->postInvoice($invoice);
+
+        $receivableAccount = Account::where('code', '1-1100')->first();
+        $revenueAccount = Account::where('code', '4-1001')->first();
+        $taxAccount = Account::where('code', '2-1200')->first();
+
+        $receivableLine = $entry->lines->firstWhere('account_id', $receivableAccount->id);
+        $revenueLine = $entry->lines->firstWhere('account_id', $revenueAccount->id);
+        $taxLine = $entry->lines->firstWhere('account_id', $taxAccount->id);
+
+        // AR line tracks total invoice amount in original currency
+        expect($receivableLine->currency_code)->toBe('USD')
+            ->and($receivableLine->amount_currency)->toBe(888)
+            ->and((float) $receivableLine->exchange_rate)->toBe(15000.0);
+
+        // Revenue line tracks revenue in original currency
+        expect($revenueLine->currency_code)->toBe('USD')
+            ->and($revenueLine->amount_currency)->toBe(800)
+            ->and((float) $revenueLine->exchange_rate)->toBe(15000.0);
+
+        // Tax line tracks tax in original currency
+        expect($taxLine->currency_code)->toBe('USD')
+            ->and($taxLine->amount_currency)->toBe(88)
+            ->and((float) $taxLine->exchange_rate)->toBe(15000.0);
+    });
+
+    it('USD bill JE lines have correct currency metadata', function () {
+        $exchangeRate = 15000;
+        $bill = Bill::factory()->create([
+            'currency' => 'USD',
+            'exchange_rate' => $exchangeRate,
+        ]);
+
+        \App\Models\Purchasing\BillItem::factory()->create([
+            'bill_id' => $bill->id,
+            'quantity' => 1,
+            'unit_price' => 1000,
+            'line_total' => 1000,
+        ]);
+
+        $bill->update([
+            'subtotal' => 1000,
+            'tax_amount' => 110,
+            'discount_amount' => 0,
+            'total_amount' => 1110,
+        ]);
+
+        $entry = $this->service->postBill($bill);
+
+        $payableAccount = Account::where('code', '2-1100')->first();
+        $expenseAccount = Account::where('code', '5-1002')->first();
+
+        $payableLine = $entry->lines->firstWhere('account_id', $payableAccount->id);
+        $expenseLine = $entry->lines->firstWhere('account_id', $expenseAccount->id);
+
+        expect($payableLine->currency_code)->toBe('USD')
+            ->and($payableLine->amount_currency)->toBe(1110)
+            ->and((float) $payableLine->exchange_rate)->toBe(15000.0);
+
+        expect($expenseLine->currency_code)->toBe('USD')
+            ->and($expenseLine->amount_currency)->toBe(1000)
+            ->and((float) $expenseLine->exchange_rate)->toBe(15000.0);
+    });
+
+    it('reversal JE preserves currency metadata from original', function () {
+        $invoice = Invoice::factory()->create([
+            'currency' => 'USD',
+            'exchange_rate' => 15000,
+        ]);
+
+        InvoiceItem::factory()->create([
+            'invoice_id' => $invoice->id,
+            'quantity' => 1,
+            'unit_price' => 500,
+            'line_total' => 500,
+        ]);
+
+        $invoice->update([
+            'subtotal' => 500,
+            'tax_amount' => 0,
+            'total_amount' => 500,
+        ]);
+
+        $entry = $this->service->postInvoice($invoice);
+        $reversal = $this->service->reverseEntry($entry);
+
+        $receivableAccount = Account::where('code', '1-1100')->first();
+        $reversalArLine = $reversal->lines->firstWhere('account_id', $receivableAccount->id);
+
+        expect($reversalArLine->currency_code)->toBe('USD')
+            ->and($reversalArLine->amount_currency)->toBe(500)
+            ->and((float) $reversalArLine->exchange_rate)->toBe(15000.0);
+    });
+});

@@ -62,11 +62,15 @@ class PaymentService extends BaseService implements PaymentServiceInterface
 
             // Capture currency info from payable (Invoice/Bill)
             $currency = $data['currency'] ?? 'IDR';
-            $exchangeRate = $data['exchange_rate'] ?? 1;
+            $exchangeRate = (float) ($data['exchange_rate'] ?? 1);
             if ($payable) {
                 /** @var Invoice|Bill $payable */
                 $currency = $payable->currency ?? 'IDR';
-                $exchangeRate = (float) ($payable->exchange_rate ?? 1);
+                // Allow caller to specify spot rate at payment date (IS-H4);
+                // fall back to payable's rate if not provided
+                $exchangeRate = isset($data['exchange_rate'])
+                    ? (float) $data['exchange_rate']
+                    : (float) ($payable->exchange_rate ?? 1);
             }
 
             $amount = $data['amount'];
