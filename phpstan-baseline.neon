@@ -1,18 +1,6 @@
 parameters:
 	ignoreErrors:
 		-
-			message: '#^Using nullsafe property access "\?\-\>quantity" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Domain/Inventory/Movements/MovementValidator.php
-
-		-
-			message: '#^Property App\\Models\\Inventory\\StockOpname\:\:\$status \(string\) does not accept App\\Enums\\DocumentStatus\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Domain/Inventory/StockOpname/StockOpnameStateMachine.php
-
-		-
 			message: '#^Cannot call method count\(\) on bool\.$#'
 			identifier: method.nonObject
 			count: 1
@@ -25,18 +13,6 @@ parameters:
 			path: app/Domain/Sales/Quotations/QuotationStatistics.php
 
 		-
-			message: '#^Parameter \#1 \$initialStatus of class App\\Domain\\Sales\\SalesReturns\\SalesReturnStateMachine constructor expects App\\Enums\\DocumentStatus, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/Sales/SalesReturns/SalesReturnStateMachine.php
-
-		-
-			message: '#^Property App\\Models\\Sales\\SalesReturn\:\:\$status \(string\) does not accept App\\Enums\\DocumentStatus\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Domain/Sales/SalesReturns/SalesReturnStateMachine.php
-
-		-
 			message: '#^Unsafe call to private method App\\Domain\\Shared\\DocumentNumbers\:\:doGenerate\(\) through static\:\:\.$#'
 			identifier: staticClassAccess.privateMethod
 			count: 2
@@ -47,12 +23,6 @@ parameters:
 			identifier: nullCoalesce.expr
 			count: 1
 			path: app/Exports/Sheets/SolarProposalDetailsSheet.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Exports/Sheets/SolarProposalSummarySheet.php
 
 		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\:\:lowStock\(\)\.$#'
@@ -89,36 +59,6 @@ parameters:
 			identifier: method.notFound
 			count: 1
 			path: app/Filters/SolarProposalFilter.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Shared\\Payment\:\:\$description\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/V1/BankReconciliationController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Shared\\Payment\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Http/Controllers/Api/V1/BankReconciliationController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Manufacturing\\ComponentStandard\:\:\$count\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/V1/ComponentStandardController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Manufacturing\\ComponentStandard\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Http/Controllers/Api/V1/ComponentStandardController.php
-
-		-
-			message: '#^Property App\\Http\\Controllers\\Api\\V1\\DashboardController\:\:\$balanceService is never read, only written\.$#'
-			identifier: property.onlyWritten
-			count: 1
-			path: app/Http/Controllers/Api/V1/DashboardController.php
 
 		-
 			message: '#^Cannot access property \$credit on array\<string, int\|string\|null\>\.$#'
@@ -175,24 +115,6 @@ parameters:
 			path: app/Http/Controllers/Api/V1/FeatureController.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Contacts\\Contact\:\:\$active_work_orders_count\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/V1/SubcontractorWorkOrderController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Contacts\\Contact\:\:\$completed_work_orders_count\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/V1/SubcontractorWorkOrderController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Contacts\\Contact\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Http/Controllers/Api/V1/SubcontractorWorkOrderController.php
-
-		-
 			message: '#^Method App\\Http\\Middleware\\BindOperationContext\:\:resolveTenantId\(\) never returns int so it can be removed from the return type\.$#'
 			identifier: return.unusedType
 			count: 1
@@ -221,12 +143,6 @@ parameters:
 			identifier: method.nonObject
 			count: 1
 			path: app/Http/Resources/Api/V1/BankTransactionResource.php
-
-		-
-			message: '#^Cannot call method format\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Http/Resources/Api/V1/BomResource.php
 
 		-
 			message: '#^Method App\\Http\\Resources\\Api\\V1\\BomResource\:\:toArray\(\) should return array\{id\: int, bom_number\: string, name\: string, description\: string\|null, product_id\: int, product\?\: array\{id\: int, name\: string, sku\: string\}, output_quantity\: float, output_unit\: string, \.\.\.\} but returns array\{id\: int, bom_number\: string, name\: string, description\: string\|null, product_id\: int\<0, max\>, product\: mixed, output_quantity\: float, output_unit\: string\|null, \.\.\.\}\.$#'
@@ -277,16 +193,16 @@ parameters:
 			path: app/Http/Resources/Api/V1/JournalEntryResource.php
 
 		-
-			message: '#^Using nullsafe method call on non\-nullable type Carbon\\Carbon\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Http/Resources/Api/V1/MaterialRequisitionResource.php
-
-		-
 			message: '#^Method App\\Http\\Resources\\Api\\V1\\MrpSuggestionResource\:\:toArray\(\) should return array\{id\: int, mrp_run_id\: int, suggestion_type\: string, action\: string, status\: array\{value\: string, label\: string, color\: string, is_terminal\: bool, is_editable\: bool\}, priority\: string, product_id\: int, product\?\: array\{id\: int, sku\: string, name\: string, unit\: string, procurement_type\: string\}\|null, \.\.\.\} but returns array\{id\: int, mrp_run_id\: int\<0, max\>, suggestion_type\: string, action\: string, status\: App\\Http\\Resources\\Api\\V1\\StatusResource, priority\: string, product_id\: int\<0, max\>, product\: mixed, \.\.\.\}\.$#'
 			identifier: return.type
 			count: 1
 			path: app/Http/Resources/Api/V1/MrpSuggestionResource.php
+
+		-
+			message: '#^Cannot call method toDateString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: app/Http/Resources/Api/V1/PaymentReminderResource.php
 
 		-
 			message: '#^Cannot call method toDateString\(\) on string\.$#'
@@ -315,7 +231,7 @@ parameters:
 		-
 			message: '#^Cannot call method format\(\) on string\.$#'
 			identifier: method.nonObject
-			count: 5
+			count: 4
 			path: app/Http/Resources/Api/V1/SalesReturnResource.php
 
 		-
@@ -337,46 +253,10 @@ parameters:
 			path: app/Http/Resources/Api/V1/UserResource.php
 
 		-
-			message: '#^Instanceof between App\\Domain\\Manufacturing\\SubcontractorWorkOrders\\Events\\SubcontractorWorkOrderCancelled and App\\Domain\\Manufacturing\\SubcontractorWorkOrders\\Events\\SubcontractorWorkOrderCancelled will always evaluate to true\.$#'
-			identifier: instanceof.alwaysTrue
-			count: 1
-			path: app/Infrastructure/Listeners/Manufacturing/LogSubcontractorWorkOrderActivity.php
-
-		-
-			message: '#^Instanceof between App\\Domain\\Projects\\Events\\ProjectCancelled and App\\Domain\\Projects\\Events\\ProjectCancelled will always evaluate to true\.$#'
-			identifier: instanceof.alwaysTrue
-			count: 1
-			path: app/Infrastructure/Listeners/Projects/LogProjectActivity.php
-
-		-
-			message: '#^Instanceof between App\\Domain\\Purchasing\\PurchaseOrders\\Events\\PurchaseOrderReceived and App\\Domain\\Purchasing\\PurchaseOrders\\Events\\PurchaseOrderReceived will always evaluate to true\.$#'
-			identifier: instanceof.alwaysTrue
-			count: 1
-			path: app/Infrastructure/Listeners/Purchasing/LogPurchaseOrderActivity.php
-
-		-
-			message: '#^Instanceof between App\\Domain\\Sales\\DeliveryOrders\\Events\\DeliveryOrderCancelled and App\\Domain\\Sales\\DeliveryOrders\\Events\\DeliveryOrderCancelled will always evaluate to true\.$#'
-			identifier: instanceof.alwaysTrue
-			count: 1
-			path: app/Infrastructure/Listeners/Sales/LogDeliveryOrderActivity.php
-
-		-
 			message: '#^Method App\\Models\\Accounting\\ExchangeRate\:\:latestRates\(\) should return Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Accounting\\ExchangeRate\> but returns Illuminate\\Database\\Eloquent\\Collection\<int, static\(App\\Models\\Accounting\\ExchangeRate\)\>\.$#'
 			identifier: return.type
 			count: 1
 			path: app/Models/Accounting/ExchangeRate.php
-
-		-
-			message: '#^Method App\\Models\\Accounting\\JournalEntry\:\:source\(\) has invalid return type App\\Models\\Accounting\\MorphTo\.$#'
-			identifier: class.notFound
-			count: 2
-			path: app/Models/Accounting/JournalEntry.php
-
-		-
-			message: '#^Strict comparison using \=\=\= between mixed and null will always evaluate to false\.$#'
-			identifier: identical.alwaysFalse
-			count: 1
-			path: app/Models/Accounting/JournalEntry.php
 
 		-
 			message: '#^Method App\\Models\\Core\\Permission\:\:allGrouped\(\) should return Illuminate\\Support\\Collection\<string, Illuminate\\Support\\Collection\<int, App\\Models\\Core\\Permission\>\> but returns Illuminate\\Database\\Eloquent\\Collection\<\(int\|string\), Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Core\\Permission\>\>\.$#'
@@ -397,24 +277,6 @@ parameters:
 			path: app/Models/Inventory/Product.php
 
 		-
-			message: '#^Strict comparison using \=\=\= between mixed and 0 will always evaluate to false\.$#'
-			identifier: identical.alwaysFalse
-			count: 1
-			path: app/Models/Inventory/StockOpname.php
-
-		-
-			message: '#^Property App\\Models\\Manufacturing\\MaterialRequisition\:\:\$total_quantity \(string\) does not accept float\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Models/Manufacturing/MaterialRequisition.php
-
-		-
-			message: '#^Property App\\Models\\Projects\\Project\:\:\$profit_margin \(string\) does not accept float\|int\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Models/Projects/Project.php
-
-		-
 			message: '#^Binary operation "\*" between int and string results in an error\.$#'
 			identifier: binaryOp.invalid
 			count: 1
@@ -431,12 +293,6 @@ parameters:
 			identifier: argument.type
 			count: 1
 			path: app/Models/Purchasing/Bill.php
-
-		-
-			message: '#^Strict comparison using \=\=\= between mixed and 0 will always evaluate to false\.$#'
-			identifier: identical.alwaysFalse
-			count: 1
-			path: app/Models/Purchasing/GoodsReceiptNote.php
 
 		-
 			message: '#^Parameter \#2 \$taxRate of method App\\Contracts\\Purchasing\\PurchaseOrderCalculatorInterface\:\:calculate\(\) expects float, string given\.$#'
@@ -457,18 +313,6 @@ parameters:
 			path: app/Models/Purchasing/PurchaseOrder.php
 
 		-
-			message: '#^Property App\\Models\\Sales\\DownPayment\:\:\$status \(string\) does not accept App\\Enums\\DocumentStatus\:\:Active\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Models/Sales/DownPayment.php
-
-		-
-			message: '#^Property App\\Models\\Sales\\DownPayment\:\:\$status \(string\) does not accept App\\Enums\\DocumentStatus\:\:FullyApplied\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Models/Sales/DownPayment.php
-
-		-
 			message: '#^Binary operation "\*" between int and string results in an error\.$#'
 			identifier: binaryOp.invalid
 			count: 1
@@ -485,18 +329,6 @@ parameters:
 			identifier: argument.type
 			count: 1
 			path: app/Models/Sales/Invoice.php
-
-		-
-			message: '#^Property App\\Models\\Sales\\Invoice\:\:\$early_discount_percent \(string\|null\) does not accept float\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Models/Sales/Invoice.php
-
-		-
-			message: '#^Cannot access property \$value on string\.$#'
-			identifier: property.nonObject
-			count: 7
-			path: app/Models/Shared/SubcontractorInvoice.php
 
 		-
 			message: '#^Method App\\Models\\Solar\\PlnTariff\:\:getGroupedByType\(\) should return Illuminate\\Support\\Collection\<string, Illuminate\\Support\\Collection\<int, App\\Models\\Solar\\PlnTariff\>\> but returns Illuminate\\Database\\Eloquent\\Collection\<\(int\|string\), Illuminate\\Database\\Eloquent\\Collection\<int, static\(App\\Models\\Solar\\PlnTariff\)\>\>\.$#'
@@ -521,60 +353,6 @@ parameters:
 			identifier: return.phpDocType
 			count: 1
 			path: app/Models/User.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$bill_number\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Notifications/OverdueNotice.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$due_date\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Notifications/OverdueNotice.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Notifications/OverdueNotice.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:getDaysOverdue\(\)\.$#'
-			identifier: method.notFound
-			count: 2
-			path: app/Notifications/OverdueNotice.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:getOutstandingAmount\(\)\.$#'
-			identifier: method.notFound
-			count: 2
-			path: app/Notifications/OverdueNotice.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$bill_number\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Notifications/PaymentReminderNotification.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$due_date\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Notifications/PaymentReminderNotification.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Notifications/PaymentReminderNotification.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:getOutstandingAmount\(\)\.$#'
-			identifier: method.notFound
-			count: 2
-			path: app/Notifications/PaymentReminderNotification.php
 
 		-
 			message: '#^Class App\\Exceptions\\Domain\\EntityNotFoundException constructor invoked with 1 parameter, 2 required\.$#'
@@ -643,24 +421,6 @@ parameters:
 			path: app/Services/Accounting/BudgetService.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Accounting\\BankTransaction\:\:\$count\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Accounting/Reports/BankReconciliationReportService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Accounting\\BankTransaction\:\:\$date\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Accounting/Reports/BankReconciliationReportService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Accounting\\BankTransaction\:\:\$total_amount\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Accounting/Reports/BankReconciliationReportService.php
-
-		-
 			message: '#^Cannot call method format\(\) on string\.$#'
 			identifier: method.nonObject
 			count: 3
@@ -675,7 +435,7 @@ parameters:
 		-
 			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Accounting\\BankTransaction\>\:\:map\(\) contains unresolvable type\.$#'
 			identifier: argument.unresolvableType
-			count: 2
+			count: 1
 			path: app/Services/Accounting/Reports/BankReconciliationReportService.php
 
 		-
@@ -715,26 +475,8 @@ parameters:
 			path: app/Services/Accounting/Strategies/Closing/IncomeSummaryStrategy.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Accounting\\JournalEntryLine\:\:\$total_credit\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Accounting/YearEndCloseService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Accounting\\JournalEntryLine\:\:\$total_debit\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Accounting/YearEndCloseService.php
-
-		-
 			message: '#^Method App\\Services\\Accounting\\YearEndCloseService\:\:getPermanentAccountBalances\(\) should return Illuminate\\Support\\Collection\<int, object\{account_id\: int, balance\: int\}\> but returns Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Accounting\\JournalEntryLine\>\.$#'
 			identifier: return.type
-			count: 1
-			path: app/Services/Accounting/YearEndCloseService.php
-
-		-
-			message: '#^Property App\\Services\\Accounting\\YearEndCloseService\:\:\$accountLookup is never read, only written\.$#'
-			identifier: property.onlyWritten
 			count: 1
 			path: app/Services/Accounting/YearEndCloseService.php
 
@@ -757,76 +499,16 @@ parameters:
 			path: app/Services/Inventory/Reports/COGSReportService.php
 
 		-
-			message: '#^Cannot access property \$value on string\.$#'
-			identifier: property.nonObject
-			count: 7
-			path: app/Services/Inventory/StockOpnameService.php
-
-		-
-			message: '#^Property App\\Models\\Manufacturing\\Bom\:\:\$status \(string\) does not accept App\\Enums\\DocumentStatus\:\:Active\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Services/Manufacturing/BomService.php
-
-		-
-			message: '#^Property App\\Models\\Manufacturing\\Bom\:\:\$status \(string\) does not accept App\\Enums\\DocumentStatus\:\:Draft\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Services/Manufacturing/BomService.php
-
-		-
-			message: '#^Property App\\Models\\Manufacturing\\Bom\:\:\$status \(string\) does not accept App\\Enums\\DocumentStatus\:\:Inactive\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Services/Manufacturing/BomService.php
-
-		-
-			message: '#^Property App\\Services\\Manufacturing\\BomTemplateService\:\:\$bomService is never read, only written\.$#'
-			identifier: property.onlyWritten
-			count: 1
-			path: app/Services/Manufacturing/BomTemplateService.php
-
-		-
 			message: '#^Return type \(array\<int, array\{code\: string, name\: string, coverage\: int, coverage_percent\: float\}\>\) of method App\\Services\\Manufacturing\\BomTemplateService\:\:getAvailableBrandsForTemplate\(\) should be compatible with return type \(array\<string\>\) of method App\\Contracts\\Manufacturing\\BomTemplateServiceInterface\:\:getAvailableBrandsForTemplate\(\)$#'
 			identifier: method.childReturnType
 			count: 1
 			path: app/Services/Manufacturing/BomTemplateService.php
 
 		-
-			message: '#^Property App\\Models\\Manufacturing\\Bom\:\:\$status \(string\) does not accept App\\Enums\\DocumentStatus\:\:Draft\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Services/Manufacturing/BomVariantGroupService.php
-
-		-
-			message: '#^Property App\\Models\\Manufacturing\\Bom\:\:\$status \(string\) does not accept App\\Enums\\DocumentStatus\:\:Draft\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Services/Manufacturing/BrandSwap/BrandSwapExecutionService.php
-
-		-
 			message: '#^Method App\\Services\\Manufacturing\\BrandSwap\\BrandSwapPreviewService\:\:compareBrands\(\) should return array\{current\: array, brands\: array, best_value\: string\|null, best_coverage\: string\|null\} but returns array\{current\: array\{total\: float, total_items\: int\<0, max\>\}, brands\: list\<array\{brand\: mixed, brand_label\: string, estimated_total\: float, savings\: float, savings_percentage\: float, coverage_percentage\: mixed, swappable_items\: mixed, no_mapping_items\: mixed\}\>, recommendations\: array\{best_value\: mixed, best_coverage\: mixed\}\}\.$#'
 			identifier: return.type
 			count: 1
 			path: app/Services/Manufacturing/BrandSwap/BrandSwapPreviewService.php
-
-		-
-			message: '#^Property App\\Models\\Manufacturing\\Bom\:\:\$status \(string\) does not accept App\\Enums\\DocumentStatus\:\:Draft\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Services/Manufacturing/CostOptimizationService.php
-
-		-
-			message: '#^Property App\\Models\\Manufacturing\\BomItem\:\:\$unit_cost \(int\) does not accept float\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Services/Manufacturing/CostOptimizationService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Inventory\\Product\:\:\$code\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Manufacturing/MrpDemandService.php
 
 		-
 			message: '#^Cannot call method copy\(\) on string\.$#'
@@ -847,82 +529,10 @@ parameters:
 			path: app/Services/Manufacturing/ProductEquivalenceService.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Shared\\SubcontractorInvoice\:\:\$amount\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Manufacturing/Reports/SubcontractorReportService.php
-
-		-
-			message: '#^Cannot call method format\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Services/Manufacturing/Reports/SubcontractorReportService.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Shared\\SubcontractorInvoice\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Services/Manufacturing/Reports/SubcontractorReportService.php
-
-		-
 			message: '#^Method App\\Services\\Manufacturing\\Reports\\WorkOrderReportService\:\:getWorkOrderCostDetail\(\) should return array\{report_name\: string, work_order\: array, cost_breakdown\: array, material_details\: Illuminate\\Support\\Collection, timeline\: array\} but returns array\{report_name\: ''Laporan Detail…'', work_order\: array\{id\: int, wo_number\: string, name\: string, type\: string, status\: App\\Enums\\DocumentStatus, project\: array\{id\: int, project_number\: string, name\: string\}\|null, product\: array\{id\: int, sku\: string, name\: string\}\|null, quantity_ordered\: float, \.\.\.\}, cost_summary\: array\{estimated\: array\{material\: int, labor\: int, overhead\: int, total\: int\}, actual\: array\{material\: int, labor\: int, overhead\: int, total\: int\}, variance\: array\{material\: int, labor\: int, overhead\: int, total\: int\}, cost_per_unit\: int\}, item_breakdown\: Illuminate\\Support\\Collection\<int, array\{id\: int, type\: string, product_name\: string, quantity_required\: float, quantity_consumed\: float, unit\: string\|null, estimated_cost\: int, actual_cost\: int, \.\.\.\}\>, timeline\: array\{planned_start\: non\-falsy\-string\|null, planned_end\: non\-falsy\-string\|null, actual_start\: non\-falsy\-string\|null, actual_end\: non\-falsy\-string\|null, confirmed_at\: non\-falsy\-string\|null, started_at\: non\-falsy\-string\|null, completed_at\: non\-falsy\-string\|null\}\}\.$#'
 			identifier: return.type
 			count: 1
 			path: app/Services/Manufacturing/Reports/WorkOrderReportService.php
-
-		-
-			message: '#^Cannot call method label\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 3
-			path: app/Services/Manufacturing/SubcontractorService.php
-
-		-
-			message: '#^Property App\\Models\\Shared\\SubcontractorInvoice\:\:\$approved_at \(string\|null\) does not accept Illuminate\\Support\\Carbon\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Services/Manufacturing/SubcontractorService.php
-
-		-
-			message: '#^Property App\\Models\\Shared\\SubcontractorInvoice\:\:\$converted_to_bill_at \(string\|null\) does not accept Illuminate\\Support\\Carbon\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Services/Manufacturing/SubcontractorService.php
-
-		-
-			message: '#^Property App\\Models\\Shared\\SubcontractorInvoice\:\:\$rejected_at \(string\|null\) does not accept Illuminate\\Support\\Carbon\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Services/Manufacturing/SubcontractorService.php
-
-		-
-			message: '#^Property App\\Models\\Shared\\SubcontractorInvoice\:\:\$status \(string\) does not accept App\\Enums\\DocumentStatus\:\:Approved\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Services/Manufacturing/SubcontractorService.php
-
-		-
-			message: '#^Property App\\Models\\Shared\\SubcontractorInvoice\:\:\$status \(string\) does not accept App\\Enums\\DocumentStatus\:\:Rejected\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Services/Manufacturing/SubcontractorService.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Services/Manufacturing/WorkOrderMaterialService.php
-
-		-
-			message: '#^Property App\\Models\\Manufacturing\\WorkOrder\:\:\$quantity_completed \(string\) does not accept float\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Services/Manufacturing/WorkOrderService.php
-
-		-
-			message: '#^Property App\\Models\\Manufacturing\\WorkOrder\:\:\$quantity_scrapped \(string\) does not accept float\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Services/Manufacturing/WorkOrderService.php
 
 		-
 			message: '#^Access to an undefined property App\\Models\\Projects\\ProjectCost\:\:\$count\.$#'
@@ -967,12 +577,6 @@ parameters:
 			path: app/Services/Projects/ProjectReportService.php
 
 		-
-			message: '#^Property App\\Models\\Projects\\Project\:\:\$progress_percentage \(string\) does not accept float\|int\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Services/Projects/ProjectService.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 3
@@ -995,12 +599,6 @@ parameters:
 			identifier: throws.notThrowable
 			count: 2
 			path: app/Services/Purchasing/BillService.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Services/Purchasing/PurchaseOrderReceivingService.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
@@ -1051,12 +649,6 @@ parameters:
 			path: app/Services/Purchasing/PurchaseReturnService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/Sales/DeliveryOrderService.php
-
-		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:items\(\)\.$#'
 			identifier: method.notFound
 			count: 1
@@ -1073,42 +665,6 @@ parameters:
 			identifier: return.type
 			count: 1
 			path: app/Services/Sales/DeliveryOrderService.php
-
-		-
-			message: '#^Property App\\Models\\Sales\\DeliveryOrder\:\:\$do_date \(Carbon\\Carbon\) does not accept string\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Services/Sales/DeliveryOrderService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$bill_number\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Sales/DownPaymentService.php
-
-		-
-			message: '#^Cannot access property \$value on string\.$#'
-			identifier: property.nonObject
-			count: 5
-			path: app/Services/Sales/DownPaymentService.php
-
-		-
-			message: '#^Property App\\Models\\Sales\\DownPayment\:\:\$refunded_at \(string\|null\) does not accept Illuminate\\Support\\Carbon\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Services/Sales/DownPaymentService.php
-
-		-
-			message: '#^Property App\\Models\\Sales\\DownPayment\:\:\$status \(string\) does not accept App\\Enums\\DocumentStatus\:\:Cancelled\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Services/Sales/DownPaymentService.php
-
-		-
-			message: '#^Property App\\Models\\Sales\\DownPayment\:\:\$status \(string\) does not accept App\\Enums\\DocumentStatus\:\:Refunded\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Services/Sales/DownPaymentService.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
@@ -1139,42 +695,6 @@ parameters:
 			identifier: return.type
 			count: 1
 			path: app/Services/Sales/InvoiceService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Purchasing\\Bill\:\:\$count\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Sales/OverdueService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Purchasing\\Bill\:\:\$total\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Sales/OverdueService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Sales\\Invoice\:\:\$count\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Sales/OverdueService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Sales\\Invoice\:\:\$total\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Sales/OverdueService.php
-
-		-
-			message: '#^Property App\\Models\\Sales\\Quotation\:\:\$next_follow_up_at \(Carbon\\Carbon\|null\) does not accept DateTime\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Services/Sales/QuotationFollowUpService.php
-
-		-
-			message: '#^Property App\\Models\\Sales\\Quotation\:\:\$next_follow_up_at \(Carbon\\Carbon\|null\) does not accept DateTime\|string\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Services/Sales/QuotationFollowUpService.php
 
 		-
 			message: '#^PHPDoc tag @throws with type App\\Services\\Sales\\InvalidArgumentException is not subtype of Throwable$#'
@@ -1213,226 +733,16 @@ parameters:
 			path: app/Services/Sales/SalesReturnService.php
 
 		-
-			message: '#^Variable \$userId on left side of \?\? is never defined\.$#'
-			identifier: nullCoalesce.variable
-			count: 1
-			path: app/Services/Sales/SalesReturnService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$paid_amount\.$#'
-			identifier: property.notFound
-			count: 6
-			path: app/Services/Shared/PaymentService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$total_amount\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/Shared/PaymentService.php
-
-		-
 			message: '#^Call to an undefined method App\\Contracts\\Accounting\\JournalServiceInterface\:\:postPayment\(\)\.$#'
 			identifier: method.notFound
 			count: 1
 			path: app/Services/Shared/PaymentService.php
 
 		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:stateMachine\(\)\.$#'
-			identifier: method.notFound
-			count: 4
-			path: app/Services/Shared/PaymentService.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: database/factories/Inventory/ProductFactory.php
-
-		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Inventory\\StockOpnameFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Inventory\\StockOpname\>\:\:definition\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: database/factories/Inventory/StockOpnameFactory.php
-
-		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Inventory\\StockOpnameItemFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Inventory\\StockOpnameItem\>\:\:definition\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: database/factories/Inventory/StockOpnameItemFactory.php
-
-		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\BomFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\Bom\>\:\:definition\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: database/factories/Manufacturing/BomFactory.php
-
-		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\BomItemFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\BomItem\>\:\:definition\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: database/factories/Manufacturing/BomItemFactory.php
-
-		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\BomVariantGroupFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\BomVariantGroup\>\:\:definition\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: database/factories/Manufacturing/BomVariantGroupFactory.php
-
-		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\MaterialConsumptionFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\MaterialConsumption\>\:\:definition\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: database/factories/Manufacturing/MaterialConsumptionFactory.php
-
-		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\MaterialRequisitionFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\MaterialRequisition\>\:\:definition\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: database/factories/Manufacturing/MaterialRequisitionFactory.php
-
-		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\MaterialRequisitionItemFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\MaterialRequisitionItem\>\:\:definition\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: database/factories/Manufacturing/MaterialRequisitionItemFactory.php
-
-		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\MrpDemandFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\MrpDemand\>\:\:definition\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: database/factories/Manufacturing/MrpDemandFactory.php
-
-		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\MrpRunFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\MrpRun\>\:\:definition\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: database/factories/Manufacturing/MrpRunFactory.php
-
-		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\MrpSuggestionFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\MrpSuggestion\>\:\:definition\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: database/factories/Manufacturing/MrpSuggestionFactory.php
-
-		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\SubcontractorWorkOrderFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\SubcontractorWorkOrder\>\:\:definition\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: database/factories/Manufacturing/SubcontractorWorkOrderFactory.php
-
-		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\WorkOrderFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\WorkOrder\>\:\:definition\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: database/factories/Manufacturing/WorkOrderFactory.php
-
-		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Manufacturing\\WorkOrderItemFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Manufacturing\\WorkOrderItem\>\:\:definition\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: database/factories/Manufacturing/WorkOrderItemFactory.php
-
-		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Projects\\ProjectCostFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Projects\\ProjectCost\>\:\:definition\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: database/factories/Projects/ProjectCostFactory.php
-
-		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Projects\\ProjectFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Projects\\Project\>\:\:definition\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: database/factories/Projects/ProjectFactory.php
-
-		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Projects\\ProjectRevenueFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Projects\\ProjectRevenue\>\:\:definition\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: database/factories/Projects/ProjectRevenueFactory.php
-
-		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Purchasing\\GoodsReceiptNoteFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Purchasing\\GoodsReceiptNote\>\:\:definition\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: database/factories/Purchasing/GoodsReceiptNoteFactory.php
-
-		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Purchasing\\GoodsReceiptNoteItemFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Purchasing\\GoodsReceiptNoteItem\>\:\:definition\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: database/factories/Purchasing/GoodsReceiptNoteItemFactory.php
-
-		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Purchasing\\PurchaseReturnFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Purchasing\\PurchaseReturn\>\:\:definition\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: database/factories/Purchasing/PurchaseReturnFactory.php
-
-		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Purchasing\\PurchaseReturnItemFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Purchasing\\PurchaseReturnItem\>\:\:definition\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: database/factories/Purchasing/PurchaseReturnItemFactory.php
-
-		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Sales\\DeliveryOrderFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Sales\\DeliveryOrder\>\:\:definition\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: database/factories/Sales/DeliveryOrderFactory.php
-
-		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Sales\\DeliveryOrderItemFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Sales\\DeliveryOrderItem\>\:\:definition\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: database/factories/Sales/DeliveryOrderItemFactory.php
-
-		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Sales\\DownPaymentApplicationFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Sales\\DownPaymentApplication\>\:\:definition\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: database/factories/Sales/DownPaymentApplicationFactory.php
-
-		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Sales\\DownPaymentFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Sales\\DownPayment\>\:\:definition\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: database/factories/Sales/DownPaymentFactory.php
-
-		-
 			message: '#^Call to an undefined method App\\Models\\Sales\\Quotation\:\:getNextRevisionNumber\(\)\.$#'
 			identifier: method.notFound
 			count: 1
 			path: database/factories/Sales/QuotationFactory.php
-
-		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Sales\\QuotationVariantOptionFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Sales\\QuotationVariantOption\>\:\:definition\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: database/factories/Sales/QuotationVariantOptionFactory.php
-
-		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Sales\\SalesReturnFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Sales\\SalesReturn\>\:\:definition\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: database/factories/Sales/SalesReturnFactory.php
-
-		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Sales\\SalesReturnItemFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Sales\\SalesReturnItem\>\:\:definition\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: database/factories/Sales/SalesReturnItemFactory.php
-
-		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\Shared\\SubcontractorInvoiceFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\Shared\\SubcontractorInvoice\>\:\:definition\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: database/factories/Shared/SubcontractorInvoiceFactory.php
-
-		-
-			message: '#^Return type \(array\<string, mixed\>\) of method Database\\Factories\\UserFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<App\\Models\\User\>\:\:definition\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: database/factories/UserFactory.php
 
 		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Schema\\ForeignKeyDefinition\:\:after\(\)\.$#'
@@ -1445,18 +755,6 @@ parameters:
 			identifier: match.alwaysTrue
 			count: 4
 			path: database/seeders/Demo/ComponentLibrarySeeder.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Purchasing\\Bill\:\:\$outstanding_amount\.$#'
-			identifier: property.notFound
-			count: 1
-			path: database/seeders/Demo/DemoExtendedTransactionSeeder.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Sales\\Invoice\:\:\$outstanding_amount\.$#'
-			identifier: property.notFound
-			count: 1
-			path: database/seeders/Demo/DemoExtendedTransactionSeeder.php
 
 		-
 			message: '#^Parameter \#2 \$quantity of method App\\Contracts\\Manufacturing\\WorkOrderServiceInterface\:\:recordOutput\(\) expects float, string given\.$#'
@@ -1495,12 +793,6 @@ parameters:
 			path: database/seeders/Demo/Nex/NexTransactionSeeder.php
 
 		-
-			message: '#^Property Database\\Seeders\\Demo\\Nex\\NexTransactionSeeder\:\:\$cashAccount is never read, only written\.$#'
-			identifier: property.onlyWritten
-			count: 1
-			path: database/seeders/Demo/Nex/NexTransactionSeeder.php
-
-		-
 			message: '#^Call to an undefined method App\\Contracts\\Purchasing\\GoodsReceiptNoteServiceInterface\:\:updateItem\(\)\.$#'
 			identifier: method.notFound
 			count: 1
@@ -1515,11 +807,5 @@ parameters:
 		-
 			message: '#^Method App\\Contracts\\Sales\\QuotationServiceInterface\:\:create\(\) invoked with 2 parameters, 1 required\.$#'
 			identifier: arguments.count
-			count: 1
-			path: database/seeders/Demo/Vahana/VahanaTransactionSeeder.php
-
-		-
-			message: '#^Property Database\\Seeders\\Demo\\Vahana\\VahanaTransactionSeeder\:\:\$cashAccount is never read, only written\.$#'
-			identifier: property.onlyWritten
 			count: 1
 			path: database/seeders/Demo/Vahana/VahanaTransactionSeeder.php
