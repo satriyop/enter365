@@ -6,6 +6,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
+ * Bill API Resource.
+ *
+ * Transforms Bill model for API responses with currency,
+ * amounts, and payment tracking.
+ *
  * @mixin \App\Models\Purchasing\Bill
  */
 class BillResource extends JsonResource
@@ -24,11 +29,17 @@ class BillResource extends JsonResource
             'due_date' => $this->due_date->toDateString(),
             'description' => $this->description,
             'reference' => $this->reference,
+
+            // Currency
+            'currency' => $this->currency,
+            'exchange_rate' => (float) $this->exchange_rate,
+
             'subtotal' => $this->subtotal,
             'tax_amount' => $this->tax_amount,
             'tax_rate' => (float) $this->tax_rate,
             'discount_amount' => $this->discount_amount,
             'total_amount' => $this->total_amount,
+            'base_currency_total' => $this->base_currency_total,
             'paid_amount' => $this->paid_amount,
             'outstanding_amount' => $this->getOutstandingAmount(),
             'status' => new StatusResource($this->status),
