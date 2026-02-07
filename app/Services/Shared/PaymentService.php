@@ -113,11 +113,12 @@ class PaymentService extends BaseService implements PaymentServiceInterface
         return $this->executeInTransaction('void', function () use ($payment, $reason) {
             // Lock the payable to prevent concurrent payment modifications
             $payable = $payment->payable;
+            $previousPaidAmount = 0;
             if ($payable) {
                 /** @var \App\Models\Sales\Invoice|\App\Models\Purchasing\Bill $payable */
                 $payable = $payable::lockForUpdate()->find($payable->getKey());
+                $previousPaidAmount = $payable->paid_amount ?? 0;
             }
-            $previousPaidAmount = $payable->paid_amount ?? 0;
 
             // Reverse journal entry
             if ($payment->journalEntry) {

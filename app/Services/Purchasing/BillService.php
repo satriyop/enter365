@@ -307,15 +307,35 @@ class BillService implements BillServiceInterface
      */
     public function void(Bill $bill, string $reason): Bill
     {
-        if (! $bill->stateMachine()->canCancel()) {
-            throw StateTransitionException::actionNotAvailable(
-                'void',
-                $bill->status->label()
-            );
-        }
+        return $this->executeInTransaction('void', function () use ($bill, $reason) {
+            if (! $bill->stateMachine()->canCancel()) {
+                throw StateTransitionException::actionNotAvailable(
+                    'void',
+                    $bill->status->label()
+                );
+            }
 
-        $bill->transitionTo(DocumentStatus::Cancelled, $this->getUserId());
+            // Reverse journal entry if exists
+            if ($bill->journal_entry_id && $bill->journalEntry) {
+                $this->journalService->reverseEntry($bill->journalEntry);
+            }
 
-        return $bill->fresh(['contact', 'items']);
+            // Transition status
+            $bill->transitionTo(DocumentStatus::Cancelled, $this->getUserId());
+
+            // Dispatch event
+            $this->dispatch(\App\Domain\Purchasing\Bills\Events\BillVoided::fromBill(
+                $bill,
+                $this->getUserId(),
+                $reason
+            ));
+
+            AuditLog::log(AuditLog::ACTION_VOIDED, $bill, null, [
+                'status' => DocumentStatus::Cancelled->value,
+                'reason' => $reason,
+            ]);
+
+            return $bill->fresh(['contact', 'items', 'journalEntry']);
+        }, ['bill_id' => $bill->id, 'reason' => $reason]);
     }
 }

@@ -7,6 +7,7 @@ namespace App\Services\Accounting\Strategies\COGS;
 use App\Contracts\Accounting\JournalServiceInterface;
 use App\Contracts\Accounting\Strategies\COGSRecognitionStrategy;
 use App\Models\Accounting\JournalEntry;
+use App\Models\Inventory\ProductStock;
 use App\Models\Sales\DeliveryOrder;
 use App\Models\Sales\Invoice;
 
@@ -93,8 +94,10 @@ class COGSOnInvoiceStrategy implements COGSRecognitionStrategy
                 continue;
             }
 
-            // Use purchase price as cost (or implement average cost lookup)
-            $unitCost = $product->purchase_price ?? 0;
+            // Use weighted average cost from inventory
+            $unitCost = ProductStock::where('product_id', $product->id)
+                ->where('average_cost', '>', 0)
+                ->value('average_cost') ?? $product->purchase_price ?? 0;
             $totalCOGS += (int) round($item->quantity * $unitCost);
         }
 

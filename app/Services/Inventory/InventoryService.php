@@ -95,6 +95,16 @@ class InventoryService extends BaseService implements InventoryServiceInterface
     ): InventoryMovement {
         return $this->executeInTransaction('stock_out', function () use ($product, $warehouse, $quantity, $notes, $referenceType, $referenceId) {
             $stock = ProductStock::lockForStock($product, $warehouse);
+
+            if ($stock->quantity < $quantity) {
+                throw InsufficientStockException::forProduct(
+                    $product,
+                    $quantity,
+                    $stock->quantity,
+                    $warehouse
+                );
+            }
+
             $quantityBefore = $stock->quantity;
 
             // Get unit cost before removing

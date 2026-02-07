@@ -259,7 +259,7 @@ class SalesReturnService implements SalesReturnServiceInterface
     /**
      * Cancel a sales return.
      */
-    public function cancel(SalesReturn $salesReturn, ?string $reason = null): SalesReturn
+    public function cancel(SalesReturn $salesReturn, ?string $reason = null, ?int $userId = null): SalesReturn
     {
         if (! $salesReturn->canBeCancelled()) {
             throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(

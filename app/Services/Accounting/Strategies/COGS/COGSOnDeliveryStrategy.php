@@ -7,6 +7,7 @@ namespace App\Services\Accounting\Strategies\COGS;
 use App\Contracts\Accounting\JournalServiceInterface;
 use App\Contracts\Accounting\Strategies\COGSRecognitionStrategy;
 use App\Models\Accounting\JournalEntry;
+use App\Models\Inventory\ProductStock;
 use App\Models\Sales\DeliveryOrder;
 use App\Models\Sales\Invoice;
 
@@ -37,7 +38,11 @@ class COGSOnDeliveryStrategy implements COGSRecognitionStrategy
 
         foreach ($deliveryOrder->items as $item) {
             if ($item->product_id && $item->product?->track_inventory) {
-                $cogsAmount += (int) round($item->quantity * $item->product->purchase_price);
+                $unitCost = ProductStock::where('product_id', $item->product_id)
+                    ->where('warehouse_id', $deliveryOrder->warehouse_id)
+                    ->where('average_cost', '>', 0)
+                    ->value('average_cost') ?? $item->product->purchase_price ?? 0;
+                $cogsAmount += (int) round($item->quantity * $unitCost);
             }
         }
 
