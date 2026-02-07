@@ -209,7 +209,7 @@ private function recordFxGainLoss(Invoice $invoice, Payment $payment): void
     }
 
     $fxAccount = $this->accountLookup->findByCodeOrFail(
-        $fxDifference > 0 ? '8-1001' : '9-1001', // Gain vs Loss
+        config($fxDifference > 0 ? 'accounting.default_accounts.foreign_exchange_gain' : 'accounting.default_accounts.foreign_exchange_loss'), // 4-2004 / 5-3006
         'FX gain/loss'
     );
 
@@ -284,10 +284,12 @@ public function rules(): array
 
 Add to chart of accounts if not exists:
 
-| Code | Name | Type |
-|------|------|------|
-| 8-1001 | Keuntungan Selisih Kurs | Other Income |
-| 9-1001 | Kerugian Selisih Kurs | Other Expense |
+| Code | Name | Type | Config Key |
+|------|------|------|------------|
+| 4-2004 | Keuntungan Selisih Kurs | Other Revenue | `foreign_exchange_gain` |
+| 4-2005 | Keuntungan Selisih Kurs Belum Direalisasi | Other Revenue | `unrealized_fx_gain` |
+| 5-3006 | Kerugian Selisih Kurs | Other Expense | `foreign_exchange_loss` |
+| 5-3007 | Kerugian Selisih Kurs Belum Direalisasi | Other Expense | `unrealized_fx_loss` |
 
 ---
 
@@ -417,7 +419,7 @@ it('handles IDR invoice with IDR payment normally', function () {
 - [ ] Payment model updated
 - [ ] Payment service currency handling
 - [ ] FX gain/loss journal creation
-- [ ] Account codes configured (8-1001, 9-1001)
+- [ ] Account codes configured (4-2004, 4-2005, 5-3006, 5-3007 via config/accounting.php)
 - [ ] API validation updated
 - [ ] Tests written and passing
 - [ ] API docs exported
