@@ -10,6 +10,7 @@ use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Sales\InvoiceServiceInterface;
 use App\Contracts\Shared\PaymentServiceInterface;
+use App\Contracts\Tax\NsfpServiceInterface;
 use App\Domain\Sales\Invoices\Events\InvoiceFullyPaid;
 use App\Domain\Sales\Invoices\Events\InvoiceOverdue;
 use App\Domain\Sales\Invoices\Events\InvoicePartiallyPaid;
@@ -57,13 +58,16 @@ class InvoiceService implements InvoiceServiceInterface
 
     private InvoiceDomainFactory $domainFactory;
 
+    private NsfpServiceInterface $nsfpService;
+
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger,
         JournalServiceInterface $journalService,
         PaymentServiceInterface $paymentService,
         COGSRecognitionStrategy $cogsStrategy,
-        InvoiceDomainFactory $domainFactory
+        InvoiceDomainFactory $domainFactory,
+        NsfpServiceInterface $nsfpService
     ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->logger = $logger;
@@ -72,6 +76,7 @@ class InvoiceService implements InvoiceServiceInterface
         $this->paymentService = $paymentService;
         $this->cogsStrategy = $cogsStrategy;
         $this->domainFactory = $domainFactory;
+        $this->nsfpService = $nsfpService;
     }
 
     protected function getModelClass(): string
@@ -218,6 +223,11 @@ class InvoiceService implements InvoiceServiceInterface
             // Create COGS journal entry (if configured)
             $this->cogsStrategy->onInvoicePost($invoice);
 
+            // Allocate NSFP number (Nomor Seri Faktur Pajak) if enabled
+            if ($this->nsfpService->isEnabled()) {
+                $this->nsfpService->allocate($invoice);
+            }
+
             // Transition status (state machine dispatches InvoiceSent event)
             $invoice->transitionTo(DocumentStatus::Sent, $this->getUserId());
 
@@ -321,6 +331,12 @@ class InvoiceService implements InvoiceServiceInterface
 
             // Reset paid amount (all payments voided and DPs unapplied)
             $invoice->paid_amount = 0;
+
+            // Mark NSFP as cancelled (number is preserved for DJP audit trail)
+            if ($invoice->nsfp_number) {
+                $invoice->is_nsfp_cancelled = true;
+            }
+
             $invoice->save();
 
             // Reverse invoice's own journal entry

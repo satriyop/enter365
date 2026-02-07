@@ -47,6 +47,9 @@ class EventServiceProvider extends ServiceProvider
 
         // Accounting Domain
         \App\Listeners\Accounting\FiscalPeriodEventSubscriber::class,
+
+        // Tax Domain
+        \App\Listeners\Tax\NsfpEventSubscriber::class,
     ];
 
     /**

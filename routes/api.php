@@ -745,6 +745,16 @@ Route::prefix('v1')->group(function () {
             Route::get('purchase-orders/{purchaseOrder}/goods-receipt-notes', [GoodsReceiptNoteController::class, 'forPurchaseOrder']);
         });
 
+        // NSFP Ranges (Nomor Seri Faktur Pajak)
+        Route::apiResource('nsfp-ranges', \App\Http\Controllers\Api\V1\NsfpRangeController::class)
+            ->parameters(['nsfp-ranges' => 'nsfpRange']);
+        Route::post('nsfp-ranges/{nsfpRange}/deactivate', [\App\Http\Controllers\Api\V1\NsfpRangeController::class, 'deactivate']);
+        Route::get('nsfp-ranges-utilization', [\App\Http\Controllers\Api\V1\NsfpRangeController::class, 'utilization']);
+
+        // e-Faktur Export (Ekspor CSV e-Faktur)
+        Route::get('reports/efaktur-export', [\App\Http\Controllers\Api\V1\EfakturExportController::class, 'export'])
+            ->name('reports.efaktur-export');
+
         // Accounting Policies (Kebijakan Akuntansi)
         Route::get('accounting-policies', [AccountingPolicyController::class, 'show'])->name('accounting-policies.show');
         Route::put('accounting-policies', [AccountingPolicyController::class, 'update'])->name('accounting-policies.update');

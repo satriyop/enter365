@@ -151,7 +151,7 @@ class TaxReportService
             ->get()
             ->map(fn ($inv) => [
                 'tanggal' => $inv->invoice_date->format('d/m/Y'),
-                'nomor_faktur' => $inv->invoice_number,
+                'nomor_faktur' => $inv->nsfp_number ?? $inv->invoice_number,
                 'nama_pembeli' => $inv->contact->name,
                 'npwp_pembeli' => $inv->contact->npwp ?? '-',
                 'alamat' => $inv->contact->address ?? '-',

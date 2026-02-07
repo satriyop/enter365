@@ -44,6 +44,12 @@ class InvoiceResource extends JsonResource
             'is_overdue' => $this->isOverdue(),
             ...($this->isOverdue() ? ['days_overdue' => $this->getDaysOverdue()] : []),
 
+            // NSFP (Nomor Seri Faktur Pajak)
+            'nsfp_number' => $this->nsfp_number,
+            'nsfp_assigned_at' => $this->nsfp_assigned_at?->toIso8601String(),
+            'is_nsfp_cancelled' => $this->is_nsfp_cancelled,
+            'has_nsfp' => $this->hasNsfp(),
+
             // Currency
             'currency' => $this->currency,
             'exchange_rate' => (float) $this->exchange_rate,

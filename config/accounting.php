@@ -180,6 +180,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | NSFP (Nomor Seri Faktur Pajak)
+    |--------------------------------------------------------------------------
+    |
+    | Tax invoice serial number settings for DJP e-Nofa compliance.
+    | PKP companies must use pre-allocated NSFP numbers on Faktur Pajak.
+    |
+    */
+    'nsfp' => [
+        'enabled' => env('NSFP_ENABLED', false),
+        'default_transaction_code' => '010',
+        'default_branch_code' => '000',
+        'low_stock_threshold' => 50,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Fiscal Year
     |--------------------------------------------------------------------------
     |
@@ -278,8 +294,10 @@ return [
         'tax_receivable' => '1-1300', // PPN Masukan
         'early_payment_discount_expense' => '5-3001',
         'early_payment_discount_income' => '4-2001',
-        'foreign_exchange_gain' => '4-3001',
-        'foreign_exchange_loss' => '5-4001',
+        'foreign_exchange_gain' => '4-2004',
+        'foreign_exchange_loss' => '5-3006',
+        'unrealized_fx_gain' => '4-2005',
+        'unrealized_fx_loss' => '5-3007',
         'inventory' => '1-1400', // Persediaan
         'goods_received_not_invoiced' => '2-1300', // Barang Diterima Belum Ditagih
         'wip' => '1-1450', // Barang Dalam Proses (WIP)

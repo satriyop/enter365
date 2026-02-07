@@ -12,6 +12,7 @@ use App\Models\Shared\Attachment;
 use App\Models\Shared\Payment;
 use App\Models\Shared\PaymentReminder;
 use App\Models\Shared\RecurringTemplate;
+use App\Models\Tax\NsfpRange;
 use App\Models\User;
 use App\Traits\CascadesSoftDeletes;
 use App\Traits\Filterable;
@@ -28,6 +29,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 /**
  * @property int $id
  * @property string $invoice_number
+ * @property string|null $nsfp_number
+ * @property int|null $nsfp_range_id
+ * @property Carbon|null $nsfp_assigned_at
+ * @property bool $is_nsfp_cancelled
  * @property int $contact_id
  * @property Carbon $invoice_date
  * @property Carbon $due_date
@@ -83,6 +88,10 @@ class Invoice extends Model
 
     protected $fillable = [
         'invoice_number',
+        'nsfp_number',
+        'nsfp_range_id',
+        'nsfp_assigned_at',
+        'is_nsfp_cancelled',
         'contact_id',
         'invoice_date',
         'due_date',
@@ -127,6 +136,8 @@ class Invoice extends Model
             'base_currency_total' => 'integer',
             'paid_amount' => 'integer',
             'last_reminder_at' => 'datetime',
+            'nsfp_assigned_at' => 'datetime',
+            'is_nsfp_cancelled' => 'boolean',
             'status' => DocumentStatus::class,
         ];
     }
@@ -180,6 +191,14 @@ class Invoice extends Model
     }
 
     /**
+     * @return BelongsTo<NsfpRange, $this>
+     */
+    public function nsfpRange(): BelongsTo
+    {
+        return $this->belongsTo(NsfpRange::class, 'nsfp_range_id');
+    }
+
+    /**
      * @return BelongsTo<RecurringTemplate, $this>
      */
     public function recurringTemplate(): BelongsTo
@@ -225,6 +244,14 @@ class Invoice extends Model
     public function isFullyPaid(): bool
     {
         return $this->paid_amount >= $this->total_amount;
+    }
+
+    /**
+     * Check if invoice has an assigned NSFP number.
+     */
+    public function hasNsfp(): bool
+    {
+        return $this->nsfp_number !== null;
     }
 
     /**
