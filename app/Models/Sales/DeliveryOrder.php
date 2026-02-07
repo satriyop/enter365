@@ -40,6 +40,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property Carbon|null $shipped_at
  * @property int|null $delivered_by
  * @property Carbon|null $delivered_at
+ * @property int|null $cancelled_by
+ * @property Carbon|null $cancelled_at
+ * @property string|null $cancellation_reason
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
@@ -95,6 +98,9 @@ class DeliveryOrder extends Model
         'shipped_at',
         'delivered_by',
         'delivered_at',
+        'cancelled_by',
+        'cancelled_at',
+        'cancellation_reason',
     ];
 
     protected function casts(): array
@@ -106,6 +112,7 @@ class DeliveryOrder extends Model
             'confirmed_at' => 'datetime',
             'shipped_at' => 'datetime',
             'delivered_at' => 'datetime',
+            'cancelled_at' => 'datetime',
             'status' => DocumentStatus::class,
         ];
     }

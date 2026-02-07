@@ -37,7 +37,7 @@ class InventoryReturnHandler implements ApprovalHandlerInterface
             $this->inventoryService->stockIn(
                 $product,
                 $warehouse,
-                (int) $item->quantity,
+                (int) round((float) $item->quantity),
                 $item->unit_price,
                 'Retur penjualan: '.$salesReturn->return_number,
                 SalesReturn::class,

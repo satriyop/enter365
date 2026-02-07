@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace App\Services\Sales;
 
+use App\Contracts\Accounting\JournalServiceInterface;
 use App\Contracts\Events\EventDispatcherInterface;
+use App\Contracts\Inventory\InventoryServiceInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Sales\SalesReturnServiceInterface;
 use App\Domain\Sales\SalesReturns\Handlers\SalesReturnApprovalPipeline;
 use App\Enums\DocumentStatus;
+use App\Models\Accounting\JournalEntry;
+use App\Models\Inventory\Product;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\SalesReturn;
 use App\Models\Sales\SalesReturnItem;
@@ -31,15 +35,22 @@ class SalesReturnService implements SalesReturnServiceInterface
 
     private SalesReturnApprovalPipeline $approvalPipeline;
 
+    private JournalServiceInterface $journalService;
+
+    private InventoryServiceInterface $inventoryService;
+
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger,
-        SalesReturnApprovalPipeline $approvalPipeline
+        SalesReturnApprovalPipeline $approvalPipeline,
+        JournalServiceInterface $journalService,
+        InventoryServiceInterface $inventoryService
     ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->logger = $logger;
-
         $this->approvalPipeline = $approvalPipeline;
+        $this->journalService = $journalService;
+        $this->inventoryService = $inventoryService;
     }
 
     protected function getModelClass(): string
@@ -125,6 +136,7 @@ class SalesReturnService implements SalesReturnServiceInterface
 
     protected function createItems(Model $document, array $items): void
     {
+        assert($document instanceof SalesReturn);
         foreach ($items as $itemData) {
             $item = new SalesReturnItem($itemData);
             $item->sales_return_id = $document->id;
@@ -258,6 +270,10 @@ class SalesReturnService implements SalesReturnServiceInterface
 
     /**
      * Cancel a sales return.
+     *
+     * When cancelling an approved return, reverses:
+     * - Journal entry (if created)
+     * - Inventory stock-in (if warehouse was specified)
      */
     public function cancel(SalesReturn $salesReturn, ?string $reason = null, ?int $userId = null): SalesReturn
     {
@@ -266,15 +282,69 @@ class SalesReturnService implements SalesReturnServiceInterface
                 'Sales Return',
                 'dibatalkan',
                 $salesReturn->status->value,
-                'draft atau submitted'
+                'draft, submitted, atau approved'
             );
         }
 
-        $salesReturn->transitionTo(DocumentStatus::Cancelled, $userId ?? null, [
-            'cancellation_reason' => $reason,
-        ]);
+        $wasApproved = $salesReturn->status === DocumentStatus::Approved;
 
-        return $salesReturn->fresh();
+        return $this->executeInTransaction('cancel', function () use ($salesReturn, $reason, $userId, $wasApproved) {
+            // Reverse side effects if cancelling from approved status
+            if ($wasApproved) {
+                $this->reverseApprovalSideEffects($salesReturn);
+            }
+
+            $salesReturn->transitionTo(DocumentStatus::Cancelled, $userId, [
+                'cancellation_reason' => $reason,
+            ]);
+
+            return $salesReturn->fresh();
+        }, ['sales_return_id' => $salesReturn->id]);
+    }
+
+    /**
+     * Reverse side effects that were applied during approval.
+     */
+    private function reverseApprovalSideEffects(SalesReturn $salesReturn): void
+    {
+        // Reverse journal entry
+        if ($salesReturn->journal_entry_id) {
+            $journalEntry = JournalEntry::find($salesReturn->journal_entry_id);
+            if ($journalEntry) {
+                $this->journalService->reverseEntry(
+                    $journalEntry,
+                    'Pembatalan retur penjualan: '.$salesReturn->return_number
+                );
+            }
+            $salesReturn->journal_entry_id = null;
+        }
+
+        // Reverse inventory stock-in
+        if ($salesReturn->warehouse_id) {
+            $warehouse = $salesReturn->warehouse;
+
+            foreach ($salesReturn->items as $item) {
+                if (! $item->product_id) {
+                    continue;
+                }
+
+                $product = Product::find($item->product_id);
+                if (! $product || ! $product->track_inventory) {
+                    continue;
+                }
+
+                $this->inventoryService->stockOut(
+                    $product,
+                    $warehouse,
+                    (int) round((float) $item->quantity),
+                    'Pembatalan retur penjualan: '.$salesReturn->return_number,
+                    SalesReturn::class,
+                    $salesReturn->id
+                );
+            }
+        }
+
+        $salesReturn->save();
     }
 
     /**

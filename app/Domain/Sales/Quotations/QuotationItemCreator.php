@@ -115,20 +115,22 @@ class QuotationItemCreator
             $description .= ' ('.$bom->variant_name.')';
         }
 
-        $taxAmount = (int) round($sellingPrice * ((float) $quotation->tax_rate / 100));
+        $quantity = (float) ($bom->output_quantity ?? 1);
+        $lineTotal = (int) round($quantity * $sellingPrice);
+        $taxAmount = (int) round($lineTotal * ((float) $quotation->tax_rate / 100));
 
         QuotationItem::create([
             'quotation_id' => $quotation->id,
             'product_id' => $bom->product_id,
             'description' => $description,
-            'quantity' => (float) ($bom->output_quantity ?? 1),
+            'quantity' => $quantity,
             'unit' => $bom->output_unit ?? 'system',
             'unit_price' => $sellingPrice,
             'discount_percent' => 0,
             'discount_amount' => 0,
             'tax_rate' => $quotation->tax_rate,
             'tax_amount' => $taxAmount,
-            'line_total' => $sellingPrice,
+            'line_total' => $lineTotal,
             'sort_order' => 0,
             'notes' => $bom->description,
         ]);

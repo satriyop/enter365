@@ -92,7 +92,7 @@ describe('JournalEntryHandler', function () {
 
     beforeEach(function () {
         // Seed required accounts
-        Account::factory()->create(['code' => '4-2001', 'name' => 'Sales Returns', 'type' => 'revenue']);
+        Account::factory()->create(['code' => '4-1004', 'name' => 'Sales Returns', 'type' => 'revenue']);
         Account::factory()->create(['code' => '1-1100', 'name' => 'Accounts Receivable', 'type' => 'asset']);
         Account::factory()->create(['code' => '2-1200', 'name' => 'PPN Keluaran', 'type' => 'liability']);
     });

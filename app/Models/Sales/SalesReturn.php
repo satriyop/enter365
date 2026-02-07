@@ -16,6 +16,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property DocumentStatus $status
+ * @property \Carbon\Carbon $return_date
+ * @property int $subtotal
+ * @property string $tax_rate
+ * @property int $tax_amount
+ * @property int $total_amount
+ */
 class SalesReturn extends Model
 {
     use Filterable, HasFactory, HasStatusHistory, SoftDeletes;
@@ -225,7 +234,11 @@ class SalesReturn extends Model
      */
     public function canBeCancelled(): bool
     {
-        return in_array($this->status, [DocumentStatus::Draft, DocumentStatus::Submitted], true);
+        return in_array($this->status, [
+            DocumentStatus::Draft,
+            DocumentStatus::Submitted,
+            DocumentStatus::Approved,
+        ], true);
     }
 
     /**

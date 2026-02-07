@@ -217,10 +217,20 @@ describe('Workflow Transitions', function () {
         expect($cancelled)->status->toBe(DocumentStatus::Cancelled);
     });
 
-    test('throws exception when canceling approved sales return', function () {
+    test('cancels approved sales return with reversals', function () {
         $return = SalesReturn::factory()
             ->has(SalesReturnItem::factory(), 'items')
             ->create(['status' => DocumentStatus::Approved]);
+
+        $cancelled = $this->service->cancel($return, 'Customer changed mind');
+
+        expect($cancelled)->status->toBe(DocumentStatus::Cancelled);
+    });
+
+    test('throws exception when canceling completed sales return', function () {
+        $return = SalesReturn::factory()
+            ->has(SalesReturnItem::factory(), 'items')
+            ->create(['status' => DocumentStatus::Completed]);
 
         $this->service->cancel($return, 'Test');
     })->throws(StateTransitionException::class);

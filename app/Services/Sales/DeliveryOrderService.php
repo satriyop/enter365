@@ -125,6 +125,9 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
     public function createFromInvoice(Invoice $invoice, array $data = []): DeliveryOrder
     {
         return $this->executeInTransaction('create_from_invoice', function () use ($invoice, $data) {
+            // Calculate already-allocated quantities from existing non-cancelled DOs
+            $allocatedQuantities = $this->getAllocatedQuantitiesForInvoice($invoice);
+
             $deliveryOrder = new DeliveryOrder([
                 'invoice_id' => $invoice->id,
                 'contact_id' => $invoice->contact_id,
@@ -137,15 +140,57 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
             ]);
             $deliveryOrder->save();
 
+            $hasItems = false;
             foreach ($invoice->items as $invoiceItem) {
+                $allocated = $allocatedQuantities[$invoiceItem->id] ?? 0;
+                $remaining = (float) $invoiceItem->quantity - $allocated;
+
+                if ($remaining <= 0) {
+                    continue;
+                }
+
                 $item = new DeliveryOrderItem;
                 $item->delivery_order_id = $deliveryOrder->id;
-                $item->fillFromInvoiceItem($invoiceItem);
+                $item->fillFromInvoiceItem($invoiceItem, $remaining);
                 $item->save();
+                $hasItems = true;
+            }
+
+            if (! $hasItems) {
+                throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                    'membuat surat jalan',
+                    'Semua item invoice sudah dialokasikan ke surat jalan lain'
+                );
             }
 
             return $deliveryOrder->fresh(['items', 'contact', 'invoice', 'warehouse']);
         }, ['invoice_id' => $invoice->id]);
+    }
+
+    /**
+     * Get already-allocated quantities per invoice item from existing non-cancelled DOs.
+     *
+     * @return array<int, float> Map of invoice_item_id => allocated quantity
+     */
+    private function getAllocatedQuantitiesForInvoice(Invoice $invoice): array
+    {
+        $existingDoIds = DeliveryOrder::query()
+            ->where('invoice_id', $invoice->id)
+            ->where('status', '!=', DocumentStatus::Cancelled)
+            ->pluck('id');
+
+        if ($existingDoIds->isEmpty()) {
+            return [];
+        }
+
+        return DeliveryOrderItem::query()
+            ->whereIn('delivery_order_id', $existingDoIds)
+            ->whereNotNull('invoice_item_id')
+            ->selectRaw('invoice_item_id, SUM(quantity) as total_qty')
+            ->groupBy('invoice_item_id')
+            ->pluck('total_qty', 'invoice_item_id')
+            ->map(fn ($qty) => (float) $qty)
+            ->toArray();
     }
 
     /**
@@ -404,7 +449,7 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
                     $this->inventoryService->stockOut(
                         $product,
                         $warehouse,
-                        (int) $item->quantity,
+                        (int) round((float) $item->quantity),
                         'Delivery: '.$deliveryOrder->do_number,
                         DeliveryOrder::class,
                         $deliveryOrder->id

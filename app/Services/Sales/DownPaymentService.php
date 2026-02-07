@@ -165,6 +165,20 @@ class DownPaymentService extends BaseService implements DownPaymentServiceInterf
         }
 
         return $this->executeInTransaction('apply_to_invoice', function () use ($downPayment, $invoice, $data, $amount) {
+            // Pessimistic lock to prevent concurrent over-application
+            $downPayment = DownPayment::lockForUpdate()->findOrFail($downPayment->id);
+            $invoice = Invoice::lockForUpdate()->findOrFail($invoice->id);
+
+            // Re-validate after acquiring lock
+            if ($amount > $downPayment->remaining_amount) {
+                throw \App\Exceptions\Domain\BusinessRuleException::quantityValidation(
+                    'Jumlah aplikasi down payment',
+                    $amount,
+                    $downPayment->remaining_amount,
+                    'exceeds'
+                );
+            }
+
             $application = new DownPaymentApplication([
                 'down_payment_id' => $downPayment->id,
                 'applicable_type' => Invoice::class,
@@ -245,6 +259,20 @@ class DownPaymentService extends BaseService implements DownPaymentServiceInterf
         }
 
         return $this->executeInTransaction('apply_to_bill', function () use ($downPayment, $bill, $data, $amount) {
+            // Pessimistic lock to prevent concurrent over-application
+            $downPayment = DownPayment::lockForUpdate()->findOrFail($downPayment->id);
+            $bill = Bill::lockForUpdate()->findOrFail($bill->id);
+
+            // Re-validate after acquiring lock
+            if ($amount > $downPayment->remaining_amount) {
+                throw \App\Exceptions\Domain\BusinessRuleException::quantityValidation(
+                    'Jumlah aplikasi down payment',
+                    $amount,
+                    $downPayment->remaining_amount,
+                    'exceeds'
+                );
+            }
+
             $application = new DownPaymentApplication([
                 'down_payment_id' => $downPayment->id,
                 'applicable_type' => Bill::class,
@@ -279,7 +307,8 @@ class DownPaymentService extends BaseService implements DownPaymentServiceInterf
     public function unapply(DownPaymentApplication $application): bool
     {
         return $this->executeInTransaction('unapply', function () use ($application) {
-            $downPayment = $application->downPayment;
+            // Pessimistic lock to prevent concurrent modifications
+            $downPayment = DownPayment::lockForUpdate()->findOrFail($application->down_payment_id);
             $applicable = $application->applicable;
 
             // Reverse journal entry
@@ -336,6 +365,19 @@ class DownPaymentService extends BaseService implements DownPaymentServiceInterf
         }
 
         return $this->executeInTransaction('refund', function () use ($downPayment, $data, $refundAmount) {
+            // Pessimistic lock to prevent concurrent refund
+            $downPayment = DownPayment::lockForUpdate()->findOrFail($downPayment->id);
+
+            // Re-validate after acquiring lock
+            if ($refundAmount > $downPayment->remaining_amount) {
+                throw \App\Exceptions\Domain\BusinessRuleException::quantityValidation(
+                    'Jumlah refund',
+                    $refundAmount,
+                    $downPayment->remaining_amount,
+                    'exceeds'
+                );
+            }
+
             // Create refund payment
             // Receivable DP: we refund TO customer (outgoing for us)
             // Payable DP: vendor refunds TO us (incoming for us)
@@ -355,10 +397,14 @@ class DownPaymentService extends BaseService implements DownPaymentServiceInterf
             ]);
             $payment->save();
 
-            // Update down payment
+            // Update down payment — only mark as Refunded if fully refunded
             $downPayment->refund_payment_id = $payment->id;
             $downPayment->refunded_at = now();
-            $downPayment->status = DocumentStatus::Refunded;
+            if ($refundAmount >= $downPayment->remaining_amount) {
+                $downPayment->status = DocumentStatus::Refunded;
+            }
+            // Partial refund: status stays Active, remaining_amount is reduced via applied_amount
+            $downPayment->applied_amount += $refundAmount;
             $downPayment->save();
 
             // Create refund journal entry

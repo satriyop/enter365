@@ -128,6 +128,6 @@ class DeliveryOrderItem extends Model
 
         $this->discount_amount = $discountAmount;
         $this->tax_amount = $taxAmount;
-        $this->line_total = $afterDiscount + $taxAmount;
+        $this->line_total = $afterDiscount;
     }
 }

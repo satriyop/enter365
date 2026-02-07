@@ -307,6 +307,10 @@ class QuotationCrudService
      */
     public function selectVariant(Quotation $quotation, int $variantOptionId): Quotation
     {
+        if (! $this->domainFactory->stateMachine($quotation)->canEdit()) {
+            throw \App\Exceptions\Domain\DocumentLockedException::cannotEdit($quotation, 'Hanya penawaran draft yang dapat diubah.');
+        }
+
         if (! $quotation->isMultiOption()) {
             throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
                 'memilih varian',
