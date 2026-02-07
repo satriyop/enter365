@@ -142,11 +142,11 @@ class DownPaymentService extends BaseService implements DownPaymentServiceInterf
         $amount = $data['amount'];
         $outstandingAmount = $invoice->getOutstandingAmount();
 
-        if ($amount > $downPayment->getRemainingAmount()) {
+        if ($amount > $downPayment->remaining_amount) {
             throw \App\Exceptions\Domain\BusinessRuleException::quantityValidation(
                 'Jumlah aplikasi down payment',
                 $amount,
-                $downPayment->getRemainingAmount(),
+                $downPayment->remaining_amount,
                 'exceeds'
             );
         }
@@ -222,11 +222,11 @@ class DownPaymentService extends BaseService implements DownPaymentServiceInterf
         $amount = $data['amount'];
         $outstandingAmount = $bill->getOutstandingAmount();
 
-        if ($amount > $downPayment->getRemainingAmount()) {
+        if ($amount > $downPayment->remaining_amount) {
             throw \App\Exceptions\Domain\BusinessRuleException::quantityValidation(
                 'Jumlah aplikasi down payment',
                 $amount,
-                $downPayment->getRemainingAmount(),
+                $downPayment->remaining_amount,
                 'exceeds'
             );
         }
@@ -315,13 +315,13 @@ class DownPaymentService extends BaseService implements DownPaymentServiceInterf
             );
         }
 
-        $refundAmount = $data['amount'] ?? $downPayment->getRemainingAmount();
+        $refundAmount = $data['amount'] ?? $downPayment->remaining_amount;
 
-        if ($refundAmount > $downPayment->getRemainingAmount()) {
+        if ($refundAmount > $downPayment->remaining_amount) {
             throw \App\Exceptions\Domain\BusinessRuleException::quantityValidation(
                 'Jumlah refund',
                 $refundAmount,
-                $downPayment->getRemainingAmount(),
+                $downPayment->remaining_amount,
                 'exceeds'
             );
         }

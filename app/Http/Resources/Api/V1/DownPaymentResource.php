@@ -16,7 +16,6 @@ class DownPaymentResource extends JsonResource
     /**
      * Transform the resource into an array.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return array{
      *   id: int,
      *   dp_number: string,
@@ -62,7 +61,7 @@ class DownPaymentResource extends JsonResource
             'dp_date' => $this->dp_date instanceof \Carbon\Carbon ? $this->dp_date->toDateString() : $this->dp_date,
             'amount' => $this->amount,
             'applied_amount' => $this->applied_amount,
-            'remaining_amount' => $this->getRemainingAmount(),
+            'remaining_amount' => $this->remaining_amount,
             'payment_method' => $this->payment_method,
             'cash_account_id' => $this->cash_account_id,
             'cash_account' => $this->whenLoaded('cashAccount', fn () => [

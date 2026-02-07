@@ -254,7 +254,7 @@ describe('Down Payment Apply to Invoice', function () {
         $invoice->refresh();
 
         expect($downPayment->applied_amount)->toBe(5000000);
-        expect($downPayment->getRemainingAmount())->toBe(5000000);
+        expect($downPayment->remaining_amount)->toBe(5000000);
         expect($invoice->paid_amount)->toBe(5000000);
     });
 

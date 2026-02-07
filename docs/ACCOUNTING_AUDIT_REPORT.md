@@ -236,10 +236,10 @@ The architecture is excellent — Strategy Pattern, fail-fast validation, transa
 
 | # | Issue | File |
 |---|---|---|
-| M1 | `JournalEntry::source()` — `MorphTo` return type not imported | `app/Models/Accounting/JournalEntry.php` |
-| M2 | `DownPayment` — virtual column `remaining_amount` in migration but not used in model | Migration vs Model mismatch |
-| M3 | No factory files for any accounting model (Account, JournalEntry, FiscalPeriod, etc.) | Missing `database/factories/Accounting/` |
-| M4 | `InvoicePosted` event dispatched but listener `PostInvoiceToJournal` never registered | Dead code in `app/Listeners/` |
+| M1 | ~~`JournalEntry::source()` — `MorphTo` return type not imported~~ | **FIXED** — added missing `use MorphTo` import |
+| M2 | ~~`DownPayment` — virtual column `remaining_amount` in migration but not used in model~~ | **FIXED** — replaced `getRemainingAmount()` method with Laravel accessor; DB virtual column kept for queries |
+| M3 | ~~No factory files for any accounting model~~ | **FALSE POSITIVE** — all factories already exist (`AccountFactory`, `JournalEntryFactory`, `FiscalPeriodFactory`, etc.) |
+| M4 | ~~`InvoicePosted` event dispatched but listener `PostInvoiceToJournal` never registered~~ | **FIXED** — removed dead event, dead listener, and dead Event::listen() registration |
 | M5 | Report controller uses string-based Gates instead of Policies | `app/Http/Controllers/Api/V1/ReportController.php` |
 | M6 | FiscalPeriod dual state tracking (`status` enum + `is_closed`/`is_locked` booleans) | `app/Models/Accounting/FiscalPeriod.php` |
 | M7 | Deprecated methods on Invoice/Bill (`updatePaymentStatus`, `markAsOverdue`) still present | Technical debt |

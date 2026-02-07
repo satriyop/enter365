@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class JournalEntry extends Model
 {
@@ -48,7 +49,7 @@ class JournalEntry extends Model
 
         static::creating(function (JournalEntry $entry) {
             // Always generate entry_number if not set (override empty check for safety)
-            if (! isset($entry->entry_number) || $entry->entry_number === null || $entry->entry_number === '') {
+            if (! isset($entry->entry_number) || $entry->entry_number === '') {
                 $entry->entry_number = \App\Domain\Shared\DocumentNumbers::generate(
                     'JE-'.now()->format('Ym').'-',
                     'journal_entries',

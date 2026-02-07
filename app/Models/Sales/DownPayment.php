@@ -10,12 +10,21 @@ use App\Models\Shared\Payment;
 use App\Models\User;
 use App\Traits\CascadesSoftDeletes;
 use App\Traits\Filterable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property DocumentStatus $status
+ * @property \Carbon\Carbon $dp_date
+ * @property int $amount
+ * @property int $applied_amount
+ * @property \Carbon\Carbon|null $refunded_at
+ */
 class DownPayment extends Model
 {
     use CascadesSoftDeletes, Filterable, HasFactory, SoftDeletes;
@@ -122,11 +131,17 @@ class DownPayment extends Model
     }
 
     /**
-     * Get remaining amount that can be applied.
+     * Remaining amount accessor — always computes from current PHP attributes
+     * so it stays correct even on dirty (unsaved) models.
+     * The DB virtual column (storedAs) is kept for raw query sorting/filtering.
+     *
+     * @return Attribute<int, never>
      */
-    public function getRemainingAmount(): int
+    protected function remainingAmount(): Attribute
     {
-        return $this->amount - $this->applied_amount;
+        return Attribute::make(
+            get: fn () => $this->amount - $this->applied_amount,
+        );
     }
 
     /**
@@ -142,7 +157,7 @@ class DownPayment extends Model
      */
     public function canBeApplied(): bool
     {
-        return $this->status === DocumentStatus::Active && $this->getRemainingAmount() > 0;
+        return $this->status === DocumentStatus::Active && $this->remaining_amount > 0;
     }
 
     /**
@@ -150,7 +165,7 @@ class DownPayment extends Model
      */
     public function canBeRefunded(): bool
     {
-        return $this->status === DocumentStatus::Active && $this->getRemainingAmount() > 0;
+        return $this->status === DocumentStatus::Active && $this->remaining_amount > 0;
     }
 
     /**
