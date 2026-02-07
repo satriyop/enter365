@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Api\V1;
 
+use App\Enums\PphCategory;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\FiscalPeriod;
 use App\Models\Purchasing\Bill;
@@ -28,8 +29,12 @@ class StorePaymentRequest extends FormRequest
             'reference' => ['nullable', 'string', 'max:100'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'cash_account_id' => ['required', 'integer', 'exists:accounts,id'],
+            'exchange_rate' => ['nullable', 'numeric', 'min:0'],
             'invoice_id' => ['nullable', 'integer', 'exists:invoices,id'],
             'bill_id' => ['nullable', 'integer', 'exists:bills,id'],
+            'pph_category' => ['nullable', 'string', Rule::in(array_column(PphCategory::cases(), 'value'))],
+            'pph_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'pph_withhold' => ['nullable', 'boolean'],
         ];
     }
 
