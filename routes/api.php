@@ -52,6 +52,7 @@ use App\Http\Controllers\Api\V1\SpecValidationRuleSetController;
 use App\Http\Controllers\Api\V1\StockOpnameController;
 use App\Http\Controllers\Api\V1\SubcontractorInvoiceController;
 use App\Http\Controllers\Api\V1\SubcontractorWorkOrderController;
+use App\Http\Controllers\Api\V1\TaskController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\WarehouseController;
 use App\Http\Controllers\Api\V1\WorkOrderController;
@@ -479,6 +480,21 @@ Route::prefix('v1')->group(function () {
             Route::delete('projects/{project}/revenues/{revenue}', [ProjectController::class, 'deleteRevenue']);
             Route::get('projects/{project}/summary', [ProjectController::class, 'summary']);
             Route::get('projects-statistics', [ProjectController::class, 'statistics']);
+
+            // Project Tasks (Tugas Proyek)
+            Route::get('projects/{project}/tasks', [TaskController::class, 'index']);
+            Route::post('projects/{project}/tasks', [TaskController::class, 'store']);
+            Route::get('projects/{project}/tasks/{task}', [TaskController::class, 'show']);
+            Route::put('projects/{project}/tasks/{task}', [TaskController::class, 'update']);
+            Route::delete('projects/{project}/tasks/{task}', [TaskController::class, 'destroy']);
+            Route::post('projects/{project}/tasks/{task}/start', [TaskController::class, 'start']);
+            Route::post('projects/{project}/tasks/{task}/complete', [TaskController::class, 'complete']);
+            Route::post('projects/{project}/tasks/{task}/cancel', [TaskController::class, 'cancel']);
+            Route::post('projects/{project}/tasks/{task}/subtasks', [TaskController::class, 'addSubtask']);
+            Route::post('projects/{project}/tasks/{task}/dependencies', [TaskController::class, 'addDependency']);
+            Route::delete('projects/{project}/tasks/{task}/dependencies/{dependency}', [TaskController::class, 'removeDependency']);
+            Route::post('projects/{project}/tasks/reorder', [TaskController::class, 'reorder']);
+            Route::get('projects/{project}/tasks-statistics', [TaskController::class, 'statistics']);
         });
 
         // Work Orders (Perintah Kerja)

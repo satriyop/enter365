@@ -190,6 +190,22 @@ class Project extends Model
     }
 
     /**
+     * @return HasMany<Task, $this>
+     */
+    public function tasks(): HasMany
+    {
+        return $this->hasMany(Task::class);
+    }
+
+    /**
+     * @return HasMany<Task, $this>
+     */
+    public function rootTasks(): HasMany
+    {
+        return $this->hasMany(Task::class)->whereNull('parent_id');
+    }
+
+    /**
      * @return BelongsTo<User, $this>
      */
     public function manager(): BelongsTo

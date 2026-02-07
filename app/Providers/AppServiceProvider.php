@@ -242,8 +242,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(\App\Contracts\Inventory\WarehouseServiceInterface::class, \App\Services\Inventory\WarehouseService::class);
         $this->app->bind(\App\Contracts\Inventory\ProductCategoryServiceInterface::class, \App\Services\Inventory\ProductCategoryService::class);
 
-        // Projects Domain (1 service)
+        // Projects Domain (2 services)
         $this->app->bind(ProjectServiceInterface::class, ProjectService::class);
+        $this->app->bind(\App\Contracts\Projects\TaskServiceInterface::class, \App\Services\Projects\TaskService::class);
 
         // Solar Domain (2 services)
         $this->app->bind(SolarProposalServiceInterface::class, SolarProposalService::class);
@@ -299,6 +300,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(\App\Models\Manufacturing\WorkOrder::class, \App\Policies\WorkOrderPolicy::class);
         Gate::policy(\App\Models\Manufacturing\Bom::class, \App\Policies\BomPolicy::class);
         Gate::policy(\App\Models\Projects\Project::class, \App\Policies\ProjectPolicy::class);
+        Gate::policy(\App\Models\Projects\Task::class, \App\Policies\TaskPolicy::class);
         Gate::policy(\App\Models\User::class, \App\Policies\UserPolicy::class);
         Gate::policy(\App\Models\Sales\SalesReturn::class, \App\Policies\SalesReturnPolicy::class);
         Gate::policy(\App\Models\Purchasing\GoodsReceiptNote::class, \App\Policies\GoodsReceiptNotePolicy::class);
@@ -415,6 +417,7 @@ class AppServiceProvider extends ServiceProvider
 
             // Projects Domain
             'project' => \App\Models\Projects\Project::class,
+            'task' => \App\Models\Projects\Task::class,
 
             // Contacts Domain
             'contact' => \App\Models\Contacts\Contact::class,
@@ -462,6 +465,7 @@ class AppServiceProvider extends ServiceProvider
         \App\Models\Purchasing\GoodsReceiptNote::observe($auditObserver);
         \App\Models\Purchasing\Bill::observe($auditObserver);
         \App\Models\Projects\Project::observe($auditObserver);
+        \App\Models\Projects\Task::observe($auditObserver);
         \App\Models\Shared\Payment::observe($auditObserver);
         \App\Models\Manufacturing\SubcontractorWorkOrder::observe($auditObserver);
         \App\Models\Manufacturing\MaterialRequisition::observe($auditObserver);

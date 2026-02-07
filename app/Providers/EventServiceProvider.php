@@ -39,6 +39,7 @@ class EventServiceProvider extends ServiceProvider
 
         // Projects Domain
         \App\Listeners\Projects\ProjectEventSubscriber::class,
+        \App\Listeners\Projects\TaskEventSubscriber::class,
 
         // Inventory Domain
         \App\Listeners\Inventory\InventoryEventSubscriber::class,

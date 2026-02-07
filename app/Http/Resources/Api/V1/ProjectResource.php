@@ -13,7 +13,6 @@ class ProjectResource extends JsonResource
     /**
      * Transform the resource into an array.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return array{
      *   id: int,
      *   project_number: string,
@@ -102,6 +101,8 @@ class ProjectResource extends JsonResource
             'revenues' => ProjectRevenueResource::collection($this->whenLoaded('revenues')),
             'revenues_count' => $this->whenCounted('revenues'),
             'cost_breakdown' => $this->when($this->relationLoaded('costs'), fn () => $this->getCostBreakdown()),
+            'tasks' => TaskResource::collection($this->whenLoaded('tasks')),
+            'tasks_count' => $this->whenCounted('tasks'),
             'manager_id' => $this->manager_id,
             'manager' => $this->whenLoaded('manager', fn () => [
                 'id' => $this->manager->id,

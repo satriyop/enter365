@@ -59,6 +59,10 @@ enum DocumentStatus: string
     // Solar
     case Accepted = 'accepted';
 
+    // Task
+    case Todo = 'todo';
+    case Done = 'done';
+
     // BOM
     case Archived = 'archived';
 
@@ -99,6 +103,8 @@ enum DocumentStatus: string
             self::Planning => 'Perencanaan',
             self::OnHold => 'Ditunda',
             self::Accepted => 'Diterima',
+            self::Todo => 'Belum Dikerjakan',
+            self::Done => 'Selesai',
             self::Archived => 'Diarsipkan',
         };
     }
@@ -109,10 +115,10 @@ enum DocumentStatus: string
     public function color(): string
     {
         return match ($this) {
-            self::Draft => 'zinc',
+            self::Draft, self::Todo => 'zinc',
             self::Cancelled, self::Rejected => 'red',
             self::Submitted, self::Processing, self::Receiving, self::Reviewed => 'yellow',
-            self::Approved, self::Completed, self::Paid, self::Delivered, self::Accepted, self::FullyApplied => 'green',
+            self::Approved, self::Completed, self::Paid, self::Delivered, self::Accepted, self::FullyApplied, self::Done => 'green',
             self::Converted, self::Active, self::Applied, self::Refunded, self::Counting => 'blue',
             self::Expired, self::Overdue => 'orange',
             self::Partial, self::InProgress, self::Assigned => 'indigo',
@@ -128,7 +134,7 @@ enum DocumentStatus: string
      */
     public function isEditable(): bool
     {
-        return $this === self::Draft;
+        return in_array($this, [self::Draft, self::Todo], true);
     }
 
     /**
@@ -143,6 +149,7 @@ enum DocumentStatus: string
             self::Paid,
             self::Delivered,
             self::Expired,
+            self::Done,
             self::Archived,
         ], true);
     }
@@ -432,6 +439,21 @@ enum DocumentStatus: string
             self::Reviewed,
             self::Approved,
             self::Completed,
+            self::Cancelled,
+        ];
+    }
+
+    /**
+     * Get statuses valid for Task documents.
+     *
+     * @return array<self>
+     */
+    public static function forTask(): array
+    {
+        return [
+            self::Todo,
+            self::InProgress,
+            self::Done,
             self::Cancelled,
         ];
     }

@@ -82,6 +82,9 @@ class ProjectFilter extends QueryFilter
             'revenues.invoice',
             'revenues.downPayment',
             'workOrders',
+            'tasks',
+            'tasks.subtasks',
+            'tasks.assignee',
         ];
     }
 
