@@ -72,6 +72,10 @@ class AccountingPolicyController extends Controller
                 'direct' => 'Tutup langsung ke retained earnings (lebih sederhana)',
                 'income_summary' => 'Melalui akun income summary (audit trail lebih jelas)',
             ],
+            'costing_method' => [
+                'weighted_average' => 'Rata-rata tertimbang (default, cocok untuk barang sejenis)',
+                'fifo' => 'First-In First-Out (wajib SAK EMKM untuk industri tertentu)',
+            ],
         ];
     }
 }

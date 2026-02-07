@@ -23,6 +23,7 @@ class UpdateAccountingPoliciesRequest extends FormRequest
             'return_accounting' => ['required', Rule::in(['full_journal', 'inventory_only'])],
             'manufacturing_costing' => ['required', Rule::in(['project_based', 'job_costing', 'wip_accounting'])],
             'closing_strategy' => ['required', Rule::in(['direct', 'income_summary'])],
+            'costing_method' => ['required', Rule::in(['weighted_average', 'fifo'])],
         ];
     }
 }

@@ -18,6 +18,7 @@ class AccountingPolicyResource extends JsonResource
      *   return_accounting: string,
      *   manufacturing_costing: string,
      *   closing_strategy: string,
+     *   costing_method: string,
      *   updated_at: string|null
      * }
      */
@@ -30,6 +31,7 @@ class AccountingPolicyResource extends JsonResource
             'return_accounting' => $this->return_accounting,
             'manufacturing_costing' => $this->manufacturing_costing,
             'closing_strategy' => $this->closing_strategy,
+            'costing_method' => $this->costing_method,
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];
     }

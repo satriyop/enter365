@@ -222,69 +222,73 @@ class COGSReportService
 
     /**
      * Get inventory value at a specific date.
+     *
+     * Uses 3 batch queries instead of per-product loops (O(1) vs O(N*4)).
      */
     protected function getInventoryValueAtDate(Carbon $asOfDate): int
     {
-        // Sum current value of all products based on movements up to date
-        $products = Product::query()
-            ->where('track_inventory', true)
-            ->where('is_active', true)
+        // Batch query 1: net quantity per product
+        // Uses ABS() to normalize sign conventions (stockOut stores negative, factories store positive)
+        $productData = DB::table('inventory_movements as m')
+            ->join('products as p', 'm.product_id', '=', 'p.id')
+            ->where('p.track_inventory', true)
+            ->where('p.is_active', true)
+            ->whereDate('m.movement_date', '<=', $asOfDate)
+            ->groupBy('m.product_id')
+            ->select([
+                'm.product_id',
+                DB::raw("SUM(CASE WHEN m.type IN ('in', 'transfer_in') THEN ABS(m.quantity) ELSE 0 END) as in_qty"),
+                DB::raw("SUM(CASE WHEN m.type IN ('out', 'transfer_out') THEN ABS(m.quantity) ELSE 0 END) as out_qty"),
+                DB::raw("SUM(CASE WHEN m.type = 'adjustment' THEN m.quantity ELSE 0 END) as adj_qty"),
+            ])
             ->get();
+
+        if ($productData->isEmpty()) {
+            return 0;
+        }
+
+        $productIds = $productData->pluck('product_id');
+
+        // Batch query 2: weighted average cost per product from IN movements
+        $costs = DB::table('inventory_movements')
+            ->whereIn('product_id', $productIds)
+            ->where('type', InventoryMovement::TYPE_IN)
+            ->whereDate('movement_date', '<=', $asOfDate)
+            ->where('quantity', '>', 0)
+            ->groupBy('product_id')
+            ->select([
+                'product_id',
+                DB::raw('SUM(total_cost) as total_cost'),
+                DB::raw('SUM(quantity) as total_qty'),
+            ])
+            ->get()
+            ->keyBy('product_id');
+
+        // Batch query 3: fallback purchase prices for products without IN movements
+        $fallbackPrices = DB::table('products')
+            ->whereIn('id', $productIds)
+            ->pluck('purchase_price', 'id');
 
         $totalValue = 0;
 
-        foreach ($products as $product) {
-            // Get quantity at date
-            $ins = InventoryMovement::query()
-                ->where('product_id', $product->id)
-                ->whereIn('type', [InventoryMovement::TYPE_IN, InventoryMovement::TYPE_TRANSFER_IN])
-                ->whereDate('movement_date', '<=', $asOfDate)
-                ->sum('quantity');
+        foreach ($productData as $row) {
+            $quantity = (int) $row->in_qty - (int) $row->out_qty + (int) $row->adj_qty;
 
-            $outs = InventoryMovement::query()
-                ->where('product_id', $product->id)
-                ->whereIn('type', [InventoryMovement::TYPE_OUT, InventoryMovement::TYPE_TRANSFER_OUT])
-                ->whereDate('movement_date', '<=', $asOfDate)
-                ->sum('quantity');
+            if ($quantity <= 0) {
+                continue;
+            }
 
-            $adjustments = InventoryMovement::query()
-                ->where('product_id', $product->id)
-                ->where('type', InventoryMovement::TYPE_ADJUSTMENT)
-                ->whereDate('movement_date', '<=', $asOfDate)
-                ->sum('quantity');
-
-            $quantity = (int) $ins - (int) $outs + (int) $adjustments;
-
-            // Use average cost from recent movements or purchase price
-            $avgCost = $this->getAverageCost($product, $asOfDate);
+            $costData = $costs->get($row->product_id);
+            if ($costData && $costData->total_qty > 0) {
+                $avgCost = (int) round($costData->total_cost / $costData->total_qty);
+            } else {
+                $avgCost = (int) ($fallbackPrices->get($row->product_id) ?? 0);
+            }
 
             $totalValue += $quantity * $avgCost;
         }
 
         return $totalValue;
-    }
-
-    /**
-     * Get average cost for a product up to a date.
-     */
-    protected function getAverageCost(Product $product, Carbon $asOfDate): int
-    {
-        // Calculate weighted average cost from IN movements
-        $movements = InventoryMovement::query()
-            ->where('product_id', $product->id)
-            ->where('type', InventoryMovement::TYPE_IN)
-            ->whereDate('movement_date', '<=', $asOfDate)
-            ->where('quantity', '>', 0)
-            ->get();
-
-        if ($movements->isEmpty()) {
-            return $product->purchase_price ?? 0;
-        }
-
-        $totalCost = $movements->sum('total_cost');
-        $totalQuantity = $movements->sum('quantity');
-
-        return $totalQuantity > 0 ? (int) round($totalCost / $totalQuantity) : 0;
     }
 
     /**

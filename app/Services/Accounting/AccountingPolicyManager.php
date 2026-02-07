@@ -9,6 +9,8 @@ use App\Contracts\Accounting\Strategies\COGSRecognitionStrategy;
 use App\Contracts\Accounting\Strategies\InventoryAccountingStrategy;
 use App\Contracts\Accounting\Strategies\ManufacturingCostStrategy;
 use App\Contracts\Accounting\Strategies\ReturnAccountingStrategy;
+use App\Contracts\Inventory\CostingStrategy;
+use App\Models\Accounting\AccountingPolicy;
 use App\Services\Accounting\Strategies\Closing\DirectClosingStrategy;
 use App\Services\Accounting\Strategies\Closing\IncomeSummaryStrategy;
 use App\Services\Accounting\Strategies\COGS\COGSOnDeliveryStrategy;
@@ -22,8 +24,9 @@ use App\Services\Accounting\Strategies\Manufacturing\ProjectBasedCostingStrategy
 use App\Services\Accounting\Strategies\Manufacturing\WIPAccountingStrategy;
 use App\Services\Accounting\Strategies\Returns\FullReturnJournalStrategy;
 use App\Services\Accounting\Strategies\Returns\InventoryOnlyReturnStrategy;
+use App\Services\Inventory\Costing\FIFOCostingStrategy;
+use App\Services\Inventory\Costing\WeightedAverageCostingStrategy;
 use Illuminate\Contracts\Container\Container;
-use App\Models\Accounting\AccountingPolicy;
 
 /**
  * Manages accounting policy strategies.
@@ -84,6 +87,16 @@ class AccountingPolicyManager
     private array $closingStrategies = [
         'direct' => DirectClosingStrategy::class,
         'income_summary' => IncomeSummaryStrategy::class,
+    ];
+
+    /**
+     * Map of inventory costing method names to strategy classes.
+     *
+     * @var array<string, class-string<CostingStrategy>>
+     */
+    private array $costingStrategies = [
+        'weighted_average' => WeightedAverageCostingStrategy::class,
+        'fifo' => FIFOCostingStrategy::class,
     ];
 
     public function __construct(
@@ -193,6 +206,23 @@ class AccountingPolicyManager
     }
 
     /**
+     * Get the configured inventory costing strategy (Weighted Average, FIFO).
+     */
+    public function costing(): CostingStrategy
+    {
+        $method = $this->getPolicyValue('costing_method', 'weighted_average');
+
+        if (! isset($this->costingStrategies[$method])) {
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'menggunakan costing method',
+                "Unknown costing method: {$method}"
+            );
+        }
+
+        return $this->container->make($this->costingStrategies[$method]);
+    }
+
+    /**
      * Get current policy values (DB-first, config fallback).
      *
      * @return array<string, string>
@@ -205,6 +235,7 @@ class AccountingPolicyManager
             'return_accounting' => $this->getPolicyValue('return_accounting', 'full_journal'),
             'manufacturing_costing' => $this->getPolicyValue('manufacturing_costing', 'project_based'),
             'closing_strategy' => $this->getPolicyValue('closing_strategy', 'direct'),
+            'costing_method' => $this->getPolicyValue('costing_method', 'weighted_average'),
         ];
     }
 
@@ -221,6 +252,7 @@ class AccountingPolicyManager
             'return_accounting' => array_keys($this->returnStrategies),
             'manufacturing_costing' => array_keys($this->manufacturingStrategies),
             'closing_strategy' => array_keys($this->closingStrategies),
+            'costing_method' => array_keys($this->costingStrategies),
         ];
     }
 

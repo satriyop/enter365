@@ -18,6 +18,7 @@ use App\Models\Inventory\ProductStock;
 use App\Models\Inventory\Warehouse;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
+use App\Services\Accounting\AccountingPolicyManager;
 use App\Services\Base\BaseService;
 use Illuminate\Support\Collection;
 
@@ -25,7 +26,8 @@ class InventoryService extends BaseService implements InventoryServiceInterface
 {
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
-        ContextualLoggerInterface $logger
+        ContextualLoggerInterface $logger,
+        private AccountingPolicyManager $policyManager
     ) {
         parent::__construct($eventDispatcher, $logger);
     }
@@ -46,8 +48,8 @@ class InventoryService extends BaseService implements InventoryServiceInterface
             $stock = ProductStock::lockForStock($product, $warehouse);
             $quantityBefore = $stock->quantity;
 
-            // Add stock with weighted average cost
-            $stock->addStock($quantity, $unitCost);
+            // Add stock using configured costing strategy (Weighted Average or FIFO)
+            $this->policyManager->costing()->recordStockIn($stock, $quantity, $unitCost, $referenceType, $referenceId);
 
             // Create movement record
             $movement = InventoryMovement::create([
@@ -107,11 +109,8 @@ class InventoryService extends BaseService implements InventoryServiceInterface
 
             $quantityBefore = $stock->quantity;
 
-            // Get unit cost before removing
-            $unitCost = $stock->average_cost;
-
-            // Remove stock
-            $stock->removeStock($quantity);
+            // Get unit cost and remove stock using configured costing strategy
+            $unitCost = $this->policyManager->costing()->recordStockOut($stock, $quantity);
 
             // Create movement record
             $movement = InventoryMovement::create([
@@ -230,16 +229,16 @@ class InventoryService extends BaseService implements InventoryServiceInterface
                 );
             }
 
-            $unitCost = $fromStock->average_cost;
+            $costingStrategy = $this->policyManager->costing();
             $fromQuantityBefore = $fromStock->quantity;
 
-            // Remove from source warehouse
-            $fromStock->removeStock($quantity);
+            // Remove from source warehouse using costing strategy
+            $unitCost = $costingStrategy->recordStockOut($fromStock, $quantity);
 
             // Add to destination warehouse (also locked)
             $toStock = ProductStock::lockForStock($product, $toWarehouse);
             $toQuantityBefore = $toStock->quantity;
-            $toStock->addStock($quantity, $unitCost);
+            $costingStrategy->recordStockIn($toStock, $quantity, $unitCost);
 
             $transferNumber = InventoryMovement::generateMovementNumber(InventoryMovement::TYPE_TRANSFER_OUT);
 
