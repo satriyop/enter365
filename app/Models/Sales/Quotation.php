@@ -53,7 +53,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int $discount_amount
  * @property string $tax_rate
  * @property int $tax_amount
- * @property int $total
+ * @property int $total_amount
  * @property int $base_currency_total
  * @property string|null $notes
  * @property string|null $terms_conditions

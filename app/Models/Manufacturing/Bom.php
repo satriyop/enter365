@@ -13,6 +13,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property DocumentStatus $status
+ * @property string $output_quantity
+ * @property int $total_material_cost
+ * @property int $total_labor_cost
+ * @property int $total_overhead_cost
+ * @property int $total_cost
+ * @property int $unit_cost
+ * @property \Carbon\Carbon|null $approved_at
+ */
 class Bom extends Model
 {
     use CascadesSoftDeletes, Filterable, HasFactory, SoftDeletes;

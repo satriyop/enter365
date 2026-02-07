@@ -189,7 +189,7 @@ class MaterialRequisition extends Model
     public function updateTotals(): void
     {
         $this->total_items = $this->items()->count();
-        $this->total_quantity = (float) $this->items()->sum('quantity_requested');
+        $this->total_quantity = (string) $this->items()->sum('quantity_requested');
     }
 
     /**

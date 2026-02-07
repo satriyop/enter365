@@ -122,7 +122,7 @@ class BomService extends BaseService implements BomServiceInterface
 
             $bom->status = DocumentStatus::Active;
             $bom->approved_by = $this->getUserId();
-            $bom->approved_at = now()->toDateTimeString();
+            $bom->approved_at = now();
             $bom->save();
 
             return $bom->fresh();

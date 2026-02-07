@@ -12,6 +12,19 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property DocumentStatus $status
+ * @property \Carbon\Carbon $invoice_date
+ * @property \Carbon\Carbon $due_date
+ * @property int $gross_amount
+ * @property int $retention_held
+ * @property int $other_deductions
+ * @property int $net_amount
+ * @property \Carbon\Carbon|null $converted_to_bill_at
+ * @property \Carbon\Carbon|null $approved_at
+ * @property \Carbon\Carbon|null $rejected_at
+ */
 class SubcontractorInvoice extends Model
 {
     use HasFactory, SoftDeletes;

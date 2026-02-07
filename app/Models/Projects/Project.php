@@ -287,9 +287,9 @@ class Project extends Model
         $this->total_cost = (int) $this->costs()->sum('total_cost');
         $this->total_revenue = (int) $this->revenues()->sum('amount');
         $this->gross_profit = $this->total_revenue - $this->total_cost;
-        $this->profit_margin = $this->total_revenue > 0
+        $this->profit_margin = (string) ($this->total_revenue > 0
             ? round(($this->gross_profit / $this->total_revenue) * 100, 2)
-            : 0;
+            : 0);
     }
 
     /**
