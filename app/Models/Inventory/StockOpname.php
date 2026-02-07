@@ -11,6 +11,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property DocumentStatus $status
+ */
 class StockOpname extends Model
 {
     use Filterable, HasFactory, SoftDeletes;
@@ -258,7 +262,7 @@ class StockOpname extends Model
      */
     public function getCountingProgress(): float
     {
-        if (empty($this->total_items) || $this->total_items === 0) {
+        if (empty($this->total_items)) {
             return 0;
         }
 

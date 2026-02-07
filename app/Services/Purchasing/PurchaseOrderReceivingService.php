@@ -93,7 +93,7 @@ class PurchaseOrderReceivingService extends BaseService
 
         return $po->items->map(fn ($item) => [
             'item_id' => $item->id,
-            'product_name' => $item->product?->name ?? $item->description,
+            'product_name' => $item->product->name ?? $item->description,
             'ordered' => (float) $item->quantity,
             'received' => (float) $item->quantity_received,
             'remaining' => (float) max(0, $item->quantity - $item->quantity_received),

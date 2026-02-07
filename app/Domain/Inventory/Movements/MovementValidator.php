@@ -96,7 +96,7 @@ class MovementValidator
                 ->where('warehouse_id', $warehouseId)
                 ->first();
 
-            $currentQty = $stock?->quantity ?? 0;
+            $currentQty = $stock->quantity ?? 0;
             $resultQty = $currentQty + $adjustmentQuantity;
 
             if ($resultQty < 0) {

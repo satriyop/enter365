@@ -28,7 +28,7 @@ class SolarProposalSummarySheet implements FromArray, ShouldAutoSize, WithStyles
             ['SOLAR PROPOSAL - EXECUTIVE SUMMARY'],
             [''],
             ['Proposal Number', $p->proposal_number],
-            ['Customer', $p->contact?->name ?? '-'],
+            ['Customer', $p->contact->name ?? '-'],
             ['Site', $p->site_name],
             ['Location', "{$p->city}, {$p->province}"],
             ['Valid Until', $p->valid_until?->format('d M Y')],

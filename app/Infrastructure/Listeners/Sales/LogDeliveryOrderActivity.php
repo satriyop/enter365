@@ -63,14 +63,13 @@ class LogDeliveryOrderActivity
             return;
         }
 
-        if ($event instanceof DeliveryOrderCancelled) {
-            Log::info('Delivery Order cancelled', [
-                'delivery_order_id' => $event->deliveryOrderId,
-                'do_number' => $event->doNumber,
-                'customer_id' => $event->customerId,
-                'reason' => $event->reason,
-                'user_id' => $event->userId,
-            ]);
-        }
+        // Last branch: must be DeliveryOrderCancelled
+        Log::info('Delivery Order cancelled', [
+            'delivery_order_id' => $event->deliveryOrderId,
+            'do_number' => $event->doNumber,
+            'customer_id' => $event->customerId,
+            'reason' => $event->reason,
+            'user_id' => $event->userId,
+        ]);
     }
 }

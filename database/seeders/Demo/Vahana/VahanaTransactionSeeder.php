@@ -60,8 +60,6 @@ class VahanaTransactionSeeder extends Seeder
 
     private ?Account $bankAccount = null;
 
-    private ?Account $cashAccount = null;
-
     /**
      * Base date for seeding (start of month simulation).
      */
@@ -123,7 +121,6 @@ class VahanaTransactionSeeder extends Seeder
         $this->purchasingUser = User::where('email', 'purchasing@demo.com')->first();
         $this->warehouse = Warehouse::where('is_default', true)->first();
         $this->bankAccount = Account::where('code', '1-1010')->first(); // Bank BCA
-        $this->cashAccount = Account::where('code', '1-1001')->first(); // Kas
 
         if (! $this->adminUser || ! $this->warehouse || ! $this->bankAccount) {
             throw new \RuntimeException('Required dependencies not found. Ensure UserSeeder, WarehouseSeeder, and AccountSeeder have run.');

@@ -8,7 +8,6 @@ use App\Models\Contacts\Contact;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
 use App\Models\Shared\Payment;
-use App\Services\Accounting\AccountBalanceService;
 use App\Services\Accounting\Reports\AgingReportService;
 use App\Services\Shared\DashboardQueryService;
 use Illuminate\Http\JsonResponse;
@@ -18,7 +17,6 @@ use Illuminate\Support\Facades\Gate;
 class DashboardController extends Controller
 {
     public function __construct(
-        private AccountBalanceService $balanceService,
         private AgingReportService $agingService,
         private DashboardQueryService $dashboardQuery
     ) {}

@@ -90,14 +90,13 @@ class LogPurchaseOrderActivity
             return;
         }
 
-        if ($event instanceof PurchaseOrderReceived) {
-            Log::info('Purchase Order fully received', [
-                'purchase_order_id' => $event->purchaseOrderId,
-                'po_number' => $event->poNumber,
-                'vendor_id' => $event->vendorId,
-                'total_amount' => $event->totalAmount,
-                'user_id' => $event->userId,
-            ]);
-        }
+        // Last branch: must be PurchaseOrderReceived
+        Log::info('Purchase Order fully received', [
+            'purchase_order_id' => $event->purchaseOrderId,
+            'po_number' => $event->poNumber,
+            'vendor_id' => $event->vendorId,
+            'total_amount' => $event->totalAmount,
+            'user_id' => $event->userId,
+        ]);
     }
 }

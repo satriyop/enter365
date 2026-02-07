@@ -226,7 +226,7 @@ class WorkOrderMaterialService extends BaseService
             $materials[] = [
                 'item_id' => $item->id,
                 'product_id' => $item->product_id,
-                'product_name' => $item->product?->name ?? $item->description,
+                'product_name' => $item->product->name ?? $item->description,
                 'quantity_required' => $item->quantity_required,
                 'quantity_reserved' => $item->quantity_reserved,
                 'quantity_consumed' => $item->quantity_consumed,

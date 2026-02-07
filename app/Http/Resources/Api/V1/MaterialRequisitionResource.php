@@ -13,7 +13,6 @@ class MaterialRequisitionResource extends JsonResource
     /**
      * Transform the resource into an array.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return array{
      *   id: int,
      *   requisition_number: string,
@@ -40,7 +39,7 @@ class MaterialRequisitionResource extends JsonResource
             'id' => $this->id,
             'requisition_number' => $this->requisition_number,
             'status' => new StatusResource($this->status),
-            'requested_date' => $this->requested_date?->toDateString(),
+            'requested_date' => $this->requested_date->toDateString(),
             'required_date' => $this->required_date?->toDateString(),
             'total_items' => $this->total_items,
             'total_quantity' => (float) $this->total_quantity,

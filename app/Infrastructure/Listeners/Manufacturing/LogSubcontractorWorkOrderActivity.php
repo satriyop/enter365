@@ -65,15 +65,14 @@ class LogSubcontractorWorkOrderActivity
             return;
         }
 
-        if ($event instanceof SubcontractorWorkOrderCancelled) {
-            Log::info('Subcontractor Work Order cancelled', [
-                'subcontractor_work_order_id' => $event->subcontractorWorkOrderId,
-                'sc_wo_number' => $event->scWoNumber,
-                'subcontractor_id' => $event->subcontractorId,
-                'project_id' => $event->projectId,
-                'user_id' => $event->userId,
-                'reason' => $event->reason,
-            ]);
-        }
+        // Last branch: must be SubcontractorWorkOrderCancelled
+        Log::info('Subcontractor Work Order cancelled', [
+            'subcontractor_work_order_id' => $event->subcontractorWorkOrderId,
+            'sc_wo_number' => $event->scWoNumber,
+            'subcontractor_id' => $event->subcontractorId,
+            'project_id' => $event->projectId,
+            'user_id' => $event->userId,
+            'reason' => $event->reason,
+        ]);
     }
 }

@@ -237,7 +237,7 @@ class GoodsReceiptNote extends Model
      */
     public function getReceivingProgress(): float
     {
-        if (empty($this->total_quantity_ordered) || $this->total_quantity_ordered === 0) {
+        if (empty($this->total_quantity_ordered)) {
             return 0;
         }
 

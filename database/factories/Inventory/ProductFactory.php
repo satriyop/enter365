@@ -85,7 +85,7 @@ class ProductFactory extends Factory
     public function withCategory(?ProductCategory $category = null): static
     {
         return $this->state(fn (array $attributes) => [
-            'category_id' => $category?->id ?? ProductCategory::factory(),
+            'category_id' => $category->id ?? ProductCategory::factory(),
         ]);
     }
 

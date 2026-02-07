@@ -70,13 +70,12 @@ class LogProjectActivity
             return;
         }
 
-        if ($event instanceof ProjectCancelled) {
-            Log::info('Project cancelled', [
-                'project_id' => $event->projectId,
-                'cancelled_at' => $event->cancelledAt,
-                'reason' => $event->reason,
-                'user_id' => $event->userId,
-            ]);
-        }
+        // Last branch: must be ProjectCancelled
+        Log::info('Project cancelled', [
+            'project_id' => $event->projectId,
+            'cancelled_at' => $event->cancelledAt,
+            'reason' => $event->reason,
+            'user_id' => $event->userId,
+        ]);
     }
 }

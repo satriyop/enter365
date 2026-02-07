@@ -18,7 +18,6 @@ use App\Services\Base\BaseService;
 class BomTemplateService extends BaseService implements BomTemplateServiceInterface
 {
     public function __construct(
-        private BomService $bomService,
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger
     ) {

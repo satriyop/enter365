@@ -253,7 +253,7 @@ class MrpDemandService
             if ($shortage > 0) {
                 $shortages[] = [
                     'product_id' => $productId,
-                    'product_code' => $product->code,
+                    'product_code' => $product->sku,
                     'product_name' => $product->name,
                     'procurement_type' => $product->procurement_type,
                     'quantity_required' => $totalRequired,
