@@ -113,7 +113,7 @@ class ChartOfAccountsSeeder extends Seeder
             ['code' => '5-1001', 'name' => 'HPP Barang Dagangan', 'type' => Account::TYPE_EXPENSE, 'subtype' => Account::SUBTYPE_OPERATING_EXPENSE, 'is_system' => false, 'parent' => '5-1000'],
             ['code' => '5-1002', 'name' => 'Pembelian', 'type' => Account::TYPE_EXPENSE, 'subtype' => Account::SUBTYPE_OPERATING_EXPENSE, 'is_system' => true, 'parent' => '5-1000'],
             ['code' => '5-1003', 'name' => 'Diskon Pembelian', 'type' => Account::TYPE_EXPENSE, 'subtype' => Account::SUBTYPE_OPERATING_EXPENSE, 'is_system' => false, 'parent' => '5-1000'],
-            ['code' => '5-1004', 'name' => 'Retur Pembelian', 'type' => Account::TYPE_EXPENSE, 'subtype' => Account::SUBTYPE_OPERATING_EXPENSE, 'is_system' => false, 'parent' => '5-1000'],
+            ['code' => '5-1004', 'name' => 'Retur Pembelian', 'type' => Account::TYPE_EXPENSE, 'subtype' => Account::SUBTYPE_OPERATING_EXPENSE, 'is_system' => true, 'parent' => '5-1000'],
             ['code' => '5-1005', 'name' => 'Ongkos Angkut Pembelian', 'type' => Account::TYPE_EXPENSE, 'subtype' => Account::SUBTYPE_OPERATING_EXPENSE, 'is_system' => false, 'parent' => '5-1000'],
 
             // 5.2 Beban Operasional
