@@ -7,7 +7,9 @@ namespace App\Services\Sales;
 use App\Contracts\Accounting\JournalServiceInterface;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
+use App\Contracts\Purchasing\BillServiceInterface;
 use App\Contracts\Sales\DownPaymentServiceInterface;
+use App\Contracts\Sales\InvoiceServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Accounting\Account;
 use App\Models\Purchasing\Bill;
@@ -21,6 +23,8 @@ class DownPaymentService extends BaseService implements DownPaymentServiceInterf
 {
     public function __construct(
         private JournalServiceInterface $journalService,
+        private InvoiceServiceInterface $invoiceService,
+        private BillServiceInterface $billService,
         private DownPaymentNumberGenerator $dpNumberGenerator,
         private PaymentNumberGenerator $paymentNumberGenerator,
         EventDispatcherInterface $eventDispatcher,
@@ -180,10 +184,10 @@ class DownPaymentService extends BaseService implements DownPaymentServiceInterf
             $downPayment->updateStatus();
             $downPayment->save();
 
-            // Update invoice paid amount
+            // Update invoice paid amount and status via service
             $invoice->paid_amount += $amount;
-            $invoice->updatePaymentStatus();
             $invoice->save();
+            $this->invoiceService->updatePaymentStatus($invoice);
 
             return $application->fresh(['downPayment', 'applicable', 'journalEntry']);
         }, ['down_payment_id' => $downPayment->id, 'invoice_id' => $invoice->id, 'amount' => $amount]);
@@ -260,10 +264,10 @@ class DownPaymentService extends BaseService implements DownPaymentServiceInterf
             $downPayment->updateStatus();
             $downPayment->save();
 
-            // Update bill paid amount
+            // Update bill paid amount and status via service
             $bill->paid_amount += $amount;
-            $bill->updatePaymentStatus();
             $bill->save();
+            $this->billService->updatePaymentStatus($bill);
 
             return $application->fresh(['downPayment', 'applicable', 'journalEntry']);
         }, ['down_payment_id' => $downPayment->id, 'bill_id' => $bill->id, 'amount' => $amount]);
@@ -288,11 +292,16 @@ class DownPaymentService extends BaseService implements DownPaymentServiceInterf
             $downPayment->updateStatus();
             $downPayment->save();
 
-            // Restore document paid amount
+            // Restore document paid amount and status via service
             if ($applicable instanceof Invoice || $applicable instanceof Bill) {
                 $applicable->paid_amount -= $application->amount;
-                $applicable->updatePaymentStatus();
                 $applicable->save();
+
+                if ($applicable instanceof Invoice) {
+                    $this->invoiceService->updatePaymentStatus($applicable);
+                } else {
+                    $this->billService->updatePaymentStatus($applicable);
+                }
             }
 
             return $application->delete();
@@ -475,6 +484,7 @@ class DownPaymentService extends BaseService implements DownPaymentServiceInterf
     private function createApplicationJournalEntry(DownPaymentApplication $application): void
     {
         $downPayment = $application->downPayment;
+        /** @var Invoice|Bill $applicable */
         $applicable = $application->applicable;
 
         $dpAccountCode = $downPayment->getDpAccountCode();

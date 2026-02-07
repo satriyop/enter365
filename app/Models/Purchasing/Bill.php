@@ -294,68 +294,6 @@ class Bill extends Model
     }
 
     /**
-     * Update payment status based on paid amount.
-     *
-     * @deprecated Use BillService::updatePaymentStatus() instead for proper state machine handling.
-     */
-    public function updatePaymentStatus(): void
-    {
-        trigger_error(
-            'Bill::updatePaymentStatus() is deprecated. Use BillService::updatePaymentStatus() instead.',
-            E_USER_DEPRECATED
-        );
-
-        if ($this->status === DocumentStatus::Cancelled) {
-            return;
-        }
-
-        // Determine target status
-        $targetStatus = null;
-        if ($this->paid_amount >= $this->total_amount) {
-            $targetStatus = DocumentStatus::Paid;
-        } elseif ($this->paid_amount > 0) {
-            $targetStatus = DocumentStatus::Partial;
-        } elseif ($this->due_date < now() && $this->status !== DocumentStatus::Draft) {
-            $targetStatus = DocumentStatus::Overdue;
-        }
-
-        // Use state machine if possible
-        if ($targetStatus && $this->stateMachine()->canTransitionTo($targetStatus)) {
-            $this->transitionTo($targetStatus);
-        }
-    }
-
-    /**
-     * Mark as overdue.
-     *
-     * @deprecated Use BillService::markAsOverdue() instead for proper state machine handling.
-     */
-    public function markAsOverdue(): bool
-    {
-        trigger_error(
-            'Bill::markAsOverdue() is deprecated. Use BillService::markAsOverdue() instead.',
-            E_USER_DEPRECATED
-        );
-
-        if ($this->status === DocumentStatus::Paid || $this->status === DocumentStatus::Cancelled) {
-            return false;
-        }
-
-        if ($this->status === DocumentStatus::Draft) {
-            return false;
-        }
-
-        // Use state machine
-        if ($this->stateMachine()->canMarkAsOverdue()) {
-            $this->transitionTo(DocumentStatus::Overdue);
-
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
      * Get the bill state machine instance.
      */
     public function stateMachine(): \App\Domain\Purchasing\Bills\BillStateMachine

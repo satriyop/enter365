@@ -240,10 +240,10 @@ The architecture is excellent — Strategy Pattern, fail-fast validation, transa
 | M2 | ~~`DownPayment` — virtual column `remaining_amount` in migration but not used in model~~ | **FIXED** — replaced `getRemainingAmount()` method with Laravel accessor; DB virtual column kept for queries |
 | M3 | ~~No factory files for any accounting model~~ | **FALSE POSITIVE** — all factories already exist (`AccountFactory`, `JournalEntryFactory`, `FiscalPeriodFactory`, etc.) |
 | M4 | ~~`InvoicePosted` event dispatched but listener `PostInvoiceToJournal` never registered~~ | **FIXED** — removed dead event, dead listener, and dead Event::listen() registration |
-| M5 | Report controller uses string-based Gates instead of Policies | `app/Http/Controllers/Api/V1/ReportController.php` |
-| M6 | FiscalPeriod dual state tracking (`status` enum + `is_closed`/`is_locked` booleans) | `app/Models/Accounting/FiscalPeriod.php` |
-| M7 | Deprecated methods on Invoice/Bill (`updatePaymentStatus`, `markAsOverdue`) still present | Technical debt |
-| M8 | No tests for COGS strategies, inventory strategies, closing strategies, return strategies | Missing test coverage |
+| M5 | ~~Report controller uses string-based Gates instead of Policies~~ | **FIXED** — replaced `Gate::authorize()` with `$this->authorize()` controller helper for consistency |
+| M6 | ~~FiscalPeriod dual state tracking~~ | **FIXED** — `status` enum is now canonical; `isOpen()`, `canPost()`, `lock()`, `unlock()` use enum; JournalService uses `getStatus()`; booleans kept as sync'd copies |
+| M7 | ~~Deprecated methods on Invoice/Bill still present~~ | **FIXED** — routed OverdueService and DownPaymentService through service layer; removed deprecated `updatePaymentStatus()` and `markAsOverdue()` from both models |
+| M8 | ~~No tests for COGS strategies, inventory strategies, closing strategies, return strategies~~ | **FALSE POSITIVE** — 74 strategy tests already exist (COGS: 22, Inventory: 23, Closing: 20, Returns: 9) |
 | M9 | Manufacturing WIP strategy uses `->get()->sum()` instead of DB aggregation | N+1 risk in `WIPAccountingStrategy` |
 | M10 | Fiscal period overlap validation in controller instead of FormRequest | Business logic leak |
 | M11 | `StoreAccountRequest` doesn't validate parent account type compatibility | Can set Revenue as parent of Asset |

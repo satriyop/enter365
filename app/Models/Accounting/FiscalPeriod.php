@@ -132,7 +132,7 @@ class FiscalPeriod extends Model
      */
     public function isOpen(): bool
     {
-        return ! $this->is_closed && ! $this->is_locked;
+        return $this->getStatus() === FiscalPeriodStatus::Open;
     }
 
     /**
@@ -140,7 +140,7 @@ class FiscalPeriod extends Model
      */
     public function canPost(): bool
     {
-        return ! $this->is_closed;
+        return $this->getStatus() !== FiscalPeriodStatus::Closed;
     }
 
     /**
@@ -171,11 +171,14 @@ class FiscalPeriod extends Model
      */
     public function lock(): bool
     {
-        if ($this->is_closed) {
+        if ($this->getStatus() === FiscalPeriodStatus::Closed) {
             return false;
         }
 
-        $this->update(['is_locked' => true]);
+        $this->update([
+            'status' => FiscalPeriodStatus::Locked,
+            'is_locked' => true,
+        ]);
 
         return true;
     }
@@ -185,11 +188,14 @@ class FiscalPeriod extends Model
      */
     public function unlock(): bool
     {
-        if ($this->is_closed) {
+        if ($this->getStatus() === FiscalPeriodStatus::Closed) {
             return false;
         }
 
-        $this->update(['is_locked' => false]);
+        $this->update([
+            'status' => FiscalPeriodStatus::Open,
+            'is_locked' => false,
+        ]);
 
         return true;
     }
@@ -286,6 +292,7 @@ class FiscalPeriod extends Model
             'name' => "Tahun Fiskal {$year}",
             'start_date' => $nextStart,
             'end_date' => $nextEnd,
+            'status' => FiscalPeriodStatus::Open,
             'is_closed' => false,
             'is_locked' => false,
         ]);

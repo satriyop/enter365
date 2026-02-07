@@ -15,7 +15,7 @@ uses(RefreshDatabase::class);
 beforeEach(function () {
     $this->user = User::factory()->create();
     $this->actingAs($this->user);
-    $this->service = new OverdueService;
+    $this->service = app(OverdueService::class);
 });
 
 describe('OverdueService mark overdue', function () {

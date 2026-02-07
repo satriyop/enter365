@@ -11,7 +11,6 @@ use App\Services\Accounting\Reports\ReportServiceFactory;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 
 class ReportController extends Controller
 {
@@ -24,7 +23,7 @@ class ReportController extends Controller
      */
     public function trialBalance(Request $request): JsonResponse
     {
-        Gate::authorize('reports.financial');
+        $this->authorize('reports.financial');
 
         $asOfDate = $request->input('as_of_date');
         $trialBalance = $this->reports->balance()->getTrialBalance($asOfDate);
@@ -47,7 +46,7 @@ class ReportController extends Controller
      */
     public function balanceSheet(Request $request): JsonResponse
     {
-        Gate::authorize('reports.financial');
+        $this->authorize('reports.financial');
 
         $asOfDate = $request->input('as_of_date');
         $compareTo = $request->input('compare_to');
@@ -71,7 +70,7 @@ class ReportController extends Controller
      */
     public function incomeStatement(Request $request): JsonResponse
     {
-        Gate::authorize('reports.financial');
+        $this->authorize('reports.financial');
 
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
@@ -103,7 +102,7 @@ class ReportController extends Controller
      */
     public function generalLedger(Request $request): JsonResponse
     {
-        Gate::authorize('reports.financial');
+        $this->authorize('reports.financial');
 
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
@@ -124,7 +123,7 @@ class ReportController extends Controller
      */
     public function receivableAging(Request $request): JsonResponse
     {
-        Gate::authorize('reports.aging');
+        $this->authorize('reports.aging');
 
         $asOfDate = $request->input('as_of_date')
             ? Carbon::parse($request->input('as_of_date'))
@@ -145,7 +144,7 @@ class ReportController extends Controller
      */
     public function payableAging(Request $request): JsonResponse
     {
-        Gate::authorize('reports.aging');
+        $this->authorize('reports.aging');
 
         $asOfDate = $request->input('as_of_date')
             ? Carbon::parse($request->input('as_of_date'))
@@ -164,7 +163,7 @@ class ReportController extends Controller
      */
     public function contactAging(Request $request, Contact $contact): JsonResponse
     {
-        Gate::authorize('reports.aging');
+        $this->authorize('reports.aging');
 
         $asOfDate = $request->input('as_of_date')
             ? Carbon::parse($request->input('as_of_date'))
@@ -191,7 +190,7 @@ class ReportController extends Controller
      */
     public function ppnSummary(Request $request): JsonResponse
     {
-        Gate::authorize('reports.tax');
+        $this->authorize('reports.tax');
 
         $startDate = $request->input('start_date') ?? now()->startOfMonth()->toDateString();
         $endDate = $request->input('end_date') ?? now()->endOfMonth()->toDateString();
@@ -211,7 +210,7 @@ class ReportController extends Controller
      */
     public function ppnMonthly(Request $request): JsonResponse
     {
-        Gate::authorize('reports.tax');
+        $this->authorize('reports.tax');
 
         $year = (int) $request->input('year', now()->year);
 
@@ -234,7 +233,7 @@ class ReportController extends Controller
      */
     public function taxInvoiceList(Request $request): JsonResponse
     {
-        Gate::authorize('reports.tax');
+        $this->authorize('reports.tax');
 
         $startDate = $request->input('start_date') ?? now()->startOfMonth()->toDateString();
         $endDate = $request->input('end_date') ?? now()->endOfMonth()->toDateString();
@@ -260,7 +259,7 @@ class ReportController extends Controller
      */
     public function inputTaxList(Request $request): JsonResponse
     {
-        Gate::authorize('reports.tax');
+        $this->authorize('reports.tax');
 
         $startDate = $request->input('start_date') ?? now()->startOfMonth()->toDateString();
         $endDate = $request->input('end_date') ?? now()->endOfMonth()->toDateString();
@@ -286,7 +285,7 @@ class ReportController extends Controller
      */
     public function cashFlow(Request $request): JsonResponse
     {
-        Gate::authorize('reports.cash_flow');
+        $this->authorize('reports.cash_flow');
 
         $startDate = $request->input('start_date') ?? now()->startOfMonth()->toDateString();
         $endDate = $request->input('end_date') ?? now()->endOfMonth()->toDateString();
@@ -306,7 +305,7 @@ class ReportController extends Controller
      */
     public function dailyCashMovement(Request $request): JsonResponse
     {
-        Gate::authorize('reports.cash_flow');
+        $this->authorize('reports.cash_flow');
 
         $startDate = $request->input('start_date') ?? now()->startOfMonth()->toDateString();
         $endDate = $request->input('end_date') ?? now()->endOfMonth()->toDateString();
@@ -333,7 +332,7 @@ class ReportController extends Controller
      */
     public function projectProfitability(Request $request): JsonResponse
     {
-        Gate::authorize('reports.project');
+        $this->authorize('reports.project');
 
         $report = $this->reports->project()->getProjectProfitabilitySummary(
             $request->input('start_date'),
@@ -351,7 +350,7 @@ class ReportController extends Controller
      */
     public function projectProfitabilityDetail(Project $project): JsonResponse
     {
-        Gate::authorize('reports.project');
+        $this->authorize('reports.project');
 
         $report = $this->reports->project()->getProjectProfitabilityDetail($project);
 
@@ -365,7 +364,7 @@ class ReportController extends Controller
      */
     public function projectCostAnalysis(Request $request): JsonResponse
     {
-        Gate::authorize('reports.project');
+        $this->authorize('reports.project');
 
         $report = $this->reports->project()->getProjectCostAnalysis(
             $request->input('start_date'),
@@ -380,7 +379,7 @@ class ReportController extends Controller
      */
     public function workOrderCosts(Request $request): JsonResponse
     {
-        Gate::authorize('reports.manufacturing');
+        $this->authorize('reports.manufacturing');
 
         $report = $this->reports->workOrder()->getWorkOrderCostSummary(
             $request->input('start_date'),
@@ -397,7 +396,7 @@ class ReportController extends Controller
      */
     public function workOrderCostDetail(WorkOrder $workOrder): JsonResponse
     {
-        Gate::authorize('reports.manufacturing');
+        $this->authorize('reports.manufacturing');
 
         $report = $this->reports->workOrder()->getWorkOrderCostDetail($workOrder);
 
@@ -411,7 +410,7 @@ class ReportController extends Controller
      */
     public function costVariance(Request $request): JsonResponse
     {
-        Gate::authorize('reports.manufacturing');
+        $this->authorize('reports.manufacturing');
 
         $report = $this->reports->workOrder()->getCostVarianceReport(
             $request->input('start_date'),
@@ -428,7 +427,7 @@ class ReportController extends Controller
      */
     public function subcontractorSummary(Request $request): JsonResponse
     {
-        Gate::authorize('reports.manufacturing');
+        $this->authorize('reports.manufacturing');
 
         $report = $this->reports->subcontractor()->getSubcontractorSummary(
             $request->input('start_date'),
@@ -445,7 +444,7 @@ class ReportController extends Controller
      */
     public function subcontractorDetail(Request $request, Contact $contact): JsonResponse
     {
-        Gate::authorize('reports.manufacturing');
+        $this->authorize('reports.manufacturing');
 
         $report = $this->reports->subcontractor()->getSubcontractorDetail(
             $contact,
@@ -463,7 +462,7 @@ class ReportController extends Controller
      */
     public function subcontractorRetention(): JsonResponse
     {
-        Gate::authorize('reports.manufacturing');
+        $this->authorize('reports.manufacturing');
 
         $report = $this->reports->subcontractor()->getRetentionSummary();
 
@@ -477,7 +476,7 @@ class ReportController extends Controller
      */
     public function changesInEquity(Request $request): JsonResponse
     {
-        Gate::authorize('reports.financial');
+        $this->authorize('reports.financial');
 
         $report = $this->reports->financial()->getStatementOfChangesInEquity(
             $request->input('start_date'),
@@ -497,7 +496,7 @@ class ReportController extends Controller
      */
     public function bankReconciliation(Request $request, Account $account): JsonResponse
     {
-        Gate::authorize('reports.financial');
+        $this->authorize('reports.financial');
 
         $report = $this->reports->bankReconciliation()->getReconciliationReport(
             $account,
@@ -517,7 +516,7 @@ class ReportController extends Controller
      */
     public function bankReconciliationOutstanding(Request $request, Account $account): JsonResponse
     {
-        Gate::authorize('reports.financial');
+        $this->authorize('reports.financial');
 
         $report = $this->reports->bankReconciliation()->getOutstandingItems(
             $account,
@@ -543,7 +542,7 @@ class ReportController extends Controller
      */
     public function cogsSummary(Request $request): JsonResponse
     {
-        Gate::authorize('reports.cogs');
+        $this->authorize('reports.cogs');
 
         $report = $this->reports->cogs()->getCOGSSummary(
             $request->input('start_date'),
@@ -563,7 +562,7 @@ class ReportController extends Controller
      */
     public function cogsByProduct(Request $request): JsonResponse
     {
-        Gate::authorize('reports.cogs');
+        $this->authorize('reports.cogs');
 
         $products = $this->reports->cogs()->getCOGSByProduct(
             $request->input('start_date'),
@@ -591,7 +590,7 @@ class ReportController extends Controller
      */
     public function cogsByCategory(Request $request): JsonResponse
     {
-        Gate::authorize('reports.cogs');
+        $this->authorize('reports.cogs');
 
         $categories = $this->reports->cogs()->getCOGSByCategory(
             $request->input('start_date'),
@@ -619,7 +618,7 @@ class ReportController extends Controller
      */
     public function cogsMonthlyTrend(Request $request): JsonResponse
     {
-        Gate::authorize('reports.cogs');
+        $this->authorize('reports.cogs');
 
         $year = (int) $request->input('year', now()->year);
         $months = $this->reports->cogs()->getMonthlyCOGSTrend($year);
@@ -639,7 +638,7 @@ class ReportController extends Controller
      */
     public function productCOGSDetail(Request $request, Product $product): JsonResponse
     {
-        Gate::authorize('reports.cogs');
+        $this->authorize('reports.cogs');
 
         $details = $this->reports->cogs()->getProductCOGSDetail(
             $product,

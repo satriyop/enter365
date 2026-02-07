@@ -2,6 +2,8 @@
 
 namespace App\Services\Sales;
 
+use App\Contracts\Purchasing\BillServiceInterface;
+use App\Contracts\Sales\InvoiceServiceInterface;
 use App\Contracts\Shared\OverdueServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Purchasing\Bill;
@@ -10,6 +12,11 @@ use Illuminate\Support\Collection;
 
 class OverdueService implements OverdueServiceInterface
 {
+    public function __construct(
+        private InvoiceServiceInterface $invoiceService,
+        private BillServiceInterface $billService
+    ) {}
+
     /**
      * Mark all overdue invoices.
      *
@@ -28,8 +35,11 @@ class OverdueService implements OverdueServiceInterface
         $marked = collect();
 
         foreach ($invoices as $invoice) {
-            if ($invoice->markAsOverdue()) {
+            try {
+                $this->invoiceService->markAsOverdue($invoice);
                 $marked->push($invoice);
+            } catch (\App\Exceptions\Domain\StateTransitionException) {
+                // Skip if state machine doesn't allow transition
             }
         }
 
@@ -54,8 +64,11 @@ class OverdueService implements OverdueServiceInterface
         $marked = collect();
 
         foreach ($bills as $bill) {
-            if ($bill->markAsOverdue()) {
+            try {
+                $this->billService->markAsOverdue($bill);
                 $marked->push($bill);
+            } catch (\App\Exceptions\Domain\StateTransitionException) {
+                // Skip if state machine doesn't allow transition
             }
         }
 
@@ -85,14 +98,18 @@ class OverdueService implements OverdueServiceInterface
      */
     public function getOverdueSummary(): array
     {
+        /** @var object{count: int, total: int} $overdueInvoices */
         $overdueInvoices = Invoice::query()
             ->where('status', DocumentStatus::Overdue)
             ->selectRaw('COUNT(*) as count, COALESCE(SUM(total_amount - paid_amount), 0) as total')
+            ->toBase()
             ->first();
 
+        /** @var object{count: int, total: int} $overdueBills */
         $overdueBills = Bill::query()
             ->where('status', DocumentStatus::Overdue)
             ->selectRaw('COUNT(*) as count, COALESCE(SUM(total_amount - paid_amount), 0) as total')
+            ->toBase()
             ->first();
 
         return [

@@ -47,14 +47,14 @@ class JournalService extends BaseService implements JournalServiceInterface
             $entryDate = Carbon::parse($data['entry_date']);
             $fiscalPeriod = FiscalPeriod::forDate($entryDate);
 
-            if ($fiscalPeriod && $fiscalPeriod->is_closed) {
+            if ($fiscalPeriod && $fiscalPeriod->getStatus() === \App\Domain\Accounting\FiscalPeriods\Enums\FiscalPeriodStatus::Closed) {
                 throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
                     'membuat jurnal',
                     "Periode fiskal '{$fiscalPeriod->name}' sudah ditutup untuk tanggal {$entryDate->toDateString()}."
                 );
             }
 
-            if ($fiscalPeriod && $fiscalPeriod->is_locked) {
+            if ($fiscalPeriod && $fiscalPeriod->getStatus() === \App\Domain\Accounting\FiscalPeriods\Enums\FiscalPeriodStatus::Locked) {
                 throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
                     'membuat jurnal',
                     "Periode fiskal '{$fiscalPeriod->name}' sedang dikunci untuk tanggal {$entryDate->toDateString()}."
@@ -130,14 +130,14 @@ class JournalService extends BaseService implements JournalServiceInterface
 
         // Check fiscal period is open for posting
         if ($entry->fiscalPeriod) {
-            if ($entry->fiscalPeriod->is_closed) {
+            if ($entry->fiscalPeriod->getStatus() === \App\Domain\Accounting\FiscalPeriods\Enums\FiscalPeriodStatus::Closed) {
                 throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
                     'posting journal entry',
                     "Tidak bisa posting ke periode fiskal '{$entry->fiscalPeriod->name}' yang sudah ditutup."
                 );
             }
 
-            if ($entry->fiscalPeriod->is_locked) {
+            if ($entry->fiscalPeriod->getStatus() === \App\Domain\Accounting\FiscalPeriods\Enums\FiscalPeriodStatus::Locked) {
                 throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
                     'posting journal entry',
                     "Tidak bisa posting ke periode fiskal '{$entry->fiscalPeriod->name}' yang sedang dikunci."

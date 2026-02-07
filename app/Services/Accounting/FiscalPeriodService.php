@@ -7,6 +7,7 @@ namespace App\Services\Accounting;
 use App\Contracts\Accounting\FiscalPeriodServiceInterface;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
+use App\Domain\Accounting\FiscalPeriods\Enums\FiscalPeriodStatus;
 use App\Domain\Accounting\FiscalPeriods\ValueObjects\ClosingChecklist;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\FiscalPeriod;
@@ -35,6 +36,7 @@ class FiscalPeriodService extends BaseService implements FiscalPeriodServiceInte
         return $this->executeInTransaction('create_fiscal_period', function () use ($data) {
             return FiscalPeriod::create([
                 ...$data,
+                'status' => FiscalPeriodStatus::Open,
                 'is_closed' => false,
                 'is_locked' => false,
             ]);
@@ -91,7 +93,7 @@ class FiscalPeriodService extends BaseService implements FiscalPeriodServiceInte
             ];
         }
 
-        if ($period->is_closed) {
+        if ($period->getStatus() === FiscalPeriodStatus::Closed) {
             return [
                 'success' => false,
                 'message' => 'Periode fiskal sudah ditutup.',
@@ -109,6 +111,7 @@ class FiscalPeriodService extends BaseService implements FiscalPeriodServiceInte
 
             // Update fiscal period
             $period->update([
+                'status' => FiscalPeriodStatus::Closed,
                 'is_closed' => true,
                 'is_locked' => true,
                 'closed_at' => now(),
@@ -222,7 +225,7 @@ class FiscalPeriodService extends BaseService implements FiscalPeriodServiceInte
      */
     public function reopenPeriod(FiscalPeriod $period): bool
     {
-        if (! $period->is_closed) {
+        if ($period->getStatus() !== FiscalPeriodStatus::Closed) {
             return false;
         }
 
@@ -237,6 +240,7 @@ class FiscalPeriodService extends BaseService implements FiscalPeriodServiceInte
 
             // Reopen the period
             $period->update([
+                'status' => FiscalPeriodStatus::Open,
                 'is_closed' => false,
                 'is_locked' => false,
                 'closed_at' => null,

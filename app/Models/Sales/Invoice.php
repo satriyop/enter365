@@ -310,73 +310,11 @@ class Invoice extends Model
     public function applyContactDiscountTerms(): void
     {
         if ($this->contact && $this->contact->early_discount_percent > 0) {
-            $this->early_discount_percent = $this->contact->early_discount_percent;
+            $this->early_discount_percent = (string) $this->contact->early_discount_percent;
             $this->early_discount_days = $this->contact->early_discount_days;
             $this->early_discount_deadline = $this->invoice_date->copy()
                 ->addDays($this->early_discount_days);
         }
-    }
-
-    /**
-     * Update payment status based on paid amount.
-     *
-     * @deprecated Use InvoiceService::updatePaymentStatus() instead for proper state machine handling.
-     */
-    public function updatePaymentStatus(): void
-    {
-        trigger_error(
-            'Invoice::updatePaymentStatus() is deprecated. Use InvoiceService::updatePaymentStatus() instead.',
-            E_USER_DEPRECATED
-        );
-
-        if ($this->status === DocumentStatus::Cancelled) {
-            return;
-        }
-
-        // Determine target status
-        $targetStatus = null;
-        if ($this->paid_amount >= $this->total_amount) {
-            $targetStatus = DocumentStatus::Paid;
-        } elseif ($this->paid_amount > 0) {
-            $targetStatus = DocumentStatus::Partial;
-        } elseif ($this->due_date < now() && $this->status !== DocumentStatus::Draft) {
-            $targetStatus = DocumentStatus::Overdue;
-        }
-
-        // Use state machine if possible
-        if ($targetStatus && $this->stateMachine()->canTransitionTo($targetStatus)) {
-            $this->transitionTo($targetStatus);
-        }
-    }
-
-    /**
-     * Mark as overdue.
-     *
-     * @deprecated Use InvoiceService::markAsOverdue() instead for proper state machine handling.
-     */
-    public function markAsOverdue(): bool
-    {
-        trigger_error(
-            'Invoice::markAsOverdue() is deprecated. Use InvoiceService::markAsOverdue() instead.',
-            E_USER_DEPRECATED
-        );
-
-        if ($this->status === DocumentStatus::Paid || $this->status === DocumentStatus::Cancelled) {
-            return false;
-        }
-
-        if ($this->status === DocumentStatus::Draft) {
-            return false;
-        }
-
-        // Use state machine
-        if ($this->stateMachine()->canMarkAsOverdue()) {
-            $this->transitionTo(DocumentStatus::Overdue);
-
-            return true;
-        }
-
-        return false;
     }
 
     /**
