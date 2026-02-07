@@ -82,6 +82,14 @@ interface DeliveryOrderServiceInterface
     public function createFromWorkOrder(WorkOrder $workOrder): DeliveryOrder;
 
     /**
+     * Reverse a shipped delivery order.
+     *
+     * Restores inventory, reverses COGS JE, transitions to Cancelled.
+     * Only works on Shipped DOs — Delivered DOs cannot be reversed.
+     */
+    public function reverseShipment(DeliveryOrder $deliveryOrder, string $reason): DeliveryOrder;
+
+    /**
      * Get delivery orders for an invoice.
      *
      * @return Collection<int, DeliveryOrder>

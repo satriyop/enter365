@@ -41,6 +41,7 @@ class DeliveryOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
             ],
             DocumentStatus::Shipped->value => [
                 DocumentStatus::Delivered->value,
+                DocumentStatus::Cancelled->value,
             ],
         ];
     }
@@ -96,6 +97,7 @@ class DeliveryOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
         return in_array($this->currentStatus, [
             DocumentStatus::Draft,
             DocumentStatus::Confirmed,
+            DocumentStatus::Shipped,
         ], true);
     }
 

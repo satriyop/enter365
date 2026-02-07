@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\Services\Sales;
 
+use App\Contracts\Accounting\JournalServiceInterface;
 use App\Contracts\Accounting\Strategies\COGSRecognitionStrategy;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Inventory\InventoryServiceInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Sales\DeliveryOrderServiceInterface;
 use App\Enums\DocumentStatus;
+use App\Models\Accounting\JournalEntry;
+use App\Models\Inventory\InventoryMovement;
 use App\Models\Manufacturing\WorkOrder;
 use App\Models\Sales\DeliveryOrder;
 use App\Models\Sales\DeliveryOrderItem;
@@ -36,16 +39,20 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
 
     private COGSRecognitionStrategy $cogsStrategy;
 
+    private JournalServiceInterface $journalService;
+
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger,
         InventoryServiceInterface $inventoryService,
-        COGSRecognitionStrategy $cogsStrategy
+        COGSRecognitionStrategy $cogsStrategy,
+        JournalServiceInterface $journalService
     ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->logger = $logger;
         $this->inventoryService = $inventoryService;
         $this->cogsStrategy = $cogsStrategy;
+        $this->journalService = $journalService;
     }
 
     protected function getModelClass(): string
@@ -329,7 +336,7 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
                 'Delivery Order',
                 'dibatalkan',
                 $deliveryOrder->status->value,
-                'draft atau confirmed'
+                'draft, confirmed, atau shipped'
             );
         }
 
@@ -340,6 +347,53 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
 
             return $deliveryOrder->fresh(['items', 'contact', 'invoice']);
         }, ['delivery_order_id' => $deliveryOrder->id]);
+    }
+
+    /**
+     * Reverse a shipped delivery order.
+     *
+     * Restores inventory (stock-in for each item that was stock-out'd during ship),
+     * reverses any COGS journal entry created for this DO, and transitions to Cancelled.
+     *
+     * @throws \App\Exceptions\Domain\StateTransitionException If DO is not in Shipped status
+     */
+    public function reverseShipment(DeliveryOrder $deliveryOrder, string $reason): DeliveryOrder
+    {
+        if ($deliveryOrder->status !== DocumentStatus::Shipped) {
+            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                'Delivery Order',
+                'dibatalkan (reverse shipment)',
+                $deliveryOrder->status->value,
+                'shipped'
+            );
+        }
+
+        return $this->executeInTransaction('reverse_shipment', function () use ($deliveryOrder, $reason) {
+            // Restore inventory for each item
+            if ($deliveryOrder->warehouse_id) {
+                $this->restoreInventory($deliveryOrder);
+            }
+
+            // Reverse COGS journal entry (created by COGSOnDeliveryStrategy)
+            $cogsJournalEntries = JournalEntry::where('source_type', DeliveryOrder::class)
+                ->where('source_id', $deliveryOrder->id)
+                ->where('is_reversed', false)
+                ->get();
+
+            foreach ($cogsJournalEntries as $je) {
+                $this->journalService->reverseEntry(
+                    $je,
+                    "Pembatalan pengiriman: {$deliveryOrder->do_number} — {$reason}"
+                );
+            }
+
+            // Transition to Cancelled via state machine
+            $deliveryOrder->transitionTo(DocumentStatus::Cancelled, $this->getUserId(), [
+                'cancellation_reason' => $reason,
+            ]);
+
+            return $deliveryOrder->fresh(['items', 'contact', 'invoice']);
+        }, ['delivery_order_id' => $deliveryOrder->id, 'reason' => $reason]);
     }
 
     /**
@@ -464,6 +518,48 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
                     );
                 }
             }
+        }
+    }
+
+    /**
+     * Restore inventory when reversing a shipment (stock-in for each item).
+     *
+     * Looks up original movement's unit_cost to maintain cost accuracy.
+     */
+    private function restoreInventory(DeliveryOrder $deliveryOrder): void
+    {
+        $warehouse = $deliveryOrder->warehouse;
+
+        foreach ($deliveryOrder->items as $item) {
+            if (! $item->product_id) {
+                continue;
+            }
+
+            $product = \App\Models\Inventory\Product::find($item->product_id);
+            if (! $product) {
+                continue;
+            }
+
+            // Look up original stock-out movement to get unit_cost
+            $originalMovement = InventoryMovement::where('reference_type', DeliveryOrder::class)
+                ->where('reference_id', $deliveryOrder->id)
+                ->where('product_id', $item->product_id)
+                ->where('type', InventoryMovement::TYPE_OUT)
+                ->first();
+
+            $unitCost = $originalMovement
+                ? $originalMovement->unit_cost
+                : ($product->purchase_price ?? 0);
+
+            $this->inventoryService->stockIn(
+                $product,
+                $warehouse,
+                (int) round((float) $item->quantity),
+                (int) $unitCost,
+                'Pembatalan pengiriman: '.$deliveryOrder->do_number,
+                DeliveryOrder::class,
+                $deliveryOrder->id
+            );
         }
     }
 }
