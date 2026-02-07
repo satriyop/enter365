@@ -188,7 +188,7 @@ class QuotationFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'quotation_number' => $original->quotation_number,
-            'revision' => $original->getNextRevisionNumber(),
+            'revision' => $original->revision + 1,
             'original_quotation_id' => $original->original_quotation_id ?? $original->id,
             'contact_id' => $original->contact_id,
             'status' => DocumentStatus::Draft,

@@ -15,9 +15,6 @@ class TaskFactory extends Factory
 {
     protected $model = Task::class;
 
-    /**
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         $startDate = $this->faker->dateTimeBetween('-1 month', '+1 month');
