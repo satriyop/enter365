@@ -1007,3 +1007,68 @@ Before committing code, ensure:
 - **API Integration:** `docs/04-api/integration-check/` - Complete integration check workflow
 - **Development Tools:** `docs/04-api/tools/` - Scramble, PHPStan usage guides
 - **Architecture:** `.claude/skills/enter365/` - Domain patterns, state machines, events
+
+---
+
+## E2E Testing Strategy
+
+> **Tracker:** See `plans/E2E_TASK_TRACKER.md` for full test checklist and progress.
+
+### Testing Priorities for ERP Applications
+
+| Priority | Category | Why It Matters |
+|----------|----------|----------------|
+| **1** | Master Data (Products, Contacts) | All transactional tests depend on these foundations |
+| **2** | Inventory | Affects both Sales (delivery) and Purchasing (receiving) |
+| **3** | Chain Tests | Individual module tests can pass while cross-module flows fail |
+| **4** | Edge Cases | Users hit fiscal period locks, negative stock, duplicates in production |
+
+### Key Insights
+
+1. **Master Data First**
+   - All transactional tests implicitly depend on products/contacts being created correctly
+   - Testing CRUD for Products, Contacts, Warehouses, and CoA catches issues early
+   - Don't assume factory data is enough — test the actual SPA forms
+
+2. **Chain Tests Are Critical**
+   - Individual module tests can pass while cross-module flows fail due to event/state machine issues
+   - Example: Quotation → Invoice → DO → Payment must work as a complete flow
+   - Always assert trial balance after financial operations
+
+3. **Edge Cases Matter for ERP**
+   - Users will hit fiscal period locks in production — test the error UX
+   - Negative stock prevention must show clear error messages
+   - Duplicate document numbers must be caught and explained
+   - Overpayment scenarios need defined behavior
+
+4. **Accounting Assertions Are Non-Negotiable**
+   - Every financial test must verify: `Trial Balance Debits = Credits`
+   - Check JE lines explicitly: correct accounts, correct amounts, correct signs
+   - Use DB assertions, not just UI checks
+
+### Test Structure
+
+```
+tests/Browser/
+├── Auth/                    # Login, logout, protected routes
+├── Sales/                   # Quotations, Invoices, DO, Returns
+├── Purchasing/              # PO, GRN, Bills, Returns
+├── Inventory/               # Stock levels, movements, opname
+├── Accounting/              # JE, fiscal periods, reports
+├── Manufacturing/           # BOM, WO, MR, subcontracting
+├── Chain/                   # Cross-module integration tests
+└── Edge/                    # Error handling, edge cases
+```
+
+### Running E2E Tests
+
+```bash
+# Run all browser tests
+php artisan test tests/Browser/
+
+# Run specific module
+php artisan test tests/Browser/Sales/
+
+# Run with filter
+php artisan test --filter=QuotationWorkflow
+```

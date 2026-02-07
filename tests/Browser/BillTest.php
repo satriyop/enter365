@@ -94,21 +94,21 @@ if (! function_exists('createBillViaUi')) {
         $page->assertSee('New Bill');
 
         // Select vendor — Radix-Vue Select
-        $page->click('Select vendor');
+        $page->click('[data-testid="bill-vendor"]');
         $page->click('[role="option"] >> text='.$supplierName);
 
         // Fill line item description
-        $page->fill('input[placeholder="Item description"]', $description);
+        $page->fill('[data-testid="bill-item-0-description"]', $description);
 
         // Fill quantity
-        $page->fill('input[type="number"][min="1"]', (string) $qty);
+        $page->fill('[data-testid="bill-item-0-quantity"]', (string) $qty);
 
         // Fill unit price (CurrencyInput)
-        $page->click('input[inputmode="numeric"]');
-        $page->type('input[inputmode="numeric"]', $price);
+        $page->click('[data-testid="bill-item-0-price"]');
+        $page->type('[data-testid="bill-item-0-price"]', $price);
 
         // Submit the form
-        $page->click('Create Bill');
+        $page->click('[data-testid="bill-submit"]');
 
         // Wait for navigation to detail page
         $page->assertSee('BL-');
@@ -299,18 +299,18 @@ it('can record partial payment on a posted bill', function () {
     $page->assertSee('Record Payment');
 
     // Select vendor
-    $page->click('Select vendor');
+    $page->click('[data-testid="payment-vendor"]');
     $page->click('[role="option"] >> text='.getTestSupplierName());
 
     // Fill amount
-    $page->fill('input[type="number"][step="1000"]', (string) $partialAmount);
+    $page->fill('[data-testid="payment-amount"]', (string) $partialAmount);
 
     // Select cash account
-    $page->click('Select account');
+    $page->click('[data-testid="payment-account"]');
     $page->click('[role="option"] >> text=Bank BCA');
 
     // Submit payment (default method is 'transfer' which is valid)
-    $page->click('button[type="submit"]');
+    $page->click('[data-testid="payment-submit"]');
     $page->assertSee('Payment recorded successfully');
 
     // Navigate back to bill detail
@@ -336,12 +336,12 @@ it('full payment zeros AP balance and trial balance is balanced', function () {
     $page->navigate(spaUrl("/payments/new?type=send&bill_id={$billId}"));
     $page->assertSee('Record Payment');
 
-    $page->click('Select vendor');
+    $page->click('[data-testid="payment-vendor"]');
     $page->click('[role="option"] >> text='.getTestSupplierName());
-    $page->fill('input[type="number"][step="1000"]', (string) $totalAmount);
-    $page->click('Select account');
+    $page->fill('[data-testid="payment-amount"]', (string) $totalAmount);
+    $page->click('[data-testid="payment-account"]');
     $page->click('[role="option"] >> text=Bank BCA');
-    $page->click('button[type="submit"]');
+    $page->click('[data-testid="payment-submit"]');
     $page->assertSee('Payment recorded successfully');
 
     // DB: bill should be fully paid

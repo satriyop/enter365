@@ -71,13 +71,13 @@ if (! function_exists('createBillViaUi')) {
 
         $page->assertSee('New Bill');
 
-        $page->click('Select vendor');
+        $page->click('[data-testid="bill-vendor"]');
         $page->click('[role="option"] >> text='.$supplierName);
-        $page->fill('input[placeholder="Item description"]', $description);
-        $page->fill('input[type="number"][min="1"]', (string) $qty);
-        $page->click('input[inputmode="numeric"]');
-        $page->type('input[inputmode="numeric"]', $price);
-        $page->click('Create Bill');
+        $page->fill('[data-testid="bill-item-0-description"]', $description);
+        $page->fill('[data-testid="bill-item-0-quantity"]', (string) $qty);
+        $page->click('[data-testid="bill-item-0-price"]');
+        $page->type('[data-testid="bill-item-0-price"]', $price);
+        $page->click('[data-testid="bill-submit"]');
         $page->assertSee('BL-');
 
         return $page;
@@ -140,18 +140,18 @@ it('can record a payment for a posted invoice', function () {
     $page->assertSee('Record Payment');
 
     // Select customer
-    $page->click('Select customer');
-    $page->click('[role="option"] >> text=PT Test Customer');
+    $page->click('[data-testid="payment-customer"]');
+    $page->click('[role="option"] >> text="PT Test Customer"');
 
     // Fill amount = full total
-    $page->fill('input[type="number"][step="1000"]', (string) $totalAmount);
+    $page->fill('[data-testid="payment-amount"]', (string) $totalAmount);
 
     // Select cash account
-    $page->click('Select account');
+    $page->click('[data-testid="payment-account"]');
     $page->click('[role="option"] >> text=Bank BCA');
 
     // Submit payment
-    $page->click('button[type="submit"]');
+    $page->click('[data-testid="payment-submit"]');
     $page->assertSee('Payment recorded successfully');
 
     // DB assertions
@@ -183,12 +183,12 @@ it('voiding a payment reverses JE and restores invoice status', function () {
     $page->navigate(spaUrl("/payments/new?invoice_id={$invoiceId}"));
     $page->assertSee('Record Payment');
 
-    $page->click('Select customer');
-    $page->click('[role="option"] >> text=PT Test Customer');
-    $page->fill('input[type="number"][step="1000"]', (string) $totalAmount);
-    $page->click('Select account');
+    $page->click('[data-testid="payment-customer"]');
+    $page->click('[role="option"] >> text="PT Test Customer"');
+    $page->fill('[data-testid="payment-amount"]', (string) $totalAmount);
+    $page->click('[data-testid="payment-account"]');
     $page->click('[role="option"] >> text=Bank BCA');
-    $page->click('button[type="submit"]');
+    $page->click('[data-testid="payment-submit"]');
     $page->assertSee('Payment recorded successfully');
 
     // Find the payment
@@ -254,12 +254,12 @@ it('recording a payment creates correct journal entry lines', function () {
     // Record full payment
     $page->navigate(spaUrl("/payments/new?invoice_id={$invoiceId}"));
     $page->assertSee('Record Payment');
-    $page->click('Select customer');
-    $page->click('[role="option"] >> text=PT Test Customer');
-    $page->fill('input[type="number"][step="1000"]', (string) $totalAmount);
-    $page->click('Select account');
+    $page->click('[data-testid="payment-customer"]');
+    $page->click('[role="option"] >> text="PT Test Customer"');
+    $page->fill('[data-testid="payment-amount"]', (string) $totalAmount);
+    $page->click('[data-testid="payment-account"]');
     $page->click('[role="option"] >> text=Bank BCA');
-    $page->click('button[type="submit"]');
+    $page->click('[data-testid="payment-submit"]');
     $page->assertSee('Payment recorded successfully');
 
     // Find the payment and verify JE lines
@@ -310,12 +310,12 @@ it('voiding a payment creates correct reversal journal entry lines', function ()
 
     $page->navigate(spaUrl("/payments/new?invoice_id={$invoiceId}"));
     $page->assertSee('Record Payment');
-    $page->click('Select customer');
-    $page->click('[role="option"] >> text=PT Test Customer');
-    $page->fill('input[type="number"][step="1000"]', (string) $totalAmount);
-    $page->click('Select account');
+    $page->click('[data-testid="payment-customer"]');
+    $page->click('[role="option"] >> text="PT Test Customer"');
+    $page->fill('[data-testid="payment-amount"]', (string) $totalAmount);
+    $page->click('[data-testid="payment-account"]');
     $page->click('[role="option"] >> text=Bank BCA');
-    $page->click('button[type="submit"]');
+    $page->click('[data-testid="payment-submit"]');
     $page->assertSee('Payment recorded successfully');
 
     // Get the payment
@@ -381,18 +381,18 @@ it('recording a bill payment creates correct journal entry lines', function () {
     $page->assertSee('Record Payment');
 
     // Select vendor
-    $page->click('Select vendor');
+    $page->click('[data-testid="payment-vendor"]');
     $page->click('[role="option"] >> text='.getTestSupplierName());
 
     // Fill amount = full total
-    $page->fill('input[type="number"][step="1000"]', (string) $totalAmount);
+    $page->fill('[data-testid="payment-amount"]', (string) $totalAmount);
 
     // Select cash account
-    $page->click('Select account');
+    $page->click('[data-testid="payment-account"]');
     $page->click('[role="option"] >> text=Bank BCA');
 
     // Submit payment
-    $page->click('button[type="submit"]');
+    $page->click('[data-testid="payment-submit"]');
     $page->assertSee('Payment recorded successfully');
 
     // Find the payment and verify JE lines
@@ -445,12 +445,12 @@ it('voiding a bill payment creates correct reversal journal entry lines', functi
     // Record full payment
     $page->navigate(spaUrl("/payments/new?type=send&bill_id={$billId}"));
     $page->assertSee('Record Payment');
-    $page->click('Select vendor');
+    $page->click('[data-testid="payment-vendor"]');
     $page->click('[role="option"] >> text='.getTestSupplierName());
-    $page->fill('input[type="number"][step="1000"]', (string) $totalAmount);
-    $page->click('Select account');
+    $page->fill('[data-testid="payment-amount"]', (string) $totalAmount);
+    $page->click('[data-testid="payment-account"]');
     $page->click('[role="option"] >> text=Bank BCA');
-    $page->click('button[type="submit"]');
+    $page->click('[data-testid="payment-submit"]');
     $page->assertSee('Payment recorded successfully');
 
     // Get the payment
@@ -521,12 +521,12 @@ it('shows payments in the list page', function () {
 
     $page->navigate(spaUrl("/payments/new?invoice_id={$invoiceId}"));
     $page->assertSee('Record Payment');
-    $page->click('Select customer');
-    $page->click('[role="option"] >> text=PT Test Customer');
-    $page->fill('input[type="number"][step="1000"]', (string) $totalAmount);
-    $page->click('Select account');
+    $page->click('[data-testid="payment-customer"]');
+    $page->click('[role="option"] >> text="PT Test Customer"');
+    $page->fill('[data-testid="payment-amount"]', (string) $totalAmount);
+    $page->click('[data-testid="payment-account"]');
     $page->click('[role="option"] >> text=Bank BCA');
-    $page->click('button[type="submit"]');
+    $page->click('[data-testid="payment-submit"]');
     $page->assertSee('Payment recorded successfully');
 
     // Navigate to payments list

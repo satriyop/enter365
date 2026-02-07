@@ -164,21 +164,21 @@ function createSalesReturnViaUi(
     $page->assertSee('New Sales Return');
 
     // Select customer — Radix-Vue Select
-    $page->click('Select customer...');
-    $page->click('[role="option"] >> text=PT Test Customer');
+    $page->click('[data-testid="sr-customer"]');
+    $page->click('[role="option"] >> text="PT Test Customer"');
 
     // Fill line item description
-    $page->fill('input[placeholder="Item description"]', $description);
+    $page->fill('[data-testid="sr-item-0-description"]', $description);
 
     // Fill quantity (step="any" allows fractional quantities)
-    $page->fill('table input[type="number"][step="any"]', (string) $qty);
+    $page->fill('[data-testid="sr-item-0-quantity"]', (string) $qty);
 
     // Fill unit price (CurrencyInput)
-    $page->click('td input[inputmode="numeric"]');
-    $page->type('td input[inputmode="numeric"]', $price);
+    $page->click('[data-testid="sr-item-0-price"]');
+    $page->type('[data-testid="sr-item-0-price"]', $price);
 
     // Submit the form
-    $page->click('button >> text=Create Sales Return');
+    $page->click('[data-testid="sr-submit"]');
 
     // Wait for success message and navigation to detail page
     $page->assertSee('created successfully');

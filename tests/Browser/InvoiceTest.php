@@ -85,18 +85,18 @@ it('can record partial payment and status changes to Partial', function () {
     $page->assertSee('Record Payment');
 
     // Select customer
-    $page->click('Select customer');
-    $page->click('[role="option"] >> text=PT Test Customer');
+    $page->click('[data-testid="payment-customer"]');
+    $page->click('[role="option"] >> text="PT Test Customer"');
 
     // Fill amount
-    $page->fill('input[type="number"][step="1000"]', (string) $partialAmount);
+    $page->fill('[data-testid="payment-amount"]', (string) $partialAmount);
 
     // Select cash account
-    $page->click('Select account');
+    $page->click('[data-testid="payment-account"]');
     $page->click('[role="option"] >> text=Bank BCA');
 
     // Submit payment (default method is 'transfer' which is valid)
-    $page->click('button[type="submit"]');
+    $page->click('[data-testid="payment-submit"]');
     $page->assertSee('Payment recorded successfully');
 
     // DB assertions
@@ -120,12 +120,12 @@ it('can record remaining payment and status changes to Paid', function () {
     $page->navigate(spaUrl("/payments/new?invoice_id={$invoiceId}"));
     $page->assertSee('Record Payment');
 
-    $page->click('Select customer');
-    $page->click('[role="option"] >> text=PT Test Customer');
-    $page->fill('input[type="number"][step="1000"]', (string) $firstPayment);
-    $page->click('Select account');
+    $page->click('[data-testid="payment-customer"]');
+    $page->click('[role="option"] >> text="PT Test Customer"');
+    $page->fill('[data-testid="payment-amount"]', (string) $firstPayment);
+    $page->click('[data-testid="payment-account"]');
     $page->click('[role="option"] >> text=Bank BCA');
-    $page->click('button[type="submit"]');
+    $page->click('[data-testid="payment-submit"]');
     $page->assertSee('Payment recorded successfully');
 
     // Navigate back to the invoice
@@ -136,12 +136,12 @@ it('can record remaining payment and status changes to Paid', function () {
     $page->navigate(spaUrl("/payments/new?invoice_id={$invoiceId}"));
     $page->assertSee('Record Payment');
 
-    $page->click('Select customer');
-    $page->click('[role="option"] >> text=PT Test Customer');
-    $page->fill('input[type="number"][step="1000"]', (string) $secondPayment);
-    $page->click('Select account');
+    $page->click('[data-testid="payment-customer"]');
+    $page->click('[role="option"] >> text="PT Test Customer"');
+    $page->fill('[data-testid="payment-amount"]', (string) $secondPayment);
+    $page->click('[data-testid="payment-account"]');
     $page->click('[role="option"] >> text=Bank BCA');
-    $page->click('button[type="submit"]');
+    $page->click('[data-testid="payment-submit"]');
     $page->assertSee('Payment recorded successfully');
 
     // DB assertions: fully paid
@@ -184,12 +184,12 @@ it('maintains balanced trial balance after all operations', function () {
     $page->navigate(spaUrl("/payments/new?invoice_id={$invoiceId}"));
     $page->assertSee('Record Payment');
 
-    $page->click('Select customer');
-    $page->click('[role="option"] >> text=PT Test Customer');
-    $page->fill('input[type="number"][step="1000"]', (string) $totalAmount);
-    $page->click('Select account');
+    $page->click('[data-testid="payment-customer"]');
+    $page->click('[role="option"] >> text="PT Test Customer"');
+    $page->fill('[data-testid="payment-amount"]', (string) $totalAmount);
+    $page->click('[data-testid="payment-account"]');
     $page->click('[role="option"] >> text=Bank BCA');
-    $page->click('button[type="submit"]');
+    $page->click('[data-testid="payment-submit"]');
     $page->assertSee('Payment recorded successfully');
 
     // Assert trial balance: total debits = total credits across ALL posted journal entries

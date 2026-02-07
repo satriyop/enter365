@@ -139,9 +139,9 @@ function loginAndVisit(string $path = '/')
 {
     $page = visit(spaUrl('/login'));
 
-    $page->fill('input[type="email"]', 'admin@example.com')
-        ->fill('input[type="password"]', 'password')
-        ->click('button[type="submit"]')
+    $page->fill('[data-testid="login-email"]', 'admin@example.com')
+        ->fill('[data-testid="login-password"]', 'password')
+        ->click('[data-testid="login-submit"]')
         ->assertPathIs('/');
 
     return $page->navigate(spaUrl($path));
@@ -186,21 +186,21 @@ function createInvoice(string $description = 'E2E Test Item', int $qty = 10, str
     $page->assertSee('New Invoice');
 
     // Select customer — Radix-Vue Select
-    $page->click('Select customer...');
-    $page->click('[role="option"] >> text=PT Test Customer');
+    $page->click('[data-testid="invoice-customer"]');
+    $page->click('[role="option"] >> text="PT Test Customer"');
 
     // Fill line item description
-    $page->fill('input[placeholder="Item description"]', $description);
+    $page->fill('[data-testid="invoice-item-0-description"]', $description);
 
     // Fill quantity
-    $page->fill('table input[type="number"][min="1"]', (string) $qty);
+    $page->fill('[data-testid="invoice-item-0-quantity"]', (string) $qty);
 
-    // Fill unit price (CurrencyInput in the table row, not the discount field below)
-    $page->click('td input[inputmode="numeric"]');
-    $page->type('td input[inputmode="numeric"]', $price);
+    // Fill unit price
+    $page->click('[data-testid="invoice-item-0-price"]');
+    $page->type('[data-testid="invoice-item-0-price"]', $price);
 
     // Submit the form
-    $page->click('Create Invoice');
+    $page->click('[data-testid="invoice-submit"]');
 
     // Wait for navigation to detail page
     $page->assertSee('INV-');
@@ -312,4 +312,51 @@ function createConfirmedWorkOrder(): WorkOrder
     return WorkOrder::factory()
         ->has(WorkOrderItem::factory())
         ->create(['status' => DocumentStatus::Confirmed]);
+}
+
+/**
+ * Ensure a product has inventory tracking enabled and stock in a warehouse.
+ *
+ * @return array{product_id: int, warehouse_id: int}
+ */
+function ensureInventorySetup(): array
+{
+    $db = realDb();
+
+    // Get or create a warehouse
+    $warehouse = $db->table('warehouses')->where('is_active', true)->first();
+    if (! $warehouse) {
+        $warehouseId = (int) $db->table('warehouses')->insertGetId([
+            'code' => 'WH-INV-TEST',
+            'name' => 'Inventory Test Warehouse',
+            'is_active' => true,
+            'is_default' => false,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    } else {
+        $warehouseId = (int) $warehouse->id;
+    }
+
+    // Ensure product 1 has inventory tracking
+    $db->table('products')->where('id', 1)->update(['track_inventory' => true]);
+
+    // Ensure product stock exists
+    $stock = $db->table('product_stocks')
+        ->where('product_id', 1)
+        ->where('warehouse_id', $warehouseId)
+        ->first();
+
+    if (! $stock) {
+        $db->table('product_stocks')->insert([
+            'product_id' => 1,
+            'warehouse_id' => $warehouseId,
+            'quantity' => 100,
+            'reserved_quantity' => 0,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
+    return ['product_id' => 1, 'warehouse_id' => $warehouseId];
 }

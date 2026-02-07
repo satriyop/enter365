@@ -71,13 +71,13 @@ if (! function_exists('createBillViaUi')) {
 
         $page->assertSee('New Bill');
 
-        $page->click('Select vendor');
+        $page->click('[data-testid="bill-vendor"]');
         $page->click('[role="option"] >> text='.$supplierName);
-        $page->fill('input[placeholder="Item description"]', $description);
-        $page->fill('input[type="number"][min="1"]', (string) $qty);
-        $page->click('input[inputmode="numeric"]');
-        $page->type('input[inputmode="numeric"]', $price);
-        $page->click('Create Bill');
+        $page->fill('[data-testid="bill-item-0-description"]', $description);
+        $page->fill('[data-testid="bill-item-0-quantity"]', (string) $qty);
+        $page->click('[data-testid="bill-item-0-price"]');
+        $page->type('[data-testid="bill-item-0-price"]', $price);
+        $page->click('[data-testid="bill-submit"]');
         $page->assertSee('BL-');
 
         return $page;

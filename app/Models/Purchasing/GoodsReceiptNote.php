@@ -3,7 +3,7 @@
 namespace App\Models\Purchasing;
 
 use App\Enums\DocumentStatus;
-use App\Models\Contact;
+use App\Models\Contacts\Contact;
 use App\Models\Inventory\Warehouse;
 use App\Models\User;
 use Carbon\Carbon;

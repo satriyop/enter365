@@ -24,8 +24,8 @@ class StoreStockOpnameRequest extends FormRequest
         return [
             'warehouse_id' => ['required', 'exists:warehouses,id'],
             'opname_date' => ['sometimes', 'date'],
-            'name' => ['sometimes', 'string', 'max:255'],
-            'notes' => ['sometimes', 'string', 'max:1000'],
+            'name' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'notes' => ['sometimes', 'nullable', 'string', 'max:1000'],
         ];
     }
 

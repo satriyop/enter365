@@ -124,34 +124,33 @@ it('can create a manual journal entry via form', function () {
     $page->assertSee('New Journal Entry');
 
     // Fill description
-    $page->fill('input[placeholder="Describe this journal entry"]', 'E2E Manual JE Test');
+    $page->fill('[data-testid="je-description"]', 'E2E Manual JE Test');
 
     // Fill reference
-    $page->fill('input[placeholder="Optional reference number or document"]', 'REF-E2E-001');
+    $page->fill('[data-testid="je-reference"]', 'REF-E2E-001');
 
     // Line 1: Select account (Bank BCA)
     // The Select trigger renders as a button with role="combobox" inside the table
-    $page->click('table button[role="combobox"] >> nth=0');
+    $page->click('[data-testid="je-line-0-account"]');
     $page->click('[role="option"] >> text=Bank BCA');
 
-    // Fill debit for first line — CurrencyInput with inputmode="numeric"
-    $debitInputs = 'input[inputmode="numeric"]';
-    $page->click("{$debitInputs} >> nth=0");
-    $page->type("{$debitInputs} >> nth=0", '500000');
+    // Fill debit for first line
+    $page->click('[data-testid="je-line-0-debit"]');
+    $page->type('[data-testid="je-line-0-debit"]', '500000');
 
     // Line 2: Select account (Pembelian — exact match to avoid "Diskon Pembelian" etc.)
-    $page->click('table button[role="combobox"] >> nth=1');
+    $page->click('[data-testid="je-line-1-account"]');
     $page->click('[role="option"] >> text=5-1002 - Pembelian');
 
-    // Fill credit for second line — nth=3 (debit1, credit1, debit2, credit2)
-    $page->click("{$debitInputs} >> nth=3");
-    $page->type("{$debitInputs} >> nth=3", '500000');
+    // Fill credit for second line
+    $page->click('[data-testid="je-line-1-credit"]');
+    $page->type('[data-testid="je-line-1-credit"]', '500000');
 
     // Should show balanced indicator
     $page->assertSee('Entry is balanced');
 
     // Submit the form
-    $page->click('Create Entry');
+    $page->click('[data-testid="je-submit"]');
 
     // Wait for navigation to detail page
     $page->assertSee('JE-');
@@ -284,28 +283,27 @@ it('rejects creation of unbalanced journal entry', function () {
     $page->assertSee('New Journal Entry');
 
     // Fill description
-    $page->fill('input[placeholder="Describe this journal entry"]', 'E2E Unbalanced JE Test');
+    $page->fill('[data-testid="je-description"]', 'E2E Unbalanced JE Test');
 
     // Line 1: Select account (Bank BCA), debit 500000
-    $page->click('table button[role="combobox"] >> nth=0');
+    $page->click('[data-testid="je-line-0-account"]');
     $page->click('[role="option"] >> text=Bank BCA');
 
-    $debitInputs = 'input[inputmode="numeric"]';
-    $page->click("{$debitInputs} >> nth=0");
-    $page->type("{$debitInputs} >> nth=0", '500000');
+    $page->click('[data-testid="je-line-0-debit"]');
+    $page->type('[data-testid="je-line-0-debit"]', '500000');
 
     // Line 2: Select account (Pembelian), credit 300000 — intentionally unbalanced
-    $page->click('table button[role="combobox"] >> nth=1');
+    $page->click('[data-testid="je-line-1-account"]');
     $page->click('[role="option"] >> text=5-1002 - Pembelian');
 
-    $page->click("{$debitInputs} >> nth=3");
-    $page->type("{$debitInputs} >> nth=3", '300000');
+    $page->click('[data-testid="je-line-1-credit"]');
+    $page->type('[data-testid="je-line-1-credit"]', '300000');
 
     // Should show "Entry is not balanced" indicator (frontend validation)
     $page->assertSee('Entry is not balanced');
 
     // Submit the form — frontend should show validation error and stay on page
-    $page->script('document.querySelector("button[type=submit], button.bg-primary")?.click()');
+    $page->script('document.querySelector("[data-testid=je-submit]")?.click()');
     usleep(1_500_000); // 1.5s for any async validation
 
     // Should still be on the same page with validation error

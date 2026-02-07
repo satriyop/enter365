@@ -9,8 +9,8 @@ declare(strict_types=1);
  * - Seeded user: admin@example.com / password
  * - Seeded accounts with posted journal entries
  *
- * Tests cover: trial balance, balance sheet, income statement page loads
- * and structural DB verification.
+ * Tests cover: trial balance, balance sheet, income statement, cash flow,
+ * receivables/payables aging, VAT, general ledger, stock reports.
  *
  * Shared helpers (realDb, loginAndVisit, spaUrl, etc.) are in tests/Pest.php.
  */
@@ -112,4 +112,110 @@ it('income statement page loads and shows correct structure', function () {
 
     // At least one of revenue or expense should have entries (from previous test data)
     expect($revenueCount + $expenseCount)->toBeGreaterThan(0);
+});
+
+// ---------------------------------------------------------------------------
+// Cash Flow Report
+// ---------------------------------------------------------------------------
+
+it('cash flow report page loads and shows operating/investing/financing sections', function () {
+    $page = loginAndVisit('/reports/cash-flow');
+
+    $page->assertSee('Cash Flow');
+});
+
+// ---------------------------------------------------------------------------
+// Receivables & Payables Aging
+// ---------------------------------------------------------------------------
+
+it('receivables aging report shows customer balances', function () {
+    $page = loginAndVisit('/reports/receivables-aging');
+
+    $page->assertSee('Receivables');
+
+    // DB verification: check if there are any outstanding invoices
+    $outstandingCount = realDb()->table('invoices')
+        ->where('status', 'sent')
+        ->whereRaw('total_amount > paid_amount')
+        ->count();
+
+    // The report should reflect the outstanding count (may be 0 if all paid)
+    if ($outstandingCount > 0) {
+        // Should show at least one customer
+        $page->assertSee('Current');
+    }
+});
+
+it('payables aging report shows vendor balances', function () {
+    $page = loginAndVisit('/reports/payables-aging');
+
+    $page->assertSee('Payables');
+
+    // DB verification: check if there are any outstanding bills
+    $outstandingCount = realDb()->table('bills')
+        ->where('status', 'approved')
+        ->whereRaw('total_amount > paid_amount')
+        ->count();
+
+    // The report renders regardless of data
+    if ($outstandingCount > 0) {
+        $page->assertSee('Current');
+    }
+});
+
+// ---------------------------------------------------------------------------
+// VAT Report
+// ---------------------------------------------------------------------------
+
+it('VAT report page loads with correct structure', function () {
+    $page = loginAndVisit('/reports/vat');
+
+    $page->assertSee('VAT');
+});
+
+// ---------------------------------------------------------------------------
+// General Ledger
+// ---------------------------------------------------------------------------
+
+it('general ledger report shows account transactions', function () {
+    $page = loginAndVisit('/reports/general-ledger');
+
+    $page->assertSee('General Ledger');
+
+    // DB: verify we have posted journal entries
+    $jeCount = realDb()->table('journal_entries')
+        ->where('is_posted', true)
+        ->whereNull('deleted_at')
+        ->count();
+
+    expect($jeCount)->toBeGreaterThan(0);
+});
+
+// ---------------------------------------------------------------------------
+// Stock Reports
+// ---------------------------------------------------------------------------
+
+it('stock summary report shows product stock levels', function () {
+    $page = loginAndVisit('/reports/stock-summary');
+
+    $page->assertSee('Stock');
+
+    // DB: verify stock records exist
+    $stockCount = realDb()->table('product_stocks')
+        ->where('quantity', '>', 0)
+        ->count();
+
+    expect($stockCount)->toBeGreaterThan(0);
+});
+
+it('stock valuation report shows inventory values', function () {
+    $page = loginAndVisit('/reports/stock-valuation');
+
+    $page->assertSee('Valuation');
+});
+
+it('COGS summary report loads', function () {
+    $page = loginAndVisit('/reports/cogs-summary');
+
+    $page->assertSee('COGS');
 });

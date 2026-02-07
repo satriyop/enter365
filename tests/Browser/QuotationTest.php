@@ -25,22 +25,22 @@ function createQuotation(string $subject = 'E2E Test Quotation')
     $page->assertSee('New Quotation');
 
     // Select customer — open Radix-Vue combobox then pick option
-    $page->click('Select customer...');
-    $page->click('[role="option"] >> text=PT Test Customer');
+    $page->click('[data-testid="quotation-customer"]');
+    $page->click('[role="option"] >> text="PT Test Customer"');
 
     // Fill subject
-    $page->fill('input[placeholder*="subject"]', $subject);
+    $page->fill('[data-testid="quotation-subject"]', $subject);
 
     // Fill first line item — select product by value (product ID).
     // Pest's guessLocator needs CSS special chars to use explicit mode;
     // 'td > select' targets the product select (parent=TD), not the discount select (parent=DIV).
-    $page->select('td > select', '1');
+    $page->select('[data-testid="quotation-item-0-product"]', '1');
 
     // Set quantity
-    $page->fill('table input[type="number"][min="1"]', '10');
+    $page->fill('[data-testid="quotation-item-0-quantity"]', '10');
 
     // Submit the form
-    $page->click('Create Quotation');
+    $page->click('[data-testid="quotation-submit"]');
 
     // Wait for navigation to detail page — QUO- prefix appears in the quotation number
     $page->assertSee('QUO-');
