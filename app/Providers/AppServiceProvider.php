@@ -176,6 +176,7 @@ class AppServiceProvider extends ServiceProvider
             }
         );
 
+        $this->app->bind(\App\Contracts\Sales\WriteOffServiceInterface::class, \App\Services\Sales\WriteOffService::class);
         $this->app->bind(RecurringServiceInterface::class, RecurringService::class);
         $this->app->bind(\App\Contracts\Sales\QuotationFollowUpServiceInterface::class, \App\Services\Sales\QuotationFollowUpService::class);
         $this->app->bind(\App\Contracts\Sales\QuotationCalculatorInterface::class, \App\Domain\Sales\Quotations\QuotationCalculator::class);
@@ -193,6 +194,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(PurchaseOrderServiceInterface::class, PurchaseOrderService::class);
         $this->app->bind(GoodsReceiptNoteServiceInterface::class, GoodsReceiptNoteService::class);
         $this->app->bind(PurchaseReturnServiceInterface::class, PurchaseReturnService::class);
+        $this->app->bind(\App\Contracts\Purchasing\LandedCostServiceInterface::class, \App\Services\Purchasing\LandedCostService::class);
         $this->app->bind(\App\Contracts\Purchasing\PurchaseOrderCalculatorInterface::class, \App\Domain\Purchasing\PurchaseOrders\PurchaseOrderCalculator::class);
         $this->app->singleton(\App\Domain\Purchasing\PurchaseOrders\PurchaseOrderDomainFactory::class);
 
@@ -253,6 +255,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Tax Domain
         $this->app->bind(\App\Contracts\Tax\NsfpServiceInterface::class, \App\Services\Tax\NsfpService::class);
+        $this->app->bind(\App\Contracts\Tax\PphCalculationServiceInterface::class, \App\Services\Tax\PphCalculationService::class);
 
         // Shared Domain
         $this->app->bind(\App\Contracts\Shared\PaymentServiceInterface::class, \App\Services\Shared\PaymentService::class);
@@ -393,6 +396,7 @@ class AppServiceProvider extends ServiceProvider
             'sales_return' => \App\Models\Sales\SalesReturn::class,
             'delivery_order' => \App\Models\Sales\DeliveryOrder::class,
             'down_payment' => \App\Models\Sales\DownPayment::class,
+            'write_off' => \App\Models\Sales\WriteOff::class,
 
             // Purchasing Domain
             'purchase_order' => \App\Models\Purchasing\PurchaseOrder::class,
@@ -401,6 +405,8 @@ class AppServiceProvider extends ServiceProvider
             'bill_item' => \App\Models\Purchasing\BillItem::class,
             'purchase_return' => \App\Models\Purchasing\PurchaseReturn::class,
             'goods_receipt_note' => \App\Models\Purchasing\GoodsReceiptNote::class,
+            'landed_cost' => \App\Models\Purchasing\LandedCost::class,
+            'landed_cost_allocation' => \App\Models\Purchasing\LandedCostAllocation::class,
 
             // Inventory Domain
             'product' => \App\Models\Inventory\Product::class,
@@ -435,6 +441,7 @@ class AppServiceProvider extends ServiceProvider
 
             // Shared Domain
             'payment' => \App\Models\Shared\Payment::class,
+            'payment_allocation' => \App\Models\Shared\PaymentAllocation::class,
             'attachment' => \App\Models\Shared\Attachment::class,
 
             // Core Domain

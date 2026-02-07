@@ -2,6 +2,7 @@
 
 namespace Database\Factories\Contacts;
 
+use App\Enums\PphCategory;
 use App\Models\Contacts\Contact;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -102,6 +103,47 @@ class ContactFactory extends Factory
             ], $this->faker->numberBetween(1, 3)),
             'hourly_rate' => $this->faker->randomElement([75000, 100000, 125000, 150000]),
             'daily_rate' => $this->faker->randomElement([500000, 750000, 1000000, 1250000]),
+        ]);
+    }
+
+    /**
+     * PPh subject (domestic supplier).
+     */
+    public function pphSubject(PphCategory $category = PphCategory::Pph23Jasa): static
+    {
+        return $this->supplier()->withNpwp()->state(fn (array $attributes) => [
+            'is_pph_subject' => true,
+            'pph_category' => $category,
+            'pph_rate' => null, // use default from enum/config
+            'is_foreign_entity' => false,
+        ]);
+    }
+
+    /**
+     * PPh subject without NPWP (gets 200% surcharge).
+     */
+    public function pphSubjectNoNpwp(PphCategory $category = PphCategory::Pph23Jasa): static
+    {
+        return $this->supplier()->state(fn (array $attributes) => [
+            'npwp' => null,
+            'is_pph_subject' => true,
+            'pph_category' => $category,
+            'pph_rate' => null,
+            'is_foreign_entity' => false,
+        ]);
+    }
+
+    /**
+     * Foreign entity supplier (PPh 26 at 20%).
+     */
+    public function foreignEntity(): static
+    {
+        return $this->supplier()->state(fn (array $attributes) => [
+            'npwp' => null,
+            'is_pph_subject' => true,
+            'pph_category' => PphCategory::Pph26,
+            'pph_rate' => null,
+            'is_foreign_entity' => true,
         ]);
     }
 

@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\AccountingPolicyController;
 use App\Http\Controllers\Api\V1\AttachmentController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BankReconciliationController;
+use App\Http\Controllers\Api\V1\BankStatementImportController;
 use App\Http\Controllers\Api\V1\BillController;
 use App\Http\Controllers\Api\V1\BomController;
 use App\Http\Controllers\Api\V1\BomTemplateController;
@@ -577,6 +578,16 @@ Route::prefix('v1')->group(function () {
             Route::post('/{bank_transaction}/unmatch', [BankReconciliationController::class, 'unmatch'])->name('bank-transactions.unmatch');
             Route::post('/{bank_transaction}/reconcile', [BankReconciliationController::class, 'reconcile'])->name('bank-transactions.reconcile');
             Route::get('/{bank_transaction}/suggest-matches', [BankReconciliationController::class, 'suggestMatches'])->name('bank-transactions.suggest-matches');
+        });
+
+        // Bank Statement Import (Impor Mutasi Bank)
+        Route::middleware('feature:bank_reconciliation')->prefix('bank-statements')->group(function () {
+            Route::post('/detect-format', [BankStatementImportController::class, 'detectFormat'])->name('bank-statements.detect-format');
+            Route::post('/validate', [BankStatementImportController::class, 'validate'])->name('bank-statements.validate');
+            Route::post('/import', [BankStatementImportController::class, 'import'])->name('bank-statements.import');
+            Route::get('/batches', [BankStatementImportController::class, 'listBatches'])->name('bank-statements.batches');
+            Route::get('/batches/{batch}/suggest-matches', [BankStatementImportController::class, 'suggestMatches'])->name('bank-statements.suggest-matches');
+            Route::delete('/batches/{batch}', [BankStatementImportController::class, 'deleteBatch'])->name('bank-statements.delete-batch');
         });
 
         // Attachments (Lampiran)

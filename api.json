@@ -2630,6 +2630,641 @@
                 }
             }
         },
+        "/bank-statements/detect-format": {
+            "post": {
+                "operationId": "bank-statements.detect-format",
+                "summary": "Detect format of uploaded bank statement",
+                "tags": [
+                    "BankStatementImport"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary",
+                                        "contentMediaType": "application/octet-stream",
+                                        "maxLength": 10240
+                                    }
+                                },
+                                "required": [
+                                    "file"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Format berhasil terdeteksi."
+                                            ]
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "bank": {
+                                                    "type": "string"
+                                                },
+                                                "date_format": {
+                                                    "type": "string"
+                                                },
+                                                "delimiter": {
+                                                    "type": "string"
+                                                },
+                                                "sample_rows": {
+                                                    "type": "array",
+                                                    "prefixItems": [
+                                                        {
+                                                            "type": "string"
+                                                        }
+                                                    ],
+                                                    "minItems": 1,
+                                                    "maxItems": 1,
+                                                    "additionalItems": false
+                                                }
+                                            },
+                                            "required": [
+                                                "bank",
+                                                "date_format",
+                                                "delimiter",
+                                                "sample_rows"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/bank-statements/validate": {
+            "post": {
+                "operationId": "bank-statements.validate",
+                "summary": "Validate import without saving",
+                "tags": [
+                    "BankStatementImport"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ValidateBankStatementImportRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Validasi selesai."
+                                            ]
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "valid_count": {
+                                                    "type": "integer",
+                                                    "enum": [
+                                                        0
+                                                    ]
+                                                },
+                                                "error_count": {
+                                                    "type": "integer",
+                                                    "enum": [
+                                                        0
+                                                    ]
+                                                },
+                                                "duplicate_count": {
+                                                    "type": "integer",
+                                                    "enum": [
+                                                        0
+                                                    ]
+                                                },
+                                                "preview_rows": {
+                                                    "type": "array",
+                                                    "prefixItems": [
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "row_number": {
+                                                                    "type": "integer",
+                                                                    "enum": [
+                                                                        2
+                                                                    ]
+                                                                },
+                                                                "is_duplicate": {
+                                                                    "type": "string"
+                                                                },
+                                                                "": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "row_number",
+                                                                "is_duplicate",
+                                                                null
+                                                            ]
+                                                        }
+                                                    ],
+                                                    "minItems": 1,
+                                                    "maxItems": 1,
+                                                    "additionalItems": false
+                                                },
+                                                "errors": {
+                                                    "type": "array",
+                                                    "prefixItems": [
+                                                        {
+                                                            "type": "string"
+                                                        }
+                                                    ],
+                                                    "minItems": 1,
+                                                    "maxItems": 1,
+                                                    "additionalItems": false
+                                                },
+                                                "warnings": {
+                                                    "type": "array",
+                                                    "prefixItems": [
+                                                        {
+                                                            "type": "string"
+                                                        }
+                                                    ],
+                                                    "minItems": 1,
+                                                    "maxItems": 1,
+                                                    "additionalItems": false
+                                                }
+                                            },
+                                            "required": [
+                                                "valid_count",
+                                                "error_count",
+                                                "duplicate_count",
+                                                "preview_rows",
+                                                "errors",
+                                                "warnings"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/bank-statements/import": {
+            "post": {
+                "operationId": "bank-statements.import",
+                "summary": "Execute import and save to database",
+                "tags": [
+                    "BankStatementImport"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ExecuteBankStatementImportRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "import_batch": {
+                                                    "type": "string"
+                                                },
+                                                "imported_count": {
+                                                    "type": "integer",
+                                                    "enum": [
+                                                        0
+                                                    ]
+                                                },
+                                                "skipped_count": {
+                                                    "type": "integer",
+                                                    "enum": [
+                                                        0
+                                                    ]
+                                                },
+                                                "errors": {
+                                                    "type": "array",
+                                                    "prefixItems": [
+                                                        {
+                                                            "type": "string"
+                                                        }
+                                                    ],
+                                                    "minItems": 1,
+                                                    "maxItems": 1,
+                                                    "additionalItems": false
+                                                }
+                                            },
+                                            "required": [
+                                                "import_batch",
+                                                "imported_count",
+                                                "skipped_count",
+                                                "errors"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/bank-statements/batches": {
+            "get": {
+                "operationId": "bank-statements.batches",
+                "summary": "List all import batches",
+                "tags": [
+                    "BankStatementImport"
+                ],
+                "parameters": [
+                    {
+                        "name": "account_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/BankTransaction"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/bank-statements/batches/{batch}/suggest-matches": {
+            "get": {
+                "operationId": "bank-statements.suggest-matches",
+                "summary": "Suggest matches for transactions in a batch",
+                "tags": [
+                    "BankStatementImport"
+                ],
+                "parameters": [
+                    {
+                        "name": "batch",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "account_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "422": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "message": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "message"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "message": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "account_id wajib diisi."
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "message"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "prefixItems": [
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "transaction_id": {
+                                                            "type": "string"
+                                                        },
+                                                        "transaction_date": {
+                                                            "type": "string"
+                                                        },
+                                                        "transaction_amount": {
+                                                            "type": "string"
+                                                        },
+                                                        "matches": {
+                                                            "type": "array",
+                                                            "prefixItems": [
+                                                                {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "type": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "payment"
+                                                                            ]
+                                                                        },
+                                                                        "id": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "number": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "amount": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "date": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "confidence": {
+                                                                            "type": "integer",
+                                                                            "enum": [
+                                                                                99
+                                                                            ]
+                                                                        },
+                                                                        "reason": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "Reference match"
+                                                                            ]
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "type",
+                                                                        "id",
+                                                                        "number",
+                                                                        "amount",
+                                                                        "date",
+                                                                        "confidence",
+                                                                        "reason"
+                                                                    ]
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "type": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "payment"
+                                                                            ]
+                                                                        },
+                                                                        "id": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "number": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "amount": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "date": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "confidence": {
+                                                                            "type": "integer",
+                                                                            "enum": [
+                                                                                85
+                                                                            ]
+                                                                        },
+                                                                        "reason": {
+                                                                            "type": "string",
+                                                                            "enum": [
+                                                                                "Amount and date match"
+                                                                            ]
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "type",
+                                                                        "id",
+                                                                        "number",
+                                                                        "amount",
+                                                                        "date",
+                                                                        "confidence",
+                                                                        "reason"
+                                                                    ]
+                                                                }
+                                                            ],
+                                                            "minItems": 2,
+                                                            "maxItems": 2,
+                                                            "additionalItems": false
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "transaction_id",
+                                                        "transaction_date",
+                                                        "transaction_amount",
+                                                        "matches"
+                                                    ]
+                                                }
+                                            ],
+                                            "minItems": 1,
+                                            "maxItems": 1,
+                                            "additionalItems": false
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/bank-statements/batches/{batch}": {
+            "delete": {
+                "operationId": "bank-statements.delete-batch",
+                "summary": "Delete an import batch",
+                "tags": [
+                    "BankStatementImport"
+                ],
+                "parameters": [
+                    {
+                        "name": "batch",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "422": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/bills": {
             "get": {
                 "operationId": "bills.index",
@@ -46604,6 +47239,141 @@
                 ],
                 "title": "AttachmentResource"
             },
+            "BankTransaction": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "account_id": {
+                        "type": "integer"
+                    },
+                    "transaction_date": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "reference": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "debit": {
+                        "type": "integer"
+                    },
+                    "credit": {
+                        "type": "integer"
+                    },
+                    "balance": {
+                        "type": "integer"
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/BankTransactionStatus"
+                    },
+                    "matched_payment_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "matched_journal_line_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "reconciled_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "reconciled_by": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "import_batch": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "external_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "created_by": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "session_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "match_confidence": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "match_rule": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "account_id",
+                    "transaction_date",
+                    "description",
+                    "reference",
+                    "debit",
+                    "credit",
+                    "balance",
+                    "status",
+                    "matched_payment_id",
+                    "matched_journal_line_id",
+                    "reconciled_at",
+                    "reconciled_by",
+                    "import_batch",
+                    "external_id",
+                    "created_by",
+                    "created_at",
+                    "updated_at",
+                    "session_id",
+                    "match_confidence",
+                    "match_rule"
+                ],
+                "title": "BankTransaction"
+            },
             "BankTransactionResource": {
                 "type": "object",
                 "properties": {
@@ -46711,6 +47481,15 @@
                     "updated_at"
                 ],
                 "title": "BankTransactionResource"
+            },
+            "BankTransactionStatus": {
+                "type": "string",
+                "enum": [
+                    "unmatched",
+                    "matched",
+                    "reconciled"
+                ],
+                "title": "BankTransactionStatus"
             },
             "BillItemResource": {
                 "type": "object",
@@ -49528,6 +50307,25 @@
                 ],
                 "title": "DownPaymentResource"
             },
+            "ExecuteBankStatementImportRequest": {
+                "type": "object",
+                "properties": {
+                    "file": {
+                        "type": "string",
+                        "format": "binary",
+                        "contentMediaType": "application/octet-stream",
+                        "maxLength": 10240
+                    },
+                    "account_id": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "file",
+                    "account_id"
+                ],
+                "title": "ExecuteBankStatementImportRequest"
+            },
             "FiscalPeriodResource": {
                 "type": "object",
                 "properties": {
@@ -52216,6 +53014,40 @@
                             "null"
                         ]
                     },
+                    "pph_category": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "$ref": "#/components/schemas/PphCategory"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "pph_rate": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "pph_base_amount": {
+                        "type": "integer"
+                    },
+                    "pph_amount": {
+                        "type": "integer"
+                    },
+                    "pph_account_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "cash_disbursement": {
+                        "type": "integer"
+                    },
                     "payment_method": {
                         "type": "string"
                     },
@@ -52256,7 +53088,10 @@
                         "type": "boolean"
                     },
                     "voided_at": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "voided_by": {
                         "type": [
@@ -52278,6 +53113,32 @@
                     },
                     "journal_entry": {
                         "$ref": "#/components/schemas/JournalEntryResource"
+                    },
+                    "allocations": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "allocatable_type": {
+                                    "type": "string"
+                                },
+                                "allocatable_id": {
+                                    "type": "string"
+                                },
+                                "amount": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "id",
+                                "allocatable_type",
+                                "allocatable_id",
+                                "amount"
+                            ]
+                        }
                     },
                     "created_by": {
                         "type": [
@@ -52302,6 +53163,12 @@
                     "currency",
                     "exchange_rate",
                     "base_currency_amount",
+                    "pph_category",
+                    "pph_rate",
+                    "pph_base_amount",
+                    "pph_amount",
+                    "pph_account_id",
+                    "cash_disbursement",
                     "payment_method",
                     "reference",
                     "notes",
@@ -52587,6 +53454,19 @@
                     "notes"
                 ],
                 "title": "PlnTariffResource"
+            },
+            "PphCategory": {
+                "type": "string",
+                "enum": [
+                    "pph23_jasa",
+                    "pph23_sewa",
+                    "pph23_bunga",
+                    "pph23_royalti",
+                    "pph4_2_konstruksi",
+                    "pph4_2_sewa",
+                    "pph26"
+                ],
+                "title": "PphCategory"
             },
             "PreviewSwapBrandRequest": {
                 "type": "object",
@@ -59320,6 +60200,35 @@
                             "integer",
                             "null"
                         ]
+                    },
+                    "pph_category": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "pph23_jasa",
+                            "pph23_sewa",
+                            "pph23_bunga",
+                            "pph23_royalti",
+                            "pph4_2_konstruksi",
+                            "pph4_2_sewa",
+                            "pph26"
+                        ]
+                    },
+                    "pph_rate": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 0,
+                        "maximum": 100
+                    },
+                    "pph_withhold": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ]
                     }
                 },
                 "required": [
@@ -65595,6 +66504,25 @@
                     "updated_at"
                 ],
                 "title": "UserResource"
+            },
+            "ValidateBankStatementImportRequest": {
+                "type": "object",
+                "properties": {
+                    "file": {
+                        "type": "string",
+                        "format": "binary",
+                        "contentMediaType": "application/octet-stream",
+                        "maxLength": 10240
+                    },
+                    "account_id": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "file",
+                    "account_id"
+                ],
+                "title": "ValidateBankStatementImportRequest"
             },
             "VoidBillRequest": {
                 "type": "object",

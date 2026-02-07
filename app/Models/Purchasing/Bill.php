@@ -4,6 +4,7 @@ namespace App\Models\Purchasing;
 
 use App\Contracts\Sales\InvoiceCalculatorInterface;
 use App\Enums\DocumentStatus;
+use App\Enums\PphCategory;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Contacts\Contact;
@@ -102,6 +103,11 @@ class Bill extends Model
         'currency',
         'exchange_rate',
         'base_currency_total',
+        'pph_category',
+        'pph_rate',
+        'pph_base_amount',
+        'pph_amount',
+        'pph_withheld_amount',
         'paid_amount',
         'status',
         'reminder_count',
@@ -128,6 +134,11 @@ class Bill extends Model
             'total_amount' => 'integer',
             'exchange_rate' => 'decimal:4',
             'base_currency_total' => 'integer',
+            'pph_category' => PphCategory::class,
+            'pph_rate' => 'decimal:2',
+            'pph_base_amount' => 'integer',
+            'pph_amount' => 'integer',
+            'pph_withheld_amount' => 'integer',
             'paid_amount' => 'integer',
             'last_reminder_at' => 'datetime',
             'status' => DocumentStatus::class,
@@ -291,6 +302,35 @@ class Bill extends Model
         } else {
             $this->base_currency_total = $this->total_amount;
         }
+    }
+
+    /**
+     * Calculate PPh withholding based on contact defaults.
+     * DPP (Dasar Pengenaan Pajak) = subtotal - discount_amount (before PPN).
+     */
+    public function calculatePph(): void
+    {
+        if (! config('accounting.pph.enabled')) {
+            return;
+        }
+
+        $contact = $this->contact ?? $this->contact()->first();
+        if (! $contact || ! $contact->isPphSubject()) {
+            return;
+        }
+
+        $this->pph_category = $contact->pph_category;
+        $this->pph_rate = $contact->getEffectivePphRate();
+        $this->pph_base_amount = $this->subtotal - $this->discount_amount;
+        $this->pph_amount = (int) round($this->pph_base_amount * $this->pph_rate / 100);
+    }
+
+    /**
+     * Get remaining PPh that can still be withheld on future payments.
+     */
+    public function getRemainingPphWithholding(): int
+    {
+        return max(0, $this->pph_amount - $this->pph_withheld_amount);
     }
 
     /**

@@ -62,6 +62,8 @@ class ChartOfAccountsSeeder extends Seeder
             ['code' => '2-1302', 'name' => 'Utang PPh 23', 'type' => Account::TYPE_LIABILITY, 'subtype' => Account::SUBTYPE_CURRENT_LIABILITY, 'is_system' => false, 'parent' => '2-1300'],
             ['code' => '2-1303', 'name' => 'Utang PPh 25', 'type' => Account::TYPE_LIABILITY, 'subtype' => Account::SUBTYPE_CURRENT_LIABILITY, 'is_system' => false, 'parent' => '2-1300'],
             ['code' => '2-1304', 'name' => 'Utang PPh Badan', 'type' => Account::TYPE_LIABILITY, 'subtype' => Account::SUBTYPE_CURRENT_LIABILITY, 'is_system' => false, 'parent' => '2-1300'],
+            ['code' => '2-1305', 'name' => 'Utang PPh 4(2)', 'type' => Account::TYPE_LIABILITY, 'subtype' => Account::SUBTYPE_CURRENT_LIABILITY, 'is_system' => false, 'parent' => '2-1300'],
+            ['code' => '2-1306', 'name' => 'Utang PPh 26', 'type' => Account::TYPE_LIABILITY, 'subtype' => Account::SUBTYPE_CURRENT_LIABILITY, 'is_system' => false, 'parent' => '2-1300'],
             ['code' => '2-1400', 'name' => 'Utang Gaji', 'type' => Account::TYPE_LIABILITY, 'subtype' => Account::SUBTYPE_CURRENT_LIABILITY, 'is_system' => false, 'parent' => '2-1000'],
             ['code' => '2-1500', 'name' => 'Utang Lain-lain', 'type' => Account::TYPE_LIABILITY, 'subtype' => Account::SUBTYPE_CURRENT_LIABILITY, 'is_system' => false, 'parent' => '2-1000'],
             ['code' => '2-1600', 'name' => 'Pendapatan Diterima Dimuka', 'type' => Account::TYPE_LIABILITY, 'subtype' => Account::SUBTYPE_CURRENT_LIABILITY, 'is_system' => false, 'parent' => '2-1000'],
@@ -98,6 +100,8 @@ class ChartOfAccountsSeeder extends Seeder
             ['code' => '4-2001', 'name' => 'Pendapatan Bunga', 'type' => Account::TYPE_REVENUE, 'subtype' => Account::SUBTYPE_OTHER_REVENUE, 'is_system' => false, 'parent' => '4-2000'],
             ['code' => '4-2002', 'name' => 'Pendapatan Sewa', 'type' => Account::TYPE_REVENUE, 'subtype' => Account::SUBTYPE_OTHER_REVENUE, 'is_system' => false, 'parent' => '4-2000'],
             ['code' => '4-2003', 'name' => 'Keuntungan Penjualan Aset', 'type' => Account::TYPE_REVENUE, 'subtype' => Account::SUBTYPE_OTHER_REVENUE, 'is_system' => false, 'parent' => '4-2000'],
+            ['code' => '4-2004', 'name' => 'Keuntungan Selisih Kurs', 'type' => Account::TYPE_REVENUE, 'subtype' => Account::SUBTYPE_OTHER_REVENUE, 'is_system' => true, 'parent' => '4-2000'],
+            ['code' => '4-2005', 'name' => 'Keuntungan Selisih Kurs Belum Direalisasi', 'type' => Account::TYPE_REVENUE, 'subtype' => Account::SUBTYPE_OTHER_REVENUE, 'is_system' => true, 'parent' => '4-2000'],
 
             // ============================================
             // 5. BEBAN (EXPENSES)
@@ -136,6 +140,8 @@ class ChartOfAccountsSeeder extends Seeder
             ['code' => '5-3003', 'name' => 'Kerugian Piutang', 'type' => Account::TYPE_EXPENSE, 'subtype' => Account::SUBTYPE_OTHER_EXPENSE, 'is_system' => false, 'parent' => '5-3000'],
             ['code' => '5-3004', 'name' => 'Kerugian Penjualan Aset', 'type' => Account::TYPE_EXPENSE, 'subtype' => Account::SUBTYPE_OTHER_EXPENSE, 'is_system' => false, 'parent' => '5-3000'],
             ['code' => '5-3005', 'name' => 'Beban Pajak Penghasilan', 'type' => Account::TYPE_EXPENSE, 'subtype' => Account::SUBTYPE_OTHER_EXPENSE, 'is_system' => false, 'parent' => '5-3000'],
+            ['code' => '5-3006', 'name' => 'Kerugian Selisih Kurs', 'type' => Account::TYPE_EXPENSE, 'subtype' => Account::SUBTYPE_OTHER_EXPENSE, 'is_system' => true, 'parent' => '5-3000'],
+            ['code' => '5-3007', 'name' => 'Kerugian Selisih Kurs Belum Direalisasi', 'type' => Account::TYPE_EXPENSE, 'subtype' => Account::SUBTYPE_OTHER_EXPENSE, 'is_system' => true, 'parent' => '5-3000'],
         ];
 
         // First pass: Create all accounts without parent relationships

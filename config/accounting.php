@@ -314,6 +314,53 @@ return [
         'retained_earnings' => '3-2000', // Laba Ditahan
         'dividends' => '3-3000', // Dividen/Prive (optional, null if not used)
         'income_summary' => '3-9000', // Ikhtisar Laba/Rugi (for income_summary strategy)
+
+        // PPh (Withholding Tax) payable accounts
+        'pph23_payable' => '2-1302', // Utang PPh 23
+        'pph4_2_payable' => '2-1305', // Utang PPh 4(2)
+        'pph26_payable' => '2-1306', // Utang PPh 26
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | PPh (Pajak Penghasilan) - Withholding Tax
+    |--------------------------------------------------------------------------
+    |
+    | Indonesian income tax withholding settings. When paying suppliers,
+    | companies must withhold PPh and remit to DJP.
+    |
+    */
+    'pph' => [
+        'enabled' => env('PPH_ENABLED', false),
+        'no_npwp_surcharge_multiplier' => 2.0,
+        'rates' => [
+            'pph23_jasa' => 2.00,
+            'pph23_sewa' => 2.00,
+            'pph23_bunga' => 15.00,
+            'pph23_royalti' => 15.00,
+            'pph4_2_konstruksi' => 3.00,
+            'pph4_2_sewa' => 10.00,
+            'pph26' => 20.00,
+        ],
+        'default_accounts' => [
+            'pph23_payable' => '2-1302',
+            'pph4_2_payable' => '2-1305',
+            'pph26_payable' => '2-1306',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Bank Statement Import
+    |--------------------------------------------------------------------------
+    |
+    | Settings for importing bank statements from CSV files.
+    |
+    */
+    'bank_import' => [
+        'auto_suggest_matches' => true,
+        'max_file_size_kb' => 10240,
+        'match_date_tolerance_days' => 7,
     ],
 
     /*

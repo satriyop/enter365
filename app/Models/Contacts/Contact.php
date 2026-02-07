@@ -3,6 +3,7 @@
 namespace App\Models\Contacts;
 
 use App\Enums\DocumentStatus;
+use App\Enums\PphCategory;
 use App\Models\Manufacturing\SubcontractorWorkOrder;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
@@ -57,6 +58,11 @@ class Contact extends Model
         'subcontractor_services',
         'hourly_rate',
         'daily_rate',
+        // PPh (Withholding Tax) fields
+        'is_pph_subject',
+        'pph_category',
+        'pph_rate',
+        'is_foreign_entity',
     ];
 
     protected function casts(): array
@@ -73,6 +79,11 @@ class Contact extends Model
             'subcontractor_services' => 'array',
             'hourly_rate' => 'integer',
             'daily_rate' => 'integer',
+            // PPh fields
+            'is_pph_subject' => 'boolean',
+            'pph_category' => PphCategory::class,
+            'pph_rate' => 'decimal:2',
+            'is_foreign_entity' => 'boolean',
         ];
     }
 
@@ -266,6 +277,42 @@ class Contact extends Model
             ->where('status', DocumentStatus::Overdue)
             ->orderBy('due_date')
             ->get();
+    }
+
+    /**
+     * Check if this contact is subject to PPh withholding.
+     */
+    public function isPphSubject(): bool
+    {
+        return $this->is_pph_subject === true;
+    }
+
+    /**
+     * Get the effective PPh rate, applying 200% surcharge if no NPWP.
+     */
+    public function getEffectivePphRate(): float
+    {
+        if (! $this->isPphSubject() || ! $this->pph_category) {
+            return 0;
+        }
+
+        $baseRate = $this->pph_rate ?? $this->pph_category->effectiveRate();
+        $surchargeMultiplier = 1.0;
+
+        // No-NPWP surcharge (PPh 23 only, not PPh 4(2) final tax, not PPh 26)
+        if (empty($this->npwp) && ! $this->pph_category->isFinal() && $this->pph_category !== PphCategory::Pph26) {
+            $surchargeMultiplier = (float) config('accounting.pph.no_npwp_surcharge_multiplier', 2.0);
+        }
+
+        return $baseRate * $surchargeMultiplier;
+    }
+
+    /**
+     * Get the PPh payable account code for this contact's category.
+     */
+    public function getPphAccountCode(): ?string
+    {
+        return $this->pph_category?->accountCode();
     }
 
     /**

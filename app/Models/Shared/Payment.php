@@ -2,6 +2,7 @@
 
 namespace App\Models\Shared;
 
+use App\Enums\PphCategory;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\BankTransaction;
 use App\Models\Accounting\JournalEntry;
@@ -11,6 +12,7 @@ use App\Traits\Filterable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -39,6 +41,11 @@ class Payment extends Model
         'currency',
         'exchange_rate',
         'base_currency_amount',
+        'pph_category',
+        'pph_rate',
+        'pph_base_amount',
+        'pph_amount',
+        'pph_account_id',
         'payment_method',
         'reference',
         'notes',
@@ -60,6 +67,10 @@ class Payment extends Model
             'amount' => 'integer',
             'exchange_rate' => 'decimal:4',
             'base_currency_amount' => 'integer',
+            'pph_category' => PphCategory::class,
+            'pph_rate' => 'decimal:2',
+            'pph_base_amount' => 'integer',
+            'pph_amount' => 'integer',
             'is_voided' => 'boolean',
             'voided_at' => 'datetime',
         ];
@@ -105,6 +116,40 @@ class Payment extends Model
     public function payable(): MorphTo
     {
         return $this->morphTo()->withTrashed();
+    }
+
+    /**
+     * Get the payment allocations (multi-document support).
+     *
+     * @return HasMany<PaymentAllocation, $this>
+     */
+    public function allocations(): HasMany
+    {
+        return $this->hasMany(PaymentAllocation::class);
+    }
+
+    /**
+     * @return BelongsTo<Account, $this>
+     */
+    public function pphAccount(): BelongsTo
+    {
+        return $this->belongsTo(Account::class, 'pph_account_id');
+    }
+
+    /**
+     * Get the actual cash disbursement (total payment minus PPh withheld).
+     */
+    public function getCashDisbursement(): int
+    {
+        return $this->amount - ($this->pph_amount ?? 0);
+    }
+
+    /**
+     * Check if this payment has PPh withholding.
+     */
+    public function hasPphWithholding(): bool
+    {
+        return ($this->pph_amount ?? 0) > 0;
     }
 
     /**

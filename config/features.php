@@ -50,6 +50,9 @@ return [
         'recurring' => env('FEATURE_RECURRING', true),
         'multi_currency' => env('FEATURE_MULTI_CURRENCY', true),
         'bank_reconciliation' => env('FEATURE_BANK_RECONCILIATION', true),
+
+        // Tax Compliance
+        'pph_withholding' => env('FEATURE_PPH_WITHHOLDING', false),
     ],
 
 ];

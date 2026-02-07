@@ -8,6 +8,7 @@ use App\Contracts\Accounting\JournalServiceInterface;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Shared\PaymentServiceInterface;
+use App\Contracts\Tax\PphCalculationServiceInterface;
 use App\Domain\Purchasing\Bills\Events\BillFullyPaid;
 use App\Domain\Purchasing\Events\PaymentSent;
 use App\Domain\Sales\Events\PaymentReceived;
@@ -18,6 +19,7 @@ use App\Models\Core\AuditLog;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
 use App\Models\Shared\Payment;
+use App\Models\Shared\PaymentAllocation;
 use App\Services\Base\BaseService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -27,6 +29,7 @@ class PaymentService extends BaseService implements PaymentServiceInterface
 {
     public function __construct(
         private JournalServiceInterface $journalService,
+        private PphCalculationServiceInterface $pphCalculationService,
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger
     ) {
@@ -36,41 +39,32 @@ class PaymentService extends BaseService implements PaymentServiceInterface
     public function create(array $data): Payment
     {
         return $this->executeInTransaction('create', function () use ($data) {
+            // Normalize legacy single-document format to allocations array
+            $allocations = $this->normalizeAllocations($data);
+
+            // Lock and validate each payable
+            $payables = $this->lockAndValidateAllocations($allocations, $data['amount']);
+
+            // Set legacy payable_type/payable_id from first allocation for backward compat
             $payableType = null;
             $payableId = null;
-            $payable = null;
-
-            // Handle invoice allocation (with pessimistic lock)
-            if (isset($data['invoice_id'])) {
-                $invoice = Invoice::lockForUpdate()->findOrFail($data['invoice_id']);
-                $this->validateInvoicePayment($invoice, $data['amount']);
-                $payableType = Invoice::class;
-                $payableId = $invoice->id;
-                $payable = $invoice;
-                unset($data['invoice_id']);
+            $firstPayable = null;
+            if ($allocations->isNotEmpty()) {
+                $first = $allocations->first();
+                $payableType = $first['model_class'];
+                $payableId = $first['allocatable_id'];
+                $firstPayable = $payables->first();
             }
 
-            // Handle bill allocation (with pessimistic lock)
-            if (isset($data['bill_id'])) {
-                $bill = Bill::lockForUpdate()->findOrFail($data['bill_id']);
-                $this->validateBillPayment($bill, $data['amount']);
-                $payableType = Bill::class;
-                $payableId = $bill->id;
-                $payable = $bill;
-                unset($data['bill_id']);
-            }
-
-            // Capture currency info from payable (Invoice/Bill)
+            // Capture currency info from first payable (or data)
             $currency = $data['currency'] ?? 'IDR';
             $exchangeRate = (float) ($data['exchange_rate'] ?? 1);
-            if ($payable) {
-                /** @var Invoice|Bill $payable */
-                $currency = $payable->currency ?? 'IDR';
-                // Allow caller to specify spot rate at payment date (IS-H4);
-                // fall back to payable's rate if not provided
+            if ($firstPayable) {
+                /** @var Invoice|Bill $firstPayable */
+                $currency = $firstPayable->currency ?? 'IDR';
                 $exchangeRate = isset($data['exchange_rate'])
                     ? (float) $data['exchange_rate']
-                    : (float) ($payable->exchange_rate ?? 1);
+                    : (float) ($firstPayable->exchange_rate ?? 1);
             }
 
             $amount = $data['amount'];
@@ -78,9 +72,46 @@ class PaymentService extends BaseService implements PaymentServiceInterface
                 ? (int) round($amount * $exchangeRate)
                 : $amount;
 
+            // Calculate PPh withholding for bill payments
+            $pphData = [];
+            if ($firstPayable instanceof Bill && config('accounting.pph.enabled')) {
+                $pphCategoryOverride = isset($data['pph_category'])
+                    ? \App\Enums\PphCategory::tryFrom($data['pph_category'])
+                    : null;
+                $pphRateOverride = isset($data['pph_rate']) ? (float) $data['pph_rate'] : null;
+
+                $shouldWithhold = $data['pph_withhold'] ?? true;
+
+                if ($shouldWithhold) {
+                    $pphResult = $this->pphCalculationService->calculateForBillPayment(
+                        $firstPayable,
+                        $amount,
+                        $pphCategoryOverride,
+                        $pphRateOverride
+                    );
+
+                    if ($pphResult) {
+                        $pphAccount = \App\Models\Accounting\Account::where('code', $pphResult->accountCode)->first();
+                        $pphData = [
+                            'pph_category' => $pphResult->category->value,
+                            'pph_rate' => $pphResult->rate,
+                            'pph_base_amount' => $pphResult->baseAmount,
+                            'pph_amount' => $pphResult->pphAmount,
+                            'pph_account_id' => $pphAccount?->id,
+                        ];
+                    }
+                }
+            }
+
+            // Remove allocation keys from data before creating payment
+            $cleanData = collect($data)
+                ->except(['invoice_id', 'bill_id', 'allocations', 'pph_withhold'])
+                ->toArray();
+
             // Create payment record
             $payment = Payment::create([
-                ...$data,
+                ...$cleanData,
+                ...$pphData,
                 'payment_number' => Payment::generatePaymentNumber($data['type']),
                 'payable_type' => $payableType,
                 'payable_id' => $payableId,
@@ -90,16 +121,38 @@ class PaymentService extends BaseService implements PaymentServiceInterface
                 'created_by' => $this->getUserId(),
             ]);
 
-            // Create journal entry (JournalService now only creates the journal)
+            // Create allocation records
+            foreach ($allocations as $allocation) {
+                PaymentAllocation::create([
+                    'payment_id' => $payment->id,
+                    'allocatable_type' => $allocation['allocatable_type'],
+                    'allocatable_id' => $allocation['allocatable_id'],
+                    'amount' => $allocation['amount'],
+                ]);
+            }
+
+            // Create journal entry
+            $payment->load('allocations.allocatable');
             $journalEntry = $this->journalService->postPayment($payment);
             $payment->update(['journal_entry_id' => $journalEntry->id]);
 
-            // Update payable amounts and status
-            if ($payable) {
-                $this->updatePayableAfterPayment($payable, $payment);
+            // Update each payable's amounts and status
+            foreach ($allocations as $allocation) {
+                $payable = $payables->get($allocation['allocatable_id']);
+                if ($payable) {
+                    $this->updatePayableAfterPayment($payable, $payment, $allocation['amount']);
+                }
             }
 
-            return $payment->load(['contact', 'cashAccount', 'journalEntry.lines.account']);
+            // Dispatch PPh withholding event
+            if ($payment->hasPphWithholding()) {
+                Event::dispatch(\App\Domain\Tax\Events\PphWithheld::fromPayment(
+                    $payment,
+                    $this->getUserId() ?? $payment->created_by
+                ));
+            }
+
+            return $payment->load(['contact', 'cashAccount', 'journalEntry.lines.account', 'allocations']);
         }, ['type' => $data['type'], 'amount' => $data['amount']]);
     }
 
@@ -133,11 +186,24 @@ class PaymentService extends BaseService implements PaymentServiceInterface
         }
 
         return $this->executeInTransaction('void', function () use ($payment, $reason) {
-            // Lock the payable to prevent concurrent payment modifications
-            $payable = $payment->payable;
-            if ($payable) {
-                /** @var \App\Models\Sales\Invoice|\App\Models\Purchasing\Bill $payable */
-                $payable = $payable::lockForUpdate()->find($payable->getKey());
+            // Load allocations if not already loaded
+            $payment->loadMissing('allocations.allocatable');
+
+            // Lock all payables via allocations
+            $payables = collect();
+            foreach ($payment->allocations as $allocation) {
+                $payable = $allocation->allocatable;
+                if ($payable) {
+                    $locked = $payable::lockForUpdate()->find($payable->getKey());
+                    $payables->put($allocation->id, $locked);
+                }
+            }
+
+            // Fall back to legacy payable if no allocations
+            if ($payables->isEmpty() && $payment->payable) {
+                $payable = $payment->payable;
+                $locked = $payable::lockForUpdate()->find($payable->getKey());
+                $payables->put('legacy', $locked);
             }
 
             // Reverse journal entry
@@ -156,9 +222,26 @@ class PaymentService extends BaseService implements PaymentServiceInterface
                 'void_reason' => $reason,
             ]);
 
-            // Reverse payable amounts and status
-            if ($payable) {
-                $this->updatePayableAfterVoid($payable, $payment);
+            // Reverse payable amounts and status via allocations
+            if ($payment->allocations->isNotEmpty()) {
+                foreach ($payment->allocations as $allocation) {
+                    $payable = $payables->get($allocation->id);
+                    if ($payable) {
+                        $this->updatePayableAfterVoid($payable, $allocation->amount);
+                    }
+                }
+            } elseif ($payables->has('legacy')) {
+                // Legacy path: single payable
+                $this->updatePayableAfterVoid($payables->get('legacy'), $payment->amount);
+            }
+
+            // Reverse PPh withheld amount on Bill
+            if ($payment->hasPphWithholding()) {
+                $bill = $payables->first(fn ($p) => $p instanceof Bill);
+                if ($bill) {
+                    $bill->pph_withheld_amount = max(0, $bill->pph_withheld_amount - $payment->pph_amount);
+                    $bill->save();
+                }
             }
 
             AuditLog::log(AuditLog::ACTION_VOIDED, $payment, null, [
@@ -166,7 +249,7 @@ class PaymentService extends BaseService implements PaymentServiceInterface
                 'amount' => $payment->amount,
             ]);
 
-            // Dispatch void event for all voided payments
+            // Dispatch void event
             Event::dispatch(new PaymentVoided(
                 invoiceId: $payment->payable_type === Invoice::class ? $payment->payable_id : null,
                 paymentId: $payment->id,
@@ -185,8 +268,18 @@ class PaymentService extends BaseService implements PaymentServiceInterface
     public function getForInvoice(Invoice $invoice): Collection
     {
         return Payment::query()
-            ->where('payable_type', Invoice::class)
-            ->where('payable_id', $invoice->id)
+            ->where(function ($q) use ($invoice) {
+                // Legacy path
+                $q->where(function ($q2) use ($invoice) {
+                    $q2->where('payable_type', Invoice::class)
+                        ->where('payable_id', $invoice->id);
+                })
+                // Multi-allocation path
+                    ->orWhereHas('allocations', function ($q2) use ($invoice) {
+                        $q2->where('allocatable_type', 'invoice')
+                            ->where('allocatable_id', $invoice->id);
+                    });
+            })
             ->where('is_voided', false)
             ->with(['cashAccount', 'creator'])
             ->orderBy('payment_date', 'desc')
@@ -196,8 +289,16 @@ class PaymentService extends BaseService implements PaymentServiceInterface
     public function getForBill(Bill $bill): Collection
     {
         return Payment::query()
-            ->where('payable_type', Bill::class)
-            ->where('payable_id', $bill->id)
+            ->where(function ($q) use ($bill) {
+                $q->where(function ($q2) use ($bill) {
+                    $q2->where('payable_type', Bill::class)
+                        ->where('payable_id', $bill->id);
+                })
+                    ->orWhereHas('allocations', function ($q2) use ($bill) {
+                        $q2->where('allocatable_type', 'bill')
+                            ->where('allocatable_id', $bill->id);
+                    });
+            })
             ->where('is_voided', false)
             ->with(['cashAccount', 'creator'])
             ->orderBy('payment_date', 'desc')
@@ -235,6 +336,115 @@ class PaymentService extends BaseService implements PaymentServiceInterface
         }
 
         return false;
+    }
+
+    /**
+     * Normalize legacy invoice_id/bill_id to allocations collection.
+     *
+     * @return Collection<int, array{allocatable_type: string, allocatable_id: int, amount: int, model_class: class-string}>
+     */
+    private function normalizeAllocations(array &$data): Collection
+    {
+        // If explicit allocations provided, use them
+        if (isset($data['allocations']) && is_array($data['allocations'])) {
+            return collect($data['allocations'])->map(function ($alloc) {
+                $modelClass = $this->resolveModelClass($alloc['allocatable_type']);
+
+                return [
+                    'allocatable_type' => $alloc['allocatable_type'],
+                    'allocatable_id' => $alloc['allocatable_id'],
+                    'amount' => $alloc['amount'],
+                    'model_class' => $modelClass,
+                ];
+            });
+        }
+
+        // Legacy: single invoice_id
+        if (isset($data['invoice_id'])) {
+            $invoiceId = $data['invoice_id'];
+            unset($data['invoice_id']);
+
+            return collect([[
+                'allocatable_type' => 'invoice',
+                'allocatable_id' => $invoiceId,
+                'amount' => $data['amount'],
+                'model_class' => Invoice::class,
+            ]]);
+        }
+
+        // Legacy: single bill_id
+        if (isset($data['bill_id'])) {
+            $billId = $data['bill_id'];
+            unset($data['bill_id']);
+
+            return collect([[
+                'allocatable_type' => 'bill',
+                'allocatable_id' => $billId,
+                'amount' => $data['amount'],
+                'model_class' => Bill::class,
+            ]]);
+        }
+
+        // No payable — standalone payment
+        return collect();
+    }
+
+    /**
+     * Resolve morph alias to model class.
+     *
+     * @return class-string
+     */
+    private function resolveModelClass(string $type): string
+    {
+        return match ($type) {
+            'invoice' => Invoice::class,
+            'bill' => Bill::class,
+            default => throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'alokasi pembayaran',
+                "Tipe dokumen tidak dikenal: {$type}"
+            ),
+        };
+    }
+
+    /**
+     * Lock each payable and validate allocation amounts.
+     *
+     * @param  Collection<int, array{allocatable_type: string, allocatable_id: int, amount: int, model_class: class-string}>  $allocations
+     * @return Collection<int, Invoice|Bill> Keyed by payable ID
+     */
+    private function lockAndValidateAllocations(Collection $allocations, int $totalAmount): Collection
+    {
+        if ($allocations->isEmpty()) {
+            return collect();
+        }
+
+        // Validate total allocations match payment amount
+        $allocatedTotal = $allocations->sum('amount');
+        if ($allocatedTotal !== $totalAmount) {
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'alokasi pembayaran',
+                "Total alokasi ({$allocatedTotal}) harus sama dengan jumlah pembayaran ({$totalAmount})."
+            );
+        }
+
+        $payables = collect();
+
+        foreach ($allocations as $allocation) {
+            /** @var class-string<Invoice|Bill> $modelClass */
+            $modelClass = $allocation['model_class'];
+            $payable = $modelClass::lockForUpdate()->findOrFail($allocation['allocatable_id']);
+
+            // Validate status
+            if ($payable instanceof Invoice) {
+                $this->validateInvoicePayment($payable, $allocation['amount']);
+            } elseif ($payable instanceof Bill) {
+                $this->validateBillPayment($payable, $allocation['amount']);
+            }
+
+            $payables->put($allocation['allocatable_id'], $payable);
+        }
+
+        return $payables;
     }
 
     /**
@@ -286,13 +496,19 @@ class PaymentService extends BaseService implements PaymentServiceInterface
     }
 
     /**
-     * Update payable (invoice/bill) after a payment is created.
+     * Update payable (invoice/bill) after a payment allocation.
      */
-    private function updatePayableAfterPayment(Model $payable, Payment $payment): void
+    private function updatePayableAfterPayment(Model $payable, Payment $payment, int $allocationAmount): void
     {
         /** @var Invoice|Bill $payable */
         $previousPaidAmount = $payable->paid_amount;
-        $payable->paid_amount += $payment->amount;
+        $payable->paid_amount += $allocationAmount;
+
+        // Track PPh withheld on bills (only for first/primary payable)
+        if ($payable instanceof Bill && $payment->hasPphWithholding() && $payable->id === $payment->payable_id) {
+            $payable->pph_withheld_amount += $payment->pph_amount;
+        }
+
         $payable->save();
 
         // Dispatch payment events
@@ -300,14 +516,14 @@ class PaymentService extends BaseService implements PaymentServiceInterface
             Event::dispatch(PaymentReceived::fromPayment(
                 invoice: $payable,
                 paymentId: $payment->id,
-                amount: $payment->amount,
+                amount: $allocationAmount,
                 userId: $this->getUserId() ?? $payment->created_by
             ));
         } elseif ($payment->type === Payment::TYPE_SEND && $payable instanceof Bill) {
             Event::dispatch(PaymentSent::fromPayment(
                 bill: $payable,
                 paymentId: $payment->id,
-                amount: $payment->amount,
+                amount: $allocationAmount,
                 userId: $this->getUserId() ?? $payment->created_by
             ));
         }
@@ -317,12 +533,12 @@ class PaymentService extends BaseService implements PaymentServiceInterface
     }
 
     /**
-     * Update payable after a payment is voided.
+     * Update payable after a payment void (per-allocation amount).
      */
-    private function updatePayableAfterVoid(Model $payable, Payment $payment): void
+    private function updatePayableAfterVoid(Model $payable, int $allocationAmount): void
     {
         /** @var Invoice|Bill $payable */
-        $payable->paid_amount = max(0, $payable->paid_amount - $payment->amount);
+        $payable->paid_amount = max(0, $payable->paid_amount - $allocationAmount);
         $payable->save();
 
         // Revert status if needed
@@ -360,14 +576,11 @@ class PaymentService extends BaseService implements PaymentServiceInterface
     private function revertPayableStatus(Model $payable): void
     {
         /** @var Invoice|Bill $payable */
-        // Determine appropriate status based on remaining paid amount
         if ($payable->paid_amount <= 0) {
-            // No payments remaining - revert to original posted status
             $targetStatus = $payable instanceof Invoice
                 ? DocumentStatus::Sent
                 : DocumentStatus::Received;
         } else {
-            // Partial payment remaining
             $targetStatus = DocumentStatus::Partial;
         }
 
