@@ -8,7 +8,9 @@ use App\Contracts\Accounting\JournalServiceInterface;
 use App\Contracts\Accounting\Strategies\COGSRecognitionStrategy;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
+use App\Contracts\Sales\DeliveryOrderServiceInterface;
 use App\Contracts\Sales\InvoiceServiceInterface;
+use App\Contracts\Sales\SalesReturnServiceInterface;
 use App\Contracts\Shared\PaymentServiceInterface;
 use App\Contracts\Tax\NsfpServiceInterface;
 use App\Domain\Sales\Invoices\Events\InvoiceFullyPaid;
@@ -19,6 +21,7 @@ use App\Enums\DocumentStatus;
 use App\Exceptions\Domain\BusinessRuleException;
 use App\Exceptions\Domain\DocumentLockedException;
 use App\Exceptions\Domain\StateTransitionException;
+use App\Models\Accounting\JournalEntry;
 use App\Models\Core\AuditLog;
 use App\Models\Sales\DeliveryOrder;
 use App\Models\Sales\DownPaymentApplication;
@@ -60,6 +63,10 @@ class InvoiceService implements InvoiceServiceInterface
 
     private NsfpServiceInterface $nsfpService;
 
+    private DeliveryOrderServiceInterface $deliveryOrderService;
+
+    private SalesReturnServiceInterface $salesReturnService;
+
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger,
@@ -67,7 +74,9 @@ class InvoiceService implements InvoiceServiceInterface
         PaymentServiceInterface $paymentService,
         COGSRecognitionStrategy $cogsStrategy,
         InvoiceDomainFactory $domainFactory,
-        NsfpServiceInterface $nsfpService
+        NsfpServiceInterface $nsfpService,
+        DeliveryOrderServiceInterface $deliveryOrderService,
+        SalesReturnServiceInterface $salesReturnService
     ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->logger = $logger;
@@ -77,6 +86,8 @@ class InvoiceService implements InvoiceServiceInterface
         $this->cogsStrategy = $cogsStrategy;
         $this->domainFactory = $domainFactory;
         $this->nsfpService = $nsfpService;
+        $this->deliveryOrderService = $deliveryOrderService;
+        $this->salesReturnService = $salesReturnService;
     }
 
     protected function getModelClass(): string
@@ -243,13 +254,16 @@ class InvoiceService implements InvoiceServiceInterface
     /**
      * Void/cancel posted invoice.
      *
-     * Cascades to child records:
-     * - Blocks if shipped/delivered delivery orders exist
-     * - Cancels draft/confirmed delivery orders
-     * - Cancels draft/submitted sales returns
-     * - Voids all active payments
-     * - Unapplies all DP applications
-     * - Reverses the invoice's own journal entry
+     * Cascades to all child records in safe order:
+     * 1. Blocks if Delivered DOs or Completed SRs exist (irreversible real-world events)
+     * 2. Reverses Shipped DOs (inventory restore + COGS JE reversal)
+     * 3. Cancels Draft/Confirmed DOs
+     * 4. Cancels Approved SRs (JE reversal + inventory reversal via SalesReturnService)
+     * 5. Cancels Draft/Submitted SRs
+     * 6. Voids all active payments
+     * 7. Unapplies all DP applications
+     * 8. Reverses COGS journal entries (for on_invoice strategy)
+     * 9. Reverses the invoice's own AR/Revenue journal entry
      *
      * @throws StateTransitionException
      * @throws BusinessRuleException
@@ -267,33 +281,61 @@ class InvoiceService implements InvoiceServiceInterface
                 );
             }
 
-            // Block if shipped/delivered DOs exist (inventory already moved)
-            $shippedDOs = DeliveryOrder::where('invoice_id', $invoice->id)
-                ->whereIn('status', [DocumentStatus::Shipped, DocumentStatus::Delivered])
+            // Block if Delivered DOs exist (customer confirmed receipt — irreversible)
+            $deliveredDOs = DeliveryOrder::where('invoice_id', $invoice->id)
+                ->where('status', DocumentStatus::Delivered)
                 ->exists();
 
-            if ($shippedDOs) {
+            if ($deliveredDOs) {
                 throw BusinessRuleException::operationNotAllowed(
                     'membatalkan faktur',
-                    'Faktur memiliki surat jalan yang sudah dikirim/diterima. Batalkan surat jalan terlebih dahulu.'
+                    'Faktur memiliki surat jalan yang sudah diterima. Batalkan surat jalan terlebih dahulu.'
                 );
             }
 
-            // Cancel cancellable delivery orders (Draft, Confirmed)
+            // Block if Completed SRs exist (fully processed — requires separate handling)
+            $completedSRs = SalesReturn::where('invoice_id', $invoice->id)
+                ->where('status', DocumentStatus::Completed)
+                ->exists();
+
+            if ($completedSRs) {
+                throw BusinessRuleException::operationNotAllowed(
+                    'membatalkan faktur',
+                    'Faktur memiliki retur penjualan yang sudah selesai diproses.'
+                );
+            }
+
+            // Reverse Shipped DOs (inventory + COGS JE reversal)
+            $cascadeReason = "Faktur dibatalkan: {$reason}";
+
+            DeliveryOrder::where('invoice_id', $invoice->id)
+                ->where('status', DocumentStatus::Shipped)
+                ->each(function (DeliveryOrder $do) use ($cascadeReason) {
+                    $this->deliveryOrderService->reverseShipment($do, $cascadeReason);
+                });
+
+            // Cancel Draft/Confirmed delivery orders
             DeliveryOrder::where('invoice_id', $invoice->id)
                 ->whereIn('status', [DocumentStatus::Draft, DocumentStatus::Confirmed])
-                ->each(function (DeliveryOrder $do) use ($reason) {
+                ->each(function (DeliveryOrder $do) use ($cascadeReason) {
                     $do->transitionTo(DocumentStatus::Cancelled, $this->getUserId(), [
-                        'cancellation_reason' => "Faktur dibatalkan: {$reason}",
+                        'cancellation_reason' => $cascadeReason,
                     ]);
                 });
 
-            // Cancel cancellable sales returns (Draft, Submitted)
+            // Cancel Approved SRs via service (triggers reverseApprovalSideEffects)
+            SalesReturn::where('invoice_id', $invoice->id)
+                ->where('status', DocumentStatus::Approved)
+                ->each(function (SalesReturn $sr) use ($cascadeReason) {
+                    $this->salesReturnService->cancel($sr, $cascadeReason);
+                });
+
+            // Cancel Draft/Submitted sales returns
             SalesReturn::where('invoice_id', $invoice->id)
                 ->whereIn('status', [DocumentStatus::Draft, DocumentStatus::Submitted])
-                ->each(function (SalesReturn $sr) use ($reason) {
+                ->each(function (SalesReturn $sr) use ($cascadeReason) {
                     $sr->transitionTo(DocumentStatus::Cancelled, $this->getUserId(), [
-                        'cancellation_reason' => "Faktur dibatalkan: {$reason}",
+                        'cancellation_reason' => $cascadeReason,
                     ]);
                 });
 
@@ -303,7 +345,7 @@ class InvoiceService implements InvoiceServiceInterface
                 ->get();
 
             foreach ($activePayments as $payment) {
-                $this->paymentService->void($payment, "Faktur dibatalkan: {$reason}");
+                $this->paymentService->void($payment, $cascadeReason);
             }
 
             // Unapply all DP applications for this invoice
@@ -339,7 +381,22 @@ class InvoiceService implements InvoiceServiceInterface
 
             $invoice->save();
 
-            // Reverse invoice's own journal entry
+            // Reverse COGS journal entries (on_invoice strategy creates with source_type=Invoice)
+            // Excludes the invoice's own AR/Revenue JE (handled separately below)
+            $cogsJournalEntries = JournalEntry::where('source_type', Invoice::class)
+                ->where('source_id', $invoice->id)
+                ->where('is_reversed', false)
+                ->when($invoice->journal_entry_id, fn ($q) => $q->where('id', '!=', $invoice->journal_entry_id))
+                ->get();
+
+            foreach ($cogsJournalEntries as $cogsJe) {
+                $this->journalService->reverseEntry(
+                    $cogsJe,
+                    "Pembatalan HPP faktur: {$invoice->invoice_number}"
+                );
+            }
+
+            // Reverse invoice's own AR/Revenue journal entry
             if ($invoice->journal_entry_id && $invoice->journalEntry) {
                 $this->journalService->reverseEntry($invoice->journalEntry);
             }
@@ -353,6 +410,9 @@ class InvoiceService implements InvoiceServiceInterface
                 'voided_payments' => $activePayments->count(),
                 'cancelled_delivery_orders' => DeliveryOrder::where('invoice_id', $invoice->id)
                     ->where('status', DocumentStatus::Cancelled)->count(),
+                'cancelled_sales_returns' => SalesReturn::where('invoice_id', $invoice->id)
+                    ->where('status', DocumentStatus::Cancelled)->count(),
+                'reversed_cogs_entries' => $cogsJournalEntries->count(),
             ]);
 
             return $this->loadRelations($invoice);
