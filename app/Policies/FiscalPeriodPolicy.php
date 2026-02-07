@@ -14,6 +14,16 @@ class FiscalPeriodPolicy extends BaseResourcePolicy
         return 'fiscal_periods';
     }
 
+    public function lock(User $user, FiscalPeriod $period): bool
+    {
+        return $this->check($user, 'lock');
+    }
+
+    public function unlock(User $user, FiscalPeriod $period): bool
+    {
+        return $this->check($user, 'unlock');
+    }
+
     public function close(User $user, FiscalPeriod $period): bool
     {
         return $this->check($user, 'close');
@@ -22,5 +32,10 @@ class FiscalPeriodPolicy extends BaseResourcePolicy
     public function reopen(User $user, FiscalPeriod $period): bool
     {
         return $this->check($user, 'reopen');
+    }
+
+    public function viewChecklist(User $user, FiscalPeriod $period): bool
+    {
+        return $this->check($user, 'close');
     }
 }

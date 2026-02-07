@@ -24,6 +24,8 @@ class BankReconciliationController extends Controller
 
     public function index(Request $request): AnonymousResourceCollection
     {
+        $this->authorize('viewAny', BankTransaction::class);
+
         $query = BankTransaction::query()->with(['account', 'matchedPayment']);
 
         if ($request->has('account_id')) {
@@ -55,6 +57,8 @@ class BankReconciliationController extends Controller
 
     public function store(StoreBankTransactionRequest $request): JsonResponse
     {
+        $this->authorize('create', BankTransaction::class);
+
         $transaction = $this->reconciliationService->create($request->validated());
 
         return (new BankTransactionResource($transaction->load('account')))
@@ -64,6 +68,8 @@ class BankReconciliationController extends Controller
 
     public function show(BankTransaction $bankTransaction): BankTransactionResource
     {
+        $this->authorize('view', $bankTransaction);
+
         return new BankTransactionResource(
             $bankTransaction->load(['account', 'matchedPayment', 'matchedJournalLine.journalEntry'])
         );
@@ -71,6 +77,8 @@ class BankReconciliationController extends Controller
 
     public function destroy(BankTransaction $bankTransaction): JsonResponse
     {
+        $this->authorize('delete', $bankTransaction);
+
         try {
             $this->reconciliationService->delete($bankTransaction);
 
@@ -82,6 +90,8 @@ class BankReconciliationController extends Controller
 
     public function matchToPayment(BankTransaction $bankTransaction, Payment $payment): JsonResponse
     {
+        $this->authorize('match', $bankTransaction);
+
         if ($bankTransaction->status !== BankTransactionStatus::Unmatched) {
             return response()->json([
                 'message' => 'Transaksi sudah di-match atau direkonsiliasi.',
@@ -98,6 +108,8 @@ class BankReconciliationController extends Controller
 
     public function unmatch(BankTransaction $bankTransaction): JsonResponse
     {
+        $this->authorize('match', $bankTransaction);
+
         if ($bankTransaction->isReconciled()) {
             return response()->json([
                 'message' => 'Tidak dapat unmatch transaksi yang sudah direkonsiliasi.',
@@ -114,6 +126,8 @@ class BankReconciliationController extends Controller
 
     public function reconcile(ReconcileBankTransactionRequest $request, BankTransaction $bankTransaction): JsonResponse
     {
+        $this->authorize('reconcile', $bankTransaction);
+
         if ($bankTransaction->isReconciled()) {
             return response()->json([
                 'message' => 'Transaksi sudah direkonsiliasi.',
@@ -130,6 +144,8 @@ class BankReconciliationController extends Controller
 
     public function bulkReconcile(Request $request): JsonResponse
     {
+        $this->authorize('reconcile', new BankTransaction);
+
         $request->validate([
             'transaction_ids' => ['required', 'array', 'min:1'],
             'transaction_ids.*' => ['integer', 'exists:bank_transactions,id'],
@@ -155,6 +171,8 @@ class BankReconciliationController extends Controller
 
     public function summary(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', BankTransaction::class);
+
         $accountId = $request->input('account_id');
 
         $query = BankTransaction::query();
@@ -186,6 +204,8 @@ class BankReconciliationController extends Controller
 
     public function suggestMatches(BankTransaction $bankTransaction): JsonResponse
     {
+        $this->authorize('view', $bankTransaction);
+
         if ($bankTransaction->status !== BankTransactionStatus::Unmatched) {
             return response()->json([
                 'message' => 'Transaksi sudah di-match.',

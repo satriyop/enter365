@@ -19,6 +19,8 @@ class FiscalPeriodController extends Controller
 
     public function index(Request $request): AnonymousResourceCollection
     {
+        $this->authorize('viewAny', FiscalPeriod::class);
+
         $query = FiscalPeriod::query();
 
         if ($request->has('is_closed')) {
@@ -41,6 +43,8 @@ class FiscalPeriodController extends Controller
 
     public function store(StoreFiscalPeriodRequest $request): JsonResponse
     {
+        $this->authorize('create', FiscalPeriod::class);
+
         // Check for overlapping periods
         $overlap = FiscalPeriod::query()
             ->where(function ($q) use ($request) {
@@ -68,11 +72,15 @@ class FiscalPeriodController extends Controller
 
     public function show(FiscalPeriod $fiscalPeriod): FiscalPeriodResource
     {
+        $this->authorize('view', $fiscalPeriod);
+
         return new FiscalPeriodResource($fiscalPeriod->load('closingEntry'));
     }
 
     public function lock(FiscalPeriod $fiscalPeriod): JsonResponse
     {
+        $this->authorize('lock', $fiscalPeriod);
+
         if ($fiscalPeriod->is_closed) {
             return response()->json([
                 'message' => 'Periode yang sudah ditutup tidak bisa dikunci.',
@@ -95,6 +103,8 @@ class FiscalPeriodController extends Controller
 
     public function unlock(FiscalPeriod $fiscalPeriod): JsonResponse
     {
+        $this->authorize('unlock', $fiscalPeriod);
+
         if ($fiscalPeriod->is_closed) {
             return response()->json([
                 'message' => 'Periode yang sudah ditutup tidak bisa dibuka kuncinya.',
@@ -117,6 +127,8 @@ class FiscalPeriodController extends Controller
 
     public function close(Request $request, FiscalPeriod $fiscalPeriod): JsonResponse
     {
+        $this->authorize('close', $fiscalPeriod);
+
         $result = $this->fiscalPeriodService->closePeriod(
             $fiscalPeriod,
             $request->input('notes')
@@ -137,6 +149,8 @@ class FiscalPeriodController extends Controller
 
     public function reopen(FiscalPeriod $fiscalPeriod): JsonResponse
     {
+        $this->authorize('reopen', $fiscalPeriod);
+
         if (! $fiscalPeriod->is_closed) {
             return response()->json([
                 'message' => 'Periode belum ditutup.',
@@ -159,6 +173,8 @@ class FiscalPeriodController extends Controller
 
     public function closingChecklist(FiscalPeriod $fiscalPeriod): JsonResponse
     {
+        $this->authorize('viewChecklist', $fiscalPeriod);
+
         $checklist = $this->fiscalPeriodService->getClosingChecklist($fiscalPeriod);
 
         return response()->json([

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Sales;
 
+use App\Contracts\Accounting\Strategies\COGSRecognitionStrategy;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Inventory\InventoryServiceInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
@@ -37,15 +38,18 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
 
     private InventoryServiceInterface $inventoryService;
 
+    private COGSRecognitionStrategy $cogsStrategy;
+
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger,
-        InventoryServiceInterface $inventoryService
+        InventoryServiceInterface $inventoryService,
+        COGSRecognitionStrategy $cogsStrategy
     ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->logger = $logger;
-
         $this->inventoryService = $inventoryService;
+        $this->cogsStrategy = $cogsStrategy;
     }
 
     protected function getModelClass(): string
@@ -237,6 +241,7 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
 
             if ($deliveryOrder->warehouse_id) {
                 $this->deductInventory($deliveryOrder);
+                $this->cogsStrategy->onDeliveryShip($deliveryOrder);
             }
 
             $this->dispatch(new DeliveryOrderShipped(
