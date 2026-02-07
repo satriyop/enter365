@@ -24,7 +24,7 @@ class StorePaymentRequest extends FormRequest
             'contact_id' => ['required', 'integer', 'exists:contacts,id'],
             'payment_date' => ['required', 'date'],
             'amount' => ['required', 'integer', 'min:1'],
-            'payment_method' => ['string', Rule::in([Payment::METHOD_CASH, Payment::METHOD_TRANSFER, Payment::METHOD_CHECK, Payment::METHOD_GIRO])],
+            'payment_method' => ['required', 'string', Rule::in([Payment::METHOD_CASH, Payment::METHOD_TRANSFER, Payment::METHOD_CHECK, Payment::METHOD_GIRO])],
             'reference' => ['nullable', 'string', 'max:100'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'cash_account_id' => ['required', 'integer', 'exists:accounts,id'],

@@ -204,8 +204,21 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
 
     public function isExpired(): bool
     {
-        return $this->currentStatus === DocumentStatus::Expired
-            || $this->quotation->valid_until->isPast();
+        if ($this->currentStatus === DocumentStatus::Expired) {
+            return true;
+        }
+
+        // Only consider validity for non-terminal, non-converted statuses
+        if (in_array($this->currentStatus, [
+            DocumentStatus::Approved,
+            DocumentStatus::Converted,
+            DocumentStatus::Cancelled,
+            DocumentStatus::Rejected,
+        ], true)) {
+            return false;
+        }
+
+        return $this->quotation->valid_until?->isPast() ?? false;
     }
 
     protected function beforeTransition(DocumentStatus $from, DocumentStatus $to): void

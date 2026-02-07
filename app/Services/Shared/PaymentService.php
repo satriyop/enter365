@@ -9,6 +9,7 @@ use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Shared\PaymentServiceInterface;
 use App\Domain\Purchasing\Bills\Events\BillFullyPaid;
+use App\Domain\Purchasing\Events\PaymentSent;
 use App\Domain\Sales\Events\PaymentReceived;
 use App\Domain\Sales\Events\PaymentVoided;
 use App\Domain\Sales\Invoices\Events\InvoiceFullyPaid;
@@ -113,11 +114,9 @@ class PaymentService extends BaseService implements PaymentServiceInterface
         return $this->executeInTransaction('void', function () use ($payment, $reason) {
             // Lock the payable to prevent concurrent payment modifications
             $payable = $payment->payable;
-            $previousPaidAmount = 0;
             if ($payable) {
                 /** @var \App\Models\Sales\Invoice|\App\Models\Purchasing\Bill $payable */
                 $payable = $payable::lockForUpdate()->find($payable->getKey());
-                $previousPaidAmount = $payable->paid_amount ?? 0;
             }
 
             // Reverse journal entry
@@ -138,7 +137,7 @@ class PaymentService extends BaseService implements PaymentServiceInterface
 
             // Reverse payable amounts and status
             if ($payable) {
-                $this->updatePayableAfterVoid($payable, $payment, $previousPaidAmount);
+                $this->updatePayableAfterVoid($payable, $payment);
             }
 
             AuditLog::log(AuditLog::ACTION_VOIDED, $payment, null, [
@@ -270,14 +269,22 @@ class PaymentService extends BaseService implements PaymentServiceInterface
      */
     private function updatePayableAfterPayment(Model $payable, Payment $payment): void
     {
+        /** @var Invoice|Bill $payable */
         $previousPaidAmount = $payable->paid_amount;
         $payable->paid_amount += $payment->amount;
         $payable->save();
 
-        // Dispatch payment received event for incoming payments
+        // Dispatch payment events
         if ($payment->type === Payment::TYPE_RECEIVE && $payable instanceof Invoice) {
             Event::dispatch(PaymentReceived::fromPayment(
                 invoice: $payable,
+                paymentId: $payment->id,
+                amount: $payment->amount,
+                userId: $this->getUserId() ?? $payment->created_by
+            ));
+        } elseif ($payment->type === Payment::TYPE_SEND && $payable instanceof Bill) {
+            Event::dispatch(PaymentSent::fromPayment(
+                bill: $payable,
                 paymentId: $payment->id,
                 amount: $payment->amount,
                 userId: $this->getUserId() ?? $payment->created_by
@@ -291,11 +298,9 @@ class PaymentService extends BaseService implements PaymentServiceInterface
     /**
      * Update payable after a payment is voided.
      */
-    private function updatePayableAfterVoid(Model $payable, Payment $payment, int $previousPaidAmount): void
+    private function updatePayableAfterVoid(Model $payable, Payment $payment): void
     {
-        // Refresh to get latest state
-        $payable->refresh();
-
+        /** @var Invoice|Bill $payable */
         $payable->paid_amount = max(0, $payable->paid_amount - $payment->amount);
         $payable->save();
 
@@ -308,6 +313,7 @@ class PaymentService extends BaseService implements PaymentServiceInterface
      */
     private function transitionPayableStatus(Model $payable, int $previousPaidAmount): void
     {
+        /** @var Invoice|Bill $payable */
         $isFullyPaid = $payable->paid_amount >= $payable->total_amount;
         $targetStatus = $isFullyPaid ? DocumentStatus::Paid : DocumentStatus::Partial;
 
@@ -332,6 +338,7 @@ class PaymentService extends BaseService implements PaymentServiceInterface
      */
     private function revertPayableStatus(Model $payable): void
     {
+        /** @var Invoice|Bill $payable */
         // Determine appropriate status based on remaining paid amount
         if ($payable->paid_amount <= 0) {
             // No payments remaining - revert to original posted status

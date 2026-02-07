@@ -391,7 +391,7 @@
         },
         "/accounts/{account}/balance": {
             "get": {
-                "operationId": "account.balance",
+                "operationId": "accounts.balance",
                 "summary": "Get account balance",
                 "tags": [
                     "Account"
@@ -475,7 +475,7 @@
         },
         "/accounts/{account}/ledger": {
             "get": {
-                "operationId": "account.ledger",
+                "operationId": "accounts.ledger",
                 "summary": "Get account ledger",
                 "tags": [
                     "Account"
@@ -618,7 +618,7 @@
         },
         "/accounting-policies": {
             "get": {
-                "operationId": "accountingPolicy.show",
+                "operationId": "accounting-policies.show",
                 "summary": "GET /api/v1/accounting-policies",
                 "tags": [
                     "AccountingPolicy"
@@ -858,7 +858,7 @@
                 }
             },
             "put": {
-                "operationId": "accountingPolicy.update",
+                "operationId": "accounting-policies.update",
                 "summary": "PUT /api/v1/accounting-policies",
                 "tags": [
                     "AccountingPolicy"
@@ -1781,7 +1781,7 @@
         },
         "/bank-transactions": {
             "get": {
-                "operationId": "bankReconciliation.index",
+                "operationId": "bank-transactions.index",
                 "tags": [
                     "BankReconciliation"
                 ],
@@ -1979,7 +1979,7 @@
                 }
             },
             "post": {
-                "operationId": "bankReconciliation.store",
+                "operationId": "bank-transactions.store",
                 "tags": [
                     "BankReconciliation"
                 ],
@@ -2026,7 +2026,7 @@
         },
         "/bank-transactions/summary": {
             "get": {
-                "operationId": "bankReconciliation.summary",
+                "operationId": "bank-transactions.summary",
                 "tags": [
                     "BankReconciliation"
                 ],
@@ -2109,7 +2109,7 @@
         },
         "/bank-transactions/bulk-reconcile": {
             "post": {
-                "operationId": "bankReconciliation.bulkReconcile",
+                "operationId": "bank-transactions.bulk-reconcile",
                 "tags": [
                     "BankReconciliation"
                 ],
@@ -2172,7 +2172,7 @@
         },
         "/bank-transactions/{bankTransaction}": {
             "get": {
-                "operationId": "bankReconciliation.show",
+                "operationId": "bank-transactions.show",
                 "tags": [
                     "BankReconciliation"
                 ],
@@ -2218,7 +2218,7 @@
                 }
             },
             "delete": {
-                "operationId": "bankReconciliation.destroy",
+                "operationId": "bank-transactions.destroy",
                 "tags": [
                     "BankReconciliation"
                 ],
@@ -2287,7 +2287,7 @@
         },
         "/bank-transactions/{bankTransaction}/match-payment/{payment}": {
             "post": {
-                "operationId": "bankReconciliation.matchToPayment",
+                "operationId": "bank-transactions.match-payment",
                 "tags": [
                     "BankReconciliation"
                 ],
@@ -2372,7 +2372,7 @@
         },
         "/bank-transactions/{bankTransaction}/unmatch": {
             "post": {
-                "operationId": "bankReconciliation.unmatch",
+                "operationId": "bank-transactions.unmatch",
                 "tags": [
                     "BankReconciliation"
                 ],
@@ -2448,7 +2448,7 @@
         },
         "/bank-transactions/{bankTransaction}/reconcile": {
             "post": {
-                "operationId": "bankReconciliation.reconcile",
+                "operationId": "bank-transactions.reconcile",
                 "tags": [
                     "BankReconciliation"
                 ],
@@ -2515,7 +2515,7 @@
         },
         "/bank-transactions/{bankTransaction}/suggest-matches": {
             "get": {
-                "operationId": "bankReconciliation.suggestMatches",
+                "operationId": "bank-transactions.suggest-matches",
                 "tags": [
                     "BankReconciliation"
                 ],
@@ -2567,7 +2567,10 @@
                                                                 "type": "string"
                                                             },
                                                             "description": {
-                                                                "type": "string"
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
                                                             }
                                                         },
                                                         "required": [
@@ -6835,7 +6838,7 @@
         },
         "/budgets/{budget}/lines": {
             "post": {
-                "operationId": "budget.addLine",
+                "operationId": "budgets.lines.store",
                 "summary": "Add a line to a budget",
                 "tags": [
                     "Budget"
@@ -6904,7 +6907,7 @@
         },
         "/budgets/{budget}/lines/{line}": {
             "put": {
-                "operationId": "budget.updateLine",
+                "operationId": "budgets.lines.update",
                 "summary": "Update a budget line",
                 "tags": [
                     "Budget"
@@ -6979,7 +6982,7 @@
                 }
             },
             "delete": {
-                "operationId": "budget.deleteLine",
+                "operationId": "budgets.lines.destroy",
                 "summary": "Delete a budget line",
                 "tags": [
                     "Budget"
@@ -7061,7 +7064,7 @@
         },
         "/budgets/{budget}/approve": {
             "post": {
-                "operationId": "budget.approve",
+                "operationId": "budgets.approve",
                 "summary": "Approve a budget",
                 "tags": [
                     "Budget"
@@ -7156,7 +7159,7 @@
         },
         "/budgets/{budget}/reopen": {
             "post": {
-                "operationId": "budget.reopen",
+                "operationId": "budgets.reopen",
                 "summary": "Reopen a budget (set back to draft)",
                 "tags": [
                     "Budget"
@@ -7233,7 +7236,7 @@
         },
         "/budgets/{budget}/close": {
             "post": {
-                "operationId": "budget.close",
+                "operationId": "budgets.close",
                 "summary": "Close a budget",
                 "tags": [
                     "Budget"
@@ -7310,7 +7313,7 @@
         },
         "/budgets/{budget}/copy": {
             "post": {
-                "operationId": "budget.copy",
+                "operationId": "budgets.copy",
                 "summary": "Copy a budget to a new fiscal period",
                 "tags": [
                     "Budget"
@@ -7394,7 +7397,7 @@
         },
         "/budgets/{budget}/comparison": {
             "get": {
-                "operationId": "budget.comparison",
+                "operationId": "budgets.comparison",
                 "summary": "Get budget vs actual comparison",
                 "tags": [
                     "Budget"
@@ -7473,7 +7476,7 @@
         },
         "/budgets/{budget}/monthly-breakdown": {
             "get": {
-                "operationId": "budget.monthlyBreakdown",
+                "operationId": "budgets.monthly-breakdown",
                 "summary": "Get monthly breakdown",
                 "tags": [
                     "Budget"
@@ -7631,7 +7634,7 @@
         },
         "/budgets/{budget}/summary": {
             "get": {
-                "operationId": "budget.summary",
+                "operationId": "budgets.summary",
                 "summary": "Get budget summary",
                 "tags": [
                     "Budget"
@@ -7778,7 +7781,7 @@
         },
         "/budgets/{budget}/over-budget": {
             "get": {
-                "operationId": "budget.overBudget",
+                "operationId": "budgets.over-budget",
                 "summary": "Get over-budget accounts",
                 "tags": [
                     "Budget"
@@ -16539,14 +16542,14 @@
                             }
                         }
                     },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
-                    },
                     "403": {
                         "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     }
                 }
             }
@@ -16601,7 +16604,7 @@
         },
         "/fiscal-periods/{fiscalPeriod}/lock": {
             "post": {
-                "operationId": "fiscalPeriod.lock",
+                "operationId": "fiscal-periods.lock",
                 "tags": [
                     "FiscalPeriod"
                 ],
@@ -16695,7 +16698,7 @@
         },
         "/fiscal-periods/{fiscalPeriod}/unlock": {
             "post": {
-                "operationId": "fiscalPeriod.unlock",
+                "operationId": "fiscal-periods.unlock",
                 "tags": [
                     "FiscalPeriod"
                 ],
@@ -16789,7 +16792,7 @@
         },
         "/fiscal-periods/{fiscalPeriod}/close": {
             "post": {
-                "operationId": "fiscalPeriod.close",
+                "operationId": "fiscal-periods.close",
                 "tags": [
                     "FiscalPeriod"
                 ],
@@ -16877,7 +16880,7 @@
         },
         "/fiscal-periods/{fiscalPeriod}/reopen": {
             "post": {
-                "operationId": "fiscalPeriod.reopen",
+                "operationId": "fiscal-periods.reopen",
                 "tags": [
                     "FiscalPeriod"
                 ],
@@ -16974,7 +16977,7 @@
         },
         "/fiscal-periods/{fiscalPeriod}/closing-checklist": {
             "get": {
-                "operationId": "fiscalPeriod.closingChecklist",
+                "operationId": "fiscal-periods.closing-checklist",
                 "tags": [
                     "FiscalPeriod"
                 ],
@@ -19250,7 +19253,7 @@
         },
         "/journal-entries": {
             "get": {
-                "operationId": "journalEntry.index",
+                "operationId": "journal-entries.index",
                 "tags": [
                     "JournalEntry"
                 ],
@@ -19403,7 +19406,7 @@
                 }
             },
             "post": {
-                "operationId": "journalEntry.store",
+                "operationId": "journal-entries.store",
                 "tags": [
                     "JournalEntry"
                 ],
@@ -19450,7 +19453,7 @@
         },
         "/journal-entries/{journalEntry}": {
             "get": {
-                "operationId": "journalEntry.show",
+                "operationId": "journal-entries.show",
                 "tags": [
                     "JournalEntry"
                 ],
@@ -19498,7 +19501,7 @@
         },
         "/journal-entries/{journalEntry}/post": {
             "post": {
-                "operationId": "journalEntry.post",
+                "operationId": "journal-entries.post",
                 "tags": [
                     "JournalEntry"
                 ],
@@ -19564,7 +19567,7 @@
         },
         "/journal-entries/{journalEntry}/reverse": {
             "post": {
-                "operationId": "journalEntry.reverse",
+                "operationId": "journal-entries.reverse",
                 "tags": [
                     "JournalEntry"
                 ],
@@ -21364,7 +21367,7 @@
         },
         "/payments": {
             "get": {
-                "operationId": "payment.index",
+                "operationId": "payments.index",
                 "summary": "Display a listing of payments",
                 "tags": [
                     "Payment"
@@ -21518,7 +21521,7 @@
                 }
             },
             "post": {
-                "operationId": "payment.store",
+                "operationId": "payments.store",
                 "tags": [
                     "Payment"
                 ],
@@ -21565,7 +21568,7 @@
         },
         "/payments/{payment}": {
             "get": {
-                "operationId": "payment.show",
+                "operationId": "payments.show",
                 "tags": [
                     "Payment"
                 ],
@@ -21613,7 +21616,7 @@
         },
         "/payments/{payment}/void": {
             "post": {
-                "operationId": "payment.void",
+                "operationId": "payments.void",
                 "tags": [
                     "Payment"
                 ],
@@ -25846,15 +25849,13 @@
                                             "integer",
                                             "null"
                                         ],
-                                        "description": "Min Rp 5 juta for B2B",
                                         "minimum": 5500
                                     },
                                     "pln_category": {
                                         "type": [
                                             "string",
                                             "null"
-                                        ],
-                                        "description": "Min 5.5 kVA for B2B"
+                                        ]
                                     },
                                     "target_savings": {
                                         "type": [
@@ -31437,7 +31438,7 @@
         },
         "/reports/trial-balance": {
             "get": {
-                "operationId": "report.trialBalance",
+                "operationId": "reports.trial-balance",
                 "summary": "Neraca Saldo (Trial Balance)",
                 "tags": [
                     "Report"
@@ -31528,7 +31529,7 @@
         },
         "/reports/balance-sheet": {
             "get": {
-                "operationId": "report.balanceSheet",
+                "operationId": "reports.balance-sheet",
                 "summary": "Laporan Posisi Keuangan (Balance Sheet)",
                 "tags": [
                     "Report"
@@ -31631,7 +31632,7 @@
         },
         "/reports/income-statement": {
             "get": {
-                "operationId": "report.incomeStatement",
+                "operationId": "reports.income-statement",
                 "summary": "Laporan Laba Rugi (Income Statement)",
                 "tags": [
                     "Report"
@@ -31756,7 +31757,7 @@
         },
         "/reports/general-ledger": {
             "get": {
-                "operationId": "report.generalLedger",
+                "operationId": "reports.general-ledger",
                 "summary": "Buku Besar (General Ledger)",
                 "tags": [
                     "Report"
@@ -31914,7 +31915,7 @@
         },
         "/reports/receivable-aging": {
             "get": {
-                "operationId": "report.receivableAging",
+                "operationId": "reports.receivable-aging",
                 "summary": "Laporan Umur Piutang (Accounts Receivable Aging)",
                 "tags": [
                     "Report"
@@ -32037,7 +32038,7 @@
         },
         "/reports/payable-aging": {
             "get": {
-                "operationId": "report.payableAging",
+                "operationId": "reports.payable-aging",
                 "summary": "Laporan Umur Hutang (Accounts Payable Aging)",
                 "tags": [
                     "Report"
@@ -32160,7 +32161,7 @@
         },
         "/reports/contacts/{contact}/aging": {
             "get": {
-                "operationId": "report.contactAging",
+                "operationId": "reports.contact-aging",
                 "summary": "Laporan Umur Piutang/Hutang per Kontak",
                 "tags": [
                     "Report"
@@ -32263,7 +32264,7 @@
         },
         "/reports/ppn-summary": {
             "get": {
-                "operationId": "report.ppnSummary",
+                "operationId": "reports.ppn-summary",
                 "summary": "Laporan PPN (VAT Report)",
                 "tags": [
                     "Report"
@@ -32469,7 +32470,7 @@
         },
         "/reports/ppn-monthly": {
             "get": {
-                "operationId": "report.ppnMonthly",
+                "operationId": "reports.ppn-monthly",
                 "summary": "Laporan PPN Bulanan per Tahun",
                 "tags": [
                     "Report"
@@ -32559,7 +32560,7 @@
         },
         "/reports/tax-invoice-list": {
             "get": {
-                "operationId": "report.taxInvoiceList",
+                "operationId": "reports.tax-invoice-list",
                 "summary": "Daftar Faktur Pajak Keluaran",
                 "tags": [
                     "Report"
@@ -32669,7 +32670,7 @@
         },
         "/reports/input-tax-list": {
             "get": {
-                "operationId": "report.inputTaxList",
+                "operationId": "reports.input-tax-list",
                 "summary": "Daftar Faktur Pajak Masukan",
                 "tags": [
                     "Report"
@@ -32779,7 +32780,7 @@
         },
         "/reports/cash-flow": {
             "get": {
-                "operationId": "report.cashFlow",
+                "operationId": "reports.cash-flow",
                 "summary": "Laporan Arus Kas (Cash Flow Statement)",
                 "tags": [
                     "Report"
@@ -32943,7 +32944,7 @@
         },
         "/reports/daily-cash-movement": {
             "get": {
-                "operationId": "report.dailyCashMovement",
+                "operationId": "reports.daily-cash-movement",
                 "summary": "Pergerakan Kas Harian",
                 "tags": [
                     "Report"
@@ -33045,7 +33046,7 @@
         },
         "/reports/project-profitability": {
             "get": {
-                "operationId": "report.projectProfitability",
+                "operationId": "reports.project-profitability",
                 "summary": "Laporan Profitabilitas Proyek (Project Profitability Report)",
                 "tags": [
                     "Report"
@@ -33293,7 +33294,7 @@
         },
         "/reports/projects/{project}/profitability": {
             "get": {
-                "operationId": "report.projectProfitabilityDetail",
+                "operationId": "reports.project-profitability-detail",
                 "summary": "Laporan Detail Profitabilitas Proyek",
                 "tags": [
                     "Report"
@@ -33646,7 +33647,7 @@
         },
         "/reports/project-cost-analysis": {
             "get": {
-                "operationId": "report.projectCostAnalysis",
+                "operationId": "reports.project-cost-analysis",
                 "summary": "Laporan Analisis Biaya Proyek",
                 "tags": [
                     "Report"
@@ -33803,7 +33804,7 @@
         },
         "/reports/work-order-costs": {
             "get": {
-                "operationId": "report.workOrderCosts",
+                "operationId": "reports.work-order-costs",
                 "summary": "Laporan Biaya Work Order",
                 "tags": [
                     "Report"
@@ -33879,7 +33880,7 @@
         },
         "/reports/work-orders/{workOrder}/costs": {
             "get": {
-                "operationId": "report.workOrderCostDetail",
+                "operationId": "reports.work-order-cost-detail",
                 "summary": "Laporan Detail Biaya Work Order",
                 "tags": [
                     "Report"
@@ -33939,7 +33940,7 @@
         },
         "/reports/cost-variance": {
             "get": {
-                "operationId": "report.costVariance",
+                "operationId": "reports.cost-variance",
                 "summary": "Laporan Variansi Biaya",
                 "tags": [
                     "Report"
@@ -34210,7 +34211,7 @@
         },
         "/reports/subcontractor-summary": {
             "get": {
-                "operationId": "report.subcontractorSummary",
+                "operationId": "reports.subcontractor-summary",
                 "summary": "Laporan Subkontraktor",
                 "tags": [
                     "Report"
@@ -34414,7 +34415,7 @@
         },
         "/reports/subcontractors/{contact}/summary": {
             "get": {
-                "operationId": "report.subcontractorDetail",
+                "operationId": "reports.subcontractor-detail",
                 "summary": "Laporan Detail Subkontraktor",
                 "tags": [
                     "Report"
@@ -34729,7 +34730,7 @@
         },
         "/reports/subcontractor-retention": {
             "get": {
-                "operationId": "report.subcontractorRetention",
+                "operationId": "reports.subcontractor-retention",
                 "summary": "Laporan Retensi Subkontraktor",
                 "tags": [
                     "Report"
@@ -34894,7 +34895,7 @@
         },
         "/reports/changes-in-equity": {
             "get": {
-                "operationId": "report.changesInEquity",
+                "operationId": "reports.changes-in-equity",
                 "summary": "Laporan Perubahan Ekuitas (Statement of Changes in Equity)",
                 "tags": [
                     "Report"
@@ -35079,7 +35080,7 @@
         },
         "/reports/accounts/{account}/bank-reconciliation": {
             "get": {
-                "operationId": "report.bankReconciliation",
+                "operationId": "reports.bank-reconciliation",
                 "summary": "Laporan Rekonsiliasi Bank",
                 "tags": [
                     "Report"
@@ -35315,7 +35316,7 @@
         },
         "/reports/accounts/{account}/bank-reconciliation/outstanding": {
             "get": {
-                "operationId": "report.bankReconciliationOutstanding",
+                "operationId": "reports.bank-reconciliation-outstanding",
                 "summary": "Item Outstanding untuk Rekonsiliasi Bank",
                 "tags": [
                     "Report"
@@ -35552,7 +35553,7 @@
         },
         "/reports/cogs-summary": {
             "get": {
-                "operationId": "report.cogsSummary",
+                "operationId": "reports.cogs-summary",
                 "summary": "Laporan Ringkasan HPP (COGS Summary)",
                 "tags": [
                     "Report"
@@ -35651,7 +35652,7 @@
         },
         "/reports/cogs-by-product": {
             "get": {
-                "operationId": "report.cogsByProduct",
+                "operationId": "reports.cogs-by-product",
                 "summary": "Laporan HPP per Produk",
                 "tags": [
                     "Report"
@@ -35776,7 +35777,7 @@
         },
         "/reports/cogs-by-category": {
             "get": {
-                "operationId": "report.cogsByCategory",
+                "operationId": "reports.cogs-by-category",
                 "summary": "Laporan HPP per Kategori",
                 "tags": [
                     "Report"
@@ -35893,7 +35894,7 @@
         },
         "/reports/cogs-monthly-trend": {
             "get": {
-                "operationId": "report.cogsMonthlyTrend",
+                "operationId": "reports.cogs-monthly-trend",
                 "summary": "Laporan Trend HPP Bulanan",
                 "tags": [
                     "Report"
@@ -35979,7 +35980,7 @@
         },
         "/reports/products/{product}/cogs": {
             "get": {
-                "operationId": "report.productCOGSDetail",
+                "operationId": "reports.product-cogs-detail",
                 "summary": "Laporan Detail HPP Produk",
                 "tags": [
                     "Report"
@@ -48893,7 +48894,10 @@
                         "type": "integer"
                     },
                     "remaining_amount": {
-                        "type": "integer"
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
                     },
                     "payment_method": {
                         "type": "string"

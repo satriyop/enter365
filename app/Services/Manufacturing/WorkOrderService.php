@@ -284,8 +284,8 @@ class WorkOrderService extends BaseService implements WorkOrderServiceInterface
             );
         }
 
-        $wo->quantity_completed = (float) $wo->quantity_completed + $quantity;
-        $wo->quantity_scrapped = (float) $wo->quantity_scrapped + $scrapped;
+        $wo->quantity_completed = (string) ((float) $wo->quantity_completed + $quantity);
+        $wo->quantity_scrapped = (string) ((float) $wo->quantity_scrapped + $scrapped);
         $wo->save();
 
         return $wo->fresh();

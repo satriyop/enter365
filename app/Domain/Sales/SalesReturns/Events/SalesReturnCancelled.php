@@ -18,7 +18,7 @@ readonly class SalesReturnCancelled
         public readonly ?string $reason,
     ) {}
 
-    public static function fromSalesReturn(SalesReturn $sr, ?int $userId = null): self
+    public static function fromSalesReturn(SalesReturn $sr, ?int $userId = null, ?string $reason = null): self
     {
         return new self(
             salesReturnId: $sr->id,
@@ -27,7 +27,7 @@ readonly class SalesReturnCancelled
             invoiceId: $sr->invoice_id ?? 0,
             userId: $userId,
             cancelledAt: now(),
-            reason: null,
+            reason: $reason,
         );
     }
 }

@@ -150,6 +150,12 @@ class SalesReturnService implements SalesReturnServiceInterface
      */
     public function createFromInvoice(Invoice $invoice, array $data = []): SalesReturn
     {
+        if (in_array($invoice->status, [DocumentStatus::Draft, DocumentStatus::Cancelled], true)) {
+            throw new \InvalidArgumentException(
+                'Retur penjualan tidak dapat dibuat dari invoice dengan status '.$invoice->status->label().'.'
+            );
+        }
+
         return $this->executeInTransaction('create_from_invoice', function () use ($invoice, $data) {
             $defaults = [
                 'invoice_id' => $invoice->id,
@@ -195,9 +201,11 @@ class SalesReturnService implements SalesReturnServiceInterface
             );
         }
 
-        $salesReturn->transitionTo(DocumentStatus::Submitted, $userId);
+        return $this->executeInTransaction('submit', function () use ($salesReturn, $userId) {
+            $salesReturn->transitionTo(DocumentStatus::Submitted, $userId);
 
-        return $salesReturn->fresh();
+            return $salesReturn->fresh();
+        }, ['sales_return_id' => $salesReturn->id]);
     }
 
     /**
@@ -242,11 +250,13 @@ class SalesReturnService implements SalesReturnServiceInterface
             );
         }
 
-        $salesReturn->transitionTo(DocumentStatus::Rejected, $userId, [
-            'rejection_reason' => $reason,
-        ]);
+        return $this->executeInTransaction('reject', function () use ($salesReturn, $reason, $userId) {
+            $salesReturn->transitionTo(DocumentStatus::Rejected, $userId, [
+                'rejection_reason' => $reason,
+            ]);
 
-        return $salesReturn->fresh();
+            return $salesReturn->fresh();
+        }, ['sales_return_id' => $salesReturn->id]);
     }
 
     /**
@@ -263,9 +273,11 @@ class SalesReturnService implements SalesReturnServiceInterface
             );
         }
 
-        $salesReturn->transitionTo(DocumentStatus::Completed, $userId);
+        return $this->executeInTransaction('complete', function () use ($salesReturn, $userId) {
+            $salesReturn->transitionTo(DocumentStatus::Completed, $userId);
 
-        return $salesReturn->fresh();
+            return $salesReturn->fresh();
+        }, ['sales_return_id' => $salesReturn->id]);
     }
 
     /**
@@ -317,6 +329,13 @@ class SalesReturnService implements SalesReturnServiceInterface
                 );
             }
             $salesReturn->journal_entry_id = null;
+        }
+
+        // Reverse invoice paid_amount adjustment
+        if ($salesReturn->invoice_id && $salesReturn->invoice) {
+            $invoice = $salesReturn->invoice;
+            $invoice->paid_amount = max(0, $invoice->paid_amount - $salesReturn->total_amount);
+            $invoice->save();
         }
 
         // Reverse inventory stock-in

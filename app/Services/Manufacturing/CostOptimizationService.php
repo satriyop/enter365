@@ -202,7 +202,7 @@ class CostOptimizationService extends BaseService
                         // Apply the optimization
                         $newItem->product_id = $optimization['cheapest_product_id'];
                         $newItem->description = $optimization['cheapest_product_name'];
-                        $newItem->unit_cost = $optimization['cheapest_unit_cost'];
+                        $newItem->unit_cost = (int) $optimization['cheapest_unit_cost'];
                         $newItem->calculateTotalCost();
 
                         $savings = ($item->unit_cost - $optimization['cheapest_unit_cost']) * $item->quantity;

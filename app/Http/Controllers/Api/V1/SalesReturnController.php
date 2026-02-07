@@ -203,7 +203,7 @@ class SalesReturnController extends Controller
         $this->authorize('delete', $salesReturn);
 
         $reason = $request->input('reason');
-        $salesReturn = $this->salesReturnService->cancel($salesReturn, $reason);
+        $salesReturn = $this->salesReturnService->cancel($salesReturn, $reason, $request->user()?->id);
 
         return response()->json([
             'message' => 'Retur penjualan berhasil dibatalkan.',

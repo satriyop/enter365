@@ -170,7 +170,7 @@ class SubcontractorReportService
                 'id' => $inv->id,
                 'invoice_number' => $inv->invoice_number,
                 'invoice_date' => $inv->invoice_date->format('Y-m-d') ?? null,
-                'amount' => $inv->amount,
+                'amount' => $inv->net_amount,
                 'status' => $inv->status,
                 'sc_wo_number' => $inv->subcontractorWorkOrder->sc_wo_number ?? null,
             ]);

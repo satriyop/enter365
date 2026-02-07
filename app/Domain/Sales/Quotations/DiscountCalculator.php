@@ -20,7 +20,7 @@ class DiscountCalculator
         }
 
         if ($discountType === self::TYPE_FIXED && $discountValue > 0) {
-            return (int) round($discountValue);
+            return min((int) round($discountValue), $subtotal);
         }
 
         return 0;

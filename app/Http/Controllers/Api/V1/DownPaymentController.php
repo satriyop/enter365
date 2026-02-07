@@ -263,16 +263,16 @@ class DownPaymentController extends Controller
             ],
             'by_type' => [
                 'receivable' => [
-                    'count' => DownPayment::where('type', DownPayment::TYPE_RECEIVABLE)->count(),
-                    'amount' => DownPayment::where('type', DownPayment::TYPE_RECEIVABLE)->sum('amount'),
-                    'remaining' => DownPayment::where('type', DownPayment::TYPE_RECEIVABLE)
+                    'count' => (clone $query)->where('type', DownPayment::TYPE_RECEIVABLE)->count(),
+                    'amount' => (clone $query)->where('type', DownPayment::TYPE_RECEIVABLE)->sum('amount'),
+                    'remaining' => (clone $query)->where('type', DownPayment::TYPE_RECEIVABLE)
                         ->where('status', DocumentStatus::Active)
                         ->selectRaw('SUM(amount - applied_amount) as remaining')->value('remaining') ?? 0,
                 ],
                 'payable' => [
-                    'count' => DownPayment::where('type', DownPayment::TYPE_PAYABLE)->count(),
-                    'amount' => DownPayment::where('type', DownPayment::TYPE_PAYABLE)->sum('amount'),
-                    'remaining' => DownPayment::where('type', DownPayment::TYPE_PAYABLE)
+                    'count' => (clone $query)->where('type', DownPayment::TYPE_PAYABLE)->count(),
+                    'amount' => (clone $query)->where('type', DownPayment::TYPE_PAYABLE)->sum('amount'),
+                    'remaining' => (clone $query)->where('type', DownPayment::TYPE_PAYABLE)
                         ->where('status', DocumentStatus::Active)
                         ->selectRaw('SUM(amount - applied_amount) as remaining')->value('remaining') ?? 0,
                 ],

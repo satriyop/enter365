@@ -51,6 +51,7 @@ class QuotationService implements QuotationServiceInterface
         $clone = clone $this;
         $clone->crud = $this->crud->withContext($context);
         $clone->workflow = $this->workflow->withContext($context);
+        $clone->conversion = $this->conversion->withContext($context);
 
         return $clone;
     }

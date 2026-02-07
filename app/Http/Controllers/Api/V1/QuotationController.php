@@ -131,11 +131,7 @@ class QuotationController extends Controller
     {
         $this->authorize('delete', $quotation);
 
-        if (! $quotation->isEditable()) {
-            return $this->error('Hanya penawaran draft yang dapat dihapus.', 422);
-        }
-
-        $quotation->delete();
+        $this->quotationService->delete($quotation);
 
         return $this->deleted('Penawaran berhasil dihapus.');
     }
@@ -244,6 +240,7 @@ class QuotationController extends Controller
     public function convertToInvoice(Quotation $quotation): JsonResponse
     {
         $this->authorize('manage', $quotation);
+        $this->authorize('create', \App\Models\Sales\Invoice::class);
 
         $invoice = $this->quotationService->convertToInvoice($quotation);
 

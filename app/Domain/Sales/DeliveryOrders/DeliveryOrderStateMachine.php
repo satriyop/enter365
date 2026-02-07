@@ -134,13 +134,13 @@ class DeliveryOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
                 break;
             case DocumentStatus::Shipped:
                 $updates['shipped_at'] = now();
-                $updates['shipped_by'] = $userId;
-                $updates['shipping_date'] = now()->toDateString();
+                $updates['shipped_by'] = $this->context['shipped_by'] ?? $userId;
+                $updates['shipping_date'] = $this->context['shipping_date'] ?? now()->toDateString();
                 break;
             case DocumentStatus::Delivered:
                 $updates['delivered_at'] = now();
                 $updates['delivered_by'] = $userId;
-                $updates['received_date'] = now()->toDateString();
+                $updates['received_date'] = $this->context['received_date'] ?? now()->toDateString();
                 break;
             case DocumentStatus::Cancelled:
                 $updates['cancelled_at'] = now();

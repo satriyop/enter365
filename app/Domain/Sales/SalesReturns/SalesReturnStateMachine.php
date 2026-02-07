@@ -212,7 +212,7 @@ class SalesReturnStateMachine extends \App\Domain\Core\AbstractStateMachine
     protected function afterCancelled(DocumentStatus $from, DocumentStatus $to): void
     {
         $userId = $this->getContextUserId();
-        $reason = $this->context['reason'] ?? null;
+        $reason = $this->context['cancellation_reason'] ?? null;
 
         $this->eventDispatcher->dispatch(new Events\SalesReturnCancelled(
             $this->sr->id,

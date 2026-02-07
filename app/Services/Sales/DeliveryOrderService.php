@@ -241,10 +241,11 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
             );
         }
 
-        // State machine dispatches DeliveryOrderConfirmed event
-        $deliveryOrder->transitionTo(DocumentStatus::Confirmed, $userId);
+        return $this->executeInTransaction('confirm', function () use ($deliveryOrder, $userId) {
+            $deliveryOrder->transitionTo(DocumentStatus::Confirmed, $userId);
 
-        return $deliveryOrder->fresh(['items', 'contact', 'invoice']);
+            return $deliveryOrder->fresh(['items', 'contact', 'invoice']);
+        }, ['delivery_order_id' => $deliveryOrder->id]);
     }
 
     /**
@@ -260,6 +261,8 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
                 'confirmed'
             );
         }
+
+        $userId = $data['shipped_by'] ?? $userId;
 
         return $this->executeInTransaction('ship', function () use ($deliveryOrder, $data, $userId) {
             $deliveryOrder->update([
@@ -330,18 +333,19 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
             );
         }
 
-        // State machine dispatches DeliveryOrderCancelled event
-        $deliveryOrder->transitionTo(DocumentStatus::Cancelled, $userId, [
-            'cancellation_reason' => $reason,
-        ]);
+        return $this->executeInTransaction('cancel', function () use ($deliveryOrder, $reason, $userId) {
+            $deliveryOrder->transitionTo(DocumentStatus::Cancelled, $userId, [
+                'cancellation_reason' => $reason,
+            ]);
 
-        return $deliveryOrder->fresh(['items', 'contact', 'invoice']);
+            return $deliveryOrder->fresh(['items', 'contact', 'invoice']);
+        }, ['delivery_order_id' => $deliveryOrder->id]);
     }
 
     /**
      * Update delivery progress (partial delivery).
      */
-    public function updateDeliveryProgress(DeliveryOrder $deliveryOrder, array $itemsDelivered): DeliveryOrder
+    public function updateDeliveryProgress(DeliveryOrder $deliveryOrder, array $itemsDelivered, ?int $userId = null): DeliveryOrder
     {
         if ($deliveryOrder->status !== DocumentStatus::Shipped) {
             throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
@@ -352,23 +356,27 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
             );
         }
 
-        return $this->executeInTransaction('update_delivery_progress', function () use ($deliveryOrder, $itemsDelivered) {
+        return $this->executeInTransaction('update_delivery_progress', function () use ($deliveryOrder, $itemsDelivered, $userId) {
             foreach ($itemsDelivered as $itemData) {
                 $item = $deliveryOrder->items()->find($itemData['item_id']);
-                if ($item) {
-                    $newDelivered = (float) $itemData['quantity_delivered'];
-                    $orderedQty = (float) $item->quantity;
-                    if ($newDelivered > $orderedQty) {
-                        throw \App\Exceptions\Domain\BusinessRuleException::quantityValidation(
-                            'Jumlah delivered untuk item '.$item->id,
-                            $newDelivered,
-                            $orderedQty,
-                            'exceeds'
-                        );
-                    }
-                    $item->quantity_delivered = $newDelivered;
-                    $item->save();
+                if (! $item) {
+                    throw new \InvalidArgumentException(
+                        "Item #{$itemData['item_id']} bukan milik delivery order ini."
+                    );
                 }
+
+                $newDelivered = (float) $itemData['quantity_delivered'];
+                $orderedQty = (float) $item->quantity;
+                if ($newDelivered > $orderedQty) {
+                    throw \App\Exceptions\Domain\BusinessRuleException::quantityValidation(
+                        'Jumlah delivered untuk item '.$item->id,
+                        $newDelivered,
+                        $orderedQty,
+                        'exceeds'
+                    );
+                }
+                $item->quantity_delivered = $newDelivered;
+                $item->save();
             }
 
             $allDelivered = $deliveryOrder->items()
@@ -376,7 +384,7 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
                 ->doesntExist();
 
             if ($allDelivered) {
-                $deliveryOrder->transitionTo(DocumentStatus::Delivered, null, [
+                $deliveryOrder->transitionTo(DocumentStatus::Delivered, $userId, [
                     'received_date' => now()->toDateString(),
                 ]);
             }

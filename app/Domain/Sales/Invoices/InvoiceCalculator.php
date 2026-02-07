@@ -24,8 +24,8 @@ class InvoiceCalculator implements InvoiceCalculatorInterface
         // Calculate tax
         $taxAmount = (int) round($subtotal * ($taxRate / 100));
 
-        // Calculate total
-        $totalAmount = $subtotal + $taxAmount - $discountAmount;
+        // Calculate total (floor at zero to prevent negative)
+        $totalAmount = max(0, $subtotal + $taxAmount - $discountAmount);
 
         // Handle multi-currency
         if ($currency !== 'IDR' && $exchangeRate > 0) {

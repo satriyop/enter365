@@ -83,13 +83,20 @@ class JournalEntryHandler implements ApprovalHandlerInterface
             'entry_date' => $salesReturn->return_date instanceof \Carbon\Carbon ? $salesReturn->return_date->toDateString() : (string) $salesReturn->return_date,
             'description' => 'Retur penjualan: '.$salesReturn->return_number,
             'reference' => $salesReturn->return_number,
-            'source_type' => JournalEntry::SOURCE_MANUAL,
+            'source_type' => JournalEntry::SOURCE_SALES_RETURN,
             'source_id' => $salesReturn->id,
             'lines' => $lines,
         ], autoPost: true);
 
         $salesReturn->journal_entry_id = $entry->id;
         $salesReturn->save();
+
+        // Update invoice subsidiary ledger to match AR credit
+        if ($salesReturn->invoice_id && $salesReturn->invoice) {
+            $invoice = $salesReturn->invoice;
+            $invoice->paid_amount += $salesReturn->total_amount;
+            $invoice->save();
+        }
     }
 
     public function priority(): int

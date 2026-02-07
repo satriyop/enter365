@@ -65,7 +65,7 @@ class QuotationFilter extends QueryFilter
             'quotation_date',
             'valid_until',
             'status',
-            'total',
+            'total_amount',
             'created_at',
             'updated_at',
         ];

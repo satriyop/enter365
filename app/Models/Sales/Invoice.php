@@ -100,7 +100,6 @@ class Invoice extends Model
         'currency',
         'exchange_rate',
         'base_currency_total',
-        'paid_amount',
         'status',
         'reminder_count',
         'last_reminder_at',
@@ -272,6 +271,23 @@ class Invoice extends Model
             && $this->early_discount_percent > 0
             && $this->early_discount_days !== null
             && $this->early_discount_days > 0;
+    }
+
+    /**
+     * Check if early payment discount is still available (not past deadline).
+     */
+    public function isEarlyPaymentDiscountAvailable(): bool
+    {
+        if (! $this->hasEarlyPaymentDiscount()) {
+            return false;
+        }
+
+        if ($this->early_discount_deadline) {
+            return ! $this->early_discount_deadline->isPast();
+        }
+
+        // Fallback: calculate from invoice_date + days
+        return ! $this->invoice_date->copy()->addDays($this->early_discount_days)->isPast();
     }
 
     /**

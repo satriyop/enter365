@@ -60,7 +60,7 @@ class InvoiceFilter extends QueryFilter
             'due_date',
             'status',
             'total_amount',
-            'amount_paid',
+            'paid_amount',
             'created_at',
             'updated_at',
         ];

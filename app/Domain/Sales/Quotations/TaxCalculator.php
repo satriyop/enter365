@@ -8,7 +8,7 @@ use App\Models\Sales\QuotationItem;
 
 class TaxCalculator
 {
-    public static function calculateFromItems(iterable $items, int $taxRate = 11): int
+    public static function calculateFromItems(iterable $items, float $taxRate = 11): int
     {
         $subtotal = 0;
 
@@ -23,7 +23,7 @@ class TaxCalculator
         return self::calculateFromSubtotal($subtotal, $taxRate);
     }
 
-    public static function calculateFromSubtotal(int $subtotal, int $taxRate): int
+    public static function calculateFromSubtotal(int $subtotal, float $taxRate): int
     {
         return (int) round($subtotal * ($taxRate / 100));
     }

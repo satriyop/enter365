@@ -137,6 +137,15 @@ class InvoiceResource extends JsonResource
      */
     private function formatMoney(int $amount): string
     {
-        return 'Rp '.number_format($amount, 0, ',', '.');
+        $currencyPrefixes = [
+            'IDR' => 'Rp ',
+            'USD' => '$ ',
+            'EUR' => '€ ',
+            'SGD' => 'S$ ',
+        ];
+
+        $prefix = $currencyPrefixes[$this->currency] ?? $this->currency.' ';
+
+        return $prefix.number_format($amount, 0, ',', '.');
     }
 }

@@ -96,11 +96,11 @@ class DeliveryOrderItem extends Model
         $this->unit = $invoiceItem->unit;
         $this->unit_price = $invoiceItem->unit_price;
         $this->discount_percent = $invoiceItem->discount_percent;
-        $this->discount_amount = $invoiceItem->discount_amount;
         $this->tax_rate = $invoiceItem->tax_rate;
-        $this->tax_amount = $invoiceItem->tax_amount;
-        $this->line_total = $invoiceItem->line_total;
         $this->sort_order = $invoiceItem->sort_order;
+
+        // Recalculate financial fields based on actual quantity
+        $this->calculateLineTotal();
     }
 
     /**

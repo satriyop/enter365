@@ -25,6 +25,8 @@ class QuotationStatisticsService
 
     private const CACHE_PREFIX = 'quotation_stats:';
 
+    private const CACHE_KEYS_REGISTRY = 'quotation_stats:_keys';
+
     public function __construct(
         private QuotationStatistics $statistics,
     ) {}
@@ -37,6 +39,7 @@ class QuotationStatisticsService
     public function get(?string $startDate = null, ?string $endDate = null): array
     {
         $cacheKey = self::CACHE_PREFIX.'overview:'.md5(($startDate ?? 'null').':'.($endDate ?? 'null'));
+        self::registerCacheKey($cacheKey);
 
         return Cache::remember($cacheKey, now()->addMinutes(self::CACHE_TTL_MINUTES), function () use ($startDate, $endDate) {
             return $this->statistics->get($startDate, $endDate);
@@ -75,6 +78,7 @@ class QuotationStatisticsService
     public function getDashboardData(?string $startDate = null, ?string $endDate = null): array
     {
         $cacheKey = self::CACHE_PREFIX.'dashboard:'.md5(($startDate ?? 'null').':'.($endDate ?? 'null'));
+        self::registerCacheKey($cacheKey);
 
         return Cache::remember($cacheKey, now()->addMinutes(self::CACHE_TTL_MINUTES), function () use ($startDate, $endDate) {
             return [
@@ -104,6 +108,7 @@ class QuotationStatisticsService
     public function getOutcomeStatistics(string $startDate, string $endDate): object
     {
         $cacheKey = self::CACHE_PREFIX.'outcomes:'.md5($startDate.':'.$endDate);
+        self::registerCacheKey($cacheKey);
 
         return Cache::remember($cacheKey, now()->addMinutes(self::CACHE_TTL_MINUTES), function () use ($startDate, $endDate) {
             return $this->computeOutcomeStatistics($startDate, $endDate);
@@ -149,6 +154,7 @@ class QuotationStatisticsService
     public function getLostReasonsBreakdown(string $startDate, string $endDate): array
     {
         $cacheKey = self::CACHE_PREFIX.'lost_reasons:'.md5($startDate.':'.$endDate);
+        self::registerCacheKey($cacheKey);
 
         return Cache::remember($cacheKey, now()->addMinutes(self::CACHE_TTL_MINUTES), function () use ($startDate, $endDate) {
             $results = DB::table('quotations')
@@ -181,6 +187,7 @@ class QuotationStatisticsService
     public function getWonReasonsBreakdown(string $startDate, string $endDate): array
     {
         $cacheKey = self::CACHE_PREFIX.'won_reasons:'.md5($startDate.':'.$endDate);
+        self::registerCacheKey($cacheKey);
 
         return Cache::remember($cacheKey, now()->addMinutes(self::CACHE_TTL_MINUTES), function () use ($startDate, $endDate) {
             $results = DB::table('quotations')
@@ -206,22 +213,38 @@ class QuotationStatisticsService
     }
 
     /**
+     * Register a cache key for later flushing.
+     */
+    private static function registerCacheKey(string $key): void
+    {
+        $keys = Cache::get(self::CACHE_KEYS_REGISTRY, []);
+        if (! in_array($key, $keys, true)) {
+            $keys[] = $key;
+            Cache::put(self::CACHE_KEYS_REGISTRY, $keys, now()->addHours(24));
+        }
+    }
+
+    /**
      * Flush all quotation statistics cache entries.
      */
     public static function flushCache(): void
     {
-        $patterns = [
-            self::CACHE_PREFIX.'overview:',
+        // Flush known static keys
+        $staticKeys = [
             self::CACHE_PREFIX.'win_loss',
             self::CACHE_PREFIX.'follow_up',
-            self::CACHE_PREFIX.'dashboard:',
-            self::CACHE_PREFIX.'outcomes:',
-            self::CACHE_PREFIX.'lost_reasons:',
-            self::CACHE_PREFIX.'won_reasons:',
         ];
 
-        foreach ($patterns as $key) {
+        foreach ($staticKeys as $key) {
             Cache::forget($key);
         }
+
+        // Flush all registered dynamic keys
+        $registeredKeys = Cache::get(self::CACHE_KEYS_REGISTRY, []);
+        foreach ($registeredKeys as $key) {
+            Cache::forget($key);
+        }
+
+        Cache::forget(self::CACHE_KEYS_REGISTRY);
     }
 }

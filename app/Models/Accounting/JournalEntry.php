@@ -28,6 +28,8 @@ class JournalEntry extends Model
 
     public const SOURCE_REVERSAL = 'reversal';
 
+    public const SOURCE_SALES_RETURN = 'sales_return';
+
     protected $fillable = [
         'entry_number',
         'entry_date',

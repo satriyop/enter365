@@ -202,6 +202,7 @@ enum DocumentStatus: string
             self::Rejected,
             self::Expired,
             self::Converted,
+            self::Cancelled,
         ];
     }
 

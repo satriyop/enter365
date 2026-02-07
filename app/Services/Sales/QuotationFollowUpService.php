@@ -11,6 +11,7 @@ use App\Domain\Sales\Quotations\Enums\QuotationPriority;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\Quotation;
 use App\Services\Base\BaseService;
+use Carbon\Carbon;
 use DateTime;
 
 /**
@@ -44,7 +45,7 @@ class QuotationFollowUpService extends BaseService implements QuotationFollowUpS
      */
     public function scheduleFollowUpAt(Quotation $quotation, DateTime|string $date): Quotation
     {
-        $quotation->next_follow_up_at = $date;
+        $quotation->next_follow_up_at = Carbon::parse($date);
         $quotation->save();
 
         return $quotation->fresh();
@@ -78,7 +79,7 @@ class QuotationFollowUpService extends BaseService implements QuotationFollowUpS
     /**
      * Calculate auto follow-up date based on quotation stage.
      */
-    public function calculateAutoFollowUpDate(Quotation $quotation): ?DateTime
+    public function calculateAutoFollowUpDate(Quotation $quotation): ?Carbon
     {
         // If already has outcome, no follow-up needed
         if ($quotation->outcome !== null) {
@@ -87,8 +88,8 @@ class QuotationFollowUpService extends BaseService implements QuotationFollowUpS
 
         // Follow-up schedule based on status and time elapsed
         return match ($quotation->status) {
-            DocumentStatus::Submitted => now()->addDays(3)->toDateTime(),
-            DocumentStatus::Approved => now()->addDays(7)->toDateTime(),
+            DocumentStatus::Submitted => now()->addDays(3),
+            DocumentStatus::Approved => now()->addDays(7),
             default => null,
         };
     }

@@ -228,7 +228,7 @@ class ProjectService extends BaseService implements ProjectServiceInterface
             );
         }
 
-        $project->progress_percentage = min(100, max(0, $percentage));
+        $project->progress_percentage = (string) min(100, max(0, $percentage));
         $project->save();
 
         return $project->fresh();

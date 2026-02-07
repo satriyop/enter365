@@ -10,6 +10,10 @@ use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Purchasing\BillServiceInterface;
 use App\Contracts\Sales\DownPaymentServiceInterface;
 use App\Contracts\Sales\InvoiceServiceInterface;
+use App\Domain\Sales\DownPayments\Events\DownPaymentApplied;
+use App\Domain\Sales\DownPayments\Events\DownPaymentCancelled;
+use App\Domain\Sales\DownPayments\Events\DownPaymentCreated;
+use App\Domain\Sales\DownPayments\Events\DownPaymentRefunded;
 use App\Enums\DocumentStatus;
 use App\Models\Accounting\Account;
 use App\Models\Purchasing\Bill;
@@ -48,7 +52,14 @@ class DownPaymentService extends BaseService implements DownPaymentServiceInterf
             // Create journal entry for the down payment
             $this->createDownPaymentJournalEntry($downPayment);
 
-            return $downPayment->fresh(['contact', 'cashAccount', 'journalEntry']);
+            $result = $downPayment->fresh(['contact', 'cashAccount', 'journalEntry']);
+
+            $this->eventDispatcher->dispatch(DownPaymentCreated::fromDownPayment(
+                $result,
+                $data['created_by'] ?? $this->getUserId() ?? 0
+            ));
+
+            return $result;
         }, ['type' => $data['type'], 'amount' => $data['amount'] ?? 0]);
     }
 
@@ -104,7 +115,14 @@ class DownPaymentService extends BaseService implements DownPaymentServiceInterf
         }
 
         return $this->executeInTransaction('delete', function () use ($downPayment) {
-            // Reverse journal entry if exists
+            // Reverse application journal entries (safety: guard above prevents this, but defense-in-depth)
+            foreach ($downPayment->applications as $application) {
+                if ($application->journal_entry_id && $application->journalEntry) {
+                    $this->journalService->reverseEntry($application->journalEntry);
+                }
+            }
+
+            // Reverse main journal entry if exists
             if ($downPayment->journalEntry) {
                 $this->journalService->reverseEntry($downPayment->journalEntry);
             }
@@ -203,7 +221,14 @@ class DownPaymentService extends BaseService implements DownPaymentServiceInterf
             $invoice->save();
             $this->invoiceService->updatePaymentStatus($invoice);
 
-            return $application->fresh(['downPayment', 'applicable', 'journalEntry']);
+            $result = $application->fresh(['downPayment', 'applicable', 'journalEntry']);
+
+            $this->eventDispatcher->dispatch(DownPaymentApplied::fromApplication(
+                $result,
+                $data['created_by'] ?? $this->getUserId() ?? 0
+            ));
+
+            return $result;
         }, ['down_payment_id' => $downPayment->id, 'invoice_id' => $invoice->id, 'amount' => $amount]);
     }
 
@@ -297,7 +322,14 @@ class DownPaymentService extends BaseService implements DownPaymentServiceInterf
             $bill->save();
             $this->billService->updatePaymentStatus($bill);
 
-            return $application->fresh(['downPayment', 'applicable', 'journalEntry']);
+            $result = $application->fresh(['downPayment', 'applicable', 'journalEntry']);
+
+            $this->eventDispatcher->dispatch(DownPaymentApplied::fromApplication(
+                $result,
+                $data['created_by'] ?? $this->getUserId() ?? 0
+            ));
+
+            return $result;
         }, ['down_payment_id' => $downPayment->id, 'bill_id' => $bill->id, 'amount' => $amount]);
     }
 
@@ -410,6 +442,13 @@ class DownPaymentService extends BaseService implements DownPaymentServiceInterf
             // Create refund journal entry
             $this->createRefundJournalEntry($downPayment, $payment, $refundAmount);
 
+            $this->eventDispatcher->dispatch(DownPaymentRefunded::fromDownPayment(
+                $downPayment,
+                $payment,
+                $refundAmount,
+                $data['created_by'] ?? $this->getUserId() ?? 0
+            ));
+
             return $payment;
         }, ['down_payment_id' => $downPayment->id, 'refund_amount' => $refundAmount]);
     }
@@ -443,6 +482,12 @@ class DownPaymentService extends BaseService implements DownPaymentServiceInterf
                 $downPayment->notes = ($downPayment->notes ? $downPayment->notes."\n" : '').'Cancelled: '.$reason;
             }
             $downPayment->save();
+
+            $this->eventDispatcher->dispatch(DownPaymentCancelled::fromDownPayment(
+                $downPayment,
+                $reason,
+                $this->getUserId() ?? 0
+            ));
 
             return $downPayment;
         }, ['down_payment_id' => $downPayment->id]);

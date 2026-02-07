@@ -192,7 +192,7 @@ class DeliveryOrderController extends Controller
         $this->authorize('update', $deliveryOrder);
 
         $reason = $request->input('reason');
-        $deliveryOrder = $this->deliveryOrderService->cancel($deliveryOrder, $reason);
+        $deliveryOrder = $this->deliveryOrderService->cancel($deliveryOrder, $reason, $request->user()?->id);
 
         return response()->json([
             'message' => 'Delivery order cancelled successfully.',
@@ -215,7 +215,8 @@ class DeliveryOrderController extends Controller
 
         $deliveryOrder = $this->deliveryOrderService->updateDeliveryProgress(
             $deliveryOrder,
-            $data['items']
+            $data['items'],
+            $request->user()?->id
         );
 
         return response()->json([

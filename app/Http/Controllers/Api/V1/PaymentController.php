@@ -9,7 +9,6 @@ use App\Http\Resources\Api\V1\PaymentResource;
 use App\Models\Shared\Payment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use InvalidArgumentException;
 
 class PaymentController extends Controller
 {
@@ -38,13 +37,9 @@ class PaymentController extends Controller
     {
         $this->authorize('create', Payment::class);
 
-        try {
-            $payment = $this->paymentService->create($request->validated());
+        $payment = $this->paymentService->create($request->validated());
 
-            return $this->created(new PaymentResource($payment), 'Pembayaran berhasil dibuat.');
-        } catch (InvalidArgumentException $e) {
-            return $this->error($e->getMessage(), 422);
-        }
+        return $this->created(new PaymentResource($payment), 'Pembayaran berhasil dibuat.');
     }
 
     public function show(Payment $payment, PaymentFilter $filter): PaymentResource
@@ -62,15 +57,11 @@ class PaymentController extends Controller
     {
         $this->authorize('void', $payment);
 
-        try {
-            $voidedPayment = $this->paymentService->void($payment);
+        $voidedPayment = $this->paymentService->void($payment);
 
-            return $this->success(
-                new PaymentResource($voidedPayment),
-                'Pembayaran berhasil dibatalkan.'
-            );
-        } catch (InvalidArgumentException $e) {
-            return $this->error($e->getMessage(), 422);
-        }
+        return $this->success(
+            new PaymentResource($voidedPayment),
+            'Pembayaran berhasil dibatalkan.'
+        );
     }
 }
