@@ -23,11 +23,12 @@ use App\Services\Accounting\Strategies\Manufacturing\WIPAccountingStrategy;
 use App\Services\Accounting\Strategies\Returns\FullReturnJournalStrategy;
 use App\Services\Accounting\Strategies\Returns\InventoryOnlyReturnStrategy;
 use Illuminate\Contracts\Container\Container;
+use App\Models\Accounting\AccountingPolicy;
 
 /**
  * Manages accounting policy strategies.
  *
- * Reads configuration and returns appropriate strategy implementations.
+ * Reads DB-persisted policies first, falls back to config.
  * Acts as a factory for accounting strategies.
  */
 class AccountingPolicyManager
@@ -90,11 +91,28 @@ class AccountingPolicyManager
     ) {}
 
     /**
+     * Read a policy value from DB first, fall back to config.
+     *
+     * Uses try/catch so the app still works during migration
+     * (before the accounting_policies table exists).
+     */
+    private function getPolicyValue(string $key, string $default): string
+    {
+        try {
+            $policy = AccountingPolicy::current();
+
+            return $policy->{$key} ?? $default;
+        } catch (\Throwable) {
+            return config("accounting.policies.{$key}", $default);
+        }
+    }
+
+    /**
      * Get the configured inventory accounting strategy.
      */
     public function inventory(): InventoryAccountingStrategy
     {
-        $method = config('accounting.policies.inventory_method', 'hybrid');
+        $method = $this->getPolicyValue('inventory_method', 'hybrid');
 
         if (! isset($this->inventoryStrategies[$method])) {
             throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
@@ -111,7 +129,7 @@ class AccountingPolicyManager
      */
     public function cogs(): COGSRecognitionStrategy
     {
-        $method = config('accounting.policies.cogs_recognition', 'on_invoice');
+        $method = $this->getPolicyValue('cogs_recognition', 'on_invoice');
 
         if (! isset($this->cogsStrategies[$method])) {
             throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
@@ -128,7 +146,7 @@ class AccountingPolicyManager
      */
     public function returns(): ReturnAccountingStrategy
     {
-        $method = config('accounting.policies.return_accounting', 'full_journal');
+        $method = $this->getPolicyValue('return_accounting', 'full_journal');
 
         if (! isset($this->returnStrategies[$method])) {
             throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
@@ -145,7 +163,7 @@ class AccountingPolicyManager
      */
     public function manufacturing(): ManufacturingCostStrategy
     {
-        $method = config('accounting.policies.manufacturing_costing', 'project_based');
+        $method = $this->getPolicyValue('manufacturing_costing', 'project_based');
 
         if (! isset($this->manufacturingStrategies[$method])) {
             throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
@@ -162,7 +180,7 @@ class AccountingPolicyManager
      */
     public function closing(): ClosingStrategy
     {
-        $method = config('accounting.policies.closing_strategy', 'direct');
+        $method = $this->getPolicyValue('closing_strategy', 'direct');
 
         if (! isset($this->closingStrategies[$method])) {
             throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
@@ -175,18 +193,34 @@ class AccountingPolicyManager
     }
 
     /**
-     * Get current policy configuration summary.
+     * Get current policy values (DB-first, config fallback).
      *
      * @return array<string, string>
      */
     public function getCurrentPolicies(): array
     {
         return [
-            'inventory_method' => config('accounting.policies.inventory_method', 'hybrid'),
-            'cogs_recognition' => config('accounting.policies.cogs_recognition', 'on_invoice'),
-            'return_accounting' => config('accounting.policies.return_accounting', 'full_journal'),
-            'manufacturing_costing' => config('accounting.policies.manufacturing_costing', 'project_based'),
-            'closing_strategy' => config('accounting.policies.closing_strategy', 'direct'),
+            'inventory_method' => $this->getPolicyValue('inventory_method', 'hybrid'),
+            'cogs_recognition' => $this->getPolicyValue('cogs_recognition', 'on_invoice'),
+            'return_accounting' => $this->getPolicyValue('return_accounting', 'full_journal'),
+            'manufacturing_costing' => $this->getPolicyValue('manufacturing_costing', 'project_based'),
+            'closing_strategy' => $this->getPolicyValue('closing_strategy', 'direct'),
+        ];
+    }
+
+    /**
+     * Get available options for each policy (for API metadata).
+     *
+     * @return array<string, list<string>>
+     */
+    public function getAvailableOptions(): array
+    {
+        return [
+            'inventory_method' => array_keys($this->inventoryStrategies),
+            'cogs_recognition' => array_keys($this->cogsStrategies),
+            'return_accounting' => array_keys($this->returnStrategies),
+            'manufacturing_costing' => array_keys($this->manufacturingStrategies),
+            'closing_strategy' => array_keys($this->closingStrategies),
         ];
     }
 
@@ -195,6 +229,6 @@ class AccountingPolicyManager
      */
     public function isPolicySet(string $policy, string $value): bool
     {
-        return config("accounting.policies.{$policy}") === $value;
+        return $this->getPolicyValue($policy, '') === $value;
     }
 }

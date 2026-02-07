@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\PublicCompanyProfileController;
 use App\Http\Controllers\Api\PublicSolarCalculatorController;
 use App\Http\Controllers\Api\PublicSolarProposalController;
 use App\Http\Controllers\Api\V1\AccountController;
+use App\Http\Controllers\Api\V1\AccountingPolicyController;
 use App\Http\Controllers\Api\V1\AttachmentController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BankReconciliationController;
@@ -727,6 +728,10 @@ Route::prefix('v1')->group(function () {
             Route::post('goods-receipt-notes/{goodsReceiptNote}/cancel', [GoodsReceiptNoteController::class, 'cancel']);
             Route::get('purchase-orders/{purchaseOrder}/goods-receipt-notes', [GoodsReceiptNoteController::class, 'forPurchaseOrder']);
         });
+
+        // Accounting Policies (Kebijakan Akuntansi)
+        Route::get('accounting-policies', [AccountingPolicyController::class, 'show']);
+        Route::put('accounting-policies', [AccountingPolicyController::class, 'update']);
 
     }); // End of auth:sanctum middleware group
 

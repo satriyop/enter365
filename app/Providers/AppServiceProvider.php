@@ -328,6 +328,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Settings Gates (non-model based)
         Gate::define('settings.features', fn (\App\Models\User $user): bool => $user->hasPermission('settings.features'));
+        Gate::define('settings.manage_accounting', fn (\App\Models\User $user): bool => $user->hasPermission('settings.manage_accounting'));
 
         // User management Gates (non-model based)
         Gate::define('users.manage_roles', fn (\App\Models\User $user): bool => $user->hasPermission('users.manage_roles'));
