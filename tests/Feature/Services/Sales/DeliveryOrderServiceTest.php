@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Contracts\Accounting\JournalServiceInterface;
 use App\Contracts\Inventory\InventoryServiceInterface;
 use App\Contracts\Sales\DeliveryOrderServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Exceptions\Domain\DocumentLockedException;
 use App\Exceptions\Domain\StateTransitionException;
+use App\Models\Accounting\JournalEntry;
 use App\Models\Contacts\Contact;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\Warehouse;
@@ -324,4 +326,85 @@ describe('Query Methods', function () {
 
         expect($results)->toHaveCount(3);
     });
+});
+
+describe('Reverse Shipment', function () {
+    test('reverses shipment and restores inventory', function () {
+        $inventoryService = $this->mock(InventoryServiceInterface::class);
+        $inventoryService->shouldReceive('stockIn')
+            ->once()
+            ->withArgs(function ($product, $warehouse, $quantity, $unitCost, $notes, $sourceType, $sourceId) {
+                return $product instanceof Product
+                    && $warehouse instanceof Warehouse
+                    && is_int($quantity)
+                    && is_int($unitCost)
+                    && $sourceType === DeliveryOrder::class;
+            });
+
+        $journalService = $this->mock(JournalServiceInterface::class);
+        $journalService->shouldReceive('reverseEntry')->never();
+
+        $service = app(DeliveryOrderServiceInterface::class);
+
+        $do = DeliveryOrder::factory()
+            ->has(DeliveryOrderItem::factory()->state(['product_id' => $this->product->id]), 'items')
+            ->shipped()
+            ->create(['warehouse_id' => $this->warehouse->id]);
+
+        $result = $service->reverseShipment($do, 'Faktur dibatalkan');
+
+        expect($result->status)->toBe(DocumentStatus::Cancelled);
+        expect($result->cancellation_reason)->toBe('Faktur dibatalkan');
+    });
+
+    test('reverses COGS JE during shipment reversal', function () {
+        $inventoryService = $this->mock(InventoryServiceInterface::class);
+        $inventoryService->shouldReceive('stockIn')->once();
+
+        $cogsJe = JournalEntry::factory()->create([
+            'source_type' => DeliveryOrder::class,
+            'is_reversed' => false,
+            'is_posted' => true,
+        ]);
+
+        $journalService = $this->mock(JournalServiceInterface::class);
+        $journalService->shouldReceive('reverseEntry')
+            ->once()
+            ->withArgs(function ($je, $description) use ($cogsJe) {
+                return $je->id === $cogsJe->id
+                    && str_contains($description, 'Pembatalan pengiriman');
+            });
+
+        $service = app(DeliveryOrderServiceInterface::class);
+
+        $do = DeliveryOrder::factory()
+            ->has(DeliveryOrderItem::factory()->state(['product_id' => $this->product->id]), 'items')
+            ->shipped()
+            ->create(['warehouse_id' => $this->warehouse->id]);
+
+        // Link the COGS JE to this DO
+        $cogsJe->update(['source_id' => $do->id]);
+
+        $service->reverseShipment($do, 'Test COGS reversal');
+
+        expect($do->fresh()->status)->toBe(DocumentStatus::Cancelled);
+    });
+
+    test('cannot reverse shipment of delivered DO', function () {
+        $do = DeliveryOrder::factory()
+            ->has(DeliveryOrderItem::factory(), 'items')
+            ->delivered()
+            ->create();
+
+        $this->service->reverseShipment($do, 'Should fail');
+    })->throws(StateTransitionException::class);
+
+    test('cannot reverse shipment of draft DO', function () {
+        $do = DeliveryOrder::factory()
+            ->has(DeliveryOrderItem::factory(), 'items')
+            ->draft()
+            ->create();
+
+        $this->service->reverseShipment($do, 'Should fail');
+    })->throws(StateTransitionException::class);
 });
