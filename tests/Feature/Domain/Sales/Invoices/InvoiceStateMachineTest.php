@@ -128,7 +128,7 @@ describe('InvoiceStateMachine guards', function () {
             ->sent()
             ->create();
 
-        $invoice->update(['paid_amount' => $invoice->total_amount]);
+        $invoice->forceFill(['paid_amount' => $invoice->total_amount])->save();
 
         $stateMachine = InvoiceStateMachine::fromInvoice($invoice);
 
@@ -174,7 +174,7 @@ describe('InvoiceStateMachine guards', function () {
             ->sent()
             ->create();
 
-        $invoice->update(['paid_amount' => (int) ($invoice->total_amount * 0.5)]);
+        $invoice->forceFill(['paid_amount' => (int) ($invoice->total_amount * 0.5)])->save();
 
         $stateMachine = InvoiceStateMachine::fromInvoice($invoice);
 
@@ -256,7 +256,7 @@ describe('InvoiceStateMachine workflow metadata', function () {
             ->sent()
             ->create(['due_date' => now()->subDay()]);
 
-        $invoice->update(['paid_amount' => (int) ($invoice->total_amount * 0.5)]);
+        $invoice->forceFill(['paid_amount' => (int) ($invoice->total_amount * 0.5)])->save();
 
         $stateMachine = InvoiceStateMachine::fromInvoice($invoice);
         $metadata = $stateMachine->getWorkflowMetadata();
@@ -317,7 +317,7 @@ describe('InvoiceStateMachine business helpers', function () {
         $unpaidMachine = InvoiceStateMachine::fromInvoice($invoice);
         expect($unpaidMachine->canMarkAsPaid())->toBeFalse();
 
-        $invoice->update(['paid_amount' => $invoice->total_amount]);
+        $invoice->forceFill(['paid_amount' => $invoice->total_amount])->save();
         $paidMachine = InvoiceStateMachine::fromInvoice($invoice->fresh());
         expect($paidMachine->canMarkAsPaid())->toBeTrue();
     });
@@ -331,7 +331,7 @@ describe('InvoiceStateMachine business helpers', function () {
         $noPay = InvoiceStateMachine::fromInvoice($invoice);
         expect($noPay->canMarkAsPartial())->toBeFalse();
 
-        $invoice->update(['paid_amount' => (int) ($invoice->total_amount * 0.5)]);
+        $invoice->forceFill(['paid_amount' => (int) ($invoice->total_amount * 0.5)])->save();
         $partialPay = InvoiceStateMachine::fromInvoice($invoice->fresh());
         expect($partialPay->canMarkAsPartial())->toBeTrue();
     });

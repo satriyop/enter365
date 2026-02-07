@@ -292,8 +292,17 @@ describe('Sales Return Workflow', function () {
             ->assertJsonPath('data.status.value', 'cancelled');
     });
 
-    it('cannot cancel an approved sales return', function () {
+    it('can cancel an approved sales return (reverses side effects)', function () {
         $salesReturn = SalesReturn::factory()->approved()->create();
+
+        $response = $this->postJson("/api/v1/sales-returns/{$salesReturn->id}/cancel");
+
+        $response->assertOk()
+            ->assertJsonPath('data.status.value', 'cancelled');
+    });
+
+    it('cannot cancel a completed sales return', function () {
+        $salesReturn = SalesReturn::factory()->completed()->create();
 
         $response = $this->postJson("/api/v1/sales-returns/{$salesReturn->id}/cancel");
 
@@ -304,7 +313,7 @@ describe('Sales Return Workflow', function () {
 describe('Sales Return from Invoice', function () {
 
     it('can create sales return from invoice', function () {
-        $invoice = Invoice::factory()->create();
+        $invoice = Invoice::factory()->sent()->create();
         InvoiceItem::factory()->for($invoice)->count(2)->create();
 
         $response = $this->postJson("/api/v1/invoices/{$invoice->id}/create-sales-return", [

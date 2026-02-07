@@ -23,7 +23,7 @@ describe('InvoicePaymentService - recordPayment', function () {
 
     it('records payment and updates paid_amount', function () {
         $invoice = createSentInvoice();
-        $invoice->update(['total_amount' => 1000000, 'paid_amount' => 0]);
+        $invoice->forceFill(['total_amount' => 1000000, 'paid_amount' => 0])->save();
 
         $result = $this->service->recordPayment($invoice, 300000);
 
@@ -32,7 +32,7 @@ describe('InvoicePaymentService - recordPayment', function () {
 
     it('transitions status to partial on partial payment', function () {
         $invoice = createSentInvoice();
-        $invoice->update(['total_amount' => 1000000, 'paid_amount' => 0]);
+        $invoice->forceFill(['total_amount' => 1000000, 'paid_amount' => 0])->save();
 
         $result = $this->service->recordPayment($invoice, 500000);
 
@@ -41,7 +41,7 @@ describe('InvoicePaymentService - recordPayment', function () {
 
     it('transitions status to paid on full payment', function () {
         $invoice = createSentInvoice();
-        $invoice->update(['total_amount' => 1000000, 'paid_amount' => 0]);
+        $invoice->forceFill(['total_amount' => 1000000, 'paid_amount' => 0])->save();
 
         $result = $this->service->recordPayment($invoice, 1000000);
 
@@ -50,7 +50,7 @@ describe('InvoicePaymentService - recordPayment', function () {
 
     it('can record multiple payments', function () {
         $invoice = createSentInvoice();
-        $invoice->update(['total_amount' => 1000000, 'paid_amount' => 0]);
+        $invoice->forceFill(['total_amount' => 1000000, 'paid_amount' => 0])->save();
 
         $this->service->recordPayment($invoice, 300000);
         $this->service->recordPayment($invoice, 200000);
@@ -66,7 +66,7 @@ describe('InvoicePaymentService - reversePayment', function () {
 
     it('reverses payment and decreases paid_amount', function () {
         $invoice = createSentInvoice();
-        $invoice->update(['total_amount' => 1000000, 'paid_amount' => 600000]);
+        $invoice->forceFill(['total_amount' => 1000000, 'paid_amount' => 600000])->save();
 
         $result = $this->service->reversePayment($invoice, 200000);
 
@@ -75,11 +75,11 @@ describe('InvoicePaymentService - reversePayment', function () {
 
     it('transitions status from paid to partial after reversal', function () {
         $invoice = createSentInvoice();
-        $invoice->update([
+        $invoice->forceFill([
             'total_amount' => 1000000,
             'paid_amount' => 1000000,
             'status' => DocumentStatus::Paid,
-        ]);
+        ])->save();
 
         $result = $this->service->reversePayment($invoice, 300000);
 
@@ -89,11 +89,11 @@ describe('InvoicePaymentService - reversePayment', function () {
 
     it('transitions status to sent when all payments reversed', function () {
         $invoice = createSentInvoice();
-        $invoice->update([
+        $invoice->forceFill([
             'total_amount' => 1000000,
             'paid_amount' => 500000,
             'status' => DocumentStatus::Partial,
-        ]);
+        ])->save();
 
         $result = $this->service->reversePayment($invoice, 500000);
 
@@ -103,7 +103,7 @@ describe('InvoicePaymentService - reversePayment', function () {
 
     it('does not allow negative paid_amount', function () {
         $invoice = createSentInvoice();
-        $invoice->update(['total_amount' => 1000000, 'paid_amount' => 200000]);
+        $invoice->forceFill(['total_amount' => 1000000, 'paid_amount' => 200000])->save();
 
         $result = $this->service->reversePayment($invoice, 500000);
 
@@ -116,7 +116,7 @@ describe('InvoicePaymentService - updatePaymentStatus', function () {
 
     it('updates status based on paid_amount', function () {
         $invoice = createSentInvoice();
-        $invoice->update(['total_amount' => 1000000, 'paid_amount' => 0]);
+        $invoice->forceFill(['total_amount' => 1000000, 'paid_amount' => 0])->save();
 
         $invoice->paid_amount = 400000;
         $invoice->save();
@@ -128,7 +128,7 @@ describe('InvoicePaymentService - updatePaymentStatus', function () {
 
     it('sets status to paid when fully paid', function () {
         $invoice = createSentInvoice();
-        $invoice->update(['total_amount' => 1000000, 'paid_amount' => 0]);
+        $invoice->forceFill(['total_amount' => 1000000, 'paid_amount' => 0])->save();
 
         $invoice->paid_amount = 1000000;
         $invoice->save();
@@ -144,10 +144,10 @@ describe('InvoicePaymentService - markAsOverdue', function () {
 
     it('marks sent invoice as overdue', function () {
         $invoice = createSentInvoice();
-        $invoice->update([
+        $invoice->forceFill([
             'due_date' => now()->subDays(5),
             'status' => DocumentStatus::Sent,
-        ]);
+        ])->save();
 
         $result = $this->service->markAsOverdue($invoice);
 
@@ -159,10 +159,10 @@ describe('InvoicePaymentService - markAsOverdue', function () {
 
     it('marks partial invoice as overdue', function () {
         $invoice = createSentInvoice();
-        $invoice->update([
+        $invoice->forceFill([
             'due_date' => now()->subDays(5),
             'status' => DocumentStatus::Partial,
-        ]);
+        ])->save();
 
         $result = $this->service->markAsOverdue($invoice);
 
@@ -171,10 +171,10 @@ describe('InvoicePaymentService - markAsOverdue', function () {
 
     it('does not mark paid invoice as overdue', function () {
         $invoice = createSentInvoice();
-        $invoice->update([
+        $invoice->forceFill([
             'due_date' => now()->subDays(5),
             'status' => DocumentStatus::Paid,
-        ]);
+        ])->save();
 
         $result = $this->service->markAsOverdue($invoice);
 
@@ -183,10 +183,10 @@ describe('InvoicePaymentService - markAsOverdue', function () {
 
     it('does not mark cancelled invoice as overdue', function () {
         $invoice = createSentInvoice();
-        $invoice->update([
+        $invoice->forceFill([
             'due_date' => now()->subDays(5),
             'status' => DocumentStatus::Cancelled,
-        ]);
+        ])->save();
 
         $result = $this->service->markAsOverdue($invoice);
 
@@ -209,11 +209,11 @@ describe('InvoicePaymentService - early payment discount', function () {
 
     it('calculates early payment discount', function () {
         $invoice = createSentInvoice();
-        $invoice->update([
+        $invoice->forceFill([
             'total_amount' => 1000000,
             'early_discount_percent' => 5,
             'early_discount_days' => 10,
-        ]);
+        ])->save();
 
         $discount = $this->service->calculateEarlyDiscount($invoice);
 
@@ -222,11 +222,11 @@ describe('InvoicePaymentService - early payment discount', function () {
 
     it('returns zero discount when no early discount configured', function () {
         $invoice = createSentInvoice();
-        $invoice->update([
+        $invoice->forceFill([
             'total_amount' => 1000000,
             'early_discount_percent' => 0,
             'early_discount_days' => 0,
-        ]);
+        ])->save();
 
         $discount = $this->service->calculateEarlyDiscount($invoice);
 
@@ -235,11 +235,11 @@ describe('InvoicePaymentService - early payment discount', function () {
 
     it('calculates early payment total with discount', function () {
         $invoice = createSentInvoice();
-        $invoice->update([
+        $invoice->forceFill([
             'total_amount' => 1000000,
             'early_discount_percent' => 10,
             'early_discount_days' => 7,
-        ]);
+        ])->save();
 
         $total = $this->service->getEarlyPaymentTotal($invoice);
 
@@ -252,12 +252,12 @@ describe('InvoicePaymentService - getPaymentSummary', function () {
 
     it('returns complete payment summary', function () {
         $invoice = createSentInvoice();
-        $invoice->update([
+        $invoice->forceFill([
             'total_amount' => 1000000,
             'paid_amount' => 400000,
             'status' => DocumentStatus::Partial,
             'due_date' => now()->subDays(3),
-        ]);
+        ])->save();
 
         $summary = $this->service->getPaymentSummary($invoice);
 
@@ -272,13 +272,13 @@ describe('InvoicePaymentService - getPaymentSummary', function () {
 
     it('includes early discount information in summary', function () {
         $invoice = createSentInvoice();
-        $invoice->update([
+        $invoice->forceFill([
             'total_amount' => 1000000,
             'paid_amount' => 0,
             'early_discount_percent' => 5,
             'early_discount_days' => 10,
             'invoice_date' => now()->subDays(2),
-        ]);
+        ])->save();
 
         $summary = $this->service->getPaymentSummary($invoice);
 
@@ -288,11 +288,11 @@ describe('InvoicePaymentService - getPaymentSummary', function () {
 
     it('shows zero outstanding for fully paid invoice', function () {
         $invoice = createSentInvoice();
-        $invoice->update([
+        $invoice->forceFill([
             'total_amount' => 1000000,
             'paid_amount' => 1000000,
             'status' => DocumentStatus::Paid,
-        ]);
+        ])->save();
 
         $summary = $this->service->getPaymentSummary($invoice);
 
@@ -302,11 +302,11 @@ describe('InvoicePaymentService - getPaymentSummary', function () {
 
     it('shows correct overdue status', function () {
         $invoice = createSentInvoice();
-        $invoice->update([
+        $invoice->forceFill([
             'total_amount' => 1000000,
             'paid_amount' => 0,
             'due_date' => now()->addDays(5),
-        ]);
+        ])->save();
 
         $summary = $this->service->getPaymentSummary($invoice);
 
@@ -320,7 +320,7 @@ describe('InvoicePaymentService - edge cases', function () {
 
     it('handles overpayment scenario', function () {
         $invoice = createSentInvoice();
-        $invoice->update(['total_amount' => 1000000, 'paid_amount' => 0]);
+        $invoice->forceFill(['total_amount' => 1000000, 'paid_amount' => 0])->save();
 
         // Record overpayment
         $invoice->paid_amount = 1200000;
@@ -333,7 +333,7 @@ describe('InvoicePaymentService - edge cases', function () {
 
     it('handles zero amount invoice', function () {
         $invoice = createSentInvoice();
-        $invoice->update(['total_amount' => 0, 'paid_amount' => 0]);
+        $invoice->forceFill(['total_amount' => 0, 'paid_amount' => 0])->save();
 
         $summary = $this->service->getPaymentSummary($invoice);
 
@@ -343,7 +343,7 @@ describe('InvoicePaymentService - edge cases', function () {
 
     it('handles multiple partial payments correctly', function () {
         $invoice = createSentInvoice();
-        $invoice->update(['total_amount' => 1000000, 'paid_amount' => 0]);
+        $invoice->forceFill(['total_amount' => 1000000, 'paid_amount' => 0])->save();
 
         // First payment
         $this->service->recordPayment($invoice, 200000);

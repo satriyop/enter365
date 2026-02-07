@@ -301,7 +301,7 @@ describe('SalesReturnStateMachine events', function () {
 
         $stateMachine->transitionTo(DocumentStatus::Cancelled, [
             'user_id' => $this->user->id,
-            'reason' => 'Customer changed mind',
+            'cancellation_reason' => 'Customer changed mind',
         ]);
 
         expect($eventDispatcher->dispatchCount(SalesReturnCancelled::class))->toBe(1);
@@ -322,7 +322,7 @@ describe('SalesReturnStateMachine events', function () {
 
         $stateMachine->transitionTo(DocumentStatus::Cancelled, [
             'user_id' => $this->user->id,
-            'reason' => 'Processing error',
+            'cancellation_reason' => 'Processing error',
         ]);
 
         expect($eventDispatcher->dispatchCount(SalesReturnCancelled::class))->toBe(1);
@@ -339,7 +339,7 @@ describe('SalesReturnStateMachine events', function () {
 
         $stateMachine->transitionTo(DocumentStatus::Cancelled, [
             'user_id' => $this->user->id,
-            'reason' => 'Stock not available for replacement',
+            'cancellation_reason' => 'Stock not available for replacement',
         ]);
 
         expect($eventDispatcher->dispatchCount(SalesReturnCancelled::class))->toBe(1);

@@ -135,7 +135,7 @@ class InvoiceResource extends JsonResource
     /**
      * Format money amount in Indonesian Rupiah format.
      */
-    private function formatMoney(int $amount): string
+    private function formatMoney(?int $amount): string
     {
         $currencyPrefixes = [
             'IDR' => 'Rp ',
@@ -146,6 +146,6 @@ class InvoiceResource extends JsonResource
 
         $prefix = $currencyPrefixes[$this->currency] ?? $this->currency.' ';
 
-        return $prefix.number_format($amount, 0, ',', '.');
+        return $prefix.number_format($amount ?? 0, 0, ',', '.');
     }
 }
