@@ -63,6 +63,7 @@ function createRequiredAccounts(array $codes = []): array
         '1-1400' => ['name' => 'Persediaan', 'type' => Account::TYPE_ASSET, 'subtype' => Account::SUBTYPE_CURRENT_ASSET],
         '2-1100' => ['name' => 'Utang Usaha', 'type' => Account::TYPE_LIABILITY, 'factory' => 'accountsPayable'],
         '2-1200' => ['name' => 'PPN Keluaran', 'type' => Account::TYPE_LIABILITY, 'factory' => 'taxPayable'],
+        '2-1300' => ['name' => 'Barang Diterima Belum Ditagih', 'type' => Account::TYPE_LIABILITY, 'subtype' => Account::SUBTYPE_CURRENT_LIABILITY],
         '4-1001' => ['name' => 'Pendapatan Penjualan', 'type' => Account::TYPE_REVENUE, 'factory' => 'salesRevenue'],
         '5-1001' => ['name' => 'Harga Pokok Penjualan', 'type' => Account::TYPE_EXPENSE, 'subtype' => Account::SUBTYPE_OPERATING_EXPENSE],
         '4-2001' => ['name' => 'Retur Penjualan', 'type' => Account::TYPE_REVENUE, 'subtype' => Account::SUBTYPE_OPERATING_REVENUE],
@@ -342,7 +343,7 @@ describe('Inventory Workflow: Stock Opname lifecycle', function () {
 
 describe('Complete Purchasing Cycle: PO → GRN → Bill → Payment', function () {
     test('full purchasing workflow with inventory, journal entries, and payment', function () {
-        $accounts = createRequiredAccounts(['1-1002', '2-1100', '1-1300', '5-1002', '1-1100']);
+        $accounts = createRequiredAccounts(['1-1002', '2-1100', '2-1300', '1-1300', '5-1002', '1-1100']);
 
         $vendor = Contact::factory()->vendor()->create();
         $warehouse = Warehouse::factory()->create();
@@ -471,6 +472,7 @@ describe('Complete Purchasing Cycle: PO → GRN → Bill → Payment', function 
             ->and($billDebit)->toBeGreaterThan(0);
 
         // Assert: Journal has DR Expense (5-1002) and CR AP (2-1100)
+        // In hybrid mode (default), bill debits expense; only perpetual mode uses GRNI
         $billAccountCodes = $billJournal->lines->pluck('account.code')->sort()->values()->all();
         expect($billAccountCodes)->toContain('5-1002')
             ->and($billAccountCodes)->toContain('2-1100');
@@ -982,7 +984,7 @@ describe('Sales Return Cycle: Invoice → Return → Inventory Reversal', functi
 
 describe('Purchase Return Cycle: Bill → Return → Inventory Adjustment', function () {
     test('full purchase return workflow with inventory reduction and journal entries', function () {
-        $accounts = createRequiredAccounts(['1-1002', '1-1300', '1-1400', '2-1100', '5-1002', '5-2001']);
+        $accounts = createRequiredAccounts(['1-1002', '1-1300', '1-1400', '2-1100', '2-1300', '5-1002', '5-2001']);
 
         $vendor = Contact::factory()->vendor()->create();
         $warehouse = Warehouse::factory()->create();
@@ -1186,7 +1188,7 @@ describe('Partial Payment Cycle: Invoice → 60% → 40% → Paid', function () 
 
 describe('Partial GRN Cycle: PO → Partial Receive → Full Receive → Bill', function () {
     test('multi-receipt receiving transitions PO through Approved → Partial → Received', function () {
-        $accounts = createRequiredAccounts(['1-1002', '1-1300', '1-1400', '2-1100', '5-1002']);
+        $accounts = createRequiredAccounts(['1-1002', '1-1300', '1-1400', '2-1100', '2-1300', '5-1002']);
 
         $vendor = Contact::factory()->vendor()->create();
         $warehouse = Warehouse::factory()->create();

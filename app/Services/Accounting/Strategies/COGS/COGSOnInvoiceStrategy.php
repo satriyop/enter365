@@ -7,9 +7,9 @@ namespace App\Services\Accounting\Strategies\COGS;
 use App\Contracts\Accounting\JournalServiceInterface;
 use App\Contracts\Accounting\Strategies\COGSRecognitionStrategy;
 use App\Models\Accounting\JournalEntry;
-use App\Models\Inventory\ProductStock;
 use App\Models\Sales\DeliveryOrder;
 use App\Models\Sales\Invoice;
+use Illuminate\Support\Facades\DB;
 
 /**
  * COGS recognition on invoice post strategy.
@@ -94,10 +94,18 @@ class COGSOnInvoiceStrategy implements COGSRecognitionStrategy
                 continue;
             }
 
-            // Use weighted average cost from inventory
-            $unitCost = ProductStock::where('product_id', $product->id)
+            // Use company-wide weighted average cost across all warehouses
+            $weightedAvg = DB::table('product_stocks')
+                ->where('product_id', $product->id)
+                ->where('quantity', '>', 0)
                 ->where('average_cost', '>', 0)
-                ->value('average_cost') ?? $product->purchase_price ?? 0;
+                ->selectRaw('SUM(quantity * average_cost) as total_value, SUM(quantity) as total_qty')
+                ->first();
+
+            $unitCost = ($weightedAvg && $weightedAvg->total_qty > 0)
+                ? (int) round($weightedAvg->total_value / $weightedAvg->total_qty)
+                : ($product->purchase_price ?? 0);
+
             $totalCOGS += (int) round($item->quantity * $unitCost);
         }
 

@@ -21,6 +21,7 @@ class JournalService extends BaseService implements JournalServiceInterface
 {
     public function __construct(
         private AccountLookupServiceInterface $accountLookup,
+        private AccountingPolicyManager $policyManager,
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger
     ) {
@@ -283,6 +284,9 @@ class JournalService extends BaseService implements JournalServiceInterface
 
     /**
      * Create journal entry for a bill when posted.
+     *
+     * In perpetual/hybrid inventory mode, inventory-tracked items debit GRNI
+     * (clearing the liability created at GRN time) instead of Expense.
      */
     public function postBill(Bill $bill): JournalEntry
     {
@@ -293,27 +297,46 @@ class JournalService extends BaseService implements JournalServiceInterface
             );
         }
 
+        $bill->loadMissing(['items.product']);
+
+        // Only perpetual mode creates GRN→GRNI journal entries that need clearing
+        $inventoryStrategy = $this->policyManager->inventory()->getIdentifier();
+        $usesGrni = $inventoryStrategy === 'perpetual';
+
         // Fail-fast: validate required accounts exist
         $requiredCodes = ['2-1100', '1-1300', '5-1002'];
+        if ($usesGrni) {
+            $requiredCodes[] = '2-1300'; // GRNI account
+        }
         $accounts = $this->accountLookup->findByCodesOrFail($requiredCodes, 'posting bill');
 
         $payableAccount = $bill->payableAccount ?? $accounts->get('2-1100');
         $taxReceivableAccount = $accounts->get('1-1300'); // PPN Masukan
         $defaultExpenseAccount = $accounts->get('5-1002'); // Pembelian
+        $grniAccount = $usesGrni ? $accounts->get('2-1300') : null; // GRNI
 
         $lines = [];
 
-        // Debit: Expense accounts (per item)
-        $expenseByAccount = [];
+        // Debit: Expense or GRNI accounts (per item)
+        $debitByAccount = [];
         foreach ($bill->items as $item) {
-            $accountId = $item->expense_account_id ?? $defaultExpenseAccount->id;
-            if (! isset($expenseByAccount[$accountId])) {
-                $expenseByAccount[$accountId] = 0;
+            $isInventoryItem = $usesGrni
+                && $item->product_id
+                && $item->product
+                && $item->product->track_inventory;
+
+            // Inventory items clear GRNI; non-inventory items go to Expense
+            $accountId = $isInventoryItem
+                ? $grniAccount->id
+                : ($item->expense_account_id ?? $defaultExpenseAccount->id);
+
+            if (! isset($debitByAccount[$accountId])) {
+                $debitByAccount[$accountId] = 0;
             }
-            $expenseByAccount[$accountId] += $item->line_total;
+            $debitByAccount[$accountId] += $item->line_total;
         }
 
-        foreach ($expenseByAccount as $accountId => $amount) {
+        foreach ($debitByAccount as $accountId => $amount) {
             $lines[] = [
                 'account_id' => $accountId,
                 'description' => 'Pembelian '.$bill->bill_number,
