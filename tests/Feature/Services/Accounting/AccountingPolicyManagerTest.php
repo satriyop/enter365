@@ -8,15 +8,20 @@ use App\Contracts\Accounting\Strategies\InventoryAccountingStrategy;
 use App\Contracts\Accounting\Strategies\ManufacturingCostStrategy;
 use App\Contracts\Accounting\Strategies\ReturnAccountingStrategy;
 use App\Exceptions\Domain\BusinessRuleException;
+use App\Models\Accounting\AccountingPolicy;
 use App\Services\Accounting\AccountingPolicyManager;
 use App\Services\Accounting\Strategies\COGS\COGSOnInvoiceStrategy;
 use App\Services\Accounting\Strategies\Inventory\HybridInventoryStrategy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Once;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
     authenticatedAdmin();
+
+    // Flush once() cache so each test starts with a clean slate
+    Once::flush();
 
     $this->manager = app(AccountingPolicyManager::class);
 });
@@ -24,8 +29,7 @@ beforeEach(function () {
 describe('AccountingPolicyManager - inventory', function () {
 
     it('returns configured inventory strategy', function () {
-        config(['accounting.policies.inventory_method' => 'hybrid']);
-
+        // DB default is 'hybrid' — no update needed
         $strategy = $this->manager->inventory();
 
         expect($strategy)->toBeInstanceOf(InventoryAccountingStrategy::class)
@@ -33,7 +37,7 @@ describe('AccountingPolicyManager - inventory', function () {
     });
 
     it('returns perpetual strategy when configured', function () {
-        config(['accounting.policies.inventory_method' => 'perpetual']);
+        AccountingPolicy::query()->update(['inventory_method' => 'perpetual']);
 
         $strategy = $this->manager->inventory();
 
@@ -41,7 +45,7 @@ describe('AccountingPolicyManager - inventory', function () {
     });
 
     it('returns periodic strategy when configured', function () {
-        config(['accounting.policies.inventory_method' => 'periodic']);
+        AccountingPolicy::query()->update(['inventory_method' => 'periodic']);
 
         $strategy = $this->manager->inventory();
 
@@ -49,7 +53,7 @@ describe('AccountingPolicyManager - inventory', function () {
     });
 
     it('throws exception for unknown inventory method', function () {
-        config(['accounting.policies.inventory_method' => 'invalid_method']);
+        AccountingPolicy::query()->update(['inventory_method' => 'invalid_method']);
 
         $this->manager->inventory();
     })->throws(BusinessRuleException::class, 'Unknown inventory method');
@@ -59,8 +63,7 @@ describe('AccountingPolicyManager - inventory', function () {
 describe('AccountingPolicyManager - cogs', function () {
 
     it('returns configured COGS recognition strategy', function () {
-        config(['accounting.policies.cogs_recognition' => 'on_invoice']);
-
+        // DB default is 'on_invoice' — no update needed
         $strategy = $this->manager->cogs();
 
         expect($strategy)->toBeInstanceOf(COGSRecognitionStrategy::class)
@@ -68,7 +71,7 @@ describe('AccountingPolicyManager - cogs', function () {
     });
 
     it('returns on_delivery strategy when configured', function () {
-        config(['accounting.policies.cogs_recognition' => 'on_delivery']);
+        AccountingPolicy::query()->update(['cogs_recognition' => 'on_delivery']);
 
         $strategy = $this->manager->cogs();
 
@@ -76,7 +79,7 @@ describe('AccountingPolicyManager - cogs', function () {
     });
 
     it('returns manual strategy when configured', function () {
-        config(['accounting.policies.cogs_recognition' => 'manual']);
+        AccountingPolicy::query()->update(['cogs_recognition' => 'manual']);
 
         $strategy = $this->manager->cogs();
 
@@ -84,7 +87,7 @@ describe('AccountingPolicyManager - cogs', function () {
     });
 
     it('throws exception for unknown COGS method', function () {
-        config(['accounting.policies.cogs_recognition' => 'invalid_cogs']);
+        AccountingPolicy::query()->update(['cogs_recognition' => 'invalid_cogs']);
 
         $this->manager->cogs();
     })->throws(BusinessRuleException::class, 'Unknown COGS recognition method');
@@ -94,8 +97,7 @@ describe('AccountingPolicyManager - cogs', function () {
 describe('AccountingPolicyManager - returns', function () {
 
     it('returns configured return accounting strategy', function () {
-        config(['accounting.policies.return_accounting' => 'full_journal']);
-
+        // DB default is 'full_journal' — no update needed
         $strategy = $this->manager->returns();
 
         expect($strategy)->toBeInstanceOf(ReturnAccountingStrategy::class)
@@ -103,7 +105,7 @@ describe('AccountingPolicyManager - returns', function () {
     });
 
     it('returns inventory_only strategy when configured', function () {
-        config(['accounting.policies.return_accounting' => 'inventory_only']);
+        AccountingPolicy::query()->update(['return_accounting' => 'inventory_only']);
 
         $strategy = $this->manager->returns();
 
@@ -111,7 +113,7 @@ describe('AccountingPolicyManager - returns', function () {
     });
 
     it('throws exception for unknown return method', function () {
-        config(['accounting.policies.return_accounting' => 'invalid_return']);
+        AccountingPolicy::query()->update(['return_accounting' => 'invalid_return']);
 
         $this->manager->returns();
     })->throws(BusinessRuleException::class, 'Unknown return accounting method');
@@ -121,8 +123,7 @@ describe('AccountingPolicyManager - returns', function () {
 describe('AccountingPolicyManager - manufacturing', function () {
 
     it('returns configured manufacturing cost strategy', function () {
-        config(['accounting.policies.manufacturing_costing' => 'project_based']);
-
+        // DB default is 'project_based' — no update needed
         $strategy = $this->manager->manufacturing();
 
         expect($strategy)->toBeInstanceOf(ManufacturingCostStrategy::class)
@@ -130,7 +131,7 @@ describe('AccountingPolicyManager - manufacturing', function () {
     });
 
     it('returns job_costing strategy when configured', function () {
-        config(['accounting.policies.manufacturing_costing' => 'job_costing']);
+        AccountingPolicy::query()->update(['manufacturing_costing' => 'job_costing']);
 
         $strategy = $this->manager->manufacturing();
 
@@ -138,7 +139,7 @@ describe('AccountingPolicyManager - manufacturing', function () {
     });
 
     it('returns wip_accounting strategy when configured', function () {
-        config(['accounting.policies.manufacturing_costing' => 'wip_accounting']);
+        AccountingPolicy::query()->update(['manufacturing_costing' => 'wip_accounting']);
 
         $strategy = $this->manager->manufacturing();
 
@@ -146,7 +147,7 @@ describe('AccountingPolicyManager - manufacturing', function () {
     });
 
     it('throws exception for unknown manufacturing method', function () {
-        config(['accounting.policies.manufacturing_costing' => 'invalid_manufacturing']);
+        AccountingPolicy::query()->update(['manufacturing_costing' => 'invalid_manufacturing']);
 
         $this->manager->manufacturing();
     })->throws(BusinessRuleException::class, 'Unknown manufacturing costing method');
@@ -156,8 +157,7 @@ describe('AccountingPolicyManager - manufacturing', function () {
 describe('AccountingPolicyManager - closing', function () {
 
     it('returns configured closing strategy', function () {
-        config(['accounting.policies.closing_strategy' => 'direct']);
-
+        // DB default is 'direct' — no update needed
         $strategy = $this->manager->closing();
 
         expect($strategy)->toBeInstanceOf(ClosingStrategy::class)
@@ -165,7 +165,7 @@ describe('AccountingPolicyManager - closing', function () {
     });
 
     it('returns income_summary strategy when configured', function () {
-        config(['accounting.policies.closing_strategy' => 'income_summary']);
+        AccountingPolicy::query()->update(['closing_strategy' => 'income_summary']);
 
         $strategy = $this->manager->closing();
 
@@ -173,7 +173,7 @@ describe('AccountingPolicyManager - closing', function () {
     });
 
     it('throws exception for unknown closing method', function () {
-        config(['accounting.policies.closing_strategy' => 'invalid_closing']);
+        AccountingPolicy::query()->update(['closing_strategy' => 'invalid_closing']);
 
         $this->manager->closing();
     })->throws(BusinessRuleException::class, 'Unknown closing strategy');
@@ -183,12 +183,12 @@ describe('AccountingPolicyManager - closing', function () {
 describe('AccountingPolicyManager - getCurrentPolicies', function () {
 
     it('returns all current policy configurations', function () {
-        config([
-            'accounting.policies.inventory_method' => 'perpetual',
-            'accounting.policies.cogs_recognition' => 'on_delivery',
-            'accounting.policies.return_accounting' => 'inventory_only',
-            'accounting.policies.manufacturing_costing' => 'job_costing',
-            'accounting.policies.closing_strategy' => 'income_summary',
+        AccountingPolicy::query()->update([
+            'inventory_method' => 'perpetual',
+            'cogs_recognition' => 'on_delivery',
+            'return_accounting' => 'inventory_only',
+            'manufacturing_costing' => 'job_costing',
+            'closing_strategy' => 'income_summary',
         ]);
 
         $policies = $this->manager->getCurrentPolicies();
@@ -202,12 +202,8 @@ describe('AccountingPolicyManager - getCurrentPolicies', function () {
     });
 
     it('uses default values when config not set', function () {
-        // The config helper with a default value will return the default when key doesn't exist
-        // But when explicitly set to null, it returns null. So let's test that the defaults
-        // are applied by the service when the config is missing.
         $policies = $this->manager->getCurrentPolicies();
 
-        // The getCurrentPolicies method returns config values with defaults
         expect($policies)->toHaveKey('inventory_method')
             ->and($policies)->toHaveKey('cogs_recognition')
             ->and($policies)->toHaveKey('return_accounting')
@@ -220,7 +216,7 @@ describe('AccountingPolicyManager - getCurrentPolicies', function () {
 describe('AccountingPolicyManager - isPolicySet', function () {
 
     it('returns true when policy matches value', function () {
-        config(['accounting.policies.inventory_method' => 'perpetual']);
+        AccountingPolicy::query()->update(['inventory_method' => 'perpetual']);
 
         $result = $this->manager->isPolicySet('inventory_method', 'perpetual');
 
@@ -228,7 +224,7 @@ describe('AccountingPolicyManager - isPolicySet', function () {
     });
 
     it('returns false when policy does not match value', function () {
-        config(['accounting.policies.inventory_method' => 'perpetual']);
+        AccountingPolicy::query()->update(['inventory_method' => 'perpetual']);
 
         $result = $this->manager->isPolicySet('inventory_method', 'periodic');
 
@@ -236,11 +232,7 @@ describe('AccountingPolicyManager - isPolicySet', function () {
     });
 
     it('checks multiple policy types', function () {
-        config([
-            'accounting.policies.cogs_recognition' => 'on_invoice',
-            'accounting.policies.closing_strategy' => 'direct',
-        ]);
-
+        // DB defaults: cogs_recognition=on_invoice, closing_strategy=direct
         expect($this->manager->isPolicySet('cogs_recognition', 'on_invoice'))->toBeTrue()
             ->and($this->manager->isPolicySet('closing_strategy', 'direct'))->toBeTrue()
             ->and($this->manager->isPolicySet('cogs_recognition', 'manual'))->toBeFalse();
@@ -251,27 +243,24 @@ describe('AccountingPolicyManager - isPolicySet', function () {
 describe('AccountingPolicyManager - strategy resolution', function () {
 
     it('resolves strategies from Laravel container', function () {
-        config(['accounting.policies.inventory_method' => 'hybrid']);
-
+        // DB default is 'hybrid' — no update needed
         $strategy1 = $this->manager->inventory();
         $strategy2 = $this->manager->inventory();
 
-        // Both should be instances (container resolution working)
         expect($strategy1)->toBeInstanceOf(HybridInventoryStrategy::class)
             ->and($strategy2)->toBeInstanceOf(HybridInventoryStrategy::class);
     });
 
     it('can switch strategies dynamically', function () {
-        // Start with one strategy
-        config(['accounting.policies.cogs_recognition' => 'on_invoice']);
+        // Start with default (on_invoice)
         $strategy1 = $this->manager->cogs();
-
         expect($strategy1)->toBeInstanceOf(COGSOnInvoiceStrategy::class);
 
-        // Switch to different strategy
-        config(['accounting.policies.cogs_recognition' => 'on_delivery']);
-        $strategy2 = $this->manager->cogs();
+        // Switch to different strategy — flush once() cache so DB is re-read
+        AccountingPolicy::query()->update(['cogs_recognition' => 'on_delivery']);
+        Once::flush();
 
+        $strategy2 = $this->manager->cogs();
         expect($strategy2)->toBeInstanceOf(\App\Services\Accounting\Strategies\COGS\COGSOnDeliveryStrategy::class);
     });
 

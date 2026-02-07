@@ -36,7 +36,6 @@ class YearEndCloseService extends BaseService implements YearEndCloseServiceInte
     public function __construct(
         private AccountingPolicyManager $policyManager,
         private JournalService $journalService,
-        private AccountLookupService $accountLookup,
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger
     ) {
@@ -253,6 +252,16 @@ class YearEndCloseService extends BaseService implements YearEndCloseServiceInte
     public function rollbackClose(FiscalPeriod $period, ClosingProgress $progress): void
     {
         $this->executeInTransaction('rollback_close', function () use ($period, $progress) {
+            // Reset period status FIRST so reversal JEs can be created
+            // (createEntry blocks JEs in closed periods)
+            $period->update([
+                'status' => FiscalPeriodStatus::Open->value,
+                'is_locked' => false,
+                'is_closed' => false,
+                'closed_at' => null,
+                'closed_by' => null,
+            ]);
+
             // Reverse journal entries in reverse order
             $journalIds = array_reverse($progress->getJournalEntryIds());
 
@@ -265,15 +274,6 @@ class YearEndCloseService extends BaseService implements YearEndCloseServiceInte
                     );
                 }
             }
-
-            // Reset period status
-            $period->update([
-                'status' => FiscalPeriodStatus::Open->value,
-                'is_locked' => false,
-                'is_closed' => false,
-                'closed_at' => null,
-                'closed_by' => null,
-            ]);
         }, ['period_id' => $period->id]);
     }
 
@@ -503,6 +503,7 @@ class YearEndCloseService extends BaseService implements YearEndCloseServiceInte
      */
     protected function checkTrialBalance(FiscalPeriod $period): array
     {
+        /** @var object{total_debit: int, total_credit: int} $result */
         $result = JournalEntryLine::query()
             ->whereHas('journalEntry', function ($q) use ($period) {
                 $q->where('is_posted', true)
@@ -510,6 +511,7 @@ class YearEndCloseService extends BaseService implements YearEndCloseServiceInte
             })
             ->selectRaw('COALESCE(SUM(debit), 0) as total_debit')
             ->selectRaw('COALESCE(SUM(credit), 0) as total_credit')
+            ->toBase()
             ->first();
 
         $totalDebit = (int) $result->total_debit;

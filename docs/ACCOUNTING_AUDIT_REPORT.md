@@ -330,9 +330,15 @@ Every point where JEs are created in the system:
 
 13. ~~**M1-M4** — Medium-severity items (batch 1)~~ — FIXED `ea29f35`
 14. ~~**M5-M8** — Medium-severity items (batch 2)~~ — FIXED `e299203`
-15. ~~**M9-M12** — Medium-severity items (batch 3)~~ — FIXED
+15. ~~**M9-M12** — Medium-severity items (batch 3)~~ — FIXED `964dd8f`
 
-**Bonus fix:** `FiscalPeriodService::reopenPeriod()` — reordered to update period status to Open BEFORE reversing closing entry (previously blocked by closed-period JE creation check)
+**Bonus fixes (audit-adjacent):**
+
+| Fix | Root Cause | Resolution |
+|-----|-----------|------------|
+| `FiscalPeriodService::reopenPeriod()` | Reversed closing JE **before** opening period — blocked by closed-period JE guard | Reordered: save closing entry ref → update status to Open → reverse JE. Fixed in `964dd8f` |
+| `YearEndCloseService::rollbackClose()` | Same ordering bug as `reopenPeriod()` — reversed JEs while period still Closed | Reordered: update period status to Open first, then reverse JEs |
+| `AccountingPolicyManagerTest` (16 tests) | Tests used `config([...])` to switch strategies, but `getPolicyValue()` reads DB first via `once()`-cached `AccountingPolicy::current()`. Migration seeds a default DB row, so config fallback was never reached | Replaced `config([...])` with `AccountingPolicy::query()->update([...])`. Added `Once::flush()` in `beforeEach` and for mid-test policy switching |
 
 ---
 
@@ -526,6 +532,8 @@ Graceful degradation — app works before `accounting_policies` table exists.
 - `unreconciled_bank` → warning
 - `required_accounts` → blocking
 - `trial_balance` → blocking
+
+**Ordering Fix:** `rollbackClose()` now updates period status to Open **before** reversing JEs (same pattern as `reopenPeriod()` fix).
 
 **Missing:** No optimistic locking — two users closing same period simultaneously could conflict.
 
