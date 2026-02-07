@@ -26995,15 +26995,13 @@
                                             "integer",
                                             "null"
                                         ],
-                                        "description": "Min Rp 5 juta for B2B",
                                         "minimum": 5500
                                     },
                                     "pln_category": {
                                         "type": [
                                             "string",
                                             "null"
-                                        ],
-                                        "description": "Min 5.5 kVA for B2B"
+                                        ]
                                     },
                                     "target_savings": {
                                         "type": [
@@ -50157,7 +50155,10 @@
                         "type": "integer"
                     },
                     "remaining_amount": {
-                        "type": "integer"
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
                     },
                     "payment_method": {
                         "type": "string"
@@ -53120,16 +53121,16 @@
                             "type": "object",
                             "properties": {
                                 "id": {
-                                    "type": "string"
+                                    "type": "integer"
                                 },
                                 "allocatable_type": {
                                     "type": "string"
                                 },
                                 "allocatable_id": {
-                                    "type": "string"
+                                    "type": "integer"
                                 },
                                 "amount": {
-                                    "type": "string"
+                                    "type": "integer"
                                 }
                             },
                             "required": [
