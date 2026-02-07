@@ -25,6 +25,8 @@ class SalesReturnController extends Controller
      */
     public function index(SalesReturnFilter $filter): AnonymousResourceCollection
     {
+        $this->authorize('viewAny', SalesReturn::class);
+
         $salesReturns = SalesReturn::query()
             ->with(['contact', 'invoice'])
             ->filter($filter)
@@ -38,6 +40,8 @@ class SalesReturnController extends Controller
      */
     public function store(StoreSalesReturnRequest $request): JsonResponse
     {
+        $this->authorize('create', SalesReturn::class);
+
         $data = $request->validated();
         $data['created_by'] = $request->user()?->id;
 
@@ -54,6 +58,8 @@ class SalesReturnController extends Controller
      */
     public function createFromInvoice(Request $request, Invoice $invoice): JsonResponse
     {
+        $this->authorize('create', SalesReturn::class);
+
         $data = $request->validate([
             'return_date' => ['sometimes', 'date'],
             'warehouse_id' => ['nullable', 'integer', 'exists:warehouses,id'],
@@ -76,6 +82,8 @@ class SalesReturnController extends Controller
      */
     public function show(SalesReturn $salesReturn, SalesReturnFilter $filter): SalesReturnResource
     {
+        $this->authorize('view', $salesReturn);
+
         $filter->apply($salesReturn->newQuery());
 
         $salesReturn->loadMissing(['items.product', 'contact', 'invoice', 'warehouse', 'creator', 'journalEntry']);
@@ -88,6 +96,8 @@ class SalesReturnController extends Controller
      */
     public function update(UpdateSalesReturnRequest $request, SalesReturn $salesReturn): JsonResponse
     {
+        $this->authorize('update', $salesReturn);
+
         $salesReturn = $this->salesReturnService->update($salesReturn, $request->validated());
 
         return response()->json([
@@ -101,6 +111,8 @@ class SalesReturnController extends Controller
      */
     public function destroy(SalesReturn $salesReturn): JsonResponse
     {
+        $this->authorize('delete', $salesReturn);
+
         $this->salesReturnService->delete($salesReturn);
 
         return response()->json(['message' => 'Retur penjualan berhasil dihapus.']);
@@ -111,6 +123,8 @@ class SalesReturnController extends Controller
      */
     public function submit(Request $request, SalesReturn $salesReturn): JsonResponse
     {
+        $this->authorize('update', $salesReturn);
+
         $salesReturn = $this->salesReturnService->submit(
             $salesReturn,
             $request->user()?->id
@@ -127,6 +141,8 @@ class SalesReturnController extends Controller
      */
     public function approve(Request $request, SalesReturn $salesReturn): JsonResponse
     {
+        $this->authorize('approve', $salesReturn);
+
         $salesReturn = $this->salesReturnService->approve(
             $salesReturn,
             $request->user()?->id
@@ -143,6 +159,8 @@ class SalesReturnController extends Controller
      */
     public function reject(Request $request, SalesReturn $salesReturn): JsonResponse
     {
+        $this->authorize('approve', $salesReturn);
+
         $data = $request->validate([
             'reason' => ['nullable', 'string', 'max:500'],
         ]);
@@ -164,6 +182,8 @@ class SalesReturnController extends Controller
      */
     public function complete(Request $request, SalesReturn $salesReturn): JsonResponse
     {
+        $this->authorize('update', $salesReturn);
+
         $salesReturn = $this->salesReturnService->complete(
             $salesReturn,
             $request->user()?->id
@@ -180,6 +200,8 @@ class SalesReturnController extends Controller
      */
     public function cancel(Request $request, SalesReturn $salesReturn): JsonResponse
     {
+        $this->authorize('delete', $salesReturn);
+
         $reason = $request->input('reason');
         $salesReturn = $this->salesReturnService->cancel($salesReturn, $reason);
 
@@ -194,6 +216,8 @@ class SalesReturnController extends Controller
      */
     public function forInvoice(Invoice $invoice): AnonymousResourceCollection
     {
+        $this->authorize('viewAny', SalesReturn::class);
+
         $salesReturns = $this->salesReturnService->getForInvoice($invoice);
 
         return SalesReturnResource::collection($salesReturns);
@@ -204,6 +228,8 @@ class SalesReturnController extends Controller
      */
     public function statistics(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', SalesReturn::class);
+
         $startDate = $request->get('start_date');
         $endDate = $request->get('end_date');
 

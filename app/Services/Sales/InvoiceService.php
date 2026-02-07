@@ -9,18 +9,21 @@ use App\Contracts\Accounting\Strategies\COGSRecognitionStrategy;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Sales\InvoiceServiceInterface;
+use App\Contracts\Shared\PaymentServiceInterface;
 use App\Domain\Sales\Invoices\Events\InvoiceFullyPaid;
 use App\Domain\Sales\Invoices\Events\InvoiceOverdue;
 use App\Domain\Sales\Invoices\Events\InvoicePartiallyPaid;
-use App\Domain\Sales\Invoices\Events\InvoiceSent;
-use App\Domain\Sales\Invoices\Events\InvoiceVoided;
 use App\Domain\Sales\Invoices\InvoiceDomainFactory;
 use App\Enums\DocumentStatus;
+use App\Exceptions\Domain\BusinessRuleException;
 use App\Exceptions\Domain\DocumentLockedException;
 use App\Exceptions\Domain\StateTransitionException;
 use App\Models\Core\AuditLog;
+use App\Models\Sales\DeliveryOrder;
+use App\Models\Sales\DownPaymentApplication;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\InvoiceItem;
+use App\Models\Sales\SalesReturn;
 use App\Services\Base\Traits\WithDocuments;
 use App\Services\Base\Traits\WithEventDispatching;
 use App\Services\Base\Traits\WithOperationContext;
@@ -48,6 +51,8 @@ class InvoiceService implements InvoiceServiceInterface
 
     private JournalServiceInterface $journalService;
 
+    private PaymentServiceInterface $paymentService;
+
     private COGSRecognitionStrategy $cogsStrategy;
 
     private InvoiceDomainFactory $domainFactory;
@@ -56,6 +61,7 @@ class InvoiceService implements InvoiceServiceInterface
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger,
         JournalServiceInterface $journalService,
+        PaymentServiceInterface $paymentService,
         COGSRecognitionStrategy $cogsStrategy,
         InvoiceDomainFactory $domainFactory
     ) {
@@ -63,6 +69,7 @@ class InvoiceService implements InvoiceServiceInterface
         $this->logger = $logger;
 
         $this->journalService = $journalService;
+        $this->paymentService = $paymentService;
         $this->cogsStrategy = $cogsStrategy;
         $this->domainFactory = $domainFactory;
     }
@@ -130,19 +137,25 @@ class InvoiceService implements InvoiceServiceInterface
      */
     protected function createItems(Model $document, array $items): void
     {
-        foreach ($items as $item) {
-            $lineTotal = (int) round($item['quantity'] * $item['unit_price']);
-
-            InvoiceItem::create([
+        assert($document instanceof Invoice);
+        foreach ($items as $index => $item) {
+            $invoiceItem = new InvoiceItem([
                 'invoice_id' => $document->id,
                 'product_id' => $item['product_id'] ?? null,
                 'description' => $item['description'],
                 'quantity' => $item['quantity'],
                 'unit' => $item['unit'] ?? 'unit',
                 'unit_price' => $item['unit_price'],
-                'line_total' => $lineTotal,
+                'discount_percent' => $item['discount_percent'] ?? 0,
+                'discount_amount' => $item['discount_amount'] ?? 0,
+                'tax_rate' => $item['tax_rate'] ?? 0,
+                'tax_amount' => $item['tax_amount'] ?? 0,
+                'sort_order' => $item['sort_order'] ?? $index,
+                'notes' => $item['notes'] ?? null,
                 'revenue_account_id' => $item['revenue_account_id'] ?? null,
             ]);
+            $invoiceItem->calculateLineTotal();
+            $invoiceItem->save();
         }
     }
 
@@ -205,11 +218,8 @@ class InvoiceService implements InvoiceServiceInterface
             // Create COGS journal entry (if configured)
             $this->cogsStrategy->onInvoicePost($invoice);
 
-            // Transition status
+            // Transition status (state machine dispatches InvoiceSent event)
             $invoice->transitionTo(DocumentStatus::Sent, $this->getUserId());
-
-            // Dispatch event
-            $this->dispatch(InvoiceSent::fromInvoice($invoice, $this->getUserId()));
 
             AuditLog::log(AuditLog::ACTION_POSTED, $invoice, null, [
                 'status' => DocumentStatus::Sent->value,
@@ -223,11 +233,23 @@ class InvoiceService implements InvoiceServiceInterface
     /**
      * Void/cancel posted invoice.
      *
+     * Cascades to child records:
+     * - Blocks if shipped/delivered delivery orders exist
+     * - Cancels draft/confirmed delivery orders
+     * - Cancels draft/submitted sales returns
+     * - Voids all active payments
+     * - Unapplies all DP applications
+     * - Reverses the invoice's own journal entry
+     *
      * @throws StateTransitionException
+     * @throws BusinessRuleException
      */
     public function void(Invoice $invoice, string $reason): Invoice
     {
         return $this->executeInTransaction('void', function () use ($invoice, $reason) {
+            // Pessimistic lock to prevent concurrent void/payment operations
+            $invoice = Invoice::lockForUpdate()->findOrFail($invoice->id);
+
             if (! $this->domainFactory->stateMachine($invoice)->canCancel()) {
                 throw StateTransitionException::actionNotAvailable(
                     'void',
@@ -235,20 +257,86 @@ class InvoiceService implements InvoiceServiceInterface
                 );
             }
 
-            // Reverse journal entry if exists
+            // Block if shipped/delivered DOs exist (inventory already moved)
+            $shippedDOs = DeliveryOrder::where('invoice_id', $invoice->id)
+                ->whereIn('status', [DocumentStatus::Shipped, DocumentStatus::Delivered])
+                ->exists();
+
+            if ($shippedDOs) {
+                throw BusinessRuleException::operationNotAllowed(
+                    'membatalkan faktur',
+                    'Faktur memiliki surat jalan yang sudah dikirim/diterima. Batalkan surat jalan terlebih dahulu.'
+                );
+            }
+
+            // Cancel cancellable delivery orders (Draft, Confirmed)
+            DeliveryOrder::where('invoice_id', $invoice->id)
+                ->whereIn('status', [DocumentStatus::Draft, DocumentStatus::Confirmed])
+                ->each(function (DeliveryOrder $do) use ($reason) {
+                    $do->transitionTo(DocumentStatus::Cancelled, $this->getUserId(), [
+                        'cancellation_reason' => "Faktur dibatalkan: {$reason}",
+                    ]);
+                });
+
+            // Cancel cancellable sales returns (Draft, Submitted)
+            SalesReturn::where('invoice_id', $invoice->id)
+                ->whereIn('status', [DocumentStatus::Draft, DocumentStatus::Submitted])
+                ->each(function (SalesReturn $sr) use ($reason) {
+                    $sr->transitionTo(DocumentStatus::Cancelled, $this->getUserId(), [
+                        'cancellation_reason' => "Faktur dibatalkan: {$reason}",
+                    ]);
+                });
+
+            // Void all active payments
+            $activePayments = $invoice->payments()
+                ->where('is_voided', false)
+                ->get();
+
+            foreach ($activePayments as $payment) {
+                $this->paymentService->void($payment, "Faktur dibatalkan: {$reason}");
+            }
+
+            // Unapply all DP applications for this invoice
+            $dpApplications = DownPaymentApplication::where('applicable_type', Invoice::class)
+                ->where('applicable_id', $invoice->id)
+                ->get();
+
+            foreach ($dpApplications as $application) {
+                // Reverse journal entry
+                if ($application->journal_entry_id && $application->journalEntry) {
+                    $this->journalService->reverseEntry($application->journalEntry);
+                }
+
+                // Restore down payment balance
+                $dp = $application->downPayment;
+                $dp->applied_amount -= $application->amount;
+                $dp->updateStatus();
+                $dp->save();
+
+                $application->delete();
+            }
+
+            // Refresh to get latest state after cascade
+            $invoice->refresh();
+
+            // Reset paid amount (all payments voided and DPs unapplied)
+            $invoice->paid_amount = 0;
+            $invoice->save();
+
+            // Reverse invoice's own journal entry
             if ($invoice->journal_entry_id && $invoice->journalEntry) {
                 $this->journalService->reverseEntry($invoice->journalEntry);
             }
 
-            // Transition status
+            // Transition status (state machine dispatches InvoiceVoided event)
             $invoice->transitionTo(DocumentStatus::Cancelled, $this->getUserId());
-
-            // Dispatch event
-            $this->dispatch(InvoiceVoided::fromInvoice($invoice, $this->getUserId(), $reason));
 
             AuditLog::log(AuditLog::ACTION_VOIDED, $invoice, null, [
                 'status' => DocumentStatus::Cancelled->value,
                 'reason' => $reason,
+                'voided_payments' => $activePayments->count(),
+                'cancelled_delivery_orders' => DeliveryOrder::where('invoice_id', $invoice->id)
+                    ->where('status', DocumentStatus::Cancelled)->count(),
             ]);
 
             return $this->loadRelations($invoice);

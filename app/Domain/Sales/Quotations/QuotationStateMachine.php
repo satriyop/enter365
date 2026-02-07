@@ -276,16 +276,6 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
         ));
     }
 
-    protected function afterSubmitted(DocumentStatus $from, DocumentStatus $to): void
-    {
-        $this->eventDispatcher->dispatch(new Events\QuotationStatusChanged(
-            $this->quotation->id,
-            $from,
-            $to,
-            $this->getContextUserId()
-        ));
-    }
-
     protected function beforeApproved(DocumentStatus $from, DocumentStatus $to): void
     {
         $this->eventDispatcher->dispatch(new Events\QuotationApproved(
@@ -296,16 +286,6 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
             $this->quotation->currency,
             $this->getContextUserId(),
             now()
-        ));
-    }
-
-    protected function afterApproved(DocumentStatus $from, DocumentStatus $to): void
-    {
-        $this->eventDispatcher->dispatch(new Events\QuotationStatusChanged(
-            $this->quotation->id,
-            $from,
-            $to,
-            $this->getContextUserId()
         ));
     }
 
@@ -324,16 +304,6 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
         ));
     }
 
-    protected function afterRejected(DocumentStatus $from, DocumentStatus $to): void
-    {
-        $this->eventDispatcher->dispatch(new Events\QuotationStatusChanged(
-            $this->quotation->id,
-            $from,
-            $to,
-            $this->getContextUserId()
-        ));
-    }
-
     protected function beforeConverted(DocumentStatus $from, DocumentStatus $to): void
     {
         $invoiceId = $this->quotation->converted_to_invoice_id ?? 0;
@@ -346,16 +316,6 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
             $invoiceId,
             $this->getContextUserId(),
             now()
-        ));
-    }
-
-    protected function afterConverted(DocumentStatus $from, DocumentStatus $to): void
-    {
-        $this->eventDispatcher->dispatch(new Events\QuotationStatusChanged(
-            $this->quotation->id,
-            $from,
-            $to,
-            $this->getContextUserId()
         ));
     }
 
@@ -372,16 +332,6 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
         ));
     }
 
-    protected function afterExpired(DocumentStatus $from, DocumentStatus $to): void
-    {
-        $this->eventDispatcher->dispatch(new Events\QuotationStatusChanged(
-            $this->quotation->id,
-            $from,
-            $to,
-            $this->getContextUserId()
-        ));
-    }
-
     protected function beforeCancelled(DocumentStatus $from, DocumentStatus $to): void
     {
         $reason = $this->context['cancellation_reason'] ?? null;
@@ -390,16 +340,6 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
             $from,
             $this->getContextUserId(),
             $reason
-        ));
-    }
-
-    protected function afterCancelled(DocumentStatus $from, DocumentStatus $to): void
-    {
-        $this->eventDispatcher->dispatch(new Events\QuotationStatusChanged(
-            $this->quotation->id,
-            $from,
-            $to,
-            $this->getContextUserId()
         ));
     }
 }

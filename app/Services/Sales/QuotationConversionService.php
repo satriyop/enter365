@@ -84,8 +84,8 @@ class QuotationConversionService extends BaseService implements QuotationConvers
                 'created_by' => $this->getUserId(),
             ]);
 
-            // Copy items
-            foreach ($quotation->items as $item) {
+            // Copy items with all financial fields (preserve pre-calculated line_total)
+            foreach ($quotation->items as $index => $item) {
                 InvoiceItem::create([
                     'invoice_id' => $invoice->id,
                     'product_id' => $item->product_id,
@@ -93,7 +93,14 @@ class QuotationConversionService extends BaseService implements QuotationConvers
                     'quantity' => $item->quantity,
                     'unit' => $item->unit,
                     'unit_price' => $item->unit_price,
+                    'discount_percent' => $item->discount_percent ?? 0,
+                    'discount_amount' => $item->discount_amount ?? 0,
+                    'tax_rate' => $item->tax_rate ?? 0,
+                    'tax_amount' => $item->tax_amount ?? 0,
                     'line_total' => $item->line_total,
+                    'sort_order' => $item->sort_order ?? $index,
+                    'notes' => $item->notes ?? null,
+                    'revenue_account_id' => $item->revenue_account_id ?? null,
                 ]);
             }
 

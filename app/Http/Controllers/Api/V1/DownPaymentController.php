@@ -31,6 +31,8 @@ class DownPaymentController extends Controller
      */
     public function index(DownPaymentFilter $filter): AnonymousResourceCollection
     {
+        $this->authorize('viewAny', DownPayment::class);
+
         $downPayments = DownPayment::query()
             ->with(['contact', 'cashAccount']) // Default eager loads
             ->filter($filter)
@@ -44,6 +46,8 @@ class DownPaymentController extends Controller
      */
     public function store(StoreDownPaymentRequest $request): JsonResponse
     {
+        $this->authorize('create', DownPayment::class);
+
         $data = $request->validated();
         $data['created_by'] = $request->user()?->id;
 
@@ -60,6 +64,8 @@ class DownPaymentController extends Controller
      */
     public function show(DownPayment $downPayment, DownPaymentFilter $filter): DownPaymentResource
     {
+        $this->authorize('view', $downPayment);
+
         $filter->apply($downPayment->newQuery());
 
         $downPayment->loadMissing(['contact', 'cashAccount', 'creator', 'applications.applicable', 'journalEntry']);
@@ -72,6 +78,8 @@ class DownPaymentController extends Controller
      */
     public function update(UpdateDownPaymentRequest $request, DownPayment $downPayment): JsonResponse
     {
+        $this->authorize('update', $downPayment);
+
         $downPayment = $this->downPaymentService->update($downPayment, $request->validated());
 
         return response()->json([
@@ -85,6 +93,8 @@ class DownPaymentController extends Controller
      */
     public function destroy(DownPayment $downPayment): JsonResponse
     {
+        $this->authorize('delete', $downPayment);
+
         $this->downPaymentService->delete($downPayment);
 
         return response()->json(['message' => 'Down payment deleted successfully.']);
@@ -92,11 +102,13 @@ class DownPaymentController extends Controller
 
     /**
      * Apply down payment to an invoice.
-     * 
+     *
      * @response array{message: string, application: DownPaymentApplicationResource, down_payment: DownPaymentResource}
      */
     public function applyToInvoice(ApplyDownPaymentRequest $request, DownPayment $downPayment, Invoice $invoice): JsonResponse
     {
+        $this->authorize('apply', $downPayment);
+
         $data = $request->validated();
         $data['created_by'] = $request->user()?->id;
 
@@ -111,11 +123,13 @@ class DownPaymentController extends Controller
 
     /**
      * Apply down payment to a bill.
-     * 
+     *
      * @response array{message: string, application: DownPaymentApplicationResource, down_payment: DownPaymentResource}
      */
     public function applyToBill(ApplyDownPaymentRequest $request, DownPayment $downPayment, Bill $bill): JsonResponse
     {
+        $this->authorize('apply', $downPayment);
+
         $data = $request->validated();
         $data['created_by'] = $request->user()?->id;
 
@@ -130,11 +144,13 @@ class DownPaymentController extends Controller
 
     /**
      * Unapply (reverse) a down payment application.
-     * 
+     *
      * @response array{message: string, down_payment: DownPaymentResource}
      */
     public function unapply(DownPayment $downPayment, DownPaymentApplication $application): JsonResponse
     {
+        $this->authorize('apply', $downPayment);
+
         if ($application->down_payment_id !== $downPayment->id) {
             return response()->json(['message' => 'Application does not belong to this down payment.'], 422);
         }
@@ -149,11 +165,13 @@ class DownPaymentController extends Controller
 
     /**
      * Refund remaining down payment balance.
-     * 
+     *
      * @response array{message: string, refund_payment: array{id: int, payment_number: string, amount: int}, down_payment: DownPaymentResource}
      */
     public function refund(RefundDownPaymentRequest $request, DownPayment $downPayment): JsonResponse
     {
+        $this->authorize('refund', $downPayment);
+
         $data = $request->validated();
         $data['created_by'] = $request->user()?->id;
 
@@ -175,6 +193,8 @@ class DownPaymentController extends Controller
      */
     public function cancel(Request $request, DownPayment $downPayment): JsonResponse
     {
+        $this->authorize('cancel', $downPayment);
+
         $reason = $request->input('reason');
         $downPayment = $this->downPaymentService->cancel($downPayment, $reason);
 
@@ -186,11 +206,13 @@ class DownPaymentController extends Controller
 
     /**
      * Get available down payments for a contact.
-     * 
+     *
      * @response \Illuminate\Http\Resources\Json\AnonymousResourceCollection<DownPaymentResource>
      */
     public function available(Request $request): AnonymousResourceCollection
     {
+        $this->authorize('viewAny', DownPayment::class);
+
         $request->validate([
             'contact_id' => ['required', 'integer', 'exists:contacts,id'],
             'type' => ['required', 'in:receivable,payable'],
@@ -206,11 +228,13 @@ class DownPaymentController extends Controller
 
     /**
      * Get down payment statistics.
-     * 
+     *
      * @response array{total_count: int, total_amount: int, total_applied: int, total_remaining: int, by_status: array{active: int, fully_applied: int, refunded: int, cancelled: int}, by_type: array{receivable: array{count: int, amount: int, remaining: int}, payable: array{count: int, amount: int, remaining: int}}}
      */
     public function statistics(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', DownPayment::class);
+
         $query = DownPayment::query();
 
         // Filter by type
@@ -263,6 +287,8 @@ class DownPaymentController extends Controller
      */
     public function applications(DownPayment $downPayment): AnonymousResourceCollection
     {
+        $this->authorize('view', $downPayment);
+
         $applications = $downPayment->applications()
             ->with(['applicable', 'creator'])
             ->orderBy('applied_date', 'desc')

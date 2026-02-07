@@ -97,7 +97,7 @@ describe('DeliveryOrderStateMachine transitions', function () {
         expect($stateMachine->canTransitionTo(DocumentStatus::Delivered))->toBeTrue();
     });
 
-    it('allows transition from shipped to cancelled', function () {
+    it('blocks transition from shipped to cancelled', function () {
         $deliveryOrder = DeliveryOrder::factory()
             ->has(DeliveryOrderItem::factory(), 'items')
             ->shipped()
@@ -105,7 +105,7 @@ describe('DeliveryOrderStateMachine transitions', function () {
 
         $stateMachine = DeliveryOrderStateMachine::fromDeliveryOrder($deliveryOrder);
 
-        expect($stateMachine->canTransitionTo(DocumentStatus::Cancelled))->toBeTrue();
+        expect($stateMachine->canTransitionTo(DocumentStatus::Cancelled))->toBeFalse();
     });
 
     it('blocks transition from delivered to any status', function () {

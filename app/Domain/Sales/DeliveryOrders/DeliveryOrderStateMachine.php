@@ -41,7 +41,6 @@ class DeliveryOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
             ],
             DocumentStatus::Shipped->value => [
                 DocumentStatus::Delivered->value,
-                DocumentStatus::Cancelled->value,
             ],
         ];
     }
@@ -166,16 +165,6 @@ class DeliveryOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
         ));
     }
 
-    protected function afterConfirmed(DocumentStatus $from, DocumentStatus $to): void
-    {
-        $this->eventDispatcher->dispatch(new Events\DeliveryOrderStatusChanged(
-            $this->deliveryOrder->id,
-            $from,
-            $to,
-            $this->getContextUserId()
-        ));
-    }
-
     protected function beforeShipped(DocumentStatus $from, DocumentStatus $to): void
     {
         $this->eventDispatcher->dispatch(new Events\DeliveryOrderShipped(
@@ -186,16 +175,6 @@ class DeliveryOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
             $this->deliveryOrder->tracking_number,
             $this->getContextUserId(),
             now()
-        ));
-    }
-
-    protected function afterShipped(DocumentStatus $from, DocumentStatus $to): void
-    {
-        $this->eventDispatcher->dispatch(new Events\DeliveryOrderStatusChanged(
-            $this->deliveryOrder->id,
-            $from,
-            $to,
-            $this->getContextUserId()
         ));
     }
 
@@ -210,16 +189,6 @@ class DeliveryOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
         ));
     }
 
-    protected function afterDelivered(DocumentStatus $from, DocumentStatus $to): void
-    {
-        $this->eventDispatcher->dispatch(new Events\DeliveryOrderStatusChanged(
-            $this->deliveryOrder->id,
-            $from,
-            $to,
-            $this->getContextUserId()
-        ));
-    }
-
     protected function beforeCancelled(DocumentStatus $from, DocumentStatus $to): void
     {
         $reason = $this->context['cancellation_reason'] ?? '';
@@ -230,16 +199,6 @@ class DeliveryOrderStateMachine extends \App\Domain\Core\AbstractStateMachine
             $reason,
             $this->getContextUserId(),
             now()
-        ));
-    }
-
-    protected function afterCancelled(DocumentStatus $from, DocumentStatus $to): void
-    {
-        $this->eventDispatcher->dispatch(new Events\DeliveryOrderStatusChanged(
-            $this->deliveryOrder->id,
-            $from,
-            $to,
-            $this->getContextUserId()
         ));
     }
 }
