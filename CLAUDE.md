@@ -662,6 +662,23 @@ These skills are auto-loaded by Claude Code when working on this project.
 - **Contracts**: Always inject interfaces, not concrete classes
 - **Indonesian Messages**: User-facing errors in Indonesian
 
+### Accounting Side-Effect Reversal — Service Layer Only
+
+**NEVER bypass service methods to reverse accounting side effects directly.** Documents with cascade void logic (Invoice, DO, SR) have side effects (JEs, inventory movements, paid_amount adjustments) that must be reversed in a specific order within a DB transaction.
+
+| DO NOT | DO INSTEAD |
+|--------|------------|
+| `$journalService->reverseEntry($invoice->journalEntry)` | `$invoiceService->void($invoice, $reason)` |
+| `$inventoryService->stockIn(...)` to undo a shipment | `$deliveryOrderService->reverseShipment($do, $reason)` |
+| `$sr->transitionTo(Cancelled)` on an Approved SR | `$salesReturnService->cancel($sr, $reason)` |
+
+**Why:** Calling low-level reversal methods directly skips the cascade order, leaves orphaned JEs, and causes `Debits != Credits` in the trial balance. The service methods handle the full cascade atomically inside `DB::transaction()`.
+
+**Key cascade services:**
+- `InvoiceService::void()` — reverses shipped DOs, approved SRs, COGS JEs, payments, DPs, and the AR/Revenue JE
+- `DeliveryOrderService::reverseShipment()` — restores inventory + reverses DO-level COGS JE
+- `SalesReturnService::cancel()` — calls `reverseApprovalSideEffects()` for approved SRs (JE + inventory + paid_amount)
+
 ### DB:: vs Eloquent Override
 
 Despite Boost guidelines, prefer `DB::table()` over Eloquent for:
