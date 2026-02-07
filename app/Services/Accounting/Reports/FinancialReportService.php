@@ -35,7 +35,7 @@ class FinancialReportService
      *     total_liabilities_equity: int
      * }
      */
-    public function getBalanceSheet(?string $asOfDate = null): array
+    public function getBalanceSheet(?string $asOfDate = null, bool $hierarchical = false): array
     {
         $asOfDate = $asOfDate ?? now()->toDateString();
 
@@ -49,7 +49,7 @@ class FinancialReportService
         $movements = DB::table('journal_entry_lines as jel')
             ->join('journal_entries as je', 'je.id', '=', 'jel.journal_entry_id')
             ->where('je.is_posted', true)
-            ->where('je.entry_date', '<=', $asOfDate)
+            ->where('je.entry_date', '<=', $asOfDate.' 23:59:59')
             ->whereNull('je.deleted_at')
             ->selectRaw('jel.account_id, SUM(jel.debit) as total_debit, SUM(jel.credit) as total_credit')
             ->groupBy('jel.account_id')
@@ -71,9 +71,20 @@ class FinancialReportService
                 'name' => $account->name,
                 'type' => $account->type,
                 'subtype' => $account->subtype,
+                'parent_id' => $account->parent_id,
                 'balance' => $balance,
             ];
-        })->filter(fn ($item) => $item->balance != 0);
+        });
+
+        if ($hierarchical) {
+            // Pass ALL items (including zero-balance) so parents can be included as tree nodes
+            $balanceItems = $this->buildAccountHierarchy($balanceItems, $accounts);
+        } else {
+            $balanceItems = $balanceItems->filter(fn ($item) => $item->balance != 0);
+        }
+
+        // For hierarchical mode, use rollup_balance for totals; for flat, use balance
+        $balanceKey = $hierarchical ? 'rollup_balance' : 'balance';
 
         // Group by type
         $currentAssets = $balanceItems->filter(fn ($i) => $i->type === Account::TYPE_ASSET && $i->subtype === Account::SUBTYPE_CURRENT_ASSET);
@@ -85,19 +96,27 @@ class FinancialReportService
         // Calculate net income and add to equity
         $netIncome = $this->calculateNetIncome($asOfDate);
         if ($netIncome != 0) {
-            $equityItems->push((object) [
+            $netIncomeItem = [
                 'account_id' => null,
                 'code' => null,
                 'name' => 'Laba/Rugi Berjalan',
                 'type' => Account::TYPE_EQUITY,
                 'subtype' => Account::SUBTYPE_EQUITY,
                 'balance' => $netIncome,
-            ]);
+            ];
+
+            if ($hierarchical) {
+                $netIncomeItem['rollup_balance'] = $netIncome;
+                $netIncomeItem['children'] = collect();
+                $netIncomeItem['depth'] = 0;
+            }
+
+            $equityItems->push((object) $netIncomeItem);
         }
 
-        $totalAssets = $currentAssets->sum('balance') + $fixedAssets->sum('balance');
-        $totalLiabilities = $currentLiabilities->sum('balance') + $longTermLiabilities->sum('balance');
-        $totalEquity = $equityItems->sum('balance');
+        $totalAssets = $currentAssets->sum($balanceKey) + $fixedAssets->sum($balanceKey);
+        $totalLiabilities = $currentLiabilities->sum($balanceKey) + $longTermLiabilities->sum($balanceKey);
+        $totalEquity = $equityItems->sum($balanceKey);
 
         return [
             'as_of_date' => $asOfDate,
@@ -141,7 +160,7 @@ class FinancialReportService
      *     net_income: int
      * }
      */
-    public function getIncomeStatement(?string $startDate = null, ?string $endDate = null): array
+    public function getIncomeStatement(?string $startDate = null, ?string $endDate = null, bool $hierarchical = false): array
     {
         $endDate = $endDate ?? now()->toDateString();
         $startDate = $startDate ?? now()->startOfYear()->toDateString();
@@ -178,23 +197,32 @@ class FinancialReportService
                 'name' => $account->name,
                 'type' => $account->type,
                 'subtype' => $account->subtype,
+                'parent_id' => $account->parent_id,
                 'balance' => abs($balance),
             ];
-        })->filter(fn ($item) => $item->balance != 0);
+        });
+
+        if ($hierarchical) {
+            $items = $this->buildAccountHierarchy($items, $accounts);
+        } else {
+            $items = $items->filter(fn ($item) => $item->balance != 0);
+        }
+
+        $balanceKey = $hierarchical ? 'rollup_balance' : 'balance';
 
         // Revenue
         $operatingRevenue = $items->filter(fn ($i) => $i->type === Account::TYPE_REVENUE && $i->subtype === Account::SUBTYPE_OPERATING_REVENUE);
         $otherRevenue = $items->filter(fn ($i) => $i->type === Account::TYPE_REVENUE && $i->subtype === Account::SUBTYPE_OTHER_REVENUE);
-        $totalRevenue = $operatingRevenue->sum('balance') + $otherRevenue->sum('balance');
+        $totalRevenue = $operatingRevenue->sum($balanceKey) + $otherRevenue->sum($balanceKey);
 
         // Expenses
         $costOfGoods = $items->filter(fn ($i) => $i->type === Account::TYPE_EXPENSE && str_starts_with($i->code, '5-1'));
         $operatingExpense = $items->filter(fn ($i) => $i->type === Account::TYPE_EXPENSE && $i->subtype === Account::SUBTYPE_OPERATING_EXPENSE && ! str_starts_with($i->code, '5-1'));
         $otherExpense = $items->filter(fn ($i) => $i->type === Account::TYPE_EXPENSE && $i->subtype === Account::SUBTYPE_OTHER_EXPENSE);
-        $totalExpenses = $costOfGoods->sum('balance') + $operatingExpense->sum('balance') + $otherExpense->sum('balance');
+        $totalExpenses = $costOfGoods->sum($balanceKey) + $operatingExpense->sum($balanceKey) + $otherExpense->sum($balanceKey);
 
-        $grossProfit = $operatingRevenue->sum('balance') - $costOfGoods->sum('balance');
-        $operatingIncome = $grossProfit - $operatingExpense->sum('balance');
+        $grossProfit = $operatingRevenue->sum($balanceKey) - $costOfGoods->sum($balanceKey);
+        $operatingIncome = $grossProfit - $operatingExpense->sum($balanceKey);
         $netIncome = $totalRevenue - $totalExpenses;
 
         return [
@@ -431,6 +459,121 @@ class FinancialReportService
                 'total' => $closingTotal,
             ],
         ];
+    }
+
+    /**
+     * Build a hierarchical tree from flat balance items using Account parent_id relationships.
+     *
+     * Returns only top-level nodes (root accounts or accounts whose parents have no balance).
+     * Each node contains:
+     * - balance: own transactions only
+     * - rollup_balance: own + all descendants
+     * - children: recursive collection
+     * - depth: nesting level
+     */
+    public function buildAccountHierarchy(Collection $flatBalances, Collection $accounts): Collection
+    {
+        // Build a map of account_id => parent_id from the full accounts collection
+        $parentMap = $accounts->pluck('parent_id', 'id');
+
+        // Index flat balances by account_id
+        $balanceById = $flatBalances->keyBy('account_id');
+
+        // Build a subtype map from all accounts
+        $subtypeMap = $accounts->pluck('subtype', 'id');
+
+        // Collect ancestor IDs within the same subtype boundary
+        $ancestorsToInclude = collect();
+
+        foreach ($flatBalances as $item) {
+            if ($item->balance == 0) {
+                continue; // Only trace ancestors for items that have actual balance
+            }
+            $currentParentId = $parentMap->get($item->account_id);
+            $itemSubtype = $item->subtype;
+            while ($currentParentId !== null) {
+                // Stop if parent has different subtype
+                if ($subtypeMap->get($currentParentId) !== $itemSubtype) {
+                    break;
+                }
+                if ($ancestorsToInclude->contains($currentParentId)) {
+                    break;
+                }
+                $ancestorsToInclude->push($currentParentId);
+                $currentParentId = $parentMap->get($currentParentId);
+            }
+        }
+
+        // Add zero-balance parent nodes so tree is complete
+        foreach ($ancestorsToInclude as $ancestorId) {
+            if (! $balanceById->has($ancestorId)) {
+                $account = $accounts->firstWhere('id', $ancestorId);
+                if ($account) {
+                    $node = (object) [
+                        'account_id' => $account->id,
+                        'code' => $account->code,
+                        'name' => $account->name,
+                        'type' => $account->type,
+                        'subtype' => $account->subtype,
+                        'parent_id' => $account->parent_id,
+                        'balance' => 0,
+                    ];
+                    $balanceById->put($ancestorId, $node);
+                }
+            }
+        }
+
+        // Build child-lookup: parent_id => [child items]
+        // Only nest within same subtype to keep category grouping intact
+        $childrenOf = [];
+        foreach ($balanceById as $item) {
+            $pid = $item->parent_id;
+            if ($pid !== null && $balanceById->has($pid)) {
+                $parent = $balanceById->get($pid);
+                if ($parent->subtype === $item->subtype) {
+                    $childrenOf[$pid][] = $item;
+                }
+            }
+        }
+
+        // Recursive tree builder
+        $buildTree = function ($item, int $depth) use (&$buildTree, &$childrenOf): object {
+            $children = collect($childrenOf[$item->account_id] ?? [])
+                ->map(fn ($child) => $buildTree($child, $depth + 1))
+                ->sortBy('code')
+                ->values();
+
+            $rollupBalance = $item->balance + $children->sum('rollup_balance');
+
+            return (object) [
+                'account_id' => $item->account_id,
+                'code' => $item->code,
+                'name' => $item->name,
+                'type' => $item->type,
+                'subtype' => $item->subtype,
+                'balance' => $item->balance,
+                'rollup_balance' => $rollupBalance,
+                'children' => $children,
+                'depth' => $depth,
+            ];
+        };
+
+        // Find root nodes: items whose parent is null, whose parent isn't in the balance set,
+        // or whose parent has a different subtype (don't cross subtype boundaries)
+        $roots = $balanceById->filter(function ($item) use ($balanceById) {
+            if ($item->parent_id === null || ! $balanceById->has($item->parent_id)) {
+                return true;
+            }
+
+            $parent = $balanceById->get($item->parent_id);
+
+            return $parent->subtype !== $item->subtype;
+        });
+
+        return $roots->map(fn ($item) => $buildTree($item, 0))
+            ->filter(fn ($item) => $item->rollup_balance != 0)
+            ->sortBy('code')
+            ->values();
     }
 
     /**

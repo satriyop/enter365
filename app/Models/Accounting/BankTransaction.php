@@ -34,6 +34,9 @@ class BankTransaction extends Model
         'reconciled_by',
         'import_batch',
         'external_id',
+        'session_id',
+        'match_confidence',
+        'match_rule',
         'created_by',
     ];
 
@@ -71,6 +74,14 @@ class BankTransaction extends Model
     public function matchedJournalLine(): BelongsTo
     {
         return $this->belongsTo(JournalEntryLine::class, 'matched_journal_line_id');
+    }
+
+    /**
+     * @return BelongsTo<BankReconciliationSession, $this>
+     */
+    public function session(): BelongsTo
+    {
+        return $this->belongsTo(BankReconciliationSession::class, 'session_id');
     }
 
     /**

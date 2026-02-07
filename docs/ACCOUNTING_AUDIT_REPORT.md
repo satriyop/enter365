@@ -849,19 +849,28 @@ Entire flow in single transaction with rollback capability.
 
 ---
 
-### IS-C1. Multi-Currency JE Uses Wrong Amount Field — CRITICAL (BUG)
+### IS-C1. Multi-Currency JE Uses Wrong Amount Field — CRITICAL (BUG) — FIXED
 
-**File:** `app/Services/Accounting/JournalService.php` lines 236, 389, 440/464
+**Status:** FIXED in commit `8701528`
 
-**Problem:** `postInvoice()`, `postBill()`, and `postPayment()` all use `$document->total_amount` for JE line amounts. For multi-currency transactions, `total_amount` is in the **transaction currency** (e.g., USD), while `base_currency_total` is the IDR equivalent.
+**File:** `app/Services/Accounting/JournalService.php`
 
-**Example:** A USD 1,000 invoice with exchange rate 15,500 creates:
-- Current: `Dr AR 1,000 / Cr Revenue 1,000` (wrong — amounts in USD, not IDR)
-- Expected: `Dr AR 15,500,000 / Cr Revenue 15,500,000` (base currency)
+**Problem:** `postInvoice()`, `postBill()`, and `postPayment()` all used `$document->total_amount` for JE line amounts. For multi-currency transactions, `total_amount` is in the **transaction currency** (e.g., USD), while `base_currency_total` is the IDR equivalent.
+
+**Example:** A USD 1,000 invoice with exchange rate 15,500 created:
+- Before fix: `Dr AR 1,000 / Cr Revenue 1,000` (wrong — amounts in USD, not IDR)
+- After fix: `Dr AR 15,500,000 / Cr Revenue 15,500,000` (base currency)
 
 **Odoo behavior:** JEs always store amounts in company currency. Transaction currency stored separately on each JE line via `amount_currency` field.
 
-**Fix:** Replace `$invoice->total_amount` with `$invoice->base_currency_total` in all three methods. Same for bill and payment amounts. The `base_currency_total` field already exists and is calculated correctly in `InvoiceCalculator`.
+**Fix:**
+- Added `toBaseCurrency()` helper to `JournalService` that converts foreign amounts to IDR
+- `postInvoice()`: Converts revenue per item, tax, discount to base currency. AR derived as balancing figure (guarantees DR == CR despite rounding)
+- `postBill()`: Converts expense per item, tax, discount to base currency. AP derived as balancing figure
+- `postPayment()`: Uses pre-computed `base_currency_amount` from Payment model
+- Added `currency`, `exchange_rate`, `base_currency_amount` columns to `payments` table (migration `2026_02_07_181620`)
+- `PaymentService::create()` captures currency/rate from linked Invoice/Bill
+- 5 new tests covering IDR regression, USD invoice/bill/payment, and rounding balance guarantee
 
 ---
 
@@ -916,15 +925,17 @@ Affects all 4 models using `InvoiceCalculator`: Invoice, Bill, SalesReturn, Purc
 
 ---
 
-### IS-H1. Posted Journal Entries Can Be Deleted — HIGH (BUG)
+### IS-H1. Posted Journal Entries Can Be Deleted — HIGH (BUG) — FIXED
+
+**Status:** FIXED in commit `8701528`
 
 **File:** `app/Models/Accounting/JournalEntry.php`
 
-**Problem:** The migration includes `$table->softDeletes()` but the model does NOT use the `SoftDeletes` trait. More importantly, there is no `deleting` event guard to prevent deletion of posted entries. Any code with model access can hard-delete a posted JE, violating audit trail requirements.
+**Problem:** There was no `deleting` event guard to prevent deletion of posted entries. Any code with model access could hard-delete a posted JE, violating audit trail requirements.
 
 **Odoo behavior:** Posted entries can never be deleted — only cancelled (which creates a reversal entry) or the entry can be set to draft first (which is also audited).
 
-**Fix:** Add `SoftDeletes` trait AND a `deleting` boot event that throws `BusinessRuleException` when `is_posted === true`.
+**Fix:** Added `static::deleting()` boot event that throws `DocumentLockedException` when `is_posted === true`. Indonesian message: "Jurnal yang sudah diposting tidak dapat dihapus. Gunakan pembalikan untuk mengoreksi." Unposted (draft) entries can still be deleted. 2 new tests added.
 
 ---
 
@@ -940,7 +951,9 @@ Affects all 4 models using `InvoiceCalculator`: Invoice, Bill, SalesReturn, Purc
 
 ### IS-H3. GRN Doesn't Trigger Inventory Accounting Strategy — HIGH (BUG)
 
-**File:** `app/Services/Purchasing/GoodsReceiptNoteService.php` lines 247-284
+**Status:** FIXED in commit `8701528`
+
+**File:** `app/Services/Purchasing/GoodsReceiptNoteService.php`
 
 **Problem:** `complete()` calls `inventoryService->stockIn()` to update stock quantities but **never** calls `policyManager->inventory()->onGoodsReceived($grn)`. In perpetual mode, `PerpetualInventoryStrategy::onGoodsReceived()` creates the `Dr Inventory (1-1400) / Cr GRNI (2-1300)` journal entry. Without this call:
 - Stock quantities increase correctly
@@ -949,7 +962,7 @@ Affects all 4 models using `InvoiceCalculator`: Invoice, Bill, SalesReturn, Purc
 
 **Odoo behavior:** Stock moves in perpetual mode always create accounting entries via `stock.move._create_account_move_line()`.
 
-**Fix:** Inject `AccountingPolicyManager` into `GoodsReceiptNoteService` and call `$this->policyManager->inventory()->onGoodsReceived($grn)` after the inventory stock-in loop.
+**Fix:** Injected `AccountingPolicyManager` into `GoodsReceiptNoteService` constructor and added `$this->policyManager->inventory()->onGoodsReceived($grn)` call after the stock-in loop in `complete()`. Follows the same pattern as `DeliveryOrderService::ship()`. 2 new tests: perpetual mode creates `Dr Inventory / Cr GRNI` JE, hybrid mode creates no JE.
 
 ---
 
@@ -1104,7 +1117,7 @@ These aspects meet or exceed typical ERP accounting standards:
 | 9 | **Return accounting pipeline** | Handler chain with priority ordering | More structured than Odoo's return model |
 | 10 | **Payment locking** | `lockForUpdate()` prevents double payment | Same — Odoo uses `SELECT FOR UPDATE` on reconciliation |
 | 11 | **Year-end closing** | 7-step orchestration with rollback | More comprehensive than Odoo's single-step closing |
-| 12 | **Multi-currency foundation** | `base_currency_total` calculated on all documents | Foundation exists — JE posting needs fix (IS-C1) |
+| 12 | **Multi-currency foundation** | `base_currency_total` calculated on all documents; JE posting converts to IDR | Same as Odoo — all JEs in company currency |
 | 13 | **FIFO cost layers** | `inventory_cost_layers` table with batch tracking | Same as Odoo `stock.valuation.layer` |
 | 14 | **GRNI clearing** | Bill posting clears GRNI in perpetual mode | Same as Odoo's goods receipt → invoice matching |
 | 15 | **Discount contra-accounts** | Separate `Diskon Penjualan (4-1003)` / `Diskon Pembelian (5-1003)` | Better — Odoo embeds discounts in line amounts |
@@ -1118,8 +1131,8 @@ These aspects meet or exceed typical ERP accounting standards:
 
 | Severity | Count | Key Themes |
 |----------|-------|------------|
-| **CRITICAL** | 4 | Multi-currency JE bug, missing NSFP, missing PPh, tax rounding |
-| **HIGH** | 7 | JE deletion guard, GRN strategy, FX gain/loss, single-doc payments |
+| **CRITICAL** | 3 (~~4~~) | ~~Multi-currency JE bug~~, missing NSFP, missing PPh, tax rounding |
+| **HIGH** | 5 (~~7~~) | ~~JE deletion guard~~, ~~GRN strategy~~, FX gain/loss, single-doc payments |
 | **MEDIUM** | 6 | JE line currency, write-off, landed cost, report hierarchy |
 | **LOW** | 3 | Analytics, per-journal sequences, NPWP validation |
 | **TOTAL** | **20** | |
@@ -1130,10 +1143,10 @@ These aspects meet or exceed typical ERP accounting standards:
 
 | # | Finding | Est. Effort | Impact |
 |---|---------|-------------|--------|
-| IS-C1 | Use `base_currency_total` in postInvoice/postBill/postPayment | 1 hour | Wrong JE amounts for all multi-currency transactions |
+| ~~IS-C1~~ | ~~Use `base_currency_total` in postInvoice/postBill/postPayment~~ | ~~1 hour~~ | **FIXED** — commit `8701528` |
 | ~~IS-C4~~ | ~~Per-line tax rounding in InvoiceCalculator~~ | ~~2 hours~~ | **FIXED** |
-| IS-H1 | Add SoftDeletes + deletion guard on JournalEntry | 30 min | Audit trail protection |
-| IS-H3 | Call `onGoodsReceived()` in GRN complete | 1 hour | Missing inventory JE in perpetual mode |
+| ~~IS-H1~~ | ~~Add SoftDeletes + deletion guard on JournalEntry~~ | ~~30 min~~ | **FIXED** — commit `8701528` |
+| ~~IS-H3~~ | ~~Call `onGoodsReceived()` in GRN complete~~ | ~~1 hour~~ | **FIXED** — commit `8701528` |
 
 #### Phase 2: Indonesian Tax Compliance
 

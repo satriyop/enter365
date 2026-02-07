@@ -126,6 +126,14 @@ class GoodsReceiptNote extends Model
     }
 
     /**
+     * @return HasMany<LandedCost, $this>
+     */
+    public function landedCosts(): HasMany
+    {
+        return $this->hasMany(LandedCost::class);
+    }
+
+    /**
      * @return BelongsTo<User, $this>
      */
     public function receivedByUser(): BelongsTo

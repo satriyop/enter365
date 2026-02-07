@@ -223,6 +223,14 @@ class Invoice extends Model
     }
 
     /**
+     * @return HasMany<WriteOff, $this>
+     */
+    public function writeOffs(): HasMany
+    {
+        return $this->hasMany(WriteOff::class);
+    }
+
+    /**
      * @return MorphMany<Attachment, $this>
      */
     public function attachments(): MorphMany

@@ -22,7 +22,10 @@ use Illuminate\Support\Collection;
 interface PaymentServiceInterface
 {
     /**
-     * Create a payment for an invoice or bill.
+     * Create a payment for one or more invoices/bills.
+     *
+     * Supports single-document (invoice_id/bill_id) for backward compat,
+     * or multi-document via allocations array.
      *
      * @param  array{
      *     type: string,
@@ -33,7 +36,8 @@ interface PaymentServiceInterface
      *     reference?: string,
      *     notes?: string,
      *     invoice_id?: int,
-     *     bill_id?: int
+     *     bill_id?: int,
+     *     allocations?: list<array{allocatable_type: string, allocatable_id: int, amount: int}>
      * }  $data
      *
      * @throws \InvalidArgumentException When validation fails
