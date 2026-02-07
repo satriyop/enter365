@@ -63,7 +63,7 @@ describe('CRUD Operations', function () {
     test('creates sales return from invoice', function () {
         $invoice = Invoice::factory()
             ->for($this->contact)
-            ->create(['tax_rate' => 11.00]);
+            ->create(['tax_rate' => 11.00, 'status' => DocumentStatus::Sent]);
 
         $invoice->items()->create([
             'product_id' => $this->product->id,

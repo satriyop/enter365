@@ -339,7 +339,9 @@ describe('PaymentService - getOutstandingAmount', function () {
 
     it('returns outstanding amount for invoice', function () {
         $invoice = createSentInvoice();
-        $invoice->update(['total_amount' => 1000000, 'paid_amount' => 400000]);
+        $invoice->total_amount = 1000000;
+        $invoice->paid_amount = 400000;
+        $invoice->saveQuietly();
 
         $outstanding = $this->service->getOutstandingAmount($invoice);
 
