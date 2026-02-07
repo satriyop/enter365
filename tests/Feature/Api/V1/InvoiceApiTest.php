@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Accounting\Account;
+use App\Models\Accounting\JournalEntryLine;
 use App\Models\Contacts\Contact;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\InvoiceItem;
@@ -221,6 +223,45 @@ describe('Invoice API', function () {
 
         // Verify journal entry was created
         $this->assertNotNull($response->json('data.journal_entry_id'));
+    });
+
+    it('posts invoice with discount creating discount contra JE line', function () {
+        $customer = Contact::factory()->customer()->create();
+        // subtotal=1,000,000 discount=100,000 tax=110,000 total=1,010,000
+        $invoice = Invoice::factory()->draft()->forContact($customer)->create([
+            'subtotal' => 1000000,
+            'discount_amount' => 100000,
+            'tax_amount' => 110000,
+            'total_amount' => 1010000,
+        ]);
+        InvoiceItem::factory()->forInvoice($invoice)->create([
+            'line_total' => 1000000,
+        ]);
+
+        $response = $this->postJson("/api/v1/invoices/{$invoice->id}/post");
+
+        $response->assertOk();
+
+        $jeId = $response->json('data.journal_entry_id');
+        $this->assertNotNull($jeId);
+
+        // Verify discount line exists: Dr Sales Discount (4-1003) = 100,000
+        $discountAccount = Account::where('code', '4-1003')->first();
+        $discountLine = JournalEntryLine::where('journal_entry_id', $jeId)
+            ->where('account_id', $discountAccount->id)
+            ->first();
+
+        expect($discountLine)->not->toBeNull()
+            ->and($discountLine->debit)->toBe(100000)
+            ->and($discountLine->credit)->toBe(0);
+
+        // Verify AR debit = total_amount (net of discount)
+        $arAccount = Account::where('code', '1-1100')->first();
+        $arLine = JournalEntryLine::where('journal_entry_id', $jeId)
+            ->where('account_id', $arAccount->id)
+            ->first();
+
+        expect($arLine->debit)->toBe(1010000);
     });
 
     it('cannot post already posted invoice', function () {

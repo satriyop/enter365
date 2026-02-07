@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Api\V1;
 
+use App\Models\Accounting\Account;
 use App\Models\Accounting\FiscalPeriod;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
@@ -62,6 +63,15 @@ class StorePaymentRequest extends FormRequest
 
             if ($type === Payment::TYPE_SEND && $invoiceId) {
                 $validator->errors()->add('invoice_id', 'Pembayaran tidak bisa dialokasikan ke faktur penjualan.');
+            }
+
+            // Validate cash account is an asset-type account (cash/bank)
+            $cashAccountId = $this->input('cash_account_id');
+            if ($cashAccountId && ! $validator->errors()->has('cash_account_id')) {
+                $cashAccount = Account::find($cashAccountId);
+                if ($cashAccount && $cashAccount->type !== Account::TYPE_ASSET) {
+                    $validator->errors()->add('cash_account_id', 'Akun kas/bank harus bertipe aset. Akun "'.$cashAccount->name.'" bertipe '.$cashAccount->type.'.');
+                }
             }
 
             // Validate fiscal period for payment_date (only reject if period exists and is closed/locked)

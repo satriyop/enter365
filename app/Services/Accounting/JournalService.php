@@ -218,6 +218,9 @@ class JournalService extends BaseService implements JournalServiceInterface
 
         // Fail-fast: validate required accounts exist
         $requiredCodes = ['1-1100', '2-1200', '4-1001'];
+        if ($invoice->discount_amount > 0) {
+            $requiredCodes[] = '4-1003'; // Diskon Penjualan
+        }
         $accounts = $this->accountLookup->findByCodesOrFail($requiredCodes, 'posting invoice');
 
         $receivableAccount = $invoice->receivableAccount ?? $accounts->get('1-1100');
@@ -226,13 +229,23 @@ class JournalService extends BaseService implements JournalServiceInterface
 
         $lines = [];
 
-        // Debit: Accounts Receivable (total amount including tax)
+        // Debit: Accounts Receivable (total amount = subtotal - discount + tax)
         $lines[] = [
             'account_id' => $receivableAccount->id,
             'description' => 'Piutang '.$invoice->contact->name,
             'debit' => $invoice->total_amount,
             'credit' => 0,
         ];
+
+        // Debit: Sales Discount contra-revenue (if discount exists)
+        if ($invoice->discount_amount > 0) {
+            $lines[] = [
+                'account_id' => $accounts->get('4-1003')->id,
+                'description' => 'Diskon penjualan '.$invoice->invoice_number,
+                'debit' => $invoice->discount_amount,
+                'credit' => 0,
+            ];
+        }
 
         // Credit: Revenue accounts (subtotal per item or single entry)
         $revenueByAccount = [];
@@ -308,6 +321,9 @@ class JournalService extends BaseService implements JournalServiceInterface
         if ($usesGrni) {
             $requiredCodes[] = '2-1300'; // GRNI account
         }
+        if ($bill->discount_amount > 0) {
+            $requiredCodes[] = '5-1003'; // Diskon Pembelian
+        }
         $accounts = $this->accountLookup->findByCodesOrFail($requiredCodes, 'posting bill');
 
         $payableAccount = $bill->payableAccount ?? $accounts->get('2-1100');
@@ -355,7 +371,17 @@ class JournalService extends BaseService implements JournalServiceInterface
             ];
         }
 
-        // Credit: Accounts Payable (total amount)
+        // Credit: Purchase Discount contra-expense (if discount exists)
+        if ($bill->discount_amount > 0) {
+            $lines[] = [
+                'account_id' => $accounts->get('5-1003')->id,
+                'description' => 'Diskon pembelian '.$bill->bill_number,
+                'debit' => 0,
+                'credit' => $bill->discount_amount,
+            ];
+        }
+
+        // Credit: Accounts Payable (total amount = subtotal - discount + tax)
         $lines[] = [
             'account_id' => $payableAccount->id,
             'description' => 'Utang '.$bill->contact->name,

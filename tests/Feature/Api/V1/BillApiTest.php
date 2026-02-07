@@ -2,6 +2,7 @@
 
 use App\Enums\DocumentStatus;
 use App\Models\Accounting\Account;
+use App\Models\Accounting\JournalEntryLine;
 use App\Models\Contacts\Contact;
 use App\Models\Purchasing\Bill;
 use App\Models\Purchasing\BillItem;
@@ -176,6 +177,45 @@ describe('Bill API', function () {
             ->assertJsonStructure(['data' => ['journal_entry']]);
 
         $this->assertNotNull($response->json('data.journal_entry_id'));
+    });
+
+    it('posts bill with discount creating discount contra JE line', function () {
+        $supplier = Contact::factory()->supplier()->create();
+        // subtotal=1,000,000 discount=50,000 tax=110,000 total=1,060,000
+        $bill = Bill::factory()->draft()->forContact($supplier)->create([
+            'subtotal' => 1000000,
+            'discount_amount' => 50000,
+            'tax_amount' => 110000,
+            'total_amount' => 1060000,
+        ]);
+        BillItem::factory()->forBill($bill)->create([
+            'line_total' => 1000000,
+        ]);
+
+        $response = $this->postJson("/api/v1/bills/{$bill->id}/post");
+
+        $response->assertOk();
+
+        $jeId = $response->json('data.journal_entry_id');
+        $this->assertNotNull($jeId);
+
+        // Verify discount line exists: Cr Purchase Discount (5-1003) = 50,000
+        $discountAccount = Account::where('code', '5-1003')->first();
+        $discountLine = JournalEntryLine::where('journal_entry_id', $jeId)
+            ->where('account_id', $discountAccount->id)
+            ->first();
+
+        expect($discountLine)->not->toBeNull()
+            ->and($discountLine->credit)->toBe(50000)
+            ->and($discountLine->debit)->toBe(0);
+
+        // Verify AP credit = total_amount (net of discount)
+        $apAccount = Account::where('code', '2-1100')->first();
+        $apLine = JournalEntryLine::where('journal_entry_id', $jeId)
+            ->where('account_id', $apAccount->id)
+            ->first();
+
+        expect($apLine->credit)->toBe(1060000);
     });
 
     it('cannot post already posted bill', function () {

@@ -159,17 +159,26 @@ The architecture is excellent — Strategy Pattern, fail-fast validation, transa
 
 ---
 
-### H3. Discounts Not Journalized Separately
+### H3. Discounts Not Journalized Separately — FIXED
 
-Invoice/bill discounts reduce the revenue/expense total directly. No `Sales Discounts` (4-2002) or `Purchase Discounts` (5-2002) contra accounts. Cannot track discount effectiveness.
+**Status:** FIXED in commit `TBD`
+
+**Impact:** Was actually a **latent bug** — when `discount_amount > 0`, the JE was unbalanced (DR AR = subtotal - discount + tax, but CR Revenue = subtotal + tax). Posting would fail the balanced check.
+
+**Fix:** Added discount contra-account lines:
+- Invoice: `Dr Diskon Penjualan (4-1003)` for `discount_amount` — balances against gross revenue
+- Bill: `Cr Diskon Pembelian (5-1003)` for `discount_amount` — balances against gross expense
+- Account codes were already in the seeder (not `4-2002`/`5-2002` as originally noted)
 
 **Files:** `JournalService::postInvoice()`, `JournalService::postBill()`
 
 ---
 
-### H4. Cash Account Type Not Validated on Payments
+### H4. Cash Account Type Not Validated on Payments — FIXED
 
-`StorePaymentRequest` validates `cash_account_id` exists but not that it's actually a cash/bank account. Could use a revenue or expense account.
+**Status:** FIXED in commit `TBD`
+
+**Fix:** Added after-validation check in `StorePaymentRequest::withValidator()` — rejects `cash_account_id` if the referenced account's type is not `asset`. Prevents using revenue, expense, liability, or equity accounts as cash/bank.
 
 **File:** `app/Http/Requests/Api/V1/StorePaymentRequest.php`
 
@@ -277,10 +286,12 @@ Every point where JEs are created in the system:
 7. ~~**H1** — Add `lockForUpdate()` in `InvoiceService::post()` and `BillService::post()`~~ — FIXED
 8. ~~**H2** — DP application JE already existed (false positive) — tests added~~ — VERIFIED
 
-### Next Priority (High Severity — H3-H6)
+### ~~Next Priority (High Severity — H3/H4)~~ — DONE
 
-9. **H3** — Add discount contra accounts
-10. **H4** — Validate cash account type in `StorePaymentRequest`
+9. ~~**H3** — Add discount contra accounts to `postInvoice()` and `postBill()`~~ — FIXED
+10. ~~**H4** — Validate cash account type in `StorePaymentRequest`~~ — FIXED
+
+### Next Priority (High Severity — H5/H6)
 
 ### Backlog
 

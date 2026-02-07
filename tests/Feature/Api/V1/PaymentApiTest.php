@@ -208,6 +208,24 @@ describe('Payment API', function () {
             ->assertJsonValidationErrors('amount');
     });
 
+    it('prevents non-asset account as cash account', function () {
+        $customer = Contact::factory()->customer()->create();
+        // Use a revenue account (not an asset)
+        $revenueAccount = Account::where('code', '4-1001')->first();
+
+        $response = $this->postJson('/api/v1/payments', [
+            'type' => Payment::TYPE_RECEIVE,
+            'contact_id' => $customer->id,
+            'payment_date' => '2024-12-25',
+            'amount' => 100000,
+            'payment_method' => Payment::METHOD_TRANSFER,
+            'cash_account_id' => $revenueAccount->id,
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['cash_account_id']);
+    });
+
     it('prevents receive payment allocated to bill', function () {
         $supplier = Contact::factory()->supplier()->create();
         $bill = Bill::factory()->forContact($supplier)->received()->create();
