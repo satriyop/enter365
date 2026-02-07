@@ -21,8 +21,11 @@ class InvoiceCalculator implements InvoiceCalculatorInterface
         // Sum all line totals
         $subtotal = (int) array_sum($lineTotals);
 
-        // Calculate tax
-        $taxAmount = (int) round($subtotal * ($taxRate / 100));
+        // Calculate tax per-line with rounding, then sum (PMK-151/PMK.03/2013 compliant)
+        $taxAmount = 0;
+        foreach ($lineTotals as $lineTotal) {
+            $taxAmount += (int) round((int) $lineTotal * ($taxRate / 100));
+        }
 
         // Calculate total (floor at zero to prevent negative)
         $totalAmount = max(0, $subtotal + $taxAmount - $discountAmount);
