@@ -204,7 +204,8 @@ describe('Payment API', function () {
             'invoice_id' => $invoice->id,
         ]);
 
-        $response->assertStatus(409);
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors('amount');
     });
 
     it('prevents receive payment allocated to bill', function () {

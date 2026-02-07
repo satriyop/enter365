@@ -2,6 +2,9 @@
 
 namespace App\Http\Requests\Api\V1;
 
+use App\Models\Accounting\FiscalPeriod;
+use App\Models\Purchasing\Bill;
+use App\Models\Sales\Invoice;
 use App\Models\Shared\Payment;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -59,6 +62,35 @@ class StorePaymentRequest extends FormRequest
 
             if ($type === Payment::TYPE_SEND && $invoiceId) {
                 $validator->errors()->add('invoice_id', 'Pembayaran tidak bisa dialokasikan ke faktur penjualan.');
+            }
+
+            // Validate fiscal period for payment_date (only reject if period exists and is closed/locked)
+            $paymentDate = $this->input('payment_date');
+            if ($paymentDate && ! $validator->errors()->has('payment_date')) {
+                $period = FiscalPeriod::forDate(\Carbon\Carbon::parse($paymentDate));
+
+                if ($period && $period->is_closed) {
+                    $validator->errors()->add('payment_date', "Periode fiskal '{$period->name}' sudah ditutup.");
+                } elseif ($period && $period->is_locked) {
+                    $validator->errors()->add('payment_date', "Periode fiskal '{$period->name}' sedang dikunci.");
+                }
+            }
+
+            // Early overpayment check for invoices
+            $amount = (int) $this->input('amount', 0);
+            if ($invoiceId && $amount > 0 && ! $validator->errors()->has('invoice_id')) {
+                $invoice = Invoice::find($invoiceId);
+                if ($invoice && $amount > $invoice->getOutstandingAmount()) {
+                    $validator->errors()->add('amount', 'Jumlah pembayaran ('.number_format($amount).') melebihi sisa tagihan ('.number_format($invoice->getOutstandingAmount()).').');
+                }
+            }
+
+            // Early overpayment check for bills
+            if ($billId && $amount > 0 && ! $validator->errors()->has('bill_id')) {
+                $bill = Bill::find($billId);
+                if ($bill && $amount > $bill->getOutstandingAmount()) {
+                    $validator->errors()->add('amount', 'Jumlah pembayaran (('.number_format($amount).') melebihi sisa tagihan ('.number_format($bill->getOutstandingAmount()).').');
+                }
             }
         });
     }

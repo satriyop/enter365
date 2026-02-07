@@ -15,6 +15,7 @@ use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
 use App\Models\Shared\Payment;
 use App\Services\Base\BaseService;
+use Carbon\Carbon;
 
 class JournalService extends BaseService implements JournalServiceInterface
 {
@@ -41,8 +42,23 @@ class JournalService extends BaseService implements JournalServiceInterface
     public function createEntry(array $data, bool $autoPost = false): JournalEntry
     {
         return $this->executeInTransaction('create_entry', function () use ($data, $autoPost) {
-            // Find or create fiscal period
-            $fiscalPeriod = FiscalPeriod::current();
+            // Resolve fiscal period by entry_date, not today's date
+            $entryDate = Carbon::parse($data['entry_date']);
+            $fiscalPeriod = FiscalPeriod::forDate($entryDate);
+
+            if ($fiscalPeriod && $fiscalPeriod->is_closed) {
+                throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                    'membuat jurnal',
+                    "Periode fiskal '{$fiscalPeriod->name}' sudah ditutup untuk tanggal {$entryDate->toDateString()}."
+                );
+            }
+
+            if ($fiscalPeriod && $fiscalPeriod->is_locked) {
+                throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                    'membuat jurnal',
+                    "Periode fiskal '{$fiscalPeriod->name}' sedang dikunci untuk tanggal {$entryDate->toDateString()}."
+                );
+            }
 
             $entry = JournalEntry::create([
                 'entry_number' => $data['entry_number'] ?? \App\Domain\Shared\DocumentNumbers::generate(
@@ -111,12 +127,21 @@ class JournalService extends BaseService implements JournalServiceInterface
             );
         }
 
-        // Check fiscal period
-        if ($entry->fiscalPeriod && $entry->fiscalPeriod->is_closed) {
-            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
-                'posting journal entry',
-                'Cannot post to a closed fiscal period'
-            );
+        // Check fiscal period is open for posting
+        if ($entry->fiscalPeriod) {
+            if ($entry->fiscalPeriod->is_closed) {
+                throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                    'posting journal entry',
+                    "Tidak bisa posting ke periode fiskal '{$entry->fiscalPeriod->name}' yang sudah ditutup."
+                );
+            }
+
+            if ($entry->fiscalPeriod->is_locked) {
+                throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                    'posting journal entry',
+                    "Tidak bisa posting ke periode fiskal '{$entry->fiscalPeriod->name}' yang sedang dikunci."
+                );
+            }
         }
 
         $entry->update(['is_posted' => true]);
@@ -155,17 +180,17 @@ class JournalService extends BaseService implements JournalServiceInterface
                 ];
             }
 
-        $entryDate = $entry->entry_date;
-        $description = 'Reversal of '.$entry->entry_number.': '.$entry->description;
+            $entryDate = $entry->entry_date;
+            $description = 'Reversal of '.$entry->entry_number.': '.$entry->description;
 
-        $reversalEntry = $this->createEntry([
-            'entry_date' => $entryDate instanceof \Carbon\Carbon ? $entryDate->toDateString() : (string) $entryDate,
-            'description' => $description,
-            'reference' => $entry->entry_number,
-            'source_type' => JournalEntry::SOURCE_REVERSAL,
-            'source_id' => $entry->id,
-            'lines' => $reversalLines,
-        ], autoPost: true);
+            $reversalEntry = $this->createEntry([
+                'entry_date' => $entryDate instanceof \Carbon\Carbon ? $entryDate->toDateString() : (string) $entryDate,
+                'description' => $description,
+                'reference' => $entry->entry_number,
+                'source_type' => JournalEntry::SOURCE_REVERSAL,
+                'source_id' => $entry->id,
+                'lines' => $reversalLines,
+            ], autoPost: true);
 
             // Update reversal relationships
             $reversalEntry->update(['reversal_of_id' => $entry->id]);
@@ -401,6 +426,7 @@ class JournalService extends BaseService implements JournalServiceInterface
         }
 
         $entryDate = $payment->payment_date;
+
         return $this->createEntry([
             'entry_date' => $entryDate instanceof \Carbon\Carbon ? $entryDate->toDateString() : (string) $entryDate,
             'description' => ($payment->type === Payment::TYPE_RECEIVE ? 'Penerimaan: ' : 'Pembayaran: ').$payment->payment_number,
