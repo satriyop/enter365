@@ -347,6 +347,7 @@ class BankReconciliationReportService
             ->selectRaw('DATE(reconciled_at) as date, COUNT(*) as count, SUM(debit) - SUM(credit) as total_amount')
             ->groupBy('date')
             ->orderBy('date', 'desc')
+            ->toBase()
             ->get()
             ->map(fn ($row) => [
                 'date' => $row->date,

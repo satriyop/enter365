@@ -235,7 +235,7 @@ class BankReconciliationController extends Controller
                 'number' => $payment->payment_number,
                 'amount' => $payment->amount,
                 'date' => $paymentDate->toDateString(),
-                'description' => $payment->description,
+                'description' => $payment->notes,
             ];
         });
 

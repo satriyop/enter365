@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
 use App\Models\Shared\PaymentReminder;
 use Illuminate\Bus\Queueable;
@@ -27,6 +28,7 @@ class PaymentReminderNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
+        /** @var Invoice|Bill $document */
         $document = $this->reminder->remindable;
         $contact = $this->reminder->contact;
         $companyName = config('accounting.company.name', 'Our Company');
@@ -58,6 +60,7 @@ class PaymentReminderNotification extends Notification implements ShouldQueue
      */
     public function toArray(object $notifiable): array
     {
+        /** @var Invoice|Bill $document */
         $document = $this->reminder->remindable;
 
         return [

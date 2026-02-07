@@ -116,6 +116,7 @@ class BillService implements BillServiceInterface
      */
     protected function createItems(Model $document, array $items): void
     {
+        assert($document instanceof Bill);
         foreach ($items as $item) {
             $amount = (int) round($item['quantity'] * $item['unit_price']);
 

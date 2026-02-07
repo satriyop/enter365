@@ -125,7 +125,7 @@ class ProjectReportService
         // Get monthly cost trend (database-agnostic)
         $monthlyCosts = $project->costs()
             ->get()
-            ->groupBy(fn ($cost) => $cost->cost_date?->format('Y-m'))
+            ->groupBy(fn ($cost) => $cost->cost_date->format('Y-m'))
             ->map(fn ($costs) => $costs->sum('total_cost'))
             ->sortKeys();
 
@@ -194,7 +194,7 @@ class ProjectReportService
      * @return array{
      *     report_name: string,
      *     period: array{start: string|null, end: string|null},
-     *     by_type: array,
+     *     by_type: Collection,
      *     by_project: Collection,
      *     totals: array
      * }
@@ -218,6 +218,7 @@ class ProjectReportService
         $byType = $query->clone()
             ->selectRaw('cost_type, SUM(total_cost) as total, COUNT(*) as count')
             ->groupBy('cost_type')
+            ->toBase()
             ->get()
             ->mapWithKeys(fn ($item) => [
                 $item->cost_type => [
@@ -227,17 +228,17 @@ class ProjectReportService
                 ],
             ]);
 
-        // By project
+        // By project (keep Eloquent for eager loading)
         $byProject = $query->clone()
             ->selectRaw('project_id, SUM(total_cost) as total')
             ->groupBy('project_id')
             ->with('project:id,project_number,name')
             ->get()
-            ->map(fn ($item) => [
+            ->map(fn (ProjectCost $item) => [
                 'project_id' => $item->project_id,
                 'project_number' => $item->project->project_number ?? null,
                 'project_name' => $item->project->name ?? null,
-                'total_cost' => (int) $item->total,
+                'total_cost' => (int) $item->getAttribute('total'),
             ])
             ->sortByDesc('total_cost')
             ->values();
@@ -301,6 +302,7 @@ class ProjectReportService
         $breakdown = $project->revenues()
             ->selectRaw('revenue_type, SUM(amount) as total, COUNT(*) as count')
             ->groupBy('revenue_type')
+            ->toBase()
             ->get()
             ->map(fn ($item) => [
                 'type' => $item->revenue_type,

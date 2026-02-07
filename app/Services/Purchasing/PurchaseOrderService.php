@@ -125,6 +125,7 @@ class PurchaseOrderService implements PurchaseOrderServiceInterface
 
     protected function createItems(Model $document, array $items): void
     {
+        assert($document instanceof PurchaseOrder);
         foreach ($items as $index => $itemData) {
             $quantity = $itemData['quantity'] ?? 1;
             $unitPrice = $itemData['unit_price'] ?? 0;

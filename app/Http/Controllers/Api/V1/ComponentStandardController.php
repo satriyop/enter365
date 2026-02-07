@@ -122,6 +122,7 @@ class ComponentStandardController extends Controller
             ->active()
             ->selectRaw('category, COUNT(*) as count')
             ->groupBy('category')
+            ->toBase()
             ->get()
             ->map(fn ($item) => [
                 'category' => $item->category,

@@ -108,6 +108,7 @@ class PurchaseReturnService implements PurchaseReturnServiceInterface
 
     protected function createItems(Model $document, array $items): void
     {
+        assert($document instanceof PurchaseReturn);
         foreach ($items as $itemData) {
             $item = new PurchaseReturnItem($itemData);
             $item->purchase_return_id = $document->id;

@@ -130,7 +130,7 @@ trait WithDocuments
             $this->recalculateTotals($document);
 
             return $this->loadRelations($document);
-        }, ['document_id' => $document->id]);
+        }, ['document_id' => $document->getKey()]);
     }
 
     /**
@@ -151,7 +151,7 @@ trait WithDocuments
             $document->delete();
 
             return true;
-        }, ['document_id' => $document->id]);
+        }, ['document_id' => $document->getKey()]);
     }
 
     /**
@@ -195,7 +195,7 @@ trait WithDocuments
      */
     protected function validateEditable(Model $document): void
     {
-        if ($document->status !== DocumentStatus::Draft) {
+        if ($document->getAttribute('status') !== DocumentStatus::Draft) {
             throw DocumentLockedException::cannotEdit(
                 $document,
                 'Hanya dokumen draft yang dapat diubah.'
@@ -211,7 +211,7 @@ trait WithDocuments
      */
     protected function validateDeletable(Model $document): void
     {
-        if ($document->status !== DocumentStatus::Draft) {
+        if ($document->getAttribute('status') !== DocumentStatus::Draft) {
             throw DocumentLockedException::cannotDelete(
                 $document,
                 'Hanya dokumen draft yang dapat dihapus.'

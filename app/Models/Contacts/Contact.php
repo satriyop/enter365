@@ -15,6 +15,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * @property-read int|null $active_work_orders_count
+ * @property-read int|null $completed_work_orders_count
+ */
 class Contact extends Model
 {
     use Filterable, HasFactory, SoftDeletes;

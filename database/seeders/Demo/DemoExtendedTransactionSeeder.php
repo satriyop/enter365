@@ -260,7 +260,7 @@ class DemoExtendedTransactionSeeder extends Seeder
 
             // Apply partial amount to invoice
             Carbon::setTestNow($this->baseDate->copy()->addDays(7));
-            $applyAmount = min($dp1->remaining_amount, $invoice->outstanding_amount);
+            $applyAmount = min($dp1->remaining_amount, $invoice->getOutstandingAmount());
             if ($applyAmount > 0) {
                 $this->downPaymentService->applyToInvoice($dp1, $invoice, [
                     'amount' => (int) ($applyAmount * 0.6), // Apply 60% of DP
@@ -289,7 +289,7 @@ class DemoExtendedTransactionSeeder extends Seeder
 
             // Apply to bill
             Carbon::setTestNow($this->baseDate->copy()->addDays(8));
-            $applyAmount = min($dp2->remaining_amount, $bill->outstanding_amount);
+            $applyAmount = min($dp2->remaining_amount, $bill->getOutstandingAmount());
             if ($applyAmount > 0) {
                 $this->downPaymentService->applyToBill($dp2, $bill, [
                     'amount' => $applyAmount,
