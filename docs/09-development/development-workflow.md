@@ -388,7 +388,6 @@ git commit -m "Your message"
 
 ## Related Documentation
 
-- [API Contract Validation Flow](../../INTEGRATION_CHECK_FLOW.md)
 - [PHPStan Setup](../../README_PHPSTAN.md)
 - [Service Pattern](../07-code-patterns/service-pattern.md)
 - [Testing Pattern](../07-code-patterns/testing-pattern.md)

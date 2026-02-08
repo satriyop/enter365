@@ -1,7 +1,7 @@
 # Architecture Simplification Plan
 
 **Created:** Jan 2026
-**Status:** Proposed
+**Status:** Partially Complete (Phase 1.1 + Phase 2 done, Phase 1.2 awaiting decision)
 **Goal:** Remove over-engineering, keep patterns that add real value
 
 ---
@@ -21,7 +21,7 @@ After honest code review, we identified patterns that add complexity without pro
 
 ## Phase 1: Delete Dead Code (Low Effort, Immediate)
 
-### 1.1 Delete Unused Repositories
+### 1.1 Delete Unused Repositories ✅ COMPLETE
 
 **Problem:** WorkOrderRepository and ProductStockRepository are bound but never injected.
 

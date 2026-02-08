@@ -1,6 +1,7 @@
 # Backend-to-Frontend Coverage Map
 
 **Generated:** 2026-02-02
+**Last Verified:** 2026-02-02 (API routes have grown since — re-audit recommended)
 **Purpose:** Identify backend features that lack frontend UI implementation
 
 ---

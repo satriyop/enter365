@@ -845,9 +845,8 @@ public function index(Request $request): AnonymousResourceCollection
 - Great for regression testing
 
 **Documentation:**
-- See `docs/04-api/integration-check/` for detailed integration check documentation
-- See `docs/04-api/tools/` for Scramble and PHPStan usage guides
-- See `INTEGRATION_CHECK_PRIORITY2_IMPLEMENTATION.md` for response validation details
+- Run `./scripts/check-api-integration.sh` for full API contract validation
+- See `README_PHPSTAN.md` for PHPStan setup guide
 
 ---
 

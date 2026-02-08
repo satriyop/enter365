@@ -19,7 +19,7 @@
 | Report pages | 13 |
 | Public pages | 3 |
 | Utility pages | 3 |
-| Bugs found | 5 (4 fixed, 1 open) |
+| Bugs found | 5 (5 fixed, 0 open) |
 | False positives | 3 |
 | Vite warnings | 1 |
 
@@ -131,7 +131,7 @@
 
 ---
 
-### BUG-08: Sales Return Detail Page — Vue Compiler Error (OPEN)
+### BUG-08: Sales Return Detail Page — Vue Compiler Error (FIXED)
 
 - **Severity:** High
 - **URL:** `/sales/sales-returns/:id`
@@ -139,7 +139,7 @@
 - **Error:** `SalesReturnDetailPage.vue:257:7` — `</Card>` closing tag but the opening tag at line 250 is `<Alert>`
 - **Root Cause:** Template mismatch — an `<Alert>` component is opened on line 250 but closed with `</Card>` on line 257
 - **Impact:** Cannot view any sales return detail page
-- **Status:** Open
+- **Status:** Fixed (template mismatch corrected: `</Card>` → `</Alert>`)
 
 ---
 
@@ -473,7 +473,7 @@
 | 2 | BUG-05: Account form crash | Cannot create/edit accounts | FIXED |
 | 3 | BUG-07: RpNaN on reports | Financial reports unusable | FIXED |
 | 4 | BUG-06: Settings form empty | Confusing UX on settings | FIXED |
-| 5 | **BUG-08: Sales Return detail crash** | Cannot view sales returns | **OPEN** — fix `</Card>` → `</Alert>` |
+| 5 | **BUG-08: Sales Return detail crash** | Cannot view sales returns | **FIXED** — `</Card>` → `</Alert>` |
 | 6 | WARN-01: HTML nesting | May cause hydration issues | Open — Low priority |
 
 ---

@@ -44,7 +44,7 @@ parallel:
    - Open **System Settings** > **Privacy & Security** > **Network**
    - Grant network access to PHP and Terminal/IDE
    - Then set `maximumNumberOfProcesses: 4` (or higher) for faster analysis
-   - See `PHPSTAN_NETWORK_PERMISSIONS.md` for details
+   - Open **System Settings** > **Privacy & Security** > **Network** to grant access
 
 2. **Run in CI/CD**
    - CI/CD environments typically have proper permissions configured
@@ -61,11 +61,8 @@ parallel:
 4. ✅ Use baseline only for legacy code
 5. ✅ Keep PHPDoc types accurate and up-to-date
 
-## Our Changes Verification
+## Current Baseline Status
 
-For the `total_amount` standardization:
-- ✅ QuotationResource: PHPDoc matches implementation
-- ✅ PurchaseOrderResource: PHPDoc matches implementation
-- ✅ Both use `total_amount: int` consistently
-- ✅ Tests updated and passing
-- ✅ Manual type verification: All types correct
+- **53 errors** remaining in `phpstan-baseline.neon` (reduced from 134)
+- Remaining errors are mostly type system noise (int vs int<0,max>), framework generics limitations, and Resource return type mismatches
+- New code must pass PHPStan — only legacy errors are baselined

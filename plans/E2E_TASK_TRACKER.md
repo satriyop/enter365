@@ -464,6 +464,12 @@
 | Missing DP accounts in CoA | `database/seeders/ChartOfAccountsSeeder.php` | Added `1-1700` (Uang Muka Pembelian) and `2-1700` (Uang Muka Penjualan) |
 | StockOpname validation rejects empty strings | `StoreStockOpnameRequest.php`, `UpdateStockOpnameRequest.php` | Added `'nullable'` to `name` and `notes` rules (ConvertEmptyStringsToNull middleware converts `''` → `null`, failing `'string'` rule) |
 | SmokeTest wrong down-payments route | `tests/Browser/SmokeTest.php` | `/down-payments` → `/finance/down-payments` |
+| General Ledger `isNotEmpty()` on array | `app/Services/Accounting/Reports/FinancialReportService.php` | `$item->entries->isNotEmpty()` → `!empty($item->entries)` (entries is array, not Collection) |
+| Feature flags 403 Forbidden | `tests/Feature/FeatureFlagsTest.php` | `Sanctum::actingAs()` → `authenticatedAdmin()` (Gate requires admin role) |
+| PO stale receive() tests | `tests/Feature/Services/Purchasing/PurchaseOrderServiceTest.php` | Removed 5 tests calling undefined `receive()` (moved to GRN service) |
+| PR approval missing ProductStock | `tests/Feature/Services/Purchasing/PurchaseReturnServiceTest.php` | Added `ProductStock::factory()->create()` before approval (prevents InsufficientStockException) |
+| DO cancel test wrong expectation | `tests/Feature/Api/V1/DeliveryOrderApiTest.php` | State machine allows shipped→cancelled; test updated to assert 200 |
+| Quotation PDF test wrong expectation | `tests/Feature/Api/V1/QuotationApiTest.php` | PDF endpoint implemented (DomPDF); test updated from 501 to 200 |
 
 ---
 
@@ -486,7 +492,8 @@
 | 12. Edge Cases | 5 | 0 | 0 | 5 |
 | **Total** | **62** | **24** | **0** | **38** |
 
-**Completed tests:** 164 tests (1020 assertions) across 22 test files, all passing.
+**Completed browser tests:** 173 tests across 23 test files, all passing.
+**Total test suite:** 2493 tests (501 unit + 1992 feature), 0 failures.
 
 ---
 

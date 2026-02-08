@@ -64,8 +64,7 @@
 | Document | Purpose |
 |----------|---------|
 | `/api.json` | OpenAPI specification (Scramble-generated) |
-| `/INTEGRATION_CHECK_FLOW.md` | API contract validation workflow |
-| `/INTEGRATION_CHECK_QUICK_REFERENCE.md` | Quick reference for API validation |
+| `./scripts/check-api-integration.sh` | API contract validation script |
 
 **Note:** Use Laravel Boost's `list-routes` tool for route discovery.
 
@@ -82,7 +81,7 @@
 |----------|---------|
 | `/docs/09-development/development-workflow.md` | Complete development workflow guide |
 | `/README_PHPSTAN.md` | PHPStan setup and usage |
-| `/INTEGRATION_CHECK_PRIORITY2_IMPLEMENTATION.md` | API contract validation implementation |
+| `./scripts/check-api-integration.sh` | API contract validation |
 
 **Key Tools:**
 - Laravel Pint - Code formatting
