@@ -675,14 +675,13 @@ describe('Quotation Statistics', function () {
 
 describe('Quotation PDF', function () {
 
-    it('returns not implemented for pdf endpoint', function () {
+    it('can generate pdf for quotation', function () {
         $quotation = Quotation::factory()->create();
 
-        $response = $this->getJson("/api/v1/quotations/{$quotation->id}/pdf");
+        $response = $this->get("/api/v1/quotations/{$quotation->id}/pdf");
 
-        $response->assertStatus(501)
-            ->assertJsonPath('success', false)
-            ->assertJsonPath('message', 'Fitur PDF belum tersedia.');
+        $response->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
     });
 });
 

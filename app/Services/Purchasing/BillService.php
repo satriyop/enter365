@@ -88,6 +88,7 @@ class BillService implements BillServiceInterface
      */
     public function create(array $data): Bill
     {
+        /** @var Bill */
         return $this->createDocument($data);
     }
 
@@ -98,6 +99,7 @@ class BillService implements BillServiceInterface
      */
     public function update(Model $document, array $data): Bill
     {
+        /** @var Bill */
         return $this->updateDocument($document, $data);
     }
 
@@ -121,7 +123,7 @@ class BillService implements BillServiceInterface
             $amount = (int) round($item['quantity'] * $item['unit_price']);
 
             BillItem::create([
-                'bill_id' => $document->id,
+                'bill_id' => $document->getKey(),
                 'description' => $item['description'],
                 'quantity' => $item['quantity'],
                 'unit' => $item['unit'] ?? 'unit',
@@ -135,7 +137,7 @@ class BillService implements BillServiceInterface
     /**
      * Validate that bill can be edited.
      *
-     * @throws InvalidArgumentException
+     * @throws \App\Exceptions\Domain\DocumentLockedException
      */
     protected function validateEditable(Model $document): void
     {
@@ -148,7 +150,8 @@ class BillService implements BillServiceInterface
     /**
      * Validate that bill can be deleted.
      *
-     * @throws InvalidArgumentException
+     * @throws \App\Exceptions\Domain\DocumentLockedException
+     * @throws \App\Exceptions\Domain\BusinessRuleException
      */
     protected function validateDeletable(Model $document): void
     {

@@ -1,17 +1,14 @@
 <?php
 
 use App\Contracts\FeatureManager;
-use App\Models\User;
 use App\Support\ConfigFeatureManager;
 use App\Support\Features;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $user = User::factory()->create();
-    Sanctum::actingAs($user);
+    authenticatedAdmin();
 });
 
 describe('ConfigFeatureManager', function () {

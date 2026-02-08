@@ -91,8 +91,6 @@ interface InventoryServiceInterface
 
     /**
      * Get stock valuation report.
-     *
-     * @return Collection<int, object>
      */
     public function getStockValuation(?Warehouse $warehouse = null): Collection;
 

@@ -214,13 +214,13 @@ class ProjectReportService
             $query->where('cost_date', '<=', $endDate);
         }
 
-        // By type
+        // By type (toBase returns stdClass, not models)
         $byType = $query->clone()
             ->selectRaw('cost_type, SUM(total_cost) as total, COUNT(*) as count')
             ->groupBy('cost_type')
             ->toBase()
             ->get()
-            ->mapWithKeys(fn ($item) => [
+            ->mapWithKeys(fn (\stdClass $item) => [
                 $item->cost_type => [
                     'total' => (int) $item->total,
                     'count' => (int) $item->count,
@@ -229,11 +229,13 @@ class ProjectReportService
             ]);
 
         // By project (keep Eloquent for eager loading)
-        $byProject = $query->clone()
+        /** @var Collection<int, ProjectCost> $projectCosts */
+        $projectCosts = $query->clone()
             ->selectRaw('project_id, SUM(total_cost) as total')
             ->groupBy('project_id')
             ->with('project:id,project_number,name')
-            ->get()
+            ->get();
+        $byProject = $projectCosts
             ->map(fn (ProjectCost $item) => [
                 'project_id' => $item->project_id,
                 'project_number' => $item->project->project_number ?? null,
@@ -304,7 +306,7 @@ class ProjectReportService
             ->groupBy('revenue_type')
             ->toBase()
             ->get()
-            ->map(fn ($item) => [
+            ->map(fn (\stdClass $item) => [
                 'type' => $item->revenue_type,
                 'total' => (int) $item->total,
                 'count' => (int) $item->count,

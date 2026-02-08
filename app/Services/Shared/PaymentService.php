@@ -341,19 +341,22 @@ class PaymentService extends BaseService implements PaymentServiceInterface
     /**
      * Normalize legacy invoice_id/bill_id to allocations collection.
      *
-     * @return Collection<int, array{allocatable_type: string, allocatable_id: int, amount: int, model_class: class-string}>
+     * @return Collection<int, array{allocatable_type: string, allocatable_id: int, amount: int, model_class: string}>
      */
     private function normalizeAllocations(array &$data): Collection
     {
         // If explicit allocations provided, use them
         if (isset($data['allocations']) && is_array($data['allocations'])) {
-            return collect($data['allocations'])->map(function ($alloc) {
+            /** @var array<int, array{allocatable_type: string, allocatable_id: int, amount: int}> $allocations */
+            $allocations = $data['allocations'];
+
+            return collect($allocations)->map(function (array $alloc) {
                 $modelClass = $this->resolveModelClass($alloc['allocatable_type']);
 
                 return [
                     'allocatable_type' => $alloc['allocatable_type'],
-                    'allocatable_id' => $alloc['allocatable_id'],
-                    'amount' => $alloc['amount'],
+                    'allocatable_id' => (int) $alloc['allocatable_id'],
+                    'amount' => (int) $alloc['amount'],
                     'model_class' => $modelClass,
                 ];
             });
@@ -361,26 +364,26 @@ class PaymentService extends BaseService implements PaymentServiceInterface
 
         // Legacy: single invoice_id
         if (isset($data['invoice_id'])) {
-            $invoiceId = $data['invoice_id'];
+            $invoiceId = (int) $data['invoice_id'];
             unset($data['invoice_id']);
 
             return collect([[
                 'allocatable_type' => 'invoice',
                 'allocatable_id' => $invoiceId,
-                'amount' => $data['amount'],
+                'amount' => (int) $data['amount'],
                 'model_class' => Invoice::class,
             ]]);
         }
 
         // Legacy: single bill_id
         if (isset($data['bill_id'])) {
-            $billId = $data['bill_id'];
+            $billId = (int) $data['bill_id'];
             unset($data['bill_id']);
 
             return collect([[
                 'allocatable_type' => 'bill',
                 'allocatable_id' => $billId,
-                'amount' => $data['amount'],
+                'amount' => (int) $data['amount'],
                 'model_class' => Bill::class,
             ]]);
         }
@@ -409,7 +412,7 @@ class PaymentService extends BaseService implements PaymentServiceInterface
     /**
      * Lock each payable and validate allocation amounts.
      *
-     * @param  Collection<int, array{allocatable_type: string, allocatable_id: int, amount: int, model_class: class-string}>  $allocations
+     * @param  Collection<int, array{allocatable_type: string, allocatable_id: int, amount: int, model_class: string}>  $allocations
      * @return Collection<int, Invoice|Bill> Keyed by payable ID
      */
     private function lockAndValidateAllocations(Collection $allocations, int $totalAmount): Collection

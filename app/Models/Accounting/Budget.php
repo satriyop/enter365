@@ -10,6 +10,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property \Carbon\Carbon|null $approved_at
+ */
 class Budget extends Model
 {
     use HasFactory, SoftDeletes;

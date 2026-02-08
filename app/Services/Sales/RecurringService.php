@@ -112,7 +112,7 @@ class RecurringService extends BaseService implements RecurringServiceInterface
             $subtotal += (int) round($item['quantity'] * $item['unit_price']);
         }
 
-        $taxAmount = (int) round($subtotal * ($template->tax_rate / 100));
+        $taxAmount = (int) round($subtotal * ((float) $template->tax_rate / 100));
         $totalAmount = $subtotal + $taxAmount - $template->discount_amount;
 
         $invoice = Invoice::create([
@@ -168,7 +168,7 @@ class RecurringService extends BaseService implements RecurringServiceInterface
             $subtotal += (int) round($item['quantity'] * $item['unit_price']);
         }
 
-        $taxAmount = (int) round($subtotal * ($template->tax_rate / 100));
+        $taxAmount = (int) round($subtotal * ((float) $template->tax_rate / 100));
         $totalAmount = $subtotal + $taxAmount - $template->discount_amount;
 
         $bill = Bill::create([

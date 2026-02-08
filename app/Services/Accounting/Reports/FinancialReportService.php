@@ -256,7 +256,7 @@ class FinancialReportService
             ->get();
 
         return $this->balanceService->getLedgers($accounts, $startDate, $endDate)
-            ->filter(fn ($item) => $item->entries->isNotEmpty());
+            ->filter(fn ($item) => ! empty($item->entries));
     }
 
     /**

@@ -16,6 +16,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property \Carbon\Carbon $payment_date
+ * @property \Carbon\Carbon|null $voided_at
+ * @property \App\Enums\PphCategory|null $pph_category
+ */
 class Payment extends Model
 {
     use Filterable, HasFactory, SoftDeletes;

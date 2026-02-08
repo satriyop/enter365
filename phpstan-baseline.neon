@@ -61,60 +61,6 @@ parameters:
 			path: app/Filters/SolarProposalFilter.php
 
 		-
-			message: '#^Cannot access property \$credit on array\<string, int\|string\|null\>\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Http/Controllers/Api/V1/ExportController.php
-
-		-
-			message: '#^Cannot access property \$date on array\<string, int\|string\|null\>\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Http/Controllers/Api/V1/ExportController.php
-
-		-
-			message: '#^Cannot access property \$debit on array\<string, int\|string\|null\>\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Http/Controllers/Api/V1/ExportController.php
-
-		-
-			message: '#^Cannot access property \$description on array\<string, int\|string\|null\>\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Http/Controllers/Api/V1/ExportController.php
-
-		-
-			message: '#^Cannot access property \$entry_number on array\<string, int\|string\|null\>\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Http/Controllers/Api/V1/ExportController.php
-
-		-
-			message: '#^Cannot access property \$running_balance on array\<string, int\|string\|null\>\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Http/Controllers/Api/V1/ExportController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,array\<string, int\|string\|null\>\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Http/Controllers/Api/V1/ExportController.php
-
-		-
-			message: '''
-				#^PHPDoc tag @return has invalid value \(JsonResponse\{
-				    modules\: array\<string, bool\>,
-				    enabled\: array\<int, string\>,
-				    disabled\: array\<int, string\>
-				\}\)\: Unexpected token "\{", expected TOKEN_HORIZONTAL_WS at offset 263 on line 9$#
-			'''
-			identifier: phpDoc.parseError
-			count: 1
-			path: app/Http/Controllers/Api/V1/FeatureController.php
-
-		-
 			message: '#^Method App\\Http\\Middleware\\BindOperationContext\:\:resolveTenantId\(\) never returns int so it can be removed from the return type\.$#'
 			identifier: return.unusedType
 			count: 1
@@ -133,18 +79,6 @@ parameters:
 			path: app/Http/Resources/Api/V1/AttachmentResource.php
 
 		-
-			message: '#^Cannot call method toDateString\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Http/Resources/Api/V1/BankTransactionResource.php
-
-		-
-			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Http/Resources/Api/V1/BankTransactionResource.php
-
-		-
 			message: '#^Method App\\Http\\Resources\\Api\\V1\\BomResource\:\:toArray\(\) should return array\{id\: int, bom_number\: string, name\: string, description\: string\|null, product_id\: int, product\?\: array\{id\: int, name\: string, sku\: string\}, output_quantity\: float, output_unit\: string, \.\.\.\} but returns array\{id\: int, bom_number\: string, name\: string, description\: string\|null, product_id\: int\<0, max\>, product\: mixed, output_quantity\: float, output_unit\: string\|null, \.\.\.\}\.$#'
 			identifier: return.type
 			count: 1
@@ -157,22 +91,10 @@ parameters:
 			path: app/Http/Resources/Api/V1/BomVariantGroupResource.php
 
 		-
-			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Http/Resources/Api/V1/BudgetResource.php
-
-		-
 			message: '#^Method App\\Http\\Resources\\Api\\V1\\CompanyProfileResource\:\:toArray\(\) should return array\{id\: int, name\: string, slug\: string, tagline\: string\|null, description\: string\|null, founded_year\: int\|null, employees_count\: int\|null, logo_path\: string\|null, \.\.\.\} but returns array\{id\: int, name\: string, slug\: string, tagline\: string\|null, description\: string\|null, founded_year\: int\<0, max\>\|null, employees_count\: string\|null, logo_path\: string\|null, \.\.\.\}\.$#'
 			identifier: return.type
 			count: 1
 			path: app/Http/Resources/Api/V1/CompanyProfileResource.php
-
-		-
-			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Http/Resources/Api/V1/ComponentBrandMappingResource.php
 
 		-
 			message: '#^Method App\\Http\\Resources\\Api\\V1\\ComponentStandardResource\:\:toArray\(\) should return array\{id\: int, code\: string, name\: string, category\: string, category_label\: string, subcategory\: string\|null, specifications\: array\<string, mixed\>\|null, standard\: string\|null, \.\.\.\} but returns array\{id\: int, code\: string, name\: string, category\: string, category_label\: string, subcategory\: string\|null, specifications\: string, standard\: string\|null, \.\.\.\}\.$#'
@@ -181,76 +103,16 @@ parameters:
 			path: app/Http/Resources/Api/V1/ComponentStandardResource.php
 
 		-
-			message: '#^Cannot call method toDateString\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Http/Resources/Api/V1/InventoryMovementResource.php
-
-		-
-			message: '#^Cannot call method toDateString\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Http/Resources/Api/V1/JournalEntryResource.php
-
-		-
 			message: '#^Method App\\Http\\Resources\\Api\\V1\\MrpSuggestionResource\:\:toArray\(\) should return array\{id\: int, mrp_run_id\: int, suggestion_type\: string, action\: string, status\: array\{value\: string, label\: string, color\: string, is_terminal\: bool, is_editable\: bool\}, priority\: string, product_id\: int, product\?\: array\{id\: int, sku\: string, name\: string, unit\: string, procurement_type\: string\}\|null, \.\.\.\} but returns array\{id\: int, mrp_run_id\: int\<0, max\>, suggestion_type\: string, action\: string, status\: App\\Http\\Resources\\Api\\V1\\StatusResource, priority\: string, product_id\: int\<0, max\>, product\: mixed, \.\.\.\}\.$#'
 			identifier: return.type
 			count: 1
 			path: app/Http/Resources/Api/V1/MrpSuggestionResource.php
 
 		-
-			message: '#^Cannot call method toDateString\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 2
-			path: app/Http/Resources/Api/V1/PaymentReminderResource.php
-
-		-
-			message: '#^Cannot call method toDateString\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Http/Resources/Api/V1/PaymentResource.php
-
-		-
 			message: '#^Method App\\Http\\Resources\\Api\\V1\\ProductResource\:\:toArray\(\) should return array\{id\: int, sku\: string, name\: string, description\: string\|null, type\: string, type_label\: string, category_id\: int\|null, category\?\: App\\Http\\Resources\\Api\\V1\\ProductCategoryResource, \.\.\.\} but returns array\{id\: int, sku\: string, name\: string, description\: string\|null, type\: string, type_label\: ''Jasa''\|''Produk'', category_id\: int\<0, max\>\|null, category\: App\\Http\\Resources\\Api\\V1\\ProductCategoryResource, \.\.\.\}\.$#'
 			identifier: return.type
 			count: 1
 			path: app/Http/Resources/Api/V1/ProductResource.php
-
-		-
-			message: '#^Cannot call method format\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Http/Resources/Api/V1/ProjectCostResource.php
-
-		-
-			message: '#^Cannot call method format\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Http/Resources/Api/V1/ProjectRevenueResource.php
-
-		-
-			message: '#^Cannot call method format\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 4
-			path: app/Http/Resources/Api/V1/SalesReturnResource.php
-
-		-
-			message: '#^Cannot call method toDateString\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Http/Resources/Api/V1/StockOpnameResource.php
-
-		-
-			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 5
-			path: app/Http/Resources/Api/V1/StockOpnameResource.php
-
-		-
-			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Http/Resources/Api/V1/UserResource.php
 
 		-
 			message: '#^Method App\\Models\\Accounting\\ExchangeRate\:\:latestRates\(\) should return Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Accounting\\ExchangeRate\> but returns Illuminate\\Database\\Eloquent\\Collection\<int, static\(App\\Models\\Accounting\\ExchangeRate\)\>\.$#'
@@ -271,94 +133,10 @@ parameters:
 			path: app/Models/Inventory/Product.php
 
 		-
-			message: '#^PHPDoc tag @param has invalid value \(\\Illuminate\\Database\\Eloquent\.Builder\<Product\>  \$query\)\: Unexpected token "\.Builder\<Product\>", expected variable at offset 91 on line 4$#'
-			identifier: phpDoc.parseError
-			count: 1
-			path: app/Models/Inventory/Product.php
-
-		-
-			message: '#^Binary operation "\*" between int and string results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: app/Models/Purchasing/Bill.php
-
-		-
-			message: '#^Parameter \#2 \$taxRate of method App\\Contracts\\Sales\\InvoiceCalculatorInterface\:\:calculate\(\) expects float, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Models/Purchasing/Bill.php
-
-		-
-			message: '#^Parameter \#5 \$exchangeRate of method App\\Contracts\\Sales\\InvoiceCalculatorInterface\:\:calculate\(\) expects float, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Models/Purchasing/Bill.php
-
-		-
-			message: '#^Parameter \#2 \$taxRate of method App\\Contracts\\Purchasing\\PurchaseOrderCalculatorInterface\:\:calculate\(\) expects float, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Models/Purchasing/PurchaseOrder.php
-
-		-
-			message: '#^Parameter \#4 \$discountValue of method App\\Contracts\\Purchasing\\PurchaseOrderCalculatorInterface\:\:calculate\(\) expects float\|null, string\|null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Models/Purchasing/PurchaseOrder.php
-
-		-
-			message: '#^Parameter \#6 \$exchangeRate of method App\\Contracts\\Purchasing\\PurchaseOrderCalculatorInterface\:\:calculate\(\) expects float, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Models/Purchasing/PurchaseOrder.php
-
-		-
-			message: '#^Binary operation "\*" between int and string results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: app/Models/Sales/Invoice.php
-
-		-
-			message: '#^Parameter \#2 \$taxRate of method App\\Contracts\\Sales\\InvoiceCalculatorInterface\:\:calculate\(\) expects float, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Models/Sales/Invoice.php
-
-		-
-			message: '#^Parameter \#5 \$exchangeRate of method App\\Contracts\\Sales\\InvoiceCalculatorInterface\:\:calculate\(\) expects float, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Models/Sales/Invoice.php
-
-		-
 			message: '#^Method App\\Models\\Solar\\PlnTariff\:\:getGroupedByType\(\) should return Illuminate\\Support\\Collection\<string, Illuminate\\Support\\Collection\<int, App\\Models\\Solar\\PlnTariff\>\> but returns Illuminate\\Database\\Eloquent\\Collection\<\(int\|string\), Illuminate\\Database\\Eloquent\\Collection\<int, static\(App\\Models\\Solar\\PlnTariff\)\>\>\.$#'
 			identifier: return.type
 			count: 1
 			path: app/Models/Solar/PlnTariff.php
-
-		-
-			message: '#^PHPDoc tag @param references unknown parameter\: \$query$#'
-			identifier: parameter.notFound
-			count: 1
-			path: app/Models/User.php
-
-		-
-			message: '#^PHPDoc tag @return with type Illuminate\\Database\\Eloquent\\Builder\<App\\Models\\User\> is incompatible with native type string\.$#'
-			identifier: return.phpDocType
-			count: 1
-			path: app/Models/User.php
-
-		-
-			message: '#^PHPDoc tag @return with type array\<string, string\> is incompatible with native type bool\.$#'
-			identifier: return.phpDocType
-			count: 1
-			path: app/Models/User.php
-
-		-
-			message: '#^Class App\\Exceptions\\Domain\\EntityNotFoundException constructor invoked with 1 parameter, 2 required\.$#'
-			identifier: arguments.count
-			count: 1
-			path: app/QueryServices/Base/AbstractQueryService.php
 
 		-
 			message: '#^Generic type Illuminate\\Contracts\\Pagination\\LengthAwarePaginator\<Illuminate\\Database\\Eloquent\\Model\> in PHPDoc tag @return does not specify all template types of interface Illuminate\\Contracts\\Pagination\\LengthAwarePaginator\: TKey, TValue$#'
@@ -397,58 +175,10 @@ parameters:
 			path: app/QueryServices/Sales/InvoiceQueryService.php
 
 		-
-			message: '#^Anonymous function should return object\{account_id\: int, code\: string, name\: string, type\: string, opening_balance\: int, entries\: Illuminate\\Support\\Collection\<int, array\{id\: int, journal_entry_id\: int, date\: string, entry_number\: string, description\: string, reference\: string\|null, debit\: int, credit\: int, \.\.\.\}\>, closing_balance\: int\}&stdClass but returns object\{account_id\: int, code\: string, name\: string, type\: string, opening_balance\: int, entries\: Illuminate\\Support\\Collection\<int, array\{id\: int, journal_entry_id\: int, date\: string, entry_number\: string, description\: string, reference\: string\|null, debit\: int, credit\: int, \.\.\.\}\>, closing_balance\: int\}&stdClass\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/Accounting/AccountBalanceService.php
-
-		-
 			message: '#^Method App\\Services\\Accounting\\AccountBalanceService\:\:getLedger\(\) should return Illuminate\\Support\\Collection\<int, array\{id\: int, journal_entry_id\: int, date\: string, entry_number\: string, description\: string, reference\: string\|null, debit\: int, credit\: int, \.\.\.\}\> but returns Illuminate\\Support\\Collection\<int, array\{id\: int, journal_entry_id\: int, date\: string, entry_number\: string, description\: string, reference\: string\|null, debit\: int, credit\: int, \.\.\.\}\>\.$#'
 			identifier: return.type
 			count: 1
 			path: app/Services/Accounting/AccountBalanceService.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,App\\Models\\Accounting\\Account\>\:\:map\(\) expects callable\(App\\Models\\Accounting\\Account, int\)\: \(object\{account_id\: int, code\: string, name\: string, type\: string, opening_balance\: int, entries\: Illuminate\\Support\\Collection\<int, array\{id\: int, journal_entry_id\: int, date\: string, entry_number\: string, description\: string, reference\: string\|null, debit\: int, credit\: int, running_balance\: int\}\>, closing_balance\: int\}&stdClass\), Closure\(mixed\)\: \(object\{account_id\: int, code\: string, name\: string, type\: string, opening_balance\: int, entries\: Illuminate\\Support\\Collection\<int, array\{id\: int, journal_entry_id\: int, date\: string, entry_number\: string, description\: string, reference\: string\|null, debit\: int, credit\: int, running_balance\: int\}\>, closing_balance\: int\}&stdClass\) given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Services/Accounting/AccountBalanceService.php
-
-		-
-			message: '#^Method App\\Services\\Accounting\\BudgetService\:\:getBudgetVsActual\(\) should return Illuminate\\Support\\Collection\<int, object\> but returns Illuminate\\Support\\Collection\<int, object\{account_id\: int, account_code\: string, account_name\: string, account_type\: string, budget_amount\: int, actual_amount\: int, variance\: int, variance_percent\: 0\|float, is_over_budget\: bool\}&stdClass\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/Accounting/BudgetService.php
-
-		-
-			message: '#^Cannot call method format\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 3
-			path: app/Services/Accounting/Reports/BankReconciliationReportService.php
-
-		-
-			message: '#^Method App\\Services\\Accounting\\Reports\\BankReconciliationReportService\:\:getReconciliationHistory\(\) should return Illuminate\\Support\\Collection\<int, array\{date\: string, count\: int, total_amount\: int\}\> but returns Illuminate\\Support\\Collection\<int, array\{date\: mixed, count\: int, total_amount\: int\}\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/Accounting/Reports/BankReconciliationReportService.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Accounting\\BankTransaction\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Services/Accounting/Reports/BankReconciliationReportService.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Shared\\Payment\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 2
-			path: app/Services/Accounting/Reports/BankReconciliationReportService.php
-
-		-
-			message: '#^Parameter \#1 \.\.\.\$values of method Illuminate\\Support\\Collection\<int,object\{account_id\: int, code\: string, name\: string, type\: string, subtype\: string\|null, balance\: int\}&stdClass\>\:\:push\(\) expects object\{account_id\: int, code\: string, name\: string, type\: string, subtype\: string\|null, balance\: int\}&stdClass, object\{account_id\: null, code\: null, name\: string, type\: string, subtype\: string, balance\: int\}&stdClass given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Services/Accounting/Reports/FinancialReportService.php
 
 		-
 			message: '#^Method App\\Services\\Accounting\\Reports\\TaxReportService\:\:getInputTaxList\(\) should return Illuminate\\Support\\Collection\<int, array\> but returns Illuminate\\Support\\Collection\<int, array\{tanggal\: string, nomor_faktur_vendor\: string, nomor_internal\: string, nama_penjual\: string, npwp_penjual\: string, dpp\: int, ppn\: int, total\: int\}\>\.$#'
@@ -463,42 +193,6 @@ parameters:
 			path: app/Services/Accounting/Reports/TaxReportService.php
 
 		-
-			message: '#^Method App\\Services\\Accounting\\Strategies\\Closing\\DirectClosingStrategy\:\:getAccountBalances\(\) should return Illuminate\\Support\\Collection\<int, object\{account_id\: int, balance\: int\}\> but returns Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Accounting\\JournalEntryLine\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/Accounting/Strategies/Closing/DirectClosingStrategy.php
-
-		-
-			message: '#^Method App\\Services\\Accounting\\Strategies\\Closing\\IncomeSummaryStrategy\:\:getAccountBalances\(\) should return Illuminate\\Support\\Collection\<int, object\{account_id\: int, balance\: int\}\> but returns Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Accounting\\JournalEntryLine\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/Accounting/Strategies/Closing/IncomeSummaryStrategy.php
-
-		-
-			message: '#^Method App\\Services\\Accounting\\YearEndCloseService\:\:getPermanentAccountBalances\(\) should return Illuminate\\Support\\Collection\<int, object\{account_id\: int, balance\: int\}\> but returns Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Accounting\\JournalEntryLine\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/Accounting/YearEndCloseService.php
-
-		-
-			message: '#^Method App\\Services\\Inventory\\InventoryService\:\:getStockValuation\(\) should return Illuminate\\Support\\Collection\<int, object\> but returns Illuminate\\Support\\Collection\<int, object\{product_id\: int\<0, max\>, product_sku\: string, product_name\: string, warehouse_id\: int\<0, max\>, warehouse_name\: string, quantity\: int, average_cost\: int, total_value\: int\}&stdClass\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/Inventory/InventoryService.php
-
-		-
-			message: '#^Cannot call method format\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Services/Inventory/Reports/COGSReportService.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Inventory\\InventoryMovement\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Services/Inventory/Reports/COGSReportService.php
-
-		-
 			message: '#^Return type \(array\<int, array\{code\: string, name\: string, coverage\: int, coverage_percent\: float\}\>\) of method App\\Services\\Manufacturing\\BomTemplateService\:\:getAvailableBrandsForTemplate\(\) should be compatible with return type \(array\<string\>\) of method App\\Contracts\\Manufacturing\\BomTemplateServiceInterface\:\:getAvailableBrandsForTemplate\(\)$#'
 			identifier: method.childReturnType
 			count: 1
@@ -509,12 +203,6 @@ parameters:
 			identifier: return.type
 			count: 1
 			path: app/Services/Manufacturing/BrandSwap/BrandSwapPreviewService.php
-
-		-
-			message: '#^Cannot call method copy\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Services/Manufacturing/MrpDemandService.php
 
 		-
 			message: '#^Expression on left side of \?\? is not nullable\.$#'
@@ -535,214 +223,10 @@ parameters:
 			path: app/Services/Manufacturing/Reports/WorkOrderReportService.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Projects\\ProjectCost\:\:\$count\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Projects/ProjectReportService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Projects\\ProjectCost\:\:\$total\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/Projects/ProjectReportService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Projects\\ProjectRevenue\:\:\$count\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Projects/ProjectReportService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Projects\\ProjectRevenue\:\:\$total\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Projects/ProjectReportService.php
-
-		-
-			message: '#^Cannot call method format\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Services/Projects/ProjectReportService.php
-
-		-
-			message: '#^Method App\\Services\\Projects\\ProjectReportService\:\:getProjectCostAnalysis\(\) should return array\{report_name\: string, period\: array\{start\: string\|null, end\: string\|null\}, by_type\: array, by_project\: Illuminate\\Support\\Collection, totals\: array\} but returns array\{report_name\: ''Laporan Analisis…'', period\: array\{start\: string\|null, end\: string\|null\}, by_type\: Illuminate\\Support\\Collection\<string, array\{total\: int, count\: int, label\: string\}\>, by_project\: Illuminate\\Support\\Collection\<int, array\{project_id\: int, project_number\: string\|null, project_name\: string\|null, total_cost\: int\}\>, totals\: array\{grand_total\: int, cost_types_count\: int\<0, max\>, projects_count\: int\<0, max\>\}\}\.$#'
+			message: '#^Method App\\Services\\Shared\\PaymentService\:\:normalizeAllocations\(\) should return Illuminate\\Support\\Collection\<int, array\{allocatable_type\: string, allocatable_id\: int, amount\: int, model_class\: string\}\> but returns Illuminate\\Support\\Collection\<int, array\{allocatable_type\: string, allocatable_id\: int, amount\: int, model_class\: class\-string\}\>\.$#'
 			identifier: return.type
-			count: 1
-			path: app/Services/Projects/ProjectReportService.php
-
-		-
-			message: '#^Using nullsafe method call on non\-nullable type string\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Services/Projects/ProjectReportService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Services/Purchasing/BillService.php
-
-		-
-			message: '#^Method App\\Services\\Purchasing\\BillService\:\:create\(\) should return App\\Models\\Purchasing\\Bill but returns Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/Purchasing/BillService.php
-
-		-
-			message: '#^Method App\\Services\\Purchasing\\BillService\:\:update\(\) should return App\\Models\\Purchasing\\Bill but returns Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/Purchasing/BillService.php
-
-		-
-			message: '#^PHPDoc tag @throws with type App\\Services\\Purchasing\\InvalidArgumentException is not subtype of Throwable$#'
-			identifier: throws.notThrowable
-			count: 2
-			path: app/Services/Purchasing/BillService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Services/Purchasing/PurchaseOrderService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$tax_rate\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Purchasing/PurchaseOrderService.php
-
-		-
-			message: '#^Call to an undefined method App\\Models\\Purchasing\\PurchaseOrder\:\:isDraft\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Services/Purchasing/PurchaseOrderService.php
-
-		-
-			message: '#^Method App\\Services\\Purchasing\\PurchaseOrderService\:\:create\(\) should return App\\Models\\Purchasing\\PurchaseOrder but returns Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/Purchasing/PurchaseOrderService.php
-
-		-
-			message: '#^Method App\\Services\\Purchasing\\PurchaseOrderService\:\:update\(\) should return App\\Models\\Purchasing\\PurchaseOrder but returns Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/Purchasing/PurchaseOrderService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Services/Purchasing/PurchaseReturnService.php
-
-		-
-			message: '#^Method App\\Services\\Purchasing\\PurchaseReturnService\:\:create\(\) should return App\\Models\\Purchasing\\PurchaseReturn but returns Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/Purchasing/PurchaseReturnService.php
-
-		-
-			message: '#^Method App\\Services\\Purchasing\\PurchaseReturnService\:\:update\(\) should return App\\Models\\Purchasing\\PurchaseReturn but returns Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/Purchasing/PurchaseReturnService.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:items\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Services/Sales/DeliveryOrderService.php
-
-		-
-			message: '#^Method App\\Services\\Sales\\DeliveryOrderService\:\:create\(\) should return App\\Models\\Sales\\DeliveryOrder but returns Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/Sales/DeliveryOrderService.php
-
-		-
-			message: '#^Method App\\Services\\Sales\\DeliveryOrderService\:\:update\(\) should return App\\Models\\Sales\\DeliveryOrder but returns Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/Sales/DeliveryOrderService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Services/Sales/InvoiceService.php
-
-		-
-			message: '#^Method App\\Services\\Sales\\InvoiceService\:\:create\(\) should return App\\Models\\Sales\\Invoice but returns Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/Sales/InvoiceService.php
-
-		-
-			message: '#^Method App\\Services\\Sales\\InvoiceService\:\:post\(\) should return App\\Models\\Sales\\Invoice but returns Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/Sales/InvoiceService.php
-
-		-
-			message: '#^Method App\\Services\\Sales\\InvoiceService\:\:update\(\) should return App\\Models\\Sales\\Invoice but returns Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/Sales/InvoiceService.php
-
-		-
-			message: '#^Method App\\Services\\Sales\\InvoiceService\:\:void\(\) should return App\\Models\\Sales\\Invoice but returns Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/Sales/InvoiceService.php
-
-		-
-			message: '#^PHPDoc tag @throws with type App\\Services\\Sales\\InvalidArgumentException is not subtype of Throwable$#'
-			identifier: throws.notThrowable
-			count: 2
-			path: app/Services/Sales/QuotationOutcomeService.php
-
-		-
-			message: '#^Binary operation "/" between string and 100 results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 2
-			path: app/Services/Sales/RecurringService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Services/Sales/SalesReturnService.php
-
-		-
-			message: '#^Cannot access property \$value on string\.$#'
-			identifier: property.nonObject
-			count: 5
-			path: app/Services/Sales/SalesReturnService.php
-
-		-
-			message: '#^Method App\\Services\\Sales\\SalesReturnService\:\:create\(\) should return App\\Models\\Sales\\SalesReturn but returns Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/Sales/SalesReturnService.php
-
-		-
-			message: '#^Method App\\Services\\Sales\\SalesReturnService\:\:update\(\) should return App\\Models\\Sales\\SalesReturn but returns Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/Sales/SalesReturnService.php
-
-		-
-			message: '#^Call to an undefined method App\\Contracts\\Accounting\\JournalServiceInterface\:\:postPayment\(\)\.$#'
-			identifier: method.notFound
 			count: 1
 			path: app/Services/Shared/PaymentService.php
-
-		-
-			message: '#^Call to an undefined method App\\Models\\Sales\\Quotation\:\:getNextRevisionNumber\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: database/factories/Sales/QuotationFactory.php
 
 		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Schema\\ForeignKeyDefinition\:\:after\(\)\.$#'

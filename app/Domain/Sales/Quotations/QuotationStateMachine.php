@@ -218,7 +218,7 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
             return false;
         }
 
-        return $this->quotation->valid_until?->isPast() ?? false;
+        return $this->quotation->valid_until->isPast();
     }
 
     protected function beforeTransition(DocumentStatus $from, DocumentStatus $to): void

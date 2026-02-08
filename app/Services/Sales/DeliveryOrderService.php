@@ -82,6 +82,7 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
      */
     public function create(array $data): DeliveryOrder
     {
+        /** @var DeliveryOrder */
         return $this->createDocument($data);
     }
 
@@ -92,6 +93,7 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
      */
     public function update(DeliveryOrder $deliveryOrder, array $data): DeliveryOrder
     {
+        /** @var DeliveryOrder */
         return $this->updateDocument($deliveryOrder, $data);
     }
 
@@ -121,6 +123,7 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
 
     protected function createItems(Model $document, array $items): void
     {
+        assert($document instanceof DeliveryOrder);
         foreach ($items as $itemData) {
             $document->items()->create($itemData);
         }

@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
 
 /**
+ * @property \App\Enums\PphCategory|null $pph_category
  * @property-read int|null $active_work_orders_count
  * @property-read int|null $completed_work_orders_count
  */

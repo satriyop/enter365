@@ -7,6 +7,7 @@ namespace App\Contracts\Accounting;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
+use App\Models\Shared\Payment;
 
 interface JournalServiceInterface
 {
@@ -36,4 +37,9 @@ interface JournalServiceInterface
      * @return JournalEntry The new reversal entry
      */
     public function reverseEntry(JournalEntry $entry, ?string $description = null): JournalEntry;
+
+    /**
+     * Post a payment to create journal entry.
+     */
+    public function postPayment(Payment $payment): JournalEntry;
 }

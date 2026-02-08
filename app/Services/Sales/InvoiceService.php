@@ -127,6 +127,7 @@ class InvoiceService implements InvoiceServiceInterface
      */
     public function create(array $data): Invoice
     {
+        /** @var Invoice */
         return $this->createDocument($data);
     }
 
@@ -137,6 +138,7 @@ class InvoiceService implements InvoiceServiceInterface
      */
     public function update(Model $document, array $data): Invoice
     {
+        /** @var Invoice */
         return $this->updateDocument($document, $data);
     }
 
@@ -156,7 +158,7 @@ class InvoiceService implements InvoiceServiceInterface
         assert($document instanceof Invoice);
         foreach ($items as $index => $item) {
             $invoiceItem = new InvoiceItem([
-                'invoice_id' => $document->id,
+                'invoice_id' => $document->getKey(),
                 'product_id' => $item['product_id'] ?? null,
                 'description' => $item['description'],
                 'quantity' => $item['quantity'],
@@ -247,6 +249,7 @@ class InvoiceService implements InvoiceServiceInterface
                 'total_amount' => $invoice->total_amount,
             ]);
 
+            /** @var Invoice */
             return $this->loadRelations($invoice);
         }, ['invoice_id' => $invoice->id, 'total_amount' => $invoice->total_amount]);
     }
@@ -415,6 +418,7 @@ class InvoiceService implements InvoiceServiceInterface
                 'reversed_cogs_entries' => $cogsJournalEntries->count(),
             ]);
 
+            /** @var Invoice */
             return $this->loadRelations($invoice);
         }, ['invoice_id' => $invoice->id, 'reason' => $reason]);
     }

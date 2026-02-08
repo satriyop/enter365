@@ -66,9 +66,9 @@ function createRequiredAccounts(array $codes = []): array
         '2-1300' => ['name' => 'Barang Diterima Belum Ditagih', 'type' => Account::TYPE_LIABILITY, 'subtype' => Account::SUBTYPE_CURRENT_LIABILITY],
         '4-1001' => ['name' => 'Pendapatan Penjualan', 'type' => Account::TYPE_REVENUE, 'factory' => 'salesRevenue'],
         '5-1001' => ['name' => 'Harga Pokok Penjualan', 'type' => Account::TYPE_EXPENSE, 'subtype' => Account::SUBTYPE_OPERATING_EXPENSE],
-        '4-2001' => ['name' => 'Retur Penjualan', 'type' => Account::TYPE_REVENUE, 'subtype' => Account::SUBTYPE_OPERATING_REVENUE],
+        '4-1004' => ['name' => 'Retur Penjualan', 'type' => Account::TYPE_REVENUE, 'subtype' => Account::SUBTYPE_OPERATING_REVENUE],
         '5-1002' => ['name' => 'Pembelian', 'type' => Account::TYPE_EXPENSE, 'subtype' => Account::SUBTYPE_OPERATING_EXPENSE],
-        '5-2001' => ['name' => 'Retur Pembelian', 'type' => Account::TYPE_EXPENSE, 'subtype' => Account::SUBTYPE_OPERATING_EXPENSE],
+        '5-1004' => ['name' => 'Retur Pembelian', 'type' => Account::TYPE_EXPENSE, 'subtype' => Account::SUBTYPE_OPERATING_EXPENSE],
         '5-2900' => ['name' => 'Penyesuaian Persediaan', 'type' => Account::TYPE_EXPENSE, 'subtype' => Account::SUBTYPE_OPERATING_EXPENSE],
     ];
 
@@ -875,7 +875,7 @@ describe('Complete Manufacturing Cycle: BOM → WO → MR → Completion', funct
 describe('Sales Return Cycle: Invoice → Return → Inventory Reversal', function () {
     test('full sales return workflow with inventory restoration and journal entries', function () {
         // Setup accounts needed: AR, Revenue, Tax, Inventory, COGS, Bank
-        $accounts = createRequiredAccounts(['1-1002', '1-1100', '1-1400', '2-1200', '4-1001', '4-2001', '5-1001']);
+        $accounts = createRequiredAccounts(['1-1002', '1-1100', '1-1400', '2-1200', '4-1001', '4-1004', '5-1001']);
 
         $customer = Contact::factory()->customer()->create();
         $warehouse = Warehouse::factory()->create();
@@ -984,7 +984,7 @@ describe('Sales Return Cycle: Invoice → Return → Inventory Reversal', functi
 
 describe('Purchase Return Cycle: Bill → Return → Inventory Adjustment', function () {
     test('full purchase return workflow with inventory reduction and journal entries', function () {
-        $accounts = createRequiredAccounts(['1-1002', '1-1300', '1-1400', '2-1100', '2-1300', '5-1002', '5-2001']);
+        $accounts = createRequiredAccounts(['1-1002', '1-1300', '1-1400', '2-1100', '2-1300', '5-1002', '5-1004']);
 
         $vendor = Contact::factory()->vendor()->create();
         $warehouse = Warehouse::factory()->create();

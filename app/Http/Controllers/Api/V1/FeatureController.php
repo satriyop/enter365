@@ -15,12 +15,6 @@ class FeatureController extends Controller
      * Frontend applications can use this to conditionally render UI elements.
      *
      * GET /api/v1/features
-     *
-     * @return JsonResponse{
-     *     modules: array<string, bool>,
-     *     enabled: array<int, string>,
-     *     disabled: array<int, string>
-     * }
      */
     public function index(): JsonResponse
     {

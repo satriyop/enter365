@@ -188,7 +188,7 @@ class DirectClosingStrategy implements ClosingStrategy
     /**
      * Get account balances for a specific account type in a period.
      *
-     * @return \Illuminate\Support\Collection<int, object{account_id: int, balance: int}>
+     * @return \Illuminate\Support\Collection<int, \stdClass>
      */
     protected function getAccountBalances(FiscalPeriod $period, string $accountType): \Illuminate\Support\Collection
     {
@@ -209,6 +209,7 @@ class DirectClosingStrategy implements ClosingStrategy
             ->select('account_id')
             ->selectRaw("{$balanceFormula} as balance")
             ->groupBy('account_id')
+            ->toBase()
             ->get();
     }
 

@@ -14,6 +14,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 /**
  * @property int $id
  * @property DocumentStatus $status
+ * @property \Carbon\Carbon $opname_date
+ * @property \Carbon\Carbon|null $counting_started_at
+ * @property \Carbon\Carbon|null $reviewed_at
+ * @property \Carbon\Carbon|null $approved_at
+ * @property \Carbon\Carbon|null $completed_at
+ * @property \Carbon\Carbon|null $cancelled_at
  */
 class StockOpname extends Model
 {

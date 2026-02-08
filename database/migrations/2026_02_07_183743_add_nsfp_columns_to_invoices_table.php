@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::table('invoices', function (Blueprint $table) {
             $table->string('nsfp_number', 20)->nullable()->unique()->after('invoice_number');
-            $table->foreignId('nsfp_range_id')->nullable()->constrained('nsfp_ranges')->nullOnDelete()->after('nsfp_number');
+            $table->foreignId('nsfp_range_id')->after('nsfp_number')->nullable()->constrained('nsfp_ranges')->nullOnDelete();
             $table->dateTime('nsfp_assigned_at')->nullable()->after('nsfp_range_id');
             $table->boolean('is_nsfp_cancelled')->default(false)->after('nsfp_assigned_at');
         });

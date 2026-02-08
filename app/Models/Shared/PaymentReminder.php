@@ -9,6 +9,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
+/**
+ * @property \Carbon\Carbon $scheduled_date
+ * @property \Carbon\Carbon|null $sent_date
+ */
 class PaymentReminder extends Model
 {
     use HasFactory;

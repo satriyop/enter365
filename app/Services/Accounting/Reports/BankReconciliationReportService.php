@@ -141,7 +141,7 @@ class BankReconciliationReportService
             ->where('status', BankTransactionStatus::Unmatched)
             ->orderBy('transaction_date')
             ->get()
-            ->map(function (BankTransaction $txn) {
+            ->map(function (BankTransaction $txn): array {
                 /** @var \Carbon\Carbon $txnDate */
                 $txnDate = $txn->transaction_date;
 
@@ -179,7 +179,7 @@ class BankReconciliationReportService
             ->whereDoesntHave('bankTransaction')
             ->orderBy('payment_date')
             ->get()
-            ->map(function (Payment $payment) {
+            ->map(function (Payment $payment): array {
                 /** @var \Carbon\Carbon $payDate */
                 $payDate = $payment->payment_date;
 
@@ -313,7 +313,7 @@ class BankReconciliationReportService
             ->orderBy('created_at', 'desc')
             ->limit(100) // Limit to recent entries
             ->get()
-            ->map(function (JournalEntryLine $line) {
+            ->map(function (JournalEntryLine $line): array {
                 /** @var \Carbon\Carbon $entryDate */
                 $entryDate = $line->journalEntry->entry_date;
 
@@ -349,8 +349,8 @@ class BankReconciliationReportService
             ->orderBy('date', 'desc')
             ->toBase()
             ->get()
-            ->map(fn ($row) => [
-                'date' => $row->date,
+            ->map(fn (\stdClass $row) => [
+                'date' => (string) $row->date,
                 'count' => (int) $row->count,
                 'total_amount' => (int) $row->total_amount,
             ]);

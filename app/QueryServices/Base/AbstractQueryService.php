@@ -53,7 +53,8 @@ abstract class AbstractQueryService
 
         if ($result === null) {
             throw new \App\Exceptions\Domain\EntityNotFoundException(
-                'Entity not found with ID: '.$id
+                'Entity',
+                $id
             );
         }
 

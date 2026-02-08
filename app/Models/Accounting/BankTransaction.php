@@ -9,6 +9,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property \Carbon\Carbon $transaction_date
+ * @property \Carbon\Carbon|null $reconciled_at
+ */
 class BankTransaction extends Model
 {
     use HasFactory;

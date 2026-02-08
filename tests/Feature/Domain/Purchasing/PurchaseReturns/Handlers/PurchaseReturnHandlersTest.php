@@ -91,8 +91,8 @@ describe('InventoryReturnHandler', function () {
 describe('JournalEntryHandler', function () {
 
     beforeEach(function () {
-        // Seed required accounts
-        Account::factory()->create(['code' => '5-2001', 'name' => 'Purchase Returns', 'type' => 'expense']);
+        // Seed required accounts (handler looks up 5-1004 and 2-1100)
+        Account::factory()->create(['code' => '5-1004', 'name' => 'Retur Pembelian', 'type' => 'expense']);
         Account::factory()->create(['code' => '2-1100', 'name' => 'Accounts Payable', 'type' => 'liability']);
         Account::factory()->create(['code' => '1-1300', 'name' => 'PPN Masukan', 'type' => 'asset']);
     });

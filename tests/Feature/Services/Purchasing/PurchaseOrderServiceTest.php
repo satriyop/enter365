@@ -6,7 +6,6 @@ use App\Contracts\Purchasing\PurchaseOrderServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Exceptions\Domain\BusinessRuleException;
 use App\Exceptions\Domain\DocumentLockedException;
-use App\Exceptions\Domain\EntityNotFoundException;
 use App\Exceptions\Domain\StateTransitionException;
 use App\Models\Contacts\Contact;
 use App\Models\Inventory\Product;
@@ -206,69 +205,8 @@ describe('Workflow Transitions', function () {
     })->throws(BusinessRuleException::class, 'alasan');
 });
 
-describe('Receiving Items', function () {
-    test('receives items partially', function () {
-        $po = PurchaseOrder::factory()
-            ->has(PurchaseOrderItem::factory()->state(['quantity' => 100]), 'items')
-            ->create(['status' => DocumentStatus::Approved]);
-
-        $item = $po->items->first();
-
-        $updated = $this->service->receive($po, [
-            ['item_id' => $item->id, 'quantity' => 50],
-        ]);
-
-        expect((float) $updated->items->first()->quantity_received)->toBe(50.0);
-    });
-
-    test('receives all items completely', function () {
-        $po = PurchaseOrder::factory()
-            ->has(PurchaseOrderItem::factory()->state(['quantity' => 100]), 'items')
-            ->create(['status' => DocumentStatus::Approved]);
-
-        $item = $po->items->first();
-
-        $updated = $this->service->receive($po, [
-            ['item_id' => $item->id, 'quantity' => 100],
-        ]);
-
-        expect((float) $updated->items->first()->quantity_received)->toBe(100.0);
-    });
-
-    test('throws exception when receiving more than ordered', function () {
-        $po = PurchaseOrder::factory()
-            ->has(PurchaseOrderItem::factory()->state(['quantity' => 100]), 'items')
-            ->create(['status' => DocumentStatus::Approved]);
-
-        $item = $po->items->first();
-
-        $this->service->receive($po, [
-            ['item_id' => $item->id, 'quantity' => 150],
-        ]);
-    })->throws(BusinessRuleException::class);
-
-    test('throws exception when receiving non-approved PO', function () {
-        $po = PurchaseOrder::factory()
-            ->has(PurchaseOrderItem::factory(), 'items')
-            ->create(['status' => DocumentStatus::Draft]);
-
-        $item = $po->items->first();
-
-        $this->service->receive($po, [
-            ['item_id' => $item->id, 'quantity' => 10],
-        ]);
-    })->throws(StateTransitionException::class);
-
-    test('throws exception for non-existent item', function () {
-        $po = PurchaseOrder::factory()
-            ->has(PurchaseOrderItem::factory(), 'items')
-            ->create(['status' => DocumentStatus::Approved]);
-
-        $this->service->receive($po, [
-            ['item_id' => 99999, 'quantity' => 10],
-        ]);
-    })->throws(EntityNotFoundException::class);
-});
+// Note: Receiving is handled by GoodsReceiptNoteService, not PurchaseOrderService.
+// See tests/Feature/Services/Purchasing/GoodsReceiptNoteServiceTest.php for receiving tests.
 
 describe('Duplication', function () {
     test('duplicates purchase order as new draft', function () {

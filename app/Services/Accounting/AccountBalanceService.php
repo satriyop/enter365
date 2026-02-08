@@ -99,7 +99,7 @@ class AccountBalanceService
             $runningBalance = (int) $account->opening_balance + $priorBalance;
         }
 
-        return $entries->map(function ($entry) use ($account, &$runningBalance) {
+        return $entries->map(function (\stdClass $entry) use ($account, &$runningBalance) {
             $movement = $account->isDebitNormal()
                 ? (int) $entry->debit - (int) $entry->credit
                 : (int) $entry->credit - (int) $entry->debit;
@@ -189,11 +189,11 @@ class AccountBalanceService
             }
         }
 
-        return $accounts->map(function ($account) use ($allEntries, $openingBalances) {
+        return $accounts->map(function (Account $account) use ($allEntries, $openingBalances) {
             $entries = $allEntries->get($account->id, collect());
             $runningBalance = $openingBalances[$account->id];
 
-            $transformedEntries = $entries->map(function ($entry) use ($account, &$runningBalance) {
+            $transformedEntries = $entries->map(function (\stdClass $entry) use ($account, &$runningBalance) {
                 $movement = $account->isDebitNormal()
                     ? (int) $entry->debit - (int) $entry->credit
                     : (int) $entry->credit - (int) $entry->debit;
@@ -219,7 +219,7 @@ class AccountBalanceService
                 'name' => $account->name,
                 'type' => $account->type,
                 'opening_balance' => $openingBalances[$account->id],
-                'entries' => $transformedEntries,
+                'entries' => $transformedEntries->values()->all(),
                 'closing_balance' => $runningBalance,
             ];
         });
@@ -250,7 +250,7 @@ class AccountBalanceService
             ->get()
             ->keyBy('account_id');
 
-        return $accounts->map(function ($account) use ($balances) {
+        return $accounts->map(function (Account $account) use ($balances) {
             $movement = $balances->get($account->id);
             $totalDebit = (int) ($movement->total_debit ?? 0);
             $totalCredit = (int) ($movement->total_credit ?? 0);

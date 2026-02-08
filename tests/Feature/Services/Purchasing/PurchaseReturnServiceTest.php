@@ -8,6 +8,7 @@ use App\Exceptions\Domain\DocumentLockedException;
 use App\Exceptions\Domain\StateTransitionException;
 use App\Models\Contacts\Contact;
 use App\Models\Inventory\Product;
+use App\Models\Inventory\ProductStock;
 use App\Models\Inventory\Warehouse;
 use App\Models\Purchasing\Bill;
 use App\Models\Purchasing\PurchaseReturn;
@@ -151,6 +152,15 @@ describe('Workflow Transitions', function () {
     })->throws(StateTransitionException::class);
 
     test('approves submitted purchase return', function () {
+        // Seed stock so stock-out doesn't fail
+        ProductStock::factory()->create([
+            'product_id' => $this->product->id,
+            'warehouse_id' => $this->warehouse->id,
+            'quantity' => 100,
+            'average_cost' => 100000,
+            'total_value' => 10000000,
+        ]);
+
         $return = PurchaseReturn::factory()
             ->has(PurchaseReturnItem::factory()->state([
                 'product_id' => $this->product->id,
@@ -228,6 +238,15 @@ describe('Workflow Transitions', function () {
 
 describe('Approval Pipeline', function () {
     test('approves purchase return successfully', function () {
+        // Seed stock so stock-out doesn't fail
+        ProductStock::factory()->create([
+            'product_id' => $this->product->id,
+            'warehouse_id' => $this->warehouse->id,
+            'quantity' => 100,
+            'average_cost' => 100000,
+            'total_value' => 10000000,
+        ]);
+
         $return = PurchaseReturn::factory()
             ->has(PurchaseReturnItem::factory()->state([
                 'product_id' => $this->product->id,

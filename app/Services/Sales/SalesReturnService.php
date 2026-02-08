@@ -93,6 +93,7 @@ class SalesReturnService implements SalesReturnServiceInterface
      */
     public function create(array $data): SalesReturn
     {
+        /** @var SalesReturn */
         $result = $this->createDocument($data);
 
         return $result;
@@ -105,6 +106,7 @@ class SalesReturnService implements SalesReturnServiceInterface
      */
     public function update(SalesReturn $salesReturn, array $data): SalesReturn
     {
+        /** @var SalesReturn */
         $result = $this->updateDocument($salesReturn, $data);
 
         return $result;
@@ -139,7 +141,7 @@ class SalesReturnService implements SalesReturnServiceInterface
         assert($document instanceof SalesReturn);
         foreach ($items as $itemData) {
             $item = new SalesReturnItem($itemData);
-            $item->sales_return_id = $document->id;
+            $item->sales_return_id = $document->getKey();
             $item->calculateLineTotal();
             $item->save();
         }
@@ -193,10 +195,12 @@ class SalesReturnService implements SalesReturnServiceInterface
     public function submit(SalesReturn $salesReturn, ?int $userId = null): SalesReturn
     {
         if (! $salesReturn->canBeSubmitted()) {
+            /** @var DocumentStatus $status */
+            $status = $salesReturn->status;
             throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
                 'Sales Return',
                 'diajukan',
-                $salesReturn->status->value,
+                $status->value,
                 'draft dengan item'
             );
         }
@@ -218,10 +222,12 @@ class SalesReturnService implements SalesReturnServiceInterface
     public function approve(SalesReturn $salesReturn, ?int $userId = null): SalesReturn
     {
         if (! $salesReturn->canBeApproved()) {
+            /** @var DocumentStatus $status */
+            $status = $salesReturn->status;
             throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
                 'Sales Return',
                 'disetujui',
-                $salesReturn->status->value,
+                $status->value,
                 'submitted'
             );
         }
@@ -242,10 +248,12 @@ class SalesReturnService implements SalesReturnServiceInterface
     public function reject(SalesReturn $salesReturn, ?string $reason = null, ?int $userId = null): SalesReturn
     {
         if (! $salesReturn->canBeRejected()) {
+            /** @var DocumentStatus $status */
+            $status = $salesReturn->status;
             throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
                 'Sales Return',
                 'ditolak',
-                $salesReturn->status->value,
+                $status->value,
                 'submitted'
             );
         }
@@ -265,10 +273,12 @@ class SalesReturnService implements SalesReturnServiceInterface
     public function complete(SalesReturn $salesReturn, ?int $userId = null): SalesReturn
     {
         if (! $salesReturn->canBeCompleted()) {
+            /** @var DocumentStatus $status */
+            $status = $salesReturn->status;
             throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
                 'Sales Return',
                 'diselesaikan',
-                $salesReturn->status->value,
+                $status->value,
                 'approved'
             );
         }
@@ -290,10 +300,12 @@ class SalesReturnService implements SalesReturnServiceInterface
     public function cancel(SalesReturn $salesReturn, ?string $reason = null, ?int $userId = null): SalesReturn
     {
         if (! $salesReturn->canBeCancelled()) {
+            /** @var DocumentStatus $status */
+            $status = $salesReturn->status;
             throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
                 'Sales Return',
                 'dibatalkan',
-                $salesReturn->status->value,
+                $status->value,
                 'draft, submitted, atau approved'
             );
         }

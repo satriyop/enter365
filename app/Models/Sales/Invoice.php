@@ -337,10 +337,10 @@ class Invoice extends Model
         $lineTotals = $this->items->pluck('line_total')->toArray();
         $totals = $calculator->calculate(
             $lineTotals,
-            $this->tax_rate,
+            (float) $this->tax_rate,
             $this->discount_amount,
             $this->currency,
-            $this->exchange_rate
+            (float) $this->exchange_rate
         );
 
         $this->subtotal = $totals->subtotal;
@@ -348,8 +348,9 @@ class Invoice extends Model
         $this->total_amount = $totals->totalAmount;
 
         // Calculate base currency total if multi-currency
-        if ($this->currency !== 'IDR' && $this->exchange_rate > 0) {
-            $this->base_currency_total = (int) round($this->total_amount * $this->exchange_rate);
+        $exchangeRate = (float) $this->exchange_rate;
+        if ($this->currency !== 'IDR' && $exchangeRate > 0) {
+            $this->base_currency_total = (int) round($this->total_amount * $exchangeRate);
         } else {
             $this->base_currency_total = $this->total_amount;
         }

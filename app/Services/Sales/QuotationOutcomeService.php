@@ -34,7 +34,8 @@ class QuotationOutcomeService extends BaseService
      *
      * @param  array{won_reason?: string, outcome_notes?: string}  $data
      *
-     * @throws InvalidArgumentException
+     * @throws \App\Exceptions\Domain\StateTransitionException
+     * @throws \App\Exceptions\Domain\BusinessRuleException
      */
     public function markAsWon(Quotation $quotation, array $data = []): Quotation
     {
@@ -71,7 +72,8 @@ class QuotationOutcomeService extends BaseService
      *
      * @param  array{lost_reason?: string, lost_to_competitor?: string, outcome_notes?: string}  $data
      *
-     * @throws InvalidArgumentException
+     * @throws \App\Exceptions\Domain\StateTransitionException
+     * @throws \App\Exceptions\Domain\BusinessRuleException
      */
     public function markAsLost(Quotation $quotation, array $data = []): Quotation
     {

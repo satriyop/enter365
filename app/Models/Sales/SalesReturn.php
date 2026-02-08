@@ -24,6 +24,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $tax_rate
  * @property int $tax_amount
  * @property int $total_amount
+ * @property \Carbon\Carbon|null $submitted_at
+ * @property \Carbon\Carbon|null $approved_at
+ * @property \Carbon\Carbon|null $rejected_at
+ * @property \Carbon\Carbon|null $completed_at
  */
 class SalesReturn extends Model
 {

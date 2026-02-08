@@ -100,8 +100,6 @@ class BudgetService extends BaseService implements BudgetServiceInterface
 
     /**
      * Get budget vs actual comparison for a period.
-     *
-     * @return Collection<int, object>
      */
     public function getBudgetVsActual(Budget $budget, ?int $month = null): Collection
     {
@@ -353,7 +351,7 @@ class BudgetService extends BaseService implements BudgetServiceInterface
     /**
      * Get accounts that are over budget.
      *
-     * @return Collection<int, object>
+     * @return Collection<int, \stdClass>
      */
     public function getOverBudgetAccounts(Budget $budget, ?int $month = null): Collection
     {

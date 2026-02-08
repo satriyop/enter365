@@ -69,6 +69,7 @@ class PurchaseReturnService implements PurchaseReturnServiceInterface
      */
     public function create(array $data): PurchaseReturn
     {
+        /** @var PurchaseReturn */
         return $this->createDocument($data);
     }
 
@@ -79,6 +80,7 @@ class PurchaseReturnService implements PurchaseReturnServiceInterface
      */
     public function update(PurchaseReturn $purchaseReturn, array $data): PurchaseReturn
     {
+        /** @var PurchaseReturn */
         return $this->updateDocument($purchaseReturn, $data);
     }
 
@@ -111,7 +113,7 @@ class PurchaseReturnService implements PurchaseReturnServiceInterface
         assert($document instanceof PurchaseReturn);
         foreach ($items as $itemData) {
             $item = new PurchaseReturnItem($itemData);
-            $item->purchase_return_id = $document->id;
+            $item->purchase_return_id = $document->getKey();
             $item->calculateLineTotal();
             $item->save();
         }

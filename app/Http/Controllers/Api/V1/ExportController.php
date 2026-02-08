@@ -105,13 +105,13 @@ class ExportController extends Controller
         $account = Account::findOrFail($accountId);
         $ledger = $this->balanceService->getLedger($account, $startDate, $endDate);
 
-        $rows = $ledger->map(fn ($entry) => [
-            'date' => $entry->date,
-            'entry_number' => $entry->entry_number,
-            'description' => $entry->description,
-            'debit' => $entry->debit,
-            'credit' => $entry->credit,
-            'balance' => $entry->running_balance,
+        $rows = $ledger->map(fn (array $entry) => [
+            'date' => $entry['date'],
+            'entry_number' => $entry['entry_number'],
+            'description' => $entry['description'],
+            'debit' => $entry['debit'],
+            'credit' => $entry['credit'],
+            'balance' => $entry['running_balance'],
         ])->toArray();
 
         return $this->exportReport($rows, 'general-ledger', $format, [

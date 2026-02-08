@@ -7,8 +7,8 @@ use App\Models\Accounting\Account;
 use App\Models\Contacts\Contact;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomItem;
-use App\Models\Manufacturing\WorkOrder;
 use App\Models\Manufacturing\ComponentBrandMapping;
+use App\Models\Manufacturing\WorkOrder;
 use App\Models\Purchasing\BillItem;
 use App\Models\Purchasing\PurchaseOrderItem;
 use App\Models\Sales\InvoiceItem;
@@ -20,6 +20,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @method static \Illuminate\Database\Eloquent\Builder<static> lowStock()
+ */
 class Product extends Model
 {
     use Filterable, HasActiveStatus, HasFactory, SoftDeletes;
@@ -401,7 +404,7 @@ class Product extends Model
     /**
      * Scope for sellable products.
      *
-     * @param  \Illuminate\Database\Eloquent.Builder<Product>  $query
+     * @param  \Illuminate\Database\Eloquent\Builder<Product>  $query
      * @return \Illuminate\Database\Eloquent\Builder<Product>
      */
     public function scopeSellable($query)

@@ -65,6 +65,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
+ *
+ * @method static \Illuminate\Database\Eloquent\Builder<static> active()
  */
 class SolarProposal extends Model
 {

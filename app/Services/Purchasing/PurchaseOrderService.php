@@ -94,6 +94,7 @@ class PurchaseOrderService implements PurchaseOrderServiceInterface
      */
     public function create(array $data): PurchaseOrder
     {
+        /** @var PurchaseOrder */
         return $this->createDocument($data);
     }
 
@@ -104,6 +105,7 @@ class PurchaseOrderService implements PurchaseOrderServiceInterface
      */
     public function update(PurchaseOrder $purchaseOrder, array $data): PurchaseOrder
     {
+        /** @var PurchaseOrder */
         return $this->updateDocument($purchaseOrder, $data);
     }
 
@@ -118,7 +120,7 @@ class PurchaseOrderService implements PurchaseOrderServiceInterface
     protected function validateDeletable(Model $document): void
     {
         /** @var PurchaseOrder $document */
-        if (! $document->isDraft()) {
+        if ($document->status !== DocumentStatus::Draft) {
             throw DocumentLockedException::cannotDelete($document, 'Hanya PO draft yang dapat dihapus.');
         }
     }
@@ -130,7 +132,7 @@ class PurchaseOrderService implements PurchaseOrderServiceInterface
             $quantity = $itemData['quantity'] ?? 1;
             $unitPrice = $itemData['unit_price'] ?? 0;
             $discountPercent = $itemData['discount_percent'] ?? 0;
-            $taxRate = $itemData['tax_rate'] ?? $document->tax_rate;
+            $taxRate = $itemData['tax_rate'] ?? $document->getAttribute('tax_rate');
 
             $grossAmount = (int) round($quantity * $unitPrice);
             $discountAmount = $discountPercent > 0
@@ -140,7 +142,7 @@ class PurchaseOrderService implements PurchaseOrderServiceInterface
             $taxAmount = (int) round($netAmount * ($taxRate / 100));
 
             PurchaseOrderItem::create([
-                'purchase_order_id' => $document->id,
+                'purchase_order_id' => $document->getKey(),
                 'product_id' => $itemData['product_id'] ?? null,
                 'description' => $itemData['description'],
                 'quantity' => $quantity,

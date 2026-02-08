@@ -88,7 +88,7 @@ class COGSReportService
 
         $totalCogs = $results->sum('total_cogs');
 
-        return $results->map(fn ($row) => [
+        return $results->map(fn (\stdClass $row) => [
             'product_id' => $row->product_id,
             'sku' => $row->sku,
             'name' => $row->name,

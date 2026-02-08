@@ -285,12 +285,15 @@ describe('Delivery Order Workflow', function () {
             ->assertJsonPath('data.status.value', 'cancelled');
     });
 
-    it('cannot cancel a shipped delivery order', function () {
+    it('can cancel a shipped delivery order', function () {
         $deliveryOrder = DeliveryOrder::factory()->shipped()->create();
 
-        $response = $this->postJson("/api/v1/delivery-orders/{$deliveryOrder->id}/cancel");
+        $response = $this->postJson("/api/v1/delivery-orders/{$deliveryOrder->id}/cancel", [
+            'reason' => 'Customer rejected shipment',
+        ]);
 
-        $response->assertUnprocessable();
+        $response->assertOk()
+            ->assertJsonPath('data.status.value', 'cancelled');
     });
 });
 

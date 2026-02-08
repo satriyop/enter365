@@ -529,7 +529,7 @@ class YearEndCloseService extends BaseService implements YearEndCloseServiceInte
     /**
      * Get permanent account balances for opening balance calculation.
      *
-     * @return \Illuminate\Support\Collection<int, object{account_id: int, balance: int}>
+     * @return \Illuminate\Support\Collection<int, \stdClass>
      */
     protected function getPermanentAccountBalances(
         FiscalPeriod $period,
@@ -548,6 +548,7 @@ class YearEndCloseService extends BaseService implements YearEndCloseServiceInte
             ->select('account_id')
             ->selectRaw('SUM(debit - credit) as balance')
             ->groupBy('account_id')
+            ->toBase()
             ->get();
     }
 }

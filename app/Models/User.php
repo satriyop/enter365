@@ -4,14 +4,15 @@ namespace App\Models;
 
 use App\Traits\Filterable;
 use App\Traits\HasRolesAndPermissions;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
+/**
+ * @property \Carbon\Carbon|null $email_verified_at
+ */
 class User extends Authenticatable
 {
     use Filterable, HasApiTokens, HasFactory, HasRolesAndPermissions, Notifiable;
@@ -61,10 +62,7 @@ class User extends Authenticatable
     }
 
     /**
-     * Scope to get only active users.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder<User>  $query
-     * @return \Illuminate\Database\Eloquent\Builder<User>
+     * Get the password for the user.
      */
     public function getAuthPassword(): string
     {
@@ -72,9 +70,7 @@ class User extends Authenticatable
     }
 
     /**
-     * The attributes that should be cast.
-     *
-     * @return array<string, string>
+     * Check if the user is active.
      */
     public function isActive(): bool
     {

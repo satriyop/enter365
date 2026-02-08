@@ -63,6 +63,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
+ *
+ * @method static Builder<static> active()
+ * @method static Builder<static> outstanding()
  */
 class PurchaseOrder extends Model
 {
@@ -462,11 +465,11 @@ class PurchaseOrder extends Model
         $lineTotals = $this->items->pluck('line_total')->toArray();
         $totals = $calculator->calculate(
             $lineTotals,
-            $this->tax_rate,
+            (float) $this->tax_rate,
             $this->discount_type,
-            $this->discount_value,
+            $this->discount_value !== null ? (float) $this->discount_value : null,
             $this->currency,
-            $this->exchange_rate
+            (float) $this->exchange_rate
         );
 
         $this->subtotal = $totals->subtotal;
