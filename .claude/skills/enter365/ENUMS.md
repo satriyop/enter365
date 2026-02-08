@@ -1,6 +1,6 @@
 # Enums Registry
 
-All 11 enums in Enter365 across `app/Enums/` and domain-specific directories.
+All 12 enums in Enter365 across `app/Enums/` and domain-specific directories.
 
 ---
 
@@ -256,6 +256,27 @@ enum WorkOrderPriority: string
     case Urgent = 'urgent';
 }
 ```
+
+### PphCategory
+
+**Location:** `app/Enums/PphCategory.php`
+
+PPh (Pajak Penghasilan) withholding tax categories for Indonesian tax compliance.
+
+```php
+enum PphCategory: string
+{
+    case Pph23Jasa = 'pph23_jasa';           // PPh 23 - Jasa (2%)
+    case Pph23Sewa = 'pph23_sewa';           // PPh 23 - Sewa Peralatan (2%)
+    case Pph23Bunga = 'pph23_bunga';         // PPh 23 - Bunga (15%)
+    case Pph23Royalti = 'pph23_royalti';     // PPh 23 - Royalti (15%)
+    case Pph4ayat2Konstruksi = 'pph4_2_konstruksi'; // PPh 4(2) - Konstruksi (2-6%)
+    case Pph4ayat2Sewa = 'pph4_2_sewa';     // PPh 4(2) - Sewa Tanah/Bangunan (10%)
+    case Pph26 = 'pph26';                   // PPh 26 - Badan Asing (20%)
+}
+```
+
+**Key methods:** `label()`, `defaultRate()`, `accountCode()`, `isFinal()`, `effectiveRate()`
 
 ---
 

@@ -163,7 +163,7 @@ Every document type has state validity checks in THREE places that don't always 
 
 | Document | State Machine `canX()` | Model `canBeX()` | Transition Array |
 |---|---|---|---|
-| **DO Cancel** | Draft, Confirmed | Draft, Confirmed | Draft, Confirmed, **Shipped** |
+| **DO Cancel** | Draft, Confirmed, Shipped | Draft, Confirmed, Shipped | Draft, Confirmed, Shipped |
 | **SR Cancel** | Draft, Submitted, **Approved** | Draft, Submitted | Draft, Submitted, **Approved** |
 
 When the transition array is more permissive than the guard methods, direct `transitionTo()` calls bypass the guards entirely.

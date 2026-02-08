@@ -1,6 +1,6 @@
 # State Machines Reference
 
-All 15 state machines in Enter365 with states, transitions, and usage.
+All 16 state machines in Enter365 with states, transitions, and usage.
 
 ---
 
@@ -322,6 +322,23 @@ sent → [accepted, rejected, expired]
 **Guards:** Send: variant_group_id && financial_analysis not null; Accept/Reject: not expired
 
 **Timestamps:** sent_at + public_token (UUID) + public_token_expires_at, accepted_at, rejected_at + reason
+
+### 16. TaskStateMachine
+
+**File:** `app/Domain/Projects/Tasks/TaskStateMachine.php`
+
+```
+todo → [in_progress, cancelled]
+in_progress → [done, cancelled]
+```
+
+**Permission Methods:** `canStart()`, `canComplete()`, `canCancel()`, `canEdit()`, `canDelete()`
+
+**Guards:** Start: no blocking dependencies; Complete: no unfinished subtasks
+
+**Events:** `TaskStarted`, `TaskCompleted`, `TaskCancelled`, `TaskStatusChanged`
+
+**Timestamps:** start_date (on start), completed_at (on done)
 
 ---
 

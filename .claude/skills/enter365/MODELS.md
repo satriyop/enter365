@@ -1,6 +1,6 @@
 # Model Patterns
 
-72 Eloquent models across 11 directories. Patterns and conventions.
+81 Eloquent models across 12 directories. Patterns and conventions.
 
 ---
 
@@ -10,18 +10,19 @@
 app/Models/
 ├── User.php
 ├── CompanyProfile.php
-├── Accounting/          (10 models)
-│   ├── Account.php, BankTransaction.php, Budget.php
-│   ├── BudgetLine.php, Currency.php, ExchangeRate.php
-│   ├── FiscalPeriod.php, JournalEntry.php, JournalEntryLine.php
+├── Accounting/          (12 models)
+│   ├── Account.php, AccountingPolicy.php, BankReconciliationSession.php
+│   ├── BankTransaction.php, Budget.php, BudgetLine.php
+│   ├── Currency.php, ExchangeRate.php, FiscalPeriod.php
+│   ├── JournalEntry.php, JournalEntryLine.php
 ├── Contacts/            (1 model)
 │   └── Contact.php
 ├── Core/                (4 models)
 │   ├── AuditLog.php, Permission.php, Role.php, StatusHistory.php
-├── Inventory/           (7 models)
-│   ├── InventoryMovement.php, Product.php, ProductCategory.php
-│   ├── ProductStock.php, StockOpname.php, StockOpnameItem.php
-│   └── Warehouse.php
+├── Inventory/           (8 models)
+│   ├── InventoryCostLayer.php, InventoryMovement.php
+│   ├── Product.php, ProductCategory.php, ProductStock.php
+│   ├── StockOpname.php, StockOpnameItem.php, Warehouse.php
 ├── Manufacturing/       (18 models)
 │   ├── Bom.php, BomItem.php, BomTemplate.php, BomTemplateItem.php
 │   ├── BomVariantGroup.php, ComponentBrandMapping.php
@@ -30,23 +31,28 @@ app/Models/
 │   ├── MrpDemand.php, MrpRun.php, MrpSuggestion.php
 │   ├── SpecValidationRule.php, SpecValidationRuleSet.php
 │   ├── SubcontractorWorkOrder.php, WorkOrder.php, WorkOrderItem.php
-├── Projects/            (3 models)
-│   ├── Project.php, ProjectCost.php, ProjectRevenue.php
-├── Purchasing/          (8 models)
+├── Projects/            (4 models)
+│   ├── Project.php, ProjectCost.php, ProjectRevenue.php, Task.php
+├── Purchasing/          (10 models)
 │   ├── Bill.php, BillItem.php, GoodsReceiptNote.php
-│   ├── GoodsReceiptNoteItem.php, PurchaseOrder.php
-│   ├── PurchaseOrderItem.php, PurchaseReturn.php, PurchaseReturnItem.php
-├── Sales/               (12 models)
+│   ├── GoodsReceiptNoteItem.php, LandedCost.php, LandedCostAllocation.php
+│   ├── PurchaseOrder.php, PurchaseOrderItem.php
+│   ├── PurchaseReturn.php, PurchaseReturnItem.php
+├── Sales/               (13 models)
 │   ├── DeliveryOrder.php, DeliveryOrderItem.php
 │   ├── DownPayment.php, DownPaymentApplication.php
 │   ├── Invoice.php, InvoiceItem.php, Quotation.php
 │   ├── QuotationActivity.php, QuotationItem.php
-│   ├── QuotationVariantOption.php, SalesReturn.php, SalesReturnItem.php
-├── Shared/              (5 models)
-│   ├── Attachment.php, Payment.php, PaymentReminder.php
-│   ├── RecurringTemplate.php, SubcontractorInvoice.php
-└── Solar/               (3 models)
-    ├── IndonesiaSolarData.php, PlnTariff.php, SolarProposal.php
+│   ├── QuotationVariantOption.php, SalesReturn.php
+│   ├── SalesReturnItem.php, WriteOff.php
+├── Shared/              (6 models)
+│   ├── Attachment.php, Payment.php, PaymentAllocation.php
+│   ├── PaymentReminder.php, RecurringTemplate.php
+│   ├── SubcontractorInvoice.php
+├── Solar/               (3 models)
+│   ├── IndonesiaSolarData.php, PlnTariff.php, SolarProposal.php
+└── Tax/                 (1 model)
+    └── NsfpRange.php
 ```
 
 ---

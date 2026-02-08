@@ -20,6 +20,12 @@ Quick lookup for which interface to inject and what service it resolves to.
 |-----------|----------------|---------|
 | `JournalServiceInterface` | `JournalService` | Journal entry CRUD |
 | `AccountLookupServiceInterface` | `AccountLookupService` | Chart of accounts lookup |
+| `AccountServiceInterface` | `AccountService` | Chart of accounts CRUD |
+| `BudgetServiceInterface` | `BudgetService` | Budget management |
+| `FiscalPeriodServiceInterface` | `FiscalPeriodService` | Fiscal period lifecycle |
+| `BankReconciliationServiceInterface` | `BankReconciliationService` | Bank statement reconciliation |
+| `YearEndCloseServiceInterface` | `YearEndCloseService` | Year-end closing process |
+| `FxRevaluationServiceInterface` | `FxRevaluationService` | Foreign currency revaluation (PSAK 10) |
 
 ### Accounting Strategies
 
@@ -46,6 +52,9 @@ Quick lookup for which interface to inject and what service it resolves to.
 | `QuotationCalculatorInterface` | `QuotationCalculator` | Quotation total calculations |
 | `InvoiceCalculatorInterface` | `InvoiceCalculator` | Invoice total calculations |
 | `QuotationNumberGeneratorInterface` | `QuotationNumberGenerator` | Quotation number generation |
+| `WriteOffServiceInterface` | `WriteOffService` | Bad debt write-offs |
+| `QuotationFollowUpServiceInterface` | `QuotationFollowUpService` | Quotation follow-up scheduling |
+| `QuotationConversionServiceInterface` | `QuotationConversionService` | Quotation → Invoice conversion |
 
 ### Quotation Services (Coordinator Pattern)
 
@@ -105,6 +114,7 @@ $this->outcomeService->markAsLost($quotation, ['lost_reason' => 'competitor']);
 | `PurchaseOrderServiceInterface` | `PurchaseOrderService` | PO CRUD, submit, approve |
 | `GoodsReceiptNoteServiceInterface` | `GoodsReceiptNoteService` | GRN CRUD, receive goods |
 | `PurchaseReturnServiceInterface` | `PurchaseReturnService` | Purchase returns with approval |
+| `LandedCostServiceInterface` | `LandedCostService` | Landed cost allocation for imports |
 | `PurchaseOrderCalculatorInterface` | `PurchaseOrderCalculator` | PO total calculations |
 
 ---
@@ -120,6 +130,7 @@ $this->outcomeService->markAsLost($quotation, ['lost_reason' => 'competitor']);
 | `MaterialRequisitionServiceInterface` | `MaterialRequisitionService` | Material requisitions |
 | `MrpServiceInterface` | `MrpService` | MRP planning |
 | `SubcontractorServiceInterface` | `SubcontractorService` | Subcontractor work orders |
+| `WorkOrderCostServiceInterface` | `WorkOrderCostService` | Work order cost tracking |
 
 ### Brand Swap Services (Coordinator Pattern)
 
@@ -156,6 +167,8 @@ Config-driven strategy bindings that resolve different implementations based on 
 | `InventoryServiceInterface` | `InventoryService` | Stock movements, transfers |
 | `StockOpnameServiceInterface` | `StockOpnameService` | Physical inventory counts |
 | `ProductServiceInterface` | `ProductService` | Product CRUD |
+| `WarehouseServiceInterface` | `WarehouseService` | Warehouse management |
+| `ProductCategoryServiceInterface` | `ProductCategoryService` | Product categories |
 
 ---
 
@@ -164,6 +177,16 @@ Config-driven strategy bindings that resolve different implementations based on 
 | Interface | Implementation | Purpose |
 |-----------|----------------|---------|
 | `ProjectServiceInterface` | `ProjectService` | Project CRUD, lifecycle |
+| `TaskServiceInterface` | `TaskService` | Task CRUD within projects |
+
+---
+
+## Tax Services
+
+| Interface | Implementation | Purpose |
+|-----------|----------------|---------|
+| `NsfpServiceInterface` | `NsfpService` | NSFP range management (DJP e-Nofa) |
+| `PphCalculationServiceInterface` | `PphCalculationService` | PPh withholding tax calculation |
 
 ---
 
@@ -181,6 +204,9 @@ Config-driven strategy bindings that resolve different implementations based on 
 | Interface | Implementation | Purpose |
 |-----------|----------------|---------|
 | `PaymentServiceInterface` | `PaymentService` | Payment recording |
+| `ContactServiceInterface` | `ContactService` | Contact CRUD |
+| `ReminderServiceInterface` | `ReminderService` | Payment reminder scheduling |
+| `OverdueServiceInterface` | `OverdueService` | Overdue detection and flagging |
 
 ---
 
@@ -244,7 +270,10 @@ See: [ARCHITECTURE_PATTERNS.md](ARCHITECTURE_PATTERNS.md#domain-factory-pattern)
 | Material Requisition | `MaterialRequisitionServiceInterface` |
 | BOM | `BomServiceInterface` |
 | Project | `ProjectServiceInterface` |
+| Task | `TaskServiceInterface` |
 | Solar Proposal | `SolarProposalServiceInterface` |
+| Write-Off | `WriteOffServiceInterface` |
+| Landed Cost | `LandedCostServiceInterface` |
 
 ### "I need to work with inventory"
 

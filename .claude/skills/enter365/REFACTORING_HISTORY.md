@@ -495,6 +495,62 @@ done
 
 ---
 
+## 2026-02 Feature Additions & Compliance
+
+### PHPStan Baseline Reduction
+
+**Date:** Feb 2026
+**Status:** ✅ Baseline reduced from 134 → 53 errors (18 test failures fixed)
+
+PHPStan error reduction through proper type annotations, null safety, `assert()` calls, and `getKey()`/`toBase()` narrowing.
+
+### Tax Compliance (NSFP & PPh)
+
+**Date:** Jan-Feb 2026
+**Status:** ✅ Complete
+
+New Tax domain added:
+- **NSFP Module** (`NsfpService`): DJP e-Nofa compliance for invoice numbering ranges
+- **PPh Withholding** (`PphCalculationService`): PPh 23, PPh 4(2), PPh 26 tax calculation
+- **PphCategory Enum**: 7 withholding tax categories with rates, account codes, and `isFinal()` logic
+
+### Multi-Currency (PSAK 10)
+
+**Date:** Jan-Feb 2026
+**Status:** ✅ Complete
+
+Implemented PSAK 10 compliant multi-currency support:
+- `FxRevaluationService`: Foreign currency revaluation
+- `BankReconciliationService`: Bank statement reconciliation
+- Exchange rate handling in Payment forms and JournalEntry
+- E2E browser tests for multi-currency Bills, Invoices, Quotations, POs
+
+### Sales Domain Audit & Nuclear Gap Fixes
+
+**Date:** Jan-Feb 2026
+**Status:** ✅ Complete (6 P0 + 9 P1 + 4 M items resolved)
+
+Critical fixes:
+- `InvoiceService::void()` cascade: reverses shipped DOs, approved SRs, COGS JEs, payments, DPs
+- `DeliveryOrderService::reverseShipment()`: inventory + COGS unwind
+- `SalesReturnService::cancel()`: JE + inventory + paid_amount reversal for approved SRs
+- Shipped → Cancelled transition for DO reversal
+- Domain events + null safety alignment
+
+### New Models & Services
+
+| Addition | Domain |
+|----------|--------|
+| `Task` model + `TaskStateMachine` | Projects |
+| `WriteOff` model + `WriteOffService` | Sales |
+| `LandedCost`, `LandedCostAllocation` | Purchasing |
+| `PaymentAllocation` | Shared |
+| `InventoryCostLayer` | Inventory |
+| `AccountingPolicy`, `BankReconciliationSession` | Accounting |
+| `NsfpRange` | Tax |
+
+---
+
 ## Remaining Work
 
 All P0-P4 issues resolved. Pattern A migration complete.

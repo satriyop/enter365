@@ -642,11 +642,11 @@ This project has detailed architecture documentation in `.claude/skills/enter365
 
 | Skill File | Purpose |
 |------------|---------|
-| **SKILL.md** | Main entry with 17+ gotchas, architecture overview |
-| **STATE_MACHINES.md** | 7 state machines with transitions, events, templates |
+| **SKILL.md** | Main entry with 29 gotchas, architecture overview |
+| **STATE_MACHINES.md** | 16 state machines with transitions, events, templates |
 | **STRATEGIES.md** | COGS, Inventory, Manufacturing accounting strategies |
-| **EVENTS.md** | 74 domain events, event dispatcher pattern |
-| **MODELS.md** | 74 models with relationships, casts, scopes |
+| **EVENTS.md** | 95 domain events, event dispatcher pattern |
+| **MODELS.md** | 81 models with relationships, casts, scopes |
 | **REPOSITORIES.md** | Repository pattern, domain queries, DB::table() for stats |
 | **ARCHITECTURE_PATTERNS.md** | OperationContext, Domain Factory, Coordinator pattern |
 | **SERVICE_BINDINGS.md** | All interface → implementation bindings |
@@ -885,7 +885,7 @@ vendor/bin/phpstan analyse --memory-limit=1G
 ### Configuration
 
 - **Config file**: `phpstan.neon`
-- **Baseline file**: `phpstan-baseline.neon` (tracks ~1844 existing errors)
+- **Baseline file**: `phpstan-baseline.neon` (tracks ~53 existing errors)
 - **Level**: 5 (good balance of strictness vs noise)
 
 ### When to Run PHPStan
@@ -919,7 +919,7 @@ vendor/bin/phpstan analyse app/Services/YourModifiedService.php
 The project uses a baseline file (`phpstan-baseline.neon`) to track existing errors:
 
 - **New code must pass** - PHPStan will fail if you introduce NEW errors
-- **Existing errors tracked** - ~1844 legacy errors are baselined
+- **Existing errors tracked** - ~53 legacy errors are baselined
 - **Gradual improvement** - Fix baselined errors over time
 
 ### Regenerating Baseline

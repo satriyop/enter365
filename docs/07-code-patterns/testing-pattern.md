@@ -150,29 +150,41 @@ describe('US-3.2: Approve Invoice', function () {
 
 ```
 tests/
+├── Browser/                    # E2E browser tests (Pest v4)
+├── Contract/                   # API contract validation tests
+│   ├── ApiContractTest.php
+│   └── ApiContractEdgeCasesTest.php
 ├── Feature/
-│   ├── Invoicing/
-│   │   ├── Epic-1/
-│   │   │   └── InvoiceCreationTest.php
-│   │   ├── Epic-2/
-│   │   │   └── InvoiceApprovalTest.php
-│   │   └── Epic-3/
-│   │       └── InvoicePaymentTest.php
-│   │
-│   ├── Manufacturing/
-│   │   ├── Epic-1/
-│   │   │   └── BomManagementTest.php
-│   │   └── Epic-2/
-│   │       └── WorkOrderTest.php
-│   │
-│   └── Api/
-│       └── AuthenticationTest.php
+│   ├── Api/V1/                 # API endpoint tests (HTTP/JSON)
+│   │   ├── InvoiceApiTest.php
+│   │   ├── QuotationApiTest.php
+│   │   └── ...
+│   ├── Domain/                 # Domain logic tests (state machines, handlers, events)
+│   │   ├── Accounting/
+│   │   ├── Sales/
+│   │   ├── Purchasing/
+│   │   ├── Inventory/
+│   │   ├── Manufacturing/
+│   │   └── ...
+│   ├── Services/               # Service layer tests
+│   │   ├── Accounting/
+│   │   ├── Sales/
+│   │   ├── Purchasing/
+│   │   ├── Inventory/
+│   │   └── ...
+│   ├── Integration/            # Cross-module workflow tests
+│   ├── Commands/               # Artisan command tests
+│   ├── QueryServices/          # Query service tests
+│   └── Models/                 # Model relationship/scope tests
 │
-└── Unit/
-    ├── Services/
-    │   └── InvoiceServiceTest.php
-    └── Models/
-        └── InvoiceTest.php
+├── Unit/
+│   ├── Domain/                 # Unit tests for domain logic
+│   ├── Listeners/              # Event listener unit tests
+│   ├── Services/               # Service unit tests
+│   ├── Filters/                # Filter unit tests
+│   └── Policies/               # Policy unit tests
+│
+└── Traits/                     # Shared test traits
 ```
 
 ---
@@ -200,6 +212,27 @@ describe('US-3.1: Create Invoice', function () {
 ---
 
 ## Common Patterns
+
+### Authentication Helpers
+
+Use `authenticatedAdmin()` (defined in `tests/Pest.php`) for API tests that need admin permissions:
+
+```php
+beforeEach(function () {
+    $this->user = authenticatedAdmin();  // Creates user + admin role + Sanctum token
+});
+```
+
+For tests that only need basic authentication:
+
+```php
+beforeEach(function () {
+    $this->user = User::factory()->create();
+    $this->actingAs($this->user);
+});
+```
+
+**Important:** Endpoints protected by Gates (e.g., `Gate::authorize('settings.features')`) require the admin role — use `authenticatedAdmin()`, not plain `actingAs()`.
 
 ### Factory Usage
 

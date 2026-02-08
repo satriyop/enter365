@@ -171,8 +171,8 @@ This skill has detailed reference files for specific patterns:
 
 | Skill File | Purpose |
 |------------|---------|
-| [STATE_MACHINES.md](STATE_MACHINES.md) | 15 state machines with transitions, events, templates |
-| [EVENTS.md](EVENTS.md) | 84 domain events, event dispatcher pattern, testing |
+| [STATE_MACHINES.md](STATE_MACHINES.md) | 16 state machines with transitions, events, templates |
+| [EVENTS.md](EVENTS.md) | 95 domain events, event dispatcher pattern, testing |
 | [STRATEGIES.md](STRATEGIES.md) | Accounting strategies (COGS, Inventory, Manufacturing) |
 | [VALUE_OBJECTS.md](VALUE_OBJECTS.md) | Money, Quantity, Percentage; Calculator patterns |
 | [APPROVAL_PIPELINES.md](APPROVAL_PIPELINES.md) | Chain of responsibility for approvals |
@@ -181,7 +181,7 @@ This skill has detailed reference files for specific patterns:
 
 | Skill File | Purpose |
 |------------|---------|
-| [MODELS.md](MODELS.md) | 72 models, relationships, casts, scopes, templates |
+| [MODELS.md](MODELS.md) | 81 models, relationships, casts, scopes, templates |
 | [REPOSITORIES.md](REPOSITORIES.md) | Repository pattern, domain queries, DB::table() for stats |
 | [ENUMS.md](ENUMS.md) | DocumentStatus and domain-specific enums |
 | [FACTORIES.md](FACTORIES.md) | Factory patterns and states for testing |
@@ -211,13 +211,13 @@ This skill has detailed reference files for specific patterns:
 ```
 HTTP Layer (thin)
     ↓
-Service Layer (business logic) ← 81 services
+Service Layer (business logic) ← 98 services
     ↓
 Domain Layer (DDD patterns) ← StateMachines, Events, ValueObjects
     ↓
-Contracts (interfaces) ← 45 interfaces
+Contracts (interfaces) ← 52 interfaces
     ↓
-Model Layer (Eloquent) ← 72 models
+Model Layer (Eloquent) ← 81 models
 ```
 
 ### Key Patterns
@@ -244,6 +244,7 @@ Model Layer (Eloquent) ← 72 models
 | Inventory | `app/Models/Inventory/` | `app/Services/Inventory/` | - |
 | Projects | `app/Models/Projects/` | `app/Services/Projects/` | `app/Domain/Projects/` |
 | Solar | `app/Models/Solar/` | `app/Services/Solar/` | - |
+| Tax | `app/Models/Tax/` | `app/Services/Tax/` | `app/Domain/Tax/` |
 
 ---
 
@@ -308,6 +309,7 @@ Use existing skill: `/scaffold-api`
 | SubcontractorWorkOrderStateMachine | Draft → Submitted → Approved → InProgress → Completed | `app/Domain/Manufacturing/SubcontractorWorkOrders/` |
 | StockOpnameStateMachine | Draft → Counting → Reviewed → Approved | `app/Domain/Inventory/StockOpnames/` |
 | SolarProposalStateMachine | Draft → Submitted → Approved → Won/Lost | `app/Domain/Solar/Proposals/` |
+| TaskStateMachine | Todo → InProgress → Done/Cancelled | `app/Domain/Projects/Tasks/` |
 
 ---
 

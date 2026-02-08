@@ -1,6 +1,6 @@
 # Domain Events Reference
 
-84 domain events across 7 domains in Enter365.
+95 domain events across 9 domains in Enter365.
 
 ---
 
@@ -100,7 +100,7 @@ interface EventDispatcherInterface
 
 ## Events by Domain
 
-### Sales (29 Events)
+### Sales (33 Events)
 
 | Event | Dispatched When |
 |-------|-----------------|
@@ -113,7 +113,6 @@ interface EventDispatcherInterface
 | `QuotationLost` | Marked as lost |
 | `QuotationCancelled` | Quotation cancelled |
 | `QuotationStatusChanged` | Any quotation status change |
-| `InvoicePosted` | Invoice posted (top-level event) |
 | `InvoiceSent` | Invoice posted to customer |
 | `InvoiceFullyPaid` | All payments received |
 | `InvoicePartiallyPaid` | Partial payment received |
@@ -131,10 +130,14 @@ interface EventDispatcherInterface
 | `SalesReturnRejected` | Return rejected |
 | `SalesReturnCancelled` | Return cancelled |
 | `SalesReturnStatusChanged` | Any sales return status change |
+| `DownPaymentCreated` | Down payment recorded |
+| `DownPaymentApplied` | Down payment applied to invoice |
+| `DownPaymentCancelled` | Down payment cancelled |
+| `DownPaymentRefunded` | Down payment refunded |
 | `PaymentReceived` | Payment recorded |
 | `PaymentVoided` | Payment voided |
 
-### Purchasing (20 Events)
+### Purchasing (21 Events)
 
 | Event | Dispatched When |
 |-------|-----------------|
@@ -158,6 +161,7 @@ interface EventDispatcherInterface
 | `PurchaseReturnRejected` | Return rejected |
 | `PurchaseReturnCancelled` | Return cancelled |
 | `PurchaseReturnStatusChanged` | Any purchase return status change |
+| `PaymentSent` | Vendor payment sent |
 
 ### Manufacturing (18 Events)
 
@@ -182,7 +186,7 @@ interface EventDispatcherInterface
 | `MrpRunFailed` | MRP run failed |
 | `MrpRunStatusChanged` | Any MRP run status change |
 
-### Projects (6 Events)
+### Projects (10 Events)
 
 | Event | Dispatched When |
 |-------|-----------------|
@@ -192,6 +196,10 @@ interface EventDispatcherInterface
 | `ProjectCompleted` | Project completed |
 | `ProjectCancelled` | Project cancelled |
 | `ProjectStatusChanged` | Any project status change |
+| `TaskStarted` | Task started (Todo → InProgress) |
+| `TaskCompleted` | Task completed (InProgress → Done) |
+| `TaskCancelled` | Task cancelled |
+| `TaskStatusChanged` | Any task status change |
 
 ### Accounting (5 Events)
 
@@ -218,6 +226,14 @@ interface EventDispatcherInterface
 | Event | Dispatched When |
 |-------|-----------------|
 | `SolarProposalStatusChanged` | Solar proposal status change |
+
+### Tax (3 Events)
+
+| Event | Dispatched When |
+|-------|-----------------|
+| `NsfpAllocated` | NSFP range allocated to invoice |
+| `NsfpLowStock` | NSFP numbers running low |
+| `PphWithheld` | PPh withholding tax calculated |
 
 ---
 

@@ -2,7 +2,7 @@
 section: development
 title: "Development Workflow"
 order: 1
-updated: 2026-01-25
+updated: 2026-02-08
 ---
 
 # Development Workflow
@@ -82,7 +82,7 @@ vendor/bin/phpstan analyse --memory-limit=512M
 
 **Configuration:**
 - **Config file:** `phpstan.neon`
-- **Baseline:** `phpstan-baseline.neon` (~1844 existing errors)
+- **Baseline:** `phpstan-baseline.neon` (~53 existing errors)
 - **Level:** 5 (good balance of strictness vs noise)
 
 **What PHPStan Catches:**
@@ -263,7 +263,10 @@ php artisan test --filter=ApiContractTest
 - **Feature Tests:** `tests/Feature/` - Full HTTP/API tests
 - **Unit Tests:** `tests/Unit/` - Isolated unit tests
 - **Contract Tests:** `tests/Contract/` - API contract validation
-- **Domain Tests:** `tests/Feature/Domain/` - Domain logic tests
+- **Domain Tests:** `tests/Feature/Domain/` - Domain logic tests (state machines, handlers, events)
+- **Integration Tests:** `tests/Feature/Integration/` - Cross-module workflow tests
+- **Browser Tests:** `tests/Browser/` - E2E browser tests (Pest v4)
+- **Service Tests:** `tests/Feature/Services/` - Service layer tests
 
 ---
 
