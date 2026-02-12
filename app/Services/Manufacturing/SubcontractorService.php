@@ -378,7 +378,7 @@ class SubcontractorService extends BaseService implements SubcontractorServiceIn
                 'quantity' => 1,
                 'unit' => 'jasa',
                 'unit_price' => $invoice->net_amount,
-                'amount' => $invoice->net_amount,
+                'line_total' => $invoice->net_amount,
             ]);
 
             // Update invoice

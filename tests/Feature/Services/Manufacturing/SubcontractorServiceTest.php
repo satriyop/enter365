@@ -748,7 +748,7 @@ describe('Invoice Operations - convertToBill', function () {
         expect($bill->items()->count())->toBe(1)
             ->and($bill->items->first()->line_total)->toBe(4750000)
             ->and($bill->items->first()->unit)->toBe('jasa');
-    })->skip('Service has bug: uses "amount" field instead of "line_total" in BillItem::create()');
+    });
 
     it('updates invoice with bill reference and conversion timestamp', function () {
         $scWo = SubcontractorWorkOrder::factory()->inProgress()->create();
