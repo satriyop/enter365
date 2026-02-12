@@ -75,6 +75,18 @@ class DemoSeeder extends Seeder
         $this->command->info('📊 Seeding Extended Features (Projects, Down Payments, Work Orders, Stock Opnames)...');
         $this->call(DemoExtendedTransactionSeeder::class);
 
+        // Seed advanced accounting (NSFP, multi-currency, FX reval, write-off, bank recon, budgets)
+        $this->command->info('💰 Seeding Advanced Accounting (Multi-Currency, FX Reval, Bank Recon, Budgets)...');
+        $this->call(DemoAdvancedAccountingSeeder::class);
+
+        // Seed advanced operations (landed costs, stock transfer, PPh, MRP, subcontracting)
+        $this->command->info('🔧 Seeding Advanced Operations (Landed Costs, MRP, Subcontracting, Recurring)...');
+        $this->call(DemoAdvancedOperationsSeeder::class);
+
+        // Seed alternate paths (rejections, cancellations, voids, solar proposals)
+        $this->command->info('🔀 Seeding Alternate Paths (Rejections, Cancellations, Voids, Solar Proposals)...');
+        $this->call(DemoAlternatePathsSeeder::class);
+
         $this->showCompletionMessage($demoChoice);
     }
 
@@ -180,6 +192,12 @@ class DemoSeeder extends Seeder
             $this->command->info('║    ☀️  PT NEX: PLTS Rooftop, Ground Mount, Lease-to-Own solar       ║');
         }
 
+        $this->command->info('╠═══════════════════════════════════════════════════════════════════╣');
+        $this->command->info('║  Advanced Features:                                                  ║');
+        $this->command->info('║    Multi-Currency (USD/SGD) | FX Revaluation | Bank Reconciliation   ║');
+        $this->command->info('║    NSFP Tax Invoices | Budgets | Recurring Templates                 ║');
+        $this->command->info('║    Landed Costs | MRP | Subcontracting | PPh Withholding             ║');
+        $this->command->info('║    Rejections | Cancellations | Voids | Solar Proposals              ║');
         $this->command->info('╠═══════════════════════════════════════════════════════════════════╣');
         $this->command->info('║  Component Library (Brand Partners):                               ║');
         $this->command->info('║    Schneider Electric | ABB | Siemens | CHINT | LS | Legrand       ║');

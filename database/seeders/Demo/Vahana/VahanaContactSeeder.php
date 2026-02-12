@@ -412,6 +412,9 @@ class VahanaContactSeeder extends Seeder
                 'subcontractor_services' => json_encode(['instalasi_panel', 'instalasi_listrik']),
                 'hourly_rate' => 75000,
                 'daily_rate' => 500000,
+                'is_pph_subject' => true,
+                'pph_category' => 'pph23_jasa',
+                'pph_rate' => 2.00,
             ],
             [
                 'code' => 'S-INS2',
@@ -428,6 +431,9 @@ class VahanaContactSeeder extends Seeder
                 'subcontractor_services' => json_encode(['instalasi_panel', 'wiring']),
                 'hourly_rate' => 100000,
                 'daily_rate' => 750000,
+                'is_pph_subject' => true,
+                'pph_category' => 'pph4_2_konstruksi',
+                'pph_rate' => 3.00,
             ],
             [
                 'code' => 'S-COM1',

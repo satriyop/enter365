@@ -408,6 +408,9 @@ class NexContactSeeder extends Seeder
                 'hourly_rate' => 125000,
                 'daily_rate' => 900000,
                 'notes' => 'PV installation & grid connection specialist',
+                'is_pph_subject' => true,
+                'pph_category' => 'pph4_2_konstruksi',
+                'pph_rate' => 3.00,
             ],
             [
                 'code' => 'S-SUB-CMT',
@@ -425,6 +428,9 @@ class NexContactSeeder extends Seeder
                 'hourly_rate' => 175000,
                 'daily_rate' => 1250000,
                 'notes' => 'Testing, commissioning & IV curve analysis',
+                'is_pph_subject' => true,
+                'pph_category' => 'pph23_jasa',
+                'pph_rate' => 2.00,
             ],
             [
                 'code' => 'S-SUB-OMT',

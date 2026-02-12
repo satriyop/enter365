@@ -2,12 +2,15 @@
 
 namespace Database\Seeders\Demo;
 
+use App\Models\Accounting\Currency;
+use App\Models\Accounting\ExchangeRate;
 use App\Models\Core\Role;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\ProductCategory;
 use App\Models\Inventory\Warehouse;
 use App\Models\Manufacturing\ComponentBrandMapping;
 use App\Models\Manufacturing\ComponentStandard;
+use App\Models\Tax\NsfpRange;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -23,6 +26,8 @@ class MasterDataSeeder extends Seeder
         $this->createProductCategories();
         $this->createUsers();
         $this->seedComponentStandards();
+        $this->seedCurrencies();
+        $this->seedNsfpRanges();
     }
 
     private function createWarehouses(): void
@@ -572,5 +577,114 @@ class MasterDataSeeder extends Seeder
         }
 
         $this->command->info("Created {$createdCount} component standards with brand mappings");
+    }
+
+    private function seedCurrencies(): void
+    {
+        $currencies = [
+            [
+                'code' => 'IDR',
+                'name' => 'Indonesian Rupiah',
+                'symbol' => 'Rp',
+                'decimal_places' => 0,
+                'is_base_currency' => true,
+                'is_active' => true,
+            ],
+            [
+                'code' => 'USD',
+                'name' => 'US Dollar',
+                'symbol' => '$',
+                'decimal_places' => 2,
+                'is_base_currency' => false,
+                'is_active' => true,
+            ],
+            [
+                'code' => 'SGD',
+                'name' => 'Singapore Dollar',
+                'symbol' => 'S$',
+                'decimal_places' => 2,
+                'is_base_currency' => false,
+                'is_active' => true,
+            ],
+        ];
+
+        foreach ($currencies as $currency) {
+            Currency::updateOrCreate(
+                ['code' => $currency['code']],
+                $currency
+            );
+        }
+
+        // Exchange rates
+        $adminUser = User::where('email', 'admin@demo.com')->first();
+        $startOfMonth = now()->startOfMonth();
+        $endOfMonth = now()->endOfMonth();
+
+        $exchangeRates = [
+            // USD transaction rate (start of month)
+            [
+                'from_currency' => 'USD',
+                'to_currency' => 'IDR',
+                'rate' => 15800.0000,
+                'effective_date' => $startOfMonth->toDateString(),
+                'source' => 'Bank Indonesia',
+                'created_by' => $adminUser?->id,
+            ],
+            // USD closing rate (end of month - for FX revaluation)
+            [
+                'from_currency' => 'USD',
+                'to_currency' => 'IDR',
+                'rate' => 16000.0000,
+                'effective_date' => $endOfMonth->toDateString(),
+                'source' => 'Bank Indonesia (Closing)',
+                'created_by' => $adminUser?->id,
+            ],
+            // SGD transaction rate
+            [
+                'from_currency' => 'SGD',
+                'to_currency' => 'IDR',
+                'rate' => 11500.0000,
+                'effective_date' => $startOfMonth->toDateString(),
+                'source' => 'Bank Indonesia',
+                'created_by' => $adminUser?->id,
+            ],
+        ];
+
+        foreach ($exchangeRates as $rate) {
+            ExchangeRate::updateOrCreate(
+                [
+                    'from_currency' => $rate['from_currency'],
+                    'to_currency' => $rate['to_currency'],
+                    'effective_date' => $rate['effective_date'],
+                ],
+                $rate
+            );
+        }
+
+        $this->command->info('Created 3 currencies (IDR, USD, SGD) with exchange rates');
+    }
+
+    private function seedNsfpRanges(): void
+    {
+        $adminUser = User::where('email', 'admin@demo.com')->first();
+
+        NsfpRange::updateOrCreate(
+            [
+                'transaction_code' => '010',
+                'branch_code' => '000',
+                'year_code' => now()->format('y'),
+            ],
+            [
+                'range_start' => 1,
+                'range_end' => 1000,
+                'next_number' => 1,
+                'used_count' => 0,
+                'is_active' => true,
+                'description' => 'Demo NSFP range for tax invoices',
+                'created_by' => $adminUser?->id,
+            ]
+        );
+
+        $this->command->info('Created NSFP range (010.000, 1-1000)');
     }
 }
