@@ -171,7 +171,7 @@ describe('QuotationStatisticsService dashboard data', function () {
         expect($result)->toHaveKeys(['overview', 'win_loss', 'follow_up'])
             ->and($result['overview'])->toHaveKey('total')
             ->and($result['win_loss'])->toHaveKey('win_rate');
-    })->skip('Quotation::needsFollowUp() scope not yet defined as static scope');
+    });
 });
 
 describe('QuotationStatisticsService caching', function () {

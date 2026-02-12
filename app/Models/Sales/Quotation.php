@@ -681,7 +681,7 @@ class Quotation extends Model
     /**
      * Check if quotation needs follow-up (for API/display).
      */
-    public function needsFollowUp(): bool
+    public function isFollowUpNeeded(): bool
     {
         if ($this->next_follow_up_at === null) {
             return false;

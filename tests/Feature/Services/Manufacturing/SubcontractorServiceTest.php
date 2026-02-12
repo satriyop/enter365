@@ -376,7 +376,7 @@ describe('Work Order Workflow - complete', function () {
         expect($projectCost)->not->toBeNull()
             ->and($projectCost->total_cost)->toBe(12000000)
             ->and($projectCost->cost_type)->toBe('subcontractor');
-    })->skip('Service has bug: uses "type" field instead of "cost_type" and "amount" instead of "total_cost"');
+    });
 
     it('does not create project cost when project_id is null', function () {
         $scWo = SubcontractorWorkOrder::factory()->inProgress()->create([

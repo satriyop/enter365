@@ -73,7 +73,7 @@ class QuotationResource extends JsonResource
             'follow_up_count' => $this->follow_up_count,
             'priority' => new LabelValueResource($this->priority),
             'priority_label' => $this->getPriorityLabel(),
-            'needs_follow_up' => $this->needsFollowUp(),
+            'needs_follow_up' => $this->isFollowUpNeeded(),
             'days_since_last_contact' => $this->getDaysSinceLastContact(),
 
             // Win/Loss outcome

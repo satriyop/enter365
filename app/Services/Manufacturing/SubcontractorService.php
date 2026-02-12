@@ -483,11 +483,11 @@ class SubcontractorService extends BaseService implements SubcontractorServiceIn
 
         ProjectCost::create([
             'project_id' => $scWo->project_id,
-            'type' => 'subcontractor',
+            'cost_type' => 'subcontractor',
             'description' => "Subkontrak: {$scWo->name}",
             'reference_type' => SubcontractorWorkOrder::class,
             'reference_id' => $scWo->id,
-            'amount' => $amount,
+            'total_cost' => $amount,
             'cost_date' => now(),
             'created_by' => $this->getUserId(),
         ]);
