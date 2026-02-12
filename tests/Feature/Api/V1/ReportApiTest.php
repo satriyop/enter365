@@ -73,10 +73,14 @@ describe('Report API', function () {
                 'data' => [
                     'report_name',
                     'as_of_date',
-                    'assets' => ['current', 'fixed', 'total'],
-                    'liabilities' => ['current', 'long_term', 'total'],
-                    'equity' => ['items', 'total'],
+                    'assets',
+                    'liabilities',
+                    'equity',
+                    'total_assets',
+                    'total_liabilities',
+                    'total_equity',
                     'total_liabilities_equity',
+                    'is_balanced',
                 ],
             ])
             ->assertJsonPath('data.report_name', 'Laporan Posisi Keuangan');
@@ -112,8 +116,10 @@ describe('Report API', function () {
                     'report_name',
                     'period_start',
                     'period_end',
-                    'revenue' => ['operating', 'other', 'total'],
-                    'expenses' => ['cost_of_goods', 'operating', 'other', 'total'],
+                    'revenue',
+                    'expenses',
+                    'total_revenue',
+                    'total_expenses',
                     'gross_profit',
                     'operating_income',
                     'net_income',
@@ -215,9 +221,12 @@ describe('Comparative Reports', function () {
                     'report_name',
                     'current_period' => [
                         'as_of_date',
-                        'assets' => ['current', 'fixed', 'total'],
-                        'liabilities' => ['current', 'long_term', 'total'],
-                        'equity' => ['items', 'total'],
+                        'assets',
+                        'liabilities',
+                        'equity',
+                        'total_assets',
+                        'total_liabilities',
+                        'total_equity',
                     ],
                     'previous_period' => [
                         'as_of_date',
@@ -261,8 +270,8 @@ describe('Comparative Reports', function () {
 
         $response->assertOk();
 
-        $currentAssets = $response->json('data.current_period.assets.total');
-        $previousAssets = $response->json('data.previous_period.assets.total');
+        $currentAssets = $response->json('data.current_period.total_assets');
+        $previousAssets = $response->json('data.previous_period.total_assets');
         $variance = $response->json('data.variance');
 
         // Current should have assets from the entry, previous should have less/none
@@ -300,8 +309,10 @@ describe('Comparative Reports', function () {
                     'current_period' => [
                         'period_start',
                         'period_end',
-                        'revenue' => ['operating', 'other', 'total'],
+                        'revenue',
                         'expenses',
+                        'total_revenue',
+                        'total_expenses',
                         'net_income',
                     ],
                     'previous_period' => [
@@ -309,6 +320,8 @@ describe('Comparative Reports', function () {
                         'period_end',
                         'revenue',
                         'expenses',
+                        'total_revenue',
+                        'total_expenses',
                         'net_income',
                     ],
                     'variance' => [

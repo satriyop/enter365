@@ -21,18 +21,18 @@ describe('generateCashFlow', function () {
 
         expect($result)->toHaveKeys([
             'period',
-            'operating',
-            'investing',
-            'financing',
-            'net_cash_flow',
-            'beginning_cash',
-            'ending_cash',
+            'operating_activities',
+            'investing_activities',
+            'financing_activities',
+            'net_cash_change',
+            'opening_balance',
+            'closing_balance',
         ]);
 
         expect($result['period'])->toBe(['start' => '2024-01-01', 'end' => '2024-01-31']);
-        expect($result['operating'])->toHaveKeys(['items', 'subtotal']);
-        expect($result['investing'])->toHaveKeys(['items', 'subtotal']);
-        expect($result['financing'])->toHaveKeys(['items', 'subtotal']);
+        expect($result['operating_activities'])->toHaveKeys(['items', 'total']);
+        expect($result['investing_activities'])->toHaveKeys(['items', 'total']);
+        expect($result['financing_activities'])->toHaveKeys(['items', 'total']);
     });
 
     test('calculates net_cash_flow correctly', function () {
@@ -62,7 +62,7 @@ describe('generateCashFlow', function () {
         $result = $this->service->generateCashFlow('2024-06-01', '2024-06-30');
 
         // Operating: 5M receipts + (-3M) payments = 2M
-        expect($result['operating']['subtotal'])->toEqual(2000000);
+        expect($result['operating_activities']['total'])->toEqual(2000000);
     });
 
     test('ending_cash equals beginning_cash plus net_cash_flow', function () {
@@ -97,7 +97,7 @@ describe('generateCashFlow', function () {
 
         $result = $this->service->generateCashFlow('2024-06-01', '2024-06-30');
 
-        expect($result['ending_cash'])->toBe($result['beginning_cash'] + $result['net_cash_flow']);
+        expect($result['closing_balance'])->toBe($result['opening_balance'] + $result['net_cash_change']);
     });
 });
 

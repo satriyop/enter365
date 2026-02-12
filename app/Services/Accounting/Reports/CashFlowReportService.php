@@ -16,12 +16,12 @@ class CashFlowReportService
      *
      * @return array{
      *     period: array{start: string, end: string},
-     *     operating: array{items: Collection, subtotal: int},
-     *     investing: array{items: Collection, subtotal: int},
-     *     financing: array{items: Collection, subtotal: int},
-     *     net_cash_flow: int,
-     *     beginning_cash: int,
-     *     ending_cash: int
+     *     operating_activities: array{items: Collection, total: int},
+     *     investing_activities: array{items: Collection, total: int},
+     *     financing_activities: array{items: Collection, total: int},
+     *     net_cash_change: int,
+     *     opening_balance: int,
+     *     closing_balance: int
      * }
      */
     public function generateCashFlow(?string $startDate = null, ?string $endDate = null): array
@@ -41,20 +41,20 @@ class CashFlowReportService
         // Financing activities
         $financing = $this->getFinancingActivities($startDate, $endDate);
 
-        $netCashFlow = $operating['subtotal'] + $investing['subtotal'] + $financing['subtotal'];
-        $endingCash = $beginningCash + $netCashFlow;
+        $netCashChange = $operating['total'] + $investing['total'] + $financing['total'];
+        $closingBalance = $beginningCash + $netCashChange;
 
         return [
             'period' => [
                 'start' => $startDate,
                 'end' => $endDate,
             ],
-            'operating' => $operating,
-            'investing' => $investing,
-            'financing' => $financing,
-            'net_cash_flow' => $netCashFlow,
-            'beginning_cash' => $beginningCash,
-            'ending_cash' => $endingCash,
+            'operating_activities' => $operating,
+            'investing_activities' => $investing,
+            'financing_activities' => $financing,
+            'net_cash_change' => $netCashChange,
+            'opening_balance' => $beginningCash,
+            'closing_balance' => $closingBalance,
         ];
     }
 
@@ -82,7 +82,7 @@ class CashFlowReportService
     /**
      * Get operating activities cash flow.
      *
-     * @return array{items: Collection, subtotal: int}
+     * @return array{items: Collection, total: int}
      */
     protected function getOperatingActivities(string $startDate, string $endDate): array
     {
@@ -120,14 +120,14 @@ class CashFlowReportService
 
         return [
             'items' => $items,
-            'subtotal' => $subtotal,
+            'total' => $subtotal,
         ];
     }
 
     /**
      * Get investing activities cash flow.
      *
-     * @return array{items: Collection, subtotal: int}
+     * @return array{items: Collection, total: int}
      */
     protected function getInvestingActivities(string $startDate, string $endDate): array
     {
@@ -150,14 +150,14 @@ class CashFlowReportService
 
         return [
             'items' => $items,
-            'subtotal' => $subtotal,
+            'total' => $subtotal,
         ];
     }
 
     /**
      * Get financing activities cash flow.
      *
-     * @return array{items: Collection, subtotal: int}
+     * @return array{items: Collection, total: int}
      */
     protected function getFinancingActivities(string $startDate, string $endDate): array
     {
@@ -180,7 +180,7 @@ class CashFlowReportService
 
         return [
             'items' => $items,
-            'subtotal' => $subtotal,
+            'total' => $subtotal,
         ];
     }
 

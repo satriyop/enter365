@@ -20,6 +20,23 @@ beforeEach(function () {
 });
 
 /**
+ * Helper: Find a section by name from section array or collection
+ */
+function findSectionAHR(\Illuminate\Support\Collection|array $sections, string $name): ?array
+{
+    return collect($sections)->firstWhere('name', $name);
+}
+
+/**
+ * Helper: Get accounts collection from a section by name
+ */
+function sectionAccountsAHR(\Illuminate\Support\Collection|array $sections, string $name): \Illuminate\Support\Collection
+{
+    $section = findSectionAHR($sections, $name);
+    return $section ? collect($section['accounts']) : collect();
+}
+
+/**
  * Helper: create a child account under a parent.
  */
 function createChildAccount(Account $parent, string $code, string $name): Account
@@ -67,7 +84,7 @@ describe('Account Hierarchy Rollup', function () {
         $result = $this->reportService->getBalanceSheet(hierarchical: true);
 
         // Find the top-level Aset Lancar node
-        $asetLancarNode = $result['assets']['current']->first(fn ($n) => $n->code === '1-1000');
+        $asetLancarNode = sectionAccountsAHR($result['assets'], 'Aset Lancar')->first(fn ($n) => $n->code === '1-1000');
         expect($asetLancarNode)->not->toBeNull();
 
         // Find Kas within Aset Lancar's children (or it may be a top-level root depending on depth)
@@ -90,7 +107,7 @@ describe('Account Hierarchy Rollup', function () {
         $result = $this->reportService->getBalanceSheet(hierarchical: true);
 
         // Navigate: Aset Lancar -> Kas -> Sub Kas A -> Sub Kas A1
-        $asetLancarNode = $result['assets']['current']->first(fn ($n) => $n->code === '1-1000');
+        $asetLancarNode = sectionAccountsAHR($result['assets'], 'Aset Lancar')->first(fn ($n) => $n->code === '1-1000');
         $kasNode = $asetLancarNode->children->first(fn ($n) => $n->account_id === $kasAccount->id);
 
         expect($kasNode)->not->toBeNull()
@@ -112,7 +129,7 @@ describe('Account Hierarchy Rollup', function () {
 
         $result = $this->reportService->getBalanceSheet(hierarchical: true);
 
-        $asetLancarNode = $result['assets']['current']->first(fn ($n) => $n->code === '1-1000');
+        $asetLancarNode = sectionAccountsAHR($result['assets'], 'Aset Lancar')->first(fn ($n) => $n->code === '1-1000');
         $kasNode = $asetLancarNode->children->first(fn ($n) => $n->account_id === $kasAccount->id);
 
         expect($kasNode)->not->toBeNull()
@@ -127,9 +144,9 @@ describe('Account Hierarchy Rollup', function () {
 
         $result = $this->reportService->getBalanceSheet(hierarchical: true);
 
-        // The whole Aset Lancar node should not appear since nothing has transactions
-        $asetLancarNode = $result['assets']['current']->first(fn ($n) => $n->code === '1-1000');
-        expect($asetLancarNode)->toBeNull();
+        // The whole Aset Lancar section should not appear since nothing has transactions
+        $asetLancarSection = findSectionAHR($result['assets'], 'Aset Lancar');
+        expect($asetLancarSection)->toBeNull();
     });
 
     it('hierarchical=false returns flat structure (backward compat)', function () {
@@ -139,7 +156,7 @@ describe('Account Hierarchy Rollup', function () {
         createBalancedJE($this->journalService, $kasAccount->id, $revenueAccount->id, 100000);
 
         $flat = $this->reportService->getBalanceSheet(hierarchical: false);
-        $kasItem = $flat['assets']['current']->first(fn ($i) => $i->account_id === $kasAccount->id);
+        $kasItem = sectionAccountsAHR($flat['assets'], 'Aset Lancar')->first(fn ($i) => $i->account_id === $kasAccount->id);
 
         // Flat structure should NOT have rollup_balance or children
         expect($kasItem)->not->toBeNull()
@@ -159,9 +176,9 @@ describe('Account Hierarchy Rollup', function () {
         $flat = $this->reportService->getBalanceSheet(hierarchical: false);
         $hierarchical = $this->reportService->getBalanceSheet(hierarchical: true);
 
-        expect($flat['assets']['total'])->toBe($hierarchical['assets']['total'])
-            ->and($flat['liabilities']['total'])->toBe($hierarchical['liabilities']['total'])
-            ->and($flat['equity']['total'])->toBe($hierarchical['equity']['total']);
+        expect($flat['total_assets'])->toBe($hierarchical['total_assets'])
+            ->and($flat['total_liabilities'])->toBe($hierarchical['total_liabilities'])
+            ->and($flat['total_equity'])->toBe($hierarchical['total_equity']);
     });
 
     it('income statement supports hierarchical mode', function () {

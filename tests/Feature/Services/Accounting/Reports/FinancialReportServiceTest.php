@@ -14,15 +14,32 @@ beforeEach(function () {
     $this->service = app(FinancialReportService::class);
 });
 
+/**
+ * Helper: Find a section by name from section array or collection
+ */
+function findSectionFRS(\Illuminate\Support\Collection|array $sections, string $name): ?array
+{
+    return collect($sections)->firstWhere('name', $name);
+}
+
+/**
+ * Helper: Get accounts collection from a section by name
+ */
+function sectionAccountsFRS(\Illuminate\Support\Collection|array $sections, string $name): \Illuminate\Support\Collection
+{
+    $section = findSectionFRS($sections, $name);
+    return $section ? collect($section['accounts']) : collect();
+}
+
 describe('getBalanceSheet', function () {
     test('returns correct structure with empty data', function () {
         $result = $this->service->getBalanceSheet();
 
         expect($result)->toBeArray()
-            ->toHaveKeys(['as_of_date', 'assets', 'liabilities', 'equity', 'total_liabilities_equity'])
-            ->and($result['assets'])->toHaveKeys(['current', 'fixed', 'total'])
-            ->and($result['liabilities'])->toHaveKeys(['current', 'long_term', 'total'])
-            ->and($result['equity'])->toHaveKeys(['items', 'total']);
+            ->toHaveKeys(['as_of_date', 'assets', 'liabilities', 'equity', 'total_assets', 'total_liabilities', 'total_equity', 'total_liabilities_equity', 'is_balanced'])
+            ->and($result['assets'])->toBeInstanceOf(\Illuminate\Support\Collection::class)
+            ->and($result['liabilities'])->toBeInstanceOf(\Illuminate\Support\Collection::class)
+            ->and($result['equity'])->toBeInstanceOf(\Illuminate\Support\Collection::class);
     });
 
     test('groups accounts by type correctly', function () {
@@ -73,12 +90,12 @@ describe('getBalanceSheet', function () {
 
         $result = $this->service->getBalanceSheet();
 
-        expect($result['assets']['current'])->toHaveCount(1)
-            ->and($result['assets']['fixed'])->toHaveCount(1)
-            ->and($result['liabilities']['current'])->toHaveCount(1)
-            ->and($result['liabilities']['long_term'])->toHaveCount(1)
-            // equity.items may include "Laba/Rugi Berjalan" virtual item
-            ->and($result['equity']['items']->count())->toBeGreaterThanOrEqual(1);
+        expect(sectionAccountsFRS($result['assets'], 'Aset Lancar'))->toHaveCount(1)
+            ->and(sectionAccountsFRS($result['assets'], 'Aset Tetap'))->toHaveCount(1)
+            ->and(sectionAccountsFRS($result['liabilities'], 'Liabilitas Jangka Pendek'))->toHaveCount(1)
+            ->and(sectionAccountsFRS($result['liabilities'], 'Liabilitas Jangka Panjang'))->toHaveCount(1)
+            // equity may include "Laba/Rugi Berjalan" virtual item
+            ->and(sectionAccountsFRS($result['equity'], 'Ekuitas')->count())->toBeGreaterThanOrEqual(1);
     });
 
     test('calculates debit-normal vs credit-normal balances correctly', function () {
@@ -122,10 +139,10 @@ describe('getBalanceSheet', function () {
         $result = $this->service->getBalanceSheet();
 
         // Balance items are stdClass objects with account_id property
-        $cashBalance = $result['assets']['current']->firstWhere('account_id', $cashAccount->id);
+        $cashBalance = sectionAccountsFRS($result['assets'], 'Aset Lancar')->firstWhere('account_id', $cashAccount->id);
         expect($cashBalance->balance)->toBe(7000000); // 5M + 2M debit
 
-        $apBalance = $result['liabilities']['current']->firstWhere('account_id', $apAccount->id);
+        $apBalance = sectionAccountsFRS($result['liabilities'], 'Liabilitas Jangka Pendek')->firstWhere('account_id', $apAccount->id);
         expect($apBalance->balance)->toBe(5000000); // 3M + 2M credit
     });
 
@@ -168,10 +185,10 @@ describe('getBalanceSheet', function () {
 
         $result = $this->service->getBalanceSheet();
 
-        // assets.total, liabilities.total, equity.total are nested
-        $totalAssets = $result['assets']['total'];
-        $totalLiabilities = $result['liabilities']['total'];
-        $totalEquity = $result['equity']['total'];
+        // Use new top-level total fields
+        $totalAssets = $result['total_assets'];
+        $totalLiabilities = $result['total_liabilities'];
+        $totalEquity = $result['total_equity'];
 
         expect($totalAssets)->toBe(25000000)
             ->and($totalLiabilities)->toBe(8000000)
@@ -184,9 +201,9 @@ describe('getIncomeStatement', function () {
         $result = $this->service->getIncomeStatement();
 
         expect($result)->toBeArray()
-            ->toHaveKeys(['period_start', 'period_end', 'revenue', 'expenses', 'gross_profit', 'operating_income', 'net_income'])
-            ->and($result['revenue'])->toHaveKeys(['operating', 'other', 'total'])
-            ->and($result['expenses'])->toHaveKeys(['cost_of_goods', 'operating', 'other', 'total']);
+            ->toHaveKeys(['period_start', 'period_end', 'revenue', 'expenses', 'total_revenue', 'total_expenses', 'gross_profit', 'operating_income', 'net_income'])
+            ->and($result['revenue'])->toBeArray()
+            ->and($result['expenses'])->toBeArray();
     });
 
     test('calculates net income from revenue minus expenses', function () {
@@ -259,8 +276,8 @@ describe('getIncomeStatement', function () {
 
         $result = $this->service->getIncomeStatement('2024-01-01', '2024-01-31');
 
-        expect($result['revenue']['total'])->toBe(50000000)
-            ->and($result['expenses']['total'])->toBe(15000000)
+        expect($result['total_revenue'])->toBe(50000000)
+            ->and($result['total_expenses'])->toBe(15000000)
             ->and($result['net_income'])->toBe(35000000);
     });
 
@@ -328,15 +345,26 @@ describe('getIncomeStatement', function () {
 
         $result = $this->service->getIncomeStatement('2024-01-01', '2024-01-31');
 
-        // Items are stdClass objects with balance property
-        expect($result['revenue']['operating'])->toHaveCount(1)
-            ->and($result['revenue']['other'])->toHaveCount(1)
-            ->and($result['expenses']['operating'])->toHaveCount(1)
-            ->and($result['expenses']['other'])->toHaveCount(1)
-            ->and($result['revenue']['operating']->sum('balance'))->toBe(40000000)
-            ->and($result['revenue']['other']->sum('balance'))->toBe(5000000)
-            ->and($result['expenses']['operating']->sum('balance'))->toBe(12000000)
-            ->and($result['expenses']['other']->sum('balance'))->toBe(2000000);
+        // Revenue and expense sections are arrays of {name, accounts, total}
+        $findSection = fn (array $sections, string $name) => collect($sections)->firstWhere('name', $name);
+
+        $opRevenue = $findSection($result['revenue'], 'Pendapatan Operasional');
+        $otherRevenue = $findSection($result['revenue'], 'Pendapatan Lain-lain');
+        $opExpense = $findSection($result['expenses'], 'Beban Operasional');
+        $otherExpense = $findSection($result['expenses'], 'Beban Lain-lain');
+
+        expect($opRevenue)->not->toBeNull()
+            ->and($opRevenue['accounts'])->toHaveCount(1)
+            ->and($opRevenue['total'])->toBe(40000000)
+            ->and($otherRevenue)->not->toBeNull()
+            ->and($otherRevenue['accounts'])->toHaveCount(1)
+            ->and($otherRevenue['total'])->toBe(5000000)
+            ->and($opExpense)->not->toBeNull()
+            ->and($opExpense['accounts'])->toHaveCount(1)
+            ->and($opExpense['total'])->toBe(12000000)
+            ->and($otherExpense)->not->toBeNull()
+            ->and($otherExpense['accounts'])->toHaveCount(1)
+            ->and($otherExpense['total'])->toBe(2000000);
     });
 });
 
@@ -395,8 +423,8 @@ describe('getComparativeBalanceSheet', function () {
 
         expect($result)->toHaveKeys(['report_name', 'current_period', 'previous_period', 'variance'])
             ->and($result['report_name'])->toBe('Laporan Posisi Keuangan Komparatif')
-            ->and($result['current_period']['assets']['total'])->toBe(13000000)
-            ->and($result['previous_period']['assets']['total'])->toBe(10000000)
+            ->and($result['current_period']['total_assets'])->toBe(13000000)
+            ->and($result['previous_period']['total_assets'])->toBe(10000000)
             ->and($result['variance']['assets_change'])->toBe(3000000);
     });
 });
@@ -452,8 +480,8 @@ describe('getComparativeIncomeStatement', function () {
 
         expect($result)->toHaveKeys(['report_name', 'current_period', 'previous_period', 'variance'])
             ->and($result['report_name'])->toBe('Laporan Laba Rugi Komparatif')
-            ->and($result['current_period']['revenue']['total'])->toBe(45000000)
-            ->and($result['previous_period']['revenue']['total'])->toBe(30000000)
+            ->and($result['current_period']['total_revenue'])->toBe(45000000)
+            ->and($result['previous_period']['total_revenue'])->toBe(30000000)
             ->and($result['variance']['revenue_change'])->toBe(15000000)
             ->and($result['current_period']['net_income'])->toBe(30000000)
             ->and($result['previous_period']['net_income'])->toBe(20000000)

@@ -384,34 +384,18 @@ class ExportController extends Controller
     {
         $rows = [];
 
-        // Assets
-        foreach ($data['assets']['accounts'] ?? [] as $account) {
-            $rows[] = [
-                'category' => 'Aset',
-                'code' => $account['code'],
-                'name' => $account['name'],
-                'balance' => $account['balance'],
-            ];
-        }
-
-        // Liabilities
-        foreach ($data['liabilities']['accounts'] ?? [] as $account) {
-            $rows[] = [
-                'category' => 'Liabilitas',
-                'code' => $account['code'],
-                'name' => $account['name'],
-                'balance' => $account['balance'],
-            ];
-        }
-
-        // Equity
-        foreach ($data['equity']['accounts'] ?? [] as $account) {
-            $rows[] = [
-                'category' => 'Ekuitas',
-                'code' => $account['code'],
-                'name' => $account['name'],
-                'balance' => $account['balance'],
-            ];
+        foreach (['assets' => 'Aset', 'liabilities' => 'Liabilitas', 'equity' => 'Ekuitas'] as $key => $category) {
+            foreach ($data[$key] ?? [] as $section) {
+                foreach ($section['accounts'] ?? [] as $account) {
+                    $account = (array) $account;
+                    $rows[] = [
+                        'category' => $category,
+                        'code' => $account['code'],
+                        'name' => $account['name'],
+                        'balance' => $account['balance'],
+                    ];
+                }
+            }
         }
 
         return $rows;
@@ -421,24 +405,30 @@ class ExportController extends Controller
     {
         $rows = [];
 
-        // Revenue
-        foreach ($data['revenue']['accounts'] ?? [] as $account) {
-            $rows[] = [
-                'category' => 'Pendapatan',
-                'code' => $account['code'],
-                'name' => $account['name'],
-                'balance' => $account['balance'],
-            ];
+        // Revenue sections
+        foreach ($data['revenue'] ?? [] as $section) {
+            foreach ($section['accounts'] ?? [] as $account) {
+                $account = (array) $account;
+                $rows[] = [
+                    'category' => 'Pendapatan',
+                    'code' => $account['code'],
+                    'name' => $account['name'],
+                    'balance' => $account['balance'],
+                ];
+            }
         }
 
-        // Expenses
-        foreach ($data['expenses']['accounts'] ?? [] as $account) {
-            $rows[] = [
-                'category' => 'Beban',
-                'code' => $account['code'],
-                'name' => $account['name'],
-                'balance' => $account['balance'],
-            ];
+        // Expense sections
+        foreach ($data['expenses'] ?? [] as $section) {
+            foreach ($section['accounts'] ?? [] as $account) {
+                $account = (array) $account;
+                $rows[] = [
+                    'category' => 'Beban',
+                    'code' => $account['code'],
+                    'name' => $account['name'],
+                    'balance' => $account['balance'],
+                ];
+            }
         }
 
         // Net income summary

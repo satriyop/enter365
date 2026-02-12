@@ -32,12 +32,12 @@ describe('Cash Flow Statement', function () {
                 'data' => [
                     'report_name',
                     'period' => ['start', 'end'],
-                    'operating' => ['items', 'subtotal'],
-                    'investing' => ['items', 'subtotal'],
-                    'financing' => ['items', 'subtotal'],
-                    'net_cash_flow',
-                    'beginning_cash',
-                    'ending_cash',
+                    'operating_activities' => ['items', 'total'],
+                    'investing_activities' => ['items', 'total'],
+                    'financing_activities' => ['items', 'total'],
+                    'net_cash_change',
+                    'opening_balance',
+                    'closing_balance',
                 ],
             ])
             ->assertJsonPath('data.report_name', 'Laporan Arus Kas');
@@ -76,8 +76,8 @@ describe('Cash Flow Statement', function () {
 
         $response->assertOk();
 
-        $operating = $response->json('data.operating');
-        expect($operating['subtotal'])->toBeGreaterThan(0);
+        $operating = $response->json('data.operating_activities');
+        expect($operating['total'])->toBeGreaterThan(0);
 
         // Should have customer receipts
         $customerReceipts = collect($operating['items'])->firstWhere('description', 'Penerimaan dari pelanggan');
@@ -110,7 +110,7 @@ describe('Cash Flow Statement', function () {
 
         $response->assertOk();
 
-        $operating = $response->json('data.operating');
+        $operating = $response->json('data.operating_activities');
 
         // Should have supplier payments (negative)
         $supplierPayments = collect($operating['items'])->firstWhere('description', 'Pembayaran ke pemasok');
@@ -148,8 +148,8 @@ describe('Cash Flow Statement', function () {
 
         $response->assertOk();
 
-        $netCashFlow = $response->json('data.net_cash_flow');
-        $operating = $response->json('data.operating.subtotal');
+        $netCashChange = $response->json('data.net_cash_change');
+        $operating = $response->json('data.operating_activities.total');
 
         // Net should be receipts - payments = 10M - 3M = 7M
         expect($operating)->toBe(7000000);
@@ -170,15 +170,15 @@ describe('Cash Flow Statement', function () {
 
         $response->assertOk();
 
-        $beginningCash = $response->json('data.beginning_cash');
-        $endingCash = $response->json('data.ending_cash');
-        $netCashFlow = $response->json('data.net_cash_flow');
+        $openingBalance = $response->json('data.opening_balance');
+        $closingBalance = $response->json('data.closing_balance');
+        $netCashChange = $response->json('data.net_cash_change');
 
-        // Beginning cash should include prior period
-        expect($beginningCash)->toBe(5000000);
+        // Opening balance should include prior period
+        expect($openingBalance)->toBe(5000000);
 
-        // Ending = Beginning + Net
-        expect($endingCash)->toBe($beginningCash + $netCashFlow);
+        // Closing = Opening + Net
+        expect($closingBalance)->toBe($openingBalance + $netCashChange);
     });
 
 });

@@ -281,7 +281,7 @@ class ReportController extends Controller
     /**
      * Laporan Arus Kas (Cash Flow Statement).
      *
-     * @response array{data: array{report_name: string, period: array{start: string, end: string}, operating: array{items: list<array{description: string, amount: int}>, subtotal: int}, investing: array{items: list<array{description: string, amount: int}>, subtotal: int}, financing: array{items: list<array{description: string, amount: int}>, subtotal: int}, net_cash_flow: int, beginning_cash: int, ending_cash: int}}
+     * @response array{data: array{report_name: string, period: array{start: string, end: string}, operating_activities: array{items: list<array{description: string, amount: int}>, total: int}, investing_activities: array{items: list<array{description: string, amount: int}>, total: int}, financing_activities: array{items: list<array{description: string, amount: int}>, total: int}, net_cash_change: int, opening_balance: int, closing_balance: int}}
      */
     public function cashFlow(Request $request): JsonResponse
     {

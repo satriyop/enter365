@@ -18,21 +18,14 @@ class FinancialReportService
      *
      * @return array{
      *     as_of_date: string,
-     *     assets: array{
-     *         current: Collection,
-     *         fixed: Collection,
-     *         total: int
-     *     },
-     *     liabilities: array{
-     *         current: Collection,
-     *         long_term: Collection,
-     *         total: int
-     *     },
-     *     equity: array{
-     *         items: Collection,
-     *         total: int
-     *     },
-     *     total_liabilities_equity: int
+     *     assets: array<int, array{name: string, accounts: Collection, total: int}>,
+     *     liabilities: array<int, array{name: string, accounts: Collection, total: int}>,
+     *     equity: array<int, array{name: string, accounts: Collection, total: int}>,
+     *     total_assets: int,
+     *     total_liabilities: int,
+     *     total_equity: int,
+     *     total_liabilities_equity: int,
+     *     is_balanced: bool
      * }
      */
     public function getBalanceSheet(?string $asOfDate = null, bool $hierarchical = false): array
@@ -118,23 +111,58 @@ class FinancialReportService
         $totalLiabilities = $currentLiabilities->sum($balanceKey) + $longTermLiabilities->sum($balanceKey);
         $totalEquity = $equityItems->sum($balanceKey);
 
+        // Build sectioned arrays matching frontend BalanceSheetSection[] contract
+        $assetSections = collect();
+        if ($currentAssets->isNotEmpty()) {
+            $assetSections->push([
+                'name' => 'Aset Lancar',
+                'accounts' => $currentAssets->values(),
+                'total' => $currentAssets->sum($balanceKey),
+            ]);
+        }
+        if ($fixedAssets->isNotEmpty()) {
+            $assetSections->push([
+                'name' => 'Aset Tetap',
+                'accounts' => $fixedAssets->values(),
+                'total' => $fixedAssets->sum($balanceKey),
+            ]);
+        }
+
+        $liabilitySections = collect();
+        if ($currentLiabilities->isNotEmpty()) {
+            $liabilitySections->push([
+                'name' => 'Liabilitas Jangka Pendek',
+                'accounts' => $currentLiabilities->values(),
+                'total' => $currentLiabilities->sum($balanceKey),
+            ]);
+        }
+        if ($longTermLiabilities->isNotEmpty()) {
+            $liabilitySections->push([
+                'name' => 'Liabilitas Jangka Panjang',
+                'accounts' => $longTermLiabilities->values(),
+                'total' => $longTermLiabilities->sum($balanceKey),
+            ]);
+        }
+
+        $equitySections = collect();
+        if ($equityItems->isNotEmpty()) {
+            $equitySections->push([
+                'name' => 'Ekuitas',
+                'accounts' => $equityItems->values(),
+                'total' => $totalEquity,
+            ]);
+        }
+
         return [
             'as_of_date' => $asOfDate,
-            'assets' => [
-                'current' => $currentAssets->values(),
-                'fixed' => $fixedAssets->values(),
-                'total' => $totalAssets,
-            ],
-            'liabilities' => [
-                'current' => $currentLiabilities->values(),
-                'long_term' => $longTermLiabilities->values(),
-                'total' => $totalLiabilities,
-            ],
-            'equity' => [
-                'items' => $equityItems->values(),
-                'total' => $totalEquity,
-            ],
+            'assets' => $assetSections->values(),
+            'liabilities' => $liabilitySections->values(),
+            'equity' => $equitySections->values(),
+            'total_assets' => $totalAssets,
+            'total_liabilities' => $totalLiabilities,
+            'total_equity' => $totalEquity,
             'total_liabilities_equity' => $totalLiabilities + $totalEquity,
+            'is_balanced' => $totalAssets === ($totalLiabilities + $totalEquity),
         ];
     }
 
@@ -144,17 +172,10 @@ class FinancialReportService
      * @return array{
      *     period_start: string,
      *     period_end: string,
-     *     revenue: array{
-     *         operating: Collection,
-     *         other: Collection,
-     *         total: int
-     *     },
-     *     expenses: array{
-     *         cost_of_goods: Collection,
-     *         operating: Collection,
-     *         other: Collection,
-     *         total: int
-     *     },
+     *     revenue: array<int, array{name: string, accounts: Collection, total: int}>,
+     *     expenses: array<int, array{name: string, accounts: Collection, total: int}>,
+     *     total_revenue: int,
+     *     total_expenses: int,
      *     gross_profit: int,
      *     operating_income: int,
      *     net_income: int
@@ -225,20 +246,53 @@ class FinancialReportService
         $operatingIncome = $grossProfit - $operatingExpense->sum($balanceKey);
         $netIncome = $totalRevenue - $totalExpenses;
 
+        // Build sectioned arrays matching frontend IncomeStatementSection[] contract
+        $revenueSections = collect();
+        if ($operatingRevenue->isNotEmpty()) {
+            $revenueSections->push([
+                'name' => 'Pendapatan Operasional',
+                'accounts' => $operatingRevenue->values(),
+                'total' => $operatingRevenue->sum($balanceKey),
+            ]);
+        }
+        if ($otherRevenue->isNotEmpty()) {
+            $revenueSections->push([
+                'name' => 'Pendapatan Lain-lain',
+                'accounts' => $otherRevenue->values(),
+                'total' => $otherRevenue->sum($balanceKey),
+            ]);
+        }
+
+        $expenseSections = collect();
+        if ($costOfGoods->isNotEmpty()) {
+            $expenseSections->push([
+                'name' => 'Harga Pokok Penjualan',
+                'accounts' => $costOfGoods->values(),
+                'total' => $costOfGoods->sum($balanceKey),
+            ]);
+        }
+        if ($operatingExpense->isNotEmpty()) {
+            $expenseSections->push([
+                'name' => 'Beban Operasional',
+                'accounts' => $operatingExpense->values(),
+                'total' => $operatingExpense->sum($balanceKey),
+            ]);
+        }
+        if ($otherExpense->isNotEmpty()) {
+            $expenseSections->push([
+                'name' => 'Beban Lain-lain',
+                'accounts' => $otherExpense->values(),
+                'total' => $otherExpense->sum($balanceKey),
+            ]);
+        }
+
         return [
             'period_start' => $startDate,
             'period_end' => $endDate,
-            'revenue' => [
-                'operating' => $operatingRevenue->values(),
-                'other' => $otherRevenue->values(),
-                'total' => $totalRevenue,
-            ],
-            'expenses' => [
-                'cost_of_goods' => $costOfGoods->values(),
-                'operating' => $operatingExpense->values(),
-                'other' => $otherExpense->values(),
-                'total' => $totalExpenses,
-            ],
+            'revenue' => $revenueSections->values()->all(),
+            'expenses' => $expenseSections->values()->all(),
+            'total_revenue' => $totalRevenue,
+            'total_expenses' => $totalExpenses,
             'gross_profit' => $grossProfit,
             'operating_income' => $operatingIncome,
             'net_income' => $netIncome,
@@ -302,17 +356,17 @@ class FinancialReportService
             'current_period' => $current,
             'previous_period' => $previous,
             'variance' => [
-                'assets_change' => $current['assets']['total'] - $previous['assets']['total'],
-                'assets_change_percent' => $previous['assets']['total'] != 0
-                    ? round((($current['assets']['total'] - $previous['assets']['total']) / $previous['assets']['total']) * 100, 2)
+                'assets_change' => $current['total_assets'] - $previous['total_assets'],
+                'assets_change_percent' => $previous['total_assets'] != 0
+                    ? round((($current['total_assets'] - $previous['total_assets']) / $previous['total_assets']) * 100, 2)
                     : 0,
-                'liabilities_change' => $current['liabilities']['total'] - $previous['liabilities']['total'],
-                'liabilities_change_percent' => $previous['liabilities']['total'] != 0
-                    ? round((($current['liabilities']['total'] - $previous['liabilities']['total']) / $previous['liabilities']['total']) * 100, 2)
+                'liabilities_change' => $current['total_liabilities'] - $previous['total_liabilities'],
+                'liabilities_change_percent' => $previous['total_liabilities'] != 0
+                    ? round((($current['total_liabilities'] - $previous['total_liabilities']) / $previous['total_liabilities']) * 100, 2)
                     : 0,
-                'equity_change' => $current['equity']['total'] - $previous['equity']['total'],
-                'equity_change_percent' => $previous['equity']['total'] != 0
-                    ? round((($current['equity']['total'] - $previous['equity']['total']) / $previous['equity']['total']) * 100, 2)
+                'equity_change' => $current['total_equity'] - $previous['total_equity'],
+                'equity_change_percent' => $previous['total_equity'] != 0
+                    ? round((($current['total_equity'] - $previous['total_equity']) / $previous['total_equity']) * 100, 2)
                     : 0,
             ],
         ];
@@ -356,13 +410,13 @@ class FinancialReportService
             'current_period' => $current,
             'previous_period' => $previous,
             'variance' => [
-                'revenue_change' => $current['revenue']['total'] - $previous['revenue']['total'],
-                'revenue_change_percent' => $previous['revenue']['total'] != 0
-                    ? round((($current['revenue']['total'] - $previous['revenue']['total']) / $previous['revenue']['total']) * 100, 2)
+                'revenue_change' => $current['total_revenue'] - $previous['total_revenue'],
+                'revenue_change_percent' => $previous['total_revenue'] != 0
+                    ? round((($current['total_revenue'] - $previous['total_revenue']) / $previous['total_revenue']) * 100, 2)
                     : 0,
-                'expenses_change' => $current['expenses']['total'] - $previous['expenses']['total'],
-                'expenses_change_percent' => $previous['expenses']['total'] != 0
-                    ? round((($current['expenses']['total'] - $previous['expenses']['total']) / $previous['expenses']['total']) * 100, 2)
+                'expenses_change' => $current['total_expenses'] - $previous['total_expenses'],
+                'expenses_change_percent' => $previous['total_expenses'] != 0
+                    ? round((($current['total_expenses'] - $previous['total_expenses']) / $previous['total_expenses']) * 100, 2)
                     : 0,
                 'net_income_change' => $current['net_income'] - $previous['net_income'],
                 'net_income_change_percent' => $previous['net_income'] != 0
