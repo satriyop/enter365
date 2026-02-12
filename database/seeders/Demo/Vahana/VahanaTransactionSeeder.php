@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders\Demo\Vahana;
 
+use App\Contracts\Inventory\InventoryServiceInterface;
 use App\Contracts\Purchasing\BillServiceInterface;
 use App\Contracts\Purchasing\GoodsReceiptNoteServiceInterface;
 use App\Contracts\Purchasing\PurchaseOrderServiceInterface;
@@ -39,6 +40,8 @@ class VahanaTransactionSeeder extends Seeder
     private DeliveryOrderServiceInterface $deliveryOrderService;
 
     private PaymentServiceInterface $paymentService;
+
+    private InventoryServiceInterface $inventoryService;
 
     private PurchaseOrderServiceInterface $purchaseOrderService;
 
@@ -82,9 +85,10 @@ class VahanaTransactionSeeder extends Seeder
         Auth::login($this->adminUser);
 
         try {
+            $this->seedInitialFinishedGoodsInventory();
+            $this->seedCompletePurchaseCycles();
             $this->seedCompleteSalesCycles();
             $this->seedDirectInvoicesWithPartialPayments();
-            $this->seedCompletePurchaseCycles();
             $this->seedSalesReturns();
             $this->seedPurchaseReturns();
         } finally {
@@ -104,6 +108,7 @@ class VahanaTransactionSeeder extends Seeder
         $this->invoiceService = app(InvoiceServiceInterface::class);
         $this->deliveryOrderService = app(DeliveryOrderServiceInterface::class);
         $this->paymentService = app(PaymentServiceInterface::class);
+        $this->inventoryService = app(InventoryServiceInterface::class);
         $this->purchaseOrderService = app(PurchaseOrderServiceInterface::class);
         $this->grnService = app(GoodsReceiptNoteServiceInterface::class);
         $this->billService = app(BillServiceInterface::class);
@@ -125,6 +130,63 @@ class VahanaTransactionSeeder extends Seeder
         if (! $this->adminUser || ! $this->warehouse || ! $this->bankAccount) {
             throw new \RuntimeException('Required dependencies not found. Ensure UserSeeder, WarehouseSeeder, and AccountSeeder have run.');
         }
+    }
+
+    /**
+     * Seed initial finished goods inventory (simulates prior manufacturing).
+     *
+     * Panel manufacturing takes weeks. This represents completed panels
+     * ready for delivery before the demo period starts.
+     */
+    private function seedInitialFinishedGoodsInventory(): void
+    {
+        $this->command->info('Seeding initial finished goods inventory...');
+
+        // FG products needed for sales cycles + buffer for other seeders
+        // Service products also need stock since delivery orders check all items
+        $initialStock = [
+            'FG-LVMDP-250' => 5,
+            'FG-LVMDP-100' => 5,
+            'FG-MCC-DOL-25' => 10,
+            'FG-DB-8W' => 25,
+            'FG-ATS-100' => 10,
+            'FG-MCC-SD-50' => 3,
+            'FG-CAP-100' => 3,
+            'FG-ATS-250' => 3,
+            'FG-DB-12W' => 5,
+            'SVC-INS-PANEL' => 20,
+            'SVC-INS-WIRING' => 20,
+            'SVC-COM-TEST' => 10,
+            'SVC-MNT-CHECK' => 10,
+        ];
+
+        Carbon::setTestNow($this->baseDate->copy()->subDay());
+
+        $count = 0;
+        foreach ($initialStock as $sku => $qty) {
+            $product = Product::where('sku', $sku)->first();
+            if (! $product) {
+                continue;
+            }
+
+            // Manufacturing cost ~60% of selling price
+            $unitCost = (int) round($product->selling_price * 0.6);
+
+            $this->inventoryService->stockIn(
+                $product,
+                $this->warehouse,
+                $qty,
+                $unitCost,
+                'Stok awal produk jadi - hasil produksi bulan lalu',
+                'initial_stock',
+                null
+            );
+            $count++;
+        }
+
+        Carbon::setTestNow(null);
+
+        $this->command->info("  Seeded initial stock for {$count} finished goods");
     }
 
     /**
