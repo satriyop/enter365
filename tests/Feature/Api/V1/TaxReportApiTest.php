@@ -99,7 +99,7 @@ describe('Tax Report API (PPN)', function () {
         $response = $this->getJson('/api/v1/reports/tax-invoice-list');
 
         $response->assertOk()
-            ->assertJsonCount(3, 'data.invoices');
+            ->assertJsonCount(3, 'data.items');
     });
 
     it('can get input tax list (Faktur Masukan)', function () {
@@ -114,7 +114,7 @@ describe('Tax Report API (PPN)', function () {
         $response = $this->getJson('/api/v1/reports/input-tax-list');
 
         $response->assertOk()
-            ->assertJsonCount(3, 'data.bills');
+            ->assertJsonCount(3, 'data.items');
     });
 
     it('filters tax reports by date range', function () {
@@ -173,7 +173,7 @@ describe('Tax Report API (PPN)', function () {
 
         $response->assertOk();
 
-        $invoice = $response->json('data.invoices.0');
+        $invoice = $response->json('data.items.0');
         expect($invoice['npwp_pembeli'])->toBe('12.345.678.9-012.345');
     });
 

@@ -240,15 +240,19 @@ class ReportController extends Controller
 
         $invoices = $this->reports->tax()->getTaxInvoiceList($startDate, $endDate);
 
+        $totalDpp = $invoices->sum('dpp');
+        $totalPpn = $invoices->sum('ppn');
+
         return $this->success([
             'report_name' => 'Daftar Faktur Pajak Keluaran',
             'period' => [
                 'start' => $startDate,
                 'end' => $endDate,
             ],
-            'invoices' => $invoices,
-            'total_dpp' => $invoices->sum('dpp'),
-            'total_ppn' => $invoices->sum('ppn'),
+            'items' => $invoices->values(),
+            'total_dpp' => $totalDpp,
+            'total_ppn' => $totalPpn,
+            'total' => $totalDpp + $totalPpn,
         ]);
     }
 
@@ -266,15 +270,19 @@ class ReportController extends Controller
 
         $bills = $this->reports->tax()->getInputTaxList($startDate, $endDate);
 
+        $totalDpp = $bills->sum('dpp');
+        $totalPpn = $bills->sum('ppn');
+
         return $this->success([
             'report_name' => 'Daftar Faktur Pajak Masukan',
             'period' => [
                 'start' => $startDate,
                 'end' => $endDate,
             ],
-            'bills' => $bills,
-            'total_dpp' => $bills->sum('dpp'),
-            'total_ppn' => $bills->sum('ppn'),
+            'items' => $bills->values(),
+            'total_dpp' => $totalDpp,
+            'total_ppn' => $totalPpn,
+            'total' => $totalDpp + $totalPpn,
         ]);
     }
 
@@ -483,9 +491,39 @@ class ReportController extends Controller
             $request->input('end_date')
         );
 
+        // Reshape opening/closing equity: flatten items and rename balance fields
+        $openingItems = collect($report['opening_equity']['items'])->map(fn ($item) => [
+            'account_id' => $item->account_id,
+            'code' => $item->code,
+            'name' => $item->name,
+            'opening_balance' => $item->balance,
+        ])->values()->all();
+
+        $closingItems = collect($report['closing_equity']['items'])->map(fn ($item) => [
+            'account_id' => $item->account_id,
+            'code' => $item->code,
+            'name' => $item->name,
+            'closing_balance' => $item->balance,
+        ])->values()->all();
+
         return $this->success([
             'report_name' => 'Laporan Perubahan Ekuitas',
-            ...$report,
+            'period' => [
+                'start_date' => $report['period_start'],
+                'end_date' => $report['period_end'],
+            ],
+            'opening_equity' => $openingItems,
+            'total_opening_equity' => $report['opening_equity']['total'],
+            'changes' => [
+                'capital_additions' => $report['changes']['capital_additions'],
+                'capital_withdrawals' => $report['changes']['capital_withdrawals'],
+                'net_income' => $report['changes']['net_income'],
+                'dividends' => $report['changes']['dividends'],
+                'adjustments' => $report['changes']['other_adjustments'],
+                'total_changes' => $report['changes']['total_changes'],
+            ],
+            'closing_equity' => $closingItems,
+            'total_closing_equity' => $report['closing_equity']['total'],
         ]);
     }
 

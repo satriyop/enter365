@@ -26,18 +26,19 @@ describe('Statement of Changes in Equity', function () {
                 'message',
                 'data' => [
                     'report_name',
-                    'period_start',
-                    'period_end',
-                    'opening_equity' => ['items', 'total'],
+                    'period' => ['start_date', 'end_date'],
+                    'opening_equity',
+                    'total_opening_equity',
                     'changes' => [
                         'capital_additions',
                         'capital_withdrawals',
                         'net_income',
                         'dividends',
-                        'other_adjustments',
+                        'adjustments',
                         'total_changes',
                     ],
-                    'closing_equity' => ['items', 'total'],
+                    'closing_equity',
+                    'total_closing_equity',
                 ],
             ])
             ->assertJsonPath('data.report_name', 'Laporan Perubahan Ekuitas');
@@ -50,8 +51,8 @@ describe('Statement of Changes in Equity', function () {
         $response = $this->getJson("/api/v1/reports/changes-in-equity?start_date={$startDate}&end_date={$endDate}");
 
         $response->assertOk()
-            ->assertJsonPath('data.period_start', $startDate)
-            ->assertJsonPath('data.period_end', $endDate);
+            ->assertJsonPath('data.period.start_date', $startDate)
+            ->assertJsonPath('data.period.end_date', $endDate);
     });
 
     it('shows opening equity from previous period', function () {
@@ -69,7 +70,7 @@ describe('Statement of Changes in Equity', function () {
 
         $response->assertOk();
 
-        $openingEquity = $response->json('data.opening_equity.total');
+        $openingEquity = $response->json('data.total_opening_equity');
         expect($openingEquity)->toBeGreaterThanOrEqual(10000000);
     });
 
@@ -181,9 +182,9 @@ describe('Statement of Changes in Equity', function () {
 
         $response->assertOk();
 
-        $openingEquity = $response->json('data.opening_equity.total');
+        $openingEquity = $response->json('data.total_opening_equity');
         $changes = $response->json('data.changes');
-        $closingEquity = $response->json('data.closing_equity.total');
+        $closingEquity = $response->json('data.total_closing_equity');
         $totalChanges = $response->json('data.changes.total_changes');
 
         // Verify that total changes = closing - opening
@@ -213,8 +214,8 @@ describe('Statement of Changes in Equity', function () {
 
         $response->assertOk();
 
-        $periodStart = $response->json('data.period_start');
-        $periodEnd = $response->json('data.period_end');
+        $periodStart = $response->json('data.period.start_date');
+        $periodEnd = $response->json('data.period.end_date');
         expect($periodStart)->not->toBeEmpty();
         expect($periodEnd)->not->toBeEmpty();
     });
