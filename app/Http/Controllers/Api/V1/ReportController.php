@@ -119,7 +119,7 @@ class ReportController extends Controller
     /**
      * Laporan Umur Piutang (Accounts Receivable Aging).
      *
-     * @response array{data: array{report_name: string, as_of_date: string, buckets: list<array{label: string, min: int, max: int|null}>, contacts: list<array{contact_id: int, contact_code: string, contact_name: string, buckets: array<string, int>, invoice_count: int}>, totals: array<string, int>}}
+     * @response array{data: array{report_name: string, as_of_date: string, buckets: list<array{label: string, min: int, max: int|null}>, contacts: list<array{id: int, code: string, name: string, current: int, days_1_30: int, days_31_60: int, days_61_90: int, over_90: int, total: int, invoice_count: int}>, totals: array{current: int, days_1_30: int, days_31_60: int, days_61_90: int, over_90: int, total: int}}}
      */
     public function receivableAging(Request $request): JsonResponse
     {
@@ -140,7 +140,7 @@ class ReportController extends Controller
     /**
      * Laporan Umur Hutang (Accounts Payable Aging).
      *
-     * @response array{data: array{report_name: string, as_of_date: string, buckets: list<array{label: string, min: int, max: int|null}>, contacts: list<array{contact_id: int, contact_code: string, contact_name: string, buckets: array<string, int>, bill_count: int}>, totals: array<string, int>}}
+     * @response array{data: array{report_name: string, as_of_date: string, buckets: list<array{label: string, min: int, max: int|null}>, contacts: list<array{id: int, code: string, name: string, current: int, days_1_30: int, days_31_60: int, days_61_90: int, over_90: int, total: int, bill_count: int}>, totals: array{current: int, days_1_30: int, days_31_60: int, days_61_90: int, over_90: int, total: int}}}
      */
     public function payableAging(Request $request): JsonResponse
     {

@@ -55,10 +55,10 @@ class AgingReportService
             $contactBuckets['total'] = array_sum($contactBuckets);
 
             $contacts->push([
-                'contact_id' => $contactId,
-                'contact_code' => $contact->code,
-                'contact_name' => $contact->name,
-                'buckets' => $contactBuckets,
+                'id' => $contactId,
+                'code' => $contact->code,
+                'name' => $contact->name,
+                ...$contactBuckets,
                 'invoice_count' => $contactInvoices->count(),
             ]);
         }
@@ -68,7 +68,7 @@ class AgingReportService
         return [
             'as_of_date' => $asOfDate->format('Y-m-d'),
             'buckets' => $buckets,
-            'contacts' => $contacts->sortByDesc(fn ($c) => $c['buckets']['total'])->values(),
+            'contacts' => $contacts->sortByDesc('total')->values(),
             'totals' => $totals,
         ];
     }
@@ -118,10 +118,10 @@ class AgingReportService
             $contactBuckets['total'] = array_sum($contactBuckets);
 
             $contacts->push([
-                'contact_id' => $contactId,
-                'contact_code' => $contact->code,
-                'contact_name' => $contact->name,
-                'buckets' => $contactBuckets,
+                'id' => $contactId,
+                'code' => $contact->code,
+                'name' => $contact->name,
+                ...$contactBuckets,
                 'bill_count' => $contactBills->count(),
             ]);
         }
@@ -131,7 +131,7 @@ class AgingReportService
         return [
             'as_of_date' => $asOfDate->format('Y-m-d'),
             'buckets' => $buckets,
-            'contacts' => $contacts->sortByDesc(fn ($c) => $c['buckets']['total'])->values(),
+            'contacts' => $contacts->sortByDesc('total')->values(),
             'totals' => $totals,
         ];
     }
@@ -204,12 +204,13 @@ class AgingReportService
      */
     protected function initializeBucketTotals(array $buckets): array
     {
-        $totals = [];
-        foreach ($buckets as $index => $bucket) {
-            $totals["bucket_{$index}"] = 0;
-        }
-
-        return $totals;
+        return [
+            'current' => 0,
+            'days_1_30' => 0,
+            'days_31_60' => 0,
+            'days_61_90' => 0,
+            'over_90' => 0,
+        ];
     }
 
     /**
@@ -232,16 +233,12 @@ class AgingReportService
      */
     protected function getBucketKey(int $daysOverdue, array $buckets): string
     {
-        foreach ($buckets as $index => $bucket) {
-            $min = $bucket['min'];
-            $max = $bucket['max'];
-
-            if ($daysOverdue >= $min && ($max === null || $daysOverdue <= $max)) {
-                return "bucket_{$index}";
-            }
-        }
-
-        // Default to last bucket
-        return 'bucket_'.(count($buckets) - 1);
+        return match (true) {
+            $daysOverdue <= 0 => 'current',
+            $daysOverdue <= 30 => 'days_1_30',
+            $daysOverdue <= 60 => 'days_31_60',
+            $daysOverdue <= 90 => 'days_61_90',
+            default => 'over_90',
+        };
     }
 }

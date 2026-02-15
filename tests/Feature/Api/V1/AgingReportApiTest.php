@@ -42,7 +42,7 @@ describe('Aging Report API', function () {
                     'as_of_date',
                     'buckets',
                     'contacts' => [
-                        '*' => ['contact_id', 'contact_name', 'buckets' => ['total']],
+                        '*' => ['id', 'name', 'current', 'days_1_30', 'days_31_60', 'days_61_90', 'over_90', 'total'],
                     ],
                     'totals',
                 ],
@@ -74,7 +74,7 @@ describe('Aging Report API', function () {
                     'as_of_date',
                     'buckets',
                     'contacts' => [
-                        '*' => ['contact_id', 'contact_name', 'buckets' => ['total']],
+                        '*' => ['id', 'name', 'current', 'days_1_30', 'days_31_60', 'days_61_90', 'over_90', 'total'],
                     ],
                     'totals',
                 ],
@@ -110,10 +110,9 @@ describe('Aging Report API', function () {
         $response->assertOk();
 
         $totals = $response->json('data.totals');
-        // bucket_0 = current, bucket_1 = 1-30, bucket_2 = 31-60
-        expect($totals['bucket_0'])->toBe(1000000);
-        expect($totals['bucket_1'])->toBe(2000000);
-        expect($totals['bucket_2'])->toBe(3000000);
+        expect($totals['current'])->toBe(1000000);
+        expect($totals['days_1_30'])->toBe(2000000);
+        expect($totals['days_31_60'])->toBe(3000000);
         expect($totals['total'])->toBe(6000000);
     });
 

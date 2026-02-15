@@ -134,23 +134,23 @@ class ExportController extends Controller
         $rows = [];
         foreach ($data['contacts'] as $contact) {
             $rows[] = [
-                'contact' => $contact['contact_name'],
-                'bucket_0' => $contact['buckets']['bucket_0'] ?? 0,
-                'bucket_1' => $contact['buckets']['bucket_1'] ?? 0,
-                'bucket_2' => $contact['buckets']['bucket_2'] ?? 0,
-                'bucket_3' => $contact['buckets']['bucket_3'] ?? 0,
-                'bucket_4' => $contact['buckets']['bucket_4'] ?? 0,
-                'total' => $contact['buckets']['total'] ?? 0,
+                'contact' => $contact['name'],
+                'current' => $contact['current'] ?? 0,
+                'days_1_30' => $contact['days_1_30'] ?? 0,
+                'days_31_60' => $contact['days_31_60'] ?? 0,
+                'days_61_90' => $contact['days_61_90'] ?? 0,
+                'over_90' => $contact['over_90'] ?? 0,
+                'total' => $contact['total'] ?? 0,
             ];
         }
 
         return $this->exportReport($rows, 'receivable-aging', $format, [
             'contact' => 'Pelanggan',
-            'bucket_0' => 'Belum Jatuh Tempo',
-            'bucket_1' => '1-30 Hari',
-            'bucket_2' => '31-60 Hari',
-            'bucket_3' => '61-90 Hari',
-            'bucket_4' => '> 90 Hari',
+            'current' => 'Belum Jatuh Tempo',
+            'days_1_30' => '1-30 Hari',
+            'days_31_60' => '31-60 Hari',
+            'days_61_90' => '61-90 Hari',
+            'over_90' => '> 90 Hari',
             'total' => 'Total',
         ]);
     }
@@ -165,23 +165,23 @@ class ExportController extends Controller
         $rows = [];
         foreach ($data['contacts'] as $contact) {
             $rows[] = [
-                'contact' => $contact['contact_name'],
-                'bucket_0' => $contact['buckets']['bucket_0'] ?? 0,
-                'bucket_1' => $contact['buckets']['bucket_1'] ?? 0,
-                'bucket_2' => $contact['buckets']['bucket_2'] ?? 0,
-                'bucket_3' => $contact['buckets']['bucket_3'] ?? 0,
-                'bucket_4' => $contact['buckets']['bucket_4'] ?? 0,
-                'total' => $contact['buckets']['total'] ?? 0,
+                'contact' => $contact['name'],
+                'current' => $contact['current'] ?? 0,
+                'days_1_30' => $contact['days_1_30'] ?? 0,
+                'days_31_60' => $contact['days_31_60'] ?? 0,
+                'days_61_90' => $contact['days_61_90'] ?? 0,
+                'over_90' => $contact['over_90'] ?? 0,
+                'total' => $contact['total'] ?? 0,
             ];
         }
 
         return $this->exportReport($rows, 'payable-aging', $format, [
             'contact' => 'Supplier',
-            'bucket_0' => 'Belum Jatuh Tempo',
-            'bucket_1' => '1-30 Hari',
-            'bucket_2' => '31-60 Hari',
-            'bucket_3' => '61-90 Hari',
-            'bucket_4' => '> 90 Hari',
+            'current' => 'Belum Jatuh Tempo',
+            'days_1_30' => '1-30 Hari',
+            'days_31_60' => '31-60 Hari',
+            'days_61_90' => '61-90 Hari',
+            'over_90' => '> 90 Hari',
             'total' => 'Total',
         ]);
     }
