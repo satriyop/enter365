@@ -219,7 +219,7 @@ class FinancialReportService
                 'type' => $account->type,
                 'subtype' => $account->subtype,
                 'parent_id' => $account->parent_id,
-                'balance' => abs($balance),
+                'balance' => $balance,
             ];
         });
 
@@ -234,13 +234,20 @@ class FinancialReportService
         // Revenue
         $operatingRevenue = $items->filter(fn ($i) => $i->type === Account::TYPE_REVENUE && $i->subtype === Account::SUBTYPE_OPERATING_REVENUE);
         $otherRevenue = $items->filter(fn ($i) => $i->type === Account::TYPE_REVENUE && $i->subtype === Account::SUBTYPE_OTHER_REVENUE);
-        $totalRevenue = $operatingRevenue->sum($balanceKey) + $otherRevenue->sum($balanceKey);
+        $uncategorizedRevenue = $items->filter(fn ($i) => $i->type === Account::TYPE_REVENUE
+            && $i->subtype !== Account::SUBTYPE_OPERATING_REVENUE
+            && $i->subtype !== Account::SUBTYPE_OTHER_REVENUE);
+        $totalRevenue = $operatingRevenue->sum($balanceKey) + $otherRevenue->sum($balanceKey) + $uncategorizedRevenue->sum($balanceKey);
 
         // Expenses
         $costOfGoods = $items->filter(fn ($i) => $i->type === Account::TYPE_EXPENSE && str_starts_with($i->code, '5-1'));
         $operatingExpense = $items->filter(fn ($i) => $i->type === Account::TYPE_EXPENSE && $i->subtype === Account::SUBTYPE_OPERATING_EXPENSE && ! str_starts_with($i->code, '5-1'));
         $otherExpense = $items->filter(fn ($i) => $i->type === Account::TYPE_EXPENSE && $i->subtype === Account::SUBTYPE_OTHER_EXPENSE);
-        $totalExpenses = $costOfGoods->sum($balanceKey) + $operatingExpense->sum($balanceKey) + $otherExpense->sum($balanceKey);
+        $uncategorizedExpense = $items->filter(fn ($i) => $i->type === Account::TYPE_EXPENSE
+            && ! str_starts_with($i->code, '5-1')
+            && $i->subtype !== Account::SUBTYPE_OPERATING_EXPENSE
+            && $i->subtype !== Account::SUBTYPE_OTHER_EXPENSE);
+        $totalExpenses = $costOfGoods->sum($balanceKey) + $operatingExpense->sum($balanceKey) + $otherExpense->sum($balanceKey) + $uncategorizedExpense->sum($balanceKey);
 
         $grossProfit = $operatingRevenue->sum($balanceKey) - $costOfGoods->sum($balanceKey);
         $operatingIncome = $grossProfit - $operatingExpense->sum($balanceKey);
@@ -260,6 +267,13 @@ class FinancialReportService
                 'name' => 'Pendapatan Lain-lain',
                 'accounts' => $otherRevenue->values(),
                 'total' => $otherRevenue->sum($balanceKey),
+            ]);
+        }
+        if ($uncategorizedRevenue->isNotEmpty()) {
+            $revenueSections->push([
+                'name' => 'Pendapatan Lain-lain',
+                'accounts' => $uncategorizedRevenue->values(),
+                'total' => $uncategorizedRevenue->sum($balanceKey),
             ]);
         }
 
@@ -283,6 +297,13 @@ class FinancialReportService
                 'name' => 'Beban Lain-lain',
                 'accounts' => $otherExpense->values(),
                 'total' => $otherExpense->sum($balanceKey),
+            ]);
+        }
+        if ($uncategorizedExpense->isNotEmpty()) {
+            $expenseSections->push([
+                'name' => 'Beban Lain-lain',
+                'accounts' => $uncategorizedExpense->values(),
+                'total' => $uncategorizedExpense->sum($balanceKey),
             ]);
         }
 

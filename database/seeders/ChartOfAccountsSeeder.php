@@ -86,7 +86,7 @@ class ChartOfAccountsSeeder extends Seeder
             // ============================================
             // 4. PENDAPATAN (REVENUE)
             // ============================================
-            ['code' => '4-0000', 'name' => 'Pendapatan', 'type' => Account::TYPE_REVENUE, 'subtype' => null, 'is_system' => true],
+            ['code' => '4-0000', 'name' => 'Pendapatan', 'type' => Account::TYPE_REVENUE, 'subtype' => Account::SUBTYPE_OPERATING_REVENUE, 'is_system' => true],
 
             // 4.1 Pendapatan Usaha (Operating Revenue)
             ['code' => '4-1000', 'name' => 'Pendapatan Usaha', 'type' => Account::TYPE_REVENUE, 'subtype' => Account::SUBTYPE_OPERATING_REVENUE, 'is_system' => true, 'parent' => '4-0000'],
@@ -106,7 +106,7 @@ class ChartOfAccountsSeeder extends Seeder
             // ============================================
             // 5. BEBAN (EXPENSES)
             // ============================================
-            ['code' => '5-0000', 'name' => 'Beban', 'type' => Account::TYPE_EXPENSE, 'subtype' => null, 'is_system' => true],
+            ['code' => '5-0000', 'name' => 'Beban', 'type' => Account::TYPE_EXPENSE, 'subtype' => Account::SUBTYPE_OPERATING_EXPENSE, 'is_system' => true],
 
             // 5.1 Harga Pokok Penjualan
             ['code' => '5-1000', 'name' => 'Harga Pokok Penjualan', 'type' => Account::TYPE_EXPENSE, 'subtype' => Account::SUBTYPE_OPERATING_EXPENSE, 'is_system' => true, 'parent' => '5-0000'],

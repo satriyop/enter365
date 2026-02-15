@@ -164,9 +164,11 @@ class DemoAdvancedOperationsSeeder extends Seeder
             return;
         }
 
-        // Find an expense account for freight
-        $expenseAccount = Account::where('code', 'like', '5-%')
+        // Find a proper leaf expense account (not a parent header with null subtype)
+        $expenseAccount = Account::where('type', Account::TYPE_EXPENSE)
             ->where('is_active', true)
+            ->whereNotNull('subtype')
+            ->where('subtype', '<>', '')
             ->first();
 
         if (! $expenseAccount) {
