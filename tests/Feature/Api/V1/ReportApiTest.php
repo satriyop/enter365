@@ -165,7 +165,7 @@ describe('Report API', function () {
                     'end_date',
                     'accounts' => [
                         '*' => [
-                            'account_id',
+                            'id',
                             'code',
                             'name',
                             'type',

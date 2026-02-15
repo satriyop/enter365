@@ -98,7 +98,7 @@ class ReportController extends Controller
     /**
      * Buku Besar (General Ledger).
      *
-     * @response array{data: array{report_name: string, start_date: string|null, end_date: string|null, accounts: list<array{account_id: int, code: string, name: string, type: string, opening_balance: int, entries: list<array{id: int, journal_entry_id: int, date: string, entry_number: string, description: string, reference: string|null, debit: int, credit: int, running_balance: int}>, closing_balance: int}>}}
+     * @response array{data: array{report_name: string, start_date: string|null, end_date: string|null, accounts: list<array{id: int, code: string, name: string, type: string, opening_balance: int, entries: list<array{id: int, journal_entry_id: int, date: string, entry_number: string, description: string, reference: string|null, debit: int, credit: int, balance: int}>, closing_balance: int}>}}
      */
     public function generalLedger(Request $request): JsonResponse
     {

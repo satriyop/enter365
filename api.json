@@ -15481,62 +15481,7 @@
                                                     "type": "object",
                                                     "properties": {
                                                         "category": {
-                                                            "type": "string",
-                                                            "enum": [
-                                                                "Aset"
-                                                            ]
-                                                        },
-                                                        "code": {
                                                             "type": "string"
-                                                        },
-                                                        "name": {
-                                                            "type": "string"
-                                                        },
-                                                        "balance": {
-                                                            "type": "string"
-                                                        }
-                                                    },
-                                                    "required": [
-                                                        "category",
-                                                        "code",
-                                                        "name",
-                                                        "balance"
-                                                    ]
-                                                },
-                                                {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "category": {
-                                                            "type": "string",
-                                                            "enum": [
-                                                                "Liabilitas"
-                                                            ]
-                                                        },
-                                                        "code": {
-                                                            "type": "string"
-                                                        },
-                                                        "name": {
-                                                            "type": "string"
-                                                        },
-                                                        "balance": {
-                                                            "type": "string"
-                                                        }
-                                                    },
-                                                    "required": [
-                                                        "category",
-                                                        "code",
-                                                        "name",
-                                                        "balance"
-                                                    ]
-                                                },
-                                                {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "category": {
-                                                            "type": "string",
-                                                            "enum": [
-                                                                "Ekuitas"
-                                                            ]
                                                         },
                                                         "code": {
                                                             "type": "string"
@@ -15556,8 +15501,8 @@
                                                     ]
                                                 }
                                             ],
-                                            "minItems": 3,
-                                            "maxItems": 3,
+                                            "minItems": 1,
+                                            "maxItems": 1,
                                             "additionalItems": false
                                         },
                                         "headers": {
@@ -26995,15 +26940,13 @@
                                             "integer",
                                             "null"
                                         ],
-                                        "description": "Min Rp 5 juta for B2B",
                                         "minimum": 5500
                                     },
                                     "pln_category": {
                                         "type": [
                                             "string",
                                             "null"
-                                        ],
-                                        "description": "Min 5.5 kVA for B2B"
+                                        ]
                                     },
                                     "target_savings": {
                                         "type": [
@@ -32928,7 +32871,7 @@
                                                     "items": {
                                                         "type": "object",
                                                         "properties": {
-                                                            "account_id": {
+                                                            "id": {
                                                                 "type": "integer"
                                                             },
                                                             "code": {
@@ -32975,7 +32918,7 @@
                                                                         "credit": {
                                                                             "type": "integer"
                                                                         },
-                                                                        "running_balance": {
+                                                                        "balance": {
                                                                             "type": "integer"
                                                                         }
                                                                     },
@@ -32988,7 +32931,7 @@
                                                                         "reference",
                                                                         "debit",
                                                                         "credit",
-                                                                        "running_balance"
+                                                                        "balance"
                                                                     ]
                                                                 }
                                                             },
@@ -32997,7 +32940,7 @@
                                                             }
                                                         },
                                                         "required": [
-                                                            "account_id",
+                                                            "id",
                                                             "code",
                                                             "name",
                                                             "type",
@@ -33933,7 +33876,7 @@
                                                         "end"
                                                     ]
                                                 },
-                                                "operating": {
+                                                "operating_activities": {
                                                     "type": "object",
                                                     "properties": {
                                                         "items": {
@@ -33954,16 +33897,16 @@
                                                                 ]
                                                             }
                                                         },
-                                                        "subtotal": {
+                                                        "total": {
                                                             "type": "integer"
                                                         }
                                                     },
                                                     "required": [
                                                         "items",
-                                                        "subtotal"
+                                                        "total"
                                                     ]
                                                 },
-                                                "investing": {
+                                                "investing_activities": {
                                                     "type": "object",
                                                     "properties": {
                                                         "items": {
@@ -33984,16 +33927,16 @@
                                                                 ]
                                                             }
                                                         },
-                                                        "subtotal": {
+                                                        "total": {
                                                             "type": "integer"
                                                         }
                                                     },
                                                     "required": [
                                                         "items",
-                                                        "subtotal"
+                                                        "total"
                                                     ]
                                                 },
-                                                "financing": {
+                                                "financing_activities": {
                                                     "type": "object",
                                                     "properties": {
                                                         "items": {
@@ -34014,34 +33957,34 @@
                                                                 ]
                                                             }
                                                         },
-                                                        "subtotal": {
+                                                        "total": {
                                                             "type": "integer"
                                                         }
                                                     },
                                                     "required": [
                                                         "items",
-                                                        "subtotal"
+                                                        "total"
                                                     ]
                                                 },
-                                                "net_cash_flow": {
+                                                "net_cash_change": {
                                                     "type": "integer"
                                                 },
-                                                "beginning_cash": {
+                                                "opening_balance": {
                                                     "type": "integer"
                                                 },
-                                                "ending_cash": {
+                                                "closing_balance": {
                                                     "type": "integer"
                                                 }
                                             },
                                             "required": [
                                                 "report_name",
                                                 "period",
-                                                "operating",
-                                                "investing",
-                                                "financing",
-                                                "net_cash_flow",
-                                                "beginning_cash",
-                                                "ending_cash"
+                                                "operating_activities",
+                                                "investing_activities",
+                                                "financing_activities",
+                                                "net_cash_change",
+                                                "opening_balance",
+                                                "closing_balance"
                                             ]
                                         }
                                     },
@@ -50157,7 +50100,10 @@
                         "type": "integer"
                     },
                     "remaining_amount": {
-                        "type": "integer"
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
                     },
                     "payment_method": {
                         "type": "string"

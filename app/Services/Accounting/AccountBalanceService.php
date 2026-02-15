@@ -44,7 +44,7 @@ class AccountBalanceService
      *     reference: string|null,
      *     debit: int,
      *     credit: int,
-     *     running_balance: int
+     *     balance: int
      * }>
      */
     public function getLedger(Account $account, ?string $startDate = null, ?string $endDate = null): Collection
@@ -115,7 +115,7 @@ class AccountBalanceService
                 'reference' => $entry->reference ? (string) $entry->reference : null,
                 'debit' => (int) $entry->debit,
                 'credit' => (int) $entry->credit,
-                'running_balance' => (int) $runningBalance,
+                'balance' => (int) $runningBalance,
             ];
         });
     }
@@ -209,12 +209,12 @@ class AccountBalanceService
                     'reference' => $entry->reference ? (string) $entry->reference : null,
                     'debit' => (int) $entry->debit,
                     'credit' => (int) $entry->credit,
-                    'running_balance' => (int) $runningBalance,
+                    'balance' => (int) $runningBalance,
                 ];
             });
 
             return (object) [
-                'account_id' => $account->id,
+                'id' => $account->id,
                 'code' => $account->code,
                 'name' => $account->name,
                 'type' => $account->type,
