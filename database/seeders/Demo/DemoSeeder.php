@@ -16,6 +16,9 @@ class DemoSeeder extends Seeder
     /** General SME trading/jasa — aligns with FEATURE_PRESET=general */
     public const DEMO_GENERAL = 'general';
 
+    /** Odoo-like enterprise packs (MFG/projects) without industry vertical masters */
+    public const DEMO_ENTERPRISE = 'enterprise';
+
     public const DEMO_VAHANA = 'vahana';
 
     public const DEMO_NEX = 'nex';
@@ -26,13 +29,15 @@ class DemoSeeder extends Seeder
      * Seed demo data for the application.
      *
      * Profiles:
-     * - general: master + core accounting/trading extended data (default product posture)
-     * - vahana: panel manufacturing (enable FEATURE_PRESET=manufacturing or full)
-     * - nex: solar EPC (enable FEATURE_PRESET=solar or full)
-     * - all: both verticals + full packs
+     * - general: master + core accounting/trading (FEATURE_PRESET=general)
+     * - enterprise: trading + odoo packs data paths; no NEX/Vahana masters
+     * - vahana: panel manufacturing + electrical_panel add-on
+     * - nex: solar EPC + solar_proposals add-on
+     * - all: both industry verticals + full packs
      *
      * Usage:
      *   php artisan seed:demo --demo=general
+     *   php artisan seed:demo --demo=enterprise
      *   php artisan seed:demo --demo=vahana
      *   php artisan seed:demo --demo=nex
      *   php artisan seed:demo --demo=all
@@ -55,13 +60,16 @@ class DemoSeeder extends Seeder
         $this->call(MasterDataSeeder::class);
         $this->command->info('');
 
-        // Component library is manufacturing/BOM-oriented
-        if (Features::enabled('bom') && $demoChoice !== self::DEMO_GENERAL) {
-            $this->command->info('🔌 Seeding Component Library (Cross-Reference System)...');
+        // Component library = Vahana electrical_panel only (not enterprise/general/nex-alone)
+        $seedPanelLibrary = Features::enabled('electrical_panel')
+            && in_array($demoChoice, [self::DEMO_VAHANA, self::DEMO_ALL], true);
+
+        if ($seedPanelLibrary) {
+            $this->command->info('🔌 Seeding Component Library (electrical_panel add-on)...');
             $this->call(ComponentLibrarySeeder::class);
             $this->command->info('');
         } else {
-            $this->command->warn('  ⏭  Skipping Component Library (bom pack off or general demo)');
+            $this->command->warn('  ⏭  Skipping Component Library (not vahana/all or electrical_panel off)');
         }
 
         // Seed Vahana-specific data (Electrical Panel Maker)
@@ -74,8 +82,11 @@ class DemoSeeder extends Seeder
             $this->seedNex();
         }
 
-        if ($demoChoice === self::DEMO_GENERAL) {
-            $this->command->info('🏢 Seeding general trading cycles (no NEX/Vahana vertical)...');
+        if (in_array($demoChoice, [self::DEMO_GENERAL, self::DEMO_ENTERPRISE], true)) {
+            $label = $demoChoice === self::DEMO_ENTERPRISE
+                ? 'enterprise trading + pack-friendly cycles (no industry masters)'
+                : 'general trading cycles (no NEX/Vahana vertical)';
+            $this->command->info("🏢 Seeding {$label}...");
             $this->call(GeneralTradingDemoSeeder::class);
             $this->command->info('');
         }
@@ -88,7 +99,7 @@ class DemoSeeder extends Seeder
         $this->command->info('💰 Seeding Advanced Accounting (Multi-Currency, FX Reval, Bank Recon, Budgets)...');
         $this->call(DemoAdvancedAccountingSeeder::class);
 
-        // Advanced ops (MRP, subcontracting) — only when packs on and not pure general
+        // Advanced ops (MRP, subcontracting) — odoo packs; skip pure general
         if ($demoChoice !== self::DEMO_GENERAL && (
             Features::enabled('mrp')
             || Features::enabled('subcontracting')
@@ -100,9 +111,9 @@ class DemoSeeder extends Seeder
             $this->command->warn('  ⏭  Skipping Advanced Operations (general profile or packs off)');
         }
 
-        // Alternate paths (includes solar proposals when pack on)
-        if ($demoChoice !== self::DEMO_GENERAL) {
-            $this->command->info('🔀 Seeding Alternate Paths (Rejections, Cancellations, Voids, Solar Proposals)...');
+        // Alternate paths (may include solar when pack + nex/all)
+        if (in_array($demoChoice, [self::DEMO_VAHANA, self::DEMO_NEX, self::DEMO_ALL], true)) {
+            $this->command->info('🔀 Seeding Alternate Paths (Rejections, Cancellations, Voids, Solar when on)...');
             $this->call(DemoAlternatePathsSeeder::class);
         } else {
             $this->command->warn('  ⏭  Skipping Alternate Paths (use demo=vahana|nex|all for edge-path demos)');
@@ -132,8 +143,9 @@ class DemoSeeder extends Seeder
                 'Select demo data',
                 [
                     self::DEMO_GENERAL => '🏢 General - SME trading/jasa (default product posture)',
-                    self::DEMO_VAHANA => '⚡ Vahana - Electrical Panel Maker (vahana.co.id)',
-                    self::DEMO_NEX => '☀️  NEX - Solar EPC Contractor (energimasadepan.com)',
+                    self::DEMO_ENTERPRISE => '🏭 Enterprise - Odoo-like packs without industry masters',
+                    self::DEMO_VAHANA => '⚡ Vahana - Electrical Panel Maker (electrical_panel)',
+                    self::DEMO_NEX => '☀️  NEX - Solar EPC Contractor (solar_proposals)',
                     self::DEMO_ALL => '🔄 Full - Vahana + NEX + packs',
                 ],
                 self::DEMO_GENERAL
@@ -141,7 +153,8 @@ class DemoSeeder extends Seeder
         } catch (\Throwable) {
             // Non-interactive: follow FEATURE_PRESET so CI/local match product defaults
             return match (config('features.preset', 'general')) {
-                'manufacturing' => self::DEMO_VAHANA,
+                'enterprise', 'manufacturing', 'services' => self::DEMO_ENTERPRISE,
+                'vahana' => self::DEMO_VAHANA,
                 'solar' => self::DEMO_NEX,
                 'full' => self::DEMO_ALL,
                 default => self::DEMO_GENERAL,
@@ -155,13 +168,18 @@ class DemoSeeder extends Seeder
     protected function warnIfPackMismatch(string $demoChoice): void
     {
         if (in_array($demoChoice, [self::DEMO_VAHANA, self::DEMO_ALL], true)
+            && Features::disabled('electrical_panel')) {
+            $this->command?->warn('  ⚠  electrical_panel is OFF. Enable FEATURE_PRESET=vahana|full for panel library / brand-swap.');
+        }
+
+        if (in_array($demoChoice, [self::DEMO_VAHANA, self::DEMO_ALL], true)
             && Features::disabled('work_orders') && Features::disabled('bom')) {
-            $this->command?->warn('  ⚠  Manufacturing packs are OFF. Enable FEATURE_PRESET=manufacturing|full for full Vahana flows.');
+            $this->command?->warn('  ⚠  Manufacturing packs are OFF. Enable FEATURE_PRESET=manufacturing|vahana|full for MFG flows.');
         }
 
         if (in_array($demoChoice, [self::DEMO_NEX, self::DEMO_ALL], true)
             && Features::disabled('solar_proposals')) {
-            $this->command?->warn('  ⚠  solar_proposals pack is OFF. Enable FEATURE_PRESET=solar|full for NEX solar flows.');
+            $this->command?->warn('  ⚠  solar_proposals pack is OFF. Enable FEATURE_PRESET=solar|nex|full for NEX solar flows.');
         }
     }
 
@@ -232,6 +250,9 @@ class DemoSeeder extends Seeder
         if ($demoChoice === self::DEMO_GENERAL) {
             $this->command->info('║    🏢 General SME: master data + core accounting demo paths         ║');
         }
+        if ($demoChoice === self::DEMO_ENTERPRISE) {
+            $this->command->info('║    🏭 Enterprise: core + pack paths; no solar/panel industry seeds  ║');
+        }
         if ($demoChoice === self::DEMO_VAHANA || $demoChoice === self::DEMO_ALL) {
             $this->command->info('║    ⚡ PT Vahana: Switchboards, MCC, ATS, Capacitor Bank panels      ║');
         }
@@ -240,7 +261,7 @@ class DemoSeeder extends Seeder
         }
 
         $this->command->info('╠═══════════════════════════════════════════════════════════════════╣');
-        $this->command->info('║  Tip: set FEATURE_PRESET=manufacturing|solar|full for vertical UIs ║');
+        $this->command->info('║  Tip: FEATURE_PRESET=enterprise|vahana|nex|full for product UIs    ║');
         $this->command->info('╚═══════════════════════════════════════════════════════════════════╝');
         $this->command->info('');
     }

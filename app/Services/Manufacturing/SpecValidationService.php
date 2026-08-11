@@ -6,8 +6,13 @@ use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\ComponentBrandMapping;
 use App\Models\Manufacturing\ComponentStandard;
 use App\Models\Manufacturing\SpecValidationRuleSet;
+use App\Support\Features;
 use Illuminate\Support\Collection;
 
+/**
+ * Electrical panel (Vahana) add-on: spec rules for brand-swap validation.
+ * Soft-skips when FEATURE electrical_panel is off.
+ */
 class SpecValidationService
 {
     /**
@@ -21,6 +26,10 @@ class SpecValidationService
         ComponentBrandMapping $newMapping,
         ?SpecValidationRuleSet $ruleSet = null
     ): array {
+        if (Features::disabled('electrical_panel')) {
+            return ['valid' => true, 'warnings' => [], 'errors' => []];
+        }
+
         $ruleSet = $ruleSet ?? SpecValidationRuleSet::getDefault();
 
         if (! $ruleSet) {
@@ -84,6 +93,19 @@ class SpecValidationService
         string $targetBrand,
         ?SpecValidationRuleSet $ruleSet = null
     ): array {
+        if (Features::disabled('electrical_panel')) {
+            return [
+                'valid' => true,
+                'items' => [],
+                'summary' => [
+                    'total_items' => 0,
+                    'validated_items' => 0,
+                    'total_warnings' => 0,
+                    'total_errors' => 0,
+                ],
+            ];
+        }
+
         $ruleSet = $ruleSet ?? $bom->getEffectiveRuleSet();
 
         $items = [];
@@ -254,6 +276,10 @@ class SpecValidationService
      */
     public function validateBomCompliance(Bom $bom, ?SpecValidationRuleSet $ruleSet = null): array
     {
+        if (Features::disabled('electrical_panel')) {
+            return ['valid' => true, 'items' => []];
+        }
+
         $ruleSet = $ruleSet ?? $bom->getEffectiveRuleSet();
 
         if (! $ruleSet) {

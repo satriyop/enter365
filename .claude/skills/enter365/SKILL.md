@@ -1,6 +1,6 @@
 # Enter365 Architecture Skill
 
-Architecture, patterns, and gotchas for Enter365 - Indonesian SME ERP/Accounting system for electrical panel manufacturing and Solar EPC contracting.
+Architecture, patterns, and gotchas for Enter365 — Indonesian SME ERP (Odoo-like core: Sales, Purchase, Inventory, Accounting, Manufacturing, Projects) with optional industry add-ons: solar EPC (`solar_proposals` / NEX) and electrical panel tools (`electrical_panel` / Vahana).
 
 ## Trigger
 

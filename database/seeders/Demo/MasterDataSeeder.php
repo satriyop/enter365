@@ -12,6 +12,7 @@ use App\Models\Manufacturing\ComponentBrandMapping;
 use App\Models\Manufacturing\ComponentStandard;
 use App\Models\Tax\NsfpRange;
 use App\Models\User;
+use App\Support\Features;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -25,7 +26,12 @@ class MasterDataSeeder extends Seeder
         $this->createWarehouses();
         $this->createProductCategories();
         $this->createUsers();
-        $this->seedComponentStandards();
+        // Vahana electrical_panel add-on only (not general/enterprise)
+        if (Features::enabled('electrical_panel')) {
+            $this->seedComponentStandards();
+        } else {
+            $this->command?->warn('  ⏭  Skipping component standards (electrical_panel off)');
+        }
         $this->seedCurrencies();
         $this->seedNsfpRanges();
     }

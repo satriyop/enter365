@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Support\Features;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -11,7 +12,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class BomItemResource extends JsonResource
 {
     /**
-     * @param  \Illuminate\Http\Request  $request
      * @return array{
      *   id: int,
      *   bom_id: int,
@@ -53,7 +53,10 @@ class BomItemResource extends JsonResource
             'effective_quantity' => $this->getEffectiveQuantity(),
             'sort_order' => $this->sort_order,
             'notes' => $this->notes,
-            'component_standard_id' => $this->component_standard_id,
+            'component_standard_id' => $this->when(
+                Features::enabled('electrical_panel'),
+                $this->component_standard_id
+            ),
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),
             'updated_at' => $this->updated_at->format('Y-m-d H:i:s'),
         ];

@@ -3,6 +3,7 @@
 namespace App\Http\Resources\Api\V1;
 
 use App\Models\Manufacturing\BomTemplateItem;
+use App\Support\Features;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -12,7 +13,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class BomTemplateItemResource extends JsonResource
 {
     /**
-     * @param  \Illuminate\Http\Request  $request
      * @return array{
      *   id: int,
      *   template_id: int,
@@ -42,13 +42,19 @@ class BomTemplateItemResource extends JsonResource
             'template_id' => $this->template_id,
             'type' => $this->type,
             'type_label' => BomTemplateItem::getTypes()[$this->type] ?? $this->type,
-            'component_standard_id' => $this->component_standard_id,
-            'component_standard' => $this->whenLoaded('componentStandard', fn () => [
-                'id' => $this->componentStandard->id,
-                'code' => $this->componentStandard->code,
-                'name' => $this->componentStandard->name,
-                'category' => $this->componentStandard->category,
-            ]),
+            'component_standard_id' => $this->when(
+                Features::enabled('electrical_panel'),
+                $this->component_standard_id
+            ),
+            'component_standard' => $this->when(
+                Features::enabled('electrical_panel') && $this->relationLoaded('componentStandard'),
+                fn () => $this->componentStandard ? [
+                    'id' => $this->componentStandard->id,
+                    'code' => $this->componentStandard->code,
+                    'name' => $this->componentStandard->name,
+                    'category' => $this->componentStandard->category,
+                ] : null
+            ),
             'product_id' => $this->product_id,
             'product' => $this->whenLoaded('product', fn () => [
                 'id' => $this->product->id,
@@ -63,7 +69,8 @@ class BomTemplateItemResource extends JsonResource
             'is_quantity_variable' => $this->is_quantity_variable,
             'sort_order' => $this->sort_order,
             'notes' => $this->notes,
-            'has_component_standard' => $this->component_standard_id !== null,
+            'has_component_standard' => Features::enabled('electrical_panel')
+                && $this->component_standard_id !== null,
             'has_product' => $this->product_id !== null,
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),

@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Solar\PlnTariff;
+use App\Support\Features;
 use Illuminate\Database\Seeder;
 
 class PlnTariffSeeder extends Seeder
@@ -25,6 +26,12 @@ class PlnTariffSeeder extends Seeder
      */
     public function run(): void
     {
+        if (Features::disabled('solar_proposals')) {
+            $this->command?->warn('  ⏭  Skipping PLN tariff data (solar_proposals off)');
+
+            return;
+        }
+
         $tariffs = [
             // ========================================
             // RESIDENTIAL (Rumah Tangga)

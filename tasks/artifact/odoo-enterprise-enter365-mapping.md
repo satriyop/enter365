@@ -332,10 +332,14 @@ So for “penawaran Odoo Enterprise samakan”, sales pitch uses **`FEATURE_PRES
 | Step | Status |
 |------|--------|
 | Classification agreed (MFG/projects = odoo packs) | done |
-| `electrical_panel` flag + BE route gate | done (A+B) |
+| `electrical_panel` flag + BE route gate | done |
 | Presets: `enterprise`, `services`, `vahana`, `nex` alias | done |
-| FE nav/router for component library / rule sets / cost opt | done |
-| Demo seeder profiles per preset | pending |
+| FE nav/router + in-page BOM brand UI gates | done (A1–A5) |
+| BE soft-skip + omit industry resource fields | done (A3/A11) |
+| Profile-aware seeders (enterprise, solar, panel) | done (A6–A8) |
+| BOM templates stay generic pack; brand hooks optional | done (A12) |
+| Reports hub pack filters | done (A13) |
+| Physical ElectricalPanel namespace move | deferred (soft-skip + README A10) |
 | Solar stays OFF on enterprise | done (config) |
 | Thin CRM pack | future |
 

@@ -9,6 +9,7 @@ use App\Models\Inventory\ProductCategory;
 use App\Models\Manufacturing\ComponentBrandMapping;
 use App\Models\Manufacturing\ComponentStandard;
 use App\Models\User;
+use App\Support\Features;
 use Illuminate\Database\Seeder;
 
 /**
@@ -32,6 +33,12 @@ class ComponentLibrarySeeder extends Seeder
 
     public function run(): void
     {
+        if (Features::disabled('electrical_panel')) {
+            $this->command?->warn('  ⏭  Skipping Component Library (electrical_panel off)');
+
+            return;
+        }
+
         $this->adminUser = User::where('email', 'admin@demo.com')->first()
             ?? User::where('email', 'admin@example.com')->first();
 

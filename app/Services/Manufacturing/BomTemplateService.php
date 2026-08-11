@@ -14,6 +14,7 @@ use App\Models\Manufacturing\BomTemplate;
 use App\Models\Manufacturing\BomTemplateItem;
 use App\Models\Manufacturing\ComponentBrandMapping;
 use App\Services\Base\BaseService;
+use App\Support\Features;
 
 class BomTemplateService extends BaseService implements BomTemplateServiceInterface
 {
@@ -240,6 +241,12 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
         ?float $quantityOverride
     ): array {
         $quantity = $quantityOverride ?? (float) $templateItem->default_quantity;
+        $panelAddonOn = Features::enabled('electrical_panel');
+
+        // Brand / component-standard resolution is Vahana (electrical_panel) only
+        if (! $panelAddonOn) {
+            $targetBrand = null;
+        }
 
         // Item has a direct product - use it regardless of brand
         if ($templateItem->product_id) {
@@ -250,7 +257,7 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
                 'bom_item_data' => [
                     'type' => $templateItem->type,
                     'product_id' => $product->id,
-                    'component_standard_id' => $templateItem->component_standard_id,
+                    'component_standard_id' => $panelAddonOn ? $templateItem->component_standard_id : null,
                     'description' => $product->name,
                     'quantity' => $quantity,
                     'unit' => $templateItem->unit ?? $product->unit ?? 'pcs',
@@ -265,6 +272,25 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
                     'purchase_price' => $product->purchase_price,
                 ],
                 'notes' => 'Menggunakan produk spesifik dari template',
+            ];
+        }
+
+        // Without electrical_panel, treat standard-only lines as manual descriptions
+        if (! $panelAddonOn && $templateItem->component_standard_id) {
+            return [
+                'status' => 'using_product',
+                'bom_item_data' => [
+                    'type' => $templateItem->type,
+                    'product_id' => null,
+                    'component_standard_id' => null,
+                    'description' => $templateItem->description,
+                    'quantity' => $quantity,
+                    'unit' => $templateItem->unit ?? 'pcs',
+                    'unit_cost' => 0,
+                    'notes' => $templateItem->notes,
+                ],
+                'product' => null,
+                'notes' => 'Komponen standar diabaikan (electrical_panel off)',
             ];
         }
 
@@ -422,6 +448,10 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
      */
     public function getAvailableBrandsForTemplate(BomTemplate $template): array
     {
+        if (Features::disabled('electrical_panel')) {
+            return [];
+        }
+
         $template->load('items.componentStandard.brandMappings');
 
         $itemsWithStandard = $template->items->filter(fn ($item) => $item->component_standard_id !== null);

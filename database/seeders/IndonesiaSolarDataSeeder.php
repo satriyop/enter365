@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Solar\IndonesiaSolarData;
+use App\Support\Features;
 use Illuminate\Database\Seeder;
 
 class IndonesiaSolarDataSeeder extends Seeder
@@ -16,6 +17,12 @@ class IndonesiaSolarDataSeeder extends Seeder
      */
     public function run(): void
     {
+        if (Features::disabled('solar_proposals')) {
+            $this->command?->warn('  ⏭  Skipping Indonesia solar data (solar_proposals off)');
+
+            return;
+        }
+
         $solarData = [
             // SUMATERA
             ['province' => 'Aceh', 'city' => 'Banda Aceh', 'latitude' => 5.5483, 'longitude' => 95.3238, 'peak_sun_hours' => 4.2, 'solar_irradiance_kwh_m2_day' => 4.45, 'optimal_tilt_angle' => 6, 'temperature_avg' => 27.5],
