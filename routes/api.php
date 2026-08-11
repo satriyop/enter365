@@ -340,75 +340,79 @@ Route::prefix('v1')->group(function () {
             Route::post('bom-variant-groups/{bom_variant_group}/reorder', [BomVariantGroupController::class, 'reorder']);
             Route::post('bom-variant-groups/{bom_variant_group}/create-variant', [BomVariantGroupController::class, 'createVariant']);
 
-            // Component Cross-Reference (Brand Equivalents)
-            Route::prefix('component-standards')->group(function () {
-                Route::get('/', [ComponentStandardController::class, 'index']);
-                Route::post('/', [ComponentStandardController::class, 'store']);
-                Route::get('/categories', [ComponentStandardController::class, 'categories']);
-                Route::get('/{componentStandard}', [ComponentStandardController::class, 'show']);
-                Route::put('/{componentStandard}', [ComponentStandardController::class, 'update']);
-                Route::delete('/{componentStandard}', [ComponentStandardController::class, 'destroy']);
-                Route::get('/{componentStandard}/brands', [ComponentStandardController::class, 'brands']);
+            // Vahana add-on: electrical panel (brand swap, standards, spec validation)
+            // Requires bom pack + electrical_panel industry flag.
+            Route::middleware('feature:electrical_panel')->group(function () {
+                // Component Cross-Reference (Brand Equivalents)
+                Route::prefix('component-standards')->group(function () {
+                    Route::get('/', [ComponentStandardController::class, 'index']);
+                    Route::post('/', [ComponentStandardController::class, 'store']);
+                    Route::get('/categories', [ComponentStandardController::class, 'categories']);
+                    Route::get('/{componentStandard}', [ComponentStandardController::class, 'show']);
+                    Route::put('/{componentStandard}', [ComponentStandardController::class, 'update']);
+                    Route::delete('/{componentStandard}', [ComponentStandardController::class, 'destroy']);
+                    Route::get('/{componentStandard}/brands', [ComponentStandardController::class, 'brands']);
 
-                // Brand Mappings
-                Route::post('/{componentStandard}/mappings', [ComponentBrandMappingController::class, 'store']);
-                Route::put('/{componentStandard}/mappings/{mapping}', [ComponentBrandMappingController::class, 'update']);
-                Route::delete('/{componentStandard}/mappings/{mapping}', [ComponentBrandMappingController::class, 'destroy']);
-                Route::post('/{componentStandard}/mappings/{mapping}/verify', [ComponentBrandMappingController::class, 'verify']);
-                Route::post('/{componentStandard}/mappings/{mapping}/set-preferred', [ComponentBrandMappingController::class, 'setPreferred']);
+                    // Brand Mappings
+                    Route::post('/{componentStandard}/mappings', [ComponentBrandMappingController::class, 'store']);
+                    Route::put('/{componentStandard}/mappings/{mapping}', [ComponentBrandMappingController::class, 'update']);
+                    Route::delete('/{componentStandard}/mappings/{mapping}', [ComponentBrandMappingController::class, 'destroy']);
+                    Route::post('/{componentStandard}/mappings/{mapping}/verify', [ComponentBrandMappingController::class, 'verify']);
+                    Route::post('/{componentStandard}/mappings/{mapping}/set-preferred', [ComponentBrandMappingController::class, 'setPreferred']);
+                });
+
+                // Cross-Reference Queries
+                Route::get('products/{product}/equivalents', [ComponentCrossReferenceController::class, 'productEquivalents']);
+                Route::get('component-search', [ComponentCrossReferenceController::class, 'search']);
+                Route::get('available-brands', [ComponentCrossReferenceController::class, 'availableBrands']);
+
+                // BOM Brand Swap
+                Route::get('boms/{bom}/brand-comparison', [ComponentCrossReferenceController::class, 'compareBrands']);
+                Route::post('boms/{bom}/swap-brand-preview', [ComponentCrossReferenceController::class, 'previewSwapBrand']);
+                Route::post('boms/{bom}/swap-brand', [ComponentCrossReferenceController::class, 'swapBrand']);
+                Route::post('boms/{bom}/generate-brand-variants', [ComponentCrossReferenceController::class, 'generateBrandVariants']);
+
+                // Cost Optimization (Mixed-brand cheapest option)
+                Route::get('boms/{bom}/cost-optimization', [ComponentCrossReferenceController::class, 'previewCostOptimization']);
+                Route::post('boms/{bom}/apply-cost-optimization', [ComponentCrossReferenceController::class, 'applyCostOptimization']);
+
+                // Quick Swap (Inline item-level swap)
+                Route::get('boms/{bom}/items/{item}/alternatives', [ComponentCrossReferenceController::class, 'getItemAlternatives']);
+                Route::patch('boms/{bom}/items/{item}/swap', [ComponentCrossReferenceController::class, 'quickSwapItem']);
+
+                // Auto-Mapping Suggestions
+                Route::get('auto-mapping/unmapped-products', [ComponentCrossReferenceController::class, 'getUnmappedProducts']);
+                Route::get('auto-mapping/products/{product}/suggest', [ComponentCrossReferenceController::class, 'suggestMapping']);
+                Route::post('auto-mapping/suggest-batch', [ComponentCrossReferenceController::class, 'suggestMappingsBatch']);
+                Route::post('auto-mapping/products/{product}/accept', [ComponentCrossReferenceController::class, 'acceptSuggestion']);
+                Route::post('auto-mapping/bulk-accept', [ComponentCrossReferenceController::class, 'bulkAcceptSuggestions']);
+                Route::get('auto-mapping/parse-name', [ComponentCrossReferenceController::class, 'parseProductName']);
+
+                // Bulk Import Component Mappings
+                Route::get('component-mappings/template', [ComponentMappingImportController::class, 'downloadTemplate']);
+                Route::post('component-mappings/validate', [ComponentMappingImportController::class, 'validate']);
+                Route::post('component-mappings/import', [ComponentMappingImportController::class, 'import']);
+                Route::get('component-mappings/stats', [ComponentMappingImportController::class, 'stats']);
+
+                // Spec Validation Rule Sets (Configurable Rules for Swap Validation)
+                Route::prefix('spec-rule-sets')->group(function () {
+                    Route::get('/', [SpecValidationRuleSetController::class, 'index']);
+                    Route::post('/', [SpecValidationRuleSetController::class, 'store']);
+                    Route::get('/metadata', [SpecValidationRuleSetController::class, 'metadata']);
+                    Route::get('/{specRuleSet}', [SpecValidationRuleSetController::class, 'show']);
+                    Route::put('/{specRuleSet}', [SpecValidationRuleSetController::class, 'update']);
+                    Route::delete('/{specRuleSet}', [SpecValidationRuleSetController::class, 'destroy']);
+                    Route::post('/{specRuleSet}/set-default', [SpecValidationRuleSetController::class, 'setDefault']);
+
+                    // Rules within Rule Sets
+                    Route::post('/{specRuleSet}/rules', [SpecValidationRuleSetController::class, 'storeRule']);
+                    Route::put('/{specRuleSet}/rules/{rule}', [SpecValidationRuleSetController::class, 'updateRule']);
+                    Route::delete('/{specRuleSet}/rules/{rule}', [SpecValidationRuleSetController::class, 'destroyRule']);
+                    Route::post('/{specRuleSet}/rules/reorder', [SpecValidationRuleSetController::class, 'reorderRules']);
+                });
             });
 
-            // Cross-Reference Queries
-            Route::get('products/{product}/equivalents', [ComponentCrossReferenceController::class, 'productEquivalents']);
-            Route::get('component-search', [ComponentCrossReferenceController::class, 'search']);
-            Route::get('available-brands', [ComponentCrossReferenceController::class, 'availableBrands']);
-
-            // BOM Brand Swap
-            Route::get('boms/{bom}/brand-comparison', [ComponentCrossReferenceController::class, 'compareBrands']);
-            Route::post('boms/{bom}/swap-brand-preview', [ComponentCrossReferenceController::class, 'previewSwapBrand']);
-            Route::post('boms/{bom}/swap-brand', [ComponentCrossReferenceController::class, 'swapBrand']);
-            Route::post('boms/{bom}/generate-brand-variants', [ComponentCrossReferenceController::class, 'generateBrandVariants']);
-
-            // Cost Optimization (Mixed-brand cheapest option)
-            Route::get('boms/{bom}/cost-optimization', [ComponentCrossReferenceController::class, 'previewCostOptimization']);
-            Route::post('boms/{bom}/apply-cost-optimization', [ComponentCrossReferenceController::class, 'applyCostOptimization']);
-
-            // Quick Swap (Inline item-level swap)
-            Route::get('boms/{bom}/items/{item}/alternatives', [ComponentCrossReferenceController::class, 'getItemAlternatives']);
-            Route::patch('boms/{bom}/items/{item}/swap', [ComponentCrossReferenceController::class, 'quickSwapItem']);
-
-            // Auto-Mapping Suggestions
-            Route::get('auto-mapping/unmapped-products', [ComponentCrossReferenceController::class, 'getUnmappedProducts']);
-            Route::get('auto-mapping/products/{product}/suggest', [ComponentCrossReferenceController::class, 'suggestMapping']);
-            Route::post('auto-mapping/suggest-batch', [ComponentCrossReferenceController::class, 'suggestMappingsBatch']);
-            Route::post('auto-mapping/products/{product}/accept', [ComponentCrossReferenceController::class, 'acceptSuggestion']);
-            Route::post('auto-mapping/bulk-accept', [ComponentCrossReferenceController::class, 'bulkAcceptSuggestions']);
-            Route::get('auto-mapping/parse-name', [ComponentCrossReferenceController::class, 'parseProductName']);
-
-            // Bulk Import Component Mappings
-            Route::get('component-mappings/template', [ComponentMappingImportController::class, 'downloadTemplate']);
-            Route::post('component-mappings/validate', [ComponentMappingImportController::class, 'validate']);
-            Route::post('component-mappings/import', [ComponentMappingImportController::class, 'import']);
-            Route::get('component-mappings/stats', [ComponentMappingImportController::class, 'stats']);
-
-            // Spec Validation Rule Sets (Configurable Rules for Swap Validation)
-            Route::prefix('spec-rule-sets')->group(function () {
-                Route::get('/', [SpecValidationRuleSetController::class, 'index']);
-                Route::post('/', [SpecValidationRuleSetController::class, 'store']);
-                Route::get('/metadata', [SpecValidationRuleSetController::class, 'metadata']);
-                Route::get('/{specRuleSet}', [SpecValidationRuleSetController::class, 'show']);
-                Route::put('/{specRuleSet}', [SpecValidationRuleSetController::class, 'update']);
-                Route::delete('/{specRuleSet}', [SpecValidationRuleSetController::class, 'destroy']);
-                Route::post('/{specRuleSet}/set-default', [SpecValidationRuleSetController::class, 'setDefault']);
-
-                // Rules within Rule Sets
-                Route::post('/{specRuleSet}/rules', [SpecValidationRuleSetController::class, 'storeRule']);
-                Route::put('/{specRuleSet}/rules/{rule}', [SpecValidationRuleSetController::class, 'updateRule']);
-                Route::delete('/{specRuleSet}/rules/{rule}', [SpecValidationRuleSetController::class, 'destroyRule']);
-                Route::post('/{specRuleSet}/rules/reorder', [SpecValidationRuleSetController::class, 'reorderRules']);
-            });
-
-            // BOM Templates (Reusable Panel Configurations)
+            // BOM Templates (generic manufacturing pack; brand hooks optional when electrical_panel ON)
             Route::prefix('bom-templates')->group(function () {
                 Route::get('/', [BomTemplateController::class, 'index']);
                 Route::post('/', [BomTemplateController::class, 'store']);

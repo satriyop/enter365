@@ -1,26 +1,37 @@
 <?php
 
 /**
- * Product module flags.
+ * Product module flags — Odoo-like core + optional packs + industry add-ons.
  *
- * Default profile: **general company** (trading / jasa / UKM end-to-end).
- * Vertical packs used heavily by Vahana (panel/manufacturing) and NEX (solar EPC)
- * are OFF by default and can be enabled per deploy via .env.
+ * Layers:
+ *   1. core_erp     — Sales / Purchase / Inventory / accounting tools (default ON)
+ *   2. odoo_packs   — Manufacturing, Projects (optional apps, not verticals)
+ *   3. industry     — NEX (solar) / Vahana (electrical panel) add-ons (default OFF)
  *
- * Enable packs when needed, e.g.:
- *   FEATURE_SOLAR_PROPOSALS=true
- *   FEATURE_MANUFACTURING=true FEATURE_BOM=true FEATURE_WORK_ORDERS=true ...
- *   FEATURE_PROJECTS=true
+ * Presets (FEATURE_PRESET):
+ *   general       — trading / jasa ringan (core only)
+ *   services      — core + projects
+ *   manufacturing — core + manufacturing packs (generic shop floor)
+ *   enterprise    — core + manufacturing + projects (Odoo Enterprise–like pitch)
+ *   solar | nex   — solar EPC add-on (+ projects, light BOM)
+ *   vahana        — manufacturing + electrical_panel add-on
+ *   full          — everything (demo / tests)
  *
- * Or turn everything on for full demo (NEX+Vahana+general):
- *   FEATURE_PRESET=full
+ * Explicit FEATURE_* env always overrides preset defaults when set.
  *
  * @see App\Support\ConfigFeatureManager
  * @see App\Http\Middleware\EnsureFeatureEnabled
+ * @see tasks/artifact/odoo-enterprise-enter365-mapping.md
  */
-$preset = env('FEATURE_PRESET', 'general'); // general | manufacturing | solar | full
+$preset = strtolower((string) env('FEATURE_PRESET', 'general'));
 
-/** @var array<string, bool> $core Always-on for general SME ERP */
+// Alias product names → internal preset keys
+$preset = match ($preset) {
+    'nex' => 'solar',
+    default => $preset,
+};
+
+/** @var array<string, bool> $core Always-on SME ERP modules */
 $core = [
     'products' => env('FEATURE_PRODUCTS', true),
     'quotations' => env('FEATURE_QUOTATIONS', true),
@@ -33,20 +44,32 @@ $core = [
     'inventory' => env('FEATURE_INVENTORY', true),
     'stock_opname' => env('FEATURE_STOCK_OPNAME', true),
     'warehouses' => env('FEATURE_WAREHOUSES', true),
-    // General accounting power tools (not NEX/Vahana-specific)
+    // Accounting power tools (Odoo-like, not industry-specific)
     'budgeting' => env('FEATURE_BUDGETING', true),
     'recurring' => env('FEATURE_RECURRING', true),
     'multi_currency' => env('FEATURE_MULTI_CURRENCY', true),
     'bank_reconciliation' => env('FEATURE_BANK_RECONCILIATION', true),
-    // Tax: opt-in
+    // Tax pack-ID (opt-in)
     'pph_withholding' => env('FEATURE_PPH_WITHHOLDING', false),
 ];
 
 /**
- * Vertical / specialist packs — default OFF for general company.
- * Individual FEATURE_* env always wins when set.
+ * Odoo-like optional packs + industry add-ons.
+ * Keys match middleware feature:{name}.
+ *
+ * @return array{
+ *     manufacturing: bool,
+ *     bom: bool,
+ *     work_orders: bool,
+ *     material_requisitions: bool,
+ *     mrp: bool,
+ *     subcontracting: bool,
+ *     projects: bool,
+ *     solar_proposals: bool,
+ *     electrical_panel: bool
+ * }
  */
-$verticalDefaults = match ($preset) {
+$packDefaults = match ($preset) {
     'full' => [
         'manufacturing' => true,
         'bom' => true,
@@ -56,28 +79,66 @@ $verticalDefaults = match ($preset) {
         'subcontracting' => true,
         'projects' => true,
         'solar_proposals' => true,
+        'electrical_panel' => true,
     ],
-    'manufacturing' => [
-        // Vahana-style panel / shop floor
+    'enterprise' => [
+        // Odoo Enterprise–like suite (no industry verticals)
         'manufacturing' => true,
         'bom' => true,
         'work_orders' => true,
         'material_requisitions' => true,
         'mrp' => true,
         'subcontracting' => true,
-        'projects' => env('FEATURE_PROJECTS', false),
+        'projects' => true,
         'solar_proposals' => false,
+        'electrical_panel' => false,
+    ],
+    'manufacturing' => [
+        // Generic shop floor / factory (not Vahana-specific)
+        'manufacturing' => true,
+        'bom' => true,
+        'work_orders' => true,
+        'material_requisitions' => true,
+        'mrp' => true,
+        'subcontracting' => true,
+        'projects' => false,
+        'solar_proposals' => false,
+        'electrical_panel' => false,
+    ],
+    'vahana' => [
+        // Panel electrical company: manufacturing + brand/spec add-on
+        'manufacturing' => true,
+        'bom' => true,
+        'work_orders' => true,
+        'material_requisitions' => true,
+        'mrp' => true,
+        'subcontracting' => true,
+        'projects' => false,
+        'solar_proposals' => false,
+        'electrical_panel' => true,
+    ],
+    'services' => [
+        'manufacturing' => false,
+        'bom' => false,
+        'work_orders' => false,
+        'material_requisitions' => false,
+        'mrp' => false,
+        'subcontracting' => false,
+        'projects' => true,
+        'solar_proposals' => false,
+        'electrical_panel' => false,
     ],
     'solar' => [
         // NEX-style solar EPC
-        'manufacturing' => env('FEATURE_MANUFACTURING', false),
-        'bom' => env('FEATURE_BOM', true), // proposals often attach BOM variants
-        'work_orders' => env('FEATURE_WORK_ORDERS', false),
-        'material_requisitions' => env('FEATURE_MATERIAL_REQUISITIONS', false),
-        'mrp' => env('FEATURE_MRP', false),
-        'subcontracting' => env('FEATURE_SUBCONTRACTING', false),
-        'projects' => env('FEATURE_PROJECTS', true),
+        'manufacturing' => false,
+        'bom' => true, // proposals often attach BOM variants
+        'work_orders' => false,
+        'material_requisitions' => false,
+        'mrp' => false,
+        'subcontracting' => false,
+        'projects' => true,
         'solar_proposals' => true,
+        'electrical_panel' => false,
     ],
     default => [ // general
         'manufacturing' => false,
@@ -88,22 +149,24 @@ $verticalDefaults = match ($preset) {
         'subcontracting' => false,
         'projects' => false,
         'solar_proposals' => false,
+        'electrical_panel' => false,
     ],
 };
 
-// Explicit FEATURE_* env overrides preset defaults (null env → keep preset bool)
-$vertical = [
-    'manufacturing' => filter_var(env('FEATURE_MANUFACTURING', $verticalDefaults['manufacturing']), FILTER_VALIDATE_BOOLEAN),
-    'bom' => filter_var(env('FEATURE_BOM', $verticalDefaults['bom']), FILTER_VALIDATE_BOOLEAN),
-    'work_orders' => filter_var(env('FEATURE_WORK_ORDERS', $verticalDefaults['work_orders']), FILTER_VALIDATE_BOOLEAN),
-    'material_requisitions' => filter_var(env('FEATURE_MATERIAL_REQUISITIONS', $verticalDefaults['material_requisitions']), FILTER_VALIDATE_BOOLEAN),
-    'mrp' => filter_var(env('FEATURE_MRP', $verticalDefaults['mrp']), FILTER_VALIDATE_BOOLEAN),
-    'subcontracting' => filter_var(env('FEATURE_SUBCONTRACTING', $verticalDefaults['subcontracting']), FILTER_VALIDATE_BOOLEAN),
-    'projects' => filter_var(env('FEATURE_PROJECTS', $verticalDefaults['projects']), FILTER_VALIDATE_BOOLEAN),
-    'solar_proposals' => filter_var(env('FEATURE_SOLAR_PROPOSALS', $verticalDefaults['solar_proposals']), FILTER_VALIDATE_BOOLEAN),
+// Explicit FEATURE_* env overrides preset defaults
+$packs = [
+    'manufacturing' => filter_var(env('FEATURE_MANUFACTURING', $packDefaults['manufacturing']), FILTER_VALIDATE_BOOLEAN),
+    'bom' => filter_var(env('FEATURE_BOM', $packDefaults['bom']), FILTER_VALIDATE_BOOLEAN),
+    'work_orders' => filter_var(env('FEATURE_WORK_ORDERS', $packDefaults['work_orders']), FILTER_VALIDATE_BOOLEAN),
+    'material_requisitions' => filter_var(env('FEATURE_MATERIAL_REQUISITIONS', $packDefaults['material_requisitions']), FILTER_VALIDATE_BOOLEAN),
+    'mrp' => filter_var(env('FEATURE_MRP', $packDefaults['mrp']), FILTER_VALIDATE_BOOLEAN),
+    'subcontracting' => filter_var(env('FEATURE_SUBCONTRACTING', $packDefaults['subcontracting']), FILTER_VALIDATE_BOOLEAN),
+    'projects' => filter_var(env('FEATURE_PROJECTS', $packDefaults['projects']), FILTER_VALIDATE_BOOLEAN),
+    // Industry add-ons
+    'solar_proposals' => filter_var(env('FEATURE_SOLAR_PROPOSALS', $packDefaults['solar_proposals']), FILTER_VALIDATE_BOOLEAN),
+    'electrical_panel' => filter_var(env('FEATURE_ELECTRICAL_PANEL', $packDefaults['electrical_panel']), FILTER_VALIDATE_BOOLEAN),
 ];
 
-// Core: env may be string "false" — normalize bools for consistency
 foreach ($core as $key => $value) {
     $core[$key] = filter_var($value, FILTER_VALIDATE_BOOLEAN);
 }
@@ -117,9 +180,9 @@ return [
     |--------------------------------------------------------------------------
     |
     | Toggle domain modules. Routes use middleware feature:{name}.
-    | Frontend should load GET /api/v1/features and hide nav accordingly.
+    | Frontend loads GET /api/v1/features and hides nav accordingly.
     |
     */
 
-    'modules' => array_merge($core, $vertical),
+    'modules' => array_merge($core, $packs),
 ];

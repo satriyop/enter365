@@ -170,12 +170,13 @@ describe('Feature Status API', function () {
             ->assertJsonPath('data.disabled', ['mrp']);
     });
 
-    it('defaults vertical packs off for general company profile', function () {
-        // Assert product policy: general core on, NEX/Vahana packs off
+    it('defaults odoo packs and industry add-ons off for general company profile', function () {
+        // Trading profile: core on; MFG/projects optional packs off; industry off
         withFeatures([
             'quotations' => true,
             'inventory' => true,
             'solar_proposals' => false,
+            'electrical_panel' => false,
             'mrp' => false,
             'projects' => false,
             'bom' => false,
@@ -187,10 +188,30 @@ describe('Feature Status API', function () {
         expect(Features::enabled('quotations'))->toBeTrue()
             ->and(Features::enabled('inventory'))->toBeTrue()
             ->and(Features::disabled('solar_proposals'))->toBeTrue()
+            ->and(Features::disabled('electrical_panel'))->toBeTrue()
             ->and(Features::disabled('mrp'))->toBeTrue()
             ->and(Features::disabled('projects'))->toBeTrue()
             ->and(Features::disabled('bom'))->toBeTrue()
             ->and(Features::disabled('work_orders'))->toBeTrue();
+    });
+
+    it('enterprise-like profile enables odoo packs but not industry add-ons', function () {
+        withFeatures([
+            'quotations' => true,
+            'bom' => true,
+            'work_orders' => true,
+            'mrp' => true,
+            'projects' => true,
+            'subcontracting' => true,
+            'solar_proposals' => false,
+            'electrical_panel' => false,
+        ]);
+
+        expect(Features::enabled('bom'))->toBeTrue()
+            ->and(Features::enabled('projects'))->toBeTrue()
+            ->and(Features::enabled('mrp'))->toBeTrue()
+            ->and(Features::disabled('solar_proposals'))->toBeTrue()
+            ->and(Features::disabled('electrical_panel'))->toBeTrue();
     });
 
     it('returns empty arrays when no modules configured', function () {
@@ -275,12 +296,46 @@ describe('EnsureFeatureEnabled Middleware', function () {
     });
 
     it('allows core financial reports when vertical packs are off', function () {
-        withoutFeatures(['projects', 'work_orders', 'subcontracting', 'solar_proposals']);
+        withoutFeatures(['projects', 'work_orders', 'subcontracting', 'solar_proposals', 'electrical_panel']);
 
         // Core reports stay available for general company
         $this->getJson('/api/v1/reports/trial-balance')->assertOk();
         $this->getJson('/api/v1/reports/balance-sheet')->assertOk();
         $this->getJson('/api/v1/reports/cogs-summary')->assertOk();
+    });
+
+    it('blocks electrical panel routes when industry add-on is disabled', function () {
+        // Generic BOM pack on, Vahana electrical_panel off
+        withFeatures([
+            'bom' => true,
+            'electrical_panel' => false,
+        ]);
+
+        $this->getJson('/api/v1/component-standards')->assertNotFound();
+        $this->getJson('/api/v1/spec-rule-sets')->assertNotFound();
+        $this->getJson('/api/v1/available-brands')->assertNotFound();
+        $this->getJson('/api/v1/component-mappings/stats')->assertNotFound();
+    });
+
+    it('allows electrical panel routes when industry add-on is enabled', function () {
+        withFeatures([
+            'bom' => true,
+            'electrical_panel' => true,
+        ]);
+
+        $this->getJson('/api/v1/component-standards')->assertOk();
+        $this->getJson('/api/v1/spec-rule-sets')->assertOk();
+        $this->getJson('/api/v1/available-brands')->assertOk();
+    });
+
+    it('still allows generic bom routes when electrical panel is off', function () {
+        withFeatures([
+            'bom' => true,
+            'electrical_panel' => false,
+        ]);
+
+        $this->getJson('/api/v1/boms')->assertOk();
+        $this->getJson('/api/v1/bom-templates')->assertOk();
     });
 
 });

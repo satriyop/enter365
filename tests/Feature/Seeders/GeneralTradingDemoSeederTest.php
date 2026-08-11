@@ -30,6 +30,7 @@ beforeEach(function () {
         'down_payments' => true,
         'stock_opname' => true,
         'solar_proposals' => false,
+        'electrical_panel' => false,
         'projects' => false,
         'bom' => false,
         'work_orders' => false,
