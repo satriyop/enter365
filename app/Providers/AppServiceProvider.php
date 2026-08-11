@@ -34,8 +34,6 @@ use App\Contracts\Sales\QuotationServiceInterface;
 use App\Contracts\Sales\RecurringServiceInterface;
 // Projects Domain Interfaces
 use App\Contracts\Sales\SalesReturnServiceInterface;
-// Solar Domain Interfaces
-
 // Sales Domain Services
 use App\Services\Accounting\AccountingPolicyManager;
 use App\Services\Accounting\JournalService;
@@ -61,7 +59,6 @@ use App\Services\Sales\DownPaymentService;
 // Projects Domain Services
 use App\Services\Sales\InvoiceService;
 use App\Services\Sales\QuotationService;
-// Solar Domain Services
 use App\Services\Sales\RecurringService;
 use App\Services\Sales\SalesReturnService;
 // Accounting Strategies
