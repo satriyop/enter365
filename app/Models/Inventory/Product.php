@@ -5,7 +5,6 @@ namespace App\Models\Inventory;
 use App\Enums\DocumentStatus;
 use App\Models\Accounting\Account;
 use App\Models\Contacts\Contact;
-use App\Models\ElectricalPanel\ComponentBrandMapping;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomItem;
 use App\Models\Manufacturing\WorkOrder;
@@ -225,15 +224,7 @@ class Product extends Model
         return $this->hasMany(BomItem::class);
     }
 
-    /**
-     * Get component brand mappings for this product.
-     *
-     * @return HasMany<ComponentBrandMapping, $this>
-     */
-    public function componentBrandMappings(): HasMany
-    {
-        return $this->hasMany(ComponentBrandMapping::class);
-    }
+    // componentBrandMappings() registered by ElectricalPanelServiceProvider (add-on).
 
     /**
      * Get work orders for this product.

@@ -3,8 +3,10 @@
 namespace App\Providers\Addons;
 
 use App\Contracts\ElectricalPanel\BomTemplateBrandResolverInterface;
+use App\Models\ElectricalPanel\ComponentBrandMapping;
 use App\Models\ElectricalPanel\ComponentStandard;
 use App\Models\ElectricalPanel\SpecValidationRuleSet;
+use App\Models\Inventory\Product;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomItem;
 use App\Models\Manufacturing\BomTemplate;
@@ -52,6 +54,10 @@ class ElectricalPanelServiceProvider extends ServiceProvider
 
         BomTemplate::resolveRelationUsing('defaultRuleSet', function (BomTemplate $template) {
             return $template->belongsTo(SpecValidationRuleSet::class, 'default_rule_set_id');
+        });
+
+        Product::resolveRelationUsing('componentBrandMappings', function (Product $product) {
+            return $product->hasMany(ComponentBrandMapping::class);
         });
     }
 
