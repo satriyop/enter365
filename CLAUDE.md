@@ -1028,7 +1028,8 @@ Before committing code, ensure:
 
 ## E2E Testing Strategy
 
-> **Tracker:** See `plans/E2E_TASK_TRACKER.md` for full test checklist and progress.
+> **Tracker:** Use `tasks/` (roadmap / audit / backlog / done / artifact).  
+> Legacy `plans/` is gitignored and no longer the source of truth.
 
 ### Testing Priorities for ERP Applications
 
