@@ -263,10 +263,11 @@ describe('Add-on package boundaries (code isolation)', function () {
             ->and($coreFiles)->toContain('NullBomTemplateBrandResolver');
     });
 
-    it('core manufacturing sources do not import ElectricalPanel models', function () {
+    it('core manufacturing and product sources do not import ElectricalPanel models', function () {
         $paths = array_merge(
             glob(app_path('Services/Manufacturing/*.php')) ?: [],
             glob(app_path('Models/Manufacturing/*.php')) ?: [],
+            [app_path('Models/Inventory/Product.php')],
         );
 
         foreach ($paths as $path) {
