@@ -25,6 +25,13 @@ interface BomTemplateServiceInterface
     public function deleteTemplate(BomTemplate $template): void;
 
     /**
+     * Duplicate a template (core lines; panel add-on also copies meta).
+     *
+     * @param  array{code: string, name?: string|null, thumbnail_path?: string|null}  $options
+     */
+    public function duplicateTemplate(BomTemplate $template, array $options): BomTemplate;
+
+    /**
      * Create a BOM from a template (core: product/manual only; panel: brand resolve).
      *
      * @param  array<string, mixed>  $options

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\ElectricalPanel\ComponentStandard;
+use App\Models\Inventory\Product;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomItem;
 use App\Models\Manufacturing\BomTemplate;
@@ -136,6 +137,62 @@ describe('API resources omit industry fields when electrical_panel off', functio
         $payload = $response->json('data.items.0');
         expect($payload)->toHaveKey('component_standard_id')
             ->and($payload['component_standard_id'])->toBe($standard->id);
+    });
+});
+
+describe('HTTP requests prohibit panel fields when electrical_panel off', function () {
+    it('rejects component_standard_id on template item create', function () {
+        withFeatures([
+            'bom' => true,
+            'electrical_panel' => false,
+        ]);
+
+        $template = BomTemplate::factory()->create();
+
+        $response = $this->postJson("/api/v1/bom-templates/{$template->id}/items", [
+            'type' => BomTemplateItem::TYPE_MATERIAL,
+            'component_standard_id' => 1,
+            'description' => 'Should fail',
+            'default_quantity' => 1,
+            'unit' => 'pcs',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['component_standard_id']);
+    });
+
+    it('rejects target_brand when creating BOM from template', function () {
+        withFeatures([
+            'bom' => true,
+            'electrical_panel' => false,
+        ]);
+
+        $template = BomTemplate::factory()->create();
+        $product = Product::factory()->create();
+
+        $response = $this->postJson("/api/v1/bom-templates/{$template->id}/create-bom", [
+            'product_id' => $product->id,
+            'target_brand' => 'schneider',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['target_brand']);
+    });
+
+    it('rejects default_rule_set_id on template create', function () {
+        withFeatures([
+            'bom' => true,
+            'electrical_panel' => false,
+        ]);
+
+        $response = $this->postJson('/api/v1/bom-templates', [
+            'code' => 'TPL-NO-PANEL',
+            'name' => 'Core only',
+            'default_rule_set_id' => 1,
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['default_rule_set_id']);
     });
 });
 

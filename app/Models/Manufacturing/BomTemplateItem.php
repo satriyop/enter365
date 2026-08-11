@@ -59,14 +59,6 @@ class BomTemplateItem extends Model
     }
 
     /**
-     * Whether this line has a product link (core). Panel standards live in add-on meta.
-     */
-    public function hasComponentStandard(): bool
-    {
-        return false;
-    }
-
-    /**
      * Check if this item has a specific product.
      */
     public function hasProduct(): bool

@@ -488,6 +488,36 @@ describe('BOM Template Duplicate', function () {
         Storage::disk('public')->assertExists($newPath);
     });
 
+    it('duplicates panel meta component standards on template items', function () {
+        $template = BomTemplate::factory()->create();
+        $standard = ComponentStandard::factory()->create();
+        $item = BomTemplateItem::factory()->create([
+            'template_id' => $template->id,
+            'description' => 'MCB 16A line',
+        ]);
+        attachTemplateItemStandard($item, $standard);
+
+        $response = $this->postJson("/api/v1/bom-templates/{$template->id}/duplicate", [
+            'code' => 'TPL-COPY-META',
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonCount(1, 'data.items')
+            ->assertJsonPath('data.items.0.component_standard_id', $standard->id)
+            ->assertJsonPath('data.items.0.has_component_standard', true);
+
+        $copyId = $response->json('data.id');
+        $this->assertDatabaseHas('electrical_panel_bom_template_item_meta', [
+            'component_standard_id' => $standard->id,
+        ]);
+        expect(
+            \App\Models\ElectricalPanel\BomTemplateItemPanelMeta::query()
+                ->where('component_standard_id', $standard->id)
+                ->count()
+        )->toBe(2);
+        expect(BomTemplate::find($copyId))->not->toBeNull();
+    });
+
 });
 
 describe('BOM Template Toggle Active', function () {

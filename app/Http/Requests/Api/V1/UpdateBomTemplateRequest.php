@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Api\V1;
 
 use App\Models\Manufacturing\BomTemplate;
+use App\Support\Features;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -21,7 +22,7 @@ class UpdateBomTemplateRequest extends FormRequest
         $template = $this->route('bom_template') ?? $this->route('bomTemplate');
         $templateId = $template->id ?? null;
 
-        return [
+        $rules = [
             'code' => [
                 'sometimes',
                 'required',
@@ -33,9 +34,14 @@ class UpdateBomTemplateRequest extends FormRequest
             'description' => ['nullable', 'string', 'max:1000'],
             'category' => ['nullable', 'string', Rule::in(array_keys(BomTemplate::getCategories()))],
             'thumbnail' => ['nullable', 'image', 'max:2048'],
-            'default_rule_set_id' => ['nullable', 'integer', 'exists:spec_validation_rule_sets,id'],
             'is_active' => ['nullable', 'boolean'],
         ];
+
+        $rules['default_rule_set_id'] = Features::enabled('electrical_panel')
+            ? ['nullable', 'integer', 'exists:spec_validation_rule_sets,id']
+            : ['prohibited'];
+
+        return $rules;
     }
 
     /**

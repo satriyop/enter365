@@ -17,7 +17,6 @@ use App\Models\Manufacturing\BomTemplateItem;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class BomTemplateController extends Controller
@@ -264,40 +263,32 @@ class BomTemplateController extends Controller
             'name' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $newTemplate = DB::transaction(function () use ($request, $bomTemplate) {
-            // Create new template
-            $newTemplate = $bomTemplate->replicate(['usage_count']);
-            $newTemplate->code = $request->input('code');
-            $newTemplate->name = $request->input('name', $bomTemplate->name.' (Copy)');
-            $newTemplate->usage_count = 0;
-            $newTemplate->created_by = auth()->id();
+        $thumbnailPath = $bomTemplate->thumbnail_path;
+        if ($bomTemplate->thumbnail_path && Storage::disk('public')->exists($bomTemplate->thumbnail_path)) {
+            $extension = pathinfo($bomTemplate->thumbnail_path, PATHINFO_EXTENSION);
+            $newPath = 'bom-templates/'.uniqid().'.'.$extension;
+            Storage::disk('public')->copy($bomTemplate->thumbnail_path, $newPath);
+            $thumbnailPath = $newPath;
+        }
 
-            // Duplicate thumbnail if exists
-            if ($bomTemplate->thumbnail_path) {
-                $extension = pathinfo($bomTemplate->thumbnail_path, PATHINFO_EXTENSION);
-                $newPath = 'bom-templates/'.uniqid().'.'.$extension;
+        $newTemplate = $this->templateService->duplicateTemplate($bomTemplate, [
+            'code' => $request->input('code'),
+            'name' => $request->input('name'),
+            'thumbnail_path' => $thumbnailPath,
+        ]);
 
-                if (Storage::disk('public')->exists($bomTemplate->thumbnail_path)) {
-                    Storage::disk('public')->copy($bomTemplate->thumbnail_path, $newPath);
-                    $newTemplate->thumbnail_path = $newPath;
-                }
-            }
+        $with = ['items.product', 'creator'];
+        if (\App\Support\Features::enabled('electrical_panel')) {
+            $with = [
+                'items.panelMeta.componentStandard',
+                'items.product',
+                'panelMeta.defaultRuleSet',
+                'defaultRuleSet',
+                'creator',
+            ];
+        }
 
-            $newTemplate->save();
-
-            // Duplicate items
-            foreach ($bomTemplate->items as $item) {
-                $newItem = $item->replicate();
-                $newItem->template_id = $newTemplate->id;
-                $newItem->save();
-            }
-
-            return $newTemplate;
-        });
-
-        return (new BomTemplateResource(
-            $newTemplate->load(['items.componentStandard', 'items.product', 'defaultRuleSet', 'creator'])
-        ))
+        return (new BomTemplateResource($newTemplate->load($with)))
             ->response()
             ->setStatusCode(201);
     }

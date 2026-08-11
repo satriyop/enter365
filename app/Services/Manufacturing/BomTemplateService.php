@@ -60,6 +60,32 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
     }
 
     /**
+     * @param  array{code: string, name?: string|null, thumbnail_path?: string|null}  $options
+     */
+    public function duplicateTemplate(BomTemplate $template, array $options): BomTemplate
+    {
+        return $this->executeInTransaction('duplicate_bom_template', function () use ($template, $options) {
+            $newTemplate = $template->replicate(['usage_count']);
+            $newTemplate->code = $options['code'];
+            $newTemplate->name = $options['name'] ?? $template->name.' (Copy)';
+            $newTemplate->usage_count = 0;
+            $newTemplate->created_by = $this->getUserId();
+            if (array_key_exists('thumbnail_path', $options)) {
+                $newTemplate->thumbnail_path = $options['thumbnail_path'];
+            }
+            $newTemplate->save();
+
+            foreach ($template->items as $item) {
+                $newItem = $item->replicate();
+                $newItem->template_id = $newTemplate->id;
+                $newItem->save();
+            }
+
+            return $newTemplate->fresh(['items', 'creator']);
+        }, ['template_id' => $template->id, 'code' => $options['code']]);
+    }
+
+    /**
      * @param  array<string, mixed>  $options
      * @return array{bom: Bom, report: array<string, mixed>}
      */

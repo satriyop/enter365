@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Api\V1;
 
 use App\Models\Manufacturing\BomTemplateItem;
+use App\Support\Features;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -18,9 +19,8 @@ class StoreBomTemplateItemRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        $rules = [
             'type' => ['required', Rule::in(array_keys(BomTemplateItem::getTypes()))],
-            'component_standard_id' => ['nullable', 'integer', 'exists:component_standards,id'],
             'product_id' => ['nullable', 'integer', 'exists:products,id'],
             'description' => ['required', 'string', 'max:255'],
             'default_quantity' => ['nullable', 'numeric', 'min:0'],
@@ -30,6 +30,12 @@ class StoreBomTemplateItemRequest extends FormRequest
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'notes' => ['nullable', 'string', 'max:500'],
         ];
+
+        $rules['component_standard_id'] = Features::enabled('electrical_panel')
+            ? ['nullable', 'integer', 'exists:component_standards,id']
+            : ['prohibited'];
+
+        return $rules;
     }
 
     /**
