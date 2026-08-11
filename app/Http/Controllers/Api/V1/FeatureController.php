@@ -11,7 +11,7 @@ class FeatureController extends Controller
      * Get feature flags status.
      *
      * Available to any authenticated user so the SPA can hide nav/routes
-     * for disabled packs (odoo apps + industry add-ons: solar, electrical_panel).
+     * for disabled packs (odoo apps + optional product add-ons).
      *
      * GET /api/v1/features
      */

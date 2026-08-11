@@ -355,6 +355,56 @@ describe('Add-on package boundaries (code isolation)', function () {
             ->and($src)->not->toContain('BomTemplateItemPanelMeta');
     });
 
+    it('core BOM HTTP layer has zero industry package mentions', function () {
+        $paths = array_merge(
+            [
+                app_path('Http/Controllers/Api/V1/BomController.php'),
+                app_path('Http/Controllers/Api/V1/BomTemplateController.php'),
+                app_path('Http/Resources/Api/V1/BomItemResource.php'),
+                app_path('Http/Resources/Api/V1/BomTemplateResource.php'),
+                app_path('Http/Resources/Api/V1/BomTemplateItemResource.php'),
+                app_path('Http/Requests/Api/V1/CreateBomFromTemplateRequest.php'),
+                app_path('Http/Requests/Api/V1/StoreBomTemplateRequest.php'),
+                app_path('Http/Requests/Api/V1/UpdateBomTemplateRequest.php'),
+                app_path('Http/Requests/Api/V1/StoreBomTemplateItemRequest.php'),
+                app_path('Http/Requests/Api/V1/UpdateBomTemplateItemRequest.php'),
+                app_path('Contracts/Manufacturing/BomTemplateServiceInterface.php'),
+                app_path('Services/Manufacturing/BomTemplateService.php'),
+                app_path('Support/AddonExtensions.php'),
+            ],
+        );
+
+        $forbidden = [
+            'App\\Models\\ElectricalPanel\\',
+            'App\\Services\\ElectricalPanel\\',
+            'App\\Models\\Solar\\',
+            'App\\Services\\Solar\\',
+            'ElectricalPanel\\',
+            'electrical_panel',
+            'component_standard_id',
+            'component_standard',
+            'default_rule_set_id',
+            'default_rule_set',
+            'defaultRuleSet',
+            'panelMeta',
+            'target_brand',
+            'spec_rule_set_id',
+            'BomItemPanelMeta',
+            'BomTemplatePanelMeta',
+            'ComponentStandard',
+            'ComponentBrandMapping',
+        ];
+
+        foreach ($paths as $path) {
+            $src = file_get_contents($path) ?: '';
+            foreach ($forbidden as $needle) {
+                expect($src)
+                    ->not->toContain($needle)
+                    ->and(basename($path)." must not mention {$needle}")->not->toBeEmpty();
+            }
+        }
+    });
+
     it('keeps industry exports and imports under add-on namespaces', function () {
         expect(class_exists(\App\Exports\ElectricalPanel\ComponentMappingTemplateExport::class))->toBeTrue()
             ->and(class_exists(\App\Imports\ElectricalPanel\ComponentMappingImport::class))->toBeTrue()

@@ -3,6 +3,7 @@
 namespace App\Http\Resources\Api\V1;
 
 use App\Models\Manufacturing\BomTemplate;
+use App\Support\AddonExtensions;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -12,30 +13,11 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class BomTemplateResource extends JsonResource
 {
     /**
-     * @param  \Illuminate\Http\Request  $request
-     * @return array{
-     *   id: int,
-     *   code: string,
-     *   name: string,
-     *   description: string|null,
-     *   category: string,
-     *   category_label: string,
-     *   thumbnail_path: string|null,
-     *   thumbnail_url: string|null,
-     *   is_active: bool,
-     *   usage_count: int,
-     *   default_rule_set?: array{id: int, name: string, code: string},
-     *   items?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
-     *   items_count?: int,
-     *   summary?: array{material_count: int, labor_count: int, overhead_count: int},
-     *   creator?: array{id: int, name: string},
-     *   created_at: string|null,
-     *   updated_at: string|null
-     * }
+     * @return array<string, mixed>
      */
     public function toArray(Request $request): array
     {
-        return [
+        return array_merge([
             'id' => $this->id,
             'code' => $this->code,
             'name' => $this->name,
@@ -46,11 +28,6 @@ class BomTemplateResource extends JsonResource
             'thumbnail_url' => $this->thumbnail_path ? asset('storage/'.$this->thumbnail_path) : null,
             'is_active' => $this->is_active,
             'usage_count' => $this->usage_count,
-            'default_rule_set' => $this->whenLoaded('defaultRuleSet', fn () => [
-                'id' => $this->defaultRuleSet->id,
-                'name' => $this->defaultRuleSet->name,
-                'code' => $this->defaultRuleSet->code,
-            ]),
             'items' => BomTemplateItemResource::collection(
                 $this->whenLoaded('items')
             ),
@@ -72,6 +49,6 @@ class BomTemplateResource extends JsonResource
             ]),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
-        ];
+        ], AddonExtensions::resourceAttributes('bom_template', $this));
     }
 }

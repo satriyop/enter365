@@ -2,9 +2,8 @@
 
 namespace App\Http\Requests\Api\V1;
 
-use App\Support\Features;
+use App\Support\AddonExtensions;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class CreateBomFromTemplateRequest extends FormRequest
 {
@@ -18,23 +17,14 @@ class CreateBomFromTemplateRequest extends FormRequest
      */
     public function rules(): array
     {
-        $rules = [
+        return array_merge([
             'product_id' => ['required', 'integer', 'exists:products,id'],
             'name' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'output_quantity' => ['nullable', 'numeric', 'min:0.01'],
             'quantity_overrides' => ['nullable', 'array'],
             'quantity_overrides.*' => ['numeric', 'min:0'],
-        ];
-
-        if (Features::enabled('electrical_panel')) {
-            $brands = array_keys(\App\Models\ElectricalPanel\ComponentBrandMapping::getBrands());
-            $rules['target_brand'] = ['nullable', 'string', Rule::in($brands)];
-        } else {
-            $rules['target_brand'] = ['prohibited'];
-        }
-
-        return $rules;
+        ], AddonExtensions::validationRules('create_bom_from_template'));
     }
 
     /**
@@ -45,7 +35,6 @@ class CreateBomFromTemplateRequest extends FormRequest
         return [
             'product_id.required' => 'Produk output harus dipilih.',
             'product_id.exists' => 'Produk tidak ditemukan.',
-            'target_brand.in' => 'Brand tidak valid.',
             'output_quantity.min' => 'Kuantitas output harus lebih dari 0.',
         ];
     }

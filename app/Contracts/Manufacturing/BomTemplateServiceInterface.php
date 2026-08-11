@@ -8,8 +8,7 @@ use App\Models\Manufacturing\BomTemplate;
 use App\Models\Manufacturing\BomTemplateItem;
 
 /**
- * BOM Template service — core product/manual implementation, or brand-aware
- * ElectricalPanel add-on implementation when the feature flag is on.
+ * BOM Template service — core product/manual lines, optionally extended by add-ons.
  */
 interface BomTemplateServiceInterface
 {
@@ -33,10 +32,11 @@ interface BomTemplateServiceInterface
     public function duplicateTemplate(BomTemplate $template, array $options): BomTemplate;
 
     /**
-     * Persist panel component-standard meta for a template item.
-     * Core no-op; ElectricalPanel implementation writes meta tables.
+     * Apply optional add-on attributes for a template item (core is a no-op).
+     *
+     * @param  array<string, mixed>  $attributes
      */
-    public function syncTemplateItemStandard(BomTemplateItem $item, ?int $componentStandardId): void;
+    public function applyItemAddonAttributes(BomTemplateItem $item, array $attributes): void;
 
     /**
      * Create a BOM from a template (core: product/manual only; panel: brand resolve).

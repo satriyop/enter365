@@ -155,7 +155,7 @@ class Bom extends Model
     /**
      * Get sibling variants (other BOMs in the same variant group).
      *
-     * Note: specRuleSet() is registered by ElectricalPanelServiceProvider (add-on).
+     * Note: specRuleSet() is registered by optional add-on providers.
      *
      * @return HasMany<self, $this>
      */

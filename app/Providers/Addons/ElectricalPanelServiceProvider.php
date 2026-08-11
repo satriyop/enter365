@@ -16,8 +16,10 @@ use App\Models\Manufacturing\BomItem;
 use App\Models\Manufacturing\BomTemplate;
 use App\Models\Manufacturing\BomTemplateItem;
 use App\Services\ElectricalPanel\BomTemplateService as PanelBomTemplateService;
+use App\Support\AddonExtensions;
 use App\Support\Features;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rule;
 
 /**
  * Industry add-on: electrical panel tools (Vahana).
@@ -103,6 +105,154 @@ class ElectricalPanelServiceProvider extends ServiceProvider
 
         Product::resolveRelationUsing('componentBrandMappings', function (Product $product) {
             return $product->hasMany(ComponentBrandMapping::class);
+        });
+
+        $this->registerCoreExtensionPoints();
+    }
+
+    /**
+     * Extend core resources / validation / eager-loads without core naming this pack.
+     */
+    private function registerCoreExtensionPoints(): void
+    {
+        AddonExtensions::registerEagerLoads('bom.show', [
+            'items.panelMeta',
+        ]);
+        AddonExtensions::registerEagerLoads('bom_template.list', [
+            'defaultRuleSet',
+        ]);
+        AddonExtensions::registerEagerLoads('bom_template.show', [
+            'items.panelMeta.componentStandard',
+            'panelMeta.defaultRuleSet',
+            'defaultRuleSet',
+        ]);
+        AddonExtensions::registerEagerLoads('bom_template.item', [
+            'panelMeta.componentStandard',
+        ]);
+        AddonExtensions::registerEagerLoads('bom_template.duplicate', [
+            'items.panelMeta.componentStandard',
+            'panelMeta.defaultRuleSet',
+            'defaultRuleSet',
+        ]);
+
+        AddonExtensions::registerResource('bom_template', function ($resource): array {
+            if (! Features::enabled('electrical_panel')) {
+                return [];
+            }
+
+            $template = $resource->resource;
+            if (! $template->relationLoaded('defaultRuleSet') || ! $template->defaultRuleSet) {
+                return ['default_rule_set' => null];
+            }
+
+            return [
+                'default_rule_set' => [
+                    'id' => $template->defaultRuleSet->id,
+                    'name' => $template->defaultRuleSet->name,
+                    'code' => $template->defaultRuleSet->code,
+                ],
+            ];
+        });
+
+        AddonExtensions::registerResource('bom_item', function ($resource): array {
+            if (! Features::enabled('electrical_panel')) {
+                return [];
+            }
+
+            $item = $resource->resource;
+
+            return [
+                'component_standard_id' => $item->panelMeta?->component_standard_id,
+            ];
+        });
+
+        AddonExtensions::registerResource('bom_template_item', function ($resource): array {
+            if (! Features::enabled('electrical_panel')) {
+                return [];
+            }
+
+            $item = $resource->resource;
+            $standard = null;
+            if ($item->relationLoaded('panelMeta') || $item->relationLoaded('componentStandard')) {
+                $standard = $item->panelMeta?->componentStandard ?? $item->componentStandard;
+            }
+
+            return [
+                'component_standard_id' => $item->panelMeta?->component_standard_id,
+                'component_standard' => $standard ? [
+                    'id' => $standard->id,
+                    'code' => $standard->code,
+                    'name' => $standard->name,
+                    'category' => $standard->category,
+                ] : null,
+                'has_component_standard' => $item->panelMeta?->component_standard_id !== null,
+            ];
+        });
+
+        AddonExtensions::registerValidationRules('bom_template', function (): array {
+            if (! Features::enabled('electrical_panel')) {
+                return [
+                    'default_rule_set_id' => ['prohibited'],
+                ];
+            }
+
+            return [
+                'default_rule_set_id' => ['nullable', 'integer', 'exists:spec_validation_rule_sets,id'],
+            ];
+        });
+
+        AddonExtensions::registerValidationRules('bom_template_item', function (): array {
+            if (! Features::enabled('electrical_panel')) {
+                return [
+                    'component_standard_id' => ['prohibited'],
+                ];
+            }
+
+            return [
+                'component_standard_id' => ['nullable', 'integer', 'exists:component_standards,id'],
+            ];
+        });
+
+        AddonExtensions::registerValidationRules('create_bom_from_template', function (): array {
+            if (! Features::enabled('electrical_panel')) {
+                return [
+                    'target_brand' => ['prohibited'],
+                ];
+            }
+
+            return [
+                'target_brand' => [
+                    'nullable',
+                    'string',
+                    Rule::in(array_keys(ComponentBrandMapping::getBrands())),
+                ],
+            ];
+        });
+
+        AddonExtensions::registerValidationRules('preview_bom_from_template', function (): array {
+            if (! Features::enabled('electrical_panel')) {
+                return [
+                    'target_brand' => ['prohibited'],
+                ];
+            }
+
+            return [
+                'target_brand' => [
+                    'nullable',
+                    'string',
+                    Rule::in(array_keys(ComponentBrandMapping::getBrands())),
+                ],
+            ];
+        });
+
+        AddonExtensions::registerMeta('bom_template.items_with_extension', function (BomTemplate $template): int {
+            if (! Features::enabled('electrical_panel')) {
+                return 0;
+            }
+
+            return (int) $template->items()
+                ->whereHas('panelMeta', fn ($q) => $q->whereNotNull('component_standard_id'))
+                ->count();
         });
     }
 

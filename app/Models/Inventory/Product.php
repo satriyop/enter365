@@ -224,7 +224,7 @@ class Product extends Model
         return $this->hasMany(BomItem::class);
     }
 
-    // componentBrandMappings() registered by ElectricalPanelServiceProvider (add-on).
+    // Optional relation macros may be registered by add-on providers.
 
     /**
      * Get work orders for this product.

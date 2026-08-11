@@ -57,7 +57,7 @@ class BomItem extends Model
         return $this->belongsTo(Product::class);
     }
 
-    // componentStandard() relation registered by ElectricalPanelServiceProvider (add-on).
+    // Optional relation macros may be registered by add-on providers.
 
     /**
      * Calculate total cost including waste.

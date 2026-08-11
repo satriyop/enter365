@@ -16,7 +16,6 @@ use App\Services\Base\BaseService;
 
 /**
  * Core BOM templates — product / manual lines only.
- * Brand / component-standard resolution lives in ElectricalPanel add-on.
  */
 class BomTemplateService extends BaseService implements BomTemplateServiceInterface
 {
@@ -60,11 +59,11 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
     }
 
     /**
-     * Core has no panel meta tables — ignore standard attachment.
+     * @param  array<string, mixed>  $attributes
      */
-    public function syncTemplateItemStandard(BomTemplateItem $item, ?int $componentStandardId): void
+    public function applyItemAddonAttributes(BomTemplateItem $item, array $attributes): void
     {
-        // no-op
+        // no-op — add-ons override via interface binding
     }
 
     /**
@@ -106,7 +105,6 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
         $report = [
             'template_id' => $template->id,
             'template_code' => $template->code,
-            'target_brand' => null,
             'total_items' => $template->items->count(),
             'resolved' => 0,
             'no_mapping' => 0,
@@ -175,7 +173,6 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
         $report = [
             'template_id' => $template->id,
             'template_code' => $template->code,
-            'target_brand' => null,
             'total_items' => $template->items->count(),
             'resolved' => 0,
             'no_mapping' => 0,

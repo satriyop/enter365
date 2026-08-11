@@ -2,7 +2,7 @@
 
 namespace App\Http\Resources\Api\V1;
 
-use App\Support\Features;
+use App\Support\AddonExtensions;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -12,29 +12,11 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class BomItemResource extends JsonResource
 {
     /**
-     * @return array{
-     *   id: int,
-     *   bom_id: int,
-     *   type: string,
-     *   product_id: int|null,
-     *   product?: array{id: int, name: string, sku: string},
-     *   description: string,
-     *   quantity: float,
-     *   unit: string,
-     *   unit_cost: int,
-     *   total_cost: int,
-     *   waste_percentage: float,
-     *   effective_quantity: float,
-     *   sort_order: int,
-     *   notes: string|null,
-     *   component_standard_id: int|null,
-     *   created_at: string,
-     *   updated_at: string
-     * }
+     * @return array<string, mixed>
      */
     public function toArray(Request $request): array
     {
-        return [
+        return array_merge([
             'id' => $this->id,
             'bom_id' => $this->bom_id,
             'type' => $this->type,
@@ -53,12 +35,8 @@ class BomItemResource extends JsonResource
             'effective_quantity' => $this->getEffectiveQuantity(),
             'sort_order' => $this->sort_order,
             'notes' => $this->notes,
-            'component_standard_id' => $this->when(
-                Features::enabled('electrical_panel'),
-                $this->panelMeta?->component_standard_id
-            ),
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),
             'updated_at' => $this->updated_at->format('Y-m-d H:i:s'),
-        ];
+        ], AddonExtensions::resourceAttributes('bom_item', $this));
     }
 }

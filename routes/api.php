@@ -322,10 +322,10 @@ Route::prefix('v1')->group(function () {
             Route::post('bom-variant-groups/{bom_variant_group}/reorder', [BomVariantGroupController::class, 'reorder']);
             Route::post('bom-variant-groups/{bom_variant_group}/create-variant', [BomVariantGroupController::class, 'createVariant']);
 
-            // Industry add-on: electrical panel (inside bom pack)
+            // Optional product add-on routes (self-gated inside file)
             require base_path('routes/addons/electrical_panel.php');
 
-            // BOM Templates (generic manufacturing pack; brand hooks optional when electrical_panel ON)
+            // BOM Templates (generic manufacturing pack; optional add-on hooks via AddonExtensions)
             Route::prefix('bom-templates')->group(function () {
                 Route::get('/', [BomTemplateController::class, 'index']);
                 Route::post('/', [BomTemplateController::class, 'store']);
@@ -349,7 +349,7 @@ Route::prefix('v1')->group(function () {
             });
         });
 
-        // Industry add-on: solar (authenticated)
+        // Optional product add-on: solar (authenticated)
         $solarRouteContext = 'auth';
         require base_path('routes/addons/solar.php');
 

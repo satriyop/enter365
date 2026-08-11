@@ -309,11 +309,19 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
     }
 
     /**
-     * Persist component standard meta for a template item.
+     * @param  array<string, mixed>  $attributes
      */
-    public function syncTemplateItemStandard(BomTemplateItem $item, ?int $componentStandardId): void
+    public function applyItemAddonAttributes(BomTemplateItem $item, array $attributes): void
     {
-        BomTemplateItemPanelMeta::sync($item, $componentStandardId);
+        if (! array_key_exists('component_standard_id', $attributes)) {
+            return;
+        }
+
+        $standardId = $attributes['component_standard_id'];
+        BomTemplateItemPanelMeta::sync(
+            $item,
+            $standardId !== null ? (int) $standardId : null
+        );
     }
 
     /**

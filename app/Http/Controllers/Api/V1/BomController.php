@@ -10,6 +10,7 @@ use App\Http\Resources\Api\V1\BomResource;
 use App\Models\Inventory\Product;
 use App\Models\Manufacturing\Bom;
 use App\Services\Manufacturing\BomService;
+use App\Support\AddonExtensions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -61,10 +62,12 @@ class BomController extends Controller
 
         $filter->apply($bom->newQuery());
 
-        $with = ['product', 'items.product', 'creator', 'parentBom'];
-        if (\App\Support\Features::enabled('electrical_panel')) {
-            $with[] = 'items.panelMeta';
-        }
+        $with = AddonExtensions::eagerLoads('bom.show', [
+            'product',
+            'items.product',
+            'creator',
+            'parentBom',
+        ]);
         $bom->loadMissing($with);
 
         return new BomResource($bom);

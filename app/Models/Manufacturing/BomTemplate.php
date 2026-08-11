@@ -82,7 +82,7 @@ class BomTemplate extends Model
             ->orderBy('sort_order');
     }
 
-    // defaultRuleSet() relation registered by ElectricalPanelServiceProvider (add-on).
+    // Optional relation macros may be registered by add-on providers.
 
     /**
      * @return BelongsTo<User, $this>

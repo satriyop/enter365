@@ -14,6 +14,7 @@ use App\Http\Resources\Api\V1\BomTemplateItemResource;
 use App\Http\Resources\Api\V1\BomTemplateResource;
 use App\Models\Manufacturing\BomTemplate;
 use App\Models\Manufacturing\BomTemplateItem;
+use App\Support\AddonExtensions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -31,7 +32,7 @@ class BomTemplateController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $query = BomTemplate::query()
-            ->with(['items', 'defaultRuleSet', 'creator']);
+            ->with(AddonExtensions::eagerLoads('bom_template.list', ['items', 'creator']));
 
         if ($request->has('is_active')) {
             $query->where('is_active', $request->boolean('is_active'));
@@ -74,7 +75,9 @@ class BomTemplateController extends Controller
 
         $template = $this->templateService->createTemplate($data);
 
-        return (new BomTemplateResource($template->load(['items', 'defaultRuleSet', 'creator'])))
+        return (new BomTemplateResource($template->load(
+            AddonExtensions::eagerLoads('bom_template.show', ['items', 'creator'])
+        )))
             ->response()
             ->setStatusCode(201);
     }
@@ -85,13 +88,10 @@ class BomTemplateController extends Controller
     public function show(BomTemplate $bomTemplate): BomTemplateResource
     {
         return new BomTemplateResource(
-            $bomTemplate->load([
+            $bomTemplate->load(AddonExtensions::eagerLoads('bom_template.show', [
                 'items.product',
-                'items.panelMeta.componentStandard',
-                'panelMeta.defaultRuleSet',
-                'defaultRuleSet',
                 'creator',
-            ])
+            ]))
         );
     }
 
@@ -157,25 +157,16 @@ class BomTemplateController extends Controller
         StoreBomTemplateItemRequest $request,
         BomTemplate $bomTemplate
     ): JsonResponse {
-        // Get max sort order and add 1 if no sort_order provided
-        $data = $request->validated();
-        $standardId = $data['component_standard_id'] ?? null;
-        unset($data['component_standard_id']);
+        [$data, $addon] = AddonExtensions::splitValidated('bom_template_item', $request->validated());
 
         if (! isset($data['sort_order'])) {
             $data['sort_order'] = $bomTemplate->items()->max('sort_order') + 1;
         }
 
         $item = $bomTemplate->items()->create($data);
+        $this->templateService->applyItemAddonAttributes($item, $addon);
 
-        if ($standardId !== null) {
-            $this->templateService->syncTemplateItemStandard($item, (int) $standardId);
-        }
-
-        $with = ['product'];
-        if (\App\Support\Features::enabled('electrical_panel')) {
-            $with[] = 'panelMeta.componentStandard';
-        }
+        $with = AddonExtensions::eagerLoads('bom_template.item', ['product']);
 
         return (new BomTemplateItemResource($item->load($with)))
             ->response()
@@ -195,25 +186,12 @@ class BomTemplateController extends Controller
             abort(404, 'Item tidak ditemukan dalam template ini.');
         }
 
-        $data = $request->validated();
-        $standardId = array_key_exists('component_standard_id', $data)
-            ? $data['component_standard_id']
-            : false;
-        unset($data['component_standard_id']);
+        [$data, $addon] = AddonExtensions::splitValidated('bom_template_item', $request->validated());
 
         $item->update($data);
+        $this->templateService->applyItemAddonAttributes($item, $addon);
 
-        if ($standardId !== false) {
-            $this->templateService->syncTemplateItemStandard(
-                $item,
-                $standardId !== null ? (int) $standardId : null
-            );
-        }
-
-        $with = ['product'];
-        if (\App\Support\Features::enabled('electrical_panel')) {
-            $with[] = 'panelMeta.componentStandard';
-        }
+        $with = AddonExtensions::eagerLoads('bom_template.item', ['product']);
 
         return new BomTemplateItemResource($item->fresh($with));
     }
@@ -287,16 +265,10 @@ class BomTemplateController extends Controller
             'thumbnail_path' => $thumbnailPath,
         ]);
 
-        $with = ['items.product', 'creator'];
-        if (\App\Support\Features::enabled('electrical_panel')) {
-            $with = [
-                'items.panelMeta.componentStandard',
-                'items.product',
-                'panelMeta.defaultRuleSet',
-                'defaultRuleSet',
-                'creator',
-            ];
-        }
+        $with = AddonExtensions::eagerLoads('bom_template.duplicate', [
+            'items.product',
+            'creator',
+        ]);
 
         return (new BomTemplateResource($newTemplate->load($with)))
             ->response()
@@ -332,31 +304,27 @@ class BomTemplateController extends Controller
             'meta' => [
                 'template_id' => $bomTemplate->id,
                 'template_code' => $bomTemplate->code,
-                'items_with_standard' => $bomTemplate->items()
-                    ->whereHas('panelMeta', fn ($q) => $q->whereNotNull('component_standard_id'))
-                    ->count(),
+                'items_with_standard' => AddonExtensions::meta(
+                    'bom_template.items_with_extension',
+                    $bomTemplate,
+                    0
+                ),
             ],
         ]);
     }
 
     /**
      * Preview creating a BOM from a template.
-     *
-     * @response array{data: array<array{template_item_id: int, type: string, description: string, quantity: float, unit: string, unit_cost: int, product: array<mixed>|null, component_standard: array<mixed>|null, status: string, notes: string|null, is_required: bool, is_quantity_variable: bool}>, report: array<mixed>}
      */
     public function previewCreateBom(
         Request $request,
         BomTemplate $bomTemplate
     ): JsonResponse {
-        $request->validate([
-            'target_brand' => ['nullable', 'string'],
+        $validated = $request->validate(array_merge([
             'quantity_overrides' => ['nullable', 'array'],
-        ]);
+        ], AddonExtensions::validationRules('preview_bom_from_template')));
 
-        $preview = $this->templateService->previewCreateFromTemplate($bomTemplate, [
-            'target_brand' => $request->input('target_brand'),
-            'quantity_overrides' => $request->input('quantity_overrides', []),
-        ]);
+        $preview = $this->templateService->previewCreateFromTemplate($bomTemplate, $validated);
 
         return response()->json([
             'data' => $preview['items'],

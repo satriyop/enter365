@@ -48,7 +48,7 @@ class BomTemplateItem extends Model
         return $this->belongsTo(BomTemplate::class, 'template_id');
     }
 
-    // componentStandard() relation registered by ElectricalPanelServiceProvider (add-on).
+    // Optional relation macros may be registered by add-on providers.
 
     /**
      * @return BelongsTo<Product, $this>
