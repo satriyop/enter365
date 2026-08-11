@@ -265,4 +265,22 @@ describe('EnsureFeatureEnabled Middleware', function () {
         $this->getJson('/api/v1/budgets')->assertNotFound();
     });
 
+    it('blocks vertical report endpoints when packs are disabled', function () {
+        withoutFeatures(['projects', 'work_orders', 'subcontracting']);
+
+        $this->getJson('/api/v1/reports/project-profitability')->assertNotFound();
+        $this->getJson('/api/v1/reports/work-order-costs')->assertNotFound();
+        $this->getJson('/api/v1/reports/subcontractor-summary')->assertNotFound();
+        $this->getJson('/api/v1/reports/cost-variance')->assertNotFound();
+    });
+
+    it('allows core financial reports when vertical packs are off', function () {
+        withoutFeatures(['projects', 'work_orders', 'subcontracting', 'solar_proposals']);
+
+        // Core reports stay available for general company
+        $this->getJson('/api/v1/reports/trial-balance')->assertOk();
+        $this->getJson('/api/v1/reports/balance-sheet')->assertOk();
+        $this->getJson('/api/v1/reports/cogs-summary')->assertOk();
+    });
+
 });

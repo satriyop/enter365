@@ -634,34 +634,42 @@ Route::prefix('v1')->group(function () {
             Route::get('cash-flow', [ReportController::class, 'cashFlow'])->name('reports.cash-flow');
             Route::get('daily-cash-movement', [ReportController::class, 'dailyCashMovement'])->name('reports.daily-cash-movement');
 
-            // Project Reports
-            Route::get('project-profitability', [ReportController::class, 'projectProfitability'])->name('reports.project-profitability');
-            Route::get('projects/{project}/profitability', [ReportController::class, 'projectProfitabilityDetail'])->name('reports.project-profitability-detail');
-            Route::get('project-cost-analysis', [ReportController::class, 'projectCostAnalysis'])->name('reports.project-cost-analysis');
-
-            // Work Order Reports
-            Route::get('work-order-costs', [ReportController::class, 'workOrderCosts'])->name('reports.work-order-costs');
-            Route::get('work-orders/{workOrder}/costs', [ReportController::class, 'workOrderCostDetail'])->name('reports.work-order-cost-detail');
-            Route::get('cost-variance', [ReportController::class, 'costVariance'])->name('reports.cost-variance');
-
-            // Subcontractor Reports
-            Route::get('subcontractor-summary', [ReportController::class, 'subcontractorSummary'])->name('reports.subcontractor-summary');
-            Route::get('subcontractors/{contact}/summary', [ReportController::class, 'subcontractorDetail'])->name('reports.subcontractor-detail');
-            Route::get('subcontractor-retention', [ReportController::class, 'subcontractorRetention'])->name('reports.subcontractor-retention');
-
             // Equity Reports
             Route::get('changes-in-equity', [ReportController::class, 'changesInEquity'])->name('reports.changes-in-equity');
 
-            // Bank Reconciliation Reports
-            Route::get('accounts/{account}/bank-reconciliation', [ReportController::class, 'bankReconciliation'])->name('reports.bank-reconciliation');
-            Route::get('accounts/{account}/bank-reconciliation/outstanding', [ReportController::class, 'bankReconciliationOutstanding'])->name('reports.bank-reconciliation-outstanding');
+            // Bank Reconciliation Reports (pack: bank_reconciliation)
+            Route::middleware('feature:bank_reconciliation')->group(function () {
+                Route::get('accounts/{account}/bank-reconciliation', [ReportController::class, 'bankReconciliation'])->name('reports.bank-reconciliation');
+                Route::get('accounts/{account}/bank-reconciliation/outstanding', [ReportController::class, 'bankReconciliationOutstanding'])->name('reports.bank-reconciliation-outstanding');
+            });
 
-            // COGS Reports (Harga Pokok Penjualan)
+            // COGS Reports (Harga Pokok Penjualan) — general trading
             Route::get('cogs-summary', [ReportController::class, 'cogsSummary'])->name('reports.cogs-summary');
             Route::get('cogs-by-product', [ReportController::class, 'cogsByProduct'])->name('reports.cogs-by-product');
             Route::get('cogs-by-category', [ReportController::class, 'cogsByCategory'])->name('reports.cogs-by-category');
             Route::get('cogs-monthly-trend', [ReportController::class, 'cogsMonthlyTrend'])->name('reports.cogs-monthly-trend');
             Route::get('products/{product}/cogs', [ReportController::class, 'productCOGSDetail'])->name('reports.product-cogs-detail');
+
+            // Project Reports (pack: projects)
+            Route::middleware('feature:projects')->group(function () {
+                Route::get('project-profitability', [ReportController::class, 'projectProfitability'])->name('reports.project-profitability');
+                Route::get('projects/{project}/profitability', [ReportController::class, 'projectProfitabilityDetail'])->name('reports.project-profitability-detail');
+                Route::get('project-cost-analysis', [ReportController::class, 'projectCostAnalysis'])->name('reports.project-cost-analysis');
+            });
+
+            // Work Order / production cost reports (pack: work_orders)
+            Route::middleware('feature:work_orders')->group(function () {
+                Route::get('work-order-costs', [ReportController::class, 'workOrderCosts'])->name('reports.work-order-costs');
+                Route::get('work-orders/{workOrder}/costs', [ReportController::class, 'workOrderCostDetail'])->name('reports.work-order-cost-detail');
+                Route::get('cost-variance', [ReportController::class, 'costVariance'])->name('reports.cost-variance');
+            });
+
+            // Subcontractor Reports (pack: subcontracting)
+            Route::middleware('feature:subcontracting')->group(function () {
+                Route::get('subcontractor-summary', [ReportController::class, 'subcontractorSummary'])->name('reports.subcontractor-summary');
+                Route::get('subcontractors/{contact}/summary', [ReportController::class, 'subcontractorDetail'])->name('reports.subcontractor-detail');
+                Route::get('subcontractor-retention', [ReportController::class, 'subcontractorRetention'])->name('reports.subcontractor-retention');
+            });
         });
 
         // Export Reports (Ekspor Laporan)
