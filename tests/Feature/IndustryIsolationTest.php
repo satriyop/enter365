@@ -17,6 +17,7 @@ use Database\Seeders\IndonesiaSolarDataSeeder;
 use Database\Seeders\PlnTariffSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 
 uses(RefreshDatabase::class);
 
@@ -29,9 +30,7 @@ describe('SpecValidation soft-skip when electrical_panel off', function () {
         withoutFeatures(['electrical_panel']);
 
         $bom = Bom::factory()->create();
-        BomItem::factory()->for($bom)->create([
-            'component_standard_id' => null,
-        ]);
+        BomItem::factory()->for($bom)->create();
 
         $service = app(SpecValidationService::class);
         $result = $service->validateBomBrandSwap($bom, 'schneider');
@@ -60,7 +59,6 @@ describe('BomTemplateService brand resolution when electrical_panel off', functi
         $template = BomTemplate::factory()->create();
         $standard = ComponentStandard::factory()->create();
         BomTemplateItem::factory()->for($template, 'template')->create([
-            'component_standard_id' => $standard->id,
             'product_id' => null,
         ]);
 
@@ -79,7 +77,6 @@ describe('BomTemplateService brand resolution when electrical_panel off', functi
         $standard = ComponentStandard::factory()->create();
         BomTemplateItem::factory()->for($template, 'template')->create([
             'type' => 'material',
-            'component_standard_id' => $standard->id,
             'product_id' => null,
             'description' => 'Generic component line',
             'default_quantity' => 2,
@@ -99,7 +96,7 @@ describe('BomTemplateService brand resolution when electrical_panel off', functi
 
         expect($bom)->toBeInstanceOf(Bom::class)
             ->and($bom->items)->toHaveCount(1)
-            ->and($bom->items->first()->component_standard_id)->toBeNull()
+            ->and($bom->items->first()->panelMeta)->toBeNull()
             ->and($bom->items->first()->description)->toBe('Generic component line')
             ->and($result['report']['using_product'])->toBe(1);
     });
@@ -112,11 +109,8 @@ describe('API resources omit industry fields when electrical_panel off', functio
             'electrical_panel' => false,
         ]);
 
-        $standard = ComponentStandard::factory()->create();
         $bom = Bom::factory()->create();
-        BomItem::factory()->for($bom)->create([
-            'component_standard_id' => $standard->id,
-        ]);
+        BomItem::factory()->for($bom)->create();
 
         $response = $this->getJson("/api/v1/boms/{$bom->id}");
 
@@ -125,7 +119,7 @@ describe('API resources omit industry fields when electrical_panel off', functio
         expect($item)->not->toHaveKey('component_standard_id');
     });
 
-    it('includes component_standard_id when electrical_panel on', function () {
+    it('includes component_standard_id from panel meta when electrical_panel on', function () {
         withFeatures([
             'bom' => true,
             'electrical_panel' => true,
@@ -133,16 +127,15 @@ describe('API resources omit industry fields when electrical_panel off', functio
 
         $standard = ComponentStandard::factory()->create();
         $bom = Bom::factory()->create();
-        BomItem::factory()->for($bom)->create([
-            'component_standard_id' => $standard->id,
-        ]);
+        $item = BomItem::factory()->for($bom)->create();
+        attachBomItemStandard($item, $standard);
 
         $response = $this->getJson("/api/v1/boms/{$bom->id}");
 
         $response->assertOk();
-        $item = $response->json('data.items.0');
-        expect($item)->toHaveKey('component_standard_id')
-            ->and($item['component_standard_id'])->toBe($standard->id);
+        $payload = $response->json('data.items.0');
+        expect($payload)->toHaveKey('component_standard_id')
+            ->and($payload['component_standard_id'])->toBe($standard->id);
     });
 });
 
@@ -250,10 +243,10 @@ describe('Add-on package boundaries (code isolation)', function () {
         expect($coreFiles)->toContain('BomService')
             ->and($coreFiles)->toContain('WorkOrderService')
             ->and($coreFiles)->toContain('MrpService')
-            ->and($coreFiles)->toContain('NullBomTemplateBrandResolver');
+            ->and($coreFiles)->not->toContain('NullBomTemplateBrandResolver');
     });
 
-    it('core manufacturing and product sources do not import ElectricalPanel models', function () {
+    it('core manufacturing sources have no panel extension columns or ElectricalPanel imports', function () {
         $paths = array_merge(
             glob(app_path('Services/Manufacturing/*.php')) ?: [],
             glob(app_path('Models/Manufacturing/*.php')) ?: [],
@@ -263,12 +256,16 @@ describe('Add-on package boundaries (code isolation)', function () {
         foreach ($paths as $path) {
             $src = file_get_contents($path) ?: '';
             expect($src)->not->toContain('App\\Models\\ElectricalPanel\\')
-                ->and($src)->not->toContain('App\\Services\\ElectricalPanel\\');
+                ->and($src)->not->toContain('App\\Services\\ElectricalPanel\\')
+                ->and($src)->not->toContain('component_standard_id')
+                ->and($src)->not->toContain('spec_rule_set_id')
+                ->and($src)->not->toContain('default_rule_set_id')
+                ->and($src)->not->toContain('BomTemplateBrandResolver');
         }
 
-        // Contract-only dependency is allowed
-        $bomTemplate = file_get_contents(app_path('Services/Manufacturing/BomTemplateService.php')) ?: '';
-        expect($bomTemplate)->toContain('BomTemplateBrandResolverInterface');
+        expect(Schema::hasColumn('bom_items', 'component_standard_id'))->toBeFalse()
+            ->and(Schema::hasColumn('boms', 'spec_rule_set_id'))->toBeFalse()
+            ->and(Schema::hasTable('electrical_panel_bom_item_meta'))->toBeTrue();
     });
 
     it('registers panel controllers under ElectricalPanel namespace', function () {

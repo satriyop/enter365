@@ -292,10 +292,10 @@ describe('Component Standards CRUD', function () {
         $standard = ComponentStandard::factory()->create();
         $bom = Bom::factory()->create();
 
-        BomItem::factory()->create([
+        $__item = BomItem::factory()->create([
             'bom_id' => $bom->id,
-            'component_standard_id' => $standard->id,
         ]);
+        attachBomItemStandard($__item, $standard);
 
         $response = $this->deleteJson("/api/v1/component-standards/{$standard->id}");
 
@@ -310,14 +310,14 @@ describe('Component Standards CRUD', function () {
         $bom1 = Bom::factory()->create();
         $bom2 = Bom::factory()->create();
 
-        BomItem::factory()->create([
+        $__item = BomItem::factory()->create([
             'bom_id' => $bom1->id,
-            'component_standard_id' => $standard->id,
         ]);
-        BomItem::factory()->create([
+        attachBomItemStandard($__item, $standard);
+        $__item = BomItem::factory()->create([
             'bom_id' => $bom2->id,
-            'component_standard_id' => $standard->id,
         ]);
+        attachBomItemStandard($__item, $standard);
 
         $response = $this->deleteJson("/api/v1/component-standards/{$standard->id}");
 

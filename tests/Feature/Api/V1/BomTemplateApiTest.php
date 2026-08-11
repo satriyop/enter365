@@ -519,14 +519,14 @@ describe('Create BOM from Template', function () {
         $standard2 = ComponentStandard::factory()->create();
 
         // Create items with component standards
-        BomTemplateItem::factory()->create([
+        $__item = BomTemplateItem::factory()->create([
             'template_id' => $template->id,
-            'component_standard_id' => $standard1->id,
         ]);
-        BomTemplateItem::factory()->create([
+        attachTemplateItemStandard($__item, $standard1);
+        $__item = BomTemplateItem::factory()->create([
             'template_id' => $template->id,
-            'component_standard_id' => $standard2->id,
         ]);
+        attachTemplateItemStandard($__item, $standard2);
 
         // Create brand mappings
         $product1 = Product::factory()->create(['brand' => 'Schneider']);
@@ -572,12 +572,12 @@ describe('Create BOM from Template', function () {
         $standard = ComponentStandard::factory()->create();
         $product = Product::factory()->create(['brand' => 'Schneider', 'purchase_price' => 100000]);
 
-        BomTemplateItem::factory()->create([
+        $__item = BomTemplateItem::factory()->create([
             'template_id' => $template->id,
-            'component_standard_id' => $standard->id,
             'description' => 'MCB 16A',
             'default_quantity' => 5,
         ]);
+        attachTemplateItemStandard($__item, $standard);
 
         ComponentBrandMapping::factory()->create([
             'component_standard_id' => $standard->id,
@@ -644,13 +644,13 @@ describe('Create BOM from Template', function () {
             'purchase_price' => 100000,
         ]);
 
-        BomTemplateItem::factory()->create([
+        $__item = BomTemplateItem::factory()->create([
             'template_id' => $template->id,
-            'component_standard_id' => $standard->id,
             'description' => 'MCB 16A',
             'default_quantity' => 5,
             'unit' => 'pcs',
         ]);
+        attachTemplateItemStandard($__item, $standard);
 
         ComponentBrandMapping::factory()->create([
             'component_standard_id' => $standard->id,
@@ -690,12 +690,12 @@ describe('Create BOM from Template', function () {
         $outputProduct = Product::factory()->create();
 
         // Item with no brand mapping
-        BomTemplateItem::factory()->create([
+        $__item = BomTemplateItem::factory()->create([
             'template_id' => $template->id,
-            'component_standard_id' => $standard->id,
             'description' => 'Custom Item',
             'default_quantity' => 1,
         ]);
+        attachTemplateItemStandard($__item, $standard);
 
         $response = $this->postJson("/api/v1/bom-templates/{$template->id}/create-bom", [
             'product_id' => $outputProduct->id,
@@ -710,7 +710,6 @@ describe('Create BOM from Template', function () {
         $this->assertDatabaseHas('bom_items', [
             'bom_id' => $bomId,
             'product_id' => null,
-            'component_standard_id' => $standard->id,
         ]);
     });
 
@@ -769,11 +768,11 @@ describe('Create BOM from Template', function () {
         $preferredProduct = Product::factory()->create(['purchase_price' => 150000]);
         $otherProduct = Product::factory()->create(['purchase_price' => 100000]);
 
-        BomTemplateItem::factory()->create([
+        $__item = BomTemplateItem::factory()->create([
             'template_id' => $template->id,
-            'component_standard_id' => $standard->id,
             'default_quantity' => 1,
         ]);
+        attachTemplateItemStandard($__item, $standard);
 
         // Create mappings, one preferred
         ComponentBrandMapping::factory()->create([

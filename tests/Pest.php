@@ -114,6 +114,26 @@ function withoutFeatures(array $features): void
     }
 }
 
+/**
+ * Attach electrical_panel component standard meta to a BOM item (add-on table).
+ */
+function attachBomItemStandard(
+    \App\Models\Manufacturing\BomItem $item,
+    \App\Models\ElectricalPanel\ComponentStandard $standard
+): void {
+    \App\Models\ElectricalPanel\BomItemPanelMeta::sync($item, $standard->id);
+}
+
+/**
+ * Attach electrical_panel component standard meta to a template item.
+ */
+function attachTemplateItemStandard(
+    \App\Models\Manufacturing\BomTemplateItem $item,
+    \App\Models\ElectricalPanel\ComponentStandard $standard
+): void {
+    \App\Models\ElectricalPanel\BomTemplateItemPanelMeta::sync($item, $standard->id);
+}
+
 /*
 |--------------------------------------------------------------------------
 | Browser Test Helpers

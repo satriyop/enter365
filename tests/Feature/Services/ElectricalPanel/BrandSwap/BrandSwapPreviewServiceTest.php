@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Models\ElectricalPanel\ComponentBrandMapping;
+use App\Models\ElectricalPanel\ComponentStandard;
 use App\Models\Inventory\Product;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomItem;
-use App\Models\ElectricalPanel\ComponentBrandMapping;
-use App\Models\ElectricalPanel\ComponentStandard;
 use App\Services\ElectricalPanel\BrandSwap\BrandSwapPreviewService;
 use App\Services\ElectricalPanel\SpecValidationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -71,12 +71,12 @@ beforeEach(function () {
         'bom_id' => $this->bom->id,
         'type' => BomItem::TYPE_MATERIAL,
         'product_id' => $this->sourceProduct->id,
-        'component_standard_id' => $this->standard->id,
         'description' => 'Schneider MCB 16A',
         'quantity' => 10,
         'unit_cost' => 200000,
         'total_cost' => 2000000,
     ]);
+    attachBomItemStandard($this->bomItem, $this->standard);
 });
 
 describe('previewItemSwap', function () {
@@ -235,7 +235,6 @@ describe('getItemAlternatives', function () {
             'bom_id' => $this->bom->id,
             'type' => BomItem::TYPE_MATERIAL,
             'product_id' => $this->sourceProduct->id,
-            'component_standard_id' => null,
             'unit_cost' => 200000,
         ]);
 

@@ -3,11 +3,11 @@
 declare(strict_types=1);
 
 use App\Enums\DocumentStatus;
+use App\Models\ElectricalPanel\ComponentBrandMapping;
+use App\Models\ElectricalPanel\ComponentStandard;
 use App\Models\Inventory\Product;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomItem;
-use App\Models\ElectricalPanel\ComponentBrandMapping;
-use App\Models\ElectricalPanel\ComponentStandard;
 use App\Services\ElectricalPanel\BrandSwap\BrandSwapExecutionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -64,12 +64,12 @@ beforeEach(function () {
         'bom_id' => $this->bom->id,
         'type' => BomItem::TYPE_MATERIAL,
         'product_id' => $this->sourceProduct->id,
-        'component_standard_id' => $this->standard->id,
         'description' => 'Schneider MCB 16A',
         'quantity' => 10,
         'unit_cost' => 200000,
         'total_cost' => 2000000,
     ]);
+    attachBomItemStandard($this->bomItem, $this->standard);
 });
 
 describe('swapBomBrand', function () {
@@ -123,7 +123,6 @@ describe('swapBomBrand', function () {
             'bom_id' => $this->bom->id,
             'type' => BomItem::TYPE_MATERIAL,
             'product_id' => $unmappedProduct->id,
-            'component_standard_id' => null,
             'description' => 'Custom Widget',
             'quantity' => 5,
             'unit_cost' => 500000,

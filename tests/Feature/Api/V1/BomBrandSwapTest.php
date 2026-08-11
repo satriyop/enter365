@@ -63,23 +63,23 @@ describe('BOM Brand Swap - Core Feature', function () {
         ]);
 
         // Create BOM items
-        BomItem::factory()->create([
+        $__item = BomItem::factory()->create([
             'bom_id' => $bom->id,
             'product_id' => $schneiderProduct1->id,
-            'component_standard_id' => $standard1->id,
             'description' => 'Schneider MCB 10A',
             'quantity' => 2,
             'unit_cost' => 100000,
         ]);
+        attachBomItemStandard($__item, $standard1);
 
-        BomItem::factory()->create([
+        $__item = BomItem::factory()->create([
             'bom_id' => $bom->id,
             'product_id' => $schneiderProduct2->id,
-            'component_standard_id' => $standard2->id,
             'description' => 'Schneider MCCB 20A',
             'quantity' => 1,
             'unit_cost' => 200000,
         ]);
+        attachBomItemStandard($__item, $standard2);
 
         // Perform swap
         $response = $this->postJson("/api/v1/boms/{$bom->id}/swap-brand", [
@@ -126,11 +126,11 @@ describe('BOM Brand Swap - Core Feature', function () {
             'is_preferred' => true,
         ]);
 
-        BomItem::factory()->create([
+        $__item = BomItem::factory()->create([
             'bom_id' => $bom->id,
             'product_id' => $schneiderProduct->id,
-            'component_standard_id' => $standard->id,
         ]);
+        attachBomItemStandard($__item, $standard);
 
         $response = $this->postJson("/api/v1/boms/{$bom->id}/swap-brand", [
             'target_brand' => 'abb',
@@ -171,16 +171,15 @@ describe('BOM Brand Swap - Core Feature', function () {
         ]);
 
         // Create items - one mappable, one not
-        BomItem::factory()->create([
+        $__item = BomItem::factory()->create([
             'bom_id' => $bom->id,
             'product_id' => $schneiderProduct->id,
-            'component_standard_id' => $standard->id,
         ]);
+        attachBomItemStandard($__item, $standard);
 
         BomItem::factory()->create([
             'bom_id' => $bom->id,
             'product_id' => $unmappedProduct->id,
-            'component_standard_id' => null,
         ]);
 
         $response = $this->postJson("/api/v1/boms/{$bom->id}/swap-brand", [
@@ -207,11 +206,11 @@ describe('BOM Brand Swap - Core Feature', function () {
             'product_id' => $schneiderProduct->id,
         ]);
 
-        BomItem::factory()->create([
+        $__item = BomItem::factory()->create([
             'bom_id' => $bom->id,
             'product_id' => $schneiderProduct->id,
-            'component_standard_id' => $standard->id,
         ]);
+        attachBomItemStandard($__item, $standard);
 
         $response = $this->postJson("/api/v1/boms/{$bom->id}/swap-brand", [
             'target_brand' => 'abb',
@@ -261,11 +260,11 @@ describe('BOM Brand Swap - Core Feature', function () {
             'is_preferred' => true,
         ]);
 
-        BomItem::factory()->create([
+        $__item = BomItem::factory()->create([
             'bom_id' => $bom->id,
             'product_id' => $schneiderProduct->id,
-            'component_standard_id' => $standard->id,
         ]);
+        attachBomItemStandard($__item, $standard);
 
         $response = $this->postJson("/api/v1/boms/{$bom->id}/swap-brand", [
             'target_brand' => 'abb',
@@ -301,11 +300,11 @@ describe('BOM Brand Swap - Core Feature', function () {
         ]);
 
         // Material item
-        BomItem::factory()->material()->create([
+        $__item = BomItem::factory()->material()->create([
             'bom_id' => $bom->id,
             'product_id' => $schneiderProduct->id,
-            'component_standard_id' => $standard->id,
         ]);
+        attachBomItemStandard($__item, $standard);
 
         // Labor item
         BomItem::factory()->labor()->create([
@@ -383,11 +382,11 @@ describe('BOM Brand Variants Generation', function () {
             'is_preferred' => true,
         ]);
 
-        BomItem::factory()->create([
+        $__item = BomItem::factory()->create([
             'bom_id' => $bom->id,
             'product_id' => $schneiderProduct->id,
-            'component_standard_id' => $standard->id,
         ]);
+        attachBomItemStandard($__item, $standard);
 
         $response = $this->postJson("/api/v1/boms/{$bom->id}/generate-brand-variants", [
             'brands' => ['abb', 'siemens'],
@@ -430,11 +429,11 @@ describe('BOM Brand Variants Generation', function () {
             'is_preferred' => true,
         ]);
 
-        BomItem::factory()->create([
+        $__item = BomItem::factory()->create([
             'bom_id' => $bom->id,
             'product_id' => $sourceProduct->id,
-            'component_standard_id' => $standard->id,
         ]);
+        attachBomItemStandard($__item, $standard);
 
         $response = $this->postJson("/api/v1/boms/{$bom->id}/generate-brand-variants", [
             'brands' => ['abb'],
@@ -478,11 +477,11 @@ describe('BOM Brand Variants Generation', function () {
             'is_preferred' => true,
         ]);
 
-        BomItem::factory()->create([
+        $__item = BomItem::factory()->create([
             'bom_id' => $bom->id,
             'product_id' => $sourceProduct->id,
-            'component_standard_id' => $standard->id,
         ]);
+        attachBomItemStandard($__item, $standard);
 
         $response = $this->postJson("/api/v1/boms/{$bom->id}/generate-brand-variants", [
             'brands' => ['abb'],
@@ -521,11 +520,11 @@ describe('BOM Brand Variants Generation', function () {
             'is_preferred' => true,
         ]);
 
-        BomItem::factory()->create([
+        $__item = BomItem::factory()->create([
             'bom_id' => $bom->id,
             'product_id' => $sourceProduct->id,
-            'component_standard_id' => $standard->id,
         ]);
+        attachBomItemStandard($__item, $standard);
 
         $response = $this->postJson("/api/v1/boms/{$bom->id}/generate-brand-variants", [
             'brands' => ['abb', 'siemens'],
