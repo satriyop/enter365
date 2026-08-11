@@ -75,7 +75,8 @@ class DemoSeeder extends Seeder
         }
 
         if ($demoChoice === self::DEMO_GENERAL) {
-            $this->command->info('🏢 General demo: master data only for vertical products; core ops seeders next.');
+            $this->command->info('🏢 Seeding general trading cycles (no NEX/Vahana vertical)...');
+            $this->call(GeneralTradingDemoSeeder::class);
             $this->command->info('');
         }
 
