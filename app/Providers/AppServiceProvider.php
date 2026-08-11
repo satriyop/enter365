@@ -247,8 +247,6 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ProjectServiceInterface::class, ProjectService::class);
         $this->app->bind(\App\Contracts\Projects\TaskServiceInterface::class, \App\Services\Projects\TaskService::class);
 
-        // Solar Domain: bindings in Addons\SolarServiceProvider (only when solar_proposals on)
-
         // Tax Domain
         $this->app->bind(\App\Contracts\Tax\NsfpServiceInterface::class, \App\Services\Tax\NsfpService::class);
         $this->app->bind(\App\Contracts\Tax\PphCalculationServiceInterface::class, \App\Services\Tax\PphCalculationService::class);
@@ -428,9 +426,6 @@ class AppServiceProvider extends ServiceProvider
 
             // Contacts Domain
             'contact' => \App\Models\Contacts\Contact::class,
-
-            // Solar Domain
-            'solar_proposal' => \App\Models\Solar\SolarProposal::class,
 
             // Tax Domain
             'nsfp_range' => \App\Models\Tax\NsfpRange::class,

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\ElectricalPanel;
 
-use App\Contracts\ElectricalPanel\BomTemplateBrandResolverInterface;
+use App\Contracts\Manufacturing\BomTemplateBrandResolverInterface;
 use App\Models\ElectricalPanel\ComponentBrandMapping;
 use App\Models\Manufacturing\BomTemplate;
 use App\Models\Manufacturing\BomTemplateItem;

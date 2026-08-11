@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services\Manufacturing;
 
-use App\Contracts\ElectricalPanel\BomTemplateBrandResolverInterface;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
+use App\Contracts\Manufacturing\BomTemplateBrandResolverInterface;
 use App\Contracts\Manufacturing\BomTemplateServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Manufacturing\Bom;

@@ -2,7 +2,7 @@
 
 namespace App\Providers\Addons;
 
-use App\Contracts\ElectricalPanel\BomTemplateBrandResolverInterface;
+use App\Contracts\Manufacturing\BomTemplateBrandResolverInterface;
 use App\Models\ElectricalPanel\ComponentBrandMapping;
 use App\Models\ElectricalPanel\ComponentStandard;
 use App\Models\ElectricalPanel\SpecValidationRuleSet;
