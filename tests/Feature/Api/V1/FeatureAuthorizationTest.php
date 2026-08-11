@@ -12,12 +12,20 @@ beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\RolesAndPermissionsSeeder']);
 });
 
-describe('Feature authorization - forbidden without permission', function () {
-    it('denies feature listing without settings.features', function () {
+describe('Feature flags - any authenticated user', function () {
+    it('allows feature listing for regular authenticated users (SPA nav)', function () {
         $user = User::factory()->create();
         Sanctum::actingAs($user);
 
-        $this->getJson('/api/v1/features')->assertForbidden();
+        $this->getJson('/api/v1/features')
+            ->assertSuccessful()
+            ->assertJsonStructure([
+                'data' => [
+                    'modules',
+                    'enabled',
+                    'disabled',
+                ],
+            ]);
     });
 });
 

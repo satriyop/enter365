@@ -14,7 +14,12 @@ Ordered by evidence gaps. Only promote a phase when **Strong** tests (DB side ef
 - [x] New task system: `tasks/{roadmap,audit,backlog,done,artifact}`
 - [x] Ignore legacy `plans/` in git
 - [x] Persona matrix audit from code+tests
-- [ ] Keep `tasks/` as only planning surface in day-to-day work
+- [x] Keep `tasks/` as only planning surface in day-to-day work
+
+## Phase 0b — Product packs (done 2026-08-11)
+
+- [x] General company default; NEX/Vahana packs OFF (`FEATURE_PRESET=general`)
+- [x] FE sidebar gates modules via GET /features
 
 ## Phase 1 — Trading pilot (Sales + Purchasing + Gudang dasar + Accounting dasar)
 

@@ -4,23 +4,21 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Support\Features;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Gate;
 
 class FeatureController extends Controller
 {
     /**
      * Get feature flags status.
      *
-     * Returns all feature modules with their enabled/disabled status.
-     * Frontend applications can use this to conditionally render UI elements.
+     * Available to any authenticated user so the SPA can hide nav/routes
+     * for disabled product packs (solar, manufacturing, projects, etc.).
      *
      * GET /api/v1/features
      */
     public function index(): JsonResponse
     {
-        Gate::authorize('settings.features');
-
         return $this->success([
+            'preset' => config('features.preset'),
             'modules' => Features::all(),
             'enabled' => Features::enabledModules(),
             'disabled' => Features::disabledModules(),

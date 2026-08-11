@@ -152,18 +152,45 @@ describe('FeatureManager Contract Binding', function () {
 describe('Feature Status API', function () {
 
     it('returns all feature flags', function () {
-        config(['features.modules' => [
-            'inventory' => true,
-            'mrp' => false,
-        ]]);
+        config([
+            'features.preset' => 'general',
+            'features.modules' => [
+                'inventory' => true,
+                'mrp' => false,
+            ],
+        ]);
 
         $response = $this->getJson('/api/v1/features');
 
         $response->assertOk()
+            ->assertJsonPath('data.preset', 'general')
             ->assertJsonPath('data.modules.inventory', true)
             ->assertJsonPath('data.modules.mrp', false)
             ->assertJsonPath('data.enabled', ['inventory'])
             ->assertJsonPath('data.disabled', ['mrp']);
+    });
+
+    it('defaults vertical packs off for general company profile', function () {
+        // Assert product policy: general core on, NEX/Vahana packs off
+        withFeatures([
+            'quotations' => true,
+            'inventory' => true,
+            'solar_proposals' => false,
+            'mrp' => false,
+            'projects' => false,
+            'bom' => false,
+            'work_orders' => false,
+            'manufacturing' => false,
+            'subcontracting' => false,
+        ]);
+
+        expect(Features::enabled('quotations'))->toBeTrue()
+            ->and(Features::enabled('inventory'))->toBeTrue()
+            ->and(Features::disabled('solar_proposals'))->toBeTrue()
+            ->and(Features::disabled('mrp'))->toBeTrue()
+            ->and(Features::disabled('projects'))->toBeTrue()
+            ->and(Features::disabled('bom'))->toBeTrue()
+            ->and(Features::disabled('work_orders'))->toBeTrue();
     });
 
     it('returns empty arrays when no modules configured', function () {

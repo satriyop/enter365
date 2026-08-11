@@ -94,15 +94,15 @@ Route::prefix('v1')->group(function () {
     | Public Routes (No Authentication Required)
     |--------------------------------------------------------------------------
     */
-    // Public Solar Proposal (Customer Portal)
-    Route::prefix('public/solar-proposals')->group(function () {
+    // Public Solar Proposal (Customer Portal) — pack: solar_proposals
+    Route::middleware('feature:solar_proposals')->prefix('public/solar-proposals')->group(function () {
         Route::get('{token}', [PublicSolarProposalController::class, 'show']);
         Route::post('{token}/accept', [PublicSolarProposalController::class, 'accept']);
         Route::post('{token}/reject', [PublicSolarProposalController::class, 'reject']);
     })->where(['token' => '[0-9a-f\-]{32,36}']);
 
-    // Public Solar Calculator (Marketing Tool)
-    Route::prefix('public/solar-calculator')->group(function () {
+    // Public Solar Calculator (Marketing Tool) — pack: solar_proposals
+    Route::middleware('feature:solar_proposals')->prefix('public/solar-calculator')->group(function () {
         Route::post('calculate', [PublicSolarCalculatorController::class, 'calculate']);
         Route::get('tariffs', [PublicSolarCalculatorController::class, 'tariffs']);
     });

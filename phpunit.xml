@@ -37,5 +37,7 @@
         <env name="NIGHTWATCH_ENABLED" value="false"/>
         <env name="SPA_URL" value="http://localhost:3000"/>
         <env name="BROWSER_DB_DATABASE" value="akuntansi"/>
+        <!-- Full product surface for automated tests (production defaults are general-core only) -->
+        <env name="FEATURE_PRESET" value="full"/>
     </php>
 </phpunit>
