@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\ElectricalPanel\BrandSwap;
 
-use App\Models\Manufacturing\Bom;
-use App\Models\Manufacturing\BomItem;
 use App\Models\ElectricalPanel\ComponentBrandMapping;
 use App\Models\ElectricalPanel\SpecValidationRuleSet;
+use App\Models\Manufacturing\Bom;
+use App\Models\Manufacturing\BomItem;
 use App\Services\ElectricalPanel\SpecValidationService;
 
 /**
@@ -36,10 +36,7 @@ class BrandSwapPreviewService
         $noMapping = 0;
 
         // Get validation results
-        $ruleSet = $ruleSet ?? $bom->getEffectiveRuleSet();
-        $validation = $ruleSet
-            ? $this->validationService->validateBomBrandSwap($bom, $targetBrand, $ruleSet)
-            : ['valid' => true, 'items' => [], 'summary' => []];
+        $validation = $this->validationService->validateBomBrandSwap($bom, $targetBrand, $ruleSet);
 
         // Index validation results by bom_item_id
         $validationByItem = collect($validation['items'])->keyBy('bom_item_id');

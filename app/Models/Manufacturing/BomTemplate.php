@@ -2,7 +2,6 @@
 
 namespace App\Models\Manufacturing;
 
-use App\Models\ElectricalPanel\SpecValidationRuleSet;
 use App\Models\User;
 use App\Traits\HasActiveStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -84,13 +83,7 @@ class BomTemplate extends Model
             ->orderBy('sort_order');
     }
 
-    /**
-     * @return BelongsTo<SpecValidationRuleSet, $this>
-     */
-    public function defaultRuleSet(): BelongsTo
-    {
-        return $this->belongsTo(SpecValidationRuleSet::class, 'default_rule_set_id');
-    }
+    // defaultRuleSet() relation registered by ElectricalPanelServiceProvider (add-on).
 
     /**
      * @return BelongsTo<User, $this>

@@ -2,7 +2,6 @@
 
 namespace App\Models\Manufacturing;
 
-use App\Models\ElectricalPanel\ComponentStandard;
 use App\Models\Inventory\Product;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -50,13 +49,7 @@ class BomTemplateItem extends Model
         return $this->belongsTo(BomTemplate::class, 'template_id');
     }
 
-    /**
-     * @return BelongsTo<ComponentStandard, $this>
-     */
-    public function componentStandard(): BelongsTo
-    {
-        return $this->belongsTo(ComponentStandard::class);
-    }
+    // componentStandard() relation registered by ElectricalPanelServiceProvider (add-on).
 
     /**
      * @return BelongsTo<Product, $this>
@@ -67,7 +60,7 @@ class BomTemplateItem extends Model
     }
 
     /**
-     * Check if this item uses a component standard (allows brand swapping).
+     * Whether this line references a component standard (FK only; no add-on type import).
      */
     public function hasComponentStandard(): bool
     {

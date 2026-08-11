@@ -3,10 +3,8 @@
 namespace App\Models\Manufacturing;
 
 use App\Enums\DocumentStatus;
-use App\Models\ElectricalPanel\SpecValidationRuleSet;
 use App\Models\Inventory\Product;
 use App\Models\User;
-use App\Support\Features;
 use App\Traits\CascadesSoftDeletes;
 use App\Traits\Filterable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -156,28 +154,9 @@ class Bom extends Model
     }
 
     /**
-     * @return BelongsTo<SpecValidationRuleSet, $this>
-     */
-    public function specRuleSet(): BelongsTo
-    {
-        return $this->belongsTo(SpecValidationRuleSet::class, 'spec_rule_set_id');
-    }
-
-    /**
-     * Get the effective rule set (BOM's rule set or default).
-     * Electrical-panel add-on only; null when industry flag is off.
-     */
-    public function getEffectiveRuleSet(): ?SpecValidationRuleSet
-    {
-        if (Features::disabled('electrical_panel')) {
-            return null;
-        }
-
-        return $this->specRuleSet ?? SpecValidationRuleSet::getDefault();
-    }
-
-    /**
      * Get sibling variants (other BOMs in the same variant group).
+     *
+     * Note: specRuleSet() is registered by ElectricalPanelServiceProvider (add-on).
      *
      * @return HasMany<self, $this>
      */

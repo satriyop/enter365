@@ -2,7 +2,6 @@
 
 namespace App\Models\Manufacturing;
 
-use App\Models\ElectricalPanel\ComponentStandard;
 use App\Models\Inventory\Product;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -59,13 +58,7 @@ class BomItem extends Model
         return $this->belongsTo(Product::class);
     }
 
-    /**
-     * @return BelongsTo<ComponentStandard, $this>
-     */
-    public function componentStandard(): BelongsTo
-    {
-        return $this->belongsTo(ComponentStandard::class);
-    }
+    // componentStandard() relation registered by ElectricalPanelServiceProvider (add-on).
 
     /**
      * Calculate total cost including waste.

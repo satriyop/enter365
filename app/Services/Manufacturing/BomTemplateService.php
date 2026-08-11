@@ -4,23 +4,23 @@ declare(strict_types=1);
 
 namespace App\Services\Manufacturing;
 
+use App\Contracts\ElectricalPanel\BomTemplateBrandResolverInterface;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Manufacturing\BomTemplateServiceInterface;
 use App\Enums\DocumentStatus;
-use App\Models\ElectricalPanel\ComponentBrandMapping;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomItem;
 use App\Models\Manufacturing\BomTemplate;
 use App\Models\Manufacturing\BomTemplateItem;
 use App\Services\Base\BaseService;
-use App\Support\Features;
 
 class BomTemplateService extends BaseService implements BomTemplateServiceInterface
 {
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
-        ContextualLoggerInterface $logger
+        ContextualLoggerInterface $logger,
+        private BomTemplateBrandResolverInterface $brandResolver,
     ) {
         parent::__construct($eventDispatcher, $logger);
     }
@@ -78,13 +78,11 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
      */
     public function createBomFromTemplate(BomTemplate $template, array $options): array
     {
-        $template->load([
-            'items.componentStandard.brandMappings.product',
-            'items.product',
-            'defaultRuleSet',
-        ]);
+        $template->load($this->brandResolver->templateEagerLoads());
 
-        $targetBrand = $options['target_brand'] ?? null;
+        $targetBrand = $this->brandResolver->isEnabled()
+            ? ($options['target_brand'] ?? null)
+            : null;
         $quantityOverrides = $options['quantity_overrides'] ?? [];
 
         $report = [
@@ -120,8 +118,10 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
             $bomItems[] = $itemReport['bom_item_data'];
         }
 
+        $specRuleSetId = $this->brandResolver->templateSpecRuleSetId($template);
+
         // Create the BOM
-        $bom = $this->executeInTransaction('create_from_template', function () use ($template, $options, $bomItems) {
+        $bom = $this->executeInTransaction('create_from_template', function () use ($template, $options, $bomItems, $specRuleSetId) {
             $bom = new Bom([
                 'product_id' => $options['product_id'],
                 'name' => $options['name'] ?? "BOM dari Template: {$template->name}",
@@ -129,7 +129,7 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
                 'output_quantity' => $options['output_quantity'] ?? 1,
                 'status' => DocumentStatus::Draft,
                 'version' => '1.0',
-                'spec_rule_set_id' => $template->default_rule_set_id,
+                'spec_rule_set_id' => $specRuleSetId,
             ]);
             $bom->created_by = $this->getUserId();
             $bom->save();
@@ -170,12 +170,11 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
      */
     public function previewCreateFromTemplate(BomTemplate $template, array $options): array
     {
-        $template->load([
-            'items.componentStandard.brandMappings.product',
-            'items.product',
-        ]);
+        $template->load($this->brandResolver->templateEagerLoads());
 
-        $targetBrand = $options['target_brand'] ?? null;
+        $targetBrand = $this->brandResolver->isEnabled()
+            ? ($options['target_brand'] ?? null)
+            : null;
         $quantityOverrides = $options['quantity_overrides'] ?? [];
 
         $items = [];
@@ -212,11 +211,7 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
                 'unit' => $itemReport['bom_item_data']['unit'] ?? $templateItem->unit,
                 'unit_cost' => $itemReport['bom_item_data']['unit_cost'] ?? 0,
                 'product' => $itemReport['product'] ?? null,
-                'component_standard' => $templateItem->componentStandard ? [
-                    'id' => $templateItem->componentStandard->id,
-                    'code' => $templateItem->componentStandard->code,
-                    'name' => $templateItem->componentStandard->name,
-                ] : null,
+                'component_standard' => $this->brandResolver->standardPreview($templateItem),
                 'status' => $itemReport['status'],
                 'notes' => $itemReport['notes'] ?? null,
                 'is_required' => $templateItem->is_required,
@@ -231,9 +226,9 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
     }
 
     /**
-     * Resolve a template item to a BOM item.
+     * Resolve a template item to a BOM item (core product/manual paths + optional add-on).
      *
-     * @return array{status: string, bom_item_data: ?array, product: ?array, notes: ?string}
+     * @return array{status: string, bom_item_data: array<string, mixed>, product: ?array<string, mixed>, notes: ?string}
      */
     private function resolveTemplateItem(
         BomTemplateItem $templateItem,
@@ -241,12 +236,6 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
         ?float $quantityOverride
     ): array {
         $quantity = $quantityOverride ?? (float) $templateItem->default_quantity;
-        $panelAddonOn = Features::enabled('electrical_panel');
-
-        // Brand / component-standard resolution is Vahana (electrical_panel) only
-        if (! $panelAddonOn) {
-            $targetBrand = null;
-        }
 
         // Item has a direct product - use it regardless of brand
         if ($templateItem->product_id) {
@@ -257,7 +246,9 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
                 'bom_item_data' => [
                     'type' => $templateItem->type,
                     'product_id' => $product->id,
-                    'component_standard_id' => $panelAddonOn ? $templateItem->component_standard_id : null,
+                    'component_standard_id' => $this->brandResolver->shouldPersistStandardId()
+                        ? $templateItem->component_standard_id
+                        : null,
                     'description' => $product->name,
                     'quantity' => $quantity,
                     'unit' => $templateItem->unit ?? $product->unit ?? 'pcs',
@@ -275,127 +266,17 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
             ];
         }
 
-        // Without electrical_panel, treat standard-only lines as manual descriptions
-        if (! $panelAddonOn && $templateItem->component_standard_id) {
-            return [
-                'status' => 'using_product',
-                'bom_item_data' => [
-                    'type' => $templateItem->type,
-                    'product_id' => null,
-                    'component_standard_id' => null,
-                    'description' => $templateItem->description,
-                    'quantity' => $quantity,
-                    'unit' => $templateItem->unit ?? 'pcs',
-                    'unit_cost' => 0,
-                    'notes' => $templateItem->notes,
-                ],
-                'product' => null,
-                'notes' => 'Komponen standar diabaikan (electrical_panel off)',
-            ];
+        $addonResult = $this->brandResolver->resolveStandardBasedItem(
+            $templateItem,
+            $targetBrand,
+            $quantity
+        );
+
+        if ($addonResult !== null) {
+            return $addonResult;
         }
 
-        // Item has a component standard - try to resolve via brand mapping
-        if ($templateItem->component_standard_id && $targetBrand) {
-            $mapping = $this->findBrandMapping(
-                $templateItem->component_standard_id,
-                $targetBrand
-            );
-
-            if ($mapping && $mapping->product) {
-                $product = $mapping->product;
-
-                return [
-                    'status' => 'resolved',
-                    'bom_item_data' => [
-                        'type' => $templateItem->type,
-                        'product_id' => $product->id,
-                        'component_standard_id' => $templateItem->component_standard_id,
-                        'description' => $product->name,
-                        'quantity' => $quantity,
-                        'unit' => $templateItem->unit ?? $product->unit ?? 'pcs',
-                        'unit_cost' => $product->purchase_price ?? 0,
-                        'notes' => $templateItem->notes,
-                    ],
-                    'product' => [
-                        'id' => $product->id,
-                        'name' => $product->name,
-                        'sku' => $product->sku,
-                        'brand' => $product->brand,
-                        'brand_sku' => $mapping->brand_sku,
-                        'purchase_price' => $product->purchase_price,
-                    ],
-                    'notes' => null,
-                ];
-            }
-
-            // No mapping found for this brand
-            return [
-                'status' => 'no_mapping',
-                'bom_item_data' => [
-                    'type' => $templateItem->type,
-                    'product_id' => null,
-                    'component_standard_id' => $templateItem->component_standard_id,
-                    'description' => $templateItem->description,
-                    'quantity' => $quantity,
-                    'unit' => $templateItem->unit ?? 'pcs',
-                    'unit_cost' => 0,
-                    'notes' => $templateItem->notes,
-                ],
-                'product' => null,
-                'notes' => "Tidak ada mapping untuk brand '{$targetBrand}'",
-            ];
-        }
-
-        // Item has component standard but no target brand specified
-        if ($templateItem->component_standard_id && ! $targetBrand) {
-            // Try to find preferred mapping
-            $mapping = $this->findPreferredMapping($templateItem->component_standard_id);
-
-            if ($mapping && $mapping->product) {
-                $product = $mapping->product;
-
-                return [
-                    'status' => 'resolved',
-                    'bom_item_data' => [
-                        'type' => $templateItem->type,
-                        'product_id' => $product->id,
-                        'component_standard_id' => $templateItem->component_standard_id,
-                        'description' => $product->name,
-                        'quantity' => $quantity,
-                        'unit' => $templateItem->unit ?? $product->unit ?? 'pcs',
-                        'unit_cost' => $product->purchase_price ?? 0,
-                        'notes' => $templateItem->notes,
-                    ],
-                    'product' => [
-                        'id' => $product->id,
-                        'name' => $product->name,
-                        'sku' => $product->sku,
-                        'brand' => $product->brand,
-                        'brand_sku' => $mapping->brand_sku,
-                        'purchase_price' => $product->purchase_price,
-                    ],
-                    'notes' => "Menggunakan brand preferensi: {$mapping->brand}",
-                ];
-            }
-
-            return [
-                'status' => 'no_mapping',
-                'bom_item_data' => [
-                    'type' => $templateItem->type,
-                    'product_id' => null,
-                    'component_standard_id' => $templateItem->component_standard_id,
-                    'description' => $templateItem->description,
-                    'quantity' => $quantity,
-                    'unit' => $templateItem->unit ?? 'pcs',
-                    'unit_cost' => 0,
-                    'notes' => $templateItem->notes,
-                ],
-                'product' => null,
-                'notes' => 'Tidak ada brand mapping untuk komponen standar ini',
-            ];
-        }
-
-        // No product and no component standard - just use description
+        // No product and no add-on standard resolution - plain description
         return [
             'status' => 'using_product',
             'bom_item_data' => [
@@ -414,81 +295,10 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
     }
 
     /**
-     * Find brand mapping for a component standard.
-     */
-    private function findBrandMapping(int $componentStandardId, string $brand): ?ComponentBrandMapping
-    {
-        return ComponentBrandMapping::query()
-            ->where('component_standard_id', $componentStandardId)
-            ->where('brand', strtolower($brand))
-            ->with('product')
-            ->first();
-    }
-
-    /**
-     * Find preferred mapping for a component standard.
-     */
-    private function findPreferredMapping(int $componentStandardId): ?ComponentBrandMapping
-    {
-        return ComponentBrandMapping::query()
-            ->where('component_standard_id', $componentStandardId)
-            ->where('is_preferred', true)
-            ->with('product')
-            ->first()
-            ?? ComponentBrandMapping::query()
-                ->where('component_standard_id', $componentStandardId)
-                ->with('product')
-                ->first();
-    }
-
-    /**
-     * Get available brands for a template based on its component standards.
-     *
      * @return array<int, array{code: string, name: string, coverage: int, coverage_percent: float}>
      */
     public function getAvailableBrandsForTemplate(BomTemplate $template): array
     {
-        if (Features::disabled('electrical_panel')) {
-            return [];
-        }
-
-        $template->load('items.componentStandard.brandMappings');
-
-        $itemsWithStandard = $template->items->filter(fn ($item) => $item->component_standard_id !== null);
-
-        if ($itemsWithStandard->isEmpty()) {
-            return [];
-        }
-
-        // Get all brand codes from mappings
-        $brandCounts = [];
-        foreach ($itemsWithStandard as $item) {
-            if ($item->componentStandard) {
-                foreach ($item->componentStandard->brandMappings as $mapping) {
-                    $brand = strtolower($mapping->brand);
-                    $brandCounts[$brand] = ($brandCounts[$brand] ?? 0) + 1;
-                }
-            }
-        }
-
-        // Build result with coverage info
-        $totalStandardItems = $itemsWithStandard->count();
-        $brands = [];
-
-        $brandNames = ComponentBrandMapping::getBrands();
-
-        foreach ($brandCounts as $brandCode => $count) {
-            $brands[] = [
-                'code' => $brandCode,
-                'name' => $brandNames[$brandCode] ?? ucfirst($brandCode),
-                'coverage' => $count,
-                'coverage_percent' => round(($count / $totalStandardItems) * 100, 1),
-            ];
-        }
-
-        // Sort by coverage descending
-        usort($brands, fn ($a, $b) => $b['coverage'] <=> $a['coverage']);
-
-        return $brands;
+        return $this->brandResolver->availableBrandsForTemplate($template);
     }
 }

@@ -2,10 +2,10 @@
 
 namespace App\Services\ElectricalPanel;
 
-use App\Models\Manufacturing\Bom;
 use App\Models\ElectricalPanel\ComponentBrandMapping;
 use App\Models\ElectricalPanel\ComponentStandard;
 use App\Models\ElectricalPanel\SpecValidationRuleSet;
+use App\Models\Manufacturing\Bom;
 use App\Support\Features;
 use Illuminate\Support\Collection;
 
@@ -106,7 +106,7 @@ class SpecValidationService
             ];
         }
 
-        $ruleSet = $ruleSet ?? $bom->getEffectiveRuleSet();
+        $ruleSet = $ruleSet ?? $this->effectiveRuleSetForBom($bom);
 
         $items = [];
         $totalWarnings = 0;
@@ -280,7 +280,7 @@ class SpecValidationService
             return ['valid' => true, 'items' => []];
         }
 
-        $ruleSet = $ruleSet ?? $bom->getEffectiveRuleSet();
+        $ruleSet = $ruleSet ?? $this->effectiveRuleSetForBom($bom);
 
         if (! $ruleSet) {
             return ['valid' => true, 'items' => []];
@@ -366,5 +366,17 @@ class SpecValidationService
             'valid' => $valid,
             'items' => $items,
         ];
+    }
+
+    private function effectiveRuleSetForBom(Bom $bom): ?SpecValidationRuleSet
+    {
+        if (Features::disabled('electrical_panel')) {
+            return null;
+        }
+
+        // Relation registered by ElectricalPanelServiceProvider
+        $attached = $bom->specRuleSet;
+
+        return $attached ?? SpecValidationRuleSet::getDefault();
     }
 }

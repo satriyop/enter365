@@ -250,6 +250,7 @@ describe('Add-on package boundaries (code isolation)', function () {
             'ProductEquivalenceService',
             'SpecValidationService',
             'SpecValidationRuleSetService',
+            'BomTemplateBrandResolver',
         ];
 
         foreach ($forbidden as $name) {
@@ -258,6 +259,31 @@ describe('Add-on package boundaries (code isolation)', function () {
 
         expect($coreFiles)->toContain('BomService')
             ->and($coreFiles)->toContain('WorkOrderService')
-            ->and($coreFiles)->toContain('MrpService');
+            ->and($coreFiles)->toContain('MrpService')
+            ->and($coreFiles)->toContain('NullBomTemplateBrandResolver');
+    });
+
+    it('core manufacturing sources do not import ElectricalPanel models', function () {
+        $paths = array_merge(
+            glob(app_path('Services/Manufacturing/*.php')) ?: [],
+            glob(app_path('Models/Manufacturing/*.php')) ?: [],
+        );
+
+        foreach ($paths as $path) {
+            $src = file_get_contents($path) ?: '';
+            expect($src)->not->toContain('App\\Models\\ElectricalPanel\\')
+                ->and($src)->not->toContain('App\\Services\\ElectricalPanel\\');
+        }
+
+        // Contract-only dependency is allowed
+        $bomTemplate = file_get_contents(app_path('Services/Manufacturing/BomTemplateService.php')) ?: '';
+        expect($bomTemplate)->toContain('BomTemplateBrandResolverInterface');
+    });
+
+    it('registers panel controllers under ElectricalPanel namespace', function () {
+        expect(class_exists(\App\Http\Controllers\Api\V1\ElectricalPanel\ComponentStandardController::class))->toBeTrue()
+            ->and(class_exists(\App\Http\Controllers\Api\V1\Solar\SolarProposalController::class))->toBeTrue()
+            ->and(file_exists(base_path('routes/addons/electrical_panel.php')))->toBeTrue()
+            ->and(file_exists(base_path('routes/addons/solar.php')))->toBeTrue();
     });
 });
