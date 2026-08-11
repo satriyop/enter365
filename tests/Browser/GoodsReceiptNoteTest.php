@@ -188,7 +188,7 @@ if (! function_exists('createPurchaseOrderInDb')) {
 
         $db->table('purchase_order_items')->insert([
             'purchase_order_id' => $poId,
-            'product_id' => 1,
+            'product_id' => browserProductId(),
             'description' => $description,
             'quantity' => $qty,
             'quantity_received' => 0,
@@ -466,7 +466,7 @@ function createGrnInDb(
     $db->table('goods_receipt_note_items')->insert([
         'goods_receipt_note_id' => $grnId,
         'purchase_order_item_id' => $poItem ? $poItem->id : null,
-        'product_id' => 1,
+        'product_id' => browserProductId(),
         'quantity_ordered' => $qty,
         'quantity_received' => 0,
         'quantity_rejected' => 0,

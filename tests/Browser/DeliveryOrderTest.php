@@ -161,7 +161,8 @@ it('can create DO from invoice and verify items match', function () {
 
     // Assert DO detail page shows correct data
     $page->assertSee('Draft');
-    $page->assertSee('PT Test Customer');
+    ensureBrowserTestCustomer();
+    $page->assertSee(browserTestCustomerName());
     $page->assertSee('DO Items Match Test');
 
     // DB assertion: DO linked to invoice

@@ -127,7 +127,7 @@ if (! function_exists('createPurchaseReturnInDb')) {
         $db->table('purchase_return_items')->insert([
             'purchase_return_id' => $prId,
             'bill_item_id' => null,
-            'product_id' => 1, // MCB 16A 1 Phase (seeded)
+            'product_id' => browserProductId(),
             'description' => $reason,
             'quantity' => $qty,
             'unit' => 'pcs',
@@ -270,18 +270,18 @@ it('approving a purchase return creates correct journal entries', function () {
     expect($totalDebit)->toBe($totalCredit);
 
     // AP account (2-1100, id=1024) should be debited for total_amount
-    $apLine = $journalLines->first(fn ($l) => $l->account_id === 1024);
+    $apLine = $journalLines->first(fn ($l) => $l->account_id === browserAccountIdByCode('2-1100'));
     expect($apLine)->not->toBeNull();
     expect($apLine->debit)->toBe($pr->total_amount);
 
     // Purchase Returns account (5-1004, id=1057) should be credited for subtotal
-    $returnLine = $journalLines->first(fn ($l) => $l->account_id === 1057);
+    $returnLine = $journalLines->first(fn ($l) => $l->account_id === browserAccountIdByCode('5-1004'));
     expect($returnLine)->not->toBeNull();
     expect((int) $returnLine->credit)->toBe((int) $pr->subtotal);
 
     // PPN Masukan account (1-1300, id=1007) should be credited for tax_amount
     if ((int) $pr->tax_amount > 0) {
-        $taxLine = $journalLines->first(fn ($l) => $l->account_id === 1007);
+        $taxLine = $journalLines->first(fn ($l) => $l->account_id === browserAccountIdByCode('1-1300'));
         expect($taxLine)->not->toBeNull();
         expect((int) $taxLine->credit)->toBe((int) $pr->tax_amount);
     }

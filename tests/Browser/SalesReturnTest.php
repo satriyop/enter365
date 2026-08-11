@@ -35,9 +35,7 @@ function getAdminUserId(): int
  */
 function getTestCustomerId(): int
 {
-    return (int) realDb()->table('contacts')
-        ->where('name', 'PT Test Customer')
-        ->value('id');
+    return (int) ensureBrowserTestCustomer()->id;
 }
 
 /**
@@ -106,7 +104,7 @@ function createSalesReturnInDb(
     $db->table('sales_return_items')->insert([
         'sales_return_id' => $srId,
         'invoice_item_id' => null,
-        'product_id' => 1, // MCB 16A 1 Phase (seeded)
+        'product_id' => browserProductId(),
         'description' => $reason,
         'quantity' => $qty,
         'unit' => 'pcs',
@@ -164,8 +162,9 @@ function createSalesReturnViaUi(
     $page->assertSee('New Sales Return');
 
     // Select customer — Radix-Vue Select
+    ensureBrowserTestCustomer();
     $page->click('[data-testid="sr-customer"]');
-    $page->click('[role="option"] >> text="PT Test Customer"');
+    $page->click('[role="option"] >> text="'.browserTestCustomerName().'"');
 
     // Fill line item description
     $page->fill('[data-testid="sr-item-0-description"]', $description);
@@ -233,7 +232,7 @@ it('can view a draft sales return detail page', function () {
     // Assert detail page renders with correct data
     $page->assertSee('SR-');
     $page->assertSee('Draft');
-    $page->assertSee('PT Test Customer');
+    $page->assertSee(browserTestCustomerName());
     $page->assertSee('View Detail Test');
 
     // Items table should show the item
@@ -295,7 +294,7 @@ it('can approve a submitted sales return via UI', function () {
 
     // Status label should show Indonesian "Disetujui"
     $page->assertSee('Disetujui');
-    $page->assertSee('PT Test Customer');
+    $page->assertSee(browserTestCustomerName());
     $page->assertSee('Approve Workflow Test');
 
     // Complete button should be visible for approved status
@@ -397,7 +396,7 @@ it('displays sales returns in the list page', function () {
 
     // Should show the SR number (or at least the prefix)
     $page->assertSee('SR-');
-    $page->assertSee('PT Test Customer');
+    $page->assertSee(browserTestCustomerName());
 });
 
 it('approving a sales return creates correct journal entries', function () {
@@ -422,19 +421,19 @@ it('approving a sales return creates correct journal entries', function () {
     expect($totalDebit)->toBe($totalCredit);
 
     // Sales Returns account (4-1004, id=1047) should be debited for subtotal
-    $returnLine = $journalLines->first(fn ($l) => $l->account_id === 1047);
+    $returnLine = $journalLines->first(fn ($l) => $l->account_id === browserAccountIdByCode('4-1004'));
     expect($returnLine)->not->toBeNull();
     expect((int) $returnLine->debit)->toBe((int) $sr->subtotal);
 
     // PPN Keluaran account (2-1200, id=1025) should be debited for tax_amount
     if ((int) $sr->tax_amount > 0) {
-        $taxLine = $journalLines->first(fn ($l) => $l->account_id === 1025);
+        $taxLine = $journalLines->first(fn ($l) => $l->account_id === browserAccountIdByCode('2-1200'));
         expect($taxLine)->not->toBeNull();
         expect((int) $taxLine->debit)->toBe((int) $sr->tax_amount);
     }
 
     // AR account (1-1100, id=1004) should be credited for total_amount
-    $arLine = $journalLines->first(fn ($l) => $l->account_id === 1004);
+    $arLine = $journalLines->first(fn ($l) => $l->account_id === browserAccountIdByCode('1-1100'));
     expect($arLine)->not->toBeNull();
     expect($arLine->credit)->toBe($sr->total_amount);
 });
@@ -472,7 +471,7 @@ it('can create sales return from invoice via API and verify link', function () {
 
     $page->assertSee('SR-');
     $page->assertSee('Draft');
-    $page->assertSee('PT Test Customer');
+    $page->assertSee(browserTestCustomerName());
 
     // Should show the linked invoice number
     $page->assertSee($invoice->invoice_number);

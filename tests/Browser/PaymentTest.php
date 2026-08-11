@@ -141,7 +141,7 @@ it('can record a payment for a posted invoice', function () {
 
     // Select customer
     $page->click('[data-testid="payment-customer"]');
-    $page->click('[role="option"] >> text="PT Test Customer"');
+    $page->click('[role="option"] >> text="'.browserTestCustomerName().'"');
 
     // Fill amount = full total
     $page->fill('[data-testid="payment-amount"]', (string) $totalAmount);
@@ -184,7 +184,7 @@ it('voiding a payment reverses JE and restores invoice status', function () {
     $page->assertSee('Record Payment');
 
     $page->click('[data-testid="payment-customer"]');
-    $page->click('[role="option"] >> text="PT Test Customer"');
+    $page->click('[role="option"] >> text="'.browserTestCustomerName().'"');
     $page->fill('[data-testid="payment-amount"]', (string) $totalAmount);
     $page->click('[data-testid="payment-account"]');
     $page->click('[role="option"] >> text=Bank BCA');
@@ -255,7 +255,7 @@ it('recording a payment creates correct journal entry lines', function () {
     $page->navigate(spaUrl("/payments/new?invoice_id={$invoiceId}"));
     $page->assertSee('Record Payment');
     $page->click('[data-testid="payment-customer"]');
-    $page->click('[role="option"] >> text="PT Test Customer"');
+    $page->click('[role="option"] >> text="'.browserTestCustomerName().'"');
     $page->fill('[data-testid="payment-amount"]', (string) $totalAmount);
     $page->click('[data-testid="payment-account"]');
     $page->click('[role="option"] >> text=Bank BCA');
@@ -278,12 +278,12 @@ it('recording a payment creates correct journal entry lines', function () {
     expect($jeLines->sum('debit'))->toBe($jeLines->sum('credit'));
 
     // Debit: Bank BCA (1-1010, id=1001) for total amount
-    $cashLine = $jeLines->first(fn ($l) => $l->account_id === 1001);
+    $cashLine = $jeLines->first(fn ($l) => $l->account_id === browserCashAccountId());
     expect($cashLine)->not->toBeNull();
     expect((int) $cashLine->debit)->toBe($totalAmount);
 
     // Credit: Piutang Usaha / AR (1-1100, id=1004) for total amount
-    $arLine = $jeLines->first(fn ($l) => $l->account_id === 1004);
+    $arLine = $jeLines->first(fn ($l) => $l->account_id === browserAccountIdByCode('1-1100'));
     expect($arLine)->not->toBeNull();
     expect((int) $arLine->credit)->toBe($totalAmount);
 
@@ -311,7 +311,7 @@ it('voiding a payment creates correct reversal journal entry lines', function ()
     $page->navigate(spaUrl("/payments/new?invoice_id={$invoiceId}"));
     $page->assertSee('Record Payment');
     $page->click('[data-testid="payment-customer"]');
-    $page->click('[role="option"] >> text="PT Test Customer"');
+    $page->click('[role="option"] >> text="'.browserTestCustomerName().'"');
     $page->fill('[data-testid="payment-amount"]', (string) $totalAmount);
     $page->click('[data-testid="payment-account"]');
     $page->click('[role="option"] >> text=Bank BCA');
@@ -346,12 +346,12 @@ it('voiding a payment creates correct reversal journal entry lines', function ()
     expect($reversalLines->sum('debit'))->toBe($reversalLines->sum('credit'));
 
     // Reversal: Debit AR (1-1100, id=1004) — opposite of original
-    $arLine = $reversalLines->first(fn ($l) => $l->account_id === 1004);
+    $arLine = $reversalLines->first(fn ($l) => $l->account_id === browserAccountIdByCode('1-1100'));
     expect($arLine)->not->toBeNull();
     expect((int) $arLine->debit)->toBe($totalAmount);
 
     // Reversal: Credit Cash (1-1010, id=1001) — opposite of original
-    $cashLine = $reversalLines->first(fn ($l) => $l->account_id === 1001);
+    $cashLine = $reversalLines->first(fn ($l) => $l->account_id === browserCashAccountId());
     expect($cashLine)->not->toBeNull();
     expect((int) $cashLine->credit)->toBe($totalAmount);
 
@@ -412,12 +412,12 @@ it('recording a bill payment creates correct journal entry lines', function () {
     expect($jeLines->sum('debit'))->toBe($jeLines->sum('credit'));
 
     // Debit: AP (2-1100, id=1024) — reducing payable
-    $apLine = $jeLines->first(fn ($l) => $l->account_id === 1024);
+    $apLine = $jeLines->first(fn ($l) => $l->account_id === browserAccountIdByCode('2-1100'));
     expect($apLine)->not->toBeNull();
     expect((int) $apLine->debit)->toBe($totalAmount);
 
     // Credit: Bank BCA (1-1010, id=1001) — cash out
-    $cashLine = $jeLines->first(fn ($l) => $l->account_id === 1001);
+    $cashLine = $jeLines->first(fn ($l) => $l->account_id === browserCashAccountId());
     expect($cashLine)->not->toBeNull();
     expect((int) $cashLine->credit)->toBe($totalAmount);
 
@@ -482,12 +482,12 @@ it('voiding a bill payment creates correct reversal journal entry lines', functi
     expect($reversalLines->sum('debit'))->toBe($reversalLines->sum('credit'));
 
     // Reversal: Debit Cash (1-1010, id=1001) — opposite of original
-    $cashLine = $reversalLines->first(fn ($l) => $l->account_id === 1001);
+    $cashLine = $reversalLines->first(fn ($l) => $l->account_id === browserCashAccountId());
     expect($cashLine)->not->toBeNull();
     expect((int) $cashLine->debit)->toBe($totalAmount);
 
     // Reversal: Credit AP (2-1100, id=1024) — opposite of original
-    $apLine = $reversalLines->first(fn ($l) => $l->account_id === 1024);
+    $apLine = $reversalLines->first(fn ($l) => $l->account_id === browserAccountIdByCode('2-1100'));
     expect($apLine)->not->toBeNull();
     expect((int) $apLine->credit)->toBe($totalAmount);
 
@@ -522,7 +522,7 @@ it('shows payments in the list page', function () {
     $page->navigate(spaUrl("/payments/new?invoice_id={$invoiceId}"));
     $page->assertSee('Record Payment');
     $page->click('[data-testid="payment-customer"]');
-    $page->click('[role="option"] >> text="PT Test Customer"');
+    $page->click('[role="option"] >> text="'.browserTestCustomerName().'"');
     $page->fill('[data-testid="payment-amount"]', (string) $totalAmount);
     $page->click('[data-testid="payment-account"]');
     $page->click('[role="option"] >> text=Bank BCA');

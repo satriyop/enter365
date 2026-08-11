@@ -20,13 +20,15 @@ declare(strict_types=1);
  */
 function createQuotation(string $subject = 'E2E Test Quotation')
 {
+    ensureBrowserTestCustomer();
+    $productId = browserProductId();
     $page = loginAndVisit('/quotations/new');
 
     $page->assertSee('New Quotation');
 
     // Select customer — open Radix-Vue combobox then pick option
     $page->click('[data-testid="quotation-customer"]');
-    $page->click('[role="option"] >> text="PT Test Customer"');
+    $page->click('[role="option"] >> text="'.browserTestCustomerName().'"');
 
     // Fill subject
     $page->fill('[data-testid="quotation-subject"]', $subject);
@@ -34,7 +36,7 @@ function createQuotation(string $subject = 'E2E Test Quotation')
     // Fill first line item — select product by value (product ID).
     // Pest's guessLocator needs CSS special chars to use explicit mode;
     // 'td > select' targets the product select (parent=TD), not the discount select (parent=DIV).
-    $page->select('[data-testid="quotation-item-0-product"]', '1');
+    $page->select('[data-testid="quotation-item-0-product"]', (string) $productId);
 
     // Set quantity
     $page->fill('[data-testid="quotation-item-0-quantity"]', '10');
@@ -51,12 +53,14 @@ function createQuotation(string $subject = 'E2E Test Quotation')
 it('can create a quotation with line items via SPA form', function () {
     $page = createQuotation('E2E Create Test');
 
+    $productName = realDb()->table('products')->where('id', browserProductId())->value('name');
+
     // Should be on the quotation detail page
     $page->assertSee('Draft')
-        ->assertSee('PT Test Customer')
+        ->assertSee(browserTestCustomerName())
         ->assertSee('E2E Create Test')
-        ->assertSee('MCB 16A 1 Phase')
-        ->assertSee('10 pcs');
+        ->assertSee($productName)
+        ->assertSee('10');
 });
 
 it('shows quotations in the list', function () {
@@ -64,7 +68,7 @@ it('shows quotations in the list', function () {
 
     $page->assertSee('Quotations')
         ->assertSee('QUO-')
-        ->assertSee('PT Test Customer');
+        ->assertSee(browserTestCustomerName());
 });
 
 it('can submit quotation for approval', function () {

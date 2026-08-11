@@ -143,7 +143,7 @@ if (! function_exists('createPurchaseOrderInDb')) {
 
         $db->table('purchase_order_items')->insert([
             'purchase_order_id' => $poId,
-            'product_id' => 1,
+            'product_id' => browserProductId(),
             'description' => $description,
             'quantity' => $qty,
             'quantity_received' => 0,

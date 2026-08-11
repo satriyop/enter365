@@ -89,26 +89,26 @@ function createJournalEntryInDb(
         'updated_at' => now(),
     ]);
 
-    // Line 1: Debit Bank BCA (1-1010, id=1001)
+    // Insert both lines together — PG balance trigger rejects partial JE inserts.
     $db->table('journal_entry_lines')->insert([
-        'journal_entry_id' => $jeId,
-        'account_id' => 1001,
-        'description' => 'Debit line: '.$description,
-        'debit' => $amount,
-        'credit' => 0,
-        'created_at' => now(),
-        'updated_at' => now(),
-    ]);
-
-    // Line 2: Credit Pembelian (5-1002, id=1055)
-    $db->table('journal_entry_lines')->insert([
-        'journal_entry_id' => $jeId,
-        'account_id' => 1055,
-        'description' => 'Credit line: '.$description,
-        'debit' => 0,
-        'credit' => $amount,
-        'created_at' => now(),
-        'updated_at' => now(),
+        [
+            'journal_entry_id' => $jeId,
+            'account_id' => browserCashAccountId(),
+            'description' => 'Debit line: '.$description,
+            'debit' => $amount,
+            'credit' => 0,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
+        [
+            'journal_entry_id' => $jeId,
+            'account_id' => browserAccountIdByCode('5-1002'),
+            'description' => 'Credit line: '.$description,
+            'debit' => 0,
+            'credit' => $amount,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
     ]);
 
     return $jeId;

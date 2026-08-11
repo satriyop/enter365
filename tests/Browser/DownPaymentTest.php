@@ -28,12 +28,7 @@ declare(strict_types=1);
 if (! function_exists('getTestSupplierName')) {
     function getTestSupplierName(): string
     {
-        $name = realDb()->table('contacts')
-            ->where('type', 'supplier')
-            ->orderBy('id')
-            ->value('name');
-
-        return $name ?: 'Rohan-Predovic';
+        return ensureBrowserTestSupplier()->name;
     }
 }
 
@@ -67,6 +62,7 @@ if (! function_exists('createBillViaUi')) {
         string $price = '50000',
     ) {
         $supplierName = getTestSupplierName();
+        ensureOpenCurrentFiscalPeriod();
         $page = loginAndVisit('/bills/new');
 
         $page->assertSee('New Bill');
@@ -177,9 +173,9 @@ function createDownPaymentInDb(
 
     // Use customer for receivable, supplier for payable
     if ($type === 'receivable') {
-        $contactId = (int) $db->table('contacts')->where('name', 'PT Test Customer')->value('id');
+        $contactId = (int) ensureBrowserTestCustomer()->id;
     } else {
-        $contactId = (int) $db->table('contacts')->where('type', 'supplier')->orderBy('id')->value('id');
+        $contactId = (int) ensureBrowserTestSupplier()->id;
     }
 
     $dpId = (int) $db->table('down_payments')->insertGetId([
@@ -191,7 +187,7 @@ function createDownPaymentInDb(
         'applied_amount' => 0,
         // remaining_amount is a generated column (amount - applied_amount)
         'payment_method' => 'transfer',
-        'cash_account_id' => 1001, // Bank BCA
+        'cash_account_id' => browserCashAccountId(),
         'reference' => 'E2E-DP-REF',
         'description' => 'E2E Down Payment Test',
         'notes' => 'Created by E2E test',
@@ -221,12 +217,14 @@ function createDownPaymentViaService(
     $userId = (int) $db->table('users')->where('email', 'admin@example.com')->value('id');
 
     if ($type === 'receivable') {
-        $contactId = (int) $db->table('contacts')->where('name', 'PT Test Customer')->value('id');
+        $contactId = (int) ensureBrowserTestCustomer()->id;
     } else {
-        $contactId = (int) $db->table('contacts')->where('type', 'supplier')->orderBy('id')->value('id');
+        $contactId = (int) ensureBrowserTestSupplier()->id;
     }
 
-    return withRealDb(function () use ($type, $amount, $contactId, $userId) {
+    $cashAccountId = browserCashAccountId();
+
+    return withRealDb(function () use ($type, $amount, $contactId, $userId, $cashAccountId) {
         $service = app(\App\Contracts\Sales\DownPaymentServiceInterface::class);
         $dp = $service->create([
             'type' => $type,
@@ -234,7 +232,7 @@ function createDownPaymentViaService(
             'dp_date' => now()->toDateString(),
             'amount' => $amount,
             'payment_method' => 'transfer',
-            'cash_account_id' => 1001, // Bank BCA
+            'cash_account_id' => $cashAccountId,
             'reference' => 'E2E-DP-REF',
             'description' => 'E2E Down Payment Test',
             'notes' => 'Created by E2E test via service',
@@ -257,7 +255,7 @@ it('can view a down payment detail page', function () {
     // Assert detail page renders with correct data
     $page->assertSee('DPR-');
     $page->assertSee('Aktif'); // Indonesian for Active
-    $page->assertSee('PT Test Customer');
+    $page->assertSee(browserTestCustomerName());
 
     // Refund button should be visible (remaining > 0)
     $page->assertSee('Refund');
@@ -323,7 +321,7 @@ it('creating a down payment via service creates correct journal entry', function
     expect($jeLines->sum('debit'))->toBe($jeLines->sum('credit'));
 
     // Debit: Bank BCA (1-1010, id=1001)
-    $cashLine = $jeLines->first(fn ($l) => $l->account_id === 1001);
+    $cashLine = $jeLines->first(fn ($l) => $l->account_id === browserCashAccountId());
     expect($cashLine)->not->toBeNull();
     expect((int) $cashLine->debit)->toBe(5000000);
 
@@ -385,7 +383,7 @@ it('applying a down payment to invoice creates correct journal entry', function 
     expect((int) $dpLine->debit)->toBe($applyAmount);
 
     // Credit: Piutang Usaha / AR (1-1100, id=1004) — reducing receivable
-    $arLine = $jeLines->first(fn ($l) => $l->account_id === 1004);
+    $arLine = $jeLines->first(fn ($l) => $l->account_id === browserAccountIdByCode('1-1100'));
     expect($arLine)->not->toBeNull();
     expect((int) $arLine->credit)->toBe($applyAmount);
 
@@ -443,7 +441,7 @@ it('cancelling a down payment reverses the journal entry', function () {
     expect($dpLine)->not->toBeNull();
     expect((int) $dpLine->debit)->toBe(2000000);
 
-    $cashLine = $reversalLines->first(fn ($l) => $l->account_id === 1001);
+    $cashLine = $reversalLines->first(fn ($l) => $l->account_id === browserCashAccountId());
     expect($cashLine)->not->toBeNull();
     expect((int) $cashLine->credit)->toBe(2000000);
 });
@@ -488,12 +486,12 @@ it('applying a payable down payment to bill creates correct journal entry', func
     expect($jeLines->sum('debit'))->toBe($jeLines->sum('credit'));
 
     // Debit: AP (2-1100, id=1024) — reducing payable
-    $apLine = $jeLines->first(fn ($l) => $l->account_id === 1024);
+    $apLine = $jeLines->first(fn ($l) => $l->account_id === browserAccountIdByCode('2-1100'));
     expect($apLine)->not->toBeNull();
     expect((int) $apLine->debit)->toBe($applyAmount);
 
     // Credit: Uang Muka Pembelian (1-1700, id=1083) — reducing DP asset
-    $dpLine = $jeLines->first(fn ($l) => $l->account_id === 1083);
+    $dpLine = $jeLines->first(fn ($l) => $l->account_id === browserAccountIdByCode('1-1700'));
     expect($dpLine)->not->toBeNull();
     expect((int) $dpLine->credit)->toBe($applyAmount);
 
@@ -560,12 +558,12 @@ it('refunding a receivable down payment creates correct journal entry', function
     expect($jeLines->sum('debit'))->toBe($jeLines->sum('credit'));
 
     // Debit: DP Liability (2-1700, id=1082) — reducing the liability
-    $dpLiabLine = $jeLines->first(fn ($l) => $l->account_id === 1082);
+    $dpLiabLine = $jeLines->first(fn ($l) => $l->account_id === browserAccountIdByCode('2-1700'));
     expect($dpLiabLine)->not->toBeNull();
     expect((int) $dpLiabLine->debit)->toBe(2000000);
 
     // Credit: Cash (1-1010, id=1001) — cash out for refund
-    $cashLine = $jeLines->first(fn ($l) => $l->account_id === 1001);
+    $cashLine = $jeLines->first(fn ($l) => $l->account_id === browserCashAccountId());
     expect($cashLine)->not->toBeNull();
     expect((int) $cashLine->credit)->toBe(2000000);
 

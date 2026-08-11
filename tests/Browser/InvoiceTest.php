@@ -19,14 +19,14 @@ it('can create an invoice and verify it in the list', function () {
 
     // Should be on the detail page with Draft status
     $page->assertSee('Draft')
-        ->assertSee('PT Test Customer')
+        ->assertSee(browserTestCustomerName())
         ->assertSee('Invoice Create Test');
 
     // Navigate to list and verify
     $page->navigate(spaUrl('/invoices'));
     $page->assertSee('Invoices')
         ->assertSee('INV-')
-        ->assertSee('PT Test Customer');
+        ->assertSee(browserTestCustomerName());
 });
 
 it('can post an invoice and journal entry is created', function () {
@@ -59,12 +59,12 @@ it('can post an invoice and journal entry is created', function () {
     expect($totalDebit)->toBe($totalCredit);
 
     // AR account (1-1100) should be debited for total_amount
-    $arLine = $journalLines->first(fn ($l) => $l->account_id === 1004); // 1-1100
+    $arLine = $journalLines->first(fn ($l) => $l->account_id === browserAccountIdByCode('1-1100'));
     expect($arLine)->not->toBeNull();
     expect($arLine->debit)->toBe($invoice->total_amount);
 
     // Revenue account (4-1001) should be credited
-    $revLine = $journalLines->first(fn ($l) => $l->account_id === 1044); // 4-1001
+    $revLine = $journalLines->first(fn ($l) => $l->account_id === browserAccountIdByCode('4-1001'));
     expect($revLine)->not->toBeNull();
     expect((int) $revLine->credit)->toBeGreaterThan(0);
 });
@@ -86,7 +86,7 @@ it('can record partial payment and status changes to Partial', function () {
 
     // Select customer
     $page->click('[data-testid="payment-customer"]');
-    $page->click('[role="option"] >> text="PT Test Customer"');
+    $page->click('[role="option"] >> text="'.browserTestCustomerName().'"');
 
     // Fill amount
     $page->fill('[data-testid="payment-amount"]', (string) $partialAmount);
@@ -121,7 +121,7 @@ it('can record remaining payment and status changes to Paid', function () {
     $page->assertSee('Record Payment');
 
     $page->click('[data-testid="payment-customer"]');
-    $page->click('[role="option"] >> text="PT Test Customer"');
+    $page->click('[role="option"] >> text="'.browserTestCustomerName().'"');
     $page->fill('[data-testid="payment-amount"]', (string) $firstPayment);
     $page->click('[data-testid="payment-account"]');
     $page->click('[role="option"] >> text=Bank BCA');
@@ -137,7 +137,7 @@ it('can record remaining payment and status changes to Paid', function () {
     $page->assertSee('Record Payment');
 
     $page->click('[data-testid="payment-customer"]');
-    $page->click('[role="option"] >> text="PT Test Customer"');
+    $page->click('[role="option"] >> text="'.browserTestCustomerName().'"');
     $page->fill('[data-testid="payment-amount"]', (string) $secondPayment);
     $page->click('[data-testid="payment-account"]');
     $page->click('[role="option"] >> text=Bank BCA');
@@ -164,7 +164,7 @@ it('can record remaining payment and status changes to Paid', function () {
 
     $arBalance = realDb()->table('journal_entry_lines')
         ->whereIn('journal_entry_id', $journalIds)
-        ->where('account_id', 1004) // 1-1100 AR
+        ->where('account_id', browserAccountIdByCode('1-1100')) // 1-1100 AR
         ->selectRaw('COALESCE(SUM(debit), 0) - COALESCE(SUM(credit), 0) as balance')
         ->value('balance');
 
@@ -185,7 +185,7 @@ it('maintains balanced trial balance after all operations', function () {
     $page->assertSee('Record Payment');
 
     $page->click('[data-testid="payment-customer"]');
-    $page->click('[role="option"] >> text="PT Test Customer"');
+    $page->click('[role="option"] >> text="'.browserTestCustomerName().'"');
     $page->fill('[data-testid="payment-amount"]', (string) $totalAmount);
     $page->click('[data-testid="payment-account"]');
     $page->click('[role="option"] >> text=Bank BCA');

@@ -157,6 +157,9 @@ function spaUrl(string $path = ''): string
  */
 function loginAndVisit(string $path = '/')
 {
+    // Keep live browser DB postable across suites that lock fiscal periods.
+    ensureOpenCurrentFiscalPeriod();
+
     $page = visit(spaUrl('/login'));
 
     $page->fill('[data-testid="login-email"]', 'admin@example.com')
@@ -197,17 +200,207 @@ function realDb(): \Illuminate\Database\ConnectionInterface
 }
 
 /**
+ * Canonical browser E2E customer name (created if missing).
+ */
+function browserTestCustomerName(): string
+{
+    return 'PT Test Customer';
+}
+
+/**
+ * Canonical browser E2E supplier name (created if missing).
+ */
+function browserTestSupplierName(): string
+{
+    return 'PT Test Supplier';
+}
+
+/**
+ * Ensure the SPA combobox customer exists in the live browser DB.
+ *
+ * @return object{id: int, name: string, type: string}
+ */
+function ensureBrowserTestCustomer(): object
+{
+    $db = realDb();
+    $name = browserTestCustomerName();
+
+    $existing = $db->table('contacts')
+        ->where('name', $name)
+        ->whereNull('deleted_at')
+        ->first();
+
+    if ($existing) {
+        if (! $existing->is_active) {
+            $db->table('contacts')->where('id', $existing->id)->update([
+                'is_active' => true,
+                'updated_at' => now(),
+            ]);
+            $existing->is_active = true;
+        }
+
+        return $existing;
+    }
+
+    $id = (int) $db->table('contacts')->insertGetId([
+        'code' => 'E2E-CUST',
+        'name' => $name,
+        'type' => 'customer',
+        'email' => 'e2e-customer@example.com',
+        'phone' => '08123456789',
+        'address' => 'Jakarta',
+        'city' => 'Jakarta',
+        'is_active' => true,
+        'credit_limit' => 0,
+        'payment_term_days' => 30,
+        'currency' => 'IDR',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    return $db->table('contacts')->where('id', $id)->first();
+}
+
+/**
+ * Ensure a supplier contact exists for bill/PO browser flows.
+ *
+ * @return object{id: int, name: string, type: string}
+ */
+function ensureBrowserTestSupplier(): object
+{
+    $db = realDb();
+    $name = browserTestSupplierName();
+
+    $existing = $db->table('contacts')
+        ->where('name', $name)
+        ->whereNull('deleted_at')
+        ->first();
+
+    if ($existing) {
+        if (! $existing->is_active) {
+            $db->table('contacts')->where('id', $existing->id)->update([
+                'is_active' => true,
+                'updated_at' => now(),
+            ]);
+        }
+
+        return $db->table('contacts')->where('id', $existing->id)->first();
+    }
+
+    // Prefer an existing real supplier if present
+    $supplier = $db->table('contacts')
+        ->whereIn('type', ['supplier', 'both'])
+        ->where('is_active', true)
+        ->whereNull('deleted_at')
+        ->orderBy('id')
+        ->first();
+
+    if ($supplier) {
+        return $supplier;
+    }
+
+    $id = (int) $db->table('contacts')->insertGetId([
+        'code' => 'E2E-SUP',
+        'name' => $name,
+        'type' => 'supplier',
+        'email' => 'e2e-supplier@example.com',
+        'phone' => '08129876543',
+        'address' => 'Jakarta',
+        'city' => 'Jakarta',
+        'is_active' => true,
+        'credit_limit' => 0,
+        'payment_term_days' => 30,
+        'currency' => 'IDR',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    return $db->table('contacts')->where('id', $id)->first();
+}
+
+/**
+ * Resolve a CoA account id by code from the browser DB (IDs drift across seeds).
+ */
+function browserAccountIdByCode(string $code): int
+{
+    $id = realDb()->table('accounts')->where('code', $code)->value('id');
+
+    if (! $id) {
+        throw new RuntimeException("Browser DB missing account code {$code}");
+    }
+
+    return (int) $id;
+}
+
+/**
+ * Bank / cash account used by payment & DP browser tests (1-1010 Bank BCA).
+ */
+function browserCashAccountId(): int
+{
+    return browserAccountIdByCode('1-1010');
+}
+
+/**
+ * Ensure fiscal periods are open/unlocked so posting is not blocked by leftover
+ * browser test state (FiscalPeriodTest can leave locks behind on the live DB).
+ *
+ * Uses the `status` column (open|locked|closing|closed) — not only legacy booleans.
+ */
+function ensureOpenCurrentFiscalPeriod(): void
+{
+    $db = realDb();
+
+    $db->table('fiscal_periods')
+        ->where('start_date', '<=', now()->toDateString())
+        ->where('end_date', '>=', now()->toDateString())
+        ->update([
+            'status' => 'open',
+            'is_closed' => false,
+            'is_locked' => false,
+            'closed_at' => null,
+            'closed_by' => null,
+            'updated_at' => now(),
+        ]);
+
+    // Clear stray locked/closing rows that still look "active" via legacy flags.
+    $db->table('fiscal_periods')
+        ->whereIn('status', ['locked', 'closing'])
+        ->update([
+            'status' => 'open',
+            'is_locked' => false,
+            'is_closed' => false,
+            'updated_at' => now(),
+        ]);
+}
+
+/**
+ * First available product id in the browser DB.
+ */
+function browserProductId(): int
+{
+    $id = realDb()->table('products')->whereNull('deleted_at')->orderBy('id')->value('id');
+
+    if (! $id) {
+        throw new RuntimeException('Browser DB has no products');
+    }
+
+    return (int) $id;
+}
+
+/**
  * Create an invoice via the SPA form and return the page on the detail view.
  */
 function createInvoice(string $description = 'E2E Test Item', int $qty = 10, string $price = '100000')
 {
+    ensureOpenCurrentFiscalPeriod();
+    $customer = ensureBrowserTestCustomer();
     $page = loginAndVisit('/invoices/new');
 
     $page->assertSee('New Invoice');
 
     // Select customer — Radix-Vue Select
     $page->click('[data-testid="invoice-customer"]');
-    $page->click('[role="option"] >> text="PT Test Customer"');
+    $page->click('[role="option"] >> text="'.$customer->name.'"');
 
     // Fill line item description
     $page->fill('[data-testid="invoice-item-0-description"]', $description);
@@ -233,6 +426,7 @@ function createInvoice(string $description = 'E2E Test Item', int $qty = 10, str
  */
 function postInvoice($page): void
 {
+    ensureOpenCurrentFiscalPeriod();
     $page->click('Post Invoice');
     $page->assertSee('posted successfully');
 
@@ -342,6 +536,7 @@ function createConfirmedWorkOrder(): WorkOrder
 function ensureInventorySetup(): array
 {
     $db = realDb();
+    $productId = browserProductId();
 
     // Get or create a warehouse
     $warehouse = $db->table('warehouses')->where('is_active', true)->first();
@@ -358,18 +553,16 @@ function ensureInventorySetup(): array
         $warehouseId = (int) $warehouse->id;
     }
 
-    // Ensure product 1 has inventory tracking
-    $db->table('products')->where('id', 1)->update(['track_inventory' => true]);
+    $db->table('products')->where('id', $productId)->update(['track_inventory' => true]);
 
-    // Ensure product stock exists
     $stock = $db->table('product_stocks')
-        ->where('product_id', 1)
+        ->where('product_id', $productId)
         ->where('warehouse_id', $warehouseId)
         ->first();
 
     if (! $stock) {
         $db->table('product_stocks')->insert([
-            'product_id' => 1,
+            'product_id' => $productId,
             'warehouse_id' => $warehouseId,
             'quantity' => 100,
             'reserved_quantity' => 0,
@@ -378,5 +571,5 @@ function ensureInventorySetup(): array
         ]);
     }
 
-    return ['product_id' => 1, 'warehouse_id' => $warehouseId];
+    return ['product_id' => $productId, 'warehouse_id' => $warehouseId];
 }

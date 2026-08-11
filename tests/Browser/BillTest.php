@@ -178,7 +178,7 @@ if (! function_exists('createBillInDb')) {
             'paid_amount' => 0,
             'status' => $status,
             'journal_entry_id' => null,
-            'payable_account_id' => 1024, // AP 2-1100
+            'payable_account_id' => browserAccountIdByCode('2-1100'),
             'currency' => 'IDR',
             'exchange_rate' => 1,
             'base_currency_total' => $totalAmount,
@@ -268,17 +268,17 @@ it('posting a bill creates correct journal entries', function () {
     expect($totalDebit)->toBe($totalCredit);
 
     // Expense account (5-1002, id=1055) should be debited for line total
-    $expenseLine = $journalLines->first(fn ($l) => $l->account_id === 1055);
+    $expenseLine = $journalLines->first(fn ($l) => $l->account_id === browserAccountIdByCode('5-1002'));
     expect($expenseLine)->not->toBeNull();
     expect((int) $expenseLine->debit)->toBeGreaterThan(0);
 
     // PPN Masukan account (1-1300, id=1007) should be debited for tax
-    $taxLine = $journalLines->first(fn ($l) => $l->account_id === 1007);
+    $taxLine = $journalLines->first(fn ($l) => $l->account_id === browserAccountIdByCode('1-1300'));
     expect($taxLine)->not->toBeNull();
     expect((int) $taxLine->debit)->toBeGreaterThan(0);
 
     // AP account (2-1100, id=1024) should be credited for total_amount
-    $apLine = $journalLines->first(fn ($l) => $l->account_id === 1024);
+    $apLine = $journalLines->first(fn ($l) => $l->account_id === browserAccountIdByCode('2-1100'));
     expect($apLine)->not->toBeNull();
     expect($apLine->credit)->toBe($bill->total_amount);
 });
@@ -363,7 +363,7 @@ it('full payment zeros AP balance and trial balance is balanced', function () {
 
     $apBalance = realDb()->table('journal_entry_lines')
         ->whereIn('journal_entry_id', $journalIds)
-        ->where('account_id', 1024) // 2-1100 AP
+        ->where('account_id', browserAccountIdByCode('2-1100'))
         ->selectRaw('COALESCE(SUM(debit), 0) - COALESCE(SUM(credit), 0) as balance')
         ->value('balance');
 
