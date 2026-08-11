@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api\V1\ElectricalPanel;
 
 use App\Http\Controllers\Api\V1\Controller;
-use App\Http\Requests\Api\V1\StoreComponentBrandMappingRequest;
-use App\Http\Requests\Api\V1\UpdateComponentBrandMappingRequest;
-use App\Http\Resources\Api\V1\ComponentBrandMappingResource;
+use App\Http\Requests\Api\V1\ElectricalPanel\StoreComponentBrandMappingRequest;
+use App\Http\Requests\Api\V1\ElectricalPanel\UpdateComponentBrandMappingRequest;
+use App\Http\Resources\Api\V1\ElectricalPanel\ComponentBrandMappingResource;
 use App\Models\ElectricalPanel\ComponentBrandMapping;
 use App\Models\ElectricalPanel\ComponentStandard;
 use App\Services\ElectricalPanel\ComponentBrandMappingService;

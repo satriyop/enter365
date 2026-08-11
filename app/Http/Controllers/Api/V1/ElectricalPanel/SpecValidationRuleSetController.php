@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Api\V1\ElectricalPanel;
 
 use App\Http\Controllers\Api\V1\Controller;
-use App\Http\Requests\Api\V1\StoreSpecValidationRuleRequest;
-use App\Http\Requests\Api\V1\StoreSpecValidationRuleSetRequest;
-use App\Http\Requests\Api\V1\UpdateSpecValidationRuleRequest;
-use App\Http\Requests\Api\V1\UpdateSpecValidationRuleSetRequest;
-use App\Http\Resources\Api\V1\SpecValidationRuleResource;
-use App\Http\Resources\Api\V1\SpecValidationRuleSetResource;
+use App\Http\Requests\Api\V1\ElectricalPanel\StoreSpecValidationRuleRequest;
+use App\Http\Requests\Api\V1\ElectricalPanel\StoreSpecValidationRuleSetRequest;
+use App\Http\Requests\Api\V1\ElectricalPanel\UpdateSpecValidationRuleRequest;
+use App\Http\Requests\Api\V1\ElectricalPanel\UpdateSpecValidationRuleSetRequest;
+use App\Http\Resources\Api\V1\ElectricalPanel\SpecValidationRuleResource;
+use App\Http\Resources\Api\V1\ElectricalPanel\SpecValidationRuleSetResource;
 use App\Models\ElectricalPanel\ComponentStandard;
 use App\Models\ElectricalPanel\SpecValidationRule;
 use App\Models\ElectricalPanel\SpecValidationRuleSet;

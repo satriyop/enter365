@@ -60,6 +60,14 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
     }
 
     /**
+     * Core has no panel meta tables — ignore standard attachment.
+     */
+    public function syncTemplateItemStandard(BomTemplateItem $item, ?int $componentStandardId): void
+    {
+        // no-op
+    }
+
+    /**
      * @param  array{code: string, name?: string|null, thumbnail_path?: string|null}  $options
      */
     public function duplicateTemplate(BomTemplate $template, array $options): BomTemplate

@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Api\V1\Solar;
 
 use App\Http\Controllers\Api\V1\Controller;
-use App\Http\Requests\Api\V1\SolarCitiesRequest;
-use App\Http\Requests\Api\V1\SolarLookupRequest;
-use App\Http\Resources\Api\V1\IndonesiaSolarDataResource;
-use App\Http\Resources\Api\V1\PlnTariffResource;
+use App\Http\Requests\Api\V1\Solar\SolarCitiesRequest;
+use App\Http\Requests\Api\V1\Solar\SolarLookupRequest;
+use App\Http\Resources\Api\V1\Solar\IndonesiaSolarDataResource;
+use App\Http\Resources\Api\V1\Solar\PlnTariffResource;
 use App\Models\Solar\IndonesiaSolarData;
 use App\Models\Solar\PlnTariff;
 use Illuminate\Http\JsonResponse;

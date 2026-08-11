@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Contracts\Manufacturing;
 
 use App\Models\Manufacturing\BomTemplate;
+use App\Models\Manufacturing\BomTemplateItem;
 
 /**
  * BOM Template service — core product/manual implementation, or brand-aware
@@ -30,6 +31,12 @@ interface BomTemplateServiceInterface
      * @param  array{code: string, name?: string|null, thumbnail_path?: string|null}  $options
      */
     public function duplicateTemplate(BomTemplate $template, array $options): BomTemplate;
+
+    /**
+     * Persist panel component-standard meta for a template item.
+     * Core no-op; ElectricalPanel implementation writes meta tables.
+     */
+    public function syncTemplateItemStandard(BomTemplateItem $item, ?int $componentStandardId): void;
 
     /**
      * Create a BOM from a template (core: product/manual only; panel: brand resolve).

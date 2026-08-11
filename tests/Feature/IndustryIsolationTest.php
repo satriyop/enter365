@@ -332,6 +332,29 @@ describe('Add-on package boundaries (code isolation)', function () {
             ->and(file_exists(base_path('routes/addons/solar.php')))->toBeTrue();
     });
 
+    it('keeps industry form requests under add-on HTTP namespaces', function () {
+        expect(class_exists(\App\Http\Requests\Api\V1\ElectricalPanel\SwapBrandRequest::class))->toBeTrue()
+            ->and(class_exists(\App\Http\Requests\Api\V1\ElectricalPanel\StoreComponentStandardRequest::class))->toBeTrue()
+            ->and(class_exists(\App\Http\Requests\Api\V1\Solar\StoreSolarProposalRequest::class))->toBeTrue()
+            ->and(file_exists(app_path('Http/Requests/Api/V1/SwapBrandRequest.php')))->toBeFalse()
+            ->and(file_exists(app_path('Http/Requests/Api/V1/StoreComponentStandardRequest.php')))->toBeFalse()
+            ->and(file_exists(app_path('Http/Requests/Api/V1/StoreSolarProposalRequest.php')))->toBeFalse();
+    });
+
+    it('keeps industry API resources under add-on HTTP namespaces', function () {
+        expect(class_exists(\App\Http\Resources\Api\V1\ElectricalPanel\ComponentStandardResource::class))->toBeTrue()
+            ->and(class_exists(\App\Http\Resources\Api\V1\Solar\SolarProposalResource::class))->toBeTrue()
+            ->and(file_exists(app_path('Http/Resources/Api/V1/ComponentStandardResource.php')))->toBeFalse()
+            ->and(file_exists(app_path('Http/Resources/Api/V1/SolarProposalResource.php')))->toBeFalse();
+    });
+
+    it('BomTemplateController does not hard-reference ElectricalPanel models', function () {
+        $src = file_get_contents(app_path('Http/Controllers/Api/V1/BomTemplateController.php')) ?: '';
+
+        expect($src)->not->toContain('App\\Models\\ElectricalPanel\\')
+            ->and($src)->not->toContain('BomTemplateItemPanelMeta');
+    });
+
     it('keeps industry exports and imports under add-on namespaces', function () {
         expect(class_exists(\App\Exports\ElectricalPanel\ComponentMappingTemplateExport::class))->toBeTrue()
             ->and(class_exists(\App\Imports\ElectricalPanel\ComponentMappingImport::class))->toBeTrue()

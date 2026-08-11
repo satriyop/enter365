@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api\Solar;
 
 use App\Enums\DocumentStatus;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\Api\V1\SolarProposalResource;
+use App\Http\Resources\Api\V1\Solar\SolarProposalResource;
 use App\Models\Solar\SolarProposal;
 use App\Services\Solar\SolarProposalService;
 use Illuminate\Http\JsonResponse;

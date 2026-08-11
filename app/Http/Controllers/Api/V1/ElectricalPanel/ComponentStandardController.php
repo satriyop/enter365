@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api\V1\ElectricalPanel;
 
 use App\Http\Controllers\Api\V1\Controller;
-use App\Http\Requests\Api\V1\StoreComponentStandardRequest;
-use App\Http\Requests\Api\V1\UpdateComponentStandardRequest;
-use App\Http\Resources\Api\V1\ComponentStandardResource;
+use App\Http\Requests\Api\V1\ElectricalPanel\StoreComponentStandardRequest;
+use App\Http\Requests\Api\V1\ElectricalPanel\UpdateComponentStandardRequest;
+use App\Http\Resources\Api\V1\ElectricalPanel\ComponentStandardResource;
 use App\Models\ElectricalPanel\ComponentBrandMapping;
 use App\Models\ElectricalPanel\ComponentStandard;
 use App\Services\ElectricalPanel\ComponentStandardService;

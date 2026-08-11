@@ -168,11 +168,16 @@ class BomTemplateController extends Controller
 
         $item = $bomTemplate->items()->create($data);
 
-        if (\App\Support\Features::enabled('electrical_panel') && $standardId) {
-            \App\Models\ElectricalPanel\BomTemplateItemPanelMeta::sync($item, (int) $standardId);
+        if ($standardId !== null) {
+            $this->templateService->syncTemplateItemStandard($item, (int) $standardId);
         }
 
-        return (new BomTemplateItemResource($item->load(['panelMeta.componentStandard', 'product'])))
+        $with = ['product'];
+        if (\App\Support\Features::enabled('electrical_panel')) {
+            $with[] = 'panelMeta.componentStandard';
+        }
+
+        return (new BomTemplateItemResource($item->load($with)))
             ->response()
             ->setStatusCode(201);
     }
@@ -198,14 +203,19 @@ class BomTemplateController extends Controller
 
         $item->update($data);
 
-        if (\App\Support\Features::enabled('electrical_panel') && $standardId !== false) {
-            \App\Models\ElectricalPanel\BomTemplateItemPanelMeta::sync(
+        if ($standardId !== false) {
+            $this->templateService->syncTemplateItemStandard(
                 $item,
                 $standardId !== null ? (int) $standardId : null
             );
         }
 
-        return new BomTemplateItemResource($item->fresh(['panelMeta.componentStandard', 'product']));
+        $with = ['product'];
+        if (\App\Support\Features::enabled('electrical_panel')) {
+            $with[] = 'panelMeta.componentStandard';
+        }
+
+        return new BomTemplateItemResource($item->fresh($with));
     }
 
     /**
