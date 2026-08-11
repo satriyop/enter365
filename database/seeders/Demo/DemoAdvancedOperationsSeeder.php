@@ -84,7 +84,7 @@ class DemoAdvancedOperationsSeeder extends Seeder
         $this->command->info('╚═══════════════════════════════════════════════════════════════════╝');
         $this->command->info('');
 
-        Auth::login($this->adminUser);
+        Auth::guard('web')->login($this->adminUser);
 
         try {
             $this->seedLandedCosts();
@@ -96,7 +96,7 @@ class DemoAdvancedOperationsSeeder extends Seeder
             $this->seedSubcontracting();
             $this->seedProjectTasks();
         } finally {
-            Auth::logout();
+            Auth::guard('web')->logout();
             Carbon::setTestNow(null);
         }
 

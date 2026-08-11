@@ -218,7 +218,7 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
             return false;
         }
 
-        return $this->quotation->valid_until->isPast();
+        return $this->isValidUntilPast();
     }
 
     protected function beforeTransition(DocumentStatus $from, DocumentStatus $to): void
@@ -229,7 +229,7 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
 
         if (in_array($to, [DocumentStatus::Approved, DocumentStatus::Rejected], true)
             && $from === DocumentStatus::Submitted
-            && $this->quotation->valid_until->isPast()) {
+            && $this->isValidUntilPast()) {
             throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
                 'Quotation',
                 'diproses',
@@ -237,6 +237,16 @@ class QuotationStateMachine extends \App\Domain\Core\AbstractStateMachine
                 'belum kedaluwarsa'
             );
         }
+    }
+
+    /**
+     * valid_until is a date-only field. Carbon::isPast() on a date cast (00:00:00)
+     * treats "today" as already past after midnight, which wrongly blocks approve/reject.
+     * Align with markExpired(): only dates strictly before today are expired.
+     */
+    private function isValidUntilPast(): bool
+    {
+        return $this->quotation->valid_until->toDateString() < now()->toDateString();
     }
 
     protected function afterTransition(DocumentStatus $from, DocumentStatus $to): void

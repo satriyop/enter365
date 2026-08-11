@@ -82,7 +82,7 @@ class NexTransactionSeeder extends Seeder
         $this->command->info('Seeding NEX solar business transactions with journal entries...');
 
         // Authenticate as admin for seeding
-        Auth::login($this->adminUser);
+        Auth::guard('web')->login($this->adminUser);
 
         try {
             // Multi-option quotation (demo showcase)
@@ -94,7 +94,7 @@ class NexTransactionSeeder extends Seeder
             $this->seedEquipmentPurchaseCycles();
             $this->seedPurchaseReturns();
         } finally {
-            Auth::logout();
+            Auth::guard('web')->logout();
         }
 
         $this->command->info('NEX transaction seeding completed!');

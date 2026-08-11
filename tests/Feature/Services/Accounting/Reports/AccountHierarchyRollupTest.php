@@ -33,6 +33,7 @@ function findSectionAHR(\Illuminate\Support\Collection|array $sections, string $
 function sectionAccountsAHR(\Illuminate\Support\Collection|array $sections, string $name): \Illuminate\Support\Collection
 {
     $section = findSectionAHR($sections, $name);
+
     return $section ? collect($section['accounts']) : collect();
 }
 
@@ -191,12 +192,17 @@ describe('Account Hierarchy Rollup', function () {
         $flat = $this->reportService->getIncomeStatement(hierarchical: false);
         $hierarchical = $this->reportService->getIncomeStatement(hierarchical: true);
 
-        // Totals must match
-        expect($flat['revenue']['total'])->toBe($hierarchical['revenue']['total'])
-            ->and($flat['net_income'])->toBe($hierarchical['net_income']);
+        // Totals must match (sectioned revenue/expenses arrays + summary keys)
+        expect($flat['total_revenue'])->toBe($hierarchical['total_revenue'])
+            ->and($flat['net_income'])->toBe($hierarchical['net_income'])
+            ->and($flat['revenue'])->toBeArray()
+            ->and($hierarchical['revenue'])->toBeArray();
 
-        // Hierarchical should have rollup_balance on the parent
-        $revenueNode = $hierarchical['revenue']['operating']->first(fn ($n) => $n->account_id === $revenueParent->id);
+        // Hierarchical should have rollup_balance on the parent within section accounts
+        $revenueAccounts = collect($hierarchical['revenue'])
+            ->flatMap(fn (array $section) => collect($section['accounts'] ?? []));
+
+        $revenueNode = $revenueAccounts->first(fn ($n) => $n->account_id === $revenueParent->id);
         if ($revenueNode) {
             expect($revenueNode->rollup_balance)->toBe(400000);
         }

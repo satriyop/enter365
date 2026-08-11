@@ -571,6 +571,25 @@ describe('QuotationStateMachine business helpers', function () {
         expect(QuotationStateMachine::fromQuotation($expiredQuotation)->isExpired())->toBeTrue();
     });
 
+    it('does not treat valid_until of today as expired', function () {
+        // date cast stores midnight; Carbon::isPast() would wrongly treat today as past
+        $quotation = Quotation::factory()
+            ->has(QuotationItem::factory(), 'items')
+            ->submitted()
+            ->create([
+                'quotation_date' => now()->toDateString(),
+                'valid_until' => now()->toDateString(),
+            ]);
+
+        $stateMachine = QuotationStateMachine::fromQuotation($quotation);
+
+        expect($stateMachine->isExpired())->toBeFalse();
+
+        $stateMachine->transitionTo(DocumentStatus::Rejected, ['user_id' => $this->user->id]);
+
+        expect($quotation->fresh()->status)->toBe(DocumentStatus::Rejected);
+    });
+
     it('provides conversion block reason when not approved', function () {
         $quotation = Quotation::factory()
             ->has(QuotationItem::factory(), 'items')

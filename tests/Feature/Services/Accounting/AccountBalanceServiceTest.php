@@ -197,12 +197,12 @@ describe('AccountBalanceService - getLedger', function () {
         $first = $ledger->first();
         expect($first['debit'])->toBe(500000)
             ->and($first['credit'])->toBe(0)
-            ->and($first['running_balance'])->toBe(1500000); // 1M + 500K
+            ->and($first['balance'])->toBe(1500000); // 1M + 500K
 
         $second = $ledger->get(1);
         expect($second['debit'])->toBe(0)
             ->and($second['credit'])->toBe(200000)
-            ->and($second['running_balance'])->toBe(1300000); // 1.5M - 200K
+            ->and($second['balance'])->toBe(1300000); // 1.5M - 200K
     });
 
     it('filters ledger by date range', function () {

@@ -106,7 +106,7 @@ class AccountController extends Controller
     /**
      * Get account ledger.
      *
-     * @response array{account_id: int, code: string, name: string, type: string, start_date: string|null, end_date: string|null, opening_balance: int, entries: array<array{id: int, journal_entry_id: int, date: string, entry_number: string, description: string, reference: string|null, debit: int, credit: int, running_balance: int}>}
+     * @response array{account_id: int, code: string, name: string, type: string, start_date: string|null, end_date: string|null, opening_balance: int, entries: array<array{id: int, journal_entry_id: int, date: string, entry_number: string, description: string, reference: string|null, debit: int, credit: int, balance: int}>}
      */
     public function ledger(Account $account, Request $request): JsonResponse
     {

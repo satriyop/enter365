@@ -82,7 +82,7 @@ class VahanaTransactionSeeder extends Seeder
         $this->command->info('Seeding complete business transactions with journal entries...');
 
         // Authenticate as admin for seeding
-        Auth::login($this->adminUser);
+        Auth::guard('web')->login($this->adminUser);
 
         try {
             $this->seedInitialFinishedGoodsInventory();
@@ -92,7 +92,7 @@ class VahanaTransactionSeeder extends Seeder
             $this->seedSalesReturns();
             $this->seedPurchaseReturns();
         } finally {
-            Auth::logout();
+            Auth::guard('web')->logout();
         }
 
         $this->command->info('Transaction seeding completed!');

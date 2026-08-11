@@ -67,7 +67,7 @@ class DemoAlternatePathsSeeder extends Seeder
         $this->command->info('╚═══════════════════════════════════════════════════════════════════╝');
         $this->command->info('');
 
-        Auth::login($this->adminUser);
+        Auth::guard('web')->login($this->adminUser);
 
         try {
             $this->seedQuotationReject();
@@ -77,7 +77,7 @@ class DemoAlternatePathsSeeder extends Seeder
             $this->seedInvoiceVoid();
             $this->seedSolarProposal();
         } finally {
-            Auth::logout();
+            Auth::guard('web')->logout();
             Carbon::setTestNow(null);
         }
 

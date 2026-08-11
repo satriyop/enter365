@@ -71,7 +71,7 @@ class DemoAdvancedAccountingSeeder extends Seeder
         $this->command->info('╚═══════════════════════════════════════════════════════════════════╝');
         $this->command->info('');
 
-        Auth::login($this->adminUser);
+        Auth::guard('web')->login($this->adminUser);
 
         try {
             $this->seedNsfpTaxInvoice();
@@ -82,7 +82,7 @@ class DemoAdvancedAccountingSeeder extends Seeder
             $this->seedBankReconciliation();
             $this->seedBudgets();
         } finally {
-            Auth::logout();
+            Auth::guard('web')->logout();
             Carbon::setTestNow(null);
         }
 
@@ -323,7 +323,7 @@ class DemoAdvancedAccountingSeeder extends Seeder
                 'reason' => 'Piutang macet - customer tidak merespon penagihan 3 bulan',
                 'write_off_date' => now()->toDateString(),
             ]);
-            $this->command->info("    Written off Rp ".number_format($writeOffAmount, 0, ',', '.')." from invoice {$invoice->invoice_number}");
+            $this->command->info('    Written off Rp '.number_format($writeOffAmount, 0, ',', '.')." from invoice {$invoice->invoice_number}");
         } catch (\Throwable $e) {
             $this->command->warn('    Write-off skipped: '.$e->getMessage());
         }

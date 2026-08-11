@@ -149,10 +149,9 @@ describe('State Transitions', function () {
     test('approves submitted quotation', function () {
         $quotation = Quotation::factory()
             ->has(QuotationItem::factory(), 'items')
+            ->submitted()
             ->create([
                 'contact_id' => $this->contact->id,
-                'status' => DocumentStatus::Submitted,
-                'submitted_at' => now(),
             ]);
 
         $approved = $this->service->approve($quotation, $this->user->id);
@@ -165,10 +164,9 @@ describe('State Transitions', function () {
     test('rejects submitted quotation with reason', function () {
         $quotation = Quotation::factory()
             ->has(QuotationItem::factory(), 'items')
+            ->submitted()
             ->create([
                 'contact_id' => $this->contact->id,
-                'status' => DocumentStatus::Submitted,
-                'submitted_at' => now(),
             ]);
 
         $rejected = $this->service->reject($quotation, 'Harga terlalu tinggi', $this->user->id);

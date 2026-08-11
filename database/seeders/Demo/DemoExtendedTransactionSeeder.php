@@ -75,7 +75,7 @@ class DemoExtendedTransactionSeeder extends Seeder
         $this->command->info('╚═══════════════════════════════════════════════════════════════════╝');
         $this->command->info('');
 
-        Auth::login($this->adminUser);
+        Auth::guard('web')->login($this->adminUser);
 
         try {
             $this->seedProjects();
@@ -84,7 +84,7 @@ class DemoExtendedTransactionSeeder extends Seeder
             $this->seedMaterialRequisitions();
             $this->seedStockOpnames();
         } finally {
-            Auth::logout();
+            Auth::guard('web')->logout();
         }
 
         $this->outputSummary();

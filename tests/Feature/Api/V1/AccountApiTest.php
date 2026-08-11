@@ -184,7 +184,7 @@ describe('Account API', function () {
                         'reference',
                         'debit',
                         'credit',
-                        'running_balance',
+                        'balance',
                     ],
                 ],
             ]);

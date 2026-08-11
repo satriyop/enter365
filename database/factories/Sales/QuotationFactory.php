@@ -27,7 +27,9 @@ class QuotationFactory extends Factory
         $prefix = 'QUO-'.now()->format('Ym').'-';
         $quotationNumber = $prefix.str_pad((string) self::$sequenceNumber, 4, '0', STR_PAD_LEFT);
 
-        $quotationDate = $this->faker->dateTimeBetween('-1 month', 'now');
+        // Keep quote date recent so default validity always lands in the future.
+        // Use expired() / validFor() states when an explicit validity window is needed.
+        $quotationDate = $this->faker->dateTimeBetween('-7 days', 'now');
         $validityDays = config('accounting.quotation.default_validity_days', 30);
         $validUntil = (clone $quotationDate)->modify("+{$validityDays} days");
 
