@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\ElectricalPanel;
 
-use App\Models\Manufacturing\BomItem;
 use App\Models\ElectricalPanel\ComponentStandard;
+use App\Models\Manufacturing\BomItem;
 
 class ComponentStandardService
 {
@@ -40,9 +40,9 @@ class ComponentStandardService
      */
     public function delete(ComponentStandard $standard): void
     {
-        // Check if any BOM items reference this standard
+        // Check if any BOM items reference this standard via panel meta
         $bomItemCount = BomItem::query()
-            ->where('component_standard_id', $standard->id)
+            ->whereHas('panelMeta', fn ($q) => $q->where('component_standard_id', $standard->id))
             ->count();
 
         if ($bomItemCount > 0) {

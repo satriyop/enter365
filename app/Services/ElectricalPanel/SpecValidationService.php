@@ -114,12 +114,12 @@ class SpecValidationService
         $valid = true;
 
         $bomItems = $bom->items()
-            ->whereNotNull('component_standard_id')
-            ->with(['componentStandard.brandMappings', 'product'])
+            ->whereHas('panelMeta', fn ($q) => $q->whereNotNull('component_standard_id'))
+            ->with(['panelMeta.componentStandard.brandMappings', 'product'])
             ->get();
 
         foreach ($bomItems as $bomItem) {
-            $standard = $bomItem->componentStandard;
+            $standard = $bomItem->panelMeta?->componentStandard;
 
             if (! $standard) {
                 continue;
@@ -290,12 +290,12 @@ class SpecValidationService
         $valid = true;
 
         $bomItems = $bom->items()
-            ->whereNotNull('component_standard_id')
-            ->with(['componentStandard.brandMappings', 'product'])
+            ->whereHas('panelMeta', fn ($q) => $q->whereNotNull('component_standard_id'))
+            ->with(['panelMeta.componentStandard.brandMappings', 'product'])
             ->get();
 
         foreach ($bomItems as $bomItem) {
-            $standard = $bomItem->componentStandard;
+            $standard = $bomItem->panelMeta?->componentStandard;
 
             if (! $standard) {
                 continue;

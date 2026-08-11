@@ -232,17 +232,19 @@ class BrandSwapPreviewService
      */
     public function getItemAlternatives(BomItem $item): array
     {
+        $standardId = $item->panelMeta?->component_standard_id;
+
         $current = [
             'product_id' => $item->product_id,
             'product_name' => $item->product->name ?? $item->description,
             'product_sku' => $item->product->sku ?? null,
             'unit_cost' => $item->unit_cost,
             'brand' => null,
-            'component_standard_id' => $item->component_standard_id,
+            'component_standard_id' => $standardId,
         ];
 
         // If no component standard, no alternatives available
-        if (! $item->component_standard_id) {
+        if (! $standardId) {
             return [
                 'current' => $current,
                 'alternatives' => [],
@@ -255,7 +257,7 @@ class BrandSwapPreviewService
         if ($item->product_id) {
             $currentMapping = ComponentBrandMapping::query()
                 ->where('product_id', $item->product_id)
-                ->where('component_standard_id', $item->component_standard_id)
+                ->where('component_standard_id', $standardId)
                 ->first();
         }
 
@@ -267,7 +269,7 @@ class BrandSwapPreviewService
         // Get all mappings for this standard (excluding current product)
         $alternatives = ComponentBrandMapping::query()
             ->with('product')
-            ->where('component_standard_id', $item->component_standard_id)
+            ->where('component_standard_id', $standardId)
             ->when($item->product_id, fn ($q) => $q->where('product_id', '!=', $item->product_id))
             ->orderBy('is_preferred', 'desc')
             ->orderBy('brand')

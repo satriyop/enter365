@@ -44,16 +44,20 @@ class BomTemplateItemResource extends JsonResource
             'type_label' => BomTemplateItem::getTypes()[$this->type] ?? $this->type,
             'component_standard_id' => $this->when(
                 Features::enabled('electrical_panel'),
-                $this->component_standard_id
+                $this->panelMeta?->component_standard_id
             ),
             'component_standard' => $this->when(
-                Features::enabled('electrical_panel') && $this->relationLoaded('componentStandard'),
-                fn () => $this->componentStandard ? [
-                    'id' => $this->componentStandard->id,
-                    'code' => $this->componentStandard->code,
-                    'name' => $this->componentStandard->name,
-                    'category' => $this->componentStandard->category,
-                ] : null
+                Features::enabled('electrical_panel') && ($this->relationLoaded('panelMeta') || $this->relationLoaded('componentStandard')),
+                function () {
+                    $standard = $this->panelMeta?->componentStandard ?? $this->componentStandard;
+
+                    return $standard ? [
+                        'id' => $standard->id,
+                        'code' => $standard->code,
+                        'name' => $standard->name,
+                        'category' => $standard->category,
+                    ] : null;
+                }
             ),
             'product_id' => $this->product_id,
             'product' => $this->whenLoaded('product', fn () => [
@@ -70,7 +74,7 @@ class BomTemplateItemResource extends JsonResource
             'sort_order' => $this->sort_order,
             'notes' => $this->notes,
             'has_component_standard' => Features::enabled('electrical_panel')
-                && $this->component_standard_id !== null,
+                && $this->panelMeta?->component_standard_id !== null,
             'has_product' => $this->product_id !== null,
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),

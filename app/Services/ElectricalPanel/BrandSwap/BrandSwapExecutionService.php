@@ -7,14 +7,15 @@ namespace App\Services\ElectricalPanel\BrandSwap;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Enums\DocumentStatus;
+use App\Models\ElectricalPanel\BomItemPanelMeta;
+use App\Models\ElectricalPanel\ComponentBrandMapping;
 use App\Models\Inventory\Product;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomItem;
 use App\Models\Manufacturing\BomVariantGroup;
-use App\Models\ElectricalPanel\ComponentBrandMapping;
 use App\Services\Base\BaseService;
-use App\Services\Manufacturing\BomVariantGroupService;
 use App\Services\ElectricalPanel\ProductEquivalenceService;
+use App\Services\Manufacturing\BomVariantGroupService;
 use Illuminate\Support\Collection;
 
 /**
@@ -189,12 +190,12 @@ class BrandSwapExecutionService extends BaseService
                 ->where('product_id', $newProduct->id)
                 ->first();
 
-            if ($newMapping) {
-                $item->component_standard_id = $newMapping->component_standard_id;
-            }
-
             $item->calculateTotalCost();
             $item->save();
+
+            if ($newMapping) {
+                BomItemPanelMeta::sync($item, (int) $newMapping->component_standard_id);
+            }
 
             // Recalculate BOM totals
             $item->bom->calculateTotals();
@@ -321,11 +322,12 @@ class BrandSwapExecutionService extends BaseService
         }
 
         $newItem->product_id = $newProduct->id;
-        $newItem->component_standard_id = $mapping->component_standard_id;
         $newItem->description = $newProduct->name;
         $newItem->unit_cost = $newProduct->purchase_price;
         $newItem->calculateTotalCost();
         $newItem->save();
+
+        BomItemPanelMeta::sync($newItem, (int) $mapping->component_standard_id);
 
         $result['new'] = [
             'product_id' => $newProduct->id,

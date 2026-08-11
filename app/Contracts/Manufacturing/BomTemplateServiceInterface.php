@@ -7,32 +7,39 @@ namespace App\Contracts\Manufacturing;
 use App\Models\Manufacturing\BomTemplate;
 
 /**
- * Interface for BOM Template service operations.
- *
- * Focused on creating BOMs from templates with brand substitution.
+ * BOM Template service — core product/manual implementation, or brand-aware
+ * ElectricalPanel add-on implementation when the feature flag is on.
  */
 interface BomTemplateServiceInterface
 {
     /**
-     * Create a BOM from a template with brand substitution options.
+     * @param  array<string, mixed>  $data
+     */
+    public function createTemplate(array $data): BomTemplate;
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function updateTemplate(BomTemplate $template, array $data): BomTemplate;
+
+    public function deleteTemplate(BomTemplate $template): void;
+
+    /**
+     * Create a BOM from a template (core: product/manual only; panel: brand resolve).
      *
-     * @param  array<string, mixed>  $options  Options including target brand, create variant, etc.
-     * @return array<string, mixed> Result with created BOM and swap report
+     * @param  array<string, mixed>  $options
+     * @return array{bom: \App\Models\Manufacturing\Bom, report: array<string, mixed>}
      */
     public function createBomFromTemplate(BomTemplate $template, array $options): array;
 
     /**
-     * Preview what a BOM would look like when created from template.
-     *
      * @param  array<string, mixed>  $options
-     * @return array<string, mixed>
+     * @return array{items: array<int, array<string, mixed>>, report: array<string, mixed>}
      */
     public function previewCreateFromTemplate(BomTemplate $template, array $options): array;
 
     /**
-     * Get available brands for component substitution in a template.
-     *
-     * @return array<string>
+     * @return array<int, array{code: string, name: string, coverage: int, coverage_percent: float}>
      */
     public function getAvailableBrandsForTemplate(BomTemplate $template): array;
 }

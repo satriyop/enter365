@@ -6,7 +6,6 @@ namespace App\Services\Manufacturing;
 
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
-use App\Contracts\Manufacturing\BomTemplateBrandResolverInterface;
 use App\Contracts\Manufacturing\BomTemplateServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Manufacturing\Bom;
@@ -15,24 +14,26 @@ use App\Models\Manufacturing\BomTemplate;
 use App\Models\Manufacturing\BomTemplateItem;
 use App\Services\Base\BaseService;
 
+/**
+ * Core BOM templates — product / manual lines only.
+ * Brand / component-standard resolution lives in ElectricalPanel add-on.
+ */
 class BomTemplateService extends BaseService implements BomTemplateServiceInterface
 {
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger,
-        private BomTemplateBrandResolverInterface $brandResolver,
     ) {
         parent::__construct($eventDispatcher, $logger);
     }
 
     /**
-     * Create a new BOM template.
-     *
-     * @param  array{code: string, name: string, description?: string, category?: string, thumbnail_path?: string, default_rule_set_id?: int, is_active?: bool}  $data
+     * @param  array{code: string, name: string, description?: string, category?: string, thumbnail_path?: string, is_active?: bool}  $data
      */
     public function createTemplate(array $data): BomTemplate
     {
         return $this->executeInTransaction('create_bom_template', function () use ($data) {
+            $data = $this->coreTemplateAttributes($data);
             $data['created_by'] = $this->getUserId();
 
             return BomTemplate::create($data);
@@ -40,22 +41,17 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
     }
 
     /**
-     * Update a BOM template.
-     *
-     * @param  array{code?: string, name?: string, description?: string, category?: string, thumbnail_path?: string, default_rule_set_id?: int, is_active?: bool}  $data
+     * @param  array{code?: string, name?: string, description?: string, category?: string, thumbnail_path?: string, is_active?: bool}  $data
      */
     public function updateTemplate(BomTemplate $template, array $data): BomTemplate
     {
         return $this->executeInTransaction('update_bom_template', function () use ($template, $data) {
-            $template->update($data);
+            $template->update($this->coreTemplateAttributes($data));
 
-            return $template->fresh(['items', 'defaultRuleSet', 'creator']);
+            return $template->fresh(['items', 'creator']);
         }, ['template_id' => $template->id]);
     }
 
-    /**
-     * Delete a BOM template.
-     */
     public function deleteTemplate(BomTemplate $template): void
     {
         $this->executeInTransaction('delete_bom_template', function () use ($template) {
@@ -64,31 +60,19 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
     }
 
     /**
-     * Create a new BOM from a template.
-     *
-     * @param  array<string, mixed>  $options  {
-     *                                         target_brand?: string,
-     *                                         product_id: int,
-     *                                         name?: string,
-     *                                         notes?: string,
-     *                                         output_quantity?: float,
-     *                                         quantity_overrides?: array<int, float>,
-     *                                         }
-     * @return array{bom: Bom, report: array}
+     * @param  array<string, mixed>  $options
+     * @return array{bom: Bom, report: array<string, mixed>}
      */
     public function createBomFromTemplate(BomTemplate $template, array $options): array
     {
-        $template->load($this->brandResolver->templateEagerLoads());
+        $template->load(['items.product']);
 
-        $targetBrand = $this->brandResolver->isEnabled()
-            ? ($options['target_brand'] ?? null)
-            : null;
         $quantityOverrides = $options['quantity_overrides'] ?? [];
 
         $report = [
             'template_id' => $template->id,
             'template_code' => $template->code,
-            'target_brand' => $targetBrand,
+            'target_brand' => null,
             'total_items' => $template->items->count(),
             'resolved' => 0,
             'no_mapping' => 0,
@@ -101,27 +85,14 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
         foreach ($template->items as $templateItem) {
             $itemReport = $this->resolveTemplateItem(
                 $templateItem,
-                $targetBrand,
                 $quantityOverrides[$templateItem->id] ?? null
             );
-
             $report['items'][] = $itemReport;
-
-            if ($itemReport['status'] === 'resolved') {
-                $report['resolved']++;
-            } elseif ($itemReport['status'] === 'no_mapping') {
-                $report['no_mapping']++;
-            } elseif ($itemReport['status'] === 'using_product') {
-                $report['using_product']++;
-            }
-
+            $report['using_product']++;
             $bomItems[] = $itemReport['bom_item_data'];
         }
 
-        $specRuleSetId = $this->brandResolver->templateSpecRuleSetId($template);
-
-        // Create the BOM
-        $bom = $this->executeInTransaction('create_from_template', function () use ($template, $options, $bomItems, $specRuleSetId) {
+        $bom = $this->executeInTransaction('create_from_template', function () use ($template, $options, $bomItems) {
             $bom = new Bom([
                 'product_id' => $options['product_id'],
                 'name' => $options['name'] ?? "BOM dari Template: {$template->name}",
@@ -129,12 +100,10 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
                 'output_quantity' => $options['output_quantity'] ?? 1,
                 'status' => DocumentStatus::Draft,
                 'version' => '1.0',
-                'spec_rule_set_id' => $specRuleSetId,
             ]);
             $bom->created_by = $this->getUserId();
             $bom->save();
 
-            // Create items
             $sortOrder = 0;
             foreach ($bomItems as $itemData) {
                 if ($itemData !== null) {
@@ -146,11 +115,8 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
                 }
             }
 
-            // Recalculate totals
             $bom->calculateTotals();
             $bom->save();
-
-            // Increment template usage
             $template->incrementUsage();
 
             return $bom->fresh(['items.product', 'product']);
@@ -163,25 +129,19 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
     }
 
     /**
-     * Preview creating a BOM from a template without actually creating it.
-     *
      * @param  array<string, mixed>  $options
-     * @return array{items: array, report: array}
+     * @return array{items: array<int, array<string, mixed>>, report: array<string, mixed>}
      */
     public function previewCreateFromTemplate(BomTemplate $template, array $options): array
     {
-        $template->load($this->brandResolver->templateEagerLoads());
-
-        $targetBrand = $this->brandResolver->isEnabled()
-            ? ($options['target_brand'] ?? null)
-            : null;
+        $template->load(['items.product']);
         $quantityOverrides = $options['quantity_overrides'] ?? [];
 
         $items = [];
         $report = [
             'template_id' => $template->id,
             'template_code' => $template->code,
-            'target_brand' => $targetBrand,
+            'target_brand' => null,
             'total_items' => $template->items->count(),
             'resolved' => 0,
             'no_mapping' => 0,
@@ -191,17 +151,9 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
         foreach ($template->items as $templateItem) {
             $itemReport = $this->resolveTemplateItem(
                 $templateItem,
-                $targetBrand,
                 $quantityOverrides[$templateItem->id] ?? null
             );
-
-            if ($itemReport['status'] === 'resolved') {
-                $report['resolved']++;
-            } elseif ($itemReport['status'] === 'no_mapping') {
-                $report['no_mapping']++;
-            } elseif ($itemReport['status'] === 'using_product') {
-                $report['using_product']++;
-            }
+            $report['using_product']++;
 
             $items[] = [
                 'template_item_id' => $templateItem->id,
@@ -211,7 +163,6 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
                 'unit' => $itemReport['bom_item_data']['unit'] ?? $templateItem->unit,
                 'unit_cost' => $itemReport['bom_item_data']['unit_cost'] ?? 0,
                 'product' => $itemReport['product'] ?? null,
-                'component_standard' => $this->brandResolver->standardPreview($templateItem),
                 'status' => $itemReport['status'],
                 'notes' => $itemReport['notes'] ?? null,
                 'is_required' => $templateItem->is_required,
@@ -226,18 +177,35 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
     }
 
     /**
-     * Resolve a template item to a BOM item (core product/manual paths + optional add-on).
+     * Core never resolves brands — empty list.
      *
+     * @return array<int, array{code: string, name: string, coverage: int, coverage_percent: float}>
+     */
+    public function getAvailableBrandsForTemplate(BomTemplate $template): array
+    {
+        return [];
+    }
+
+    /**
+     * Only core BOM template attributes (never panel add-on fields).
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function coreTemplateAttributes(array $data): array
+    {
+        return array_intersect_key($data, array_flip([
+            'code', 'name', 'description', 'category', 'thumbnail_path', 'is_active',
+        ]));
+    }
+
+    /**
      * @return array{status: string, bom_item_data: array<string, mixed>, product: ?array<string, mixed>, notes: ?string}
      */
-    private function resolveTemplateItem(
-        BomTemplateItem $templateItem,
-        ?string $targetBrand,
-        ?float $quantityOverride
-    ): array {
+    private function resolveTemplateItem(BomTemplateItem $templateItem, ?float $quantityOverride): array
+    {
         $quantity = $quantityOverride ?? (float) $templateItem->default_quantity;
 
-        // Item has a direct product - use it regardless of brand
         if ($templateItem->product_id) {
             $product = $templateItem->product;
 
@@ -246,9 +214,6 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
                 'bom_item_data' => [
                     'type' => $templateItem->type,
                     'product_id' => $product->id,
-                    'component_standard_id' => $this->brandResolver->shouldPersistStandardId()
-                        ? $templateItem->component_standard_id
-                        : null,
                     'description' => $product->name,
                     'quantity' => $quantity,
                     'unit' => $templateItem->unit ?? $product->unit ?? 'pcs',
@@ -266,23 +231,11 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
             ];
         }
 
-        $addonResult = $this->brandResolver->resolveStandardBasedItem(
-            $templateItem,
-            $targetBrand,
-            $quantity
-        );
-
-        if ($addonResult !== null) {
-            return $addonResult;
-        }
-
-        // No product and no add-on standard resolution - plain description
         return [
             'status' => 'using_product',
             'bom_item_data' => [
                 'type' => $templateItem->type,
                 'product_id' => null,
-                'component_standard_id' => null,
                 'description' => $templateItem->description,
                 'quantity' => $quantity,
                 'unit' => $templateItem->unit ?? 'pcs',
@@ -292,13 +245,5 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
             'product' => null,
             'notes' => 'Item manual tanpa produk terkait',
         ];
-    }
-
-    /**
-     * @return array<int, array{code: string, name: string, coverage: int, coverage_percent: float}>
-     */
-    public function getAvailableBrandsForTemplate(BomTemplate $template): array
-    {
-        return $this->brandResolver->availableBrandsForTemplate($template);
     }
 }

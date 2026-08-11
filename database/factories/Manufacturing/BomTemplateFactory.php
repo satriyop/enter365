@@ -2,7 +2,6 @@
 
 namespace Database\Factories\Manufacturing;
 
-use App\Models\ElectricalPanel\SpecValidationRuleSet;
 use App\Models\Manufacturing\BomTemplate;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -22,7 +21,6 @@ class BomTemplateFactory extends Factory
             'description' => $this->faker->optional()->sentence(),
             'category' => $this->faker->randomElement(array_keys(BomTemplate::getCategories())),
             'thumbnail_path' => null,
-            'default_rule_set_id' => null,
             'is_active' => true,
             'usage_count' => 0,
             'created_by' => null,
@@ -45,9 +43,12 @@ class BomTemplateFactory extends Factory
 
     public function withRuleSet(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'default_rule_set_id' => SpecValidationRuleSet::factory(),
-        ]);
+        return $this->afterCreating(function (BomTemplate $template) {
+            \App\Models\ElectricalPanel\BomTemplatePanelMeta::sync(
+                $template,
+                \App\Models\ElectricalPanel\SpecValidationRuleSet::factory()->create()->id
+            );
+        });
     }
 
     public function withCreator(): static

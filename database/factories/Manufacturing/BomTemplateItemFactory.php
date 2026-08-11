@@ -2,7 +2,6 @@
 
 namespace Database\Factories\Manufacturing;
 
-use App\Models\ElectricalPanel\ComponentStandard;
 use App\Models\Inventory\Product;
 use App\Models\Manufacturing\BomTemplate;
 use App\Models\Manufacturing\BomTemplateItem;
@@ -20,7 +19,6 @@ class BomTemplateItemFactory extends Factory
         return [
             'template_id' => BomTemplate::factory(),
             'type' => BomTemplateItem::TYPE_MATERIAL,
-            'component_standard_id' => null,
             'product_id' => null,
             'description' => $this->faker->words(4, true),
             'default_quantity' => $this->faker->randomFloat(2, 1, 10),
@@ -55,9 +53,12 @@ class BomTemplateItemFactory extends Factory
 
     public function withComponentStandard(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'component_standard_id' => ComponentStandard::factory(),
-        ]);
+        return $this->afterCreating(function (BomTemplateItem $item) {
+            \App\Models\ElectricalPanel\BomTemplateItemPanelMeta::sync(
+                $item,
+                \App\Models\ElectricalPanel\ComponentStandard::factory()->create()->id
+            );
+        });
     }
 
     public function withProduct(): static

@@ -61,7 +61,11 @@ class BomController extends Controller
 
         $filter->apply($bom->newQuery());
 
-        $bom->loadMissing(['product', 'items.product', 'creator', 'parentBom']);
+        $with = ['product', 'items.product', 'creator', 'parentBom'];
+        if (\App\Support\Features::enabled('electrical_panel')) {
+            $with[] = 'items.panelMeta';
+        }
+        $bom->loadMissing($with);
 
         return new BomResource($bom);
     }

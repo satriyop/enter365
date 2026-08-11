@@ -55,7 +55,7 @@ class BomItemResource extends JsonResource
             'notes' => $this->notes,
             'component_standard_id' => $this->when(
                 Features::enabled('electrical_panel'),
-                $this->component_standard_id
+                $this->panelMeta?->component_standard_id
             ),
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),
             'updated_at' => $this->updated_at->format('Y-m-d H:i:s'),

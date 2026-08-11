@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Contracts\Manufacturing\BomTemplateServiceInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\CreateBomFromTemplateRequest;
 use App\Http\Requests\Api\V1\StoreBomTemplateItemRequest;
@@ -13,7 +14,6 @@ use App\Http\Resources\Api\V1\BomTemplateItemResource;
 use App\Http\Resources\Api\V1\BomTemplateResource;
 use App\Models\Manufacturing\BomTemplate;
 use App\Models\Manufacturing\BomTemplateItem;
-use App\Services\Manufacturing\BomTemplateService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -23,7 +23,7 @@ use Illuminate\Support\Facades\Storage;
 class BomTemplateController extends Controller
 {
     public function __construct(
-        private BomTemplateService $templateService
+        private BomTemplateServiceInterface $templateService
     ) {}
 
     /**
@@ -87,8 +87,9 @@ class BomTemplateController extends Controller
     {
         return new BomTemplateResource(
             $bomTemplate->load([
-                'items.componentStandard',
                 'items.product',
+                'items.panelMeta.componentStandard',
+                'panelMeta.defaultRuleSet',
                 'defaultRuleSet',
                 'creator',
             ])
@@ -159,13 +160,20 @@ class BomTemplateController extends Controller
     ): JsonResponse {
         // Get max sort order and add 1 if no sort_order provided
         $data = $request->validated();
+        $standardId = $data['component_standard_id'] ?? null;
+        unset($data['component_standard_id']);
+
         if (! isset($data['sort_order'])) {
             $data['sort_order'] = $bomTemplate->items()->max('sort_order') + 1;
         }
 
         $item = $bomTemplate->items()->create($data);
 
-        return (new BomTemplateItemResource($item->load(['componentStandard', 'product'])))
+        if (\App\Support\Features::enabled('electrical_panel') && $standardId) {
+            \App\Models\ElectricalPanel\BomTemplateItemPanelMeta::sync($item, (int) $standardId);
+        }
+
+        return (new BomTemplateItemResource($item->load(['panelMeta.componentStandard', 'product'])))
             ->response()
             ->setStatusCode(201);
     }
@@ -183,9 +191,22 @@ class BomTemplateController extends Controller
             abort(404, 'Item tidak ditemukan dalam template ini.');
         }
 
-        $item->update($request->validated());
+        $data = $request->validated();
+        $standardId = array_key_exists('component_standard_id', $data)
+            ? $data['component_standard_id']
+            : false;
+        unset($data['component_standard_id']);
 
-        return new BomTemplateItemResource($item->fresh(['componentStandard', 'product']));
+        $item->update($data);
+
+        if (\App\Support\Features::enabled('electrical_panel') && $standardId !== false) {
+            \App\Models\ElectricalPanel\BomTemplateItemPanelMeta::sync(
+                $item,
+                $standardId !== null ? (int) $standardId : null
+            );
+        }
+
+        return new BomTemplateItemResource($item->fresh(['panelMeta.componentStandard', 'product']));
     }
 
     /**
@@ -311,7 +332,7 @@ class BomTemplateController extends Controller
                 'template_id' => $bomTemplate->id,
                 'template_code' => $bomTemplate->code,
                 'items_with_standard' => $bomTemplate->items()
-                    ->whereNotNull('component_standard_id')
+                    ->whereHas('panelMeta', fn ($q) => $q->whereNotNull('component_standard_id'))
                     ->count(),
             ],
         ]);
