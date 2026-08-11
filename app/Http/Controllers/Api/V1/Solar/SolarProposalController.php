@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Solar;
 
 use App\Enums\DocumentStatus;
-use App\Exports\SolarProposalExport;
+use App\Exports\Solar\SolarProposalExport;
 use App\Filters\SolarProposalFilter;
 use App\Http\Controllers\Api\V1\Controller;
 use App\Http\Requests\Api\V1\AcceptSolarProposalRequest;

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Exports\Sheets;
+namespace App\Exports\Solar\Sheets;
 
 use App\Models\Solar\SolarProposal;
 use Maatwebsite\Excel\Concerns\FromArray;

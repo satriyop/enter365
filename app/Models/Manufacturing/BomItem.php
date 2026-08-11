@@ -21,6 +21,7 @@ class BomItem extends Model
         'bom_id',
         'type',
         'product_id',
+        // Extension column owned by electrical_panel add-on (nullable FK).
         'component_standard_id',
         'description',
         'quantity',

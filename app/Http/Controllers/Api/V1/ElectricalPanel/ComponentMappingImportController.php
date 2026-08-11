@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Api\V1\ElectricalPanel;
 
-use App\Exports\ComponentMappingTemplateExport;
+use App\Exports\ElectricalPanel\ComponentMappingTemplateExport;
 use App\Http\Controllers\Api\V1\Controller;
-use App\Imports\ComponentMappingImport;
+use App\Imports\ElectricalPanel\ComponentMappingImport;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;

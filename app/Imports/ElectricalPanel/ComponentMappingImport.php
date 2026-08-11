@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Imports;
+namespace App\Imports\ElectricalPanel;
 
 use App\Models\ElectricalPanel\ComponentBrandMapping;
 use App\Models\ElectricalPanel\ComponentStandard;

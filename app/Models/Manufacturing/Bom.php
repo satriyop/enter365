@@ -51,6 +51,7 @@ class Bom extends Model
         'variant_label',
         'is_primary_variant',
         'variant_sort_order',
+        // Extension column owned by electrical_panel add-on (nullable FK).
         'spec_rule_set_id',
         'notes',
         'created_by',

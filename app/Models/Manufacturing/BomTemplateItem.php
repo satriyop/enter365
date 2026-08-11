@@ -20,6 +20,7 @@ class BomTemplateItem extends Model
     protected $fillable = [
         'template_id',
         'type',
+        // Extension column owned by electrical_panel add-on (nullable FK).
         'component_standard_id',
         'product_id',
         'description',

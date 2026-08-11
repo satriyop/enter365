@@ -204,35 +204,25 @@ describe('Add-on package boundaries (code isolation)', function () {
             ->and(config('addons.solar.feature'))->toBe('solar_proposals');
     });
 
-    it('does not bind solar services when solar_proposals is off at provider register', function () {
-        config(['features.modules.solar_proposals' => false]);
+    it('refuses to resolve solar services when solar_proposals is off', function () {
+        withoutFeatures(['solar_proposals']);
 
-        $app = app();
-        // Simulate fresh registration against current config (flag off)
-        $provider = new \App\Providers\Addons\SolarServiceProvider($app);
-        // Clear prior binding from boot (phpunit FEATURE_PRESET=full)
-        $app->offsetUnset(\App\Contracts\Solar\SolarProposalServiceInterface::class);
-        $app->offsetUnset(\App\Contracts\Solar\SolarCalculationServiceInterface::class);
+        expect(\App\Providers\Addons\SolarServiceProvider::isEnabled())->toBeFalse();
 
-        $provider->register();
+        expect(fn () => app(\App\Contracts\Solar\SolarProposalServiceInterface::class))
+            ->toThrow(\Illuminate\Contracts\Container\BindingResolutionException::class);
 
-        expect($app->bound(\App\Contracts\Solar\SolarProposalServiceInterface::class))->toBeFalse()
-            ->and($app->bound(\App\Contracts\Solar\SolarCalculationServiceInterface::class))->toBeFalse()
-            ->and(\App\Providers\Addons\SolarServiceProvider::isEnabled())->toBeFalse();
+        expect(fn () => app(\App\Contracts\Solar\SolarCalculationServiceInterface::class))
+            ->toThrow(\Illuminate\Contracts\Container\BindingResolutionException::class);
     });
 
-    it('binds solar services when solar_proposals is on at provider register', function () {
-        config(['features.modules.solar_proposals' => true]);
+    it('resolves solar services when solar_proposals is on', function () {
+        withFeatures(['solar_proposals' => true]);
 
-        $app = app();
-        $app->offsetUnset(\App\Contracts\Solar\SolarProposalServiceInterface::class);
-        $app->offsetUnset(\App\Contracts\Solar\SolarCalculationServiceInterface::class);
-
-        (new \App\Providers\Addons\SolarServiceProvider($app))->register();
-
-        expect($app->bound(\App\Contracts\Solar\SolarProposalServiceInterface::class))->toBeTrue()
-            ->and($app->make(\App\Contracts\Solar\SolarProposalServiceInterface::class))
-            ->toBeInstanceOf(\App\Services\Solar\SolarProposalService::class);
+        expect(app(\App\Contracts\Solar\SolarProposalServiceInterface::class))
+            ->toBeInstanceOf(\App\Services\Solar\SolarProposalService::class)
+            ->and(app(\App\Contracts\Solar\SolarCalculationServiceInterface::class))
+            ->toBeInstanceOf(\App\Services\Solar\SolarCalculationService::class);
     });
 
     it('keeps core manufacturing services without industry class names', function () {
@@ -286,5 +276,22 @@ describe('Add-on package boundaries (code isolation)', function () {
             ->and(class_exists(\App\Http\Controllers\Api\V1\Solar\SolarProposalController::class))->toBeTrue()
             ->and(file_exists(base_path('routes/addons/electrical_panel.php')))->toBeTrue()
             ->and(file_exists(base_path('routes/addons/solar.php')))->toBeTrue();
+    });
+
+    it('keeps industry exports and imports under add-on namespaces', function () {
+        expect(class_exists(\App\Exports\ElectricalPanel\ComponentMappingTemplateExport::class))->toBeTrue()
+            ->and(class_exists(\App\Imports\ElectricalPanel\ComponentMappingImport::class))->toBeTrue()
+            ->and(class_exists(\App\Exports\Solar\SolarProposalExport::class))->toBeTrue()
+            ->and(file_exists(app_path('Exports/ComponentMappingTemplateExport.php')))->toBeFalse()
+            ->and(file_exists(app_path('Exports/SolarProposalExport.php')))->toBeFalse()
+            ->and(file_exists(app_path('Imports/ComponentMappingImport.php')))->toBeFalse();
+    });
+
+    it('does not register solar morph alias from AppServiceProvider', function () {
+        $src = file_get_contents(app_path('Providers/AppServiceProvider.php')) ?: '';
+
+        expect($src)->not->toContain('solar_proposal')
+            ->and($src)->not->toContain('SolarProposal')
+            ->and($src)->not->toContain('SolarCalculation');
     });
 });

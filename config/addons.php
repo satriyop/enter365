@@ -30,6 +30,16 @@ return [
         'label' => 'Electrical Panel Tools',
         'service_namespace' => 'App\\Services\\ElectricalPanel',
         'model_namespace' => 'App\\Models\\ElectricalPanel',
+        'http_namespace' => 'App\\Http\\Controllers\\Api\\V1\\ElectricalPanel',
+        'export_namespace' => 'App\\Exports\\ElectricalPanel',
+        'routes' => 'routes/addons/electrical_panel.php',
+        /** Nullable FK columns living on core tables (owned by this add-on) */
+        'extension_columns' => [
+            'bom_items.component_standard_id',
+            'bom_template_items.component_standard_id',
+            'boms.spec_rule_set_id',
+            'bom_templates.default_rule_set_id',
+        ],
     ],
 
     /*
@@ -49,6 +59,12 @@ return [
         'label' => 'Solar Proposals',
         'service_namespace' => 'App\\Services\\Solar',
         'model_namespace' => 'App\\Models\\Solar',
+        'http_namespace' => 'App\\Http\\Controllers\\Api\\V1\\Solar',
+        'export_namespace' => 'App\\Exports\\Solar',
+        'routes' => 'routes/addons/solar.php',
+        'morph_aliases' => [
+            'solar_proposal' => 'App\\Models\\Solar\\SolarProposal',
+        ],
     ],
 
 ];
