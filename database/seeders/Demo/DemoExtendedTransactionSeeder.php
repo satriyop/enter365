@@ -17,6 +17,7 @@ use App\Models\Manufacturing\Bom;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
 use App\Models\User;
+use App\Support\Features;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Auth;
@@ -78,11 +79,35 @@ class DemoExtendedTransactionSeeder extends Seeder
         Auth::guard('web')->login($this->adminUser);
 
         try {
-            $this->seedProjects();
-            $this->seedDownPayments();
-            $this->seedWorkOrders();
-            $this->seedMaterialRequisitions();
-            $this->seedStockOpnames();
+            if (Features::enabled('projects')) {
+                $this->seedProjects();
+            } else {
+                $this->command?->warn('  ⏭  Skipping Projects (feature pack off)');
+            }
+
+            if (Features::enabled('down_payments')) {
+                $this->seedDownPayments();
+            } else {
+                $this->command?->warn('  ⏭  Skipping Down Payments (feature pack off)');
+            }
+
+            if (Features::enabled('work_orders')) {
+                $this->seedWorkOrders();
+            } else {
+                $this->command?->warn('  ⏭  Skipping Work Orders (feature pack off)');
+            }
+
+            if (Features::enabled('material_requisitions')) {
+                $this->seedMaterialRequisitions();
+            } else {
+                $this->command?->warn('  ⏭  Skipping Material Requisitions (feature pack off)');
+            }
+
+            if (Features::enabled('stock_opname')) {
+                $this->seedStockOpnames();
+            } else {
+                $this->command?->warn('  ⏭  Skipping Stock Opnames (feature pack off)');
+            }
         } finally {
             Auth::guard('web')->logout();
         }

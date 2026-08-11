@@ -2,6 +2,7 @@
 
 namespace Database\Seeders\Demo;
 
+use App\Support\Features;
 use Database\Seeders\Demo\Nex\NexContactSeeder;
 use Database\Seeders\Demo\Nex\NexProductSeeder;
 use Database\Seeders\Demo\Nex\NexTransactionSeeder;
@@ -12,6 +13,9 @@ use Illuminate\Database\Seeder;
 
 class DemoSeeder extends Seeder
 {
+    /** General SME trading/jasa — aligns with FEATURE_PRESET=general */
+    public const DEMO_GENERAL = 'general';
+
     public const DEMO_VAHANA = 'vahana';
 
     public const DEMO_NEX = 'nex';
@@ -21,45 +25,44 @@ class DemoSeeder extends Seeder
     /**
      * Seed demo data for the application.
      *
-     * This seeder creates contextual demo data for:
-     * - PT Vahana Gasti Teknika (Electrical Panel Maker) - vahana.co.id
-     * - PT Nusantara Energi Khatulistiwa / NEX (Solar EPC) - energimasadepan.com
-     *
-     * It includes:
-     * - Master data (warehouses, product categories, users)
-     * - Contacts (customers, vendors, subcontractors)
-     * - Products with BOMs (raw materials, finished goods, services)
-     * - Full transaction cycle (quotations, invoices, POs, work orders)
+     * Profiles:
+     * - general: master + core accounting/trading extended data (default product posture)
+     * - vahana: panel manufacturing (enable FEATURE_PRESET=manufacturing or full)
+     * - nex: solar EPC (enable FEATURE_PRESET=solar or full)
+     * - all: both verticals + full packs
      *
      * Usage:
-     *   php artisan db:seed --class=DemoSeeder                    # Interactive prompt
-     *   php artisan db:seed --class=DemoSeeder --demo=vahana      # Vahana only
-     *   php artisan db:seed --class=DemoSeeder --demo=nex         # NEX only
-     *   php artisan db:seed --class=DemoSeeder --demo=all         # Both (default)
-     *
-     * Or with fresh migration:
-     *   php artisan migrate:fresh --seed --seeder=DemoSeeder --demo=vahana
+     *   php artisan seed:demo --demo=general
+     *   php artisan seed:demo --demo=vahana
+     *   php artisan seed:demo --demo=nex
+     *   php artisan seed:demo --demo=all
      */
     public function run(): void
     {
         $demoChoice = $this->getDemoChoice();
+        $this->warnIfPackMismatch($demoChoice);
 
         $this->command->info('');
         $this->command->info('╔═══════════════════════════════════════════════════════════════════╗');
         $this->command->info('║                     ENTER365 DEMO DATA                             ║');
         $this->command->info('║         Indonesian Accounting System - SAK EMKM Compliant          ║');
+        $this->command->info('║         Profile: '.str_pad(strtoupper($demoChoice), 48).'║');
         $this->command->info('╚═══════════════════════════════════════════════════════════════════╝');
         $this->command->info('');
 
-        // Seed master data first (shared between both customers)
+        // Seed master data first (shared)
         $this->command->info('📦 Seeding Master Data...');
         $this->call(MasterDataSeeder::class);
         $this->command->info('');
 
-        // Seed comprehensive component library for panel manufacturing
-        $this->command->info('🔌 Seeding Component Library (Cross-Reference System)...');
-        $this->call(ComponentLibrarySeeder::class);
-        $this->command->info('');
+        // Component library is manufacturing/BOM-oriented
+        if (Features::enabled('bom') && $demoChoice !== self::DEMO_GENERAL) {
+            $this->command->info('🔌 Seeding Component Library (Cross-Reference System)...');
+            $this->call(ComponentLibrarySeeder::class);
+            $this->command->info('');
+        } else {
+            $this->command->warn('  ⏭  Skipping Component Library (bom pack off or general demo)');
+        }
 
         // Seed Vahana-specific data (Electrical Panel Maker)
         if ($demoChoice === self::DEMO_VAHANA || $demoChoice === self::DEMO_ALL) {
@@ -71,21 +74,38 @@ class DemoSeeder extends Seeder
             $this->seedNex();
         }
 
-        // Seed extended feature data (Projects, Down Payments, Work Orders, Stock Opnames)
+        if ($demoChoice === self::DEMO_GENERAL) {
+            $this->command->info('🏢 General demo: master data only for vertical products; core ops seeders next.');
+            $this->command->info('');
+        }
+
+        // Extended features (respects feature flags inside seeder)
         $this->command->info('📊 Seeding Extended Features (Projects, Down Payments, Work Orders, Stock Opnames)...');
         $this->call(DemoExtendedTransactionSeeder::class);
 
-        // Seed advanced accounting (NSFP, multi-currency, FX reval, write-off, bank recon, budgets)
+        // Advanced accounting (bank recon, budgets, multi-currency — general-friendly)
         $this->command->info('💰 Seeding Advanced Accounting (Multi-Currency, FX Reval, Bank Recon, Budgets)...');
         $this->call(DemoAdvancedAccountingSeeder::class);
 
-        // Seed advanced operations (landed costs, stock transfer, PPh, MRP, subcontracting)
-        $this->command->info('🔧 Seeding Advanced Operations (Landed Costs, MRP, Subcontracting, Recurring)...');
-        $this->call(DemoAdvancedOperationsSeeder::class);
+        // Advanced ops (MRP, subcontracting) — only when packs on and not pure general
+        if ($demoChoice !== self::DEMO_GENERAL && (
+            Features::enabled('mrp')
+            || Features::enabled('subcontracting')
+            || Features::enabled('recurring')
+        )) {
+            $this->command->info('🔧 Seeding Advanced Operations (Landed Costs, MRP, Subcontracting, Recurring)...');
+            $this->call(DemoAdvancedOperationsSeeder::class);
+        } else {
+            $this->command->warn('  ⏭  Skipping Advanced Operations (general profile or packs off)');
+        }
 
-        // Seed alternate paths (rejections, cancellations, voids, solar proposals)
-        $this->command->info('🔀 Seeding Alternate Paths (Rejections, Cancellations, Voids, Solar Proposals)...');
-        $this->call(DemoAlternatePathsSeeder::class);
+        // Alternate paths (includes solar proposals when pack on)
+        if ($demoChoice !== self::DEMO_GENERAL) {
+            $this->command->info('🔀 Seeding Alternate Paths (Rejections, Cancellations, Voids, Solar Proposals)...');
+            $this->call(DemoAlternatePathsSeeder::class);
+        } else {
+            $this->command->warn('  ⏭  Skipping Alternate Paths (use demo=vahana|nex|all for edge-path demos)');
+        }
 
         $this->showCompletionMessage($demoChoice);
     }
@@ -100,24 +120,47 @@ class DemoSeeder extends Seeder
             return app('demo.choice');
         }
 
-        // Try to use interactive prompt, fall back to DEMO_ALL if not available
+        // Try to use interactive prompt
         try {
             $this->command->info('');
             $this->command->info('Which demo data would you like to seed?');
+            $this->command->info('  (Product packs: FEATURE_PRESET='.config('features.preset', 'general').')');
             $this->command->info('');
 
             return $this->command->choice(
                 'Select demo data',
                 [
+                    self::DEMO_GENERAL => '🏢 General - SME trading/jasa (default product posture)',
                     self::DEMO_VAHANA => '⚡ Vahana - Electrical Panel Maker (vahana.co.id)',
                     self::DEMO_NEX => '☀️  NEX - Solar EPC Contractor (energimasadepan.com)',
-                    self::DEMO_ALL => '🔄 Both - Vahana + NEX (full demo)',
+                    self::DEMO_ALL => '🔄 Full - Vahana + NEX + packs',
                 ],
-                self::DEMO_ALL
+                self::DEMO_GENERAL
             );
         } catch (\Throwable) {
-            // Non-interactive mode (e.g., migrate:fresh --seed, CI/CD)
-            return self::DEMO_ALL;
+            // Non-interactive: follow FEATURE_PRESET so CI/local match product defaults
+            return match (config('features.preset', 'general')) {
+                'manufacturing' => self::DEMO_VAHANA,
+                'solar' => self::DEMO_NEX,
+                'full' => self::DEMO_ALL,
+                default => self::DEMO_GENERAL,
+            };
+        }
+    }
+
+    /**
+     * Warn when demo vertical needs packs that are currently disabled.
+     */
+    protected function warnIfPackMismatch(string $demoChoice): void
+    {
+        if (in_array($demoChoice, [self::DEMO_VAHANA, self::DEMO_ALL], true)
+            && Features::disabled('work_orders') && Features::disabled('bom')) {
+            $this->command?->warn('  ⚠  Manufacturing packs are OFF. Enable FEATURE_PRESET=manufacturing|full for full Vahana flows.');
+        }
+
+        if (in_array($demoChoice, [self::DEMO_NEX, self::DEMO_ALL], true)
+            && Features::disabled('solar_proposals')) {
+            $this->command?->warn('  ⚠  solar_proposals pack is OFF. Enable FEATURE_PRESET=solar|full for NEX solar flows.');
         }
     }
 
@@ -185,6 +228,9 @@ class DemoSeeder extends Seeder
         $this->command->info('╠═══════════════════════════════════════════════════════════════════╣');
         $this->command->info('║  Data Seeded:                                                      ║');
 
+        if ($demoChoice === self::DEMO_GENERAL) {
+            $this->command->info('║    🏢 General SME: master data + core accounting demo paths         ║');
+        }
         if ($demoChoice === self::DEMO_VAHANA || $demoChoice === self::DEMO_ALL) {
             $this->command->info('║    ⚡ PT Vahana: Switchboards, MCC, ATS, Capacitor Bank panels      ║');
         }
@@ -193,14 +239,7 @@ class DemoSeeder extends Seeder
         }
 
         $this->command->info('╠═══════════════════════════════════════════════════════════════════╣');
-        $this->command->info('║  Advanced Features:                                                  ║');
-        $this->command->info('║    Multi-Currency (USD/SGD) | FX Revaluation | Bank Reconciliation   ║');
-        $this->command->info('║    NSFP Tax Invoices | Budgets | Recurring Templates                 ║');
-        $this->command->info('║    Landed Costs | MRP | Subcontracting | PPh Withholding             ║');
-        $this->command->info('║    Rejections | Cancellations | Voids | Solar Proposals              ║');
-        $this->command->info('╠═══════════════════════════════════════════════════════════════════╣');
-        $this->command->info('║  Component Library (Brand Partners):                               ║');
-        $this->command->info('║    Schneider Electric | ABB | Siemens | CHINT | LS | Legrand       ║');
+        $this->command->info('║  Tip: set FEATURE_PRESET=manufacturing|solar|full for vertical UIs ║');
         $this->command->info('╚═══════════════════════════════════════════════════════════════════╝');
         $this->command->info('');
     }
