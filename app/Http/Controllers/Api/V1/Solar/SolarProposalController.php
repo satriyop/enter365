@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1;
+namespace App\Http\Controllers\Api\V1\Solar;
 
 use App\Enums\DocumentStatus;
 use App\Exports\SolarProposalExport;
 use App\Filters\SolarProposalFilter;
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Api\V1\Controller;
 use App\Http\Requests\Api\V1\AcceptSolarProposalRequest;
 use App\Http\Requests\Api\V1\AttachSolarVariantsRequest;
 use App\Http\Requests\Api\V1\StoreSolarProposalRequest;

@@ -2,8 +2,6 @@
 
 use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\PublicCompanyProfileController;
-use App\Http\Controllers\Api\PublicSolarCalculatorController;
-use App\Http\Controllers\Api\PublicSolarProposalController;
 use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\AccountingPolicyController;
 use App\Http\Controllers\Api\V1\AttachmentController;
@@ -16,10 +14,6 @@ use App\Http\Controllers\Api\V1\BomTemplateController;
 use App\Http\Controllers\Api\V1\BomVariantGroupController;
 use App\Http\Controllers\Api\V1\BudgetController;
 use App\Http\Controllers\Api\V1\CompanyProfileController;
-use App\Http\Controllers\Api\V1\ComponentBrandMappingController;
-use App\Http\Controllers\Api\V1\ComponentCrossReferenceController;
-use App\Http\Controllers\Api\V1\ComponentMappingImportController;
-use App\Http\Controllers\Api\V1\ComponentStandardController;
 use App\Http\Controllers\Api\V1\ContactController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\DeliveryOrderController;
@@ -47,9 +41,6 @@ use App\Http\Controllers\Api\V1\RecurringTemplateController;
 use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\RoleController;
 use App\Http\Controllers\Api\V1\SalesReturnController;
-use App\Http\Controllers\Api\V1\SolarDataController;
-use App\Http\Controllers\Api\V1\SolarProposalController;
-use App\Http\Controllers\Api\V1\SpecValidationRuleSetController;
 use App\Http\Controllers\Api\V1\StockOpnameController;
 use App\Http\Controllers\Api\V1\SubcontractorInvoiceController;
 use App\Http\Controllers\Api\V1\SubcontractorWorkOrderController;
@@ -94,18 +85,9 @@ Route::prefix('v1')->group(function () {
     | Public Routes (No Authentication Required)
     |--------------------------------------------------------------------------
     */
-    // Public Solar Proposal (Customer Portal) — pack: solar_proposals
-    Route::middleware('feature:solar_proposals')->prefix('public/solar-proposals')->group(function () {
-        Route::get('{token}', [PublicSolarProposalController::class, 'show']);
-        Route::post('{token}/accept', [PublicSolarProposalController::class, 'accept']);
-        Route::post('{token}/reject', [PublicSolarProposalController::class, 'reject']);
-    })->where(['token' => '[0-9a-f\-]{32,36}']);
-
-    // Public Solar Calculator (Marketing Tool) — pack: solar_proposals
-    Route::middleware('feature:solar_proposals')->prefix('public/solar-calculator')->group(function () {
-        Route::post('calculate', [PublicSolarCalculatorController::class, 'calculate']);
-        Route::get('tariffs', [PublicSolarCalculatorController::class, 'tariffs']);
-    });
+    // Industry add-on: solar (public)
+    $solarRouteContext = 'public';
+    require base_path('routes/addons/solar.php');
 
     // Public Company Profiles
     Route::prefix('public/company-profiles')->group(function () {
@@ -340,77 +322,8 @@ Route::prefix('v1')->group(function () {
             Route::post('bom-variant-groups/{bom_variant_group}/reorder', [BomVariantGroupController::class, 'reorder']);
             Route::post('bom-variant-groups/{bom_variant_group}/create-variant', [BomVariantGroupController::class, 'createVariant']);
 
-            // Vahana add-on: electrical panel (brand swap, standards, spec validation)
-            // Requires bom pack + electrical_panel industry flag.
-            Route::middleware('feature:electrical_panel')->group(function () {
-                // Component Cross-Reference (Brand Equivalents)
-                Route::prefix('component-standards')->group(function () {
-                    Route::get('/', [ComponentStandardController::class, 'index']);
-                    Route::post('/', [ComponentStandardController::class, 'store']);
-                    Route::get('/categories', [ComponentStandardController::class, 'categories']);
-                    Route::get('/{componentStandard}', [ComponentStandardController::class, 'show']);
-                    Route::put('/{componentStandard}', [ComponentStandardController::class, 'update']);
-                    Route::delete('/{componentStandard}', [ComponentStandardController::class, 'destroy']);
-                    Route::get('/{componentStandard}/brands', [ComponentStandardController::class, 'brands']);
-
-                    // Brand Mappings
-                    Route::post('/{componentStandard}/mappings', [ComponentBrandMappingController::class, 'store']);
-                    Route::put('/{componentStandard}/mappings/{mapping}', [ComponentBrandMappingController::class, 'update']);
-                    Route::delete('/{componentStandard}/mappings/{mapping}', [ComponentBrandMappingController::class, 'destroy']);
-                    Route::post('/{componentStandard}/mappings/{mapping}/verify', [ComponentBrandMappingController::class, 'verify']);
-                    Route::post('/{componentStandard}/mappings/{mapping}/set-preferred', [ComponentBrandMappingController::class, 'setPreferred']);
-                });
-
-                // Cross-Reference Queries
-                Route::get('products/{product}/equivalents', [ComponentCrossReferenceController::class, 'productEquivalents']);
-                Route::get('component-search', [ComponentCrossReferenceController::class, 'search']);
-                Route::get('available-brands', [ComponentCrossReferenceController::class, 'availableBrands']);
-
-                // BOM Brand Swap
-                Route::get('boms/{bom}/brand-comparison', [ComponentCrossReferenceController::class, 'compareBrands']);
-                Route::post('boms/{bom}/swap-brand-preview', [ComponentCrossReferenceController::class, 'previewSwapBrand']);
-                Route::post('boms/{bom}/swap-brand', [ComponentCrossReferenceController::class, 'swapBrand']);
-                Route::post('boms/{bom}/generate-brand-variants', [ComponentCrossReferenceController::class, 'generateBrandVariants']);
-
-                // Cost Optimization (Mixed-brand cheapest option)
-                Route::get('boms/{bom}/cost-optimization', [ComponentCrossReferenceController::class, 'previewCostOptimization']);
-                Route::post('boms/{bom}/apply-cost-optimization', [ComponentCrossReferenceController::class, 'applyCostOptimization']);
-
-                // Quick Swap (Inline item-level swap)
-                Route::get('boms/{bom}/items/{item}/alternatives', [ComponentCrossReferenceController::class, 'getItemAlternatives']);
-                Route::patch('boms/{bom}/items/{item}/swap', [ComponentCrossReferenceController::class, 'quickSwapItem']);
-
-                // Auto-Mapping Suggestions
-                Route::get('auto-mapping/unmapped-products', [ComponentCrossReferenceController::class, 'getUnmappedProducts']);
-                Route::get('auto-mapping/products/{product}/suggest', [ComponentCrossReferenceController::class, 'suggestMapping']);
-                Route::post('auto-mapping/suggest-batch', [ComponentCrossReferenceController::class, 'suggestMappingsBatch']);
-                Route::post('auto-mapping/products/{product}/accept', [ComponentCrossReferenceController::class, 'acceptSuggestion']);
-                Route::post('auto-mapping/bulk-accept', [ComponentCrossReferenceController::class, 'bulkAcceptSuggestions']);
-                Route::get('auto-mapping/parse-name', [ComponentCrossReferenceController::class, 'parseProductName']);
-
-                // Bulk Import Component Mappings
-                Route::get('component-mappings/template', [ComponentMappingImportController::class, 'downloadTemplate']);
-                Route::post('component-mappings/validate', [ComponentMappingImportController::class, 'validate']);
-                Route::post('component-mappings/import', [ComponentMappingImportController::class, 'import']);
-                Route::get('component-mappings/stats', [ComponentMappingImportController::class, 'stats']);
-
-                // Spec Validation Rule Sets (Configurable Rules for Swap Validation)
-                Route::prefix('spec-rule-sets')->group(function () {
-                    Route::get('/', [SpecValidationRuleSetController::class, 'index']);
-                    Route::post('/', [SpecValidationRuleSetController::class, 'store']);
-                    Route::get('/metadata', [SpecValidationRuleSetController::class, 'metadata']);
-                    Route::get('/{specRuleSet}', [SpecValidationRuleSetController::class, 'show']);
-                    Route::put('/{specRuleSet}', [SpecValidationRuleSetController::class, 'update']);
-                    Route::delete('/{specRuleSet}', [SpecValidationRuleSetController::class, 'destroy']);
-                    Route::post('/{specRuleSet}/set-default', [SpecValidationRuleSetController::class, 'setDefault']);
-
-                    // Rules within Rule Sets
-                    Route::post('/{specRuleSet}/rules', [SpecValidationRuleSetController::class, 'storeRule']);
-                    Route::put('/{specRuleSet}/rules/{rule}', [SpecValidationRuleSetController::class, 'updateRule']);
-                    Route::delete('/{specRuleSet}/rules/{rule}', [SpecValidationRuleSetController::class, 'destroyRule']);
-                    Route::post('/{specRuleSet}/rules/reorder', [SpecValidationRuleSetController::class, 'reorderRules']);
-                });
-            });
+            // Industry add-on: electrical panel (inside bom pack)
+            require base_path('routes/addons/electrical_panel.php');
 
             // BOM Templates (generic manufacturing pack; brand hooks optional when electrical_panel ON)
             Route::prefix('bom-templates')->group(function () {
@@ -436,36 +349,9 @@ Route::prefix('v1')->group(function () {
             });
         });
 
-        // Solar Proposals (Proposal Panel Surya)
-        Route::middleware('feature:solar_proposals')->group(function () {
-            Route::apiResource('solar-proposals', SolarProposalController::class)
-                ->parameters(['solar-proposals' => 'solarProposal']);
-            Route::post('solar-proposals/{solarProposal}/calculate', [SolarProposalController::class, 'calculate']);
-            Route::post('solar-proposals/{solarProposal}/attach-variants', [SolarProposalController::class, 'attachVariants']);
-            Route::post('solar-proposals/{solarProposal}/select-bom', [SolarProposalController::class, 'selectBom']);
-            Route::post('solar-proposals/{solarProposal}/send', [SolarProposalController::class, 'send']);
-            Route::post('solar-proposals/{solarProposal}/accept', [SolarProposalController::class, 'accept']);
-            Route::post('solar-proposals/{solarProposal}/reject', [SolarProposalController::class, 'reject']);
-            Route::post('solar-proposals/{solarProposal}/convert-to-quotation', [SolarProposalController::class, 'convertToQuotation']);
-            Route::get('solar-proposals/{solarProposal}/pdf', [SolarProposalController::class, 'pdf']);
-            Route::get('solar-proposals/{solarProposal}/excel', [SolarProposalController::class, 'excel']);
-            Route::get('solar-proposals-statistics', [SolarProposalController::class, 'statistics']);
-
-            // Solar Data Lookup
-            Route::prefix('solar-data')->group(function () {
-                Route::get('lookup', [SolarDataController::class, 'lookup']);
-                Route::get('provinces', [SolarDataController::class, 'provinces']);
-                Route::get('cities', [SolarDataController::class, 'cities']);
-                Route::get('locations', [SolarDataController::class, 'locations']);
-            });
-
-            // PLN Tariff Lookup
-            Route::prefix('pln-tariffs')->group(function () {
-                Route::get('/', [SolarDataController::class, 'tariffs']);
-                Route::get('grouped', [SolarDataController::class, 'tariffsGrouped']);
-                Route::get('{code}', [SolarDataController::class, 'tariffByCode']);
-            });
-        });
+        // Industry add-on: solar (authenticated)
+        $solarRouteContext = 'auth';
+        require base_path('routes/addons/solar.php');
 
         // Projects (Proyek)
         Route::middleware('feature:projects')->group(function () {

@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1;
+namespace App\Http\Controllers\Api\V1\Solar;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Api\V1\Controller;
 use App\Http\Requests\Api\V1\SolarCitiesRequest;
 use App\Http\Requests\Api\V1\SolarLookupRequest;
 use App\Http\Resources\Api\V1\IndonesiaSolarDataResource;

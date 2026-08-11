@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1;
+namespace App\Http\Controllers\Api\V1\ElectricalPanel;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Api\V1\Controller;
 use App\Http\Requests\Api\V1\StoreSpecValidationRuleRequest;
 use App\Http\Requests\Api\V1\StoreSpecValidationRuleSetRequest;
 use App\Http\Requests\Api\V1\UpdateSpecValidationRuleRequest;
