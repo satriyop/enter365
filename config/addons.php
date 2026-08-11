@@ -33,12 +33,15 @@ return [
         'http_namespace' => 'App\\Http\\Controllers\\Api\\V1\\ElectricalPanel',
         'export_namespace' => 'App\\Exports\\ElectricalPanel',
         'routes' => 'routes/addons/electrical_panel.php',
-        /** Nullable FK columns living on core tables (owned by this add-on) */
-        'extension_columns' => [
-            'bom_items.component_standard_id',
-            'bom_template_items.component_standard_id',
-            'boms.spec_rule_set_id',
-            'bom_templates.default_rule_set_id',
+        /**
+         * Extension data lives in add-on meta tables (not core manufacturing columns).
+         * Core bom_items / boms / bom_templates have no panel FKs after Fase A.
+         */
+        'meta_tables' => [
+            'electrical_panel_bom_item_meta',
+            'electrical_panel_bom_meta',
+            'electrical_panel_bom_template_item_meta',
+            'electrical_panel_bom_template_meta',
         ],
     ],
 

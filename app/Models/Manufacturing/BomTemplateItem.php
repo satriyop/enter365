@@ -20,8 +20,6 @@ class BomTemplateItem extends Model
     protected $fillable = [
         'template_id',
         'type',
-        // Extension column owned by electrical_panel add-on (nullable FK).
-        'component_standard_id',
         'product_id',
         'description',
         'default_quantity',
@@ -61,11 +59,11 @@ class BomTemplateItem extends Model
     }
 
     /**
-     * Whether this line references a component standard (FK only; no add-on type import).
+     * Whether this line has a product link (core). Panel standards live in add-on meta.
      */
     public function hasComponentStandard(): bool
     {
-        return $this->component_standard_id !== null;
+        return false;
     }
 
     /**

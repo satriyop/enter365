@@ -2,7 +2,11 @@
 
 namespace App\Providers\Addons;
 
-use App\Contracts\Manufacturing\BomTemplateBrandResolverInterface;
+use App\Contracts\Manufacturing\BomTemplateServiceInterface;
+use App\Models\ElectricalPanel\BomItemPanelMeta;
+use App\Models\ElectricalPanel\BomPanelMeta;
+use App\Models\ElectricalPanel\BomTemplateItemPanelMeta;
+use App\Models\ElectricalPanel\BomTemplatePanelMeta;
 use App\Models\ElectricalPanel\ComponentBrandMapping;
 use App\Models\ElectricalPanel\ComponentStandard;
 use App\Models\ElectricalPanel\SpecValidationRuleSet;
@@ -11,49 +15,90 @@ use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomItem;
 use App\Models\Manufacturing\BomTemplate;
 use App\Models\Manufacturing\BomTemplateItem;
-use App\Services\ElectricalPanel\BomTemplateBrandResolver;
-use App\Services\Manufacturing\NullBomTemplateBrandResolver;
+use App\Services\ElectricalPanel\BomTemplateService as PanelBomTemplateService;
 use App\Support\Features;
 use Illuminate\Support\ServiceProvider;
 
 /**
  * Industry add-on: electrical panel tools (Vahana).
  *
- * - Binds real BomTemplateBrandResolver when flag ON, else NullBomTemplateBrandResolver
- * - Registers Eloquent relations on core BOM models without core importing panel types
+ * Owns meta tables for BOM extension data and brand-aware template services.
+ * Core manufacturing tables no longer hold panel FKs.
  */
 class ElectricalPanelServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        // Resolve per call so withFeatures() / runtime flag flips work in tests & CLI.
-        $this->app->bind(BomTemplateBrandResolverInterface::class, function ($app) {
+        // Dynamic so withFeatures() works after boot; panel service when flag ON.
+        $this->app->bind(BomTemplateServiceInterface::class, function ($app) {
             if (Features::enabled('electrical_panel')) {
-                return $app->make(BomTemplateBrandResolver::class);
+                return $app->make(PanelBomTemplateService::class);
             }
 
-            return $app->make(NullBomTemplateBrandResolver::class);
+            return $app->make(\App\Services\Manufacturing\BomTemplateService::class);
         });
     }
 
     public function boot(): void
     {
-        // Always register relations so eager-loads work when add-on data/FK exists.
-        // Core models intentionally do not type-hint ElectricalPanel classes.
+        BomItem::resolveRelationUsing('panelMeta', function (BomItem $item) {
+            return $item->hasOne(BomItemPanelMeta::class, 'bom_item_id');
+        });
+
         BomItem::resolveRelationUsing('componentStandard', function (BomItem $item) {
-            return $item->belongsTo(ComponentStandard::class, 'component_standard_id');
+            return $item->hasOneThrough(
+                ComponentStandard::class,
+                BomItemPanelMeta::class,
+                'bom_item_id',
+                'id',
+                'id',
+                'component_standard_id'
+            );
+        });
+
+        BomTemplateItem::resolveRelationUsing('panelMeta', function (BomTemplateItem $item) {
+            return $item->hasOne(BomTemplateItemPanelMeta::class, 'bom_template_item_id');
         });
 
         BomTemplateItem::resolveRelationUsing('componentStandard', function (BomTemplateItem $item) {
-            return $item->belongsTo(ComponentStandard::class, 'component_standard_id');
+            return $item->hasOneThrough(
+                ComponentStandard::class,
+                BomTemplateItemPanelMeta::class,
+                'bom_template_item_id',
+                'id',
+                'id',
+                'component_standard_id'
+            );
+        });
+
+        Bom::resolveRelationUsing('panelMeta', function (Bom $bom) {
+            return $bom->hasOne(BomPanelMeta::class, 'bom_id');
         });
 
         Bom::resolveRelationUsing('specRuleSet', function (Bom $bom) {
-            return $bom->belongsTo(SpecValidationRuleSet::class, 'spec_rule_set_id');
+            return $bom->hasOneThrough(
+                SpecValidationRuleSet::class,
+                BomPanelMeta::class,
+                'bom_id',
+                'id',
+                'id',
+                'spec_rule_set_id'
+            );
+        });
+
+        BomTemplate::resolveRelationUsing('panelMeta', function (BomTemplate $template) {
+            return $template->hasOne(BomTemplatePanelMeta::class, 'bom_template_id');
         });
 
         BomTemplate::resolveRelationUsing('defaultRuleSet', function (BomTemplate $template) {
-            return $template->belongsTo(SpecValidationRuleSet::class, 'default_rule_set_id');
+            return $template->hasOneThrough(
+                SpecValidationRuleSet::class,
+                BomTemplatePanelMeta::class,
+                'bom_template_id',
+                'id',
+                'id',
+                'default_rule_set_id'
+            );
         });
 
         Product::resolveRelationUsing('componentBrandMappings', function (Product $product) {

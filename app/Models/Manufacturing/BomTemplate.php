@@ -31,8 +31,6 @@ class BomTemplate extends Model
         'description',
         'category',
         'thumbnail_path',
-        // Extension column owned by electrical_panel add-on (nullable FK).
-        'default_rule_set_id',
         'is_active',
         'usage_count',
         'created_by',
