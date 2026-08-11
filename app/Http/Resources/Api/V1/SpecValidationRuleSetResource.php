@@ -2,7 +2,7 @@
 
 namespace App\Http\Resources\Api\V1;
 
-use App\Models\Manufacturing\SpecValidationRuleSet;
+use App\Models\ElectricalPanel\SpecValidationRuleSet;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -12,7 +12,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class SpecValidationRuleSetResource extends JsonResource
 {
     /**
-     * @param  \Illuminate\Http\Request  $request
      * @return array{
      *   id: int,
      *   code: string,

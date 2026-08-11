@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Manufacturing;
+namespace App\Services\ElectricalPanel;
 
 use App\Models\Manufacturing\BomItem;
-use App\Models\Manufacturing\ComponentStandard;
+use App\Models\ElectricalPanel\ComponentStandard;
 
 class ComponentStandardService
 {

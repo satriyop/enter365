@@ -6,9 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreComponentBrandMappingRequest;
 use App\Http\Requests\Api\V1\UpdateComponentBrandMappingRequest;
 use App\Http\Resources\Api\V1\ComponentBrandMappingResource;
-use App\Models\Manufacturing\ComponentBrandMapping;
-use App\Models\Manufacturing\ComponentStandard;
-use App\Services\Manufacturing\ComponentBrandMappingService;
+use App\Models\ElectricalPanel\ComponentBrandMapping;
+use App\Models\ElectricalPanel\ComponentStandard;
+use App\Services\ElectricalPanel\ComponentBrandMappingService;
 use Illuminate\Http\JsonResponse;
 
 class ComponentBrandMappingController extends Controller

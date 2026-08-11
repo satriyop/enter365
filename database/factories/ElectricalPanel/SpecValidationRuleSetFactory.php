@@ -1,8 +1,8 @@
 <?php
 
-namespace Database\Factories\Manufacturing;
+namespace Database\Factories\ElectricalPanel;
 
-use App\Models\Manufacturing\SpecValidationRuleSet;
+use App\Models\ElectricalPanel\SpecValidationRuleSet;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 

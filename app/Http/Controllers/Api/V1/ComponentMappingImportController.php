@@ -188,10 +188,10 @@ class ComponentMappingImportController extends Controller
      */
     public function stats(): JsonResponse
     {
-        $totalStandards = \App\Models\Manufacturing\ComponentStandard::count();
-        $totalMappings = \App\Models\Manufacturing\ComponentBrandMapping::count();
+        $totalStandards = \App\Models\ElectricalPanel\ComponentStandard::count();
+        $totalMappings = \App\Models\ElectricalPanel\ComponentBrandMapping::count();
 
-        $productsWithMapping = \App\Models\Manufacturing\ComponentBrandMapping::distinct('product_id')->count();
+        $productsWithMapping = \App\Models\ElectricalPanel\ComponentBrandMapping::distinct('product_id')->count();
         $totalProducts = \App\Models\Inventory\Product::count();
         $productsWithoutMapping = $totalProducts - $productsWithMapping;
 
@@ -199,7 +199,7 @@ class ComponentMappingImportController extends Controller
             ? round(($productsWithMapping / $totalProducts) * 100)
             : 0;
 
-        $brandCounts = \App\Models\Manufacturing\ComponentBrandMapping::query()
+        $brandCounts = \App\Models\ElectricalPanel\ComponentBrandMapping::query()
             ->selectRaw('brand, COUNT(*) as count')
             ->groupBy('brand')
             ->pluck('count', 'brand')

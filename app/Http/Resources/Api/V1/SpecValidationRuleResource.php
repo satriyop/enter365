@@ -2,18 +2,17 @@
 
 namespace App\Http\Resources\Api\V1;
 
-use App\Models\Manufacturing\ComponentStandard;
-use App\Models\Manufacturing\SpecValidationRule;
+use App\Models\ElectricalPanel\ComponentStandard;
+use App\Models\ElectricalPanel\SpecValidationRule;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Models\Manufacturing\SpecValidationRule
+ * @mixin \App\Models\ElectricalPanel\SpecValidationRule
  */
 class SpecValidationRuleResource extends JsonResource
 {
     /**
-     * @param  \Illuminate\Http\Request  $request
      * @return array{
      *   id: int,
      *   rule_set_id: int,

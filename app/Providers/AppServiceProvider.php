@@ -35,8 +35,7 @@ use App\Contracts\Sales\RecurringServiceInterface;
 // Projects Domain Interfaces
 use App\Contracts\Sales\SalesReturnServiceInterface;
 // Solar Domain Interfaces
-use App\Contracts\Solar\SolarCalculationServiceInterface;
-use App\Contracts\Solar\SolarProposalServiceInterface;
+
 // Sales Domain Services
 use App\Services\Accounting\AccountingPolicyManager;
 use App\Services\Accounting\JournalService;
@@ -66,8 +65,7 @@ use App\Services\Sales\QuotationService;
 use App\Services\Sales\RecurringService;
 use App\Services\Sales\SalesReturnService;
 // Accounting Strategies
-use App\Services\Solar\SolarCalculationService;
-use App\Services\Solar\SolarProposalService;
+
 use App\Support\ConfigFeatureManager;
 use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\OpenApi;
@@ -249,9 +247,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ProjectServiceInterface::class, ProjectService::class);
         $this->app->bind(\App\Contracts\Projects\TaskServiceInterface::class, \App\Services\Projects\TaskService::class);
 
-        // Solar Domain (2 services)
-        $this->app->bind(SolarProposalServiceInterface::class, SolarProposalService::class);
-        $this->app->bind(SolarCalculationServiceInterface::class, SolarCalculationService::class);
+        // Solar Domain: bindings in Addons\SolarServiceProvider (only when solar_proposals on)
 
         // Tax Domain
         $this->app->bind(\App\Contracts\Tax\NsfpServiceInterface::class, \App\Services\Tax\NsfpService::class);

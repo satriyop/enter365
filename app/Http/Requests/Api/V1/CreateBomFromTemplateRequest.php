@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Api\V1;
 
-use App\Models\Manufacturing\ComponentBrandMapping;
+use App\Models\ElectricalPanel\ComponentBrandMapping;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 

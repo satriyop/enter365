@@ -1,8 +1,8 @@
 <?php
 
-namespace Database\Factories\Manufacturing;
+namespace Database\Factories\ElectricalPanel;
 
-use App\Models\Manufacturing\ComponentStandard;
+use App\Models\ElectricalPanel\ComponentStandard;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

@@ -5,10 +5,10 @@ declare(strict_types=1);
 use App\Models\Inventory\Product;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomItem;
-use App\Models\Manufacturing\ComponentBrandMapping;
-use App\Models\Manufacturing\ComponentStandard;
-use App\Services\Manufacturing\BrandSwap\BrandSwapPreviewService;
-use App\Services\Manufacturing\SpecValidationService;
+use App\Models\ElectricalPanel\ComponentBrandMapping;
+use App\Models\ElectricalPanel\ComponentStandard;
+use App\Services\ElectricalPanel\BrandSwap\BrandSwapPreviewService;
+use App\Services\ElectricalPanel\SpecValidationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);

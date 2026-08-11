@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models\Manufacturing;
+namespace App\Models\ElectricalPanel;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

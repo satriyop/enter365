@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Manufacturing;
+namespace App\Services\ElectricalPanel;
 
-use App\Models\Manufacturing\SpecValidationRuleSet;
+use App\Models\ElectricalPanel\SpecValidationRuleSet;
 
 class SpecValidationRuleSetService
 {

@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Api\V1;
 
-use App\Models\Manufacturing\ComponentStandard;
-use App\Models\Manufacturing\SpecValidationRule;
+use App\Models\ElectricalPanel\ComponentStandard;
+use App\Models\ElectricalPanel\SpecValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 

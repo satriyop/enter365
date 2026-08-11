@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
+use App\Models\ElectricalPanel\ComponentStandard;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomItem;
 use App\Models\Manufacturing\BomTemplate;
 use App\Models\Manufacturing\BomTemplateItem;
-use App\Models\Manufacturing\ComponentStandard;
 use App\Models\Solar\IndonesiaSolarData;
 use App\Models\Solar\PlnTariff;
+use App\Services\ElectricalPanel\SpecValidationService;
 use App\Services\Manufacturing\BomTemplateService;
-use App\Services\Manufacturing\SpecValidationService;
 use App\Support\Features;
 use Database\Seeders\Demo\MasterDataSeeder;
 use Database\Seeders\IndonesiaSolarDataSeeder;
@@ -180,5 +180,84 @@ describe('Demo profile constants', function () {
     it('exposes enterprise demo profile constant', function () {
         expect(\Database\Seeders\Demo\DemoSeeder::DEMO_ENTERPRISE)->toBe('enterprise')
             ->and(Features::disabled('electrical_panel') || Features::enabled('electrical_panel'))->toBeTrue();
+    });
+});
+
+describe('Add-on package boundaries (code isolation)', function () {
+    it('places electrical panel services outside core Manufacturing', function () {
+        expect(class_exists(\App\Services\ElectricalPanel\BrandSwapService::class))->toBeTrue()
+            ->and(class_exists(\App\Services\ElectricalPanel\SpecValidationService::class))->toBeTrue()
+            ->and(class_exists(\App\Models\ElectricalPanel\ComponentStandard::class))->toBeTrue()
+            ->and(file_exists(app_path('Services/Manufacturing/BrandSwapService.php')))->toBeFalse()
+            ->and(file_exists(app_path('Services/Manufacturing/SpecValidationService.php')))->toBeFalse()
+            ->and(file_exists(app_path('Services/Manufacturing/ComponentStandardService.php')))->toBeFalse()
+            ->and(file_exists(app_path('Models/Manufacturing/ComponentStandard.php')))->toBeFalse()
+            ->and(is_dir(app_path('Services/Manufacturing/BrandSwap')))->toBeFalse();
+    });
+
+    it('registers industry add-on service providers', function () {
+        $providers = require base_path('bootstrap/providers.php');
+
+        expect($providers)->toContain(\App\Providers\Addons\ElectricalPanelServiceProvider::class)
+            ->and($providers)->toContain(\App\Providers\Addons\SolarServiceProvider::class)
+            ->and(config('addons.electrical_panel.feature'))->toBe('electrical_panel')
+            ->and(config('addons.solar.feature'))->toBe('solar_proposals');
+    });
+
+    it('does not bind solar services when solar_proposals is off at provider register', function () {
+        config(['features.modules.solar_proposals' => false]);
+
+        $app = app();
+        // Simulate fresh registration against current config (flag off)
+        $provider = new \App\Providers\Addons\SolarServiceProvider($app);
+        // Clear prior binding from boot (phpunit FEATURE_PRESET=full)
+        $app->offsetUnset(\App\Contracts\Solar\SolarProposalServiceInterface::class);
+        $app->offsetUnset(\App\Contracts\Solar\SolarCalculationServiceInterface::class);
+
+        $provider->register();
+
+        expect($app->bound(\App\Contracts\Solar\SolarProposalServiceInterface::class))->toBeFalse()
+            ->and($app->bound(\App\Contracts\Solar\SolarCalculationServiceInterface::class))->toBeFalse()
+            ->and(\App\Providers\Addons\SolarServiceProvider::isEnabled())->toBeFalse();
+    });
+
+    it('binds solar services when solar_proposals is on at provider register', function () {
+        config(['features.modules.solar_proposals' => true]);
+
+        $app = app();
+        $app->offsetUnset(\App\Contracts\Solar\SolarProposalServiceInterface::class);
+        $app->offsetUnset(\App\Contracts\Solar\SolarCalculationServiceInterface::class);
+
+        (new \App\Providers\Addons\SolarServiceProvider($app))->register();
+
+        expect($app->bound(\App\Contracts\Solar\SolarProposalServiceInterface::class))->toBeTrue()
+            ->and($app->make(\App\Contracts\Solar\SolarProposalServiceInterface::class))
+            ->toBeInstanceOf(\App\Services\Solar\SolarProposalService::class);
+    });
+
+    it('keeps core manufacturing services without industry class names', function () {
+        $coreFiles = collect(glob(app_path('Services/Manufacturing/*.php')) ?: [])
+            ->map(fn (string $path) => basename($path, '.php'))
+            ->values()
+            ->all();
+
+        $forbidden = [
+            'BrandSwapService',
+            'ComponentStandardService',
+            'ComponentBrandMappingService',
+            'ComponentMappingService',
+            'CostOptimizationService',
+            'ProductEquivalenceService',
+            'SpecValidationService',
+            'SpecValidationRuleSetService',
+        ];
+
+        foreach ($forbidden as $name) {
+            expect($coreFiles)->not->toContain($name);
+        }
+
+        expect($coreFiles)->toContain('BomService')
+            ->and($coreFiles)->toContain('WorkOrderService')
+            ->and($coreFiles)->toContain('MrpService');
     });
 });

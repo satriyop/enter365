@@ -2,10 +2,10 @@
 
 namespace Database\Factories\Manufacturing;
 
+use App\Models\ElectricalPanel\ComponentStandard;
 use App\Models\Inventory\Product;
 use App\Models\Manufacturing\BomTemplate;
 use App\Models\Manufacturing\BomTemplateItem;
-use App\Models\Manufacturing\ComponentStandard;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

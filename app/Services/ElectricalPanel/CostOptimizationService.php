@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Manufacturing;
+namespace App\Services\ElectricalPanel;
 
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomItem;
-use App\Models\Manufacturing\ComponentBrandMapping;
+use App\Models\ElectricalPanel\ComponentBrandMapping;
 use App\Services\Base\BaseService;
 
 /**

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Database\Seeders\Demo;
 
+use App\Models\ElectricalPanel\ComponentBrandMapping;
+use App\Models\ElectricalPanel\ComponentStandard;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\ProductCategory;
-use App\Models\Manufacturing\ComponentBrandMapping;
-use App\Models\Manufacturing\ComponentStandard;
 use App\Models\User;
 use App\Support\Features;
 use Illuminate\Database\Seeder;

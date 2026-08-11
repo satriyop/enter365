@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Manufacturing\BrandSwap;
+namespace App\Services\ElectricalPanel\BrandSwap;
 
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomItem;
-use App\Models\Manufacturing\ComponentBrandMapping;
-use App\Models\Manufacturing\SpecValidationRuleSet;
-use App\Services\Manufacturing\SpecValidationService;
+use App\Models\ElectricalPanel\ComponentBrandMapping;
+use App\Models\ElectricalPanel\SpecValidationRuleSet;
+use App\Services\ElectricalPanel\SpecValidationService;
 
 /**
  * Service for previewing brand swap operations.

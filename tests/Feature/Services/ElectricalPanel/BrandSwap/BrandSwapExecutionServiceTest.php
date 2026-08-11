@@ -6,9 +6,9 @@ use App\Enums\DocumentStatus;
 use App\Models\Inventory\Product;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomItem;
-use App\Models\Manufacturing\ComponentBrandMapping;
-use App\Models\Manufacturing\ComponentStandard;
-use App\Services\Manufacturing\BrandSwap\BrandSwapExecutionService;
+use App\Models\ElectricalPanel\ComponentBrandMapping;
+use App\Models\ElectricalPanel\ComponentStandard;
+use App\Services\ElectricalPanel\BrandSwap\BrandSwapExecutionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);

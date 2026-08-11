@@ -1,10 +1,10 @@
 <?php
 
-namespace Database\Factories\Manufacturing;
+namespace Database\Factories\ElectricalPanel;
 
 use App\Models\Inventory\Product;
-use App\Models\Manufacturing\ComponentBrandMapping;
-use App\Models\Manufacturing\ComponentStandard;
+use App\Models\ElectricalPanel\ComponentBrandMapping;
+use App\Models\ElectricalPanel\ComponentStandard;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

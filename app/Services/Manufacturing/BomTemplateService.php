@@ -8,11 +8,11 @@ use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Manufacturing\BomTemplateServiceInterface;
 use App\Enums\DocumentStatus;
+use App\Models\ElectricalPanel\ComponentBrandMapping;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomItem;
 use App\Models\Manufacturing\BomTemplate;
 use App\Models\Manufacturing\BomTemplateItem;
-use App\Models\Manufacturing\ComponentBrandMapping;
 use App\Services\Base\BaseService;
 use App\Support\Features;
 

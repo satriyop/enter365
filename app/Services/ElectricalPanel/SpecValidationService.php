@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Services\Manufacturing;
+namespace App\Services\ElectricalPanel;
 
 use App\Models\Manufacturing\Bom;
-use App\Models\Manufacturing\ComponentBrandMapping;
-use App\Models\Manufacturing\ComponentStandard;
-use App\Models\Manufacturing\SpecValidationRuleSet;
+use App\Models\ElectricalPanel\ComponentBrandMapping;
+use App\Models\ElectricalPanel\ComponentStandard;
+use App\Models\ElectricalPanel\SpecValidationRuleSet;
 use App\Support\Features;
 use Illuminate\Support\Collection;
 

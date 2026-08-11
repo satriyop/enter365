@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models\Manufacturing;
+namespace App\Models\ElectricalPanel;
 
 use App\Models\Inventory\Product;
 use App\Models\User;

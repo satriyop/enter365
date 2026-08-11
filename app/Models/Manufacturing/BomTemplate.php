@@ -2,6 +2,7 @@
 
 namespace App\Models\Manufacturing;
 
+use App\Models\ElectricalPanel\SpecValidationRuleSet;
 use App\Models\User;
 use App\Traits\HasActiveStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

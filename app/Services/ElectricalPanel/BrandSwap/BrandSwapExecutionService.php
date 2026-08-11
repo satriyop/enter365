@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Manufacturing\BrandSwap;
+namespace App\Services\ElectricalPanel\BrandSwap;
 
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
@@ -11,10 +11,10 @@ use App\Models\Inventory\Product;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomItem;
 use App\Models\Manufacturing\BomVariantGroup;
-use App\Models\Manufacturing\ComponentBrandMapping;
+use App\Models\ElectricalPanel\ComponentBrandMapping;
 use App\Services\Base\BaseService;
 use App\Services\Manufacturing\BomVariantGroupService;
-use App\Services\Manufacturing\ProductEquivalenceService;
+use App\Services\ElectricalPanel\ProductEquivalenceService;
 use Illuminate\Support\Collection;
 
 /**

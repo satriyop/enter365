@@ -2,8 +2,8 @@
 
 namespace Database\Factories\Manufacturing;
 
+use App\Models\ElectricalPanel\SpecValidationRuleSet;
 use App\Models\Manufacturing\BomTemplate;
-use App\Models\Manufacturing\SpecValidationRuleSet;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 

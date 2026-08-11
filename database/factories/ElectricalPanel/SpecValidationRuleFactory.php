@@ -1,10 +1,10 @@
 <?php
 
-namespace Database\Factories\Manufacturing;
+namespace Database\Factories\ElectricalPanel;
 
-use App\Models\Manufacturing\ComponentStandard;
-use App\Models\Manufacturing\SpecValidationRule;
-use App\Models\Manufacturing\SpecValidationRuleSet;
+use App\Models\ElectricalPanel\ComponentStandard;
+use App\Models\ElectricalPanel\SpecValidationRule;
+use App\Models\ElectricalPanel\SpecValidationRuleSet;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
