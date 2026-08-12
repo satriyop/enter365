@@ -82,29 +82,24 @@ Severity legend:
 
 ---
 
-#### F-03 · Manufacturing cost strategies: default no-JE + lifecycle not wired
+#### F-03 · Manufacturing cost strategies: default no-JE + lifecycle not wired — **FIXED 2026-08-12**
 
-**Why it hurts (real residual risk):** Job/WIP JE implementations exist but **WO lifecycle never invokes them**. Default policy is **`project_based`**, a deliberate **no-journal stub** (costs expected in `project_costs`). Factories/shops on `job_costing` / `wip_accounting` get **zero strategy-driven JEs** until wired — false confidence from unit tests alone.
+**Was:** Job/WIP JE implementations existed but WO lifecycle never invoked them.
 
-| Fact | Evidence |
+**Fixed:**
+| Path | Behavior |
 |------|----------|
-| Default config | `config/accounting.php` → `manufacturing_costing` default `project_based` via `env('ACCOUNTING_MFG_METHOD', 'project_based')` |
-| Policy resolution | `AccountingPolicyManager::manufacturing()` defaults `'project_based'` |
-| Default strategy behavior | `ProjectBasedCostingStrategy` — all hooks return `null`; `calculateTotalCost` returns `0` (comments: costs in `project_costs`) |
-| JE strategies implemented | `JobCostingStrategy` (~118 LOC) posts inventory→WIP on consume, WIP→FG on complete; `WIPAccountingStrategy` (~124 LOC) similar full WIP path |
-| Unit coverage (strategy only) | `tests/Unit/Services/Accounting/Strategies/Manufacturing/JobCostingStrategyTest.php` |
-| **Not called from MFG services** | Grep of `app/Services/Manufacturing`: **no** `onMaterialConsumption` / `onWorkOrderComplete` / `onWorkOrderStart` / `manufacturing()` usage |
-| WO cost helper | `WorkOrderCostService::updateProjectCosts` only recalculates project financials if `project_id` set — does **not** call `ManufacturingCostStrategy` |
-| PHPStan exclude (**one file only**) | `phpstan.neon:29–30` excludes **only** `ProjectBasedCostingStrategy.php` with comment *“intentionally returns null (costs tracked in project_costs table)”* — **not** all Manufacturing strategies |
+| `WorkOrderMaterialService::consumeMaterials` | Creates `MaterialConsumption` for remaining qty + `manufacturing()->onMaterialConsumption()` |
+| `WorkOrderMaterialService::recordConsumption` | Calls strategy after each consumption save |
+| `WorkOrderService::start` | Calls `onWorkOrderStart` (no-op for all current methods) |
+| `WorkOrderService::complete` | After transition, calls `onWorkOrderComplete`; project_based still uses `updateProjectCosts` when `project_id` set |
+| CoA seeder | Added `1-1410` Persediaan Barang Jadi + `1-1450` WIP (referenced by strategies) |
+| Integration tests | `WorkOrderManufacturingCostStrategyWiringTest` — project_based (no JE), job_costing (consume+complete JEs, no double-count), wip_accounting (posted JEs) |
 
-**Not the bug:** “JobCosting JE mapping incomplete” or “PHPStan excludes Manufacturing/*”.
-
-**Remediation:**
-1. Decide product default: keep `project_based` for EPC/solar **or** switch shops to `job_costing` / `wip_accounting` via config/demo presets.
-2. **Wire** `AccountingPolicyManager::manufacturing()` into `WorkOrderMaterialService::consumeMaterials` and `WorkOrderService::complete` (and start if WIP needs open entries).
-3. For `project_based`, ensure material costs actually land in `project_costs` on consume/complete (today strategy returns null — verify WO→project cost path is complete elsewhere).
-4. Add **integration** tests: WO consume/complete with each method asserts JE presence/absence correctly.
-5. Keep PHPStan exclude limited to intentional stub; document in audit not Claude.md lore.
+**Residual (honest):**
+- Default remains `project_based` (no JE) — intentional for EPC/solar.
+- `project_based` does **not** create `ProjectCost` rows; it relies on existing `WorkOrderCostService::updateProjectCosts` → `project.calculateFinancials()`.
+- Domain `WorkOrderCompletionPipeline` / `MaterialConsumptionHandler` still not used by `WorkOrderService` (service path is live).
 
 ---
 
@@ -292,7 +287,7 @@ Suggested file names / order:
 | 3 | PO/GRN/etc. destroy always via service (no direct `$model->delete()`) | Cascades/events preserved |
 | 4 | BomTemplate item mutations via BomTemplateServiceInterface | AddonAttributes already there |
 | 5 | Split PaymentService / JournalService / DownPaymentService (coordinator) | Testability |
-| 6 | Wire ManufacturingCostStrategy into WO consume/complete; validate project_based → project_costs; integration tests per method | Real JEs when job_costing/wip on; honest default |
+| 6 | ~~Wire ManufacturingCostStrategy into WO consume/complete~~ **DONE 2026-08-12** | Real JEs when job_costing/wip on; honest default |
 | 7 | Remove or implement notification listeners | Honest product behavior |
 | 8 | FE: extract panel UI from core BOM pages; rename package; remove login console.log | Agent + brand hygiene |
 | 9 | Browser smoke: MFG + solar + panel nav under presets | SPA stability signal |

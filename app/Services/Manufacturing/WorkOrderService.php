@@ -14,6 +14,7 @@ use App\Models\Manufacturing\BomItem;
 use App\Models\Manufacturing\WorkOrder;
 use App\Models\Manufacturing\WorkOrderItem;
 use App\Models\Projects\Project;
+use App\Services\Accounting\AccountingPolicyManager;
 use App\Services\Base\BaseService;
 
 class WorkOrderService extends BaseService implements WorkOrderServiceInterface
@@ -23,6 +24,7 @@ class WorkOrderService extends BaseService implements WorkOrderServiceInterface
         private WorkOrderCostService $costService,
         private WorkOrderNumberGenerator $numberGenerator,
         private WorkOrderDomainFactory $domainFactory,
+        private AccountingPolicyManager $policyManager,
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger
     ) {
@@ -205,9 +207,14 @@ class WorkOrderService extends BaseService implements WorkOrderServiceInterface
             );
         }
 
-        $wo->transitionTo(DocumentStatus::InProgress, $userId);
+        return $this->executeInTransaction('start', function () use ($wo, $userId) {
+            $wo->transitionTo(DocumentStatus::InProgress, $userId);
 
-        return $wo->fresh();
+            // Strategy may track WIP on start (currently no-op for all methods)
+            $this->policyManager->manufacturing()->onWorkOrderStart($wo->fresh());
+
+            return $wo->fresh();
+        }, ['work_order_id' => $wo->id]);
     }
 
     /**
@@ -232,6 +239,10 @@ class WorkOrderService extends BaseService implements WorkOrderServiceInterface
             $wo->transitionTo(DocumentStatus::Completed, $userId);
 
             $wo->refresh();
+
+            // Job costing / WIP: transfer accumulated WIP → finished goods
+            // Project based: no JE (project financials updated below)
+            $this->policyManager->manufacturing()->onWorkOrderComplete($wo);
 
             if ($wo->project_id) {
                 $this->costService->updateProjectCosts($wo);

@@ -31,6 +31,8 @@ class ChartOfAccountsSeeder extends Seeder
             ['code' => '1-1200', 'name' => 'Piutang Lain-lain', 'type' => Account::TYPE_ASSET, 'subtype' => Account::SUBTYPE_CURRENT_ASSET, 'is_system' => false, 'parent' => '1-1000'],
             ['code' => '1-1300', 'name' => 'PPN Masukan', 'type' => Account::TYPE_ASSET, 'subtype' => Account::SUBTYPE_CURRENT_ASSET, 'is_system' => true, 'parent' => '1-1000'],
             ['code' => '1-1400', 'name' => 'Persediaan Barang Dagangan', 'type' => Account::TYPE_ASSET, 'subtype' => Account::SUBTYPE_CURRENT_ASSET, 'is_system' => false, 'parent' => '1-1000'],
+            ['code' => '1-1410', 'name' => 'Persediaan Barang Jadi', 'type' => Account::TYPE_ASSET, 'subtype' => Account::SUBTYPE_CURRENT_ASSET, 'is_system' => false, 'parent' => '1-1000'],
+            ['code' => '1-1450', 'name' => 'Barang Dalam Proses (WIP)', 'type' => Account::TYPE_ASSET, 'subtype' => Account::SUBTYPE_CURRENT_ASSET, 'is_system' => false, 'parent' => '1-1000'],
             ['code' => '1-1500', 'name' => 'Biaya Dibayar Dimuka', 'type' => Account::TYPE_ASSET, 'subtype' => Account::SUBTYPE_CURRENT_ASSET, 'is_system' => false, 'parent' => '1-1000'],
             ['code' => '1-1501', 'name' => 'Sewa Dibayar Dimuka', 'type' => Account::TYPE_ASSET, 'subtype' => Account::SUBTYPE_CURRENT_ASSET, 'is_system' => false, 'parent' => '1-1500'],
             ['code' => '1-1502', 'name' => 'Asuransi Dibayar Dimuka', 'type' => Account::TYPE_ASSET, 'subtype' => Account::SUBTYPE_CURRENT_ASSET, 'is_system' => false, 'parent' => '1-1500'],

@@ -13,6 +13,7 @@ use App\Models\Inventory\ProductStock;
 use App\Models\Manufacturing\MaterialConsumption;
 use App\Models\Manufacturing\WorkOrder;
 use App\Models\Manufacturing\WorkOrderItem;
+use App\Services\Accounting\AccountingPolicyManager;
 use App\Services\Base\BaseService;
 
 /**
@@ -24,7 +25,8 @@ class WorkOrderMaterialService extends BaseService
 {
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
-        ContextualLoggerInterface $logger
+        ContextualLoggerInterface $logger,
+        private AccountingPolicyManager $policyManager,
     ) {
         parent::__construct($eventDispatcher, $logger);
     }
@@ -103,16 +105,24 @@ class WorkOrderMaterialService extends BaseService
 
     /**
      * Consume materials (deduct from inventory).
+     *
+     * Creates MaterialConsumption rows for remaining untracked qty and invokes
+     * the configured ManufacturingCostStrategy for each new consumption.
      */
     public function consumeMaterials(WorkOrder $wo): void
     {
         $this->executeInTransaction('consume_materials', function () use ($wo) {
+            $wo->loadMissing(['materialItems.product']);
+            $strategy = $this->policyManager->manufacturing();
+
             foreach ($wo->materialItems as $item) {
                 if (! $item->product_id) {
                     continue;
                 }
 
                 $quantityToConsume = (int) $item->quantity_required;
+                $remainingForCost = max(0.0, $item->getRemainingQuantity());
+                $unitCost = (int) ($item->unit_cost ?: ($item->product?->purchase_price ?? 0));
 
                 // Lock the stock row to prevent concurrent modification
                 $stock = ProductStock::where('product_id', $item->product_id)
@@ -136,8 +146,8 @@ class WorkOrderMaterialService extends BaseService
                         'quantity' => $quantityToConsume,
                         'quantity_before' => $stock->quantity + $quantityToConsume,
                         'quantity_after' => $stock->quantity,
-                        'unit_cost' => $item->unit_cost,
-                        'total_cost' => (int) round($quantityToConsume * $item->unit_cost),
+                        'unit_cost' => $unitCost,
+                        'total_cost' => (int) round($quantityToConsume * $unitCost),
                         'reference_type' => WorkOrder::class,
                         'reference_id' => $wo->id,
                         'notes' => "Konsumsi untuk WO: {$wo->wo_number}",
@@ -145,10 +155,31 @@ class WorkOrderMaterialService extends BaseService
                     ]);
                 }
 
-                // Update item as consumed
+                // Track remaining cost basis only (avoid double-counting prior recordConsumption)
+                if ($remainingForCost > 0) {
+                    $consumption = new MaterialConsumption([
+                        'work_order_id' => $wo->id,
+                        'work_order_item_id' => $item->id,
+                        'product_id' => $item->product_id,
+                        'quantity_consumed' => $remainingForCost,
+                        'quantity_scrapped' => 0,
+                        'unit' => $item->unit ?? $item->product?->unit ?? 'pcs',
+                        'unit_cost' => $unitCost,
+                        'consumed_date' => now(),
+                        'consumed_by' => $this->getUserId(),
+                        'notes' => "Konsumsi otomatis saat penyelesaian WO: {$wo->wo_number}",
+                    ]);
+                    $consumption->calculateTotalCost();
+                    $consumption->save();
+
+                    $strategy->onMaterialConsumption($consumption);
+                }
+
+                // Update item as fully consumed
                 $item->quantity_consumed = $quantityToConsume;
-                $item->actual_unit_cost = $item->unit_cost;
-                $item->total_actual_cost = (int) round($quantityToConsume * $item->unit_cost);
+                $item->actual_unit_cost = $unitCost;
+                $item->total_actual_cost = (int) $item->consumptions()->sum('total_cost')
+                    ?: (int) round($quantityToConsume * $unitCost);
                 $item->save();
             }
         }, ['work_order_id' => $wo->id]);
@@ -171,6 +202,8 @@ class WorkOrderMaterialService extends BaseService
         }
 
         $this->executeInTransaction('record_consumption', function () use ($wo, $consumptions) {
+            $strategy = $this->policyManager->manufacturing();
+
             foreach ($consumptions as $consumptionData) {
                 $woItem = isset($consumptionData['work_order_item_id'])
                     ? WorkOrderItem::find($consumptionData['work_order_item_id'])
@@ -194,6 +227,8 @@ class WorkOrderMaterialService extends BaseService
                 ]);
                 $consumption->calculateTotalCost();
                 $consumption->save();
+
+                $strategy->onMaterialConsumption($consumption);
 
                 // Update WO item consumed quantity
                 if ($woItem) {

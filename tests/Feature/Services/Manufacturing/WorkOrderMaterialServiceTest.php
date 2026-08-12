@@ -289,6 +289,12 @@ describe('consumeMaterials', function () {
             ->first();
 
         expect((float) $item->quantity_consumed)->toEqual(10.0);
+
+        // Verify MaterialConsumption created for strategy cost basis
+        $consumption = MaterialConsumption::where('work_order_id', $wo->id)->first();
+        expect($consumption)->not->toBeNull()
+            ->and((float) $consumption->quantity_consumed)->toEqual(10.0)
+            ->and((int) $consumption->total_cost)->toBe(1500000);
     });
 });
 
