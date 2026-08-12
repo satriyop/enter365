@@ -4,76 +4,49 @@ declare(strict_types=1);
 
 namespace App\Services\Sales;
 
-use App\Contracts\Accounting\JournalServiceInterface;
-use App\Contracts\Accounting\Strategies\COGSRecognitionStrategy;
-use App\Contracts\Events\EventDispatcherInterface;
-use App\Contracts\Inventory\InventoryServiceInterface;
-use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Sales\DeliveryOrderServiceInterface;
-use App\Enums\DocumentStatus;
-use App\Models\Accounting\JournalEntry;
-use App\Models\Inventory\InventoryMovement;
 use App\Models\Manufacturing\WorkOrder;
 use App\Models\Sales\DeliveryOrder;
-use App\Models\Sales\DeliveryOrderItem;
 use App\Models\Sales\Invoice;
-use App\Services\Base\Traits\WithDocuments;
-use App\Services\Base\Traits\WithEventDispatching;
-use App\Services\Base\Traits\WithOperationContext;
-use App\Services\Base\Traits\WithTransaction;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
+use App\Services\Sales\DeliveryOrder\DeliveryOrderCrudService;
+use App\Services\Sales\DeliveryOrder\DeliveryOrderWorkflowService;
+use App\Support\OperationContext;
+use Illuminate\Database\Eloquent\Collection;
 
+/**
+ * Delivery order service coordinator.
+ *
+ * Thin coordinator that delegates to focused services:
+ * - DeliveryOrderCrudService: create, update, delete, createFromInvoice, createFromWorkOrder, duplicate, getForInvoice
+ * - DeliveryOrderWorkflowService: confirm, ship, deliver, cancel, reverseShipment, updateDeliveryProgress
+ *
+ * @see \App\Services\Sales\DeliveryOrder\DeliveryOrderCrudService
+ * @see \App\Services\Sales\DeliveryOrder\DeliveryOrderWorkflowService
+ */
 class DeliveryOrderService implements DeliveryOrderServiceInterface
 {
-    use WithDocuments;
-    use WithEventDispatching;
-    use WithOperationContext;
-    use WithTransaction;
-
-    protected EventDispatcherInterface $eventDispatcher;
-
-    protected ContextualLoggerInterface $logger;
-
-    private InventoryServiceInterface $inventoryService;
-
-    private COGSRecognitionStrategy $cogsStrategy;
-
-    private JournalServiceInterface $journalService;
-
     public function __construct(
-        EventDispatcherInterface $eventDispatcher,
-        ContextualLoggerInterface $logger,
-        InventoryServiceInterface $inventoryService,
-        COGSRecognitionStrategy $cogsStrategy,
-        JournalServiceInterface $journalService
-    ) {
-        $this->eventDispatcher = $eventDispatcher;
-        $this->logger = $logger;
-        $this->inventoryService = $inventoryService;
-        $this->cogsStrategy = $cogsStrategy;
-        $this->journalService = $journalService;
+        private DeliveryOrderCrudService $crud,
+        private DeliveryOrderWorkflowService $workflow,
+    ) {}
+
+    /**
+     * Set operation context for all underlying services.
+     *
+     * Returns a clone with context-aware services for fluent chaining.
+     */
+    public function withContext(OperationContext $context): static
+    {
+        $clone = clone $this;
+        $clone->crud = $this->crud->withContext($context);
+        $clone->workflow = $this->workflow->withContext($context);
+
+        return $clone;
     }
 
-    protected function getModelClass(): string
-    {
-        return DeliveryOrder::class;
-    }
-
-    protected function getItemRelation(): string
-    {
-        return 'items';
-    }
-
-    protected function getInitialStatus(): DocumentStatus
-    {
-        return DocumentStatus::Draft;
-    }
-
-    protected function getEagerLoadRelations(): array
-    {
-        return ['items', 'contact', 'invoice', 'warehouse'];
-    }
+    // ─────────────────────────────────────────────────────────────
+    // CRUD Operations (delegated to DeliveryOrderCrudService)
+    // ─────────────────────────────────────────────────────────────
 
     /**
      * Create a new delivery order.
@@ -82,8 +55,7 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
      */
     public function create(array $data): DeliveryOrder
     {
-        /** @var DeliveryOrder */
-        return $this->createDocument($data);
+        return $this->crud->create($data);
     }
 
     /**
@@ -93,8 +65,7 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
      */
     public function update(DeliveryOrder $deliveryOrder, array $data): DeliveryOrder
     {
-        /** @var DeliveryOrder */
-        return $this->updateDocument($deliveryOrder, $data);
+        return $this->crud->update($deliveryOrder, $data);
     }
 
     /**
@@ -102,105 +73,17 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
      */
     public function delete(DeliveryOrder $deliveryOrder): bool
     {
-        return $this->deleteDocument($deliveryOrder);
-    }
-
-    protected function validateEditable(Model $document): void
-    {
-        /** @var DeliveryOrder $document */
-        if (! $document->isEditable()) {
-            throw \App\Exceptions\Domain\DocumentLockedException::cannotEdit($document, 'Delivery order can only be edited in draft status.');
-        }
-    }
-
-    protected function validateDeletable(Model $document): void
-    {
-        /** @var DeliveryOrder $document */
-        if (! $document->isEditable()) {
-            throw \App\Exceptions\Domain\DocumentLockedException::cannotDelete($document, 'Only draft delivery orders can be deleted.');
-        }
-    }
-
-    protected function createItems(Model $document, array $items): void
-    {
-        assert($document instanceof DeliveryOrder);
-        foreach ($items as $itemData) {
-            $document->items()->create($itemData);
-        }
+        return $this->crud->delete($deliveryOrder);
     }
 
     /**
      * Create delivery order from invoice.
+     *
+     * @param  array<string, mixed>  $data
      */
     public function createFromInvoice(Invoice $invoice, array $data = []): DeliveryOrder
     {
-        return $this->executeInTransaction('create_from_invoice', function () use ($invoice, $data) {
-            // Calculate already-allocated quantities from existing non-cancelled DOs
-            $allocatedQuantities = $this->getAllocatedQuantitiesForInvoice($invoice);
-
-            $deliveryOrder = new DeliveryOrder([
-                'invoice_id' => $invoice->id,
-                'contact_id' => $invoice->contact_id,
-                'do_date' => $data['do_date'] ?? now()->toDateString(),
-                'shipping_address' => $data['shipping_address'] ?? $invoice->contact->address ?? null,
-                'shipping_method' => $data['shipping_method'] ?? null,
-                'warehouse_id' => $data['warehouse_id'] ?? null,
-                'notes' => $data['notes'] ?? null,
-                'created_by' => $data['created_by'] ?? null,
-            ]);
-            $deliveryOrder->save();
-
-            $hasItems = false;
-            foreach ($invoice->items as $invoiceItem) {
-                $allocated = $allocatedQuantities[$invoiceItem->id] ?? 0;
-                $remaining = (float) $invoiceItem->quantity - $allocated;
-
-                if ($remaining <= 0) {
-                    continue;
-                }
-
-                $item = new DeliveryOrderItem;
-                $item->delivery_order_id = $deliveryOrder->id;
-                $item->fillFromInvoiceItem($invoiceItem, $remaining);
-                $item->save();
-                $hasItems = true;
-            }
-
-            if (! $hasItems) {
-                throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
-                    'membuat surat jalan',
-                    'Semua item invoice sudah dialokasikan ke surat jalan lain'
-                );
-            }
-
-            return $deliveryOrder->fresh(['items', 'contact', 'invoice', 'warehouse']);
-        }, ['invoice_id' => $invoice->id]);
-    }
-
-    /**
-     * Get already-allocated quantities per invoice item from existing non-cancelled DOs.
-     *
-     * @return array<int, float> Map of invoice_item_id => allocated quantity
-     */
-    private function getAllocatedQuantitiesForInvoice(Invoice $invoice): array
-    {
-        $existingDoIds = DeliveryOrder::query()
-            ->where('invoice_id', $invoice->id)
-            ->where('status', '!=', DocumentStatus::Cancelled)
-            ->pluck('id');
-
-        if ($existingDoIds->isEmpty()) {
-            return [];
-        }
-
-        return DeliveryOrderItem::query()
-            ->whereIn('delivery_order_id', $existingDoIds)
-            ->whereNotNull('invoice_item_id')
-            ->selectRaw('invoice_item_id, SUM(quantity) as total_qty')
-            ->groupBy('invoice_item_id')
-            ->pluck('total_qty', 'invoice_item_id')
-            ->map(fn ($qty) => (float) $qty)
-            ->toArray();
+        return $this->crud->createFromInvoice($invoice, $data);
     }
 
     /**
@@ -208,246 +91,7 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
      */
     public function createFromWorkOrder(WorkOrder $workOrder): DeliveryOrder
     {
-        return $this->executeInTransaction('create_from_work_order', function () use ($workOrder) {
-            $project = $workOrder->project;
-
-            $deliveryOrder = new DeliveryOrder([
-                'contact_id' => $project->contact_id,
-                'do_date' => now()->toDateString(),
-                'shipping_address' => $project->contact->address ?? null,
-                'warehouse_id' => $workOrder->warehouse_id,
-                'notes' => "From Work Order: {$workOrder->wo_number}",
-                'created_by' => $this->getUserId(),
-            ]);
-            $deliveryOrder->save();
-
-            if ($workOrder->product_id) {
-                $deliveryOrder->items()->create([
-                    'product_id' => $workOrder->product_id,
-                    'description' => $workOrder->name ?? $workOrder->product->name ?? '',
-                    'quantity' => $workOrder->quantity_completed > 0
-                        ? $workOrder->quantity_completed
-                        : $workOrder->quantity_ordered,
-                    'unit' => $workOrder->product->unit ?? 'pcs',
-                    'quantity_delivered' => 0,
-                ]);
-            }
-
-            return $deliveryOrder->fresh(['items', 'contact', 'warehouse']);
-        }, ['work_order_id' => $workOrder->id]);
-    }
-
-    /**
-     * Confirm a delivery order.
-     */
-    public function confirm(DeliveryOrder $deliveryOrder, ?int $userId = null): DeliveryOrder
-    {
-        if (! $deliveryOrder->stateMachine()->canConfirm()) {
-            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
-                'Delivery Order',
-                'dikonfirmasi',
-                $deliveryOrder->status->value,
-                'draft dengan item'
-            );
-        }
-
-        return $this->executeInTransaction('confirm', function () use ($deliveryOrder, $userId) {
-            $deliveryOrder->transitionTo(DocumentStatus::Confirmed, $userId);
-
-            return $deliveryOrder->fresh(['items', 'contact', 'invoice']);
-        }, ['delivery_order_id' => $deliveryOrder->id]);
-    }
-
-    /**
-     * Ship a delivery order.
-     */
-    public function ship(DeliveryOrder $deliveryOrder, array $data = [], ?int $userId = null): DeliveryOrder
-    {
-        if (! $deliveryOrder->stateMachine()->canShip()) {
-            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
-                'Delivery Order',
-                'dikirim',
-                $deliveryOrder->status->value,
-                'confirmed'
-            );
-        }
-
-        $userId = $data['shipped_by'] ?? $userId;
-
-        return $this->executeInTransaction('ship', function () use ($deliveryOrder, $data, $userId) {
-            $deliveryOrder->update([
-                'tracking_number' => $data['tracking_number'] ?? $deliveryOrder->tracking_number,
-                'driver_name' => $data['driver_name'] ?? $deliveryOrder->driver_name,
-                'vehicle_number' => $data['vehicle_number'] ?? $deliveryOrder->vehicle_number,
-            ]);
-
-            // State machine dispatches DeliveryOrderShipped event
-            $deliveryOrder->transitionTo(DocumentStatus::Shipped, $userId, [
-                'shipped_by' => $data['shipped_by'] ?? null,
-                'shipping_date' => $data['shipping_date'] ?? now()->toDateString(),
-            ]);
-
-            if ($deliveryOrder->warehouse_id) {
-                $this->deductInventory($deliveryOrder);
-                $this->cogsStrategy->onDeliveryShip($deliveryOrder);
-            }
-
-            return $deliveryOrder->fresh(['items', 'contact', 'invoice']);
-        }, ['delivery_order_id' => $deliveryOrder->id]);
-    }
-
-    /**
-     * Mark delivery order as delivered.
-     */
-    public function deliver(DeliveryOrder $deliveryOrder, array $data = [], ?int $userId = null): DeliveryOrder
-    {
-        if (! $deliveryOrder->stateMachine()->canDeliver()) {
-            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
-                'Delivery Order',
-                'ditandai delivered',
-                $deliveryOrder->status->value,
-                'shipped'
-            );
-        }
-
-        return $this->executeInTransaction('deliver', function () use ($deliveryOrder, $data, $userId) {
-            $deliveryOrder->update([
-                'received_by' => $data['received_by'] ?? null,
-                'delivery_notes' => $data['delivery_notes'] ?? null,
-            ]);
-
-            $deliveryOrder->items()->update([
-                'quantity_delivered' => DB::raw('quantity'),
-            ]);
-
-            // State machine dispatches DeliveryOrderDelivered event
-            $deliveryOrder->transitionTo(DocumentStatus::Delivered, $userId, [
-                'received_date' => $data['received_date'] ?? now()->toDateString(),
-            ]);
-
-            return $deliveryOrder->fresh(['items']);
-        }, ['delivery_order_id' => $deliveryOrder->id]);
-    }
-
-    /**
-     * Cancel a delivery order.
-     */
-    public function cancel(DeliveryOrder $deliveryOrder, ?string $reason = null, ?int $userId = null): DeliveryOrder
-    {
-        if (! $deliveryOrder->stateMachine()->canCancel()) {
-            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
-                'Delivery Order',
-                'dibatalkan',
-                $deliveryOrder->status->value,
-                'draft, confirmed, atau shipped'
-            );
-        }
-
-        return $this->executeInTransaction('cancel', function () use ($deliveryOrder, $reason, $userId) {
-            $deliveryOrder->transitionTo(DocumentStatus::Cancelled, $userId, [
-                'cancellation_reason' => $reason,
-            ]);
-
-            return $deliveryOrder->fresh(['items', 'contact', 'invoice']);
-        }, ['delivery_order_id' => $deliveryOrder->id]);
-    }
-
-    /**
-     * Reverse a shipped delivery order.
-     *
-     * Restores inventory (stock-in for each item that was stock-out'd during ship),
-     * reverses any COGS journal entry created for this DO, and transitions to Cancelled.
-     *
-     * @throws \App\Exceptions\Domain\StateTransitionException If DO is not in Shipped status
-     */
-    public function reverseShipment(DeliveryOrder $deliveryOrder, string $reason): DeliveryOrder
-    {
-        if ($deliveryOrder->status !== DocumentStatus::Shipped) {
-            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
-                'Delivery Order',
-                'dibatalkan (reverse shipment)',
-                $deliveryOrder->status->value,
-                'shipped'
-            );
-        }
-
-        return $this->executeInTransaction('reverse_shipment', function () use ($deliveryOrder, $reason) {
-            // Restore inventory for each item
-            if ($deliveryOrder->warehouse_id) {
-                $this->restoreInventory($deliveryOrder);
-            }
-
-            // Reverse COGS journal entry (created by COGSOnDeliveryStrategy)
-            $cogsJournalEntries = JournalEntry::where('source_type', DeliveryOrder::class)
-                ->where('source_id', $deliveryOrder->id)
-                ->where('is_reversed', false)
-                ->get();
-
-            foreach ($cogsJournalEntries as $je) {
-                $this->journalService->reverseEntry(
-                    $je,
-                    "Pembatalan pengiriman: {$deliveryOrder->do_number} — {$reason}"
-                );
-            }
-
-            // Transition to Cancelled via state machine
-            $deliveryOrder->transitionTo(DocumentStatus::Cancelled, $this->getUserId(), [
-                'cancellation_reason' => $reason,
-            ]);
-
-            return $deliveryOrder->fresh(['items', 'contact', 'invoice']);
-        }, ['delivery_order_id' => $deliveryOrder->id, 'reason' => $reason]);
-    }
-
-    /**
-     * Update delivery progress (partial delivery).
-     */
-    public function updateDeliveryProgress(DeliveryOrder $deliveryOrder, array $itemsDelivered, ?int $userId = null): DeliveryOrder
-    {
-        if ($deliveryOrder->status !== DocumentStatus::Shipped) {
-            throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
-                'Delivery Order',
-                'update delivery progress',
-                $deliveryOrder->status->value,
-                'shipped'
-            );
-        }
-
-        return $this->executeInTransaction('update_delivery_progress', function () use ($deliveryOrder, $itemsDelivered, $userId) {
-            foreach ($itemsDelivered as $itemData) {
-                $item = $deliveryOrder->items()->find($itemData['item_id']);
-                if (! $item) {
-                    throw new \InvalidArgumentException(
-                        "Item #{$itemData['item_id']} bukan milik delivery order ini."
-                    );
-                }
-
-                $newDelivered = (float) $itemData['quantity_delivered'];
-                $orderedQty = (float) $item->quantity;
-                if ($newDelivered > $orderedQty) {
-                    throw \App\Exceptions\Domain\BusinessRuleException::quantityValidation(
-                        'Jumlah delivered untuk item '.$item->id,
-                        $newDelivered,
-                        $orderedQty,
-                        'exceeds'
-                    );
-                }
-                $item->quantity_delivered = $newDelivered;
-                $item->save();
-            }
-
-            $allDelivered = $deliveryOrder->items()
-                ->whereRaw('quantity_delivered < quantity')
-                ->doesntExist();
-
-            if ($allDelivered) {
-                $deliveryOrder->transitionTo(DocumentStatus::Delivered, $userId, [
-                    'received_date' => now()->toDateString(),
-                ]);
-            }
-
-            return $deliveryOrder->fresh(['items']);
-        }, ['delivery_order_id' => $deliveryOrder->id, 'items_count' => count($itemsDelivered)]);
+        return $this->crud->createFromWorkOrder($workOrder);
     }
 
     /**
@@ -455,114 +99,74 @@ class DeliveryOrderService implements DeliveryOrderServiceInterface
      */
     public function duplicate(DeliveryOrder $deliveryOrder): DeliveryOrder
     {
-        return $this->executeInTransaction('duplicate', function () use ($deliveryOrder) {
-            $newDo = $deliveryOrder->replicate([
-                'do_number',
-                'status',
-                'shipping_date',
-                'received_date',
-                'tracking_number',
-                'received_by',
-                'delivery_notes',
-                'confirmed_by',
-                'confirmed_at',
-                'shipped_by',
-                'shipped_at',
-                'delivered_by',
-                'delivered_at',
-            ]);
-            $newDo->status = DocumentStatus::Draft;
-            $newDo->do_date = now();
-            $newDo->save();
-
-            foreach ($deliveryOrder->items as $item) {
-                $newItem = $item->replicate(['quantity_delivered']);
-                $newItem->delivery_order_id = $newDo->id;
-                $newItem->quantity_delivered = 0;
-                $newItem->save();
-            }
-
-            return $newDo->fresh(['items', 'contact', 'invoice']);
-        }, ['source_delivery_order_id' => $deliveryOrder->id]);
+        return $this->crud->duplicate($deliveryOrder);
     }
 
     /**
      * Get delivery orders for an invoice.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, DeliveryOrder>
+     * @return Collection<int, DeliveryOrder>
      */
-    public function getForInvoice(Invoice $invoice): \Illuminate\Database\Eloquent\Collection
+    public function getForInvoice(Invoice $invoice): Collection
     {
-        return DeliveryOrder::query()
-            ->where('invoice_id', $invoice->id)
-            ->with(['items', 'creator'])
-            ->orderBy('do_date', 'desc')
-            ->get();
+        return $this->crud->getForInvoice($invoice);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Workflow Operations (delegated to DeliveryOrderWorkflowService)
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * Confirm a delivery order.
+     */
+    public function confirm(DeliveryOrder $deliveryOrder, ?int $userId = null): DeliveryOrder
+    {
+        return $this->workflow->confirm($deliveryOrder, $userId);
     }
 
     /**
-     * Deduct inventory when shipping.
-     */
-    private function deductInventory(DeliveryOrder $deliveryOrder): void
-    {
-        $warehouse = $deliveryOrder->warehouse;
-
-        foreach ($deliveryOrder->items as $item) {
-            if ($item->product_id) {
-                $product = \App\Models\Inventory\Product::find($item->product_id);
-                if ($product) {
-                    $this->inventoryService->stockOut(
-                        $product,
-                        $warehouse,
-                        (int) round((float) $item->quantity),
-                        'Delivery: '.$deliveryOrder->do_number,
-                        DeliveryOrder::class,
-                        $deliveryOrder->id
-                    );
-                }
-            }
-        }
-    }
-
-    /**
-     * Restore inventory when reversing a shipment (stock-in for each item).
+     * Ship a delivery order.
      *
-     * Looks up original movement's unit_cost to maintain cost accuracy.
+     * @param  array<string, mixed>  $data
      */
-    private function restoreInventory(DeliveryOrder $deliveryOrder): void
+    public function ship(DeliveryOrder $deliveryOrder, array $data = [], ?int $userId = null): DeliveryOrder
     {
-        $warehouse = $deliveryOrder->warehouse;
+        return $this->workflow->ship($deliveryOrder, $data, $userId);
+    }
 
-        foreach ($deliveryOrder->items as $item) {
-            if (! $item->product_id) {
-                continue;
-            }
+    /**
+     * Mark delivery order as delivered.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function deliver(DeliveryOrder $deliveryOrder, array $data = [], ?int $userId = null): DeliveryOrder
+    {
+        return $this->workflow->deliver($deliveryOrder, $data, $userId);
+    }
 
-            $product = \App\Models\Inventory\Product::find($item->product_id);
-            if (! $product) {
-                continue;
-            }
+    /**
+     * Cancel a delivery order.
+     */
+    public function cancel(DeliveryOrder $deliveryOrder, ?string $reason = null, ?int $userId = null): DeliveryOrder
+    {
+        return $this->workflow->cancel($deliveryOrder, $reason, $userId);
+    }
 
-            // Look up original stock-out movement to get unit_cost
-            $originalMovement = InventoryMovement::where('reference_type', DeliveryOrder::class)
-                ->where('reference_id', $deliveryOrder->id)
-                ->where('product_id', $item->product_id)
-                ->where('type', InventoryMovement::TYPE_OUT)
-                ->first();
+    /**
+     * Reverse a shipped delivery order.
+     */
+    public function reverseShipment(DeliveryOrder $deliveryOrder, string $reason): DeliveryOrder
+    {
+        return $this->workflow->reverseShipment($deliveryOrder, $reason);
+    }
 
-            $unitCost = $originalMovement
-                ? $originalMovement->unit_cost
-                : ($product->purchase_price ?? 0);
-
-            $this->inventoryService->stockIn(
-                $product,
-                $warehouse,
-                (int) round((float) $item->quantity),
-                (int) $unitCost,
-                'Pembatalan pengiriman: '.$deliveryOrder->do_number,
-                DeliveryOrder::class,
-                $deliveryOrder->id
-            );
-        }
+    /**
+     * Update delivery progress (partial delivery).
+     *
+     * @param  array<int, array{item_id: int, quantity_delivered: float}>  $itemsDelivered
+     */
+    public function updateDeliveryProgress(DeliveryOrder $deliveryOrder, array $itemsDelivered, ?int $userId = null): DeliveryOrder
+    {
+        return $this->workflow->updateDeliveryProgress($deliveryOrder, $itemsDelivered, $userId);
     }
 }
