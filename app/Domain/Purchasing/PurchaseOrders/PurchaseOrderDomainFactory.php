@@ -108,11 +108,19 @@ class PurchaseOrderDomainFactory
 
     /**
      * Get receiving progress percentage.
+     *
+     * Supports aggregated attributes (total_quantity / total_received) when
+     * present on the model (e.g. from list queries with selects/joins).
      */
     public function getReceivingProgress(PurchaseOrder $purchaseOrder): float
     {
-        $totalQty = $purchaseOrder->items->sum('quantity');
-        $receivedQty = $purchaseOrder->items->sum('quantity_received');
+        $totalQty = array_key_exists('total_quantity', $purchaseOrder->getAttributes())
+            ? (float) $purchaseOrder->getAttributes()['total_quantity']
+            : (float) $purchaseOrder->items()->sum('quantity');
+
+        $receivedQty = array_key_exists('total_received', $purchaseOrder->getAttributes())
+            ? (float) $purchaseOrder->getAttributes()['total_received']
+            : (float) $purchaseOrder->items()->sum('quantity_received');
 
         if ($totalQty == 0) {
             return 0.0;
@@ -123,16 +131,33 @@ class PurchaseOrderDomainFactory
 
     /**
      * Check if purchase order is fully received.
+     *
+     * Supports status shortcut and aggregated attributes from list queries.
      */
     public function isFullyReceived(PurchaseOrder $purchaseOrder): bool
     {
+        if ($purchaseOrder->status === \App\Enums\DocumentStatus::Received) {
+            return true;
+        }
+
+        $attributes = $purchaseOrder->getAttributes();
+
+        if (array_key_exists('total_quantity', $attributes) && array_key_exists('total_received', $attributes)) {
+            $totalQty = (float) $attributes['total_quantity'];
+            $receivedQty = (float) $attributes['total_received'];
+
+            return $receivedQty >= $totalQty && $totalQty > 0;
+        }
+
+        $purchaseOrder->loadMissing('items');
+
         foreach ($purchaseOrder->items as $item) {
             if ($item->quantity_received < $item->quantity) {
                 return false;
             }
         }
 
-        return true;
+        return $purchaseOrder->items->count() > 0;
     }
 
     /**
@@ -140,7 +165,11 @@ class PurchaseOrderDomainFactory
      */
     public function hasReceivedItems(PurchaseOrder $purchaseOrder): bool
     {
-        return $purchaseOrder->items->where('quantity_received', '>', 0)->isNotEmpty();
+        if (array_key_exists('total_received', $purchaseOrder->getAttributes())) {
+            return (float) $purchaseOrder->getAttributes()['total_received'] > 0;
+        }
+
+        return $purchaseOrder->items()->where('quantity_received', '>', 0)->exists();
     }
 
     /**

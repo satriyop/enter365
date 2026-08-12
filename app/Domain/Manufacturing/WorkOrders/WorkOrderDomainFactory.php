@@ -47,11 +47,13 @@ class WorkOrderDomainFactory
     /**
      * Calculate estimated costs from work order items.
      *
+     * Always queries items to avoid stale relation state after item mutations.
+     *
      * @return WorkOrderCosts Calculated estimated costs
      */
     public function calculateEstimatedCosts(WorkOrder $workOrder): WorkOrderCosts
     {
-        $items = $workOrder->items;
+        $items = $workOrder->items()->get();
 
         $materialCost = (int) $items
             ->where('type', WorkOrderItem::TYPE_MATERIAL)
@@ -71,11 +73,13 @@ class WorkOrderDomainFactory
     /**
      * Calculate actual costs from work order items.
      *
+     * Always queries items to avoid stale relation state after item mutations.
+     *
      * @return WorkOrderCosts Calculated actual costs
      */
     public function calculateActualCosts(WorkOrder $workOrder): WorkOrderCosts
     {
-        $items = $workOrder->items;
+        $items = $workOrder->items()->get();
 
         $materialCost = (int) $items
             ->where('type', WorkOrderItem::TYPE_MATERIAL)

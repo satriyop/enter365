@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Domain\Sales\Quotations\QuotationDomainFactory;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -104,7 +105,10 @@ class QuotationResource extends JsonResource
             'converted_invoice' => new InvoiceResource($this->whenLoaded('convertedInvoice')),
             'activities' => QuotationActivityResource::collection($this->whenLoaded('activities')),
             'variant_options' => QuotationVariantOptionResource::collection($this->whenLoaded('variantOptions')),
-            'variant_comparison' => $this->when($this->isMultiOption(), fn () => $this->getVariantComparison()),
+            'variant_comparison' => $this->when(
+                $this->isMultiOption(),
+                fn () => app(QuotationDomainFactory::class)->getVariantComparison($this->resource)
+            ),
 
             'created_by' => $this->created_by,
             'created_at' => $this->created_at->toIso8601String(),

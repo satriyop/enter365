@@ -370,52 +370,6 @@ class WorkOrder extends Model
     }
 
     /**
-     * Calculate estimated costs from items.
-     */
-    public function calculateEstimatedCosts(): void
-    {
-        $this->estimated_material_cost = (int) $this->items()
-            ->where('type', WorkOrderItem::TYPE_MATERIAL)
-            ->sum('total_estimated_cost');
-
-        $this->estimated_labor_cost = (int) $this->items()
-            ->where('type', WorkOrderItem::TYPE_LABOR)
-            ->sum('total_estimated_cost');
-
-        $this->estimated_overhead_cost = (int) $this->items()
-            ->where('type', WorkOrderItem::TYPE_OVERHEAD)
-            ->sum('total_estimated_cost');
-
-        $this->estimated_total_cost = $this->estimated_material_cost
-            + $this->estimated_labor_cost
-            + $this->estimated_overhead_cost;
-    }
-
-    /**
-     * Calculate actual costs from consumptions.
-     */
-    public function calculateActualCosts(): void
-    {
-        $this->actual_material_cost = (int) $this->items()
-            ->where('type', WorkOrderItem::TYPE_MATERIAL)
-            ->sum('total_actual_cost');
-
-        $this->actual_labor_cost = (int) $this->items()
-            ->where('type', WorkOrderItem::TYPE_LABOR)
-            ->sum('total_actual_cost');
-
-        $this->actual_overhead_cost = (int) $this->items()
-            ->where('type', WorkOrderItem::TYPE_OVERHEAD)
-            ->sum('total_actual_cost');
-
-        $this->actual_total_cost = $this->actual_material_cost
-            + $this->actual_labor_cost
-            + $this->actual_overhead_cost;
-
-        $this->cost_variance = $this->estimated_total_cost - $this->actual_total_cost;
-    }
-
-    /**
      * Get completion percentage.
      */
     public function getCompletionPercentage(): float

@@ -6,6 +6,7 @@ namespace App\Services\Manufacturing;
 
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
+use App\Domain\Manufacturing\WorkOrders\WorkOrderDomainFactory;
 use App\Enums\DocumentStatus;
 use App\Models\Inventory\InventoryMovement;
 use App\Models\Inventory\Product;
@@ -27,6 +28,7 @@ class WorkOrderMaterialService extends BaseService
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger,
         private AccountingPolicyManager $policyManager,
+        private WorkOrderDomainFactory $domainFactory,
     ) {
         parent::__construct($eventDispatcher, $logger);
     }
@@ -241,7 +243,7 @@ class WorkOrderMaterialService extends BaseService
             }
 
             // Recalculate WO actual costs
-            $wo->calculateActualCosts();
+            $this->domainFactory->applyActualCosts($wo);
             $wo->save();
         }, ['work_order_id' => $wo->id, 'items_count' => count($consumptions)]);
     }

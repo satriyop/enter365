@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Sales\Quotation;
 
+use App\Domain\Sales\Quotations\QuotationDomainFactory;
 use App\Http\Resources\Api\V1\QuotationVariantOptionResource;
 use App\Models\Sales\Quotation;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -13,6 +14,10 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  */
 class QuotationVariantPresentationService
 {
+    public function __construct(
+        private QuotationDomainFactory $domainFactory,
+    ) {}
+
     /**
      * Build the variant options payload for a multi-option quotation.
      *
@@ -65,7 +70,7 @@ class QuotationVariantPresentationService
     {
         $quotation->loadMissing(['contact', 'variantOptions']);
 
-        $comparison = $quotation->getVariantComparison();
+        $comparison = $this->domainFactory->getVariantComparison($quotation);
 
         return [
             'quotation' => [

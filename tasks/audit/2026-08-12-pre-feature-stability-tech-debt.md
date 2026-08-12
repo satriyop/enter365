@@ -158,17 +158,17 @@ Model `calculateTotals()` removed from the five money documents. BOM still has s
 
 ---
 
-#### F-07 · God models still large
+#### F-07 · God models still large — **partially FIXED 2026-08-12**
 
-| LOC | Path |
-|-----|------|
-| 728 | `app/Models/Sales/Quotation.php` |
-| 652 | `app/Models/Solar/SolarProposal.php` |
-| 638 | `app/Models/Inventory/Product.php` |
-| 543 | `app/Models/Purchasing/PurchaseOrder.php` |
-| 529 | `app/Models/Manufacturing/WorkOrder.php` |
+| LOC | Path | Change |
+|-----|------|--------|
+| ~~728~~ → **693** | `Quotation.php` | `getVariantComparison` → `QuotationDomainFactory` |
+| ~~529~~ → **483** | `WorkOrder.php` | cost calcs → factory `applyEstimated/ActualCosts`; model methods removed |
+| ~~516~~ → **489** | `PurchaseOrder.php` | removed deprecated `updateReceivingStatus`; receiving via factory in service |
+| 652 | `SolarProposal.php` | deferred (attribute readers) |
+| 638 | `Product.php` | deferred (scopes/relationships) |
 
-**Remediation:** Continue domain factory extraction; avoid new business methods on models.
+**Remediation remaining:** Product/SolarProposal only if still painful; avoid new business methods on models.
 
 ---
 
@@ -191,13 +191,16 @@ Config under `accounting.notifications.*` (per-event `enabled`, `channels`, opti
 
 ### P2 — Isolation residuals, FE, agent confusion
 
-#### F-09 · FE core BOM/template pages still soft-gate industry fields — **partially FIXED 2026-08-12**
+#### F-09 · FE core BOM/template pages still soft-gate industry fields — **mostly FIXED 2026-08-12**
 
 **Progress:**
-- Extracted `BomPanelToolbar.vue` under `pages/addons/electrical-panel/components/` used by core `BomDetailPage`
-- API clients already under `src/api/addons/*`
+- `BomPanelToolbar.vue` on BOM detail
+- Template form: `BomTemplateRuleSetField.vue`
+- Template detail: `BomTemplatePanelMetaCards.vue` + `BomTemplateItemStandardField.vue`
+- Create from template: `CreateBomTargetBrandCard.vue`
+- All under `pages/addons/electrical-panel/components/`; core pages only `v-if` feature gate + props
 
-**Residual:** Template form/detail and CreateBomFromTemplate still soft-gate standards inline; full page moves remain optional.
+**Residual:** Core pages still import/fetch panel hooks; full route-level page ownership optional.
 
 ---
 

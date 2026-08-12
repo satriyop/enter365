@@ -453,33 +453,6 @@ class PurchaseOrder extends Model
     }
 
     /**
-     * Update receiving status based on items.
-     *
-     * @deprecated Use PurchaseOrderReceivingService::updateReceivingStatus() instead for proper state machine handling.
-     */
-    public function updateReceivingStatus(): void
-    {
-        trigger_error(
-            'PurchaseOrder::updateReceivingStatus() is deprecated. Use PurchaseOrderReceivingService::updateReceivingStatus() instead.',
-            E_USER_DEPRECATED
-        );
-
-        if (! $this->stateMachine()->canReceive()) {
-            return;
-        }
-
-        $isFullyReceived = $this->isFullyReceived();
-        $hasReceivedItems = $this->hasReceivedItems();
-
-        // Use state machine for proper event dispatch
-        if ($isFullyReceived && $this->status !== DocumentStatus::Received) {
-            $this->transitionTo(DocumentStatus::Received, auth()->id());
-        } elseif ($hasReceivedItems && $this->status === DocumentStatus::Approved) {
-            $this->transitionTo(DocumentStatus::Partial, auth()->id());
-        }
-    }
-
-    /**
      * Get the state machine instance for this purchase order.
      */
     public function stateMachine(): \App\Domain\Purchasing\PurchaseOrders\PurchaseOrderStateMachine

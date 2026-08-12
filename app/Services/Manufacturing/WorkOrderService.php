@@ -105,7 +105,7 @@ class WorkOrderService extends BaseService implements WorkOrderServiceInterface
             $this->createItemsFromBom($wo, $bom, $quantity);
 
             // Calculate estimated costs
-            $wo->calculateEstimatedCosts();
+            $this->domainFactory->applyEstimatedCosts($wo);
             $wo->save();
 
             return $wo->fresh(['items', 'project', 'product', 'bom']);
@@ -145,7 +145,7 @@ class WorkOrderService extends BaseService implements WorkOrderServiceInterface
             if (isset($data['items'])) {
                 $wo->items()->delete();
                 $this->createItems($wo, $data['items']);
-                $wo->calculateEstimatedCosts();
+                $this->domainFactory->applyEstimatedCosts($wo);
                 $wo->save();
             }
 
@@ -234,7 +234,7 @@ class WorkOrderService extends BaseService implements WorkOrderServiceInterface
         return $this->executeInTransaction('complete', function () use ($wo, $userId) {
             $this->materialService->consumeMaterials($wo);
 
-            $wo->calculateActualCosts();
+            $this->domainFactory->applyActualCosts($wo);
 
             $wo->transitionTo(DocumentStatus::Completed, $userId);
 

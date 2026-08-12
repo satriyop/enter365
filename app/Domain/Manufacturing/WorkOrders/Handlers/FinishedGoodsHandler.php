@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Manufacturing\WorkOrders\Handlers;
 
 use App\Domain\Inventory\Movements\MovementRecorder;
+use App\Domain\Manufacturing\WorkOrders\WorkOrderDomainFactory;
 use App\Models\Inventory\InventoryMovement;
 use App\Models\Manufacturing\WorkOrder;
 
@@ -21,7 +22,8 @@ use App\Models\Manufacturing\WorkOrder;
 class FinishedGoodsHandler implements CompletionHandlerInterface
 {
     public function __construct(
-        private MovementRecorder $movementRecorder
+        private MovementRecorder $movementRecorder,
+        private WorkOrderDomainFactory $domainFactory,
     ) {}
 
     public function handle(WorkOrder $workOrder, ?int $userId = null): void
@@ -77,7 +79,7 @@ class FinishedGoodsHandler implements CompletionHandlerInterface
     {
         // Refresh to get latest actual costs (after material consumption)
         $workOrder->refresh();
-        $workOrder->calculateActualCosts();
+        $this->domainFactory->applyActualCosts($workOrder);
 
         $totalCost = $workOrder->actual_total_cost ?? $workOrder->estimated_total_cost ?? 0;
 

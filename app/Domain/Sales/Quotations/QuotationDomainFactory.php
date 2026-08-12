@@ -7,6 +7,7 @@ namespace App\Domain\Sales\Quotations;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Sales\QuotationCalculatorInterface;
 use App\Models\Sales\Quotation;
+use App\Models\Sales\QuotationVariantOption;
 
 /**
  * Factory for creating quotation domain objects with proper dependency injection.
@@ -115,5 +116,42 @@ class QuotationDomainFactory
         $quotation->base_currency_total = $totals->baseCurrencyTotal;
 
         return $quotation;
+    }
+
+    /**
+     * Build variant comparison summary for customer display.
+     *
+     * @return array{options: array<int, array<string, mixed>>, price_range: array{min: int, max: int, difference: int}}|null
+     */
+    public function getVariantComparison(Quotation $quotation): ?array
+    {
+        $quotation->loadMissing('variantOptions');
+
+        if (! $quotation->isMultiOption() || $quotation->variantOptions->isEmpty()) {
+            return null;
+        }
+
+        $options = $quotation->variantOptions->map(fn (QuotationVariantOption $option) => [
+            'id' => $option->id,
+            'bom_id' => $option->bom_id,
+            'display_name' => $option->display_name,
+            'tagline' => $option->tagline,
+            'is_recommended' => $option->is_recommended,
+            'selling_price' => $option->selling_price,
+            'features' => $option->features,
+            'specifications' => $option->specifications,
+            'warranty_terms' => $option->warranty_terms,
+        ])->toArray();
+
+        $prices = $quotation->variantOptions->pluck('selling_price');
+
+        return [
+            'options' => $options,
+            'price_range' => [
+                'min' => $prices->min(),
+                'max' => $prices->max(),
+                'difference' => $prices->max() - $prices->min(),
+            ],
+        ];
     }
 }

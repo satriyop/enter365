@@ -6,6 +6,7 @@ namespace App\Services\Purchasing;
 
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
+use App\Domain\Purchasing\PurchaseOrders\PurchaseOrderDomainFactory;
 use App\Enums\DocumentStatus;
 use App\Models\Purchasing\PurchaseOrder;
 use App\Services\Base\BaseService;
@@ -19,7 +20,8 @@ class PurchaseOrderReceivingService extends BaseService
 {
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
-        ContextualLoggerInterface $logger
+        ContextualLoggerInterface $logger,
+        private PurchaseOrderDomainFactory $domainFactory,
     ) {
         parent::__construct($eventDispatcher, $logger);
     }
@@ -32,15 +34,15 @@ class PurchaseOrderReceivingService extends BaseService
      */
     public function updateReceivingStatus(PurchaseOrder $po): PurchaseOrder
     {
-        $stateMachine = $po->stateMachine();
+        $stateMachine = $this->domainFactory->stateMachine($po);
 
         if (! $stateMachine->canReceive()) {
             return $po;
         }
 
         return $this->executeInTransaction('update_receiving_status', function () use ($po) {
-            $isFullyReceived = $po->isFullyReceived();
-            $hasReceivedItems = $po->hasReceivedItems();
+            $isFullyReceived = $this->domainFactory->isFullyReceived($po);
+            $hasReceivedItems = $this->domainFactory->hasReceivedItems($po);
 
             // Determine target status based on receiving state
             if ($isFullyReceived && $po->status !== DocumentStatus::Received) {
@@ -74,9 +76,9 @@ class PurchaseOrderReceivingService extends BaseService
     {
         return [
             'status' => $po->status,
-            'progress' => $po->getReceivingProgress(),
-            'is_fully_received' => $po->isFullyReceived(),
-            'has_received_items' => $po->hasReceivedItems(),
+            'progress' => $this->domainFactory->getReceivingProgress($po),
+            'is_fully_received' => $this->domainFactory->isFullyReceived($po),
+            'has_received_items' => $this->domainFactory->hasReceivedItems($po),
             'first_received_at' => $po->first_received_at?->toIso8601String(),
             'fully_received_at' => $po->fully_received_at?->toIso8601String(),
         ];

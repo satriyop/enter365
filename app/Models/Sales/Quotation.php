@@ -375,41 +375,6 @@ class Quotation extends Model
     }
 
     /**
-     * Get variant comparison summary for customer display.
-     *
-     * @return array{options: array<int, array<string, mixed>>, price_range: array{min: int, max: int, difference: int}}|null
-     */
-    public function getVariantComparison(): ?array
-    {
-        if (! $this->isMultiOption() || $this->variantOptions->isEmpty()) {
-            return null;
-        }
-
-        $options = $this->variantOptions->map(fn (QuotationVariantOption $option) => [
-            'id' => $option->id,
-            'bom_id' => $option->bom_id,
-            'display_name' => $option->display_name,
-            'tagline' => $option->tagline,
-            'is_recommended' => $option->is_recommended,
-            'selling_price' => $option->selling_price,
-            'features' => $option->features,
-            'specifications' => $option->specifications,
-            'warranty_terms' => $option->warranty_terms,
-        ])->toArray();
-
-        $prices = $this->variantOptions->pluck('selling_price');
-
-        return [
-            'options' => $options,
-            'price_range' => [
-                'min' => $prices->min(),
-                'max' => $prices->max(),
-                'difference' => $prices->max() - $prices->min(),
-            ],
-        ];
-    }
-
-    /**
      * Scope for draft quotations.
      *
      * @param  Builder<Quotation>  $query

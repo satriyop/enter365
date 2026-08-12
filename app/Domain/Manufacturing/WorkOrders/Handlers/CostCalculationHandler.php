@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Manufacturing\WorkOrders\Handlers;
 
+use App\Domain\Manufacturing\WorkOrders\WorkOrderDomainFactory;
 use App\Models\Manufacturing\WorkOrder;
 use App\Models\Manufacturing\WorkOrderItem;
 
@@ -19,13 +20,17 @@ use App\Models\Manufacturing\WorkOrderItem;
  */
 class CostCalculationHandler implements CompletionHandlerInterface
 {
+    public function __construct(
+        private WorkOrderDomainFactory $domainFactory,
+    ) {}
+
     public function handle(WorkOrder $workOrder, ?int $userId = null): void
     {
         // Recalculate costs for each item from consumption records
         $this->recalculateItemCosts($workOrder);
 
         // Recalculate work order totals
-        $workOrder->calculateActualCosts();
+        $this->domainFactory->applyActualCosts($workOrder);
         $workOrder->save();
     }
 
