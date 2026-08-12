@@ -4,6 +4,7 @@ namespace App\Services\Sales;
 
 use App\Contracts\Shared\ReminderServiceInterface;
 use App\Enums\DocumentStatus;
+use App\Exceptions\Domain\BusinessRuleException;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
 use App\Models\Shared\PaymentReminder;
@@ -178,6 +179,23 @@ class ReminderService implements ReminderServiceInterface
             ->where('remindable_id', $document->id)
             ->where('status', PaymentReminder::STATUS_PENDING)
             ->update(['status' => PaymentReminder::STATUS_CANCELLED]);
+    }
+
+    /**
+     * Cancel a single pending reminder.
+     */
+    public function cancelReminder(PaymentReminder $reminder): PaymentReminder
+    {
+        if (! $reminder->isPending()) {
+            throw BusinessRuleException::operationNotAllowed(
+                'membatalkan pengingat',
+                'Hanya pengingat dengan status pending yang dapat dibatalkan.'
+            );
+        }
+
+        $reminder->cancel();
+
+        return $reminder->fresh(['remindable', 'contact']) ?? $reminder;
     }
 
     /**

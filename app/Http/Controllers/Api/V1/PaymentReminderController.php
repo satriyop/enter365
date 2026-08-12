@@ -153,15 +153,15 @@ class PaymentReminderController extends Controller
      */
     public function cancel(PaymentReminder $paymentReminder): PaymentReminderResource|JsonResponse
     {
-        if (! $paymentReminder->isPending()) {
+        try {
+            $reminder = $this->reminderService->cancelReminder($paymentReminder);
+        } catch (\App\Exceptions\Domain\BusinessRuleException $e) {
             return response()->json([
-                'message' => 'Hanya pengingat dengan status pending yang dapat dibatalkan.',
+                'message' => $e->getMessage(),
             ], 422);
         }
 
-        $paymentReminder->cancel();
-
-        return new PaymentReminderResource($paymentReminder->fresh(['remindable', 'contact']));
+        return new PaymentReminderResource($reminder);
     }
 
     /**

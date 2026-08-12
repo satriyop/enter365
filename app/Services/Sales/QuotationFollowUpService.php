@@ -10,6 +10,7 @@ use App\Contracts\Sales\QuotationFollowUpServiceInterface;
 use App\Domain\Sales\Quotations\Enums\QuotationPriority;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\Quotation;
+use App\Models\Sales\QuotationActivity;
 use App\Services\Base\BaseService;
 use Carbon\Carbon;
 use DateTime;
@@ -52,6 +53,30 @@ class QuotationFollowUpService extends BaseService implements QuotationFollowUpS
     }
 
     /**
+     * Schedule follow-up and optionally record a notes activity.
+     *
+     * @param  array{next_follow_up_at: string|\DateTimeInterface, notes?: string|null}  $data
+     */
+    public function scheduleFollowUpWithNotes(Quotation $quotation, array $data, ?int $userId = null): Quotation
+    {
+        return $this->executeInTransaction('schedule_follow_up_with_notes', function () use ($quotation, $data, $userId) {
+            $this->scheduleFollowUpAt($quotation, $data['next_follow_up_at']);
+
+            if (! empty($data['notes'])) {
+                $quotation->activities()->create([
+                    'user_id' => $userId ?? $this->getUserId(),
+                    'type' => QuotationActivity::TYPE_FOLLOW_UP_SCHEDULED,
+                    'description' => $data['notes'],
+                    'activity_at' => now(),
+                    'next_follow_up_at' => $data['next_follow_up_at'],
+                ]);
+            }
+
+            return $quotation->fresh(['contact', 'assignedTo']);
+        }, ['quotation_id' => $quotation->id]);
+    }
+
+    /**
      * Clear scheduled follow-up.
      */
     public function clearFollowUp(Quotation $quotation): Quotation
@@ -73,6 +98,31 @@ class QuotationFollowUpService extends BaseService implements QuotationFollowUpS
             $quotation->save();
 
             return $quotation->fresh();
+        }, ['quotation_id' => $quotation->id]);
+    }
+
+    /**
+     * Create a quotation activity and update contact tracking / next follow-up.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function storeActivity(Quotation $quotation, array $data, ?int $userId = null): QuotationActivity
+    {
+        return $this->executeInTransaction('store_activity', function () use ($quotation, $data, $userId) {
+            $nextFollowUpAt = $data['next_follow_up_at'] ?? null;
+
+            $activity = $quotation->activities()->create([
+                ...$data,
+                'user_id' => $userId ?? $this->getUserId(),
+            ]);
+
+            $this->recordContact($quotation);
+
+            if ($nextFollowUpAt !== null) {
+                $this->scheduleFollowUpAt($quotation, $nextFollowUpAt);
+            }
+
+            return $activity->load('user');
         }, ['quotation_id' => $quotation->id]);
     }
 

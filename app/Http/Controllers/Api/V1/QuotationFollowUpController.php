@@ -10,14 +10,12 @@ use App\Http\Requests\Api\V1\StoreQuotationActivityRequest;
 use App\Http\Resources\Api\V1\QuotationActivityResource;
 use App\Http\Resources\Api\V1\QuotationResource;
 use App\Models\Sales\Quotation;
-use App\Models\Sales\QuotationActivity;
 use App\Services\Sales\Quotation\QuotationStatisticsService;
 use App\Services\Sales\QuotationFollowUpService;
 use App\Services\Sales\QuotationOutcomeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class QuotationFollowUpController extends Controller
@@ -95,25 +93,13 @@ class QuotationFollowUpController extends Controller
      */
     public function storeActivity(StoreQuotationActivityRequest $request, Quotation $quotation): JsonResponse
     {
-        $activity = DB::transaction(function () use ($request, $quotation) {
-            // Create the activity
-            $activity = $quotation->activities()->create([
-                ...$request->validated(),
-                'user_id' => $request->user()->id,
-            ]);
+        $activity = $this->followUpService->storeActivity(
+            $quotation,
+            $request->validated(),
+            $request->user()?->id
+        );
 
-            // Update quotation's last_contacted_at and follow_up_count
-            $this->followUpService->recordContact($quotation);
-
-            // If activity includes next_follow_up_at, update quotation's next_follow_up_at
-            if ($request->filled('next_follow_up_at')) {
-                $this->followUpService->scheduleFollowUpAt($quotation, $request->input('next_follow_up_at'));
-            }
-
-            return $activity;
-        });
-
-        return (new QuotationActivityResource($activity->load('user')))
+        return (new QuotationActivityResource($activity))
             ->response()
             ->setStatusCode(201);
     }
@@ -131,23 +117,13 @@ class QuotationFollowUpController extends Controller
             'next_follow_up_at.after' => 'Tanggal follow-up harus di masa depan.',
         ]);
 
-        DB::transaction(function () use ($validated, $quotation, $request) {
-            $quotation->next_follow_up_at = $validated['next_follow_up_at'];
-            $quotation->save();
+        $quotation = $this->followUpService->scheduleFollowUpWithNotes(
+            $quotation,
+            $validated,
+            $request->user()?->id
+        );
 
-            // Record activity if notes provided
-            if (! empty($validated['notes'])) {
-                $quotation->activities()->create([
-                    'user_id' => $request->user()->id,
-                    'type' => QuotationActivity::TYPE_FOLLOW_UP_SCHEDULED,
-                    'description' => $validated['notes'],
-                    'activity_at' => now(),
-                    'next_follow_up_at' => $validated['next_follow_up_at'],
-                ]);
-            }
-        });
-
-        return new QuotationResource($quotation->fresh(['contact', 'assignedTo']));
+        return new QuotationResource($quotation->loadMissing(['contact', 'assignedTo']));
     }
 
     /**
@@ -162,10 +138,9 @@ class QuotationFollowUpController extends Controller
             'assigned_to.exists' => 'User tidak ditemukan.',
         ]);
 
-        $quotation->assigned_to = $validated['assigned_to'];
-        $quotation->save();
+        $quotation = $this->followUpService->assignTo($quotation, $validated['assigned_to']);
 
-        return new QuotationResource($quotation->fresh(['contact', 'assignedTo']));
+        return new QuotationResource($quotation->loadMissing(['contact', 'assignedTo']));
     }
 
     /**
@@ -183,10 +158,9 @@ class QuotationFollowUpController extends Controller
             'priority.in' => 'Prioritas tidak valid.',
         ]);
 
-        $quotation->priority = $validated['priority'];
-        $quotation->save();
+        $quotation = $this->followUpService->updatePriority($quotation, $validated['priority']);
 
-        return new QuotationResource($quotation->fresh(['contact', 'assignedTo']));
+        return new QuotationResource($quotation->loadMissing(['contact', 'assignedTo']));
     }
 
     /**
@@ -212,20 +186,7 @@ class QuotationFollowUpController extends Controller
             'outcome_notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $quotation = DB::transaction(function () use ($quotation, $validated, $request) {
-            $quotation = $this->outcomeService->markAsWon($quotation, $validated);
-
-            // Record activity
-            $quotation->activities()->create([
-                'user_id' => $request->user()->id,
-                'type' => QuotationActivity::TYPE_STATUS_CHANGE,
-                'subject' => 'Penawaran Menang',
-                'description' => $validated['outcome_notes'] ?? 'Penawaran ditandai sebagai menang.',
-                'activity_at' => now(),
-            ]);
-
-            return $quotation;
-        });
+        $quotation = $this->outcomeService->markAsWon($quotation, $validated);
 
         return new QuotationResource($quotation->fresh(['contact', 'assignedTo']));
     }
@@ -254,20 +215,7 @@ class QuotationFollowUpController extends Controller
             'outcome_notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $quotation = DB::transaction(function () use ($quotation, $validated, $request) {
-            $quotation = $this->outcomeService->markAsLost($quotation, $validated);
-
-            // Record activity
-            $quotation->activities()->create([
-                'user_id' => $request->user()->id,
-                'type' => QuotationActivity::TYPE_STATUS_CHANGE,
-                'subject' => 'Penawaran Kalah',
-                'description' => $validated['outcome_notes'] ?? 'Penawaran ditandai sebagai kalah.',
-                'activity_at' => now(),
-            ]);
-
-            return $quotation;
-        });
+        $quotation = $this->outcomeService->markAsLost($quotation, $validated);
 
         return new QuotationResource($quotation->fresh(['contact', 'assignedTo']));
     }

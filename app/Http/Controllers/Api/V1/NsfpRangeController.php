@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Contracts\Tax\NsfpServiceInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreNsfpRangeRequest;
 use App\Http\Requests\Api\V1\UpdateNsfpRangeRequest;
@@ -15,6 +16,10 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class NsfpRangeController extends Controller
 {
+    public function __construct(
+        private NsfpServiceInterface $nsfpService
+    ) {}
+
     public function index(Request $request): AnonymousResourceCollection
     {
         $this->authorize('viewAny', NsfpRange::class);
@@ -44,13 +49,10 @@ class NsfpRangeController extends Controller
     {
         $this->authorize('create', NsfpRange::class);
 
-        $range = NsfpRange::create([
-            ...$request->validated(),
-            'next_number' => $request->input('range_start'),
-            'created_by' => $request->user()?->id,
-        ]);
-
-        $range->load('createdBy');
+        $range = $this->nsfpService->createRange(
+            $request->validated(),
+            $request->user()?->id
+        );
 
         return (new NsfpRangeResource($range))
             ->response()
@@ -71,20 +73,20 @@ class NsfpRangeController extends Controller
     {
         $this->authorize('update', $nsfpRange);
 
-        $nsfpRange->update($request->validated());
+        $range = $this->nsfpService->updateRange($nsfpRange, $request->validated());
 
-        return new NsfpRangeResource($nsfpRange);
+        return new NsfpRangeResource($range);
     }
 
     public function deactivate(NsfpRange $nsfpRange): JsonResponse
     {
         $this->authorize('deactivate', $nsfpRange);
 
-        $nsfpRange->update(['is_active' => false]);
+        $range = $this->nsfpService->deactivateRange($nsfpRange);
 
         return response()->json([
             'message' => 'Range NSFP berhasil dinonaktifkan.',
-            'data' => new NsfpRangeResource($nsfpRange),
+            'data' => new NsfpRangeResource($range),
         ]);
     }
 

@@ -9,6 +9,7 @@ use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Domain\Sales\Quotations\Enums\QuotationOutcome;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\Quotation;
+use App\Models\Sales\QuotationActivity;
 use App\Services\Base\BaseService;
 
 /**
@@ -63,6 +64,14 @@ class QuotationOutcomeService extends BaseService
             $quotation->next_follow_up_at = null; // Clear follow-up when won
             $quotation->save();
 
+            $quotation->activities()->create([
+                'user_id' => $this->getUserId(),
+                'type' => QuotationActivity::TYPE_STATUS_CHANGE,
+                'subject' => 'Penawaran Menang',
+                'description' => $data['outcome_notes'] ?? 'Penawaran ditandai sebagai menang.',
+                'activity_at' => now(),
+            ]);
+
             return $quotation->fresh();
         }, ['quotation_id' => $quotation->id]);
     }
@@ -101,6 +110,14 @@ class QuotationOutcomeService extends BaseService
             $quotation->outcome_at = now();
             $quotation->next_follow_up_at = null; // Clear follow-up when lost
             $quotation->save();
+
+            $quotation->activities()->create([
+                'user_id' => $this->getUserId(),
+                'type' => QuotationActivity::TYPE_STATUS_CHANGE,
+                'subject' => 'Penawaran Kalah',
+                'description' => $data['outcome_notes'] ?? 'Penawaran ditandai sebagai kalah.',
+                'activity_at' => now(),
+            ]);
 
             return $quotation->fresh();
         }, ['quotation_id' => $quotation->id]);

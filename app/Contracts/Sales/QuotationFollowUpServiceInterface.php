@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Contracts\Sales;
 
 use App\Models\Sales\Quotation;
+use App\Models\Sales\QuotationActivity;
 
 /**
  * Interface for Quotation follow-up management.
@@ -22,6 +23,13 @@ interface QuotationFollowUpServiceInterface
     public function scheduleFollowUpAt(Quotation $quotation, \DateTime|string $date): Quotation;
 
     /**
+     * Schedule follow-up and optionally record a notes activity.
+     *
+     * @param  array{next_follow_up_at: string|\DateTimeInterface, notes?: string|null}  $data
+     */
+    public function scheduleFollowUpWithNotes(Quotation $quotation, array $data, ?int $userId = null): Quotation;
+
+    /**
      * Clear the follow-up schedule.
      */
     public function clearFollowUp(Quotation $quotation): Quotation;
@@ -30,6 +38,13 @@ interface QuotationFollowUpServiceInterface
      * Record a contact interaction.
      */
     public function recordContact(Quotation $quotation): Quotation;
+
+    /**
+     * Create a quotation activity and update contact tracking.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function storeActivity(Quotation $quotation, array $data, ?int $userId = null): QuotationActivity;
 
     /**
      * Assign a quotation to a sales person.

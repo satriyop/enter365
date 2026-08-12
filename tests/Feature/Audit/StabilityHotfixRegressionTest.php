@@ -93,11 +93,50 @@ describe('F-01 PaymentReminder create via ReminderService', function () {
             ->and($reminder->status)->toBe(PaymentReminder::STATUS_PENDING);
     });
 
-    it('controller store does not call PaymentReminder::create directly', function () {
+    it('cancels pending reminders through ReminderService', function () {
+        $invoice = Invoice::factory()->create();
+        $reminder = PaymentReminder::factory()->pending()->create([
+            'remindable_type' => Invoice::class,
+            'remindable_id' => $invoice->id,
+        ]);
+
+        $cancelled = app(ReminderServiceInterface::class)->cancelReminder($reminder);
+
+        expect($cancelled->status)->toBe(PaymentReminder::STATUS_CANCELLED);
+    });
+
+    it('controller write paths go through ReminderService', function () {
         $src = file_get_contents(app_path('Http/Controllers/Api/V1/PaymentReminderController.php')) ?: '';
 
         expect($src)->toContain('scheduleManualInvoiceReminder')
             ->and($src)->toContain('createAndSendImmediateInvoiceReminder')
-            ->and($src)->not->toContain('PaymentReminder::create');
+            ->and($src)->toContain('cancelReminder')
+            ->and($src)->not->toContain('PaymentReminder::create')
+            ->and($src)->not->toContain('$paymentReminder->cancel()');
+    });
+});
+
+describe('F-01 QuotationFollowUp / NsfpRange controller writes via services', function () {
+    it('QuotationFollowUpController does not open DB transactions or create activities directly', function () {
+        $src = file_get_contents(app_path('Http/Controllers/Api/V1/QuotationFollowUpController.php')) ?: '';
+
+        expect($src)->toContain('storeActivity')
+            ->and($src)->toContain('scheduleFollowUpWithNotes')
+            ->and($src)->toContain('assignTo')
+            ->and($src)->toContain('updatePriority')
+            ->and($src)->toContain('markAsWon')
+            ->and($src)->toContain('markAsLost')
+            ->and($src)->not->toContain('DB::transaction')
+            ->and($src)->not->toContain('activities()->create');
+    });
+
+    it('NsfpRangeController writes go through NsfpService', function () {
+        $src = file_get_contents(app_path('Http/Controllers/Api/V1/NsfpRangeController.php')) ?: '';
+
+        expect($src)->toContain('createRange')
+            ->and($src)->toContain('updateRange')
+            ->and($src)->toContain('deactivateRange')
+            ->and($src)->not->toContain('NsfpRange::create')
+            ->and($src)->not->toContain('$nsfpRange->update');
     });
 });

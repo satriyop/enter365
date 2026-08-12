@@ -53,19 +53,19 @@ Severity legend:
 
 ### P0 — Correctness / money / inventory
 
-#### F-01 · Controllers still own transactions and writes (bypass service contracts)
+#### F-01 · Controllers still own transactions and writes (bypass service contracts) — **mostly FIXED 2026-08-12**
 
 **Why it hurts:** Side effects, logging, OperationContext, and future cascade rules diverge from service layer; easy to ship untested money-adjacent flows.
 
-| Evidence | Pattern |
-|----------|---------|
-| `app/Http/Controllers/Api/V1/QuotationFollowUpController.php` | `DB::transaction` + `$quotation->activities()->create` + direct field updates (`storeActivity`, `scheduleFollowUp`, mark won/lost paths) |
-| `app/Http/Controllers/Api/V1/PaymentReminderController.php` | `PaymentReminder::create([...])` inline (~122, ~188) |
-| `app/Http/Controllers/Api/V1/NsfpRangeController.php` | `NsfpRange::create` / `update` on controller |
-| `app/Http/Controllers/Api/V1/PurchaseOrderController.php` | `$purchaseOrder->delete()` after `isEditable()` check (~destroy) — skips service delete/hooks |
-| `app/Http/Controllers/Api/V1/BomTemplateController.php` | Item `create`/`update`/`delete`/`reorder` + `toggleActive` largely on model, not full template service |
+| Evidence | Status |
+|----------|--------|
+| `QuotationFollowUpController` | **Fixed** — storeActivity / scheduleFollowUpWithNotes / assignTo / updatePriority / markAsWon|Lost via services (no `DB::transaction` / `activities()->create`) |
+| `PaymentReminderController` | **Fixed** — create/send/cancel via `ReminderService` |
+| `NsfpRangeController` | **Fixed** — createRange / updateRange / deactivateRange via `NsfpService` |
+| `PurchaseOrderController` destroy | **Fixed** — via `PurchaseOrderService::delete` |
+| `BomTemplateController` item mutations | **Still open** — item create/update/delete/reorder + toggleActive largely on model |
 
-**Remediation:** Move to dedicated services (or existing follow-up/reminder services); controller = authorize + request + resource only.
+**Remediation remaining:** BomTemplate item mutations via `BomTemplateServiceInterface`.
 
 ---
 
@@ -282,7 +282,7 @@ Suggested file names / order:
 
 | Pri | Item | Outcome |
 |-----|------|---------|
-| 1 | Extract QuotationFollowUp + PaymentReminder + NsfpRange writes into services | Single transaction/logging path |
+| 1 | ~~Extract QuotationFollowUp + PaymentReminder + NsfpRange writes into services~~ **DONE 2026-08-12** (BomTemplate still open) | Single transaction/logging path |
 | 2 | Replace `auth()->id()` in AttachmentService + BankStatementImportService | Queue/import safe |
 | 3 | PO/GRN/etc. destroy always via service (no direct `$model->delete()`) | Cascades/events preserved |
 | 4 | BomTemplate item mutations via BomTemplateServiceInterface | AddonAttributes already there |

@@ -97,4 +97,56 @@ class NsfpService implements NsfpServiceInterface
 
         return $nsfpNumber;
     }
+
+    /**
+     * Create a new NSFP range from e-Nofa import.
+     *
+     * @param  array{
+     *     transaction_code: string,
+     *     branch_code: string,
+     *     year_code: string,
+     *     range_start: int,
+     *     range_end: int,
+     *     description?: string|null
+     * }  $data
+     */
+    public function createRange(array $data, ?int $createdBy = null): NsfpRange
+    {
+        $range = NsfpRange::create([
+            'transaction_code' => $data['transaction_code'],
+            'branch_code' => $data['branch_code'],
+            'year_code' => $data['year_code'],
+            'range_start' => $data['range_start'],
+            'range_end' => $data['range_end'],
+            'next_number' => $data['range_start'],
+            'used_count' => 0,
+            'is_active' => true,
+            'description' => $data['description'] ?? null,
+            'created_by' => $createdBy,
+        ]);
+
+        return $range->load('createdBy');
+    }
+
+    /**
+     * Update mutable fields on an NSFP range.
+     *
+     * @param  array{description?: string|null, is_active?: bool}  $data
+     */
+    public function updateRange(NsfpRange $range, array $data): NsfpRange
+    {
+        $range->update(array_intersect_key($data, array_flip(['description', 'is_active'])));
+
+        return $range->fresh() ?? $range;
+    }
+
+    /**
+     * Deactivate an NSFP range.
+     */
+    public function deactivateRange(NsfpRange $range): NsfpRange
+    {
+        $range->update(['is_active' => false]);
+
+        return $range->fresh() ?? $range;
+    }
 }

@@ -20,6 +20,49 @@ beforeEach(function () {
     $this->actingAs($this->user);
 });
 
+describe('NsfpService range management', function () {
+    it('creates an NSFP range with next_number at range_start', function () {
+        $service = app(NsfpService::class);
+
+        $range = $service->createRange([
+            'transaction_code' => '010',
+            'branch_code' => '000',
+            'year_code' => '26',
+            'range_start' => 100,
+            'range_end' => 500,
+            'description' => 'Test range',
+        ], $this->user->id);
+
+        expect($range->next_number)->toBe(100)
+            ->and($range->used_count)->toBe(0)
+            ->and($range->is_active)->toBeTrue()
+            ->and($range->created_by)->toBe($this->user->id)
+            ->and($range->description)->toBe('Test range');
+    });
+
+    it('updates description and active flag', function () {
+        $range = NsfpRange::factory()->active()->create();
+        $service = app(NsfpService::class);
+
+        $updated = $service->updateRange($range, [
+            'description' => 'Updated',
+            'is_active' => false,
+        ]);
+
+        expect($updated->description)->toBe('Updated')
+            ->and($updated->is_active)->toBeFalse();
+    });
+
+    it('deactivates a range', function () {
+        $range = NsfpRange::factory()->active()->create();
+        $service = app(NsfpService::class);
+
+        $deactivated = $service->deactivateRange($range);
+
+        expect($deactivated->is_active)->toBeFalse();
+    });
+});
+
 describe('NsfpService allocation', function () {
     it('allocates sequential NSFP number to invoice', function () {
         config(['accounting.nsfp.enabled' => true]);

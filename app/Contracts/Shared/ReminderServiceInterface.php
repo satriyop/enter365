@@ -46,6 +46,13 @@ interface ReminderServiceInterface
     public function cancelReminders(Invoice|Bill $document): int;
 
     /**
+     * Cancel a single pending reminder.
+     *
+     * @throws \App\Exceptions\Domain\BusinessRuleException
+     */
+    public function cancelReminder(PaymentReminder $reminder): PaymentReminder;
+
+    /**
      * Schedule a manual custom reminder for an invoice.
      *
      * @param  array{scheduled_date: string|\DateTimeInterface, type: string, channel: string, message?: string|null}  $data

@@ -6,6 +6,7 @@ use App\Contracts\Sales\QuotationFollowUpServiceInterface;
 use App\Domain\Sales\Quotations\Enums\QuotationPriority;
 use App\Enums\DocumentStatus;
 use App\Models\Sales\Quotation;
+use App\Models\Sales\QuotationActivity;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -89,6 +90,65 @@ describe('recordContact', function () {
         $result = $this->service->recordContact($quotation);
 
         expect($result->follow_up_count)->toBe(4);
+    });
+});
+
+describe('storeActivity', function () {
+    it('creates activity, increments contact tracking, and schedules follow-up', function () {
+        $quotation = Quotation::factory()->create([
+            'status' => DocumentStatus::Submitted,
+            'follow_up_count' => 0,
+            'last_contacted_at' => null,
+            'next_follow_up_at' => null,
+        ]);
+
+        $nextFollowUp = now()->addDays(5)->toDateTimeString();
+
+        $activity = $this->service->storeActivity($quotation, [
+            'type' => QuotationActivity::TYPE_CALL,
+            'description' => 'Follow-up call',
+            'activity_at' => now()->toDateTimeString(),
+            'next_follow_up_at' => $nextFollowUp,
+        ], $this->user->id);
+
+        expect($activity)->toBeInstanceOf(QuotationActivity::class)
+            ->and($activity->type)->toBe(QuotationActivity::TYPE_CALL)
+            ->and($activity->user_id)->toBe($this->user->id);
+
+        $quotation->refresh();
+        expect($quotation->follow_up_count)->toBe(1)
+            ->and($quotation->last_contacted_at)->not->toBeNull()
+            ->and($quotation->next_follow_up_at)->not->toBeNull();
+    });
+});
+
+describe('scheduleFollowUpWithNotes', function () {
+    it('schedules follow-up and records activity when notes provided', function () {
+        $quotation = Quotation::factory()->create(['status' => DocumentStatus::Submitted]);
+        $target = now()->addDays(4)->toDateTimeString();
+
+        $result = $this->service->scheduleFollowUpWithNotes($quotation, [
+            'next_follow_up_at' => $target,
+            'notes' => 'Call again next week',
+        ], $this->user->id);
+
+        expect($result->next_follow_up_at)->not->toBeNull();
+
+        $activity = QuotationActivity::where('quotation_id', $quotation->id)->first();
+        expect($activity)->not->toBeNull()
+            ->and($activity->type)->toBe(QuotationActivity::TYPE_FOLLOW_UP_SCHEDULED)
+            ->and($activity->description)->toBe('Call again next week')
+            ->and($activity->user_id)->toBe($this->user->id);
+    });
+
+    it('schedules follow-up without activity when notes empty', function () {
+        $quotation = Quotation::factory()->create(['status' => DocumentStatus::Submitted]);
+
+        $this->service->scheduleFollowUpWithNotes($quotation, [
+            'next_follow_up_at' => now()->addDays(2)->toDateTimeString(),
+        ], $this->user->id);
+
+        expect(QuotationActivity::where('quotation_id', $quotation->id)->count())->toBe(0);
     });
 });
 
