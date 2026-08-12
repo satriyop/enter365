@@ -111,19 +111,19 @@ Severity legend:
 | `PaymentService` | 128 | Creation (420), Void (162), Query (121) |
 | `DownPaymentService` | 149 | Crud (188), Application (346), Lifecycle (235) |
 | `JournalService` | 113 | Entry (207), Document (541) |
+| `DeliveryOrderService` | 172 | Crud (280), Workflow (334) |
+| `InvoiceService` | 142 | Crud (166), Posting (97), Void (232), PaymentStatus (181) |
 
 **Still large (not split this pass):**
 
 | LOC (approx) | Path |
 |--------------|------|
 | ~699 | `FinancialReportService.php` |
-| ~568 | `DeliveryOrderService.php` |
-| ~561 | `InvoiceService.php` |
 | ~554 | `YearEndCloseService.php` (keep — intentional orchestrator) |
 | ~509 | `SolarProposalService.php` |
 | ~502 | `SubcontractorService.php` |
 
-**Remediation remaining:** DO / Invoice / FinancialReport / Subcontractor when next needed.
+**Remediation remaining:** FinancialReport / Subcontractor / Solar when next needed.
 
 ---
 
@@ -270,7 +270,7 @@ Isolation skills were updated; keep `SERVICE_BINDINGS.md` / SKILL.md in sync whe
 | No `auth()->id()` in services | **Fixed** (F-02) |
 | Business logic not in controller | **Fixed** for F-01 list |
 | No `app()` in models | **Residual** calculators (F-06) |
-| God service split at 500+ LOC | **Payment/DP/Journal done**; DO/Invoice/Reports remain (F-04) |
+| God service split at 500+ LOC | **Payment/DP/Journal/DO/Invoice done**; reports/subcon/solar remain (F-04) |
 | Industry add-ons outside Manufacturing | **Healthy** for BrandSwap / HTTP namespaces |
 | Accounting reverse only via document services | **Healthy** on Invoice void path when service used |
 | Feature flags gate packs | **Healthy** + tests |
