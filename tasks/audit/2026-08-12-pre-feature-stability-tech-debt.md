@@ -127,17 +127,17 @@ Severity legend:
 
 ---
 
-#### F-05 · Fat controllers (reports, export, cross-ref, quotation)
+#### F-05 · Fat controllers (reports, export, cross-ref, quotation) — **partially FIXED 2026-08-12**
 
-| LOC | Path |
-|-----|------|
-| 706 | `app/Http/Controllers/Api/V1/ReportController.php` |
-| 444 | `app/Http/Controllers/Api/V1/ExportController.php` |
-| 422 | `app/Http/Controllers/Api/V1/QuotationController.php` |
-| 419 | `app/Http/Controllers/Api/V1/ProjectController.php` |
-| 409 | `app/Http/Controllers/Api/V1/ElectricalPanel/ComponentCrossReferenceController.php` |
+| LOC | Path | Status |
+|-----|------|--------|
+| ~~706~~ | `ReportController.php` | **Split** into 8 domain controllers under `Controllers/Api/V1/Reports/*` (routes/URLs unchanged); equity reshape → service |
+| ~~444~~ → **115** | `ExportController.php` | **Thinned** — assembly in `ReportExportService` (417) |
+| 422 | `QuotationController.php` | Still open (variant presentation, PDF) |
+| 419 | `ProjectController.php` | Still open (cost/revenue validation bulk) |
+| 409 | `ElectricalPanel/ComponentCrossReferenceController.php` | Still open (already mostly service-backed) |
 
-**Remediation:** Report/export already partially in services — push remaining assembly out of HTTP; split panel cross-ref by read vs write.
+**Remediation remaining:** Quotation/Project presentation thinning; panel cross-ref read vs write split if needed.
 
 ---
 
