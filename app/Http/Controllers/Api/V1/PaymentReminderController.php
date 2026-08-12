@@ -10,7 +10,6 @@ use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
 use App\Models\Shared\PaymentReminder;
 use App\Services\Sales\ReminderService;
-use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -116,21 +115,11 @@ class PaymentReminderController extends Controller
      */
     public function store(StorePaymentReminderRequest $request, Invoice $invoice): JsonResponse
     {
-        $scheduledDate = Carbon::parse($request->validated('scheduled_date'));
-        $daysOffset = $invoice->due_date->diffInDays($scheduledDate, false);
-
-        $reminder = PaymentReminder::create([
-            'remindable_type' => Invoice::class,
-            'remindable_id' => $invoice->id,
-            'contact_id' => $invoice->contact_id,
-            'type' => $request->validated('type'),
-            'days_offset' => $daysOffset,
-            'scheduled_date' => $scheduledDate,
-            'status' => PaymentReminder::STATUS_PENDING,
-            'channel' => $request->validated('channel'),
-            'message' => $request->validated('message'),
-            'created_by' => $request->user()->id,
-        ]);
+        $reminder = $this->reminderService->scheduleManualInvoiceReminder(
+            $invoice,
+            $request->validated(),
+            $request->user()?->id
+        );
 
         return (new PaymentReminderResource($reminder->load('contact')))
             ->response()
@@ -185,29 +174,20 @@ class PaymentReminderController extends Controller
             'channel' => ['nullable', 'string', 'in:email,whatsapp'],
         ]);
 
-        $reminder = PaymentReminder::create([
-            'remindable_type' => Invoice::class,
-            'remindable_id' => $invoice->id,
-            'contact_id' => $invoice->contact_id,
-            'type' => $invoice->isOverdue()
-                ? PaymentReminder::TYPE_OVERDUE
-                : PaymentReminder::TYPE_UPCOMING,
-            'days_offset' => 0,
-            'scheduled_date' => today(),
-            'status' => PaymentReminder::STATUS_PENDING,
-            'channel' => $validated['channel'] ?? PaymentReminder::CHANNEL_EMAIL,
-            'message' => $validated['message'] ?? null,
-            'created_by' => $request->user()->id,
-        ]);
+        $reminder = $this->reminderService->createAndSendImmediateInvoiceReminder(
+            $invoice,
+            $validated,
+            $request->user()?->id
+        );
 
-        $success = $this->reminderService->sendReminder($reminder);
+        $reminder = $reminder->fresh(['remindable', 'contact']) ?? $reminder;
 
-        if (! $success) {
+        if (! $reminder->wasSent()) {
             return response()->json([
                 'message' => 'Gagal mengirim pengingat.',
             ], 422);
         }
 
-        return new PaymentReminderResource($reminder->fresh(['remindable', 'contact']));
+        return new PaymentReminderResource($reminder);
     }
 }

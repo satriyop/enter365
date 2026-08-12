@@ -9,11 +9,15 @@ use App\Models\Sales\Invoice;
 use App\Models\Shared\PaymentReminder;
 use App\Notifications\OverdueNotice;
 use App\Notifications\PaymentReminderNotification;
+use App\Services\Base\Traits\WithOperationContext;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Notification;
 
 class ReminderService implements ReminderServiceInterface
 {
+    use WithOperationContext;
+
     /**
      * Create scheduled reminders for an invoice.
      *
@@ -174,5 +178,56 @@ class ReminderService implements ReminderServiceInterface
             ->where('remindable_id', $document->id)
             ->where('status', PaymentReminder::STATUS_PENDING)
             ->update(['status' => PaymentReminder::STATUS_CANCELLED]);
+    }
+
+    /**
+     * Schedule a manual custom reminder for an invoice.
+     *
+     * @param  array{scheduled_date: string|\DateTimeInterface, type: string, channel: string, message?: string|null}  $data
+     */
+    public function scheduleManualInvoiceReminder(Invoice $invoice, array $data, ?int $createdBy = null): PaymentReminder
+    {
+        $scheduledDate = Carbon::parse($data['scheduled_date']);
+        $daysOffset = $invoice->due_date->diffInDays($scheduledDate, false);
+
+        return PaymentReminder::create([
+            'remindable_type' => Invoice::class,
+            'remindable_id' => $invoice->id,
+            'contact_id' => $invoice->contact_id,
+            'type' => $data['type'],
+            'days_offset' => $daysOffset,
+            'scheduled_date' => $scheduledDate,
+            'status' => PaymentReminder::STATUS_PENDING,
+            'channel' => $data['channel'],
+            'message' => $data['message'] ?? null,
+            'created_by' => $createdBy ?? $this->getUserId(),
+        ]);
+    }
+
+    /**
+     * Create and immediately attempt to send a reminder for an invoice.
+     *
+     * @param  array{message?: string|null, channel?: string|null}  $data
+     */
+    public function createAndSendImmediateInvoiceReminder(Invoice $invoice, array $data = [], ?int $createdBy = null): PaymentReminder
+    {
+        $reminder = PaymentReminder::create([
+            'remindable_type' => Invoice::class,
+            'remindable_id' => $invoice->id,
+            'contact_id' => $invoice->contact_id,
+            'type' => $invoice->isOverdue()
+                ? PaymentReminder::TYPE_OVERDUE
+                : PaymentReminder::TYPE_UPCOMING,
+            'days_offset' => 0,
+            'scheduled_date' => today(),
+            'status' => PaymentReminder::STATUS_PENDING,
+            'channel' => $data['channel'] ?? PaymentReminder::CHANNEL_EMAIL,
+            'message' => $data['message'] ?? null,
+            'created_by' => $createdBy ?? $this->getUserId(),
+        ]);
+
+        $this->sendReminder($reminder);
+
+        return $reminder->fresh(['remindable', 'contact']) ?? $reminder;
     }
 }

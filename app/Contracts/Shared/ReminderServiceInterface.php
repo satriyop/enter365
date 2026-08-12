@@ -44,4 +44,18 @@ interface ReminderServiceInterface
      * Cancel all reminders for a document.
      */
     public function cancelReminders(Invoice|Bill $document): int;
+
+    /**
+     * Schedule a manual custom reminder for an invoice.
+     *
+     * @param  array{scheduled_date: string|\DateTimeInterface, type: string, channel: string, message?: string|null}  $data
+     */
+    public function scheduleManualInvoiceReminder(Invoice $invoice, array $data, ?int $createdBy = null): PaymentReminder;
+
+    /**
+     * Create and immediately send a reminder for an invoice.
+     *
+     * @param  array{message?: string|null, channel?: string|null}  $data
+     */
+    public function createAndSendImmediateInvoiceReminder(Invoice $invoice, array $data = [], ?int $createdBy = null): PaymentReminder;
 }
