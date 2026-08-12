@@ -57583,16 +57583,26 @@
                         "type": "number"
                     },
                     "actual_quantity": {
-                        "type": "number"
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "description": "Preserve null so SPA can show \"Not counted\" (PHP (float) null === 0.0)"
                     },
                     "difference_quantity": {
-                        "type": "number"
+                        "type": [
+                            "number",
+                            "null"
+                        ]
                     },
                     "unit_cost": {
                         "type": "integer"
                     },
                     "difference_value": {
-                        "type": "integer"
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
                     },
                     "notes": {
                         "type": [
