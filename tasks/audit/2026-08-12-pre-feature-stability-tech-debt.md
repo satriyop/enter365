@@ -22,7 +22,7 @@ The app is **architecturally mature in core domains** (service layer, state mach
 | Model service-locator `app()` | **Residual** on calculateTotals |
 | FE branding / package name / core page soft-gates | **Cosmetic + residual coupling** |
 | Browser E2E for MFG / solar / panel | **Gap** (feature API journeys exist; SPA E2E does not) |
-| Manufacturing costing strategies | **Incomplete / PHPStan-excluded** |
+| Manufacturing costing strategies | **JE strategies exist but unwired; default `project_based` posts no JE** |
 
 **Recommendation:** Fix P0–P1 money-path and service-layer leaks before large new features; treat P2–P3 as parallel hygiene.
 
@@ -82,16 +82,29 @@ Severity legend:
 
 ---
 
-#### F-03 · Manufacturing cost strategies incomplete / excluded from analysis
+#### F-03 · Manufacturing cost strategies: default no-JE + lifecycle not wired
 
-**Why it hurts:** WO completion / WIP / job costing may not post correct JEs; PHPStan exclude hides regressions.
+**Why it hurts (real residual risk):** Job/WIP JE implementations exist but **WO lifecycle never invokes them**. Default policy is **`project_based`**, a deliberate **no-journal stub** (costs expected in `project_costs`). Factories/shops on `job_costing` / `wip_accounting` get **zero strategy-driven JEs** until wired — false confidence from unit tests alone.
 
-| Evidence |
-|----------|
-| `app/Services/Accounting/Strategies/Manufacturing/*` (`JobCostingStrategy`, `ProjectBasedCostingStrategy`, `WIPAccountingStrategy`) |
-| `phpstan.neon` excludes Manufacturing strategies (project notes / README_PHPSTAN) |
+| Fact | Evidence |
+|------|----------|
+| Default config | `config/accounting.php` → `manufacturing_costing` default `project_based` via `env('ACCOUNTING_MFG_METHOD', 'project_based')` |
+| Policy resolution | `AccountingPolicyManager::manufacturing()` defaults `'project_based'` |
+| Default strategy behavior | `ProjectBasedCostingStrategy` — all hooks return `null`; `calculateTotalCost` returns `0` (comments: costs in `project_costs`) |
+| JE strategies implemented | `JobCostingStrategy` (~118 LOC) posts inventory→WIP on consume, WIP→FG on complete; `WIPAccountingStrategy` (~124 LOC) similar full WIP path |
+| Unit coverage (strategy only) | `tests/Unit/Services/Accounting/Strategies/Manufacturing/JobCostingStrategyTest.php` |
+| **Not called from MFG services** | Grep of `app/Services/Manufacturing`: **no** `onMaterialConsumption` / `onWorkOrderComplete` / `onWorkOrderStart` / `manufacturing()` usage |
+| WO cost helper | `WorkOrderCostService::updateProjectCosts` only recalculates project financials if `project_id` set — does **not** call `ManufacturingCostStrategy` |
+| PHPStan exclude (**one file only**) | `phpstan.neon:29–30` excludes **only** `ProjectBasedCostingStrategy.php` with comment *“intentionally returns null (costs tracked in project_costs table)”* — **not** all Manufacturing strategies |
 
-**Remediation:** Complete JE mapping + tests for WO material consume / FG receipt; remove PHPStan exclude when green.
+**Not the bug:** “JobCosting JE mapping incomplete” or “PHPStan excludes Manufacturing/*”.
+
+**Remediation:**
+1. Decide product default: keep `project_based` for EPC/solar **or** switch shops to `job_costing` / `wip_accounting` via config/demo presets.
+2. **Wire** `AccountingPolicyManager::manufacturing()` into `WorkOrderMaterialService::consumeMaterials` and `WorkOrderService::complete` (and start if WIP needs open entries).
+3. For `project_based`, ensure material costs actually land in `project_costs` on consume/complete (today strategy returns null — verify WO→project cost path is complete elsewhere).
+4. Add **integration** tests: WO consume/complete with each method asserts JE presence/absence correctly.
+5. Keep PHPStan exclude limited to intentional stub; document in audit not Claude.md lore.
 
 ---
 
@@ -279,7 +292,7 @@ Suggested file names / order:
 | 3 | PO/GRN/etc. destroy always via service (no direct `$model->delete()`) | Cascades/events preserved |
 | 4 | BomTemplate item mutations via BomTemplateServiceInterface | AddonAttributes already there |
 | 5 | Split PaymentService / JournalService / DownPaymentService (coordinator) | Testability |
-| 6 | Complete ManufacturingCost strategies + tests; lift PHPStan exclude | Correct COGS/WIP |
+| 6 | Wire ManufacturingCostStrategy into WO consume/complete; validate project_based → project_costs; integration tests per method | Real JEs when job_costing/wip on; honest default |
 | 7 | Remove or implement notification listeners | Honest product behavior |
 | 8 | FE: extract panel UI from core BOM pages; rename package; remove login console.log | Agent + brand hygiene |
 | 9 | Browser smoke: MFG + solar + panel nav under presets | SPA stability signal |
@@ -301,7 +314,7 @@ Existing related backlog: `tasks/backlog/001-assert-fg-stock-on-wo-complete.md`,
 **Block or carefully gate** features that touch:
 
 - Invoice/DO/Payment/DP void paths (fat services, high risk)  
-- Manufacturing costing / WO complete stock  
+- Manufacturing costing wiring (strategy hooks not called from WO lifecycle) / WO complete stock  
 - Controllers that still open `DB::transaction`  
 
 ---
@@ -312,10 +325,10 @@ Existing related backlog: `tasks/backlog/001-assert-fg-stock-on-wo-complete.md`,
 |--------|----------|
 | Service/controller/model LOC ranking | workspace greps 2026-08-12 |
 | Pattern greps (`auth()`, `app()`, TODOs, FE any) | same |
-| Spot reads | QuotationFollowUpController, PaymentReminderController, InvoiceService void, AttachmentService, Invoice::calculateTotals |
+| Spot reads | QuotationFollowUpController, PaymentReminderController, InvoiceService void, AttachmentService, Invoice::calculateTotals, JobCostingStrategy, ProjectBasedCostingStrategy, WorkOrderCostService, config/accounting.php, phpstan.neon |
 | Standards | `.claude/skills/enter365/CODE_REVIEW_ANTIPATTERNS.md`, `ARCHITECTURE_PATTERNS.md`, `SKILL.md` |
 | Isolation history | `tasks/done/2026-08-11-*.md` |
-| PHPStan sample | InvoiceService — clean |
+| PHPStan | InvoiceService sample clean; exclude path is **only** `ProjectBasedCostingStrategy.php` |
 
 ---
 
