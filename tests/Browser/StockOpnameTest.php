@@ -3,91 +3,85 @@
 declare(strict_types=1);
 
 /**
- * INV-PEST-02: Stock opname browser tests.
+ * INV-PEST-02: Stock opname browser tests (pure SPA workflow).
+ *
+ * Core path create → generate → start → count → submit → approve is driven
+ * entirely via the SPA (in-app modals). No REST helpers for those steps.
  *
  * Prerequisites:
  * - Seeded user: admin@example.com / password
- * - At least one product with track_inventory = true
- * - At least one warehouse
+ * - SPA_URL + live browser DB
  *
- * Tests cover: opname creation, generate items, workflow (start → submit → approve).
- *
- * NOTE: The StockOpnameDetailPage uses confirm()/prompt() for some actions.
- * Playwright auto-dismisses these dialogs, so we use API calls for those
- * transitions (generate items, approve, reject, cancel) and UI clicks for
- * transitions that don't use dialogs (start counting, submit review).
- *
- * Shared helpers (realDb, loginAndVisit, spaUrl, etc.) are in tests/Pest.php.
+ * Related backlog: tasks/backlog/004-stock-opname-pure-ui-e2e.md
  */
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+if (! function_exists('waitForOpnameStatus')) {
+    function waitForOpnameStatus(int $opnameId, string $expectedStatus, int $maxRetries = 40): void
+    {
+        for ($i = 0; $i < $maxRetries; $i++) {
+            $status = realDb()->table('stock_opnames')->where('id', $opnameId)->value('status');
+            if ($status === $expectedStatus) {
+                return;
+            }
+            usleep(250_000);
+        }
+    }
+}
 
 /**
- * Get a Sanctum token for API calls from the browser test context.
- * We use the realDb() connection to query the seeded admin user.
+ * Isolated warehouse + single product stock so Generate yields one countable line.
+ *
+ * @return array{warehouse_id: int, warehouse_name: string, product_id: int, system_qty: int, counted_qty: int}
  */
-function getApiToken(): string
+function seedPureUiOpnameFixture(): array
 {
     $db = realDb();
-    $user = $db->table('users')->where('email', 'admin@example.com')->first();
+    $suffix = substr((string) time(), -6);
+    $systemQty = 100;
+    $countedQty = 105; // +5 variance applied on approve
 
-    // Create a token directly
-    $token = bin2hex(random_bytes(20));
-    $db->table('personal_access_tokens')->insert([
-        'tokenable_type' => 'App\\Models\\User',
-        'tokenable_id' => $user->id,
-        'name' => 'e2e-opname-test',
-        'token' => hash('sha256', $token),
-        'abilities' => '["*"]',
+    $warehouseId = (int) $db->table('warehouses')->insertGetId([
+        'code' => "WH-OP-{$suffix}",
+        'name' => "E2E Opname WH {$suffix}",
+        'is_active' => true,
+        'is_default' => false,
         'created_at' => now(),
         'updated_at' => now(),
     ]);
 
-    return $token;
-}
-
-/**
- * Call the API with a given token.
- *
- * @param  array<string, mixed>  $data
- * @return object{status: int, body: mixed}
- */
-function apiCall(string $method, string $path, string $token, array $data = []): object
-{
-    $baseUrl = env('API_URL', 'https://enter365.test');
-    $url = $baseUrl.'/api/v1'.$path;
-
-    $context = stream_context_create([
-        'http' => [
-            'method' => $method,
-            'header' => implode("\r\n", [
-                'Authorization: Bearer '.$token,
-                'Content-Type: application/json',
-                'Accept: application/json',
-            ]),
-            'content' => in_array($method, ['POST', 'PUT']) ? json_encode($data) : null,
-            'ignore_errors' => true,
-        ],
-        'ssl' => [
-            'verify_peer' => false,
-            'verify_peer_name' => false,
-        ],
+    $productId = (int) $db->table('products')->insertGetId([
+        'sku' => "OP-SKU-{$suffix}",
+        'name' => "E2E Opname Product {$suffix}",
+        'type' => 'product',
+        'unit' => 'pcs',
+        'purchase_price' => 10000,
+        'selling_price' => 15000,
+        'tax_rate' => 11,
+        'is_taxable' => true,
+        'track_inventory' => true,
+        'min_stock' => 0,
+        'current_stock' => $systemQty,
+        'is_active' => true,
+        'created_at' => now(),
+        'updated_at' => now(),
     ]);
 
-    $response = file_get_contents($url, false, $context);
+    $db->table('product_stocks')->insert([
+        'product_id' => $productId,
+        'warehouse_id' => $warehouseId,
+        'quantity' => $systemQty,
+        'reserved_quantity' => 0,
+        'average_cost' => 10000,
+        'total_value' => $systemQty * 10000,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
 
-    // Extract status code from response headers
-    $status = 200;
-    if (isset($http_response_header[0])) {
-        preg_match('/HTTP\/\d+\.?\d*\s+(\d+)/', $http_response_header[0], $matches);
-        $status = (int) ($matches[1] ?? 200);
-    }
-
-    return (object) [
-        'status' => $status,
-        'body' => json_decode($response ?: '{}'),
+    return [
+        'warehouse_id' => $warehouseId,
+        'warehouse_name' => "E2E Opname WH {$suffix}",
+        'product_id' => $productId,
+        'system_qty' => $systemQty,
+        'counted_qty' => $countedQty,
     ];
 }
 
@@ -99,163 +93,178 @@ it('shows stock opname list page', function () {
     $page = loginAndVisit('/inventory/opnames');
 
     $page->assertSee('Stock Opname');
+    $page->assertNoJavascriptErrors();
 });
 
 it('can create a stock opname via the form', function () {
     $db = realDb();
-
-    // Ensure we have a warehouse
-    $warehouse = $db->table('warehouses')->where('is_active', true)->first();
-    expect($warehouse)->not->toBeNull();
-
-    // Record the latest opname ID before creating
+    $fixture = seedPureUiOpnameFixture();
     $lastId = (int) ($db->table('stock_opnames')->max('id') ?? 0);
 
     $page = loginAndVisit('/inventory/opnames/new');
-
     $page->assertSee('New Stock Opname');
 
-    // Wait for async warehouse data to load
-    usleep(2_000_000);
-
-    // Select warehouse using the specific option data-testid
     $page->click('[data-testid="opname-warehouse"]');
-    usleep(1_000_000);
-    // Use the first role=option available
-    $page->click('[role="option"] >> nth=0');
-
-    // Fill optional name
-    $page->fill('[data-testid="opname-name"]', 'E2E Test Opname');
-
-    // Submit the form
+    $page->click('[role="option"] >> text='.$fixture['warehouse_name']);
+    $page->fill('[data-testid="opname-name"]', 'E2E Create Opname');
     $page->click('[data-testid="opname-submit"]');
 
-    // Wait for navigation to detail page
-    usleep(3_000_000);
+    $opnameId = 0;
+    for ($i = 0; $i < 40; $i++) {
+        $url = $page->url();
+        if (preg_match('#/inventory/opnames/(\d+)#', $url, $m) && ! str_contains($url, '/new')) {
+            $opnameId = (int) $m[1];
+            break;
+        }
+        usleep(250_000);
+    }
 
-    // Verify a new opname was created in DB (by checking ID > lastId)
-    $opname = $db->table('stock_opnames')
-        ->where('id', '>', $lastId)
-        ->orderByDesc('id')
-        ->first();
+    if ($opnameId === 0) {
+        $opnameId = (int) $db->table('stock_opnames')
+            ->where('id', '>', $lastId)
+            ->orderByDesc('id')
+            ->value('id');
+    }
 
-    expect($opname)->not->toBeNull();
-    expect($opname->status)->toBe('draft');
+    expect($opnameId)->toBeGreaterThan(0);
+    $opname = $db->table('stock_opnames')->where('id', $opnameId)->first();
+    expect($opname)->not->toBeNull()
+        ->and($opname->status)->toBe('draft')
+        ->and((int) $opname->warehouse_id)->toBe($fixture['warehouse_id']);
+});
+
+it('runs pure UI opname workflow generate → start → count → submit → approve with stock variance', function () {
+    $db = realDb();
+    $fixture = seedPureUiOpnameFixture();
+    $lastId = (int) ($db->table('stock_opnames')->max('id') ?? 0);
+
+    // --- Create via SPA ---
+    $page = loginAndVisit('/inventory/opnames/new');
+    $page->assertSee('New Stock Opname');
+    $page->click('[data-testid="opname-warehouse"]');
+    $page->click('[role="option"] >> text='.$fixture['warehouse_name']);
+    $page->fill('[data-testid="opname-name"]', 'E2E Pure UI Workflow');
+    $page->click('[data-testid="opname-submit"]');
+
+    $opnameId = 0;
+    for ($i = 0; $i < 40; $i++) {
+        $url = $page->url();
+        if (preg_match('#/inventory/opnames/(\d+)#', $url, $m) && ! str_contains($url, '/new')) {
+            $opnameId = (int) $m[1];
+            break;
+        }
+        usleep(250_000);
+    }
+    if ($opnameId === 0) {
+        $opnameId = (int) $db->table('stock_opnames')->where('id', '>', $lastId)->orderByDesc('id')->value('id');
+        expect($opnameId)->toBeGreaterThan(0);
+        $page = loginAndVisit('/inventory/opnames/'.$opnameId);
+    }
+
+    // --- Generate items (modal, not confirm()) ---
+    $page->assertSee('No items to count yet');
+    $page->click('[data-testid="opname-generate-empty-btn"]');
+    $page->assertSee('Generate items from warehouse stock');
+    $page->click('[data-testid="opname-generate-confirm"]');
+
+    $itemId = 0;
+    for ($i = 0; $i < 40; $i++) {
+        $itemId = (int) ($db->table('stock_opname_items')
+            ->where('stock_opname_id', $opnameId)
+            ->where('product_id', $fixture['product_id'])
+            ->value('id') ?? 0);
+        if ($itemId > 0) {
+            break;
+        }
+        usleep(250_000);
+    }
+    expect($itemId)->toBeGreaterThan(0);
+
+    $item = $db->table('stock_opname_items')->where('id', $itemId)->first();
+    expect((int) $item->system_quantity)->toBe($fixture['system_qty']);
+
+    $page = loginAndVisit('/inventory/opnames/'.$opnameId);
+    $page->assertSee('Generate'); // items present (header actions)
+
+    // --- Start counting (stay on SPA session; reload after DB status flip) ---
+    $page->click('[data-testid="opname-start-btn"]');
+    waitForOpnameStatus($opnameId, 'counting');
+    $page->navigate(spaUrl('/inventory/opnames/'.$opnameId));
+    $page->assertSee('Penghitungan'); // DocumentStatus::Counting label
+    $page->assertSee('Not counted');
+
+    // --- Count with variance via SPA inline edit ---
+    // ResponsiveTable renders desktop + mobile cells (strict mode: use first)
+    $page->click('[data-testid="opname-count-cell-'.$itemId.'"] >> nth=0');
+    $page->fill('[data-testid="opname-count-input"] >> nth=0', (string) $fixture['counted_qty']);
+    $page->click('[data-testid="opname-count-save"] >> nth=0');
+
+    for ($i = 0; $i < 40; $i++) {
+        $counted = $db->table('stock_opname_items')->where('id', $itemId)->value('counted_quantity');
+        if ((int) $counted === $fixture['counted_qty']) {
+            break;
+        }
+        usleep(250_000);
+    }
+    expect((int) $db->table('stock_opname_items')->where('id', $itemId)->value('counted_quantity'))
+        ->toBe($fixture['counted_qty']);
+
+    // --- Submit for review ---
+    $page->navigate(spaUrl('/inventory/opnames/'.$opnameId));
+    $page->assertSee('Submit Review');
+    $page->click('[data-testid="opname-submit-review-btn"]');
+    waitForOpnameStatus($opnameId, 'reviewed');
+    $page->navigate(spaUrl('/inventory/opnames/'.$opnameId));
+    $page->assertSee('Approve & Complete');
+
+    // --- Approve via modal ---
+    $page->click('[data-testid="opname-approve-btn"]');
+    $page->assertSee('Approve this stock opname');
+    $page->click('[data-testid="opname-approve-confirm"]');
+    waitForOpnameStatus($opnameId, 'completed');
+
+    $opname = $db->table('stock_opnames')->where('id', $opnameId)->first();
+    expect($opname->status)->toBe('completed')
+        ->and($opname->approved_at)->not->toBeNull();
+
+    // Stock must reflect counted absolute qty after approve
+    $stockQty = (int) $db->table('product_stocks')
+        ->where('product_id', $fixture['product_id'])
+        ->where('warehouse_id', $fixture['warehouse_id'])
+        ->value('quantity');
+
+    expect($stockQty)->toBe($fixture['counted_qty']);
+
+    $page->navigate(spaUrl('/inventory/opnames/'.$opnameId));
+    $page->assertSee('Selesai');
 });
 
 it('shows stock opname detail page with correct status', function () {
     $db = realDb();
+    $fixture = seedPureUiOpnameFixture();
 
-    // Get the most recent opname
-    $opname = $db->table('stock_opnames')
-        ->orderByDesc('id')
-        ->first();
-
-    if (! $opname) {
-        // Create one directly in DB
-        $warehouse = $db->table('warehouses')->where('is_active', true)->first();
-        $db->table('stock_opnames')->insert([
-            'opname_number' => 'SO-TEST-'.now()->format('YmdHis'),
-            'warehouse_id' => $warehouse->id,
-            'opname_date' => now()->toDateString(),
-            'status' => 'draft',
-            'name' => 'E2E Detail Test',
-            'total_items' => 0,
-            'total_counted' => 0,
-            'total_variance_qty' => 0,
-            'total_variance_value' => 0,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-        $opname = $db->table('stock_opnames')->orderByDesc('id')->first();
-    }
-
-    $page = loginAndVisit('/inventory/opnames/'.$opname->id);
-
-    // Should show opname number
-    $page->assertSee($opname->opname_number);
-});
-
-it('can run the full opname workflow: generate → start → count → submit → approve', function () {
-    $db = realDb();
-
-    // Setup: ensure product 1 has stock
-    ensureInventorySetup();
-
-    $warehouse = $db->table('warehouses')->where('is_active', true)->first();
-    $token = getApiToken();
-
-    // 1. Create opname via API (faster than UI for workflow test)
-    $createResponse = apiCall('POST', '/stock-opnames', $token, [
-        'warehouse_id' => $warehouse->id,
+    $id = (int) $db->table('stock_opnames')->insertGetId([
+        'opname_number' => 'SO-TEST-'.now()->format('YmdHis'),
+        'warehouse_id' => $fixture['warehouse_id'],
         'opname_date' => now()->toDateString(),
-        'name' => 'E2E Full Workflow Test',
+        'status' => 'draft',
+        'name' => 'E2E Detail Test',
+        'total_items' => 0,
+        'total_counted' => 0,
+        'total_variance_qty' => 0,
+        'total_variance_value' => 0,
+        'created_at' => now(),
+        'updated_at' => now(),
     ]);
 
-    expect($createResponse->status)->toBe(201);
-    $opnameId = $createResponse->body->data->id;
-
-    // 2. Generate items via API (bypasses confirm dialog)
-    $genResponse = apiCall('POST', "/stock-opnames/{$opnameId}/generate-items", $token);
-    expect($genResponse->status)->toBeIn([200, 201]);
-
-    // Verify items were generated
-    $itemCount = $db->table('stock_opname_items')
-        ->where('stock_opname_id', $opnameId)
-        ->count();
-    expect($itemCount)->toBeGreaterThan(0);
-
-    // 3. Start counting via UI (no confirm dialog on this button)
-    $page = loginAndVisit('/inventory/opnames/'.$opnameId);
-    $page->assertSee('Start Counting');
-    $page->click('[data-testid="opname-start-btn"]');
-    usleep(2_000_000);
-
-    // Verify status changed in DB
-    $opname = $db->table('stock_opnames')->where('id', $opnameId)->first();
-    expect($opname->status)->toBe('counting');
-
-    // 4. Update counted quantities via API
-    $items = $db->table('stock_opname_items')
-        ->where('stock_opname_id', $opnameId)
-        ->get();
-
-    foreach ($items as $item) {
-        // Count same as system quantity (no variance)
-        apiCall('PUT', "/stock-opnames/{$opnameId}/items/{$item->id}", $token, [
-            'counted_quantity' => $item->system_quantity,
-        ]);
-    }
-
-    // 5. Submit for review via UI (no confirm dialog)
-    $page = reloadPage($page);
-    usleep(1_000_000);
-    $page->click('[data-testid="opname-submit-review-btn"]');
-    usleep(2_000_000);
-
-    // Verify status changed
-    $opname = $db->table('stock_opnames')->where('id', $opnameId)->first();
-    expect($opname->status)->toBe('reviewed');
-
-    // 6. Approve via API (bypasses confirm dialog)
-    $approveResponse = apiCall('POST', "/stock-opnames/{$opnameId}/approve", $token);
-    expect($approveResponse->status)->toBeIn([200, 201]);
-
-    // 7. Verify final state
-    $opname = $db->table('stock_opnames')->where('id', $opnameId)->first();
-    expect($opname->status)->toBe('completed');
-    expect($opname->approved_at)->not->toBeNull();
-
-    // Cleanup token
-    $db->table('personal_access_tokens')
-        ->where('name', 'e2e-opname-test')
-        ->delete();
+    $opname = $db->table('stock_opnames')->where('id', $id)->first();
+    $page = loginAndVisit('/inventory/opnames/'.$opname->id);
+    $page->assertSee($opname->opname_number);
 });
 
 it('shows variance report page for a completed opname', function () {
     $db = realDb();
 
-    // Find a completed opname (from previous test)
     $opname = $db->table('stock_opnames')
         ->where('status', 'completed')
         ->orderByDesc('id')
@@ -266,7 +275,5 @@ it('shows variance report page for a completed opname', function () {
     }
 
     $page = loginAndVisit('/inventory/opnames/'.$opname->id.'/variance');
-
-    // The variance report should load
     $page->assertSee('Variance');
 });

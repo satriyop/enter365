@@ -11,7 +11,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class StockOpnameItemResource extends JsonResource
 {
     /**
-     * @param  \Illuminate\Http\Request  $request
      * @return array{
      *   id: int,
      *   stock_opname_id: int,
@@ -42,10 +41,17 @@ class StockOpnameItemResource extends JsonResource
                 'unit' => $this->product->unit,
             ]),
             'system_quantity' => (float) $this->system_quantity,
-            'actual_quantity' => (float) $this->counted_quantity,
-            'difference_quantity' => (float) ($this->counted_quantity - $this->system_quantity),
+            // Preserve null so SPA can show "Not counted" (PHP (float) null === 0.0)
+            'actual_quantity' => $this->counted_quantity === null
+                ? null
+                : (float) $this->counted_quantity,
+            'difference_quantity' => $this->counted_quantity === null
+                ? null
+                : (float) ($this->counted_quantity - $this->system_quantity),
             'unit_cost' => $this->system_cost,
-            'difference_value' => (int) round(($this->counted_quantity - $this->system_quantity) * $this->system_cost),
+            'difference_value' => $this->counted_quantity === null
+                ? null
+                : (int) round(($this->counted_quantity - $this->system_quantity) * $this->system_cost),
             'notes' => $this->notes,
             'created_at' => $createdAt?->toIso8601String(),
         ];
