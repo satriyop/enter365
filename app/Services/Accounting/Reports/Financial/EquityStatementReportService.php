@@ -102,6 +102,65 @@ class EquityStatementReportService
     }
 
     /**
+     * Statement of Changes in Equity shaped for the API response contract.
+     *
+     * @return array{
+     *     report_name: string,
+     *     period: array{start_date: string, end_date: string},
+     *     opening_equity: list<array{account_id: int, code: string, name: string, opening_balance: int}>,
+     *     total_opening_equity: int,
+     *     changes: array{
+     *         capital_additions: int,
+     *         capital_withdrawals: int,
+     *         net_income: int,
+     *         dividends: int,
+     *         adjustments: int,
+     *         total_changes: int
+     *     },
+     *     closing_equity: list<array{account_id: int, code: string, name: string, closing_balance: int}>,
+     *     total_closing_equity: int
+     * }
+     */
+    public function getStatementOfChangesInEquityForApi(?string $startDate = null, ?string $endDate = null): array
+    {
+        $report = $this->getStatementOfChangesInEquity($startDate, $endDate);
+
+        $openingItems = collect($report['opening_equity']['items'])->map(fn ($item) => [
+            'account_id' => $item->account_id,
+            'code' => $item->code,
+            'name' => $item->name,
+            'opening_balance' => $item->balance,
+        ])->values()->all();
+
+        $closingItems = collect($report['closing_equity']['items'])->map(fn ($item) => [
+            'account_id' => $item->account_id,
+            'code' => $item->code,
+            'name' => $item->name,
+            'closing_balance' => $item->balance,
+        ])->values()->all();
+
+        return [
+            'report_name' => 'Laporan Perubahan Ekuitas',
+            'period' => [
+                'start_date' => $report['period_start'],
+                'end_date' => $report['period_end'],
+            ],
+            'opening_equity' => $openingItems,
+            'total_opening_equity' => $report['opening_equity']['total'],
+            'changes' => [
+                'capital_additions' => $report['changes']['capital_additions'],
+                'capital_withdrawals' => $report['changes']['capital_withdrawals'],
+                'net_income' => $report['changes']['net_income'],
+                'dividends' => $report['changes']['dividends'],
+                'adjustments' => $report['changes']['other_adjustments'],
+                'total_changes' => $report['changes']['total_changes'],
+            ],
+            'closing_equity' => $closingItems,
+            'total_closing_equity' => $report['closing_equity']['total'],
+        ];
+    }
+
+    /**
      * Calculate equity changes for the period.
      *
      * @return array{additions: int, withdrawals: int, dividends: int, other: int}

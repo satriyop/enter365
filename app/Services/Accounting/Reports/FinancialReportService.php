@@ -144,6 +144,31 @@ class FinancialReportService
     }
 
     /**
+     * Statement of Changes in Equity shaped for the API response contract.
+     *
+     * @return array{
+     *     report_name: string,
+     *     period: array{start_date: string, end_date: string},
+     *     opening_equity: list<array{account_id: int, code: string, name: string, opening_balance: int}>,
+     *     total_opening_equity: int,
+     *     changes: array{
+     *         capital_additions: int,
+     *         capital_withdrawals: int,
+     *         net_income: int,
+     *         dividends: int,
+     *         adjustments: int,
+     *         total_changes: int
+     *     },
+     *     closing_equity: list<array{account_id: int, code: string, name: string, closing_balance: int}>,
+     *     total_closing_equity: int
+     * }
+     */
+    public function getStatementOfChangesInEquityForApi(?string $startDate = null, ?string $endDate = null): array
+    {
+        return $this->equityStatementService->getStatementOfChangesInEquityForApi($startDate, $endDate);
+    }
+
+    /**
      * Build a hierarchical tree from flat balance items using Account parent_id relationships.
      *
      * Returns only top-level nodes (root accounts or accounts whose parents have no balance).

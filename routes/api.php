@@ -38,7 +38,14 @@ use App\Http\Controllers\Api\V1\PurchaseReturnController;
 use App\Http\Controllers\Api\V1\QuotationController;
 use App\Http\Controllers\Api\V1\QuotationFollowUpController;
 use App\Http\Controllers\Api\V1\RecurringTemplateController;
-use App\Http\Controllers\Api\V1\ReportController;
+use App\Http\Controllers\Api\V1\Reports\AgingReportController;
+use App\Http\Controllers\Api\V1\Reports\BankReconciliationReportController;
+use App\Http\Controllers\Api\V1\Reports\CashFlowReportController;
+use App\Http\Controllers\Api\V1\Reports\CogsReportController;
+use App\Http\Controllers\Api\V1\Reports\FinancialReportController;
+use App\Http\Controllers\Api\V1\Reports\ManufacturingReportController;
+use App\Http\Controllers\Api\V1\Reports\ProjectReportController;
+use App\Http\Controllers\Api\V1\Reports\TaxReportController;
 use App\Http\Controllers\Api\V1\RoleController;
 use App\Http\Controllers\Api\V1\SalesReturnController;
 use App\Http\Controllers\Api\V1\StockOpnameController;
@@ -503,61 +510,61 @@ Route::prefix('v1')->group(function () {
         // Financial Reports (Laporan Keuangan)
         Route::prefix('reports')->group(function () {
             // Basic Reports
-            Route::get('trial-balance', [ReportController::class, 'trialBalance'])->name('reports.trial-balance');
-            Route::get('balance-sheet', [ReportController::class, 'balanceSheet'])->name('reports.balance-sheet');
-            Route::get('income-statement', [ReportController::class, 'incomeStatement'])->name('reports.income-statement');
-            Route::get('general-ledger', [ReportController::class, 'generalLedger'])->name('reports.general-ledger');
+            Route::get('trial-balance', [FinancialReportController::class, 'trialBalance'])->name('reports.trial-balance');
+            Route::get('balance-sheet', [FinancialReportController::class, 'balanceSheet'])->name('reports.balance-sheet');
+            Route::get('income-statement', [FinancialReportController::class, 'incomeStatement'])->name('reports.income-statement');
+            Route::get('general-ledger', [FinancialReportController::class, 'generalLedger'])->name('reports.general-ledger');
 
             // Aging Reports
-            Route::get('receivable-aging', [ReportController::class, 'receivableAging'])->name('reports.receivable-aging');
-            Route::get('payable-aging', [ReportController::class, 'payableAging'])->name('reports.payable-aging');
-            Route::get('contacts/{contact}/aging', [ReportController::class, 'contactAging'])->name('reports.contact-aging');
+            Route::get('receivable-aging', [AgingReportController::class, 'receivableAging'])->name('reports.receivable-aging');
+            Route::get('payable-aging', [AgingReportController::class, 'payableAging'])->name('reports.payable-aging');
+            Route::get('contacts/{contact}/aging', [AgingReportController::class, 'contactAging'])->name('reports.contact-aging');
 
             // Tax Reports (PPN)
-            Route::get('ppn-summary', [ReportController::class, 'ppnSummary'])->name('reports.ppn-summary');
-            Route::get('ppn-monthly', [ReportController::class, 'ppnMonthly'])->name('reports.ppn-monthly');
-            Route::get('tax-invoice-list', [ReportController::class, 'taxInvoiceList'])->name('reports.tax-invoice-list');
-            Route::get('input-tax-list', [ReportController::class, 'inputTaxList'])->name('reports.input-tax-list');
+            Route::get('ppn-summary', [TaxReportController::class, 'ppnSummary'])->name('reports.ppn-summary');
+            Route::get('ppn-monthly', [TaxReportController::class, 'ppnMonthly'])->name('reports.ppn-monthly');
+            Route::get('tax-invoice-list', [TaxReportController::class, 'taxInvoiceList'])->name('reports.tax-invoice-list');
+            Route::get('input-tax-list', [TaxReportController::class, 'inputTaxList'])->name('reports.input-tax-list');
 
             // Cash Flow Reports
-            Route::get('cash-flow', [ReportController::class, 'cashFlow'])->name('reports.cash-flow');
-            Route::get('daily-cash-movement', [ReportController::class, 'dailyCashMovement'])->name('reports.daily-cash-movement');
+            Route::get('cash-flow', [CashFlowReportController::class, 'cashFlow'])->name('reports.cash-flow');
+            Route::get('daily-cash-movement', [CashFlowReportController::class, 'dailyCashMovement'])->name('reports.daily-cash-movement');
 
             // Equity Reports
-            Route::get('changes-in-equity', [ReportController::class, 'changesInEquity'])->name('reports.changes-in-equity');
+            Route::get('changes-in-equity', [FinancialReportController::class, 'changesInEquity'])->name('reports.changes-in-equity');
 
             // Bank Reconciliation Reports (pack: bank_reconciliation)
             Route::middleware('feature:bank_reconciliation')->group(function () {
-                Route::get('accounts/{account}/bank-reconciliation', [ReportController::class, 'bankReconciliation'])->name('reports.bank-reconciliation');
-                Route::get('accounts/{account}/bank-reconciliation/outstanding', [ReportController::class, 'bankReconciliationOutstanding'])->name('reports.bank-reconciliation-outstanding');
+                Route::get('accounts/{account}/bank-reconciliation', [BankReconciliationReportController::class, 'bankReconciliation'])->name('reports.bank-reconciliation');
+                Route::get('accounts/{account}/bank-reconciliation/outstanding', [BankReconciliationReportController::class, 'bankReconciliationOutstanding'])->name('reports.bank-reconciliation-outstanding');
             });
 
             // COGS Reports (Harga Pokok Penjualan) — general trading
-            Route::get('cogs-summary', [ReportController::class, 'cogsSummary'])->name('reports.cogs-summary');
-            Route::get('cogs-by-product', [ReportController::class, 'cogsByProduct'])->name('reports.cogs-by-product');
-            Route::get('cogs-by-category', [ReportController::class, 'cogsByCategory'])->name('reports.cogs-by-category');
-            Route::get('cogs-monthly-trend', [ReportController::class, 'cogsMonthlyTrend'])->name('reports.cogs-monthly-trend');
-            Route::get('products/{product}/cogs', [ReportController::class, 'productCOGSDetail'])->name('reports.product-cogs-detail');
+            Route::get('cogs-summary', [CogsReportController::class, 'cogsSummary'])->name('reports.cogs-summary');
+            Route::get('cogs-by-product', [CogsReportController::class, 'cogsByProduct'])->name('reports.cogs-by-product');
+            Route::get('cogs-by-category', [CogsReportController::class, 'cogsByCategory'])->name('reports.cogs-by-category');
+            Route::get('cogs-monthly-trend', [CogsReportController::class, 'cogsMonthlyTrend'])->name('reports.cogs-monthly-trend');
+            Route::get('products/{product}/cogs', [CogsReportController::class, 'productCOGSDetail'])->name('reports.product-cogs-detail');
 
             // Project Reports (pack: projects)
             Route::middleware('feature:projects')->group(function () {
-                Route::get('project-profitability', [ReportController::class, 'projectProfitability'])->name('reports.project-profitability');
-                Route::get('projects/{project}/profitability', [ReportController::class, 'projectProfitabilityDetail'])->name('reports.project-profitability-detail');
-                Route::get('project-cost-analysis', [ReportController::class, 'projectCostAnalysis'])->name('reports.project-cost-analysis');
+                Route::get('project-profitability', [ProjectReportController::class, 'projectProfitability'])->name('reports.project-profitability');
+                Route::get('projects/{project}/profitability', [ProjectReportController::class, 'projectProfitabilityDetail'])->name('reports.project-profitability-detail');
+                Route::get('project-cost-analysis', [ProjectReportController::class, 'projectCostAnalysis'])->name('reports.project-cost-analysis');
             });
 
             // Work Order / production cost reports (pack: work_orders)
             Route::middleware('feature:work_orders')->group(function () {
-                Route::get('work-order-costs', [ReportController::class, 'workOrderCosts'])->name('reports.work-order-costs');
-                Route::get('work-orders/{workOrder}/costs', [ReportController::class, 'workOrderCostDetail'])->name('reports.work-order-cost-detail');
-                Route::get('cost-variance', [ReportController::class, 'costVariance'])->name('reports.cost-variance');
+                Route::get('work-order-costs', [ManufacturingReportController::class, 'workOrderCosts'])->name('reports.work-order-costs');
+                Route::get('work-orders/{workOrder}/costs', [ManufacturingReportController::class, 'workOrderCostDetail'])->name('reports.work-order-cost-detail');
+                Route::get('cost-variance', [ManufacturingReportController::class, 'costVariance'])->name('reports.cost-variance');
             });
 
             // Subcontractor Reports (pack: subcontracting)
             Route::middleware('feature:subcontracting')->group(function () {
-                Route::get('subcontractor-summary', [ReportController::class, 'subcontractorSummary'])->name('reports.subcontractor-summary');
-                Route::get('subcontractors/{contact}/summary', [ReportController::class, 'subcontractorDetail'])->name('reports.subcontractor-detail');
-                Route::get('subcontractor-retention', [ReportController::class, 'subcontractorRetention'])->name('reports.subcontractor-retention');
+                Route::get('subcontractor-summary', [ManufacturingReportController::class, 'subcontractorSummary'])->name('reports.subcontractor-summary');
+                Route::get('subcontractors/{contact}/summary', [ManufacturingReportController::class, 'subcontractorDetail'])->name('reports.subcontractor-detail');
+                Route::get('subcontractor-retention', [ManufacturingReportController::class, 'subcontractorRetention'])->name('reports.subcontractor-retention');
             });
         });
 
