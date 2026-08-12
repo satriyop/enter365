@@ -4,8 +4,13 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\DocumentStatus;
 use App\Filters\ProjectFilter;
+use App\Http\Requests\Api\V1\StoreProjectCostRequest;
 use App\Http\Requests\Api\V1\StoreProjectRequest;
+use App\Http\Requests\Api\V1\StoreProjectRevenueRequest;
+use App\Http\Requests\Api\V1\UpdateProjectCostRequest;
+use App\Http\Requests\Api\V1\UpdateProjectProgressRequest;
 use App\Http\Requests\Api\V1\UpdateProjectRequest;
+use App\Http\Requests\Api\V1\UpdateProjectRevenueRequest;
 use App\Http\Resources\Api\V1\ProjectCostResource;
 use App\Http\Resources\Api\V1\ProjectResource;
 use App\Http\Resources\Api\V1\ProjectRevenueResource;
@@ -201,19 +206,14 @@ class ProjectController extends Controller
     /**
      * Update project progress.
      */
-    public function updateProgress(Request $request, Project $project): ProjectResource
+    public function updateProgress(UpdateProjectProgressRequest $request, Project $project): ProjectResource
     {
         $this->authorize('update', $project);
 
-        $request->validate([
-            'progress' => ['required', 'numeric', 'min:0', 'max:100'],
-        ], [
-            'progress.required' => 'Persentase progress harus diisi.',
-            'progress.min' => 'Persentase progress minimal 0%.',
-            'progress.max' => 'Persentase progress maksimal 100%.',
-        ]);
-
-        $project = $this->projectService->updateProgress($project, $request->input('progress'));
+        $project = $this->projectService->updateProgress(
+            $project,
+            (float) $request->validated('progress')
+        );
 
         return new ProjectResource($project);
     }
@@ -221,30 +221,11 @@ class ProjectController extends Controller
     /**
      * Add cost to project.
      */
-    public function addCost(Request $request, Project $project): JsonResponse
+    public function addCost(StoreProjectCostRequest $request, Project $project): JsonResponse
     {
         $this->authorize('update', $project);
 
-        $request->validate([
-            'type' => ['required', 'string', Rule::in(array_keys(ProjectCost::getCostTypes()))],
-            'description' => ['required', 'string', 'max:255'],
-            'quantity' => ['nullable', 'numeric', 'min:0.0001'],
-            'unit' => ['nullable', 'string', 'max:20'],
-            'unit_cost' => ['required', 'integer', 'min:0'],
-            'date' => ['nullable', 'date'],
-            'reference' => ['nullable', 'string', 'max:100'],
-            'notes' => ['nullable', 'string', 'max:500'],
-        ], [
-            'type.required' => 'Tipe biaya harus diisi.',
-            'description.required' => 'Deskripsi biaya harus diisi.',
-            'unit_cost.required' => 'Biaya satuan harus diisi.',
-        ]);
-
-        $data = $request->all();
-        $data['cost_type'] = $data['type'] ?? null;
-        $data['cost_date'] = $data['date'] ?? null;
-
-        $cost = $this->projectService->addCost($project, $data);
+        $cost = $this->projectService->addCost($project, $request->validated());
 
         return response()->json([
             'message' => 'Biaya berhasil ditambahkan.',
@@ -255,34 +236,13 @@ class ProjectController extends Controller
     /**
      * Update project cost.
      */
-    public function updateCost(Request $request, Project $project, ProjectCost $cost): JsonResponse
+    public function updateCost(UpdateProjectCostRequest $request, Project $project, ProjectCost $cost): JsonResponse
     {
         $this->authorize('update', $project);
 
-        if ($cost->project_id !== $project->id) {
-            return response()->json(['message' => 'Biaya tidak ditemukan untuk proyek ini.'], 404);
-        }
+        $this->projectService->ensureCostBelongsToProject($project, $cost);
 
-        $request->validate([
-            'type' => ['nullable', 'string', Rule::in(array_keys(ProjectCost::getCostTypes()))],
-            'description' => ['nullable', 'string', 'max:255'],
-            'quantity' => ['nullable', 'numeric', 'min:0.0001'],
-            'unit' => ['nullable', 'string', 'max:20'],
-            'unit_cost' => ['nullable', 'integer', 'min:0'],
-            'date' => ['nullable', 'date'],
-            'reference' => ['nullable', 'string', 'max:100'],
-            'notes' => ['nullable', 'string', 'max:500'],
-        ]);
-
-        $data = $request->all();
-        if (isset($data['type'])) {
-            $data['cost_type'] = $data['type'];
-        }
-        if (isset($data['date'])) {
-            $data['cost_date'] = $data['date'];
-        }
-
-        $cost = $this->projectService->updateCost($cost, $data);
+        $cost = $this->projectService->updateCost($cost, $request->validated());
 
         return response()->json([
             'message' => 'Biaya berhasil diperbarui.',
@@ -297,9 +257,7 @@ class ProjectController extends Controller
     {
         $this->authorize('update', $project);
 
-        if ($cost->project_id !== $project->id) {
-            return response()->json(['message' => 'Biaya tidak ditemukan untuk proyek ini.'], 404);
-        }
+        $this->projectService->ensureCostBelongsToProject($project, $cost);
 
         $this->projectService->deleteCost($cost);
 
@@ -309,28 +267,11 @@ class ProjectController extends Controller
     /**
      * Add revenue to project.
      */
-    public function addRevenue(Request $request, Project $project): JsonResponse
+    public function addRevenue(StoreProjectRevenueRequest $request, Project $project): JsonResponse
     {
         $this->authorize('update', $project);
 
-        $request->validate([
-            'type' => ['required', 'string', Rule::in(array_keys(ProjectRevenue::getRevenueTypes()))],
-            'description' => ['required', 'string', 'max:255'],
-            'amount' => ['required', 'integer', 'min:0'],
-            'date' => ['nullable', 'date'],
-            'reference' => ['nullable', 'string', 'max:100'],
-            'notes' => ['nullable', 'string', 'max:500'],
-        ], [
-            'type.required' => 'Tipe pendapatan harus diisi.',
-            'description.required' => 'Deskripsi pendapatan harus diisi.',
-            'amount.required' => 'Jumlah pendapatan harus diisi.',
-        ]);
-
-        $data = $request->all();
-        $data['revenue_type'] = $data['type'] ?? null;
-        $data['revenue_date'] = $data['date'] ?? null;
-
-        $revenue = $this->projectService->addRevenue($project, $data);
+        $revenue = $this->projectService->addRevenue($project, $request->validated());
 
         return response()->json([
             'message' => 'Pendapatan berhasil ditambahkan.',
@@ -341,32 +282,13 @@ class ProjectController extends Controller
     /**
      * Update project revenue.
      */
-    public function updateRevenue(Request $request, Project $project, ProjectRevenue $revenue): JsonResponse
+    public function updateRevenue(UpdateProjectRevenueRequest $request, Project $project, ProjectRevenue $revenue): JsonResponse
     {
         $this->authorize('update', $project);
 
-        if ($revenue->project_id !== $project->id) {
-            return response()->json(['message' => 'Pendapatan tidak ditemukan untuk proyek ini.'], 404);
-        }
+        $this->projectService->ensureRevenueBelongsToProject($project, $revenue);
 
-        $request->validate([
-            'type' => ['nullable', 'string', Rule::in(array_keys(ProjectRevenue::getRevenueTypes()))],
-            'description' => ['nullable', 'string', 'max:255'],
-            'amount' => ['nullable', 'integer', 'min:0'],
-            'date' => ['nullable', 'date'],
-            'reference' => ['nullable', 'string', 'max:100'],
-            'notes' => ['nullable', 'string', 'max:500'],
-        ]);
-
-        $data = $request->all();
-        if (isset($data['type'])) {
-            $data['revenue_type'] = $data['type'];
-        }
-        if (isset($data['date'])) {
-            $data['revenue_date'] = $data['date'];
-        }
-
-        $revenue = $this->projectService->updateRevenue($revenue, $data);
+        $revenue = $this->projectService->updateRevenue($revenue, $request->validated());
 
         return response()->json([
             'message' => 'Pendapatan berhasil diperbarui.',
@@ -381,9 +303,7 @@ class ProjectController extends Controller
     {
         $this->authorize('update', $project);
 
-        if ($revenue->project_id !== $project->id) {
-            return response()->json(['message' => 'Pendapatan tidak ditemukan untuk proyek ini.'], 404);
-        }
+        $this->projectService->ensureRevenueBelongsToProject($project, $revenue);
 
         $this->projectService->deleteRevenue($revenue);
 

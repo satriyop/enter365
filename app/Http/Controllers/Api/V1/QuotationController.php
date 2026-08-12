@@ -4,15 +4,18 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Filters\QuotationFilter;
 use App\Http\Requests\Api\V1\CancelQuotationRequest;
+use App\Http\Requests\Api\V1\SelectQuotationVariantRequest;
 use App\Http\Requests\Api\V1\StoreQuotationFromBomRequest;
 use App\Http\Requests\Api\V1\StoreQuotationRequest;
+use App\Http\Requests\Api\V1\SyncQuotationVariantOptionsRequest;
 use App\Http\Requests\Api\V1\UpdateQuotationRequest;
 use App\Http\Resources\Api\V1\InvoiceResource;
 use App\Http\Resources\Api\V1\QuotationResource;
 use App\Http\Resources\Api\V1\QuotationVariantOptionResource;
 use App\Models\Sales\Quotation;
+use App\Services\Sales\Quotation\QuotationPdfService;
+use App\Services\Sales\Quotation\QuotationVariantPresentationService;
 use App\Services\Sales\QuotationService;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -21,7 +24,9 @@ use Symfony\Component\HttpFoundation\Response;
 class QuotationController extends Controller
 {
     public function __construct(
-        private QuotationService $quotationService
+        private QuotationService $quotationService,
+        private QuotationPdfService $quotationPdfService,
+        private QuotationVariantPresentationService $variantPresentationService,
     ) {}
 
     /**
@@ -274,18 +279,7 @@ class QuotationController extends Controller
     {
         $this->authorize('view', $quotation);
 
-        // Load relationships needed for the PDF
-        $quotation->load(['contact', 'items.product']);
-
-        $pdf = Pdf::loadView('pdf.quotation', [
-            'quotation' => $quotation,
-        ]);
-
-        $pdf->setPaper('a4', 'portrait');
-
-        $filename = $quotation->quotation_number.'.pdf';
-
-        return $pdf->download($filename);
+        return $this->quotationPdfService->download($quotation);
     }
 
     /**
@@ -314,50 +308,22 @@ class QuotationController extends Controller
             return $this->error('Penawaran ini bukan tipe multi-option.', 422);
         }
 
-        $options = $quotation->variantOptions()
-            ->with('bom')
-            ->orderBy('sort_order')
-            ->get();
-
-        return $this->success([
-            'options' => QuotationVariantOptionResource::collection($options),
-            'meta' => [
-                'quotation_id' => $quotation->id,
-                'quotation_number' => $quotation->getFullNumber(),
-                'variant_group_id' => $quotation->variant_group_id,
-                'selected_variant_id' => $quotation->selected_variant_id,
-                'has_selected_variant' => $quotation->hasSelectedVariant(),
-            ],
-        ]);
+        return $this->success(
+            $this->variantPresentationService->getVariantOptionsPayload($quotation)
+        );
     }
 
     /**
      * Add or update variant options for a multi-option quotation.
      */
-    public function syncVariantOptions(Request $request, Quotation $quotation): JsonResponse
+    public function syncVariantOptions(SyncQuotationVariantOptionsRequest $request, Quotation $quotation): JsonResponse
     {
         $this->authorize('manage', $quotation);
 
-        $validated = $request->validate([
-            'options' => ['required', 'array', 'min:2'],
-            'options.*.bom_id' => ['required', 'exists:boms,id'],
-            'options.*.display_name' => ['required', 'string', 'max:255'],
-            'options.*.tagline' => ['nullable', 'string', 'max:255'],
-            'options.*.is_recommended' => ['boolean'],
-            'options.*.selling_price' => ['required', 'integer', 'min:0'],
-            'options.*.features' => ['nullable', 'array'],
-            'options.*.features.*' => ['string'],
-            'options.*.specifications' => ['nullable', 'array'],
-            'options.*.warranty_terms' => ['nullable', 'string', 'max:500'],
-        ], [
-            'options.required' => 'Opsi varian harus diisi.',
-            'options.min' => 'Minimal 2 opsi varian diperlukan.',
-            'options.*.bom_id.required' => 'BOM harus dipilih untuk setiap opsi.',
-            'options.*.display_name.required' => 'Nama tampilan harus diisi.',
-            'options.*.selling_price.required' => 'Harga jual harus diisi.',
-        ]);
-
-        $savedOptions = $this->quotationService->syncVariantOptions($quotation, $validated['options']);
+        $savedOptions = $this->quotationService->syncVariantOptions(
+            $quotation,
+            $request->validated('options')
+        );
 
         return $this->success(
             QuotationVariantOptionResource::collection($savedOptions),
@@ -368,23 +334,14 @@ class QuotationController extends Controller
     /**
      * Select a variant for a multi-option quotation.
      */
-    public function selectVariant(Request $request, Quotation $quotation): QuotationResource|JsonResponse
+    public function selectVariant(SelectQuotationVariantRequest $request, Quotation $quotation): QuotationResource
     {
         $this->authorize('manage', $quotation);
 
-        // Check quotation type BEFORE validation for better UX
-        if (! $quotation->isMultiOption()) {
-            return $this->error('Penawaran ini bukan tipe multi-option.', 422);
-        }
-
-        $validated = $request->validate([
-            'variant_option_id' => ['required', 'exists:quotation_variant_options,id'],
-        ], [
-            'variant_option_id.required' => 'Pilihan varian harus dipilih.',
-            'variant_option_id.exists' => 'Pilihan varian tidak ditemukan.',
-        ]);
-
-        $quotation = $this->quotationService->selectVariant($quotation, $validated['variant_option_id']);
+        $quotation = $this->quotationService->selectVariant(
+            $quotation,
+            (int) $request->validated('variant_option_id')
+        );
 
         return new QuotationResource(
             $quotation->load(['variantGroup', 'selectedVariant', 'variantOptions.bom'])
@@ -402,21 +359,8 @@ class QuotationController extends Controller
             return $this->error('Penawaran ini bukan tipe multi-option.', 422);
         }
 
-        $comparison = $quotation->getVariantComparison();
-
-        return $this->success([
-            'quotation' => [
-                'id' => $quotation->id,
-                'quotation_number' => $quotation->getFullNumber(),
-                'subject' => $quotation->subject,
-                'contact' => $quotation->contact ? [
-                    'id' => $quotation->contact->id,
-                    'name' => $quotation->contact->name,
-                ] : null,
-                'selected_variant_id' => $quotation->selected_variant_id,
-            ],
-            'options' => $comparison['options'] ?? [],
-            'price_range' => $comparison['price_range'] ?? null,
-        ]);
+        return $this->success(
+            $this->variantPresentationService->getVariantComparisonPayload($quotation)
+        );
     }
 }

@@ -293,6 +293,19 @@ class ProjectService extends BaseService implements ProjectServiceInterface
     }
 
     /**
+     * Ensure the cost belongs to the given project.
+     *
+     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
+     */
+    public function ensureCostBelongsToProject(Project $project, ProjectCost $cost): void
+    {
+        if ($cost->project_id !== $project->id) {
+            throw (new \Illuminate\Database\Eloquent\ModelNotFoundException)
+                ->setModel(ProjectCost::class, [$cost->id]);
+        }
+    }
+
+    /**
      * Add revenue to project.
      *
      * @param  array<string, mixed>  $data
@@ -346,6 +359,19 @@ class ProjectService extends BaseService implements ProjectServiceInterface
 
             return true;
         }, ['revenue_id' => $revenue->id]);
+    }
+
+    /**
+     * Ensure the revenue belongs to the given project.
+     *
+     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
+     */
+    public function ensureRevenueBelongsToProject(Project $project, ProjectRevenue $revenue): void
+    {
+        if ($revenue->project_id !== $project->id) {
+            throw (new \Illuminate\Database\Eloquent\ModelNotFoundException)
+                ->setModel(ProjectRevenue::class, [$revenue->id]);
+        }
     }
 
     /**

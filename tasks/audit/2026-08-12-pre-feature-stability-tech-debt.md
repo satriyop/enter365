@@ -127,17 +127,17 @@ Severity legend:
 
 ---
 
-#### F-05 · Fat controllers (reports, export, cross-ref, quotation) — **partially FIXED 2026-08-12**
+#### F-05 · Fat controllers (reports, export, cross-ref, quotation) — **mostly FIXED 2026-08-12**
 
 | LOC | Path | Status |
 |-----|------|--------|
-| ~~706~~ | `ReportController.php` | **Split** into 8 domain controllers under `Controllers/Api/V1/Reports/*` (routes/URLs unchanged); equity reshape → service |
-| ~~444~~ → **115** | `ExportController.php` | **Thinned** — assembly in `ReportExportService` (417) |
-| 422 | `QuotationController.php` | Still open (variant presentation, PDF) |
-| 419 | `ProjectController.php` | Still open (cost/revenue validation bulk) |
+| ~~706~~ | `ReportController.php` | **Split** into 8 domain controllers under `Controllers/Api/V1/Reports/*` |
+| ~~444~~ → **115** | `ExportController.php` | **Thinned** — `ReportExportService` |
+| ~~422~~ → **366** | `QuotationController.php` | **Thinned** — PDF + variant presentation services + form requests |
+| ~~419~~ → **339** | `ProjectController.php` | **Thinned** — cost/revenue/progress Form Requests + ownership in service |
 | 409 | `ElectricalPanel/ComponentCrossReferenceController.php` | Still open (already mostly service-backed) |
 
-**Remediation remaining:** Quotation/Project presentation thinning; panel cross-ref read vs write split if needed.
+**Remediation remaining:** panel cross-ref read/write split only if needed.
 
 ---
 
@@ -191,42 +191,31 @@ Config under `accounting.notifications.*` (per-event `enabled`, `channels`, opti
 
 ### P2 — Isolation residuals, FE, agent confusion
 
-#### F-09 · FE core BOM/template pages still soft-gate industry fields
+#### F-09 · FE core BOM/template pages still soft-gate industry fields — **partially FIXED 2026-08-12**
 
-**Why it hurts:** Agents re-introduce Vahana fields as “core BOM”; dual mental model.
+**Progress:**
+- Extracted `BomPanelToolbar.vue` under `pages/addons/electrical-panel/components/` used by core `BomDetailPage`
+- API clients already under `src/api/addons/*`
 
-| Evidence |
-|----------|
-| `front-end-enter365/src/pages/boms/BomDetailPage.vue`, `CreateBomFromTemplatePage.vue` |
-| `front-end-enter365/src/pages/settings/bom-templates/*` (`features.enabled('electrical_panel')`, component standards) |
-| Clients moved under `src/api/addons/*` but UI still mixed |
-
-**Remediation:** Extract panel UI slots under `pages/addons/electrical-panel` (already partial).
+**Residual:** Template form/detail and CreateBomFromTemplate still soft-gate standards inline; full page moves remain optional.
 
 ---
 
-#### F-10 · FE package/name debt
+#### F-10 · FE package/name debt — **partially FIXED 2026-08-12**
 
-| Evidence |
-|----------|
-| `front-end-enter365/package.json` `"name": "solar-erp-frontend"` |
-| Login rebranded to Enter365 (`LoginPage.vue`) — package name lags |
-| ~110 `as any` / `: any` hits under `src/` |
-| Debug `console.log` in `LoginPage.vue`, `stores/auth.ts` |
-
-**Remediation:** Rename package; strip login debug logs; tighten types on hot paths.
+| Item | Status |
+|------|--------|
+| package.json name → `enter365-frontend` | **Done** |
+| Login/auth debug `console.log` | **Removed** |
+| `as any` hot-path cleanup | Still open (~110 hits) |
 
 ---
 
-#### F-11 · Browser E2E gap vs feature packs
+#### F-11 · Browser E2E gap vs feature packs — **partially FIXED 2026-08-12**
 
-| Evidence |
-|----------|
-| `tests/Browser/*` — sales/purchase/inventory/auth only |
-| No browser coverage for BOM, WO, MRP, solar, electrical-panel UI |
-| Backlog already notes: `tasks/backlog/002-browser-mfg-chain.md` |
+**Progress:** Added `tests/Browser/FeaturePackSmokeTest.php` — loads WO, BOMs, MR, MRP, solar calculator, panel cost-opt, BOM templates without JS errors.
 
-**Remediation:** Smoke browser per FEATURE_PRESET (nav gate + one happy path) after API journeys (already present).
+**Residual:** Full chain E2E still open (`tasks/backlog/002-browser-mfg-chain.md`).
 
 ---
 
@@ -291,8 +280,8 @@ Suggested file names / order:
 | 5 | ~~Split PaymentService / JournalService / DownPaymentService (coordinator)~~ **DONE 2026-08-12** | Testability |
 | 6 | ~~Wire ManufacturingCostStrategy into WO consume/complete~~ **DONE 2026-08-12** | Real JEs when job_costing/wip on; honest default |
 | 7 | ~~Implement notification listeners~~ **DONE 2026-08-12** | Honest product behavior |
-| 8 | FE: extract panel UI from core BOM pages; rename package; remove login console.log | Agent + brand hygiene |
-| 9 | Browser smoke: MFG + solar + panel nav under presets | SPA stability signal |
+| 8 | ~~FE package rename + login log strip + BomPanelToolbar extract~~ **partial DONE** | Agent + brand hygiene |
+| 9 | ~~Browser feature-pack smoke~~ **partial DONE** (`FeaturePackSmokeTest`); full MFG chain still open | SPA stability signal |
 | 10 | ~~Model calculateTotals → service/factory only~~ **DONE 2026-08-12** (money docs) | DIP hygiene |
 
 Existing related backlog: `tasks/backlog/001-assert-fg-stock-on-wo-complete.md`, `002-browser-mfg-chain.md`.
