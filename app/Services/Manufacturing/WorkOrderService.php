@@ -7,6 +7,7 @@ namespace App\Services\Manufacturing;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Manufacturing\WorkOrderServiceInterface;
+use App\Domain\Manufacturing\WorkOrders\Handlers\FinishedGoodsHandler;
 use App\Domain\Manufacturing\WorkOrders\WorkOrderDomainFactory;
 use App\Enums\DocumentStatus;
 use App\Models\Manufacturing\Bom;
@@ -25,6 +26,7 @@ class WorkOrderService extends BaseService implements WorkOrderServiceInterface
         private WorkOrderNumberGenerator $numberGenerator,
         private WorkOrderDomainFactory $domainFactory,
         private AccountingPolicyManager $policyManager,
+        private FinishedGoodsHandler $finishedGoodsHandler,
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger
     ) {
@@ -240,9 +242,14 @@ class WorkOrderService extends BaseService implements WorkOrderServiceInterface
 
             $wo->refresh();
 
+            // Receive finished goods into inventory (TYPE_PRODUCTION receipt)
+            if ($this->finishedGoodsHandler->shouldHandle($wo)) {
+                $this->finishedGoodsHandler->handle($wo, $userId);
+            }
+
             // Job costing / WIP: transfer accumulated WIP → finished goods
             // Project based: no JE (project financials updated below)
-            $this->policyManager->manufacturing()->onWorkOrderComplete($wo);
+            $this->policyManager->manufacturing()->onWorkOrderComplete($wo->fresh());
 
             if ($wo->project_id) {
                 $this->costService->updateProjectCosts($wo);

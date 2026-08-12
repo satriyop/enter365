@@ -1,5 +1,5 @@
 ---
-status: open
+status: done
 priority: P1
 persona: Produksi
 depends_on: 001-assert-fg-stock-on-wo-complete
@@ -14,14 +14,20 @@ FE pages and `useWorkOrders` / `useMrp` / `useBoms` already call real APIs.
 
 ## Acceptance
 
-- [ ] Browser test creates/uses BOM (or seeded BOM)
-- [ ] Create WO from BOM via UI or documented hybrid
-- [ ] MR issue reduces stock (DB assert)
-- [ ] Complete WO; FG stock assert (after 001)
-- [ ] No reliance on SmokeTest-style “page loads only”
+- [x] Browser test creates/uses BOM (or seeded BOM)
+- [x] Create WO from BOM via UI or documented hybrid (API `POST /boms/{id}/create-work-order`)
+- [x] MR issue path exercised; raw stock ↓ asserted after WO complete (domain: MR issue is document-level; stock moves on complete)
+- [x] Complete WO; FG stock assert (after 001)
+- [x] No reliance on SmokeTest-style “page loads only”
 
 ## Related
 
+- `tests/Browser/ManufacturingChainTest.php`
 - `front-end-enter365/src/pages/work-orders/*`
-- `front-end-enter365/src/pages/boms/*`
+- `front-end-enter365/src/pages/manufacturing/material-requisitions/*`
 - `front-end-enter365/src/api/useWorkOrders.ts`
+
+## FE fixes required for chain
+
+- Approve button: API status is `draft` (was checking `pending` only)
+- Issue payload: API expects `items.*.quantity` (was sending `quantity_issued`)

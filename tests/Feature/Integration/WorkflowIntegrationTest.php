@@ -857,11 +857,11 @@ describe('Complete Manufacturing Cycle: BOM → WO → MR → Completion', funct
             ->and($stockB->quantity)->toBe(485)    // 500 - 15
             ->and($stockB->reserved_quantity)->toBe(0);
 
-        // Assert: InventoryMovement records created
+        // Assert: InventoryMovement records for raw material consume + FG receipt
         $movements = InventoryMovement::where('reference_type', WorkOrder::class)
             ->where('reference_id', $wo->id)
             ->get();
-        expect($movements)->toHaveCount(2);
+        expect($movements)->toHaveCount(3);
 
         $movementA = $movements->firstWhere('product_id', $rawA->id);
         $movementB = $movements->firstWhere('product_id', $rawB->id);
@@ -869,6 +869,18 @@ describe('Complete Manufacturing Cycle: BOM → WO → MR → Completion', funct
             ->and($movementA->quantity)->toBe(6)
             ->and($movementB->type)->toBe(InventoryMovement::TYPE_OUT)
             ->and($movementB->quantity)->toBe(15);
+
+        // Assert: finished goods stock increased by quantity_ordered (3)
+        $fgStock = ProductStock::where('product_id', $finished->id)
+            ->where('warehouse_id', $warehouse->id)
+            ->first();
+        expect($fgStock)->not->toBeNull()
+            ->and($fgStock->quantity)->toBe(3);
+
+        $fgMovement = $movements->firstWhere('product_id', $finished->id);
+        expect($fgMovement)->not->toBeNull()
+            ->and($fgMovement->type)->toBe(InventoryMovement::TYPE_PRODUCTION)
+            ->and($fgMovement->quantity)->toBe(3);
     });
 });
 

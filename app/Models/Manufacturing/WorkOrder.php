@@ -358,7 +358,14 @@ class WorkOrder extends Model
      */
     public function isProduction(): bool
     {
-        return $this->type === self::TYPE_PRODUCTION;
+        $type = $this->type;
+
+        if ($type instanceof WorkOrderType) {
+            return $type === WorkOrderType::Production;
+        }
+
+        return $type === self::TYPE_PRODUCTION
+            || $type === WorkOrderType::Production->value;
     }
 
     /**
@@ -366,7 +373,14 @@ class WorkOrder extends Model
      */
     public function isInstallation(): bool
     {
-        return $this->type === self::TYPE_INSTALLATION;
+        $type = $this->type;
+
+        if ($type instanceof WorkOrderType) {
+            return $type === WorkOrderType::Installation;
+        }
+
+        return $type === self::TYPE_INSTALLATION
+            || $type === WorkOrderType::Installation->value;
     }
 
     /**
