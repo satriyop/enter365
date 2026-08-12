@@ -100,25 +100,30 @@ Severity legend:
 
 ### P1 — Architecture / dual paths / fat hotspots
 
-#### F-04 · God-scale services on critical paths (skill threshold 500+ LOC)
+#### F-04 · God-scale services on critical paths — **partially FIXED 2026-08-12**
 
 **Why it hurts:** SRP, test setup cost, merge conflicts, agent mis-edits.
 
+**Fixed (coordinator pattern, interfaces unchanged):**
+
+| Coordinator | Lines | Focused services |
+|-------------|------:|------------------|
+| `PaymentService` | 128 | Creation (420), Void (162), Query (121) |
+| `DownPaymentService` | 149 | Crud (188), Application (346), Lifecycle (235) |
+| `JournalService` | 113 | Entry (207), Document (541) |
+
+**Still large (not split this pass):**
+
 | LOC (approx) | Path |
 |--------------|------|
-| 713 | `app/Services/Accounting/JournalService.php` |
-| 700 | `app/Services/Sales/DownPaymentService.php` |
-| 699 | `app/Services/Accounting/Reports/FinancialReportService.php` |
-| 596 | `app/Services/Shared/PaymentService.php` |
-| 568 | `app/Services/Sales/DeliveryOrderService.php` |
-| 561 | `app/Services/Sales/InvoiceService.php` |
-| 554 | `app/Services/Accounting/YearEndCloseService.php` |
-| 509 | `app/Services/Solar/SolarProposalService.php` |
-| 502 | `app/Services/Manufacturing/SubcontractorService.php` |
+| ~699 | `FinancialReportService.php` |
+| ~568 | `DeliveryOrderService.php` |
+| ~561 | `InvoiceService.php` |
+| ~554 | `YearEndCloseService.php` (keep — intentional orchestrator) |
+| ~509 | `SolarProposalService.php` |
+| ~502 | `SubcontractorService.php` |
 
-**Note:** YearEndClose may be intentionally orchestrator-style (skill allows keep). Invoice/DO/Payment are better coordinator candidates (void/ship/pay already multi-phase).
-
-**Remediation:** Split by write vs read / lifecycle vs report (Coordinator pattern already used for Quotation + BrandSwap).
+**Remediation remaining:** DO / Invoice / FinancialReport / Subcontractor when next needed.
 
 ---
 
@@ -265,7 +270,7 @@ Isolation skills were updated; keep `SERVICE_BINDINGS.md` / SKILL.md in sync whe
 | No `auth()->id()` in services | **Fixed** (F-02) |
 | Business logic not in controller | **Fixed** for F-01 list |
 | No `app()` in models | **Residual** calculators (F-06) |
-| God service split at 500+ LOC | **Several remain** (F-04) |
+| God service split at 500+ LOC | **Payment/DP/Journal done**; DO/Invoice/Reports remain (F-04) |
 | Industry add-ons outside Manufacturing | **Healthy** for BrandSwap / HTTP namespaces |
 | Accounting reverse only via document services | **Healthy** on Invoice void path when service used |
 | Feature flags gate packs | **Healthy** + tests |
@@ -282,7 +287,7 @@ Suggested file names / order:
 | 2 | ~~Replace `auth()->id()` in AttachmentService + BankStatementImportService~~ **DONE** | Queue/import safe |
 | 3 | ~~PO destroy via service~~ **DONE** | Cascades/events preserved |
 | 4 | ~~BomTemplate item mutations via BomTemplateServiceInterface~~ **DONE 2026-08-12** | AddonAttributes already there |
-| 5 | Split PaymentService / JournalService / DownPaymentService (coordinator) | Testability |
+| 5 | ~~Split PaymentService / JournalService / DownPaymentService (coordinator)~~ **DONE 2026-08-12** | Testability |
 | 6 | ~~Wire ManufacturingCostStrategy into WO consume/complete~~ **DONE 2026-08-12** | Real JEs when job_costing/wip on; honest default |
 | 7 | ~~Implement notification listeners~~ **DONE 2026-08-12** | Honest product behavior |
 | 8 | FE: extract panel UI from core BOM pages; rename package; remove login console.log | Agent + brand hygiene |
