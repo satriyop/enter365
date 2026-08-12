@@ -6,6 +6,7 @@ namespace App\Services\Accounting\BankImport;
 
 use App\Models\Accounting\BankTransaction;
 use App\Models\Shared\Payment;
+use App\Services\Base\Traits\WithOperationContext;
 use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -13,6 +14,8 @@ use Illuminate\Support\Str;
 
 class BankStatementImportService
 {
+    use WithOperationContext;
+
     public function __construct(
         private BankStatementFormatDetector $detector
     ) {}
@@ -204,7 +207,7 @@ class BankStatementImportService
                         'status' => 'unmatched',
                         'import_batch' => $importBatch,
                         'external_id' => $parsed['external_id'],
-                        'created_by' => auth()->id(),
+                        'created_by' => $this->getUserId(),
                     ]);
 
                     $importedCount++;

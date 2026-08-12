@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace App\Services\Shared;
 
 use App\Models\Shared\Attachment;
+use App\Services\Base\Traits\WithOperationContext;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
 class AttachmentService
 {
+    use WithOperationContext;
+
     /**
      * Create a new attachment.
      *
@@ -34,7 +37,7 @@ class AttachmentService
             'size' => $file->getSize(),
             'description' => $data['description'] ?? null,
             'category' => $data['category'] ?? Attachment::CATEGORY_OTHER,
-            'uploaded_by' => auth()->id(),
+            'uploaded_by' => $this->getUserId(),
         ]);
 
         return $attachment->load('uploader');
