@@ -10,6 +10,7 @@ use App\Contracts\Inventory\InventoryServiceInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Sales\SalesReturnServiceInterface;
 use App\Domain\Sales\SalesReturns\Handlers\SalesReturnApprovalPipeline;
+use App\Domain\Sales\SalesReturns\SalesReturnDomainFactory;
 use App\Enums\DocumentStatus;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Inventory\Product;
@@ -44,7 +45,8 @@ class SalesReturnService implements SalesReturnServiceInterface
         ContextualLoggerInterface $logger,
         SalesReturnApprovalPipeline $approvalPipeline,
         JournalServiceInterface $journalService,
-        InventoryServiceInterface $inventoryService
+        InventoryServiceInterface $inventoryService,
+        private SalesReturnDomainFactory $domainFactory,
     ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->logger = $logger;
@@ -182,11 +184,22 @@ class SalesReturnService implements SalesReturnServiceInterface
             }
 
             $salesReturn->refresh();
-            $salesReturn->calculateTotals();
+            $salesReturn->load('items');
+            $this->domainFactory->applyTotals($salesReturn);
             $salesReturn->save();
 
             return $salesReturn->fresh(['items', 'contact', 'invoice', 'warehouse']);
         }, ['invoice_id' => $invoice->id]);
+    }
+
+    protected function recalculateTotals(Model $document): void
+    {
+        $document->refresh();
+        $document->load($this->getItemRelation());
+
+        /** @var SalesReturn $document */
+        $this->domainFactory->applyTotals($document);
+        $document->save();
     }
 
     /**

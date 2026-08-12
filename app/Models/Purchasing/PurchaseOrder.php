@@ -2,7 +2,6 @@
 
 namespace App\Models\Purchasing;
 
-use App\Contracts\Purchasing\PurchaseOrderCalculatorInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Contacts\Contact;
 use App\Models\Projects\Project;
@@ -451,32 +450,6 @@ class PurchaseOrder extends Model
     public function getStatusLabel(): string
     {
         return $this->status->label();
-    }
-
-    /**
-     * Calculate and update totals from items.
-     *
-     * @param  PurchaseOrderCalculatorInterface|null  $calculator  Optional calculator for unit testing
-     */
-    public function calculateTotals(?PurchaseOrderCalculatorInterface $calculator = null): void
-    {
-        $calculator ??= app(PurchaseOrderCalculatorInterface::class);
-
-        $lineTotals = $this->items->pluck('line_total')->toArray();
-        $totals = $calculator->calculate(
-            $lineTotals,
-            (float) $this->tax_rate,
-            $this->discount_type,
-            $this->discount_value !== null ? (float) $this->discount_value : null,
-            $this->currency,
-            (float) $this->exchange_rate
-        );
-
-        $this->subtotal = $totals->subtotal;
-        $this->discount_amount = $totals->discountAmount;
-        $this->tax_amount = $totals->taxAmount;
-        $this->total_amount = $totals->totalAmount;
-        $this->base_currency_total = $totals->baseCurrencyTotal;
     }
 
     /**

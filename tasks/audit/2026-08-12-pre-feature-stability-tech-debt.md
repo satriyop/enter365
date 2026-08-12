@@ -141,19 +141,20 @@ Severity legend:
 
 ---
 
-#### F-06 · Model service locator `app(CalculatorInterface)` in totals
+#### F-06 · Model service locator `app(CalculatorInterface)` in totals — **FIXED 2026-08-12**
 
-**Why it hurts:** Hidden DI; unit-test friction; skill “no app() in models” residual.
+**Was:** Invoice/Bill/SR/PO/PR models called `app(CalculatorInterface)` inside `calculateTotals()`.
 
-| Path |
-|------|
-| `app/Models/Sales/Invoice.php` `calculateTotals()` |
-| `app/Models/Purchasing/Bill.php` |
-| `app/Models/Sales/SalesReturn.php` |
-| `app/Models/Purchasing/PurchaseOrder.php` |
-| `app/Models/Purchasing/PurchaseReturn.php` |
+**Fixed:**
+| Document | Totals path |
+|----------|-------------|
+| Invoice | `InvoiceDomainFactory::applyTotals` via `InvoiceCrudService::recalculateTotals` |
+| Bill | new `BillDomainFactory` + `BillService` |
+| PurchaseOrder | existing `PurchaseOrderDomainFactory` + `PurchaseOrderService` |
+| SalesReturn | new `SalesReturnDomainFactory` + `SalesReturnService` |
+| PurchaseReturn | new `PurchaseReturnDomainFactory` + `PurchaseReturnService` |
 
-**Remediation:** Prefer DomainFactory/service-only totals (Quotation path already moved); keep models read-only.
+Model `calculateTotals()` removed from the five money documents. BOM still has simple model totals (no calculator locator).
 
 ---
 
@@ -269,7 +270,7 @@ Isolation skills were updated; keep `SERVICE_BINDINGS.md` / SKILL.md in sync whe
 |----------------|---------------|
 | No `auth()->id()` in services | **Fixed** (F-02) |
 | Business logic not in controller | **Fixed** for F-01 list |
-| No `app()` in models | **Residual** calculators (F-06) |
+| No `app()` in models | **Money docs fixed** (F-06); BOM totals still on model |
 | God service split at 500+ LOC | **F-04 complete** (YearEndClose kept as orchestrator) |
 | Industry add-ons outside Manufacturing | **Healthy** for BrandSwap / HTTP namespaces |
 | Accounting reverse only via document services | **Healthy** on Invoice void path when service used |
@@ -292,7 +293,7 @@ Suggested file names / order:
 | 7 | ~~Implement notification listeners~~ **DONE 2026-08-12** | Honest product behavior |
 | 8 | FE: extract panel UI from core BOM pages; rename package; remove login console.log | Agent + brand hygiene |
 | 9 | Browser smoke: MFG + solar + panel nav under presets | SPA stability signal |
-| 10 | Model calculateTotals → service/factory only | DIP hygiene |
+| 10 | ~~Model calculateTotals → service/factory only~~ **DONE 2026-08-12** (money docs) | DIP hygiene |
 
 Existing related backlog: `tasks/backlog/001-assert-fg-stock-on-wo-complete.md`, `002-browser-mfg-chain.md`.
 

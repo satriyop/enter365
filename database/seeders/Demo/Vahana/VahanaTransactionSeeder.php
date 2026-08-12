@@ -554,8 +554,9 @@ class VahanaTransactionSeeder extends Seeder
             $item->calculateLineTotal();
             $item->save();
         }
-        $salesReturn->refresh();
-        $salesReturn->calculateTotals();
+        $salesReturn->refresh()->load('items');
+        app(\App\Domain\Sales\SalesReturns\SalesReturnDomainFactory::class)
+            ->applyTotals($salesReturn);
         $salesReturn->save();
 
         // Submit and approve (triggers inventory and journal handlers)
@@ -607,8 +608,9 @@ class VahanaTransactionSeeder extends Seeder
             $item->calculateLineTotal();
             $item->save();
         }
-        $purchaseReturn->refresh();
-        $purchaseReturn->calculateTotals();
+        $purchaseReturn->refresh()->load('items');
+        app(\App\Domain\Purchasing\PurchaseReturns\PurchaseReturnDomainFactory::class)
+            ->applyTotals($purchaseReturn);
         $purchaseReturn->save();
 
         // Submit and approve (triggers inventory and journal handlers)

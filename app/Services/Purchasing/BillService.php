@@ -8,6 +8,7 @@ use App\Contracts\Accounting\JournalServiceInterface;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Purchasing\BillServiceInterface;
+use App\Domain\Purchasing\Bills\BillDomainFactory;
 use App\Domain\Purchasing\Bills\Events\BillFullyPaid;
 use App\Domain\Purchasing\Bills\Events\BillOverdue;
 use App\Domain\Purchasing\Bills\Events\BillPartiallyPaid;
@@ -38,12 +39,23 @@ class BillService implements BillServiceInterface
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger,
-        JournalServiceInterface $journalService
+        JournalServiceInterface $journalService,
+        private BillDomainFactory $domainFactory,
     ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->logger = $logger;
 
         $this->journalService = $journalService;
+    }
+
+    protected function recalculateTotals(Model $document): void
+    {
+        $document->refresh();
+        $document->load($this->getItemRelation());
+
+        /** @var Bill $document */
+        $this->domainFactory->applyTotals($document);
+        $document->save();
     }
 
     protected function getModelClass(): string

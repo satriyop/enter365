@@ -6,6 +6,7 @@ namespace App\Services\Manufacturing;
 
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
+use App\Domain\Purchasing\PurchaseOrders\PurchaseOrderDomainFactory;
 use App\Enums\DocumentStatus;
 use App\Enums\MrpSuggestionStatus;
 use App\Models\Inventory\Product;
@@ -28,7 +29,8 @@ class MrpSuggestionService extends BaseService
 {
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
-        ContextualLoggerInterface $logger
+        ContextualLoggerInterface $logger,
+        private PurchaseOrderDomainFactory $purchaseOrderDomainFactory,
     ) {
         parent::__construct($eventDispatcher, $logger);
     }
@@ -182,8 +184,9 @@ class MrpSuggestionService extends BaseService
                 'line_total' => $suggestion->estimated_total_cost ?? 0,
             ]);
 
-            // Recalculate PO totals
-            $po->calculateTotals();
+            // Recalculate PO totals via domain factory (no app() in models)
+            $po->load('items');
+            $this->purchaseOrderDomainFactory->applyTotals($po);
             $po->save();
 
             // Mark suggestion as converted

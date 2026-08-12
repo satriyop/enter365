@@ -25,8 +25,8 @@ function createAndPostInvoice(): Invoice
 {
     $invoice = Invoice::factory()->create();
     InvoiceItem::factory()->create(['invoice_id' => $invoice->id]);
-    $invoice->refresh();
-    $invoice->calculateTotals();
+    $invoice->refresh()->load('items');
+    app(\App\Domain\Sales\Invoices\InvoiceDomainFactory::class)->applyTotals($invoice);
     $invoice->save();
 
     $service = app(InvoiceService::class);

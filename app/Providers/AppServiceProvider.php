@@ -183,6 +183,7 @@ class AppServiceProvider extends ServiceProvider
         // InvoiceCalculator and InvoiceDomainFactory
         $this->app->bind(\App\Contracts\Sales\InvoiceCalculatorInterface::class, \App\Domain\Sales\Invoices\InvoiceCalculator::class);
         $this->app->singleton(\App\Domain\Sales\Invoices\InvoiceDomainFactory::class);
+        $this->app->singleton(\App\Domain\Sales\SalesReturns\SalesReturnDomainFactory::class);
 
         // Purchasing Domain (4 services)
         $this->app->bind(BillServiceInterface::class, BillService::class);
@@ -192,6 +193,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(\App\Contracts\Purchasing\LandedCostServiceInterface::class, \App\Services\Purchasing\LandedCostService::class);
         $this->app->bind(\App\Contracts\Purchasing\PurchaseOrderCalculatorInterface::class, \App\Domain\Purchasing\PurchaseOrders\PurchaseOrderCalculator::class);
         $this->app->singleton(\App\Domain\Purchasing\PurchaseOrders\PurchaseOrderDomainFactory::class);
+        $this->app->singleton(\App\Domain\Purchasing\Bills\BillDomainFactory::class);
+        $this->app->singleton(\App\Domain\Purchasing\PurchaseReturns\PurchaseReturnDomainFactory::class);
 
         // Register PurchaseReturnApprovalPipeline with handlers
         $this->app->bind(

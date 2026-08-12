@@ -8,6 +8,7 @@ use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Purchasing\PurchaseReturnServiceInterface;
 use App\Domain\Purchasing\PurchaseReturns\Handlers\PurchaseReturnApprovalPipeline;
+use App\Domain\Purchasing\PurchaseReturns\PurchaseReturnDomainFactory;
 use App\Enums\DocumentStatus;
 use App\Models\Purchasing\Bill;
 use App\Models\Purchasing\PurchaseReturn;
@@ -34,7 +35,8 @@ class PurchaseReturnService implements PurchaseReturnServiceInterface
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger,
-        PurchaseReturnApprovalPipeline $approvalPipeline
+        PurchaseReturnApprovalPipeline $approvalPipeline,
+        private PurchaseReturnDomainFactory $domainFactory,
     ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->logger = $logger;
@@ -144,11 +146,22 @@ class PurchaseReturnService implements PurchaseReturnServiceInterface
                 $item->save();
             }
 
-            $purchaseReturn->calculateTotals();
+            $purchaseReturn->load('items');
+            $this->domainFactory->applyTotals($purchaseReturn);
             $purchaseReturn->save();
 
             return $purchaseReturn->fresh(['items', 'contact', 'bill', 'warehouse']);
         }, ['bill_id' => $bill->id]);
+    }
+
+    protected function recalculateTotals(Model $document): void
+    {
+        $document->refresh();
+        $document->load($this->getItemRelation());
+
+        /** @var PurchaseReturn $document */
+        $this->domainFactory->applyTotals($document);
+        $document->save();
     }
 
     public function submit(PurchaseReturn $purchaseReturn, ?int $userId = null): PurchaseReturn

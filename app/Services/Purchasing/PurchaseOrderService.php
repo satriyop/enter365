@@ -62,6 +62,16 @@ class PurchaseOrderService implements PurchaseOrderServiceInterface
         return 'items';
     }
 
+    protected function recalculateTotals(Model $document): void
+    {
+        $document->refresh();
+        $document->load($this->getItemRelation());
+
+        /** @var PurchaseOrder $document */
+        $this->domainFactory->applyTotals($document);
+        $document->save();
+    }
+
     protected function getInitialStatus(): DocumentStatus
     {
         return DocumentStatus::Draft;

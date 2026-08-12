@@ -6,6 +6,7 @@ namespace App\Services\Sales\Invoice;
 
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
+use App\Domain\Sales\Invoices\InvoiceDomainFactory;
 use App\Enums\DocumentStatus;
 use App\Exceptions\Domain\DocumentLockedException;
 use App\Models\Sales\Invoice;
@@ -37,9 +38,20 @@ class InvoiceCrudService
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger,
+        private InvoiceDomainFactory $domainFactory,
     ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->logger = $logger;
+    }
+
+    protected function recalculateTotals(Model $document): void
+    {
+        $document->refresh();
+        $document->load($this->getItemRelation());
+
+        /** @var Invoice $document */
+        $this->domainFactory->applyTotals($document);
+        $document->save();
     }
 
     protected function getModelClass(): string

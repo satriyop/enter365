@@ -2,7 +2,6 @@
 
 namespace App\Models\Sales;
 
-use App\Contracts\Sales\InvoiceCalculatorInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\JournalEntry;
@@ -323,37 +322,6 @@ class Invoice extends Model
 
         // Fallback: calculate from invoice_date + days
         return ! $this->invoice_date->copy()->addDays($this->early_discount_days)->isPast();
-    }
-
-    /**
-     * Calculate and update totals from items.
-     *
-     * @param  InvoiceCalculatorInterface|null  $calculator  Optional calculator for unit testing
-     */
-    public function calculateTotals(?InvoiceCalculatorInterface $calculator = null): void
-    {
-        $calculator ??= app(InvoiceCalculatorInterface::class);
-
-        $lineTotals = $this->items->pluck('line_total')->toArray();
-        $totals = $calculator->calculate(
-            $lineTotals,
-            (float) $this->tax_rate,
-            $this->discount_amount,
-            $this->currency,
-            (float) $this->exchange_rate
-        );
-
-        $this->subtotal = $totals->subtotal;
-        $this->tax_amount = $totals->taxAmount;
-        $this->total_amount = $totals->totalAmount;
-
-        // Calculate base currency total if multi-currency
-        $exchangeRate = (float) $this->exchange_rate;
-        if ($this->currency !== 'IDR' && $exchangeRate > 0) {
-            $this->base_currency_total = (int) round($this->total_amount * $exchangeRate);
-        } else {
-            $this->base_currency_total = $this->total_amount;
-        }
     }
 
     /**

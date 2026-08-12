@@ -2,7 +2,6 @@
 
 namespace App\Models\Sales;
 
-use App\Contracts\Sales\InvoiceCalculatorInterface;
 use App\Enums\DocumentStatus;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Contacts\Contact;
@@ -243,28 +242,6 @@ class SalesReturn extends Model
             DocumentStatus::Submitted,
             DocumentStatus::Approved,
         ], true);
-    }
-
-    /**
-     * Calculate and update totals from items.
-     */
-    public function calculateTotals(?InvoiceCalculatorInterface $calculator = null): void
-    {
-        $calculator ??= app(InvoiceCalculatorInterface::class);
-
-        $lineTotals = $this->items->pluck('line_total')->toArray();
-        $taxRate = $this->tax_rate ?? config('accounting.tax.default_rate', 11.00);
-        $totals = $calculator->calculate(
-            $lineTotals,
-            $taxRate,
-            0, // No discount in sales return
-            $this->currency ?? 'IDR',
-            $this->exchange_rate ?? 1
-        );
-
-        $this->subtotal = $totals->subtotal;
-        $this->tax_amount = $totals->taxAmount;
-        $this->total_amount = $totals->totalAmount;
     }
 
     /**

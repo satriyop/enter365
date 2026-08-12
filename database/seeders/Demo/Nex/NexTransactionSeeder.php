@@ -659,8 +659,9 @@ class NexTransactionSeeder extends Seeder
             $item->calculateLineTotal();
             $item->save();
         }
-        $purchaseReturn->refresh();
-        $purchaseReturn->calculateTotals();
+        $purchaseReturn->refresh()->load('items');
+        app(\App\Domain\Purchasing\PurchaseReturns\PurchaseReturnDomainFactory::class)
+            ->applyTotals($purchaseReturn);
         $purchaseReturn->save();
 
         // Submit and approve (triggers inventory and journal handlers)
