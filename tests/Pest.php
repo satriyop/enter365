@@ -115,6 +115,126 @@ function withoutFeatures(array $features): void
 }
 
 /**
+ * Apply feature modules matching a FEATURE_PRESET key (config/features.php packs).
+ */
+function applyFeaturePreset(string $preset): void
+{
+    $preset = strtolower($preset);
+    if ($preset === 'nex') {
+        $preset = 'solar';
+    }
+
+    config(['features.preset' => $preset]);
+
+    $packs = match ($preset) {
+        'full' => [
+            'manufacturing' => true,
+            'bom' => true,
+            'work_orders' => true,
+            'material_requisitions' => true,
+            'mrp' => true,
+            'subcontracting' => true,
+            'projects' => true,
+            'solar_proposals' => true,
+            'electrical_panel' => true,
+        ],
+        'enterprise' => [
+            'manufacturing' => true,
+            'bom' => true,
+            'work_orders' => true,
+            'material_requisitions' => true,
+            'mrp' => true,
+            'subcontracting' => true,
+            'projects' => true,
+            'solar_proposals' => false,
+            'electrical_panel' => false,
+        ],
+        'manufacturing' => [
+            'manufacturing' => true,
+            'bom' => true,
+            'work_orders' => true,
+            'material_requisitions' => true,
+            'mrp' => true,
+            'subcontracting' => true,
+            'projects' => false,
+            'solar_proposals' => false,
+            'electrical_panel' => false,
+        ],
+        'vahana' => [
+            'manufacturing' => true,
+            'bom' => true,
+            'work_orders' => true,
+            'material_requisitions' => true,
+            'mrp' => true,
+            'subcontracting' => true,
+            'projects' => false,
+            'solar_proposals' => false,
+            'electrical_panel' => true,
+        ],
+        'services' => [
+            'manufacturing' => false,
+            'bom' => false,
+            'work_orders' => false,
+            'material_requisitions' => false,
+            'mrp' => false,
+            'subcontracting' => false,
+            'projects' => true,
+            'solar_proposals' => false,
+            'electrical_panel' => false,
+        ],
+        'solar' => [
+            'manufacturing' => false,
+            'bom' => true,
+            'work_orders' => false,
+            'material_requisitions' => false,
+            'mrp' => false,
+            'subcontracting' => false,
+            'projects' => true,
+            'solar_proposals' => true,
+            'electrical_panel' => false,
+        ],
+        default => [ // general
+            'manufacturing' => false,
+            'bom' => false,
+            'work_orders' => false,
+            'material_requisitions' => false,
+            'mrp' => false,
+            'subcontracting' => false,
+            'projects' => false,
+            'solar_proposals' => false,
+            'electrical_panel' => false,
+        ],
+    };
+
+    withFeatures($packs);
+}
+
+/**
+ * Foundation seeders that seed:demo --fresh runs before DemoSeeder.
+ *
+ * @param  \PHPUnit\Framework\TestCase  $test
+ */
+function seedDemoFoundation($test): void
+{
+    $test->seed(\Database\Seeders\RolesAndPermissionsSeeder::class);
+    $test->seed(\Database\Seeders\ChartOfAccountsSeeder::class);
+    $test->seed(\Database\Seeders\FiscalPeriodSeeder::class);
+    $test->seed(\Database\Seeders\IndonesiaSolarDataSeeder::class);
+    $test->seed(\Database\Seeders\PlnTariffSeeder::class);
+}
+
+/**
+ * Run DemoSeeder for a profile via the same entry used by seed:demo (demo.choice).
+ *
+ * @param  \PHPUnit\Framework\TestCase  $test
+ */
+function seedDemoProfile($test, string $profile): void
+{
+    app()->instance('demo.choice', $profile);
+    $test->seed(\Database\Seeders\Demo\DemoSeeder::class);
+}
+
+/**
  * Panel meta test helpers live under tests/Support/Addons/ (industry add-on tests only).
  */
 

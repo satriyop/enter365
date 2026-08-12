@@ -356,6 +356,9 @@ class DemoExtendedTransactionSeeder extends Seeder
         foreach ($boms as $index => $bom) {
             Carbon::setTestNow($this->baseDate->copy()->addDays($index + 5));
 
+            // Ensure raw materials exist so WO start/complete can consume stock
+            $this->ensureBomMaterialStock($bom, max(1, (int) ($index === 0 ? 2 : 1)));
+
             // Create work order from BOM
             $wo = $this->workOrderService->createFromBom($bom, [
                 'name' => 'Produksi: '.$bom->name,
@@ -388,6 +391,42 @@ class DemoExtendedTransactionSeeder extends Seeder
         Carbon::setTestNow(null);
 
         $this->command->info("    Created {$woCount} work orders (1 completed, 1 in progress)");
+    }
+
+    /**
+     * Stock BOM material lines so work-order material issues do not fail demos.
+     */
+    private function ensureBomMaterialStock(Bom $bom, int $outputQty): void
+    {
+        if (! $this->warehouse) {
+            return;
+        }
+
+        $bom->loadMissing('items.product');
+
+        foreach ($bom->items as $item) {
+            if (! $item->product_id || ! $item->product) {
+                continue;
+            }
+
+            $need = (int) ceil((float) $item->quantity * $outputQty * 1.2) + 50;
+            $stock = ProductStock::query()->firstOrNew([
+                'product_id' => $item->product_id,
+                'warehouse_id' => $this->warehouse->id,
+            ]);
+
+            $current = (int) ($stock->quantity ?? 0);
+            if ($current >= $need) {
+                continue;
+            }
+
+            $unitCost = (int) ($item->product->purchase_price ?: $item->unit_cost ?: 0);
+            $stock->quantity = $need;
+            $stock->reserved_quantity = (int) ($stock->reserved_quantity ?? 0);
+            $stock->average_cost = $unitCost;
+            $stock->total_value = $need * $unitCost;
+            $stock->save();
+        }
     }
 
     /**
