@@ -12,7 +12,6 @@ use App\Models\Solar\IndonesiaSolarData;
 use App\Models\Solar\PlnTariff;
 use App\Services\ElectricalPanel\SpecValidationService;
 use App\Services\Manufacturing\BomTemplateService;
-use App\Support\Features;
 use Database\Seeders\Demo\MasterDataSeeder;
 use Database\Seeders\IndonesiaSolarDataSeeder;
 use Database\Seeders\PlnTariffSeeder;
@@ -226,9 +225,12 @@ describe('Profile-aware foundation seeders', function () {
 });
 
 describe('Demo profile constants', function () {
-    it('exposes enterprise demo profile constant', function () {
+    it('exposes demo profiles for all feature presets', function () {
         expect(\Database\Seeders\Demo\DemoSeeder::DEMO_ENTERPRISE)->toBe('enterprise')
-            ->and(Features::disabled('electrical_panel') || Features::enabled('electrical_panel'))->toBeTrue();
+            ->and(\Database\Seeders\Demo\DemoSeeder::DEMO_SERVICES)->toBe('services')
+            ->and(\Database\Seeders\Demo\DemoSeeder::DEMO_MANUFACTURING)->toBe('manufacturing')
+            ->and(\Database\Seeders\Demo\DemoSeeder::profileFromFeaturePreset('services'))->toBe('services')
+            ->and(\Database\Seeders\Demo\DemoSeeder::profiles())->toContain('general', 'vahana', 'nex', 'all');
     });
 });
 

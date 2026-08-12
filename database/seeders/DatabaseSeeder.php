@@ -58,14 +58,13 @@ class DatabaseSeeder extends Seeder
 
         $this->command->info('');
         $this->command->info('Foundation data seeded successfully.');
+        $this->command->info('FEATURE_PRESET='.config('features.preset', 'general'));
         $this->command->info('');
-        $this->command->info('Available seeders:');
+        $this->command->info('Demo profiles (align with FEATURE_PRESET):');
+        $this->command->info('  php artisan seed:demo --demo=general|services|manufacturing|enterprise|vahana|nex|all');
+        $this->command->info('  php artisan seed:demo --fresh   # migrate:fresh + foundation + demo');
         $this->command->info('');
-        $this->command->info('  Component Library Only (226 standards, 943 brand mappings):');
-        $this->command->info('    php artisan db:seed --class=Database\\\\Seeders\\\\Demo\\\\ComponentLibrarySeeder');
-        $this->command->info('');
-        $this->command->info('  Full Demo Data (includes Component Library + Vahana + NEX):');
-        $this->command->info('    php artisan db:seed --class=Database\\\\Seeders\\\\Demo\\\\DemoSeeder');
+        $this->command->info('  Industry masters soft-skip when flags off (electrical_panel / solar_proposals).');
         $this->command->info('');
     }
 }

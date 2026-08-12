@@ -339,8 +339,9 @@ class DemoExtendedTransactionSeeder extends Seeder
         $this->command->info('  → Seeding Work Orders...');
 
         // Find BOMs with items to create work orders from (active = approved status)
+        // BOM lifecycle uses DocumentStatus::Active ('active'), not 'approved'
         $boms = Bom::whereHas('items')
-            ->where('status', 'approved')
+            ->whereIn('status', ['active', 'approved'])
             ->limit(2)
             ->get();
 
@@ -358,11 +359,11 @@ class DemoExtendedTransactionSeeder extends Seeder
             // Create work order from BOM
             $wo = $this->workOrderService->createFromBom($bom, [
                 'name' => 'Produksi: '.$bom->name,
-                'quantity_ordered' => $index === 0 ? 2 : 1,
+                'quantity' => $index === 0 ? 2 : 1,
                 'warehouse_id' => $this->warehouse->id,
                 'planned_start_date' => now()->toDateString(),
                 'planned_end_date' => now()->addDays(14)->toDateString(),
-                'priority' => $index === 0 ? 'high' : 'medium',
+                'priority' => $index === 0 ? 'high' : 'normal',
                 'notes' => 'Work Order untuk produksi '.$bom->name,
             ]);
 
@@ -377,7 +378,7 @@ class DemoExtendedTransactionSeeder extends Seeder
             // For the first WO, complete it
             if ($index === 0) {
                 Carbon::setTestNow($this->baseDate->copy()->addDays($index + 14));
-                $this->workOrderService->recordOutput($wo, $wo->quantity_ordered, 0);
+                $this->workOrderService->recordOutput($wo, (float) $wo->quantity_ordered, 0.0);
                 $this->workOrderService->complete($wo, $this->productionUser->id);
             }
 

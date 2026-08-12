@@ -290,9 +290,26 @@ Legenda: **✓** hidup · **·** 404 / nav hidden
 
 ---
 
-## 8. Next (when isolation arc continues)
+## 8. Demo seeders (feature-set complete)
 
-1. Verify OpenAPI + FE types after AddonExtensions resource shape.  
-2. Smoke `enterprise`, `vahana`, `nex` (and optional `full`).  
-3. Optional: extract FE industry UI fully under `pages/addons/*` (zero-mention in core Vue pages).  
-4. Promote this map (or a trimmed version) to permanent docs when product packaging is 100% frozen.
+Command: `php artisan seed:demo --demo=<profile>` (default follows `FEATURE_PRESET`).
+
+| Demo profile | FEATURE_PRESET | Trading | Generic BOM | Projects demo | Vahana | NEX + SolarProposal |
+|--------------|----------------|:-------:|:-----------:|:-------------:|:------:|:-------------------:|
+| `general` | general | ✓ | · | · | · | · |
+| `services` | services | ✓ | · | ✓ | · | · |
+| `manufacturing` | manufacturing | ✓ | ✓ | · | · | · |
+| `enterprise` | enterprise | ✓ | ✓ | ✓ | · | · |
+| `vahana` | vahana | · (vertical) | · | flag | ✓ + library | · |
+| `nex` | solar/nex | · (vertical) | · | flag | · | ✓ |
+| `all` | full | · | ✓ | ✓ | ✓ | ✓ |
+
+Industry masters soft-skip: `electrical_panel` / `solar_proposals` flags.  
+Generic MFG: `EnterpriseManufacturingDemoSeeder` (`BOM-ASM-001/002`).  
+NEX proposals: `NexSolarProposalSeeder`.
+
+## 9. Next (when isolation arc continues)
+
+1. Smoke `enterprise`, `vahana`, `nex` (and optional `full`) browser E2E.  
+2. Optional: extract FE industry UI fully under `pages/addons/*`.  
+3. Promote this map to permanent docs when product packaging is frozen.
