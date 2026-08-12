@@ -109,6 +109,14 @@ class PurchaseOrderService implements PurchaseOrderServiceInterface
         return $this->updateDocument($purchaseOrder, $data);
     }
 
+    /**
+     * Delete a draft purchase order and its items.
+     */
+    public function delete(PurchaseOrder $purchaseOrder): bool
+    {
+        return $this->deleteDocument($purchaseOrder);
+    }
+
     protected function validateEditable(Model $document): void
     {
         /** @var PurchaseOrder $document */

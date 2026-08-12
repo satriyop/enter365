@@ -82,11 +82,7 @@ class PurchaseOrderController extends Controller
     {
         $this->authorize('delete', $purchaseOrder);
 
-        if (! $purchaseOrder->isEditable()) {
-            return $this->error('Hanya PO draft yang dapat dihapus.', 422);
-        }
-
-        $purchaseOrder->delete();
+        $this->purchaseOrderService->delete($purchaseOrder);
 
         return $this->deleted('PO berhasil dihapus.');
     }

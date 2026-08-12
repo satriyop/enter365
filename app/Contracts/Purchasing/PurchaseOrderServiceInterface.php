@@ -28,6 +28,11 @@ interface PurchaseOrderServiceInterface
     public function update(PurchaseOrder $purchaseOrder, array $data): PurchaseOrder;
 
     /**
+     * Delete a draft purchase order (and line items).
+     */
+    public function delete(PurchaseOrder $purchaseOrder): bool;
+
+    /**
      * Submit a purchase order for approval.
      */
     public function submit(PurchaseOrder $purchaseOrder, ?int $userId = null): PurchaseOrder;
