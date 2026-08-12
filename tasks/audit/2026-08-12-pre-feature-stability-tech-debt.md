@@ -63,9 +63,9 @@ Severity legend:
 | `PaymentReminderController` | **Fixed** — create/send/cancel via `ReminderService` |
 | `NsfpRangeController` | **Fixed** — createRange / updateRange / deactivateRange via `NsfpService` |
 | `PurchaseOrderController` destroy | **Fixed** — via `PurchaseOrderService::delete` |
-| `BomTemplateController` item mutations | **Still open** — item create/update/delete/reorder + toggleActive largely on model |
+| `BomTemplateController` item mutations | **Fixed 2026-08-12** — addItem / updateItem / deleteItem / reorderItems / toggleActive via `BomTemplateServiceInterface` + shared `ManagesBomTemplateItems` trait (core + ElectricalPanel) |
 
-**Remediation remaining:** BomTemplate item mutations via `BomTemplateServiceInterface`.
+**F-01 closed** for listed controllers. Thumbnail file IO still lives in controller (storage concern).
 
 ---
 
@@ -282,10 +282,10 @@ Suggested file names / order:
 
 | Pri | Item | Outcome |
 |-----|------|---------|
-| 1 | ~~Extract QuotationFollowUp + PaymentReminder + NsfpRange writes into services~~ **DONE 2026-08-12** (BomTemplate still open) | Single transaction/logging path |
+| 1 | ~~Extract QuotationFollowUp + PaymentReminder + NsfpRange + BomTemplate item writes into services~~ **DONE 2026-08-12** | Single transaction/logging path |
 | 2 | Replace `auth()->id()` in AttachmentService + BankStatementImportService | Queue/import safe |
 | 3 | PO/GRN/etc. destroy always via service (no direct `$model->delete()`) | Cascades/events preserved |
-| 4 | BomTemplate item mutations via BomTemplateServiceInterface | AddonAttributes already there |
+| 4 | ~~BomTemplate item mutations via BomTemplateServiceInterface~~ **DONE 2026-08-12** | AddonAttributes already there |
 | 5 | Split PaymentService / JournalService / DownPaymentService (coordinator) | Testability |
 | 6 | ~~Wire ManufacturingCostStrategy into WO consume/complete~~ **DONE 2026-08-12** | Real JEs when job_costing/wip on; honest default |
 | 7 | Remove or implement notification listeners | Honest product behavior |

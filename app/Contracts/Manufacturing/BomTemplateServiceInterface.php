@@ -39,6 +39,44 @@ interface BomTemplateServiceInterface
     public function applyItemAddonAttributes(BomTemplateItem $item, array $attributes): void;
 
     /**
+     * Add an item to a template.
+     *
+     * @param  array<string, mixed>  $data
+     * @param  array<string, mixed>  $addonAttributes
+     */
+    public function addItem(BomTemplate $template, array $data, array $addonAttributes = []): BomTemplateItem;
+
+    /**
+     * Update an item within a template.
+     *
+     * @param  array<string, mixed>  $data
+     * @param  array<string, mixed>  $addonAttributes
+     */
+    public function updateItem(
+        BomTemplate $template,
+        BomTemplateItem $item,
+        array $data,
+        array $addonAttributes = []
+    ): BomTemplateItem;
+
+    /**
+     * Delete an item from a template.
+     */
+    public function deleteItem(BomTemplate $template, BomTemplateItem $item): void;
+
+    /**
+     * Reorder items within a template.
+     *
+     * @param  list<int>  $itemIds
+     */
+    public function reorderItems(BomTemplate $template, array $itemIds): BomTemplate;
+
+    /**
+     * Toggle template active status.
+     */
+    public function toggleActive(BomTemplate $template): BomTemplate;
+
+    /**
      * Create a BOM from a template (product/manual lines; add-ons may resolve extra options).
      *
      * @param  array<string, mixed>  $options

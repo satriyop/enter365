@@ -139,4 +139,18 @@ describe('F-01 QuotationFollowUp / NsfpRange controller writes via services', fu
             ->and($src)->not->toContain('NsfpRange::create')
             ->and($src)->not->toContain('$nsfpRange->update');
     });
+
+    it('BomTemplateController item mutations go through BomTemplateService', function () {
+        $src = file_get_contents(app_path('Http/Controllers/Api/V1/BomTemplateController.php')) ?: '';
+
+        expect($src)->toContain('addItem')
+            ->and($src)->toContain('updateItem')
+            ->and($src)->toContain('deleteItem')
+            ->and($src)->toContain('reorderItems')
+            ->and($src)->toContain('toggleActive')
+            ->and($src)->not->toContain('items()->create')
+            ->and($src)->not->toContain('$item->update')
+            ->and($src)->not->toContain('$item->delete()')
+            ->and($src)->not->toContain('$bomTemplate->update');
+    });
 });

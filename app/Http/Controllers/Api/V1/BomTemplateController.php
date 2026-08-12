@@ -159,12 +159,7 @@ class BomTemplateController extends Controller
     ): JsonResponse {
         [$data, $addon] = AddonExtensions::splitValidated('bom_template_item', $request->validated());
 
-        if (! isset($data['sort_order'])) {
-            $data['sort_order'] = $bomTemplate->items()->max('sort_order') + 1;
-        }
-
-        $item = $bomTemplate->items()->create($data);
-        $this->templateService->applyItemAddonAttributes($item, $addon);
+        $item = $this->templateService->addItem($bomTemplate, $data, $addon);
 
         $with = AddonExtensions::eagerLoads('bom_template.item', ['product']);
 
@@ -181,19 +176,13 @@ class BomTemplateController extends Controller
         BomTemplate $bomTemplate,
         BomTemplateItem $item
     ): BomTemplateItemResource {
-        // Ensure the item belongs to the template
-        if ($item->template_id !== $bomTemplate->id) {
-            abort(404, 'Item tidak ditemukan dalam template ini.');
-        }
-
         [$data, $addon] = AddonExtensions::splitValidated('bom_template_item', $request->validated());
 
-        $item->update($data);
-        $this->templateService->applyItemAddonAttributes($item, $addon);
+        $item = $this->templateService->updateItem($bomTemplate, $item, $data, $addon);
 
         $with = AddonExtensions::eagerLoads('bom_template.item', ['product']);
 
-        return new BomTemplateItemResource($item->fresh($with));
+        return new BomTemplateItemResource($item->load($with));
     }
 
     /**
@@ -203,12 +192,7 @@ class BomTemplateController extends Controller
         BomTemplate $bomTemplate,
         BomTemplateItem $item
     ): JsonResponse {
-        // Ensure the item belongs to the template
-        if ($item->template_id !== $bomTemplate->id) {
-            abort(404, 'Item tidak ditemukan dalam template ini.');
-        }
-
-        $item->delete();
+        $this->templateService->deleteItem($bomTemplate, $item);
 
         return response()->json(['message' => 'Item berhasil dihapus.']);
     }
@@ -227,15 +211,14 @@ class BomTemplateController extends Controller
             'item_ids.*' => ['required', 'integer', 'exists:bom_template_items,id'],
         ]);
 
-        foreach ($request->input('item_ids') as $index => $itemId) {
-            BomTemplateItem::where('id', $itemId)
-                ->where('template_id', $bomTemplate->id)
-                ->update(['sort_order' => $index]);
-        }
+        $template = $this->templateService->reorderItems(
+            $bomTemplate,
+            array_map('intval', $request->input('item_ids'))
+        );
 
         return response()->json([
             'message' => 'Urutan item berhasil diubah.',
-            'data' => new BomTemplateResource($bomTemplate->fresh('items')),
+            'data' => new BomTemplateResource($template->loadMissing('items')),
         ]);
     }
 
@@ -280,13 +263,13 @@ class BomTemplateController extends Controller
      */
     public function toggleActive(BomTemplate $bomTemplate): JsonResponse
     {
-        $bomTemplate->update(['is_active' => ! $bomTemplate->is_active]);
+        $template = $this->templateService->toggleActive($bomTemplate);
 
         return response()->json([
-            'message' => $bomTemplate->is_active
+            'message' => $template->is_active
                 ? 'Template berhasil diaktifkan.'
                 : 'Template berhasil dinonaktifkan.',
-            'data' => new BomTemplateResource($bomTemplate->fresh()),
+            'data' => new BomTemplateResource($template),
         ]);
     }
 

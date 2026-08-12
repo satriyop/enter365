@@ -18,6 +18,7 @@ use App\Models\Manufacturing\BomItem;
 use App\Models\Manufacturing\BomTemplate;
 use App\Models\Manufacturing\BomTemplateItem;
 use App\Services\Base\BaseService;
+use App\Services\Manufacturing\Concerns\ManagesBomTemplateItems;
 
 /**
  * Brand-aware BOM template operations for electrical_panel add-on.
@@ -25,6 +26,8 @@ use App\Services\Base\BaseService;
  */
 class BomTemplateService extends BaseService implements BomTemplateServiceInterface
 {
+    use ManagesBomTemplateItems;
+
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger,

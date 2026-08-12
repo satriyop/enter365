@@ -13,12 +13,15 @@ use App\Models\Manufacturing\BomItem;
 use App\Models\Manufacturing\BomTemplate;
 use App\Models\Manufacturing\BomTemplateItem;
 use App\Services\Base\BaseService;
+use App\Services\Manufacturing\Concerns\ManagesBomTemplateItems;
 
 /**
  * Core BOM templates — product / manual lines only.
  */
 class BomTemplateService extends BaseService implements BomTemplateServiceInterface
 {
+    use ManagesBomTemplateItems;
+
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger,
