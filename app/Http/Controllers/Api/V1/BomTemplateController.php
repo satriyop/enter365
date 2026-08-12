@@ -291,29 +291,6 @@ class BomTemplateController extends Controller
     }
 
     /**
-     * Get available brands for a template.
-     *
-     * @response array{data: array<array{code: string, name: string, coverage: int, coverage_percent: float}>, meta: array{template_id: int, template_code: string, items_with_standard: int}}
-     */
-    public function availableBrands(BomTemplate $bomTemplate): JsonResponse
-    {
-        $brands = $this->templateService->getAvailableBrandsForTemplate($bomTemplate);
-
-        return response()->json([
-            'data' => $brands,
-            'meta' => [
-                'template_id' => $bomTemplate->id,
-                'template_code' => $bomTemplate->code,
-                'items_with_standard' => AddonExtensions::meta(
-                    'bom_template.items_with_extension',
-                    $bomTemplate,
-                    0
-                ),
-            ],
-        ]);
-    }
-
-    /**
      * Preview creating a BOM from a template.
      */
     public function previewCreateBom(

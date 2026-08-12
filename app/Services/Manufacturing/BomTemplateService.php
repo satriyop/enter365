@@ -208,17 +208,7 @@ class BomTemplateService extends BaseService implements BomTemplateServiceInterf
     }
 
     /**
-     * Core never resolves brands — empty list.
-     *
-     * @return array<int, array{code: string, name: string, coverage: int, coverage_percent: float}>
-     */
-    public function getAvailableBrandsForTemplate(BomTemplate $template): array
-    {
-        return [];
-    }
-
-    /**
-     * Only core BOM template attributes (never panel add-on fields).
+     * Only core BOM template attributes (never add-on fields).
      *
      * @param  array<string, mixed>  $data
      * @return array<string, mixed>

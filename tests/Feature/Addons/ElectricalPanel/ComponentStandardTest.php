@@ -5,6 +5,7 @@ use App\Models\ElectricalPanel\ComponentStandard;
 use App\Models\Inventory\Product;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomItem;
+use Tests\Support\Addons\ElectricalPanelHelpers;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -295,7 +296,7 @@ describe('Component Standards CRUD', function () {
         $__item = BomItem::factory()->create([
             'bom_id' => $bom->id,
         ]);
-        attachBomItemStandard($__item, $standard);
+        ElectricalPanelHelpers::attachBomItemStandard($__item, $standard);
 
         $response = $this->deleteJson("/api/v1/component-standards/{$standard->id}");
 
@@ -313,11 +314,11 @@ describe('Component Standards CRUD', function () {
         $__item = BomItem::factory()->create([
             'bom_id' => $bom1->id,
         ]);
-        attachBomItemStandard($__item, $standard);
+        ElectricalPanelHelpers::attachBomItemStandard($__item, $standard);
         $__item = BomItem::factory()->create([
             'bom_id' => $bom2->id,
         ]);
-        attachBomItemStandard($__item, $standard);
+        ElectricalPanelHelpers::attachBomItemStandard($__item, $standard);
 
         $response = $this->deleteJson("/api/v1/component-standards/{$standard->id}");
 

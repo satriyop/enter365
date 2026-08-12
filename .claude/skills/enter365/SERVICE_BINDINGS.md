@@ -119,30 +119,41 @@ $this->outcomeService->markAsLost($quotation, ['lost_reason' => 'competitor']);
 
 ---
 
-## Manufacturing Services
+## Manufacturing Services (generic Odoo pack — not industry verticals)
 
 | Interface | Implementation | Purpose |
 |-----------|----------------|---------|
 | `BomServiceInterface` | `BomService` | BOM CRUD, activate |
-| `BomTemplateServiceInterface` | `BomTemplateService` | BOM templates |
-| `BomVariantGroupServiceInterface` | `BomVariantGroupService` | Multi-brand alternatives |
+| `BomTemplateServiceInterface` | `BomTemplateService` (core) **or** `ElectricalPanel\BomTemplateService` when `electrical_panel` ON | BOM templates; brand resolve only via add-on bind |
+| `BomVariantGroupServiceInterface` | `BomVariantGroupService` | BOM variant groups |
 | `WorkOrderServiceInterface` | `WorkOrderService` | Work order CRUD, start, complete |
 | `MaterialRequisitionServiceInterface` | `MaterialRequisitionService` | Material requisitions |
 | `MrpServiceInterface` | `MrpService` | MRP planning |
 | `SubcontractorServiceInterface` | `SubcontractorService` | Subcontractor work orders |
 | `WorkOrderCostServiceInterface` | `WorkOrderCostService` | Work order cost tracking |
 
-### Brand Swap Services (Coordinator Pattern)
+**Do not put BrandSwap / ComponentStandard / SpecValidation under Manufacturing.** Those are industry add-on only.
 
-The BrandSwapService uses the Coordinator Pattern, delegating to focused services:
+---
 
-| Class | Purpose | Dependencies |
-|-------|---------|--------------|
-| `BrandSwapService` | Thin coordinator (124 lines) | Preview + Execution services |
-| `BrandSwap\BrandSwapPreviewService` | Read-only previews (310 lines) | SpecValidationService |
-| `BrandSwap\BrandSwapExecutionService` | Write operations (342 lines) | EquivalenceService, VariantGroupService |
+## Industry add-on: Electrical Panel (Vahana) — `feature:electrical_panel`
 
-**Note:** No interface bindings needed - Laravel auto-resolves concrete classes.
+| Namespace | Purpose |
+|-----------|---------|
+| `App\Services\ElectricalPanel\*` | Brand swap, standards, cost opt, panel BomTemplateService |
+| `App\Models\ElectricalPanel\*` | ComponentStandard, mappings, panel meta tables |
+| `App\Http\Controllers\Api\V1\ElectricalPanel\*` | Gated routes in `routes/addons/electrical_panel.php` |
+| `App\Providers\Addons\ElectricalPanelServiceProvider` | Relations, `AddonExtensions`, dynamic `BomTemplateServiceInterface` bind |
+
+### Brand Swap Services (Coordinator Pattern) — **ElectricalPanel only**
+
+| Class | Path | Purpose |
+|-------|------|---------|
+| `BrandSwapService` | `app/Services/ElectricalPanel/BrandSwapService.php` | Thin coordinator |
+| `BrandSwapPreviewService` | `app/Services/ElectricalPanel/BrandSwap/` | Read-only previews |
+| `BrandSwapExecutionService` | `app/Services/ElectricalPanel/BrandSwap/` | Write operations |
+
+**Never** place these under `app/Services/Manufacturing/`. Core BOM has no brand methods.
 
 See: [ARCHITECTURE_PATTERNS.md](ARCHITECTURE_PATTERNS.md#coordinator-pattern-for-god-services)
 

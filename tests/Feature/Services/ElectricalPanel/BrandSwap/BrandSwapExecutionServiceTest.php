@@ -10,6 +10,7 @@ use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomItem;
 use App\Services\ElectricalPanel\BrandSwap\BrandSwapExecutionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Support\Addons\ElectricalPanelHelpers;
 
 uses(RefreshDatabase::class);
 
@@ -69,7 +70,7 @@ beforeEach(function () {
         'unit_cost' => 200000,
         'total_cost' => 2000000,
     ]);
-    attachBomItemStandard($this->bomItem, $this->standard);
+    ElectricalPanelHelpers::attachBomItemStandard($this->bomItem, $this->standard);
 });
 
 describe('swapBomBrand', function () {

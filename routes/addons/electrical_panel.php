@@ -7,6 +7,7 @@
  * @see App\Providers\Addons\ElectricalPanelServiceProvider
  */
 
+use App\Http\Controllers\Api\V1\ElectricalPanel\BomTemplateBrandController;
 use App\Http\Controllers\Api\V1\ElectricalPanel\ComponentBrandMappingController;
 use App\Http\Controllers\Api\V1\ElectricalPanel\ComponentCrossReferenceController;
 use App\Http\Controllers\Api\V1\ElectricalPanel\ComponentMappingImportController;
@@ -15,6 +16,8 @@ use App\Http\Controllers\Api\V1\ElectricalPanel\SpecValidationRuleSetController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('feature:electrical_panel')->group(function () {
+    Route::get('bom-templates/{bomTemplate}/available-brands', [BomTemplateBrandController::class, 'availableBrands']);
+
     Route::prefix('component-standards')->group(function () {
         Route::get('/', [ComponentStandardController::class, 'index']);
         Route::post('/', [ComponentStandardController::class, 'store']);

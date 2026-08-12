@@ -342,8 +342,7 @@ Route::prefix('v1')->group(function () {
                 Route::delete('/{bomTemplate}/items/{item}', [BomTemplateController::class, 'destroyItem']);
                 Route::post('/{bomTemplate}/items/reorder', [BomTemplateController::class, 'reorderItems']);
 
-                // Create BOM from Template
-                Route::get('/{bomTemplate}/available-brands', [BomTemplateController::class, 'availableBrands']);
+                // Create BOM from Template (brand-specific ops live in routes/addons/electrical_panel.php)
                 Route::post('/{bomTemplate}/preview-bom', [BomTemplateController::class, 'previewCreateBom']);
                 Route::post('/{bomTemplate}/create-bom', [BomTemplateController::class, 'createBom']);
             });

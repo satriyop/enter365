@@ -6,6 +6,7 @@ use App\Models\Inventory\Product;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\BomItem;
 use App\Models\Manufacturing\BomVariantGroup;
+use Tests\Support\Addons\ElectricalPanelHelpers;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -70,7 +71,7 @@ describe('BOM Brand Swap - Core Feature', function () {
             'quantity' => 2,
             'unit_cost' => 100000,
         ]);
-        attachBomItemStandard($__item, $standard1);
+        ElectricalPanelHelpers::attachBomItemStandard($__item, $standard1);
 
         $__item = BomItem::factory()->create([
             'bom_id' => $bom->id,
@@ -79,7 +80,7 @@ describe('BOM Brand Swap - Core Feature', function () {
             'quantity' => 1,
             'unit_cost' => 200000,
         ]);
-        attachBomItemStandard($__item, $standard2);
+        ElectricalPanelHelpers::attachBomItemStandard($__item, $standard2);
 
         // Perform swap
         $response = $this->postJson("/api/v1/boms/{$bom->id}/swap-brand", [
@@ -130,7 +131,7 @@ describe('BOM Brand Swap - Core Feature', function () {
             'bom_id' => $bom->id,
             'product_id' => $schneiderProduct->id,
         ]);
-        attachBomItemStandard($__item, $standard);
+        ElectricalPanelHelpers::attachBomItemStandard($__item, $standard);
 
         $response = $this->postJson("/api/v1/boms/{$bom->id}/swap-brand", [
             'target_brand' => 'abb',
@@ -175,7 +176,7 @@ describe('BOM Brand Swap - Core Feature', function () {
             'bom_id' => $bom->id,
             'product_id' => $schneiderProduct->id,
         ]);
-        attachBomItemStandard($__item, $standard);
+        ElectricalPanelHelpers::attachBomItemStandard($__item, $standard);
 
         BomItem::factory()->create([
             'bom_id' => $bom->id,
@@ -210,7 +211,7 @@ describe('BOM Brand Swap - Core Feature', function () {
             'bom_id' => $bom->id,
             'product_id' => $schneiderProduct->id,
         ]);
-        attachBomItemStandard($__item, $standard);
+        ElectricalPanelHelpers::attachBomItemStandard($__item, $standard);
 
         $response = $this->postJson("/api/v1/boms/{$bom->id}/swap-brand", [
             'target_brand' => 'abb',
@@ -264,7 +265,7 @@ describe('BOM Brand Swap - Core Feature', function () {
             'bom_id' => $bom->id,
             'product_id' => $schneiderProduct->id,
         ]);
-        attachBomItemStandard($__item, $standard);
+        ElectricalPanelHelpers::attachBomItemStandard($__item, $standard);
 
         $response = $this->postJson("/api/v1/boms/{$bom->id}/swap-brand", [
             'target_brand' => 'abb',
@@ -304,7 +305,7 @@ describe('BOM Brand Swap - Core Feature', function () {
             'bom_id' => $bom->id,
             'product_id' => $schneiderProduct->id,
         ]);
-        attachBomItemStandard($__item, $standard);
+        ElectricalPanelHelpers::attachBomItemStandard($__item, $standard);
 
         // Labor item
         BomItem::factory()->labor()->create([
@@ -386,7 +387,7 @@ describe('BOM Brand Variants Generation', function () {
             'bom_id' => $bom->id,
             'product_id' => $schneiderProduct->id,
         ]);
-        attachBomItemStandard($__item, $standard);
+        ElectricalPanelHelpers::attachBomItemStandard($__item, $standard);
 
         $response = $this->postJson("/api/v1/boms/{$bom->id}/generate-brand-variants", [
             'brands' => ['abb', 'siemens'],
@@ -433,7 +434,7 @@ describe('BOM Brand Variants Generation', function () {
             'bom_id' => $bom->id,
             'product_id' => $sourceProduct->id,
         ]);
-        attachBomItemStandard($__item, $standard);
+        ElectricalPanelHelpers::attachBomItemStandard($__item, $standard);
 
         $response = $this->postJson("/api/v1/boms/{$bom->id}/generate-brand-variants", [
             'brands' => ['abb'],
@@ -481,7 +482,7 @@ describe('BOM Brand Variants Generation', function () {
             'bom_id' => $bom->id,
             'product_id' => $sourceProduct->id,
         ]);
-        attachBomItemStandard($__item, $standard);
+        ElectricalPanelHelpers::attachBomItemStandard($__item, $standard);
 
         $response = $this->postJson("/api/v1/boms/{$bom->id}/generate-brand-variants", [
             'brands' => ['abb'],
@@ -524,7 +525,7 @@ describe('BOM Brand Variants Generation', function () {
             'bom_id' => $bom->id,
             'product_id' => $sourceProduct->id,
         ]);
-        attachBomItemStandard($__item, $standard);
+        ElectricalPanelHelpers::attachBomItemStandard($__item, $standard);
 
         $response = $this->postJson("/api/v1/boms/{$bom->id}/generate-brand-variants", [
             'brands' => ['abb', 'siemens'],

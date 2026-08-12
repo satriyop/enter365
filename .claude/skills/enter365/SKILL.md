@@ -239,12 +239,15 @@ Model Layer (Eloquent) ← 81 models
 |--------|-----------------|-------------------|--------------|
 | Sales | `app/Models/Sales/` | `app/Services/Sales/` | `app/Domain/Sales/` |
 | Purchasing | `app/Models/Purchasing/` | `app/Services/Purchasing/` | `app/Domain/Purchasing/` |
-| Manufacturing | `app/Models/Manufacturing/` | `app/Services/Manufacturing/` | - |
+| Manufacturing (generic pack) | `app/Models/Manufacturing/` | `app/Services/Manufacturing/` | - |
 | Accounting | `app/Models/Accounting/` | `app/Services/Accounting/` | `app/Domain/Accounting/` |
 | Inventory | `app/Models/Inventory/` | `app/Services/Inventory/` | - |
 | Projects | `app/Models/Projects/` | `app/Services/Projects/` | `app/Domain/Projects/` |
-| Solar | `app/Models/Solar/` | `app/Services/Solar/` | - |
+| **ElectricalPanel** (Vahana add-on) | `app/Models/ElectricalPanel/` | `app/Services/ElectricalPanel/` | - |
+| **Solar** (NEX add-on) | `app/Models/Solar/` | `app/Services/Solar/` | - |
 | Tax | `app/Models/Tax/` | `app/Services/Tax/` | `app/Domain/Tax/` |
+
+**Isolation rule:** BrandSwap, ComponentStandard, SpecValidation, cost optimization, and panel meta tables live **only** under ElectricalPanel / `routes/addons/electrical_panel.php`. Core Manufacturing must not import or name those packages. Extend core BOM resources via `App\Support\AddonExtensions`.
 
 ---
 
@@ -675,7 +678,8 @@ $range->contains($dateString);
 Services with 500+ lines and 8+ dependencies should be split. Use Coordinator Pattern:
 
 ```php
-// ❌ BAD - God Service (627 lines)
+// ❌ BAD - God Service (627 lines) — still industry add-on, NOT Manufacturing core
+// namespace App\Services\ElectricalPanel;
 class BrandSwapService
 {
     public function __construct(/* 8 dependencies */) {}
@@ -685,10 +689,12 @@ class BrandSwapService
     public function quickSwapItem() { }     // Write
 }
 
-// ✅ GOOD - Coordinator + Focused Services
-// BrandSwapService.php (124 lines) - Thin coordinator
-// BrandSwap/BrandSwapPreviewService.php (310 lines) - Read-only
-// BrandSwap/BrandSwapExecutionService.php (342 lines) - Write ops
+// ✅ GOOD - Coordinator + Focused Services under ElectricalPanel only
+// app/Services/ElectricalPanel/BrandSwapService.php (124 lines) - Thin coordinator
+// app/Services/ElectricalPanel/BrandSwap/BrandSwapPreviewService.php (310 lines)
+// app/Services/ElectricalPanel/BrandSwap/BrandSwapExecutionService.php (342 lines)
+//
+// ❌ NEVER re-create under app/Services/Manufacturing/
 ```
 
 **When to split:** Different dependency needs, 500+ lines, distinct responsibility groups.
@@ -696,6 +702,7 @@ class BrandSwapService
 **When to keep:** Single cohesive workflow, uses Strategy pattern, methods interdependent.
 
 See: [ARCHITECTURE_PATTERNS.md](ARCHITECTURE_PATTERNS.md#coordinator-pattern-for-god-services)
+See also: `tasks/artifact/feature-preset-and-industry-addons-map.md`
 
 ### 23. Events Are for Side Effects, NOT Core Operations
 

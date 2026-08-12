@@ -323,7 +323,7 @@ See [Domain Factory Pattern](#domain-factory-pattern) below for the implementati
 **Solution: Coordinator Pattern** (see below)
 
 **Applied to:**
-- `BrandSwapService` (627 → 124 lines) - Split into Preview + Execution services
+- `App\Services\ElectricalPanel\BrandSwapService` (627 → 124 lines) — industry add-on only; **not** Manufacturing core
 
 **Kept as-is (architectural decision):**
 - `YearEndCloseService` (544 lines) - Well-structured orchestrator using Strategy pattern
@@ -569,9 +569,10 @@ Services with 500+ lines handling multiple responsibilities:
 - **Merge conflicts**: Multiple devs touching same large file
 - **Constructor hell**: 8+ dependencies
 
-**Symptoms of a God Service:**
+**Symptoms of a God Service** (example from **electrical_panel add-on**, not Manufacturing core):
 ```php
-class BrandSwapService  // 627 lines
+// app/Services/ElectricalPanel/BrandSwapService.php — 627 lines historically
+class BrandSwapService
 {
     public function __construct(
         // 8 dependencies...
@@ -593,9 +594,9 @@ class BrandSwapService  // 627 lines
 
 Split into focused services, keep thin coordinator for backward compatibility.
 
-**Directory Structure:**
+**Directory Structure (industry add-on — never under Manufacturing):**
 ```
-app/Services/Manufacturing/
+app/Services/ElectricalPanel/
 ├── BrandSwapService.php              # 124 lines - Coordinator
 └── BrandSwap/
     ├── BrandSwapPreviewService.php   # 310 lines - Read-only
@@ -605,9 +606,13 @@ app/Services/Manufacturing/
 **Coordinator (Thin Facade):**
 
 ```php
+namespace App\Services\ElectricalPanel;
+
 use App\Services\Base\BaseService;
 use App\Services\Base\Traits\WithTransaction;
 use App\Services\Base\Traits\WithEventDispatching;
+use App\Services\ElectricalPanel\BrandSwap\BrandSwapPreviewService;
+use App\Services\ElectricalPanel\BrandSwap\BrandSwapExecutionService;
 
 class BrandSwapService extends BaseService
 {
@@ -639,6 +644,8 @@ class BrandSwapService extends BaseService
 **Focused Preview Service (Read-Only):**
 
 ```php
+namespace App\Services\ElectricalPanel\BrandSwap;
+
 class BrandSwapPreviewService
 {
     public function __construct(
@@ -655,6 +662,8 @@ class BrandSwapPreviewService
 **Focused Execution Service (Write Operations):**
 
 ```php
+namespace App\Services\ElectricalPanel\BrandSwap;
+
 use App\Services\Base\BaseService;
 use App\Services\Base\Traits\WithTransaction;
 use App\Services\Base\Traits\WithEventDispatching;

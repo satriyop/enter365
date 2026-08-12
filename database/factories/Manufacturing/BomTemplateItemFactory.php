@@ -51,16 +51,6 @@ class BomTemplateItemFactory extends Factory
         ]);
     }
 
-    public function withComponentStandard(): static
-    {
-        return $this->afterCreating(function (BomTemplateItem $item) {
-            \App\Models\ElectricalPanel\BomTemplateItemPanelMeta::sync(
-                $item,
-                \App\Models\ElectricalPanel\ComponentStandard::factory()->create()->id
-            );
-        });
-    }
-
     public function withProduct(): static
     {
         return $this->state(fn (array $attributes) => [

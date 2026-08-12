@@ -19,6 +19,7 @@ use Database\Seeders\PlnTariffSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
+use Tests\Support\Addons\ElectricalPanelHelpers;
 
 uses(RefreshDatabase::class);
 
@@ -54,18 +55,16 @@ describe('SpecValidation soft-skip when electrical_panel off', function () {
 });
 
 describe('BomTemplateService brand resolution when electrical_panel off', function () {
-    it('returns empty available brands', function () {
-        withoutFeatures(['electrical_panel']);
-
-        $template = BomTemplate::factory()->create();
-        $standard = ComponentStandard::factory()->create();
-        BomTemplateItem::factory()->for($template, 'template')->create([
-            'product_id' => null,
+    it('404s template available-brands when electrical_panel off', function () {
+        withFeatures([
+            'bom' => true,
+            'electrical_panel' => false,
         ]);
 
-        $brands = app(BomTemplateService::class)->getAvailableBrandsForTemplate($template);
+        $template = BomTemplate::factory()->create();
 
-        expect($brands)->toBe([]);
+        $this->getJson("/api/v1/bom-templates/{$template->id}/available-brands")
+            ->assertNotFound();
     });
 
     it('creates bom from template without requiring brand mappings', function () {
@@ -129,7 +128,7 @@ describe('API resources omit industry fields when electrical_panel off', functio
         $standard = ComponentStandard::factory()->create();
         $bom = Bom::factory()->create();
         $item = BomItem::factory()->for($bom)->create();
-        attachBomItemStandard($item, $standard);
+        ElectricalPanelHelpers::attachBomItemStandard($item, $standard);
 
         $response = $this->getJson("/api/v1/boms/{$bom->id}");
 
@@ -393,6 +392,9 @@ describe('Add-on package boundaries (code isolation)', function () {
             'BomTemplatePanelMeta',
             'ComponentStandard',
             'ComponentBrandMapping',
+            'getAvailableBrands',
+            'availableBrands',
+            'BrandSwap',
         ];
 
         foreach ($paths as $path) {

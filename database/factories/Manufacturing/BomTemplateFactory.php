@@ -41,16 +41,6 @@ class BomTemplateFactory extends Factory
         ]);
     }
 
-    public function withRuleSet(): static
-    {
-        return $this->afterCreating(function (BomTemplate $template) {
-            \App\Models\ElectricalPanel\BomTemplatePanelMeta::sync(
-                $template,
-                \App\Models\ElectricalPanel\SpecValidationRuleSet::factory()->create()->id
-            );
-        });
-    }
-
     public function withCreator(): static
     {
         return $this->state(fn (array $attributes) => [
