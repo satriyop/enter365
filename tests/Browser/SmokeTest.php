@@ -20,7 +20,8 @@ declare(strict_types=1);
 it('loads the SPA login page', function () {
     $page = visit(spaUrl('/login'));
 
-    $page->assertSee('Sign in to your account');
+    $page->assertSee('Enter365');
+    $page->assertSee('Sign in');
 });
 
 it('has no javascript errors on login page', function () {
