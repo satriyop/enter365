@@ -69,16 +69,11 @@ Severity legend:
 
 ---
 
-#### F-02 · `auth()->id()` residual in services (breaks CLI/queue/test context)
+#### F-02 · `auth()->id()` residual in services — **FIXED 2026-08-12**
 
-**Why it hurts:** Skills forbid this; queues/import jobs get `null` creator; inconsistent with OperationContext.
+**Was:** AttachmentService / BankStatementImportService used `auth()->id()`.
 
-| Path | Line / symbol |
-|------|----------------|
-| `app/Services/Shared/AttachmentService.php` | `'uploaded_by' => auth()->id()` |
-| `app/Services/Accounting/BankImport/BankStatementImportService.php` | `'created_by' => auth()->id()` (~207) |
-
-**Remediation:** Extend `BaseService` + `$this->getUserId()` (or inject OperationContext).
+**Fixed:** Both use `WithOperationContext` + `getUserId()` (regression in `StabilityHotfixRegressionTest`).
 
 ---
 
@@ -171,19 +166,20 @@ Severity legend:
 
 ---
 
-#### F-08 · Notification listeners are no-ops (TODO)
+#### F-08 · Notification listeners are no-ops (TODO) — **FIXED 2026-08-12**
 
-**Why it hurts:** Product appears to “notify” but does nothing; silent UX/compliance gap.
+**Was:** Auto-discovered listeners registered but empty TODOs.
 
-| Path |
-|------|
-| `app/Infrastructure/Listeners/Sales/NotifyCustomerOnInvoiceSent.php` |
-| `app/Infrastructure/Listeners/Sales/NotifyCustomerOnQuotationApproved.php` |
-| `app/Infrastructure/Listeners/Sales/NotifySalesTeamOnQuotationSubmitted.php` |
-| `app/Infrastructure/Listeners/Sales/NotifySalesTeamOnQuotationWon.php` |
-| `app/Infrastructure/Listeners/Purchasing/NotifyAccountPayableOnBillReceived.php` |
+**Fixed:** Real queued mail notifications + config flags:
+| Event | Notification | Recipient |
+|-------|--------------|-----------|
+| InvoiceSent | `InvoiceSentNotification` | Contact email |
+| QuotationApproved | `QuotationApprovedNotification` | Contact email |
+| QuotationSubmitted | `QuotationSubmittedTeamNotification` | team email (`TeamNotifier`) |
+| QuotationWon | `QuotationWonTeamNotification` | team email |
+| BillReceived | `BillReceivedTeamNotification` | team email |
 
-**Remediation:** Implement or remove listeners + events until infrastructure exists (avoid false confidence).
+Config under `accounting.notifications.*` (per-event `enabled`, `channels`, optional `team_email`). Default team inbox: `NOTIFICATION_TEAM_EMAIL` / `COMPANY_EMAIL`. Channels use **mail only** (no `notifications` table yet).
 
 ---
 
@@ -266,8 +262,8 @@ Isolation skills were updated; keep `SERVICE_BINDINGS.md` / SKILL.md in sync whe
 
 | Skill standard | Current state |
 |----------------|---------------|
-| No `auth()->id()` in services | **2 leftovers** (F-02) |
-| Business logic not in controller | **Violated** follow-up/reminders/NSFP/PO delete/BOM template items (F-01) |
+| No `auth()->id()` in services | **Fixed** (F-02) |
+| Business logic not in controller | **Fixed** for F-01 list |
 | No `app()` in models | **Residual** calculators (F-06) |
 | God service split at 500+ LOC | **Several remain** (F-04) |
 | Industry add-ons outside Manufacturing | **Healthy** for BrandSwap / HTTP namespaces |
@@ -283,12 +279,12 @@ Suggested file names / order:
 | Pri | Item | Outcome |
 |-----|------|---------|
 | 1 | ~~Extract QuotationFollowUp + PaymentReminder + NsfpRange + BomTemplate item writes into services~~ **DONE 2026-08-12** | Single transaction/logging path |
-| 2 | Replace `auth()->id()` in AttachmentService + BankStatementImportService | Queue/import safe |
-| 3 | PO/GRN/etc. destroy always via service (no direct `$model->delete()`) | Cascades/events preserved |
+| 2 | ~~Replace `auth()->id()` in AttachmentService + BankStatementImportService~~ **DONE** | Queue/import safe |
+| 3 | ~~PO destroy via service~~ **DONE** | Cascades/events preserved |
 | 4 | ~~BomTemplate item mutations via BomTemplateServiceInterface~~ **DONE 2026-08-12** | AddonAttributes already there |
 | 5 | Split PaymentService / JournalService / DownPaymentService (coordinator) | Testability |
 | 6 | ~~Wire ManufacturingCostStrategy into WO consume/complete~~ **DONE 2026-08-12** | Real JEs when job_costing/wip on; honest default |
-| 7 | Remove or implement notification listeners | Honest product behavior |
+| 7 | ~~Implement notification listeners~~ **DONE 2026-08-12** | Honest product behavior |
 | 8 | FE: extract panel UI from core BOM pages; rename package; remove login console.log | Agent + brand hygiene |
 | 9 | Browser smoke: MFG + solar + panel nav under presets | SPA stability signal |
 | 10 | Model calculateTotals → service/factory only | DIP hygiene |

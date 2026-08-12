@@ -5,52 +5,45 @@ declare(strict_types=1);
 namespace App\Infrastructure\Listeners\Sales;
 
 use App\Domain\Sales\Invoices\Events\InvoiceSent;
+use App\Models\Sales\Invoice;
+use App\Notifications\InvoiceSentNotification;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 
 /**
- * Listener to send invoice notifications to customers.
- *
- * TODO: Implement email notification logic when email infrastructure is ready.
- *
- * This listener should:
- * 1. Load the invoice with customer relationship
- * 2. Check if customer has email address
- * 3. Queue an email job to send the invoice
- * 4. Log the notification attempt
- *
- * Example implementation:
- *
- * public function handle(InvoiceSent $event): void
- * {
- *     $invoice = Invoice::with('contact')->find($event->invoiceId);
- *
- *     if (!$invoice->contact->email) {
- *         Log::warning('Cannot send invoice: customer has no email', [
- *             'invoice_id' => $event->invoiceId,
- *             'customer_id' => $event->customerId,
- *         ]);
- *         return;
- *     }
- *
- *     SendInvoiceEmail::dispatch($invoice)
- *         ->onQueue('notifications')
- *         ->delay(now()->addSeconds(5));
- *
- *     Log::info('Invoice notification queued', [
- *         'invoice_id' => $event->invoiceId,
- *         'customer_email' => $invoice->contact->email,
- *     ]);
- * }
+ * Notify customer by email when an invoice is sent.
  */
 class NotifyCustomerOnInvoiceSent
 {
     public function handle(InvoiceSent $event): void
     {
-        // TODO: Implement email notification when email infrastructure is ready
-        //
-        // This listener should be triggered when InvoiceSent event is dispatched.
-        // It will queue an email job to send the invoice to the customer.
-        //
-        // For now, the invoice notification is handled by the API controller
-        // that returns the invoice data directly to the client.
+        if (! config('accounting.notifications.invoice_sent.enabled', true)) {
+            return;
+        }
+
+        $invoice = Invoice::with('contact')->find($event->invoiceId);
+
+        if (! $invoice) {
+            return;
+        }
+
+        $email = $invoice->contact?->email;
+
+        if (! $email) {
+            Log::info('Invoice sent notification skipped: contact has no email', [
+                'invoice_id' => $event->invoiceId,
+                'customer_id' => $event->customerId,
+            ]);
+
+            return;
+        }
+
+        Notification::route('mail', $email)
+            ->notify(new InvoiceSentNotification($invoice));
+
+        Log::info('Invoice sent notification queued', [
+            'invoice_id' => $invoice->id,
+            'customer_email' => $email,
+        ]);
     }
 }

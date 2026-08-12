@@ -5,43 +5,36 @@ declare(strict_types=1);
 namespace App\Infrastructure\Listeners\Purchasing;
 
 use App\Domain\Purchasing\Bills\Events\BillReceived;
+use App\Models\Purchasing\Bill;
+use App\Notifications\BillReceivedTeamNotification;
+use App\Support\TeamNotifier;
+use Illuminate\Support\Facades\Log;
 
 /**
- * Listener to notify accounts payable team when bill is received.
- *
- * TODO: Implement notification logic when notification infrastructure is ready.
- *
- * This listener should:
- * 1. Load the bill with vendor relationship
- * 2. Notify the accounts payable team (internal notification/email)
- * 3. Log the notification attempt
- *
- * Example implementation:
- *
- * public function handle(BillReceived $event): void
- * {
- *     $bill = Bill::with('contact')->find($event->billId);
- *
- *     // Notify AP team
- *     Notification::route('slack', config('services.slack.ap_channel'))
- *         ->notify(new BillReceivedNotification($bill));
- *
- *     Log::info('Bill received notification sent to AP team', [
- *         'bill_id' => $event->billId,
- *         'bill_number' => $event->billNumber,
- *         'vendor_id' => $event->vendorId,
- *     ]);
- * }
+ * Notify accounts payable team when a bill is received.
  */
 class NotifyAccountPayableOnBillReceived
 {
     public function handle(BillReceived $event): void
     {
-        // TODO: Implement notification when infrastructure is ready
-        //
-        // This listener should be triggered when BillReceived event is dispatched.
-        // It will notify the accounts payable team about the new bill.
-        //
-        // For now, the bill is processed internally by the API.
+        if (! config('accounting.notifications.bill_received.enabled', true)) {
+            return;
+        }
+
+        $bill = Bill::with('contact')->find($event->billId);
+
+        if (! $bill) {
+            return;
+        }
+
+        TeamNotifier::mail(
+            new BillReceivedTeamNotification($bill),
+            'bill_received'
+        );
+
+        Log::info('Bill received team notification queued', [
+            'bill_id' => $bill->id,
+            'bill_number' => $bill->bill_number,
+        ]);
     }
 }

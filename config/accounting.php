@@ -257,21 +257,49 @@ return [
     |
     */
     'notifications' => [
+        /*
+         * Fallback internal team inbox (sales/AP). Per-event keys may override.
+         */
+        'team_email' => env('NOTIFICATION_TEAM_EMAIL', env('COMPANY_EMAIL', '')),
+
         'payment_reminder' => [
             'enabled' => env('NOTIFICATION_PAYMENT_REMINDER', true),
-            'channels' => ['database', 'mail'],
+            'channels' => ['mail'],
         ],
         'overdue_alert' => [
             'enabled' => env('NOTIFICATION_OVERDUE_ALERT', true),
-            'channels' => ['database', 'mail'],
+            'channels' => ['mail'],
         ],
         'credit_limit_warning' => [
             'enabled' => env('NOTIFICATION_CREDIT_LIMIT', true),
-            'channels' => ['database'],
+            'channels' => ['mail'],
         ],
         'recurring_generated' => [
             'enabled' => env('NOTIFICATION_RECURRING', true),
-            'channels' => ['database'],
+            'channels' => ['mail'],
+        ],
+        'invoice_sent' => [
+            'enabled' => env('NOTIFICATION_INVOICE_SENT', true),
+            'channels' => ['mail'],
+        ],
+        'quotation_approved' => [
+            'enabled' => env('NOTIFICATION_QUOTATION_APPROVED', true),
+            'channels' => ['mail'],
+        ],
+        'quotation_submitted' => [
+            'enabled' => env('NOTIFICATION_QUOTATION_SUBMITTED', true),
+            'channels' => ['mail'],
+            'team_email' => env('NOTIFICATION_SALES_TEAM_EMAIL'),
+        ],
+        'quotation_won' => [
+            'enabled' => env('NOTIFICATION_QUOTATION_WON', true),
+            'channels' => ['mail'],
+            'team_email' => env('NOTIFICATION_SALES_TEAM_EMAIL'),
+        ],
+        'bill_received' => [
+            'enabled' => env('NOTIFICATION_BILL_RECEIVED', true),
+            'channels' => ['mail'],
+            'team_email' => env('NOTIFICATION_AP_TEAM_EMAIL'),
         ],
     ],
 
