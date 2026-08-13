@@ -86,6 +86,13 @@ class BankReconciliationService extends BaseService implements BankReconciliatio
     {
         $this->guardNotReconciled($txn);
 
+        if ($txn->status !== BankTransactionStatus::Unmatched) {
+            throw BusinessRuleException::operationNotAllowed(
+                'match transaksi bank',
+                'Transaksi sudah di-match atau direkonsiliasi.'
+            );
+        }
+
         $txn->update([
             'status' => BankTransactionStatus::Matched,
             'matched_journal_line_id' => $line->id,
@@ -104,6 +111,13 @@ class BankReconciliationService extends BaseService implements BankReconciliatio
             );
         }
 
+        if ($txn->status !== BankTransactionStatus::Matched) {
+            throw BusinessRuleException::operationNotAllowed(
+                'unmatch transaksi bank',
+                'Hanya transaksi yang sudah di-match yang dapat di-unmatch.'
+            );
+        }
+
         $txn->update([
             'status' => BankTransactionStatus::Unmatched,
             'matched_payment_id' => null,
@@ -113,6 +127,11 @@ class BankReconciliationService extends BaseService implements BankReconciliatio
         ]);
     }
 
+    /**
+     * Mark a matched transaction as reconciled.
+     *
+     * Invariant: unmatched → matched → reconciled (never skip match).
+     */
     public function reconcile(BankTransaction $txn): void
     {
         if ($txn->status !== BankTransactionStatus::Matched) {

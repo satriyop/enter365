@@ -121,50 +121,21 @@ class BankTransaction extends Model
     }
 
     /**
-     * Match this transaction to a payment.
+     * Check if transaction is matched (ready to reconcile).
      */
-    public function matchToPayment(Payment $payment): void
+    public function isMatched(): bool
     {
-        $this->update([
-            'status' => BankTransactionStatus::Matched,
-            'matched_payment_id' => $payment->id,
-        ]);
+        return $this->status === BankTransactionStatus::Matched;
     }
 
     /**
-     * Match this transaction to a journal entry line.
+     * Check if transaction is still unmatched.
      */
-    public function matchToJournalLine(JournalEntryLine $line): void
+    public function isUnmatched(): bool
     {
-        $this->update([
-            'status' => BankTransactionStatus::Matched,
-            'matched_journal_line_id' => $line->id,
-        ]);
+        return $this->status === BankTransactionStatus::Unmatched;
     }
 
-    /**
-     * Mark as reconciled.
-     */
-    public function reconcile(?int $userId = null): void
-    {
-        $this->update([
-            'status' => BankTransactionStatus::Reconciled,
-            'reconciled_at' => now(),
-            'reconciled_by' => $userId ?? auth()->id(),
-        ]);
-    }
-
-    /**
-     * Unmatch this transaction.
-     */
-    public function unmatch(): void
-    {
-        $this->update([
-            'status' => BankTransactionStatus::Unmatched,
-            'matched_payment_id' => null,
-            'matched_journal_line_id' => null,
-            'reconciled_at' => null,
-            'reconciled_by' => null,
-        ]);
-    }
+    // Workflow transitions (match / unmatch / reconcile) live only on
+    // BankReconciliationServiceInterface — do not add model mutators here.
 }
