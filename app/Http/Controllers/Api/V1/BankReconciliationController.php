@@ -14,7 +14,6 @@ use App\Services\Accounting\BankReconciliationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Support\Facades\DB;
 
 class BankReconciliationController extends Controller
 {
@@ -92,13 +91,11 @@ class BankReconciliationController extends Controller
     {
         $this->authorize('match', $bankTransaction);
 
-        if ($bankTransaction->status !== BankTransactionStatus::Unmatched) {
-            return response()->json([
-                'message' => 'Transaksi sudah di-match atau direkonsiliasi.',
-            ], 422);
+        try {
+            $this->reconciliationService->matchToPayment($bankTransaction, $payment);
+        } catch (\App\Exceptions\Domain\BusinessRuleException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
         }
-
-        $bankTransaction->matchToPayment($payment);
 
         return response()->json([
             'message' => 'Transaksi berhasil di-match dengan pembayaran.',
@@ -110,13 +107,11 @@ class BankReconciliationController extends Controller
     {
         $this->authorize('match', $bankTransaction);
 
-        if ($bankTransaction->isReconciled()) {
-            return response()->json([
-                'message' => 'Tidak dapat unmatch transaksi yang sudah direkonsiliasi.',
-            ], 422);
+        try {
+            $this->reconciliationService->unmatch($bankTransaction);
+        } catch (\App\Exceptions\Domain\BusinessRuleException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
         }
-
-        $bankTransaction->unmatch();
 
         return response()->json([
             'message' => 'Transaksi berhasil di-unmatch.',
@@ -128,13 +123,11 @@ class BankReconciliationController extends Controller
     {
         $this->authorize('reconcile', $bankTransaction);
 
-        if ($bankTransaction->isReconciled()) {
-            return response()->json([
-                'message' => 'Transaksi sudah direkonsiliasi.',
-            ], 422);
+        try {
+            $this->reconciliationService->reconcile($bankTransaction);
+        } catch (\App\Exceptions\Domain\BusinessRuleException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
         }
-
-        $bankTransaction->reconcile(auth()->id());
 
         return response()->json([
             'message' => 'Transaksi berhasil direkonsiliasi.',
@@ -151,17 +144,8 @@ class BankReconciliationController extends Controller
             'transaction_ids.*' => ['integer', 'exists:bank_transactions,id'],
         ]);
 
-        $count = DB::transaction(function () use ($request) {
-            $transactions = BankTransaction::whereIn('id', $request->transaction_ids)
-                ->where('status', '!=', BankTransactionStatus::Reconciled)
-                ->get();
-
-            foreach ($transactions as $transaction) {
-                $transaction->reconcile(auth()->id());
-            }
-
-            return $transactions->count();
-        });
+        // Service only reconciles matched transactions (must match first)
+        $count = $this->reconciliationService->batchReconcile($request->input('transaction_ids'));
 
         return response()->json([
             'message' => "{$count} transaksi berhasil direkonsiliasi.",

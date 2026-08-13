@@ -12,6 +12,7 @@ use App\Models\Inventory\InventoryMovement;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\ProductStock;
 use App\Models\Manufacturing\MaterialConsumption;
+use App\Models\Manufacturing\MaterialRequisitionItem;
 use App\Models\Manufacturing\WorkOrder;
 use App\Models\Manufacturing\WorkOrderItem;
 use App\Services\Accounting\AccountingPolicyManager;
@@ -122,7 +123,10 @@ class WorkOrderMaterialService extends BaseService
                     continue;
                 }
 
-                $quantityToConsume = (int) $item->quantity_required;
+                $required = (int) $item->quantity_required;
+                // Materials already issued via MR must not be deducted again from stock
+                $alreadyIssued = $this->quantityIssuedViaMaterialRequisitions($wo, (int) $item->product_id);
+                $quantityToConsume = max(0, $required - (int) floor($alreadyIssued));
                 $remainingForCost = max(0.0, $item->getRemainingQuantity());
                 $unitCost = (int) ($item->unit_cost ?: ($item->product?->purchase_price ?? 0));
 
@@ -133,28 +137,33 @@ class WorkOrderMaterialService extends BaseService
                     ->first();
 
                 if ($stock) {
-                    // Release from reserved and deduct from quantity
+                    // Always release remaining reservation
                     $stock->reserved_quantity = max(0, $stock->reserved_quantity - (int) $item->quantity_reserved);
-                    $stock->quantity = max(0, $stock->quantity - $quantityToConsume);
-                    $stock->total_value = $stock->quantity * $stock->average_cost;
-                    $stock->save();
 
-                    // Create inventory movement
-                    InventoryMovement::create([
-                        'movement_number' => InventoryMovement::generateMovementNumber(InventoryMovement::TYPE_OUT),
-                        'product_id' => $item->product_id,
-                        'warehouse_id' => $wo->warehouse_id,
-                        'type' => InventoryMovement::TYPE_OUT,
-                        'quantity' => $quantityToConsume,
-                        'quantity_before' => $stock->quantity + $quantityToConsume,
-                        'quantity_after' => $stock->quantity,
-                        'unit_cost' => $unitCost,
-                        'total_cost' => (int) round($quantityToConsume * $unitCost),
-                        'reference_type' => WorkOrder::class,
-                        'reference_id' => $wo->id,
-                        'notes' => "Konsumsi untuk WO: {$wo->wo_number}",
-                        'movement_date' => now(),
-                    ]);
+                    if ($quantityToConsume > 0) {
+                        $stock->quantity = max(0, $stock->quantity - $quantityToConsume);
+                        $stock->total_value = $stock->quantity * $stock->average_cost;
+                        $stock->save();
+
+                        InventoryMovement::create([
+                            'movement_number' => InventoryMovement::generateMovementNumber(InventoryMovement::TYPE_OUT),
+                            'product_id' => $item->product_id,
+                            'warehouse_id' => $wo->warehouse_id,
+                            'type' => InventoryMovement::TYPE_OUT,
+                            'quantity' => $quantityToConsume,
+                            'quantity_before' => $stock->quantity + $quantityToConsume,
+                            'quantity_after' => $stock->quantity,
+                            'unit_cost' => $unitCost,
+                            'total_cost' => (int) round($quantityToConsume * $unitCost),
+                            'reference_type' => WorkOrder::class,
+                            'reference_id' => $wo->id,
+                            'notes' => "Konsumsi untuk WO: {$wo->wo_number}",
+                            'movement_date' => now(),
+                        ]);
+                    } else {
+                        $stock->total_value = $stock->quantity * $stock->average_cost;
+                        $stock->save();
+                    }
                 }
 
                 // Track remaining cost basis only (avoid double-counting prior recordConsumption)
@@ -177,14 +186,29 @@ class WorkOrderMaterialService extends BaseService
                     $strategy->onMaterialConsumption($consumption);
                 }
 
-                // Update item as fully consumed
-                $item->quantity_consumed = $quantityToConsume;
+                // Update item as fully consumed (required qty, including MR-issued portion)
+                $item->quantity_consumed = $required;
+                $item->quantity_reserved = 0;
                 $item->actual_unit_cost = $unitCost;
                 $item->total_actual_cost = (int) $item->consumptions()->sum('total_cost')
-                    ?: (int) round($quantityToConsume * $unitCost);
+                    ?: (int) round($required * $unitCost);
                 $item->save();
             }
         }, ['work_order_id' => $wo->id]);
+    }
+
+    /**
+     * Total quantity already issued from material requisitions for this WO product.
+     */
+    private function quantityIssuedViaMaterialRequisitions(WorkOrder $wo, int $productId): float
+    {
+        return (float) MaterialRequisitionItem::query()
+            ->where('product_id', $productId)
+            ->whereHas('materialRequisition', function ($query) use ($wo) {
+                $query->where('work_order_id', $wo->id)
+                    ->whereNull('deleted_at');
+            })
+            ->sum('quantity_issued');
     }
 
     /**

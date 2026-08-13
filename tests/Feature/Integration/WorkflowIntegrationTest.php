@@ -829,17 +829,28 @@ describe('Complete Manufacturing Cycle: BOM → WO → MR → Completion', funct
 
         expect($mr->status)->toBe(DocumentStatus::Issued);
 
-        // --- Phase 4: Work Order lifecycle (confirm → start → complete) ---
-        $wo = $woService->confirm($wo, $this->user->id);
-        expect($wo->status)->toBe(DocumentStatus::Confirmed);
-
-        // Assert: reserved_quantity increased
+        // MR issue reduces physical stock immediately
         $stockA = ProductStock::where('product_id', $rawA->id)
             ->where('warehouse_id', $warehouse->id)
             ->first();
         $stockB = ProductStock::where('product_id', $rawB->id)
             ->where('warehouse_id', $warehouse->id)
             ->first();
+        expect($stockA->quantity)->toBe(94)       // 100 - 6
+            ->and($stockB->quantity)->toBe(485);  // 500 - 15
+
+        $mrMovements = InventoryMovement::where('reference_type', \App\Models\Manufacturing\MaterialRequisition::class)
+            ->where('reference_id', $mr->id)
+            ->get();
+        expect($mrMovements)->toHaveCount(2);
+
+        // --- Phase 4: Work Order lifecycle (confirm → start → complete) ---
+        $wo = $woService->confirm($wo, $this->user->id);
+        expect($wo->status)->toBe(DocumentStatus::Confirmed);
+
+        // Assert: reserved_quantity increased (against remaining free stock)
+        $stockA->refresh();
+        $stockB->refresh();
         expect($stockA->reserved_quantity)->toBe(6)
             ->and($stockB->reserved_quantity)->toBe(15);
 
@@ -849,26 +860,23 @@ describe('Complete Manufacturing Cycle: BOM → WO → MR → Completion', funct
         $wo = $woService->complete($wo, $this->user->id);
         expect($wo->status)->toBe(DocumentStatus::Completed);
 
-        // Assert: Stock consumed (quantity decreased, reserved back to 0)
+        // Stock already reduced on MR issue — complete must not double-deduct
         $stockA->refresh();
         $stockB->refresh();
-        expect($stockA->quantity)->toBe(94)       // 100 - 6
+        expect($stockA->quantity)->toBe(94)
             ->and($stockA->reserved_quantity)->toBe(0)
-            ->and($stockB->quantity)->toBe(485)    // 500 - 15
+            ->and($stockB->quantity)->toBe(485)
             ->and($stockB->reserved_quantity)->toBe(0);
 
-        // Assert: InventoryMovement records for raw material consume + FG receipt
-        $movements = InventoryMovement::where('reference_type', WorkOrder::class)
+        // WO complete: FG receipt only for materials (raw OUT already on MR)
+        $woMovements = InventoryMovement::where('reference_type', WorkOrder::class)
             ->where('reference_id', $wo->id)
             ->get();
-        expect($movements)->toHaveCount(3);
+        expect($woMovements->where('product_id', $rawA->id))->toHaveCount(0)
+            ->and($woMovements->where('product_id', $rawB->id))->toHaveCount(0)
+            ->and($woMovements->where('product_id', $finished->id))->toHaveCount(1);
 
-        $movementA = $movements->firstWhere('product_id', $rawA->id);
-        $movementB = $movements->firstWhere('product_id', $rawB->id);
-        expect($movementA->type)->toBe(InventoryMovement::TYPE_OUT)
-            ->and($movementA->quantity)->toBe(6)
-            ->and($movementB->type)->toBe(InventoryMovement::TYPE_OUT)
-            ->and($movementB->quantity)->toBe(15);
+        $movements = $woMovements;
 
         // Assert: finished goods stock increased by quantity_ordered (3)
         $fgStock = ProductStock::where('product_id', $finished->id)

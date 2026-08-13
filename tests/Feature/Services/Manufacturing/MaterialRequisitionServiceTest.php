@@ -358,6 +358,11 @@ describe('MaterialRequisitionService - issue', function () {
         $item->refresh();
         expect((float) $item->quantity_issued)->toBe(50.0);
         expect((float) $item->quantity_pending)->toBe(50.0);
+
+        $stock = ProductStock::where('product_id', $this->product->id)
+            ->where('warehouse_id', $this->warehouse->id)
+            ->first();
+        expect($stock->quantity)->toBe(150); // 200 - 50
     });
 
     test('issues all materials and transitions to issued status', function () {
@@ -392,6 +397,15 @@ describe('MaterialRequisitionService - issue', function () {
         $item->refresh();
         expect((float) $item->quantity_issued)->toBe(100.0);
         expect((float) $item->quantity_pending)->toBe(0.0);
+
+        $stock = ProductStock::where('product_id', $this->product->id)
+            ->where('warehouse_id', $this->warehouse->id)
+            ->first();
+        expect($stock->quantity)->toBe(100); // 200 - 100
+
+        expect(\App\Models\Inventory\InventoryMovement::where('reference_type', MaterialRequisition::class)
+            ->where('reference_id', $mr->id)
+            ->count())->toBe(1);
     });
 
     test('issues multiple items partially', function () {

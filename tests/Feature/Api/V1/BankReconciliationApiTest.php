@@ -103,15 +103,24 @@ describe('Bank Reconciliation API', function () {
         $response->assertUnprocessable();
     });
 
-    it('can reconcile a transaction', function () {
+    it('can reconcile a matched transaction', function () {
         $account = Account::factory()->asset()->create();
-        $transaction = BankTransaction::factory()->forAccount($account)->unmatched()->create();
+        $transaction = BankTransaction::factory()->forAccount($account)->matched()->create();
 
         $response = $this->postJson("/api/v1/bank-transactions/{$transaction->id}/reconcile");
 
         $response->assertOk()
             ->assertJsonPath('data.status.value', 'reconciled')
             ->assertJsonPath('data.is_reconciled', true);
+    });
+
+    it('cannot reconcile unmatched transaction without match first', function () {
+        $account = Account::factory()->asset()->create();
+        $transaction = BankTransaction::factory()->forAccount($account)->unmatched()->create();
+
+        $response = $this->postJson("/api/v1/bank-transactions/{$transaction->id}/reconcile");
+
+        $response->assertUnprocessable();
     });
 
     it('cannot reconcile already reconciled transaction', function () {
@@ -123,18 +132,19 @@ describe('Bank Reconciliation API', function () {
         $response->assertUnprocessable();
     });
 
-    it('can bulk reconcile transactions', function () {
+    it('can bulk reconcile matched transactions only', function () {
         $account = Account::factory()->asset()->create();
-        $transactions = BankTransaction::factory()->forAccount($account)->unmatched()->count(3)->create();
+        $matched = BankTransaction::factory()->forAccount($account)->matched()->count(3)->create();
+        BankTransaction::factory()->forAccount($account)->unmatched()->count(2)->create();
 
         $response = $this->postJson('/api/v1/bank-transactions/bulk-reconcile', [
-            'transaction_ids' => $transactions->pluck('id')->toArray(),
+            'transaction_ids' => $matched->pluck('id')->toArray(),
         ]);
 
         $response->assertOk()
             ->assertJsonPath('reconciled_count', 3);
 
-        foreach ($transactions as $transaction) {
+        foreach ($matched as $transaction) {
             $this->assertDatabaseHas('bank_transactions', [
                 'id' => $transaction->id,
                 'status' => 'reconciled',

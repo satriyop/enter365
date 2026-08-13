@@ -16,7 +16,7 @@ FE pages and `useWorkOrders` / `useMrp` / `useBoms` already call real APIs.
 
 - [x] Browser test creates/uses BOM (or seeded BOM)
 - [x] Create WO from BOM via UI or documented hybrid (API `POST /boms/{id}/create-work-order`)
-- [x] MR issue path exercised; raw stock ↓ asserted after WO complete (domain: MR issue is document-level; stock moves on complete)
+- [x] MR issue path exercised; raw stock ↓ on MR issue (no double-deduct on WO complete)
 - [x] Complete WO; FG stock assert (after 001)
 - [x] No reliance on SmokeTest-style “page loads only”
 

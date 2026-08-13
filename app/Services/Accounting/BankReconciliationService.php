@@ -66,6 +66,13 @@ class BankReconciliationService extends BaseService implements BankReconciliatio
     {
         $this->guardNotReconciled($txn);
 
+        if ($txn->status !== BankTransactionStatus::Unmatched) {
+            throw BusinessRuleException::operationNotAllowed(
+                'match transaksi bank',
+                'Transaksi sudah di-match atau direkonsiliasi.'
+            );
+        }
+
         $txn->update([
             'status' => BankTransactionStatus::Matched,
             'matched_payment_id' => $payment->id,

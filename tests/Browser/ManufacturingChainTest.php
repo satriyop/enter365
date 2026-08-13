@@ -375,7 +375,7 @@ it('runs full manufacturing browser chain with stock asserts', function () {
     $page = loginAndVisit("/manufacturing/material-requisitions/{$mrId}");
     $page->assertSee('Approved');
 
-    // --- UI: Issue Materials (document-level; stock moves on WO complete) ---
+    // --- UI: Issue Materials (reduces stock immediately) ---
     $page->click('Issue Materials');
     $page->assertSee('Enter the quantities to issue');
     $page->click('[role="dialog"] button >> text=Max');
@@ -388,6 +388,21 @@ it('runs full manufacturing browser chain with stock asserts', function () {
         ->first();
     expect((float) $mrItem->quantity_issued)->toBe((float) $requiredMaterial);
 
+    $rawStockAfterIssue = realDb()->table('product_stocks')
+        ->where('product_id', $setup['raw_product_id'])
+        ->where('warehouse_id', $setup['warehouse_id'])
+        ->first();
+    expect((int) $rawStockAfterIssue->quantity)->toBe($setup['raw_starting_qty'] - $requiredMaterial);
+
+    $mrMovement = realDb()->table('inventory_movements')
+        ->where('reference_type', 'App\\Models\\Manufacturing\\MaterialRequisition')
+        ->where('reference_id', $mrId)
+        ->where('product_id', $setup['raw_product_id'])
+        ->where('type', 'out')
+        ->first();
+    expect($mrMovement)->not->toBeNull()
+        ->and((int) $mrMovement->quantity)->toBe($requiredMaterial);
+
     // --- UI: Complete WO ---
     $page = loginAndVisit("/work-orders/{$woId}");
     $page->assertSee($woNumber);
@@ -397,7 +412,7 @@ it('runs full manufacturing browser chain with stock asserts', function () {
     $page = loginAndVisit("/work-orders/{$woId}");
     $page->assertSee('Selesai'); // DocumentStatus::Completed label
 
-    // --- DB: raw stock reduced on complete; FG stock increased ---
+    // --- DB: raw stock unchanged on complete (already issued); FG stock increased ---
     $rawStock = realDb()->table('product_stocks')
         ->where('product_id', $setup['raw_product_id'])
         ->where('warehouse_id', $setup['warehouse_id'])
@@ -425,13 +440,12 @@ it('runs full manufacturing browser chain with stock asserts', function () {
     expect($fgMovement)->not->toBeNull()
         ->and((int) $fgMovement->quantity)->toBe($setup['wo_qty']);
 
-    $rawMovement = realDb()->table('inventory_movements')
+    // No second raw OUT on WO complete when MR already issued full qty
+    $rawWoMovement = realDb()->table('inventory_movements')
         ->where('reference_type', 'App\\Models\\Manufacturing\\WorkOrder')
         ->where('reference_id', $woId)
         ->where('product_id', $setup['raw_product_id'])
         ->where('type', 'out')
         ->first();
-
-    expect($rawMovement)->not->toBeNull()
-        ->and((int) $rawMovement->quantity)->toBe($requiredMaterial);
+    expect($rawWoMovement)->toBeNull();
 });

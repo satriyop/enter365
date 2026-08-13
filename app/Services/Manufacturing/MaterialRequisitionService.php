@@ -8,10 +8,12 @@ use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Manufacturing\MaterialRequisitionServiceInterface;
 use App\Enums\DocumentStatus;
+use App\Models\Inventory\InventoryMovement;
 use App\Models\Inventory\ProductStock;
 use App\Models\Manufacturing\MaterialRequisition;
 use App\Models\Manufacturing\MaterialRequisitionItem;
 use App\Models\Manufacturing\WorkOrder;
+use App\Models\Manufacturing\WorkOrderItem;
 use App\Services\Base\BaseService;
 
 class MaterialRequisitionService extends BaseService implements MaterialRequisitionServiceInterface
@@ -133,6 +135,9 @@ class MaterialRequisitionService extends BaseService implements MaterialRequisit
         }
 
         return $this->executeInTransaction('issue', function () use ($mr, $items, $userId) {
+            $mr->loadMissing(['workOrder']);
+            $userId = $userId ?? $this->getUserId();
+
             foreach ($items as $issueData) {
                 $mrItem = MaterialRequisitionItem::findOrFail($issueData['item_id']);
 
@@ -155,21 +160,13 @@ class MaterialRequisitionService extends BaseService implements MaterialRequisit
                     );
                 }
 
-                $stock = ProductStock::where('product_id', $mrItem->product_id)
-                    ->where('warehouse_id', $mr->warehouse_id)
-                    ->first();
-
-                if ($stock) {
-                    $availableQty = (float) $stock->quantity - (float) $stock->reserved_quantity;
-                    if ($availableQty < $quantityToIssue) {
-                        $product = $mrItem->product;
-                        throw \App\Exceptions\Domain\BusinessRuleException::quantityValidation(
-                            "Stok {$product->name}",
-                            $quantityToIssue,
-                            $availableQty,
-                            'exceeds'
-                        );
-                    }
+                if ($mrItem->product_id && $mr->warehouse_id) {
+                    $this->issueStockForItem(
+                        $mr,
+                        $mrItem,
+                        $quantityToIssue,
+                        $userId
+                    );
                 }
 
                 $mrItem->quantity_issued = (float) $mrItem->quantity_issued + $quantityToIssue;
@@ -177,7 +174,7 @@ class MaterialRequisitionService extends BaseService implements MaterialRequisit
                 $mrItem->save();
             }
 
-            $mr->issued_by = $userId ?? $this->getUserId();
+            $mr->issued_by = $userId;
             $mr->issued_at = now();
             $mr->save();
 
@@ -189,6 +186,85 @@ class MaterialRequisitionService extends BaseService implements MaterialRequisit
 
             return $mr->fresh(['items']);
         }, ['requisition_id' => $mr->id]);
+    }
+
+    /**
+     * Deduct warehouse stock for an issued MR line and record TYPE_OUT movement.
+     *
+     * When the parent work order has reserved the same product, reservation is
+     * released first so physical issue can use reserved stock (not only free stock).
+     */
+    private function issueStockForItem(
+        MaterialRequisition $mr,
+        MaterialRequisitionItem $mrItem,
+        float $quantityToIssue,
+        ?int $userId
+    ): void {
+        $issueQty = (int) ceil($quantityToIssue);
+
+        $stock = ProductStock::where('product_id', $mrItem->product_id)
+            ->where('warehouse_id', $mr->warehouse_id)
+            ->lockForUpdate()
+            ->first();
+
+        $woItem = $mrItem->work_order_item_id
+            ? WorkOrderItem::query()->lockForUpdate()->find($mrItem->work_order_item_id)
+            : null;
+
+        // Free stock + this WO's own reservation (cannot take other WOs' reserved qty)
+        $reservedForThisWo = 0.0;
+        if ($woItem && $stock) {
+            $reservedForThisWo = min(
+                (float) $woItem->quantity_reserved,
+                (float) $stock->reserved_quantity
+            );
+        }
+
+        $freeStock = $stock
+            ? max(0.0, (float) $stock->quantity - (float) $stock->reserved_quantity)
+            : 0.0;
+        $maxIssuable = $freeStock + $reservedForThisWo;
+
+        if (! $stock || $maxIssuable + 1e-9 < $quantityToIssue) {
+            $product = $mrItem->product;
+            throw \App\Exceptions\Domain\BusinessRuleException::quantityValidation(
+                "Stok {$product?->name}",
+                $quantityToIssue,
+                $maxIssuable,
+                'exceeds'
+            );
+        }
+
+        // Release this WO's reservation portion used by the issue
+        if ($woItem && $reservedForThisWo > 0) {
+            $release = min($reservedForThisWo, $quantityToIssue);
+            $stock->reserved_quantity = max(0, (int) $stock->reserved_quantity - (int) ceil($release));
+            $woItem->quantity_reserved = max(0, (float) $woItem->quantity_reserved - $release);
+            $woItem->save();
+        }
+
+        $quantityBefore = (int) $stock->quantity;
+        $stock->quantity = max(0, $quantityBefore - $issueQty);
+        $unitCost = (int) ($stock->average_cost ?: 0);
+        $stock->total_value = $stock->quantity * $stock->average_cost;
+        $stock->save();
+
+        InventoryMovement::create([
+            'movement_number' => InventoryMovement::generateMovementNumber(InventoryMovement::TYPE_OUT),
+            'product_id' => $mrItem->product_id,
+            'warehouse_id' => $mr->warehouse_id,
+            'type' => InventoryMovement::TYPE_OUT,
+            'quantity' => $issueQty,
+            'quantity_before' => $quantityBefore,
+            'quantity_after' => $stock->quantity,
+            'unit_cost' => $unitCost,
+            'total_cost' => (int) round($issueQty * $unitCost),
+            'reference_type' => MaterialRequisition::class,
+            'reference_id' => $mr->id,
+            'notes' => "Pengeluaran MR {$mr->requisition_number}",
+            'movement_date' => now(),
+            'created_by' => $userId,
+        ]);
     }
 
     /**
