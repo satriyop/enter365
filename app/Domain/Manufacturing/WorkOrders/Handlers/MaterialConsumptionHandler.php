@@ -4,37 +4,26 @@ declare(strict_types=1);
 
 namespace App\Domain\Manufacturing\WorkOrders\Handlers;
 
-use App\Domain\Inventory\Movements\MovementRecorder;
-use App\Models\Inventory\InventoryMovement;
-use App\Models\Manufacturing\MaterialConsumption;
 use App\Models\Manufacturing\WorkOrder;
-use App\Models\Manufacturing\WorkOrderItem;
+use App\Services\Manufacturing\WorkOrderMaterialService;
 
 /**
- * Handles material consumption when a work order is completed.
+ * Pipeline adapter for material consumption on WO complete.
  *
- * This handler:
- * - Issues remaining materials from inventory that weren't consumed during production
- * - Creates MaterialConsumption records for tracking
- * - Updates WorkOrderItem consumed quantities
+ * Does not re-implement stock/MR rules — delegates to WorkOrderMaterialService
+ * so the live completion path and any pipeline composition stay one implementation.
  *
- * Priority: 10 (runs first to consume materials before costs are calculated)
+ * Priority: 10 (before costs and finished goods).
  */
 class MaterialConsumptionHandler implements CompletionHandlerInterface
 {
     public function __construct(
-        private MovementRecorder $movementRecorder
+        private WorkOrderMaterialService $materialService,
     ) {}
 
     public function handle(WorkOrder $workOrder, ?int $userId = null): void
     {
-        $materialItems = $workOrder->materialItems()
-            ->with('product')
-            ->get();
-
-        foreach ($materialItems as $item) {
-            $this->consumeRemainingMaterial($workOrder, $item, $userId);
-        }
+        $this->materialService->consumeMaterials($workOrder);
     }
 
     public function priority(): int
@@ -44,51 +33,7 @@ class MaterialConsumptionHandler implements CompletionHandlerInterface
 
     public function shouldHandle(WorkOrder $workOrder): bool
     {
-        // Only handle if this is a production work order with materials
-        return $workOrder->isProduction()
-            && $workOrder->warehouse_id !== null
+        return $workOrder->warehouse_id !== null
             && $workOrder->materialItems()->exists();
-    }
-
-    private function consumeRemainingMaterial(
-        WorkOrder $workOrder,
-        WorkOrderItem $item,
-        ?int $userId
-    ): void {
-        $remainingQty = $item->getRemainingQuantity();
-
-        if ($remainingQty <= 0) {
-            return;
-        }
-
-        // Issue from inventory
-        $movement = $this->movementRecorder->recordIssue(
-            productId: $item->product_id,
-            warehouseId: $workOrder->warehouse_id,
-            quantity: (int) ceil($remainingQty),
-            type: InventoryMovement::TYPE_PRODUCTION,
-            notes: "Konsumsi otomatis saat penyelesaian WO #{$workOrder->wo_number}",
-            referenceType: WorkOrder::class,
-            referenceId: $workOrder->id,
-            userId: $userId
-        );
-
-        // Create consumption record
-        MaterialConsumption::create([
-            'work_order_id' => $workOrder->id,
-            'work_order_item_id' => $item->id,
-            'product_id' => $item->product_id,
-            'quantity_consumed' => $remainingQty,
-            'quantity_scrapped' => 0,
-            'unit' => $item->unit,
-            'unit_cost' => $movement->unit_cost,
-            'total_cost' => (int) round($remainingQty * $movement->unit_cost),
-            'consumed_date' => now(),
-            'consumed_by' => $userId,
-            'notes' => 'Konsumsi otomatis saat penyelesaian work order',
-        ]);
-
-        // Update item consumed quantity
-        $item->increment('quantity_consumed', $remainingQty);
     }
 }

@@ -7,15 +7,21 @@ namespace App\Domain\Manufacturing\WorkOrders\Handlers;
 use App\Models\Manufacturing\WorkOrder;
 
 /**
- * Pipeline that orchestrates work order completion handlers.
+ * Optional ordered list of completion handlers (internal extensibility seam).
  *
- * Runs handlers in priority order (lower priority numbers run first).
- * Each handler is responsible for a single concern (SRP).
+ * Live production completion is orchestrated by WorkOrderCompletion (used from
+ * WorkOrderService::complete). This pipeline remains for composing optional
+ * handlers and for unit tests of priority/skip behaviour. Do not call it as a
+ * second complete path — MaterialConsumptionHandler delegates to the same
+ * WorkOrderMaterialService as WorkOrderCompletion.
  *
- * Typical handler sequence:
- * 1. MaterialConsumptionHandler (priority: 10) - Consume materials
- * 2. FinishedGoodsHandler (priority: 20) - Add finished goods to inventory
- * 3. CostCalculationHandler (priority: 30) - Calculate actual costs
+ * Typical handler sequence when composed:
+ * 1. MaterialConsumptionHandler (priority: 10)
+ * 2. FinishedGoodsHandler (priority: 20)
+ * 3. CostCalculationHandler (priority: 30)
+ *
+ * Note: full complete() also transitions status between costs and FG; the
+ * pipeline alone does not replace WorkOrderCompletion::run().
  */
 class WorkOrderCompletionPipeline
 {

@@ -7,7 +7,7 @@ namespace App\Services\Manufacturing;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Manufacturing\WorkOrderServiceInterface;
-use App\Domain\Manufacturing\WorkOrders\Handlers\FinishedGoodsHandler;
+use App\Domain\Manufacturing\WorkOrders\WorkOrderCompletion;
 use App\Domain\Manufacturing\WorkOrders\WorkOrderDomainFactory;
 use App\Enums\DocumentStatus;
 use App\Models\Manufacturing\Bom;
@@ -26,7 +26,7 @@ class WorkOrderService extends BaseService implements WorkOrderServiceInterface
         private WorkOrderNumberGenerator $numberGenerator,
         private WorkOrderDomainFactory $domainFactory,
         private AccountingPolicyManager $policyManager,
-        private FinishedGoodsHandler $finishedGoodsHandler,
+        private WorkOrderCompletion $workOrderCompletion,
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger
     ) {
@@ -221,6 +221,9 @@ class WorkOrderService extends BaseService implements WorkOrderServiceInterface
 
     /**
      * Complete work order.
+     *
+     * External seam for finishing production: all inventory, cost, accounting,
+     * and project side effects run inside WorkOrderCompletion (one deep module).
      */
     public function complete(WorkOrder $wo, ?int $userId = null): WorkOrder
     {
@@ -233,32 +236,11 @@ class WorkOrderService extends BaseService implements WorkOrderServiceInterface
             );
         }
 
-        return $this->executeInTransaction('complete', function () use ($wo, $userId) {
-            $this->materialService->consumeMaterials($wo);
-
-            $this->domainFactory->applyActualCosts($wo);
-
-            $wo->transitionTo(DocumentStatus::Completed, $userId);
-
-            $wo->refresh();
-
-            // Receive finished goods into inventory (TYPE_PRODUCTION receipt)
-            if ($this->finishedGoodsHandler->shouldHandle($wo)) {
-                $this->finishedGoodsHandler->handle($wo, $userId);
-            }
-
-            // Job costing / WIP: transfer accumulated WIP → finished goods
-            // Project based: no JE (project financials updated below)
-            $this->policyManager->manufacturing()->onWorkOrderComplete($wo->fresh());
-
-            if ($wo->project_id) {
-                $this->costService->updateProjectCosts($wo);
-            }
-
-            $this->costService->createDeliveryOrderIfNeeded($wo);
-
-            return $wo->fresh();
-        }, ['work_order_id' => $wo->id]);
+        return $this->executeInTransaction(
+            'complete',
+            fn () => $this->workOrderCompletion->run($wo, $userId),
+            ['work_order_id' => $wo->id]
+        );
     }
 
     /**
