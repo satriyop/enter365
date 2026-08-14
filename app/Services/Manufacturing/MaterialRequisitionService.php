@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace App\Services\Manufacturing;
 
 use App\Contracts\Events\EventDispatcherInterface;
+use App\Contracts\Inventory\InventoryServiceInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Manufacturing\MaterialRequisitionServiceInterface;
 use App\Enums\DocumentStatus;
-use App\Models\Inventory\InventoryMovement;
-use App\Models\Inventory\ProductStock;
+use App\Exceptions\Domain\BusinessRuleException;
+use App\Exceptions\Domain\InsufficientStockException;
+use App\Models\Inventory\Product;
+use App\Models\Inventory\Warehouse;
 use App\Models\Manufacturing\MaterialRequisition;
 use App\Models\Manufacturing\MaterialRequisitionItem;
 use App\Models\Manufacturing\WorkOrder;
@@ -20,6 +23,7 @@ class MaterialRequisitionService extends BaseService implements MaterialRequisit
 {
     public function __construct(
         private MaterialRequisitionNumberGenerator $numberGenerator,
+        private InventoryServiceInterface $inventoryService,
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger
     ) {
@@ -189,10 +193,9 @@ class MaterialRequisitionService extends BaseService implements MaterialRequisit
     }
 
     /**
-     * Deduct warehouse stock for an issued MR line and record TYPE_OUT movement.
+     * Deduct warehouse stock for an issued MR line via the inventory seam.
      *
-     * When the parent work order has reserved the same product, reservation is
-     * released first so physical issue can use reserved stock (not only free stock).
+     * Document rule: only this work order's reserved qty may be consumed.
      */
     private function issueStockForItem(
         MaterialRequisition $mr,
@@ -202,69 +205,48 @@ class MaterialRequisitionService extends BaseService implements MaterialRequisit
     ): void {
         $issueQty = (int) ceil($quantityToIssue);
 
-        $stock = ProductStock::where('product_id', $mrItem->product_id)
-            ->where('warehouse_id', $mr->warehouse_id)
-            ->lockForUpdate()
-            ->first();
+        $product = $mrItem->product ?? Product::query()->find($mrItem->product_id);
+        $warehouse = $mr->warehouse ?? Warehouse::query()->find($mr->warehouse_id);
+
+        if ($product === null || $warehouse === null) {
+            return;
+        }
 
         $woItem = $mrItem->work_order_item_id
             ? WorkOrderItem::query()->lockForUpdate()->find($mrItem->work_order_item_id)
             : null;
 
-        // Free stock + this WO's own reservation (cannot take other WOs' reserved qty)
-        $reservedForThisWo = 0.0;
-        if ($woItem && $stock) {
-            $reservedForThisWo = min(
-                (float) $woItem->quantity_reserved,
-                (float) $stock->reserved_quantity
+        $reservedToConsume = 0;
+        if ($woItem !== null) {
+            $reservedToConsume = (int) min(
+                (int) ceil((float) $woItem->quantity_reserved),
+                $issueQty,
             );
         }
 
-        $freeStock = $stock
-            ? max(0.0, (float) $stock->quantity - (float) $stock->reserved_quantity)
-            : 0.0;
-        $maxIssuable = $freeStock + $reservedForThisWo;
-
-        if (! $stock || $maxIssuable + 1e-9 < $quantityToIssue) {
-            $product = $mrItem->product;
-            throw \App\Exceptions\Domain\BusinessRuleException::quantityValidation(
-                "Stok {$product?->name}",
+        try {
+            $this->inventoryService->issueAgainstReservation(
+                $product,
+                $warehouse,
+                $issueQty,
+                $reservedToConsume,
+                "Pengeluaran MR {$mr->requisition_number}",
+                MaterialRequisition::class,
+                $mr->id,
+            );
+        } catch (InsufficientStockException $e) {
+            throw BusinessRuleException::quantityValidation(
+                "Stok {$product->name}",
                 $quantityToIssue,
-                $maxIssuable,
+                (float) ($e->getContext()['available'] ?? 0),
                 'exceeds'
             );
         }
 
-        // Release this WO's reservation portion used by the issue
-        if ($woItem && $reservedForThisWo > 0) {
-            $release = min($reservedForThisWo, $quantityToIssue);
-            $stock->reserved_quantity = max(0, (int) $stock->reserved_quantity - (int) ceil($release));
-            $woItem->quantity_reserved = max(0, (float) $woItem->quantity_reserved - $release);
+        if ($woItem !== null && $reservedToConsume > 0) {
+            $woItem->quantity_reserved = max(0, (float) $woItem->quantity_reserved - $quantityToIssue);
             $woItem->save();
         }
-
-        $quantityBefore = (int) $stock->quantity;
-        $stock->quantity = max(0, $quantityBefore - $issueQty);
-        $unitCost = (int) ($stock->average_cost ?: 0);
-        $stock->total_value = $stock->quantity * $stock->average_cost;
-        $stock->save();
-
-        InventoryMovement::create([
-            'movement_number' => InventoryMovement::generateMovementNumber(InventoryMovement::TYPE_OUT),
-            'product_id' => $mrItem->product_id,
-            'warehouse_id' => $mr->warehouse_id,
-            'type' => InventoryMovement::TYPE_OUT,
-            'quantity' => $issueQty,
-            'quantity_before' => $quantityBefore,
-            'quantity_after' => $stock->quantity,
-            'unit_cost' => $unitCost,
-            'total_cost' => (int) round($issueQty * $unitCost),
-            'reference_type' => MaterialRequisition::class,
-            'reference_id' => $mr->id,
-            'notes' => "Pengeluaran MR {$mr->requisition_number}",
-            'movement_date' => now(),
-            'created_by' => $userId,
-        ]);
     }
 
     /**

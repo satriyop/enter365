@@ -7,6 +7,7 @@ use App\Enums\DocumentStatus;
 use App\Exceptions\Domain\BusinessRuleException;
 use App\Exceptions\Domain\DocumentLockedException;
 use App\Exceptions\Domain\StateTransitionException;
+use App\Models\Inventory\InventoryMovement;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\ProductStock;
 use App\Models\Inventory\Warehouse;
@@ -586,6 +587,69 @@ describe('MaterialRequisitionService - issue', function () {
             ['item_id' => $item->id, 'quantity' => 50],
         ]);
     })->throws(BusinessRuleException::class);
+
+    test('issues against work order reservation and records production movement via inventory seam', function () {
+        $wo = WorkOrder::factory()
+            ->withWarehouse($this->warehouse)
+            ->create();
+
+        $woItem = WorkOrderItem::factory()->create([
+            'work_order_id' => $wo->id,
+            'product_id' => $this->product->id,
+            'quantity_required' => 40,
+            'quantity_reserved' => 40,
+        ]);
+
+        $mr = MaterialRequisition::factory()
+            ->approved()
+            ->withWarehouse($this->warehouse)
+            ->create(['work_order_id' => $wo->id]);
+
+        $item = MaterialRequisitionItem::factory()
+            ->forRequisition($mr)
+            ->state([
+                'product_id' => $this->product->id,
+                'work_order_item_id' => $woItem->id,
+                'quantity_requested' => 40,
+            ])
+            ->approved()
+            ->create();
+
+        ProductStock::create([
+            'product_id' => $this->product->id,
+            'warehouse_id' => $this->warehouse->id,
+            'quantity' => 100,
+            'reserved_quantity' => 40,
+            'average_cost' => 50000,
+            'total_value' => 5_000_000,
+        ]);
+
+        $this->service->issue($mr, [
+            ['item_id' => $item->id, 'quantity' => 15],
+        ]);
+
+        $stock = ProductStock::where('product_id', $this->product->id)
+            ->where('warehouse_id', $this->warehouse->id)
+            ->first();
+
+        expect($stock->quantity)->toBe(85)
+            ->and($stock->reserved_quantity)->toBe(25);
+
+        $woItem->refresh();
+        expect((float) $woItem->quantity_reserved)->toBe(25.0);
+
+        $item->refresh();
+        expect((float) $item->quantity_issued)->toBe(15.0);
+
+        $movement = InventoryMovement::where('reference_type', MaterialRequisition::class)
+            ->where('reference_id', $mr->id)
+            ->where('product_id', $this->product->id)
+            ->first();
+
+        expect($movement)->not->toBeNull()
+            ->and($movement->type)->toBe(InventoryMovement::TYPE_OUT)
+            ->and($movement->quantity)->toBe(-15);
+    });
 
     test('throws exception when issuing from non-approved material requisition', function () {
         $mr = MaterialRequisition::factory()
