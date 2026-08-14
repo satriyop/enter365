@@ -27,3 +27,29 @@ it('has no production caller of MovementRecorder', function () {
 
     expect($matches)->toBe([]);
 });
+
+it('creates inventory movements only inside InventoryService', function () {
+    $matches = [];
+
+    $iterator = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator(app_path(), FilesystemIterator::SKIP_DOTS)
+    );
+
+    foreach ($iterator as $file) {
+        if ($file->getExtension() !== 'php') {
+            continue;
+        }
+
+        $path = $file->getPathname();
+        if (str_ends_with($path, '/Services/Inventory/InventoryService.php')) {
+            continue;
+        }
+
+        $contents = file_get_contents($path);
+        if ($contents !== false && str_contains($contents, 'InventoryMovement::create')) {
+            $matches[] = $path;
+        }
+    }
+
+    expect($matches)->toBe([]);
+});

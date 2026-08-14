@@ -7,10 +7,12 @@ use App\Contracts\Inventory\InventoryServiceInterface;
 use App\Contracts\Sales\DeliveryOrderServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Exceptions\Domain\DocumentLockedException;
+use App\Exceptions\Domain\InsufficientStockException;
 use App\Exceptions\Domain\StateTransitionException;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Contacts\Contact;
 use App\Models\Inventory\Product;
+use App\Models\Inventory\ProductStock;
 use App\Models\Inventory\Warehouse;
 use App\Models\Sales\DeliveryOrder;
 use App\Models\Sales\DeliveryOrderItem;
@@ -198,6 +200,38 @@ describe('State Transitions', function () {
             ]);
 
         $service->ship($do, [], $this->user->id);
+    });
+
+    test('refuses to ship stock reserved for another work order', function () {
+        ProductStock::factory()->create([
+            'product_id' => $this->product->id,
+            'warehouse_id' => $this->warehouse->id,
+            'quantity' => 100,
+            'reserved_quantity' => 90,
+            'average_cost' => 100000,
+        ]);
+
+        $do = DeliveryOrder::factory()
+            ->has(DeliveryOrderItem::factory()->state([
+                'product_id' => $this->product->id,
+                'quantity' => 20,
+            ]), 'items')
+            ->create([
+                'status' => DocumentStatus::Confirmed,
+                'warehouse_id' => $this->warehouse->id,
+            ]);
+
+        expect(fn () => $this->service->ship($do, [], $this->user->id))
+            ->toThrow(InsufficientStockException::class);
+
+        $stock = ProductStock::where('product_id', $this->product->id)
+            ->where('warehouse_id', $this->warehouse->id)
+            ->first();
+
+        expect($stock->quantity)->toBe(100)
+            ->and($stock->reserved_quantity)->toBe(90);
+
+        expect($do->fresh()->status)->toBe(DocumentStatus::Confirmed);
     });
 
     test('delivers shipped delivery order', function () {
