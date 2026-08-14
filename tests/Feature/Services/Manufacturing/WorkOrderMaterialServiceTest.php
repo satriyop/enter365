@@ -200,6 +200,23 @@ describe('reserveMaterials', function () {
         expect(fn () => $this->service->reserveMaterials($wo))
             ->toThrow(BusinessRuleException::class);
     });
+
+    test('throws when warehouse is missing', function () {
+        $wo = WorkOrder::factory()->create([
+            'warehouse_id' => null,
+        ]);
+
+        WorkOrderItem::factory()->create([
+            'work_order_id' => $wo->id,
+            'type' => WorkOrderItem::TYPE_MATERIAL,
+            'product_id' => $this->product->id,
+            'quantity_required' => 10,
+            'quantity_reserved' => 0,
+        ]);
+
+        expect(fn () => $this->service->reserveMaterials($wo))
+            ->toThrow(BusinessRuleException::class);
+    });
 });
 
 describe('releaseMaterials', function () {
@@ -280,7 +297,7 @@ describe('consumeMaterials', function () {
 
         expect($movement)->not->toBeNull()
             ->and($movement->type)->toBe(InventoryMovement::TYPE_OUT)
-            ->and($movement->quantity)->toBe(10)
+            ->and($movement->quantity)->toBe(-10)
             ->and($movement->product_id)->toBe($this->product->id);
 
         // Verify WO item updated
@@ -295,6 +312,59 @@ describe('consumeMaterials', function () {
         expect($consumption)->not->toBeNull()
             ->and((float) $consumption->quantity_consumed)->toEqual(10.0)
             ->and((int) $consumption->total_cost)->toBe(1500000);
+    });
+
+    test('does not double-deduct stock already issued via material requisition', function () {
+        $wo = WorkOrder::factory()->create([
+            'warehouse_id' => $this->warehouse->id,
+            'wo_number' => 'WO-RESIDUAL-001',
+        ]);
+
+        WorkOrderItem::factory()->create([
+            'work_order_id' => $wo->id,
+            'type' => WorkOrderItem::TYPE_MATERIAL,
+            'product_id' => $this->product->id,
+            'quantity_required' => 20,
+            'quantity_reserved' => 8,
+            'quantity_consumed' => 0,
+            'unit_cost' => 150000,
+        ]);
+
+        ProductStock::factory()->create([
+            'product_id' => $this->product->id,
+            'warehouse_id' => $this->warehouse->id,
+            'quantity' => 88,
+            'reserved_quantity' => 23,
+            'average_cost' => 150000,
+        ]);
+
+        $mr = \App\Models\Manufacturing\MaterialRequisition::factory()
+            ->withWarehouse($this->warehouse)
+            ->create(['work_order_id' => $wo->id]);
+
+        \App\Models\Manufacturing\MaterialRequisitionItem::factory()
+            ->forRequisition($mr)
+            ->create([
+                'product_id' => $this->product->id,
+                'quantity_requested' => 20,
+                'quantity_issued' => 12,
+            ]);
+
+        $this->service->consumeMaterials($wo->fresh(['items']));
+
+        $stock = ProductStock::where('product_id', $this->product->id)
+            ->where('warehouse_id', $this->warehouse->id)
+            ->first();
+
+        expect($stock->quantity)->toBe(80)
+            ->and($stock->reserved_quantity)->toBe(15);
+
+        $movements = InventoryMovement::where('reference_type', WorkOrder::class)
+            ->where('reference_id', $wo->id)
+            ->get();
+
+        expect($movements)->toHaveCount(1)
+            ->and($movements->first()->quantity)->toBe(-8);
     });
 });
 

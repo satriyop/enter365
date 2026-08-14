@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Services\Manufacturing;
 
 use App\Contracts\Events\EventDispatcherInterface;
+use App\Contracts\Inventory\InventoryServiceInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Domain\Manufacturing\WorkOrders\WorkOrderDomainFactory;
 use App\Enums\DocumentStatus;
-use App\Models\Inventory\InventoryMovement;
+use App\Exceptions\Domain\BusinessRuleException;
+use App\Exceptions\Domain\InsufficientStockException;
 use App\Models\Inventory\Product;
-use App\Models\Inventory\ProductStock;
+use App\Models\Inventory\Warehouse;
 use App\Models\Manufacturing\MaterialConsumption;
 use App\Models\Manufacturing\MaterialRequisitionItem;
 use App\Models\Manufacturing\WorkOrder;
@@ -30,6 +32,7 @@ class WorkOrderMaterialService extends BaseService
         ContextualLoggerInterface $logger,
         private AccountingPolicyManager $policyManager,
         private WorkOrderDomainFactory $domainFactory,
+        private InventoryServiceInterface $inventoryService,
     ) {
         parent::__construct($eventDispatcher, $logger);
     }
@@ -40,36 +43,31 @@ class WorkOrderMaterialService extends BaseService
     public function reserveMaterials(WorkOrder $wo): void
     {
         $this->executeInTransaction('reserve_materials', function () use ($wo) {
+            $warehouse = $this->resolveWarehouse($wo);
+
             foreach ($wo->materialItems as $item) {
                 if (! $item->product_id) {
                     continue;
                 }
 
-                $warehouseId = $wo->warehouse_id;
-
-                // Lock the stock row to prevent concurrent reservation
-                $stock = ProductStock::where('product_id', $item->product_id)
-                    ->where('warehouse_id', $warehouseId)
-                    ->lockForUpdate()
-                    ->first();
-
-                $availableQty = $stock
-                    ? $stock->quantity - $stock->reserved_quantity
-                    : 0;
-
-                if ($availableQty < (int) $item->quantity_required) {
-                    $product = $item->product;
-                    throw \App\Exceptions\Domain\BusinessRuleException::insufficientStock(
-                        $product->name,
-                        (float) $item->quantity_required,
-                        $availableQty
+                $product = $item->product ?? Product::query()->find($item->product_id);
+                if ($product === null || $warehouse === null) {
+                    throw BusinessRuleException::operationNotAllowed(
+                        'reservasi material',
+                        'Produk atau gudang tidak ditemukan',
                     );
                 }
 
-                // Reserve the stock
-                if ($stock) {
-                    $stock->reserved_quantity = $stock->reserved_quantity + (int) $item->quantity_required;
-                    $stock->save();
+                $qty = (int) ceil((float) $item->quantity_required);
+
+                try {
+                    $this->inventoryService->reserve($product, $warehouse, $qty);
+                } catch (InsufficientStockException $e) {
+                    throw BusinessRuleException::insufficientStock(
+                        $product->name,
+                        (float) $qty,
+                        (float) ($e->getContext()['available'] ?? 0),
+                    );
                 }
 
                 $item->quantity_reserved = $item->quantity_required;
@@ -84,21 +82,26 @@ class WorkOrderMaterialService extends BaseService
     public function releaseMaterials(WorkOrder $wo): void
     {
         $this->executeInTransaction('release_materials', function () use ($wo) {
+            $warehouse = $this->resolveWarehouse($wo);
+
             foreach ($wo->materialItems as $item) {
                 if (! $item->product_id || $item->quantity_reserved <= 0) {
                     continue;
                 }
 
-                // Lock the stock row to prevent concurrent modification
-                $stock = ProductStock::where('product_id', $item->product_id)
-                    ->where('warehouse_id', $wo->warehouse_id)
-                    ->lockForUpdate()
-                    ->first();
-
-                if ($stock) {
-                    $stock->reserved_quantity = max(0, $stock->reserved_quantity - (int) $item->quantity_reserved);
-                    $stock->save();
+                $product = $item->product ?? Product::query()->find($item->product_id);
+                if ($product === null || $warehouse === null) {
+                    throw BusinessRuleException::operationNotAllowed(
+                        'pelepasan reservasi material',
+                        'Produk atau gudang tidak ditemukan',
+                    );
                 }
+
+                $this->inventoryService->release(
+                    $product,
+                    $warehouse,
+                    (int) ceil((float) $item->quantity_reserved),
+                );
 
                 $item->quantity_reserved = 0;
                 $item->save();
@@ -116,6 +119,7 @@ class WorkOrderMaterialService extends BaseService
     {
         $this->executeInTransaction('consume_materials', function () use ($wo) {
             $wo->loadMissing(['materialItems.product']);
+            $warehouse = $this->resolveWarehouse($wo);
             $strategy = $this->policyManager->manufacturing();
 
             foreach ($wo->materialItems as $item) {
@@ -123,46 +127,41 @@ class WorkOrderMaterialService extends BaseService
                     continue;
                 }
 
-                $required = (int) $item->quantity_required;
+                $required = (int) ceil((float) $item->quantity_required);
                 // Materials already issued via MR must not be deducted again from stock
                 $alreadyIssued = $this->quantityIssuedViaMaterialRequisitions($wo, (int) $item->product_id);
                 $quantityToConsume = max(0, $required - (int) floor($alreadyIssued));
                 $remainingForCost = max(0.0, $item->getRemainingQuantity());
-                $unitCost = (int) ($item->unit_cost ?: ($item->product?->purchase_price ?? 0));
 
-                // Lock the stock row to prevent concurrent modification
-                $stock = ProductStock::where('product_id', $item->product_id)
-                    ->where('warehouse_id', $wo->warehouse_id)
-                    ->lockForUpdate()
-                    ->first();
+                $product = $item->product ?? Product::query()->find($item->product_id);
+                if ($product === null) {
+                    continue;
+                }
 
-                if ($stock) {
-                    // Always release remaining reservation
-                    $stock->reserved_quantity = max(0, $stock->reserved_quantity - (int) $item->quantity_reserved);
+                $unitCost = (int) ($item->unit_cost ?: ($product->purchase_price ?? 0));
 
-                    if ($quantityToConsume > 0) {
-                        $stock->quantity = max(0, $stock->quantity - $quantityToConsume);
-                        $stock->total_value = $stock->quantity * $stock->average_cost;
-                        $stock->save();
+                $reserved = (int) ceil((float) $item->quantity_reserved);
 
-                        InventoryMovement::create([
-                            'movement_number' => InventoryMovement::generateMovementNumber(InventoryMovement::TYPE_OUT),
-                            'product_id' => $item->product_id,
-                            'warehouse_id' => $wo->warehouse_id,
-                            'type' => InventoryMovement::TYPE_OUT,
-                            'quantity' => $quantityToConsume,
-                            'quantity_before' => $stock->quantity + $quantityToConsume,
-                            'quantity_after' => $stock->quantity,
-                            'unit_cost' => $unitCost,
-                            'total_cost' => (int) round($quantityToConsume * $unitCost),
-                            'reference_type' => WorkOrder::class,
-                            'reference_id' => $wo->id,
-                            'notes' => "Konsumsi untuk WO: {$wo->wo_number}",
-                            'movement_date' => now(),
-                        ]);
-                    } else {
-                        $stock->total_value = $stock->quantity * $stock->average_cost;
-                        $stock->save();
+                if ($warehouse !== null && $reserved > 0) {
+                    $this->inventoryService->release($product, $warehouse, $reserved);
+                }
+
+                if ($warehouse !== null && $quantityToConsume > 0) {
+                    try {
+                        $this->inventoryService->stockOut(
+                            $product,
+                            $warehouse,
+                            $quantityToConsume,
+                            "Konsumsi untuk WO: {$wo->wo_number}",
+                            WorkOrder::class,
+                            $wo->id,
+                        );
+                    } catch (InsufficientStockException $e) {
+                        throw BusinessRuleException::insufficientStock(
+                            $product->name,
+                            (float) $quantityToConsume,
+                            (float) ($e->getContext()['available'] ?? 0),
+                        );
                     }
                 }
 
@@ -174,7 +173,7 @@ class WorkOrderMaterialService extends BaseService
                         'product_id' => $item->product_id,
                         'quantity_consumed' => $remainingForCost,
                         'quantity_scrapped' => 0,
-                        'unit' => $item->unit ?? $item->product?->unit ?? 'pcs',
+                        'unit' => $item->unit ?? $product->unit ?? 'pcs',
                         'unit_cost' => $unitCost,
                         'consumed_date' => now(),
                         'consumed_by' => $this->getUserId(),
@@ -195,6 +194,11 @@ class WorkOrderMaterialService extends BaseService
                 $item->save();
             }
         }, ['work_order_id' => $wo->id]);
+    }
+
+    private function resolveWarehouse(WorkOrder $wo): ?Warehouse
+    {
+        return $wo->warehouse ?? Warehouse::query()->find($wo->warehouse_id);
     }
 
     /**

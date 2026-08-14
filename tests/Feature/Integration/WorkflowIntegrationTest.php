@@ -238,7 +238,7 @@ describe('Manufacturing Workflow: Work Order lifecycle', function () {
             ->first();
         expect($movement)->not->toBeNull()
             ->and($movement->type)->toBe(InventoryMovement::TYPE_OUT)
-            ->and($movement->quantity)->toBe(10);
+            ->and($movement->quantity)->toBe(-10);
     });
 });
 
