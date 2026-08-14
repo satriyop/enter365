@@ -209,7 +209,10 @@ class MaterialRequisitionService extends BaseService implements MaterialRequisit
         $warehouse = $mr->warehouse ?? Warehouse::query()->find($mr->warehouse_id);
 
         if ($product === null || $warehouse === null) {
-            return;
+            throw BusinessRuleException::operationNotAllowed(
+                'mengeluarkan item',
+                'Produk atau gudang tidak ditemukan'
+            );
         }
 
         $woItem = $mrItem->work_order_item_id
