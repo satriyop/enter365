@@ -85,8 +85,69 @@ class InventoryService extends BaseService implements InventoryServiceInterface
         }, ['product_id' => $product->id, 'warehouse_id' => $warehouse->id, 'quantity' => $quantity]);
     }
 
+    public function reserve(Product $product, Warehouse $warehouse, int $quantity): void
+    {
+        if ($quantity <= 0) {
+            return;
+        }
+
+        $this->executeInTransaction('reserve', function () use ($product, $warehouse, $quantity) {
+            $stock = ProductStock::lockForStock($product, $warehouse);
+            $available = $stock->getAvailableQuantity();
+
+            if ($available < $quantity) {
+                throw InsufficientStockException::forProduct(
+                    $product,
+                    $quantity,
+                    $available,
+                    $warehouse
+                );
+            }
+
+            $stock->reserved_quantity = (int) $stock->reserved_quantity + $quantity;
+            $stock->save();
+        }, ['product_id' => $product->id, 'warehouse_id' => $warehouse->id, 'quantity' => $quantity]);
+    }
+
+    public function release(Product $product, Warehouse $warehouse, int $quantity): void
+    {
+        if ($quantity <= 0) {
+            return;
+        }
+
+        $this->executeInTransaction('release', function () use ($product, $warehouse, $quantity) {
+            $stock = ProductStock::lockForStock($product, $warehouse);
+            $stock->reserved_quantity = max(0, (int) $stock->reserved_quantity - $quantity);
+            $stock->save();
+        }, ['product_id' => $product->id, 'warehouse_id' => $warehouse->id, 'quantity' => $quantity]);
+    }
+
+    public function issueAgainstReservation(
+        Product $product,
+        Warehouse $warehouse,
+        int $quantity,
+        int $reservedToConsume,
+        ?string $notes = null,
+        ?string $referenceType = null,
+        ?int $referenceId = null,
+    ): InventoryMovement {
+        return $this->executeInTransaction('issue_against_reservation', function () use ($product, $warehouse, $quantity, $reservedToConsume, $notes, $referenceType, $referenceId) {
+            $stock = ProductStock::lockForStock($product, $warehouse);
+
+            $consumeReserved = min(
+                max(0, $reservedToConsume),
+                max(0, (int) $stock->reserved_quantity),
+                max(0, $quantity),
+            );
+            $stock->reserved_quantity = max(0, (int) $stock->reserved_quantity - $consumeReserved);
+            $stock->save();
+
+            return $this->stockOut($product, $warehouse, $quantity, $notes, $referenceType, $referenceId);
+        }, ['product_id' => $product->id, 'warehouse_id' => $warehouse->id, 'quantity' => $quantity]);
+    }
+
     /**
-     * Record stock out (sale/delivery).
+     * Record stock out (sale/delivery). Free stock only.
      */
     public function stockOut(
         Product $product,
@@ -98,12 +159,13 @@ class InventoryService extends BaseService implements InventoryServiceInterface
     ): InventoryMovement {
         return $this->executeInTransaction('stock_out', function () use ($product, $warehouse, $quantity, $notes, $referenceType, $referenceId) {
             $stock = ProductStock::lockForStock($product, $warehouse);
+            $available = $stock->getAvailableQuantity();
 
-            if ($stock->quantity < $quantity) {
+            if ($available < $quantity) {
                 throw InsufficientStockException::forProduct(
                     $product,
                     $quantity,
-                    $stock->quantity,
+                    $available,
                     $warehouse
                 );
             }

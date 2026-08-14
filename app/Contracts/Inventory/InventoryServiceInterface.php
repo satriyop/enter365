@@ -33,7 +33,32 @@ interface InventoryServiceInterface
     ): InventoryMovement;
 
     /**
-     * Record stock out (sale/delivery).
+     * Reserve on-hand stock (reduces free stock; on-hand unchanged).
+     */
+    public function reserve(Product $product, Warehouse $warehouse, int $quantity): void;
+
+    /**
+     * Release reserved stock (never below zero; on-hand unchanged).
+     */
+    public function release(Product $product, Warehouse $warehouse, int $quantity): void;
+
+    /**
+     * Issue stock, consuming up to $reservedToConsume of reserved quantity first.
+     *
+     * Remaining reserved (other owners) stays protected. Free-stock-only after release.
+     */
+    public function issueAgainstReservation(
+        Product $product,
+        Warehouse $warehouse,
+        int $quantity,
+        int $reservedToConsume,
+        ?string $notes = null,
+        ?string $referenceType = null,
+        ?int $referenceId = null,
+    ): InventoryMovement;
+
+    /**
+     * Record stock out (sale/delivery). Free stock only; cannot consume reserved.
      */
     public function stockOut(
         Product $product,

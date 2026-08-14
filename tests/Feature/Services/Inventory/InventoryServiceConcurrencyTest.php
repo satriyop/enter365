@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Contracts\Inventory\InventoryServiceInterface;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\ProductStock;
 use App\Models\Inventory\Warehouse;
 use App\Models\User;
-use App\Services\Inventory\InventoryService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 
@@ -15,7 +15,7 @@ uses(RefreshDatabase::class);
 beforeEach(function () {
     $this->user = User::factory()->create();
     $this->actingAs($this->user);
-    $this->service = app(InventoryService::class);
+    $this->service = app(InventoryServiceInterface::class);
     $this->warehouse = Warehouse::factory()->create();
     $this->product = Product::factory()->create(['track_inventory' => true]);
 });
@@ -133,5 +133,33 @@ describe('InventoryService concurrency safety', function () {
             expect($stock->quantity)->toBe(50)
                 ->and($stock->average_cost)->toBe(10000);
         });
+    });
+
+    it('applies sequential reserves so the second sees reduced free stock', function () {
+        $this->service->stockIn($this->product, $this->warehouse, 100, 10000);
+        $this->service->reserve($this->product, $this->warehouse, 40);
+        $this->service->reserve($this->product, $this->warehouse, 35);
+
+        $stock = ProductStock::where('product_id', $this->product->id)
+            ->where('warehouse_id', $this->warehouse->id)
+            ->first();
+
+        expect($stock->reserved_quantity)->toBe(75)
+            ->and($stock->getAvailableQuantity())->toBe(25);
+    });
+
+    it('keeps on-hand and reserved consistent after sequential reserve then issue', function () {
+        $this->service->stockIn($this->product, $this->warehouse, 80, 10000);
+        $this->service->reserve($this->product, $this->warehouse, 50);
+        $this->service->issueAgainstReservation($this->product, $this->warehouse, 20, 20);
+        $this->service->issueAgainstReservation($this->product, $this->warehouse, 15, 15);
+
+        $stock = ProductStock::where('product_id', $this->product->id)
+            ->where('warehouse_id', $this->warehouse->id)
+            ->first();
+
+        expect($stock->quantity)->toBe(45)
+            ->and($stock->reserved_quantity)->toBe(15)
+            ->and($stock->getAvailableQuantity())->toBe(30);
     });
 });
