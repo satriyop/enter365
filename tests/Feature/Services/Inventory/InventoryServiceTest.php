@@ -120,6 +120,35 @@ describe('InventoryService stock movements', function () {
         expect($sourceStock->quantity)->toBe(60);
         expect($destStock->quantity)->toBe(40);
     });
+
+    it('records production receipt with production movement type and syncs current stock', function () {
+        $movement = $this->service->stockIn(
+            $this->product,
+            $this->warehouse,
+            8,
+            25000,
+            'Hasil produksi WO #WO-1',
+            'App\\Models\\Manufacturing\\WorkOrder',
+            99,
+            InventoryMovement::TYPE_PRODUCTION,
+        );
+
+        expect($movement->type)->toBe(InventoryMovement::TYPE_PRODUCTION)
+            ->and($movement->quantity)->toBe(8)
+            ->and($movement->unit_cost)->toBe(25000)
+            ->and($movement->total_cost)->toBe(200000)
+            ->and($movement->reference_id)->toBe(99);
+
+        $stock = ProductStock::where('product_id', $this->product->id)
+            ->where('warehouse_id', $this->warehouse->id)
+            ->first();
+
+        expect($stock->quantity)->toBe(8)
+            ->and($stock->average_cost)->toBe(25000);
+
+        $this->product->refresh();
+        expect($this->product->current_stock)->toBe(8);
+    });
 });
 
 describe('InventoryService reporting', function () {

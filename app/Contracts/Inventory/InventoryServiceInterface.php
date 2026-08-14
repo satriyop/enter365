@@ -17,7 +17,9 @@ use Illuminate\Support\Collection;
 interface InventoryServiceInterface
 {
     /**
-     * Record stock in (purchase/receiving).
+     * Record stock in (purchase/receiving/production receipt).
+     *
+     * @param  string  $type  Movement type; defaults to incoming. Use production for finished goods.
      */
     public function stockIn(
         Product $product,
@@ -26,7 +28,8 @@ interface InventoryServiceInterface
         int $unitCost,
         ?string $notes = null,
         ?string $referenceType = null,
-        ?int $referenceId = null
+        ?int $referenceId = null,
+        string $type = InventoryMovement::TYPE_IN,
     ): InventoryMovement;
 
     /**

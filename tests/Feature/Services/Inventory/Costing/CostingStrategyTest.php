@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\Accounting\AccountingPolicy;
 use App\Models\Inventory\InventoryCostLayer;
+use App\Models\Inventory\InventoryMovement;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\ProductStock;
 use App\Models\Inventory\Warehouse;
@@ -176,6 +177,33 @@ describe('InventoryService with FIFO policy', function () {
             ->where('warehouse_id', $warehouse->id)
             ->first();
         expect($stock->quantity)->toBe(150);
+    });
+
+    it('creates cost layers for production receipt', function () {
+        $product = Product::factory()->create(['track_inventory' => true, 'purchase_price' => 10000]);
+        $warehouse = Warehouse::factory()->create();
+
+        /** @var InventoryService $service */
+        $service = app(InventoryService::class);
+
+        $service->stockIn(
+            $product,
+            $warehouse,
+            20,
+            18000,
+            'Hasil produksi',
+            null,
+            null,
+            InventoryMovement::TYPE_PRODUCTION,
+        );
+
+        $layers = InventoryCostLayer::where('product_id', $product->id)
+            ->where('warehouse_id', $warehouse->id)
+            ->get();
+
+        expect($layers)->toHaveCount(1)
+            ->and($layers[0]->quantity)->toBe(20)
+            ->and($layers[0]->unit_cost)->toBe(18000);
     });
 
     it('uses FIFO cost on stockOut', function () {

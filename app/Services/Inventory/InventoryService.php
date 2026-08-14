@@ -33,7 +33,7 @@ class InventoryService extends BaseService implements InventoryServiceInterface
     }
 
     /**
-     * Record stock in (purchase/receiving).
+     * Record stock in (purchase/receiving/production receipt).
      */
     public function stockIn(
         Product $product,
@@ -42,9 +42,10 @@ class InventoryService extends BaseService implements InventoryServiceInterface
         int $unitCost,
         ?string $notes = null,
         ?string $referenceType = null,
-        ?int $referenceId = null
+        ?int $referenceId = null,
+        string $type = InventoryMovement::TYPE_IN,
     ): InventoryMovement {
-        return $this->executeInTransaction('stock_in', function () use ($product, $warehouse, $quantity, $unitCost, $notes, $referenceType, $referenceId) {
+        return $this->executeInTransaction('stock_in', function () use ($product, $warehouse, $quantity, $unitCost, $notes, $referenceType, $referenceId, $type) {
             $stock = ProductStock::lockForStock($product, $warehouse);
             $quantityBefore = $stock->quantity;
 
@@ -53,10 +54,10 @@ class InventoryService extends BaseService implements InventoryServiceInterface
 
             // Create movement record
             $movement = InventoryMovement::create([
-                'movement_number' => InventoryMovement::generateMovementNumber(InventoryMovement::TYPE_IN),
+                'movement_number' => InventoryMovement::generateMovementNumber($type),
                 'product_id' => $product->id,
                 'warehouse_id' => $warehouse->id,
-                'type' => InventoryMovement::TYPE_IN,
+                'type' => $type,
                 'quantity' => $quantity,
                 'quantity_before' => $quantityBefore,
                 'quantity_after' => $stock->quantity,

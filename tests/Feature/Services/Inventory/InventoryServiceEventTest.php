@@ -6,6 +6,7 @@ use App\Domain\Inventory\Movements\Events\InventoryAdjusted;
 use App\Domain\Inventory\Movements\Events\InventoryIssued;
 use App\Domain\Inventory\Movements\Events\InventoryReceived;
 use App\Domain\Inventory\Movements\Events\InventoryTransferred;
+use App\Models\Inventory\InventoryMovement;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\Warehouse;
 use App\Models\User;
@@ -33,6 +34,26 @@ describe('InventoryService event dispatching', function () {
             return $event->productId === $this->product->id
                 && $event->warehouseId === $this->warehouse->id
                 && $event->quantity === 100.0;
+        });
+    });
+
+    it('dispatches InventoryReceived on production receipt', function () {
+        Event::fake([InventoryReceived::class]);
+
+        $this->service->stockIn(
+            $this->product,
+            $this->warehouse,
+            5,
+            20000,
+            'Hasil produksi',
+            null,
+            null,
+            InventoryMovement::TYPE_PRODUCTION,
+        );
+
+        Event::assertDispatched(InventoryReceived::class, function (InventoryReceived $event) {
+            return $event->productId === $this->product->id
+                && $event->quantity === 5.0;
         });
     });
 

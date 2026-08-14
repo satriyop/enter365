@@ -4,25 +4,26 @@ declare(strict_types=1);
 
 namespace App\Domain\Manufacturing\WorkOrders\Handlers;
 
-use App\Domain\Inventory\Movements\MovementRecorder;
+use App\Contracts\Inventory\InventoryServiceInterface;
 use App\Domain\Manufacturing\WorkOrders\WorkOrderDomainFactory;
 use App\Models\Inventory\InventoryMovement;
+use App\Models\Inventory\Product;
+use App\Models\Inventory\Warehouse;
 use App\Models\Manufacturing\WorkOrder;
 
 /**
  * Handles finished goods inventory when a work order is completed.
  *
  * This handler:
- * - Receives finished goods into inventory
+ * - Receives finished goods via the inventory stock-mutation seam
  * - Calculates unit cost based on actual production costs
- * - Creates inventory movement records
  *
  * Priority: 20 (runs after materials are consumed, before cost calculation)
  */
 class FinishedGoodsHandler implements CompletionHandlerInterface
 {
     public function __construct(
-        private MovementRecorder $movementRecorder,
+        private InventoryServiceInterface $inventoryService,
         private WorkOrderDomainFactory $domainFactory,
     ) {}
 
@@ -34,18 +35,24 @@ class FinishedGoodsHandler implements CompletionHandlerInterface
             return;
         }
 
+        $product = $workOrder->product ?? Product::query()->find($workOrder->product_id);
+        $warehouse = $workOrder->warehouse ?? Warehouse::query()->find($workOrder->warehouse_id);
+
+        if ($product === null || $warehouse === null) {
+            return;
+        }
+
         $unitCost = $this->calculateUnitCost($workOrder, $quantityProduced);
 
-        $this->movementRecorder->recordReceipt(
-            productId: $workOrder->product_id,
-            warehouseId: $workOrder->warehouse_id,
-            quantity: $quantityProduced,
-            unitCost: $unitCost,
-            type: InventoryMovement::TYPE_PRODUCTION,
-            notes: "Hasil produksi WO #{$workOrder->wo_number}",
-            referenceType: WorkOrder::class,
-            referenceId: $workOrder->id,
-            userId: $userId
+        $this->inventoryService->stockIn(
+            $product,
+            $warehouse,
+            $quantityProduced,
+            $unitCost,
+            "Hasil produksi WO #{$workOrder->wo_number}",
+            WorkOrder::class,
+            $workOrder->id,
+            InventoryMovement::TYPE_PRODUCTION,
         );
     }
 

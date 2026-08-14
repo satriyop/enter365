@@ -78,7 +78,11 @@ test('complete receives finished goods stock and production movement', function 
         ->first();
 
     expect($fgStock)->not->toBeNull()
-        ->and($fgStock->quantity)->toBe($qtyOrdered);
+        ->and($fgStock->quantity)->toBe($qtyOrdered)
+        ->and($fgStock->average_cost)->toBe(40000);
+
+    $this->finishedProduct->refresh();
+    expect($this->finishedProduct->current_stock)->toBe($qtyOrdered);
 
     $fgMovement = InventoryMovement::where('reference_type', WorkOrder::class)
         ->where('reference_id', $completed->id)
@@ -88,7 +92,8 @@ test('complete receives finished goods stock and production movement', function 
     expect($fgMovement)->not->toBeNull()
         ->and($fgMovement->type)->toBe(InventoryMovement::TYPE_PRODUCTION)
         ->and($fgMovement->quantity)->toBe($qtyOrdered)
-        ->and($fgMovement->quantity_after)->toBe($qtyOrdered);
+        ->and($fgMovement->quantity_after)->toBe($qtyOrdered)
+        ->and($fgMovement->unit_cost)->toBe(40000);
 
     $rawStock = ProductStock::where('product_id', $this->rawMaterial->id)
         ->where('warehouse_id', $this->warehouse->id)

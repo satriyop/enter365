@@ -109,6 +109,7 @@ class InventoryMovement extends Model
             self::TYPE_ADJUSTMENT => 'Penyesuaian',
             self::TYPE_TRANSFER_IN => 'Transfer Masuk',
             self::TYPE_TRANSFER_OUT => 'Transfer Keluar',
+            self::TYPE_PRODUCTION => 'Produksi',
             default => $this->type,
         };
     }
@@ -118,7 +119,7 @@ class InventoryMovement extends Model
      */
     public function isIncoming(): bool
     {
-        return in_array($this->type, [self::TYPE_IN, self::TYPE_TRANSFER_IN]);
+        return in_array($this->type, [self::TYPE_IN, self::TYPE_TRANSFER_IN, self::TYPE_PRODUCTION]);
     }
 
     /**
