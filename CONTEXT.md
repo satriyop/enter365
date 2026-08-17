@@ -33,3 +33,13 @@ _Avoid_: Force issue, override reserved
 **Production receipt**:
 Inbound stock mutation of finished goods from a completed work order, at a unit cost determined by manufacturing.
 _Avoid_: FG stock-in as a separate business concept from stock mutation
+
+### Accounting
+
+**Budget**:
+A fiscal-period planning document of revenue and expense lines. Status is draft, approved, or closed.
+_Avoid_: Project cost plan, stock reservation
+
+**Budget lifecycle**:
+The write path that creates, edits, approves, reopens, closes, copies, or deletes a budget and its lines.
+_Avoid_: Budget report (comparison / over-budget is read-only)

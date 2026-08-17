@@ -134,7 +134,7 @@ describe('Budget CRUD', function () {
             'name' => 'Updated Name',
         ]);
 
-        $response->assertStatus(422)
+        $response->assertStatus(409)
             ->assertJsonPath('message', 'Anggaran yang sudah disetujui atau ditutup tidak bisa diubah.');
     });
 
@@ -152,7 +152,7 @@ describe('Budget CRUD', function () {
 
         $response = $this->deleteJson("/api/v1/budgets/{$budget->id}");
 
-        $response->assertStatus(422);
+        $response->assertStatus(409);
     });
 });
 
@@ -211,7 +211,7 @@ describe('Budget Lines', function () {
             'annual_amount' => 12000000,
         ]);
 
-        $response->assertStatus(422)
+        $response->assertStatus(409)
             ->assertJsonPath('message', 'Akun sudah ada dalam anggaran ini.');
     });
 
@@ -262,7 +262,7 @@ describe('Budget Lines', function () {
             'annual_amount' => 12000000,
         ]);
 
-        $response->assertStatus(422);
+        $response->assertStatus(409);
     });
 });
 
@@ -285,7 +285,7 @@ describe('Budget Workflow', function () {
 
         $response = $this->postJson("/api/v1/budgets/{$budget->id}/approve");
 
-        $response->assertStatus(422)
+        $response->assertStatus(409)
             ->assertJsonPath('message', 'Anggaran harus memiliki minimal satu baris.');
     });
 
@@ -294,7 +294,7 @@ describe('Budget Workflow', function () {
 
         $response = $this->postJson("/api/v1/budgets/{$budget->id}/approve");
 
-        $response->assertStatus(422);
+        $response->assertStatus(409);
     });
 
     it('can reopen an approved budget', function () {
@@ -311,7 +311,7 @@ describe('Budget Workflow', function () {
 
         $response = $this->postJson("/api/v1/budgets/{$budget->id}/reopen");
 
-        $response->assertStatus(422);
+        $response->assertStatus(409);
     });
 
     it('can close an approved budget', function () {
@@ -328,7 +328,7 @@ describe('Budget Workflow', function () {
 
         $response = $this->postJson("/api/v1/budgets/{$budget->id}/close");
 
-        $response->assertStatus(422);
+        $response->assertStatus(409);
     });
 
     it('can copy a budget to new period', function () {
@@ -357,7 +357,7 @@ describe('Budget Workflow', function () {
             'fiscal_period_id' => $existingPeriod->id,
         ]);
 
-        $response->assertStatus(422)
+        $response->assertStatus(409)
             ->assertJsonPath('message', 'Sudah ada anggaran untuk periode ini.');
     });
 });

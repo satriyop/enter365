@@ -24,6 +24,18 @@ interface BudgetServiceInterface
     public function createBudget(array $data, array $lines = []): Budget;
 
     /**
+     * Update a draft budget header.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function updateBudget(Budget $budget, array $data): Budget;
+
+    /**
+     * Soft-delete a draft budget and its lines.
+     */
+    public function deleteBudget(Budget $budget): void;
+
+    /**
      * Add a line item to a budget.
      *
      * @param  array<string, mixed>  $data
@@ -35,7 +47,27 @@ interface BudgetServiceInterface
      *
      * @param  array<string, mixed>  $data
      */
-    public function updateBudgetLine(BudgetLine $line, array $data): BudgetLine;
+    public function updateBudgetLine(Budget $budget, BudgetLine $line, array $data): BudgetLine;
+
+    /**
+     * Delete a budget line and recalculate totals.
+     */
+    public function deleteBudgetLine(Budget $budget, BudgetLine $line): void;
+
+    /**
+     * Approve a draft budget that has at least one line.
+     */
+    public function approve(Budget $budget): Budget;
+
+    /**
+     * Reopen an approved budget back to draft.
+     */
+    public function reopen(Budget $budget): Budget;
+
+    /**
+     * Close an approved budget.
+     */
+    public function close(Budget $budget): Budget;
 
     /**
      * Get budget vs actual comparison.

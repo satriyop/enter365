@@ -8,12 +8,15 @@ use App\Contracts\Accounting\BudgetServiceInterface;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Enums\BudgetStatus;
+use App\Exceptions\Domain\BusinessRuleException;
+use App\Exceptions\Domain\EntityNotFoundException;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\Budget;
 use App\Models\Accounting\BudgetLine;
 use App\Models\Accounting\FiscalPeriod;
 use App\Models\Accounting\JournalEntryLine;
 use App\Services\Base\BaseService;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 
 class BudgetService extends BaseService implements BudgetServiceInterface
@@ -34,7 +37,10 @@ class BudgetService extends BaseService implements BudgetServiceInterface
     public function createBudget(array $data, array $lines = []): Budget
     {
         return $this->executeInTransaction('create_budget', function () use ($data, $lines) {
-            $budget = Budget::create($data);
+            $budget = new Budget;
+            $budget->fill($data);
+            $budget->status = BudgetStatus::Draft->value;
+            $budget->save();
 
             foreach ($lines as $lineData) {
                 $this->addBudgetLine($budget, $lineData);
@@ -47,25 +53,57 @@ class BudgetService extends BaseService implements BudgetServiceInterface
     }
 
     /**
+     * @param  array<string, mixed>  $data
+     */
+    public function updateBudget(Budget $budget, array $data): Budget
+    {
+        return $this->executeInTransaction('update_budget', function () use ($budget, $data) {
+            $this->assertDraftEditable($budget, 'Anggaran yang sudah disetujui atau ditutup tidak bisa diubah.');
+
+            $budget->update(Arr::only($data, ['name', 'description', 'type', 'notes']));
+
+            return $budget->fresh(['lines.account', 'fiscalPeriod']);
+        }, ['budget_id' => $budget->id]);
+    }
+
+    public function deleteBudget(Budget $budget): void
+    {
+        $this->executeInTransaction('delete_budget', function () use ($budget) {
+            $this->assertDraftEditable($budget, 'Anggaran yang sudah disetujui atau ditutup tidak bisa dihapus.');
+
+            $budget->lines()->delete();
+            $budget->delete();
+        }, ['budget_id' => $budget->id]);
+    }
+
+    /**
      * Add a budget line.
      *
      * @param  array<string, mixed>  $data
      */
     public function addBudgetLine(Budget $budget, array $data): BudgetLine
     {
-        $line = new BudgetLine($data);
-        $line->budget_id = $budget->id;
+        return $this->executeInTransaction('add_budget_line', function () use ($budget, $data) {
+            $this->assertDraftEditable($budget, 'Anggaran yang sudah disetujui tidak bisa diubah.');
 
-        // If annual_amount is provided but no monthly amounts, distribute evenly
-        if (isset($data['annual_amount']) && ! isset($data['jan_amount'])) {
-            $line->distributeEvenly($data['annual_amount']);
-        } else {
-            $line->recalculateAnnual();
-        }
+            if (isset($data['account_id']) && $budget->lines()->where('account_id', $data['account_id'])->exists()) {
+                throw new BusinessRuleException('Akun sudah ada dalam anggaran ini.');
+            }
 
-        $line->save();
+            $line = new BudgetLine($data);
+            $line->budget_id = $budget->id;
 
-        return $line;
+            if (isset($data['annual_amount']) && ! isset($data['jan_amount'])) {
+                $line->distributeEvenly($data['annual_amount']);
+            } else {
+                $line->recalculateAnnual();
+            }
+
+            $line->save();
+            $budget->recalculateTotals();
+
+            return $line;
+        }, ['budget_id' => $budget->id]);
     }
 
     /**
@@ -73,29 +111,93 @@ class BudgetService extends BaseService implements BudgetServiceInterface
      *
      * @param  array<string, mixed>  $data
      */
-    public function updateBudgetLine(BudgetLine $line, array $data): BudgetLine
+    public function updateBudgetLine(Budget $budget, BudgetLine $line, array $data): BudgetLine
     {
-        $line->fill($data);
+        return $this->executeInTransaction('update_budget_line', function () use ($budget, $line, $data) {
+            $this->assertLineBelongsToBudget($budget, $line);
+            $this->assertDraftEditable($budget, 'Anggaran yang sudah disetujui tidak bisa diubah.');
 
-        // Recalculate annual if monthly amounts changed
-        if (isset($data['jan_amount']) || isset($data['feb_amount']) || isset($data['mar_amount']) ||
-            isset($data['apr_amount']) || isset($data['may_amount']) || isset($data['jun_amount']) ||
-            isset($data['jul_amount']) || isset($data['aug_amount']) || isset($data['sep_amount']) ||
-            isset($data['oct_amount']) || isset($data['nov_amount']) || isset($data['dec_amount'])) {
-            $line->recalculateAnnual();
-        }
+            $line->fill($data);
 
-        // If only annual_amount changed and user wants even distribution
-        if (isset($data['annual_amount']) && isset($data['distribute_evenly']) && $data['distribute_evenly']) {
-            $line->distributeEvenly($data['annual_amount']);
-        }
+            // Recalculate annual if monthly amounts changed
+            if (isset($data['jan_amount']) || isset($data['feb_amount']) || isset($data['mar_amount']) ||
+                isset($data['apr_amount']) || isset($data['may_amount']) || isset($data['jun_amount']) ||
+                isset($data['jul_amount']) || isset($data['aug_amount']) || isset($data['sep_amount']) ||
+                isset($data['oct_amount']) || isset($data['nov_amount']) || isset($data['dec_amount'])) {
+                $line->recalculateAnnual();
+            }
 
-        $line->save();
+            // If only annual_amount changed and user wants even distribution
+            if (isset($data['annual_amount']) && isset($data['distribute_evenly']) && $data['distribute_evenly']) {
+                $line->distributeEvenly($data['annual_amount']);
+            }
 
-        // Recalculate budget totals
-        $line->budget->recalculateTotals();
+            $line->save();
 
-        return $line->fresh('account');
+            $line->budget->recalculateTotals();
+
+            return $line->fresh('account');
+        }, ['budget_id' => $budget->id, 'line_id' => $line->id]);
+    }
+
+    public function deleteBudgetLine(Budget $budget, BudgetLine $line): void
+    {
+        $this->executeInTransaction('delete_budget_line', function () use ($budget, $line) {
+            $this->assertLineBelongsToBudget($budget, $line);
+            $this->assertDraftEditable($budget, 'Anggaran yang sudah disetujui tidak bisa diubah.');
+
+            $line->delete();
+            $budget->recalculateTotals();
+        }, ['budget_id' => $budget->id, 'line_id' => $line->id]);
+    }
+
+    public function approve(Budget $budget): Budget
+    {
+        return $this->executeInTransaction('approve_budget', function () use ($budget) {
+            $this->assertDraftEditable($budget, 'Anggaran ini sudah disetujui atau ditutup.');
+
+            if ($budget->lines()->count() === 0) {
+                throw new BusinessRuleException('Anggaran harus memiliki minimal satu baris.');
+            }
+
+            $budget->update([
+                'status' => BudgetStatus::Approved,
+                'approved_by' => $this->getUserId(),
+                'approved_at' => now(),
+            ]);
+
+            return $budget->fresh(['fiscalPeriod']);
+        }, ['budget_id' => $budget->id]);
+    }
+
+    public function reopen(Budget $budget): Budget
+    {
+        return $this->executeInTransaction('reopen_budget', function () use ($budget) {
+            if ($budget->isClosed()) {
+                throw new BusinessRuleException('Anggaran yang sudah ditutup tidak bisa dibuka kembali.');
+            }
+
+            $budget->update([
+                'status' => BudgetStatus::Draft,
+                'approved_by' => null,
+                'approved_at' => null,
+            ]);
+
+            return $budget->fresh(['fiscalPeriod']);
+        }, ['budget_id' => $budget->id]);
+    }
+
+    public function close(Budget $budget): Budget
+    {
+        return $this->executeInTransaction('close_budget', function () use ($budget) {
+            if (! $budget->isApproved()) {
+                throw new BusinessRuleException('Hanya anggaran yang sudah disetujui yang bisa ditutup.');
+            }
+
+            $budget->update(['status' => BudgetStatus::Closed]);
+
+            return $budget->fresh(['fiscalPeriod']);
+        }, ['budget_id' => $budget->id]);
     }
 
     /**
@@ -312,6 +414,10 @@ class BudgetService extends BaseService implements BudgetServiceInterface
     public function copyBudget(Budget $budget, FiscalPeriod $newPeriod, ?string $newName = null): Budget
     {
         return $this->executeInTransaction('copy_budget', function () use ($budget, $newPeriod, $newName) {
+            if (Budget::query()->where('fiscal_period_id', $newPeriod->id)->exists()) {
+                throw new BusinessRuleException('Sudah ada anggaran untuk periode ini.');
+            }
+
             $newBudget = Budget::create([
                 'name' => $newName ?? 'Anggaran '.$newPeriod->name,
                 'description' => $budget->description,
@@ -358,6 +464,20 @@ class BudgetService extends BaseService implements BudgetServiceInterface
         $comparison = $this->getBudgetVsActual($budget, $month);
 
         return $comparison->filter(fn ($item) => $item->is_over_budget);
+    }
+
+    private function assertDraftEditable(Budget $budget, string $message): void
+    {
+        if (! $budget->isEditable()) {
+            throw new BusinessRuleException($message);
+        }
+    }
+
+    private function assertLineBelongsToBudget(Budget $budget, BudgetLine $line): void
+    {
+        if ($line->budget_id !== $budget->id) {
+            throw new EntityNotFoundException('Baris anggaran', $line->id);
+        }
     }
 
     /**

@@ -27,7 +27,7 @@
 
 | Status | Count | Description |
 |--------|-------|-------------|
-| Accepted | 48 | Current active decisions |
+| Accepted | 50 | Current active decisions |
 | Proposed | 0 | Under discussion |
 | Deprecated | 0 | No longer recommended |
 | Superseded | 0 | Replaced by newer ADR |
@@ -124,6 +124,8 @@ Decisions about system-level architecture and operations.
 | 46 | [0046](./0046-recurring-documents.md) | Recurring Document Generation | Low | `domain`, `automation` |
 | 47 | [0047](./0047-dashboard-kpis.md) | Dashboard KPI Calculation | Low | `domain`, `reporting` |
 | 48 | [0048](./0048-excel-export.md) | Excel Export Strategy | Low | `infrastructure`, `reporting` |
+| 49 | [0049](./0049-single-stock-mutation-seam.md) | Single Stock Mutation Seam | High | `inventory`, `architecture` |
+| 50 | [0050](./0050-budget-lifecycle-seam.md) | Budget Lifecycle Behind the Service Seam | Medium | `accounting`, `architecture` |
 
 ---
 
@@ -139,12 +141,15 @@ Decisions about system-level architecture and operations.
 - [0005](./0005-single-accounting-namespace.md) Single Namespace
 - [0007](./0007-feature-flag-system.md) Feature Flags
 - [0010](./0010-configuration-driven-rules.md) Config-Driven Rules
+- [0049](./0049-single-stock-mutation-seam.md) Stock Mutation Seam
+- [0050](./0050-budget-lifecycle-seam.md) Budget Lifecycle Seam
 
 ### Domain (Accounting)
 - [0006](./0006-sak-emkm-compliance.md) SAK EMKM Compliance
 - [0008](./0008-integer-currency-storage.md) Integer Currency
 - [0011](./0011-double-entry-bookkeeping.md) Double-Entry
 - [0012](./0012-chart-of-accounts-hierarchy.md) Chart of Accounts
+- [0050](./0050-budget-lifecycle-seam.md) Budget Lifecycle Seam
 
 ### Domain (Manufacturing)
 - [0009](./0009-bom-variant-groups.md) BOM Variant Groups
@@ -173,7 +178,7 @@ Decisions about system-level architecture and operations.
 ## Creating New ADRs
 
 1. Copy template from [`template.md`](./template.md)
-2. Use next sequential number (currently: 0049)
+2. Use next sequential number (currently: 0051)
 3. Follow naming convention: `XXXX-short-kebab-case-title.md`
 4. Fill in all sections (use short format for simple decisions)
 5. Add to this index under appropriate category

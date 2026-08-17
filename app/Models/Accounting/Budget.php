@@ -103,56 +103,6 @@ class Budget extends Model
     }
 
     /**
-     * Approve the budget.
-     */
-    public function approve(?int $userId = null): bool
-    {
-        if (! $this->isEditable()) {
-            return false;
-        }
-
-        $this->update([
-            'status' => BudgetStatus::Approved,
-            'approved_by' => $userId ?? auth()->id(),
-            'approved_at' => now(),
-        ]);
-
-        return true;
-    }
-
-    /**
-     * Close the budget.
-     */
-    public function close(): bool
-    {
-        if ($this->status !== BudgetStatus::Approved) {
-            return false;
-        }
-
-        $this->update(['status' => BudgetStatus::Closed]);
-
-        return true;
-    }
-
-    /**
-     * Reopen the budget (set back to draft).
-     */
-    public function reopen(): bool
-    {
-        if ($this->status === BudgetStatus::Closed) {
-            return false;
-        }
-
-        $this->update([
-            'status' => BudgetStatus::Draft,
-            'approved_by' => null,
-            'approved_at' => null,
-        ]);
-
-        return true;
-    }
-
-    /**
      * Recalculate totals from lines.
      */
     public function recalculateTotals(): void

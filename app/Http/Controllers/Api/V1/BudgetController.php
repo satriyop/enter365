@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Contracts\Accounting\BudgetServiceInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreBudgetLineRequest;
 use App\Http\Requests\Api\V1\StoreBudgetRequest;
@@ -12,7 +13,6 @@ use App\Http\Resources\Api\V1\BudgetResource;
 use App\Models\Accounting\Budget;
 use App\Models\Accounting\BudgetLine;
 use App\Models\Accounting\FiscalPeriod;
-use App\Services\Accounting\BudgetService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -20,7 +20,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 class BudgetController extends Controller
 {
     public function __construct(
-        protected BudgetService $budgetService
+        protected BudgetServiceInterface $budgetService
     ) {}
 
     /**
@@ -96,17 +96,11 @@ class BudgetController extends Controller
     {
         $this->authorize('update', $budget);
 
-        if (! $budget->isEditable()) {
-            return response()->json([
-                'message' => 'Anggaran yang sudah disetujui atau ditutup tidak bisa diubah.',
-            ], 422);
-        }
-
-        $budget->update($request->validated());
+        $budget = $this->budgetService->updateBudget($budget, $request->validated());
 
         return response()->json([
             'message' => 'Anggaran berhasil diperbarui.',
-            'data' => new BudgetResource($budget->fresh(['lines.account', 'fiscalPeriod'])),
+            'data' => new BudgetResource($budget),
         ]);
     }
 
@@ -117,14 +111,7 @@ class BudgetController extends Controller
     {
         $this->authorize('delete', $budget);
 
-        if (! $budget->isEditable()) {
-            return response()->json([
-                'message' => 'Anggaran yang sudah disetujui atau ditutup tidak bisa dihapus.',
-            ], 422);
-        }
-
-        $budget->lines()->delete();
-        $budget->delete();
+        $this->budgetService->deleteBudget($budget);
 
         return response()->json([
             'message' => 'Anggaran berhasil dihapus.',
@@ -138,21 +125,7 @@ class BudgetController extends Controller
     {
         $this->authorize('update', $budget);
 
-        if (! $budget->isEditable()) {
-            return response()->json([
-                'message' => 'Anggaran yang sudah disetujui tidak bisa diubah.',
-            ], 422);
-        }
-
-        // Check if account already exists in budget
-        if ($budget->lines()->where('account_id', $request->input('account_id'))->exists()) {
-            return response()->json([
-                'message' => 'Akun sudah ada dalam anggaran ini.',
-            ], 422);
-        }
-
         $line = $this->budgetService->addBudgetLine($budget, $request->validated());
-        $budget->recalculateTotals();
 
         return response()->json([
             'message' => 'Baris anggaran berhasil ditambahkan.',
@@ -167,17 +140,7 @@ class BudgetController extends Controller
     {
         $this->authorize('update', $budget);
 
-        if ($line->budget_id !== $budget->id) {
-            return response()->json(['message' => 'Baris tidak ditemukan.'], 404);
-        }
-
-        if (! $budget->isEditable()) {
-            return response()->json([
-                'message' => 'Anggaran yang sudah disetujui tidak bisa diubah.',
-            ], 422);
-        }
-
-        $line = $this->budgetService->updateBudgetLine($line, $request->validated());
+        $line = $this->budgetService->updateBudgetLine($budget, $line, $request->validated());
 
         return response()->json([
             'message' => 'Baris anggaran berhasil diperbarui.',
@@ -192,18 +155,7 @@ class BudgetController extends Controller
     {
         $this->authorize('update', $budget);
 
-        if ($line->budget_id !== $budget->id) {
-            return response()->json(['message' => 'Baris tidak ditemukan.'], 404);
-        }
-
-        if (! $budget->isEditable()) {
-            return response()->json([
-                'message' => 'Anggaran yang sudah disetujui tidak bisa diubah.',
-            ], 422);
-        }
-
-        $line->delete();
-        $budget->recalculateTotals();
+        $this->budgetService->deleteBudgetLine($budget, $line);
 
         return response()->json([
             'message' => 'Baris anggaran berhasil dihapus.',
@@ -217,23 +169,11 @@ class BudgetController extends Controller
     {
         $this->authorize('approve', $budget);
 
-        if (! $budget->isEditable()) {
-            return response()->json([
-                'message' => 'Anggaran ini sudah disetujui atau ditutup.',
-            ], 422);
-        }
-
-        if ($budget->lines()->count() === 0) {
-            return response()->json([
-                'message' => 'Anggaran harus memiliki minimal satu baris.',
-            ], 422);
-        }
-
-        $budget->approve();
+        $budget = $this->budgetService->approve($budget);
 
         return response()->json([
             'message' => 'Anggaran berhasil disetujui.',
-            'data' => new BudgetResource($budget->fresh(['fiscalPeriod'])),
+            'data' => new BudgetResource($budget),
         ]);
     }
 
@@ -244,17 +184,11 @@ class BudgetController extends Controller
     {
         $this->authorize('update', $budget);
 
-        if ($budget->isClosed()) {
-            return response()->json([
-                'message' => 'Anggaran yang sudah ditutup tidak bisa dibuka kembali.',
-            ], 422);
-        }
-
-        $budget->reopen();
+        $budget = $this->budgetService->reopen($budget);
 
         return response()->json([
             'message' => 'Anggaran berhasil dibuka kembali.',
-            'data' => new BudgetResource($budget->fresh(['fiscalPeriod'])),
+            'data' => new BudgetResource($budget),
         ]);
     }
 
@@ -265,17 +199,11 @@ class BudgetController extends Controller
     {
         $this->authorize('update', $budget);
 
-        if (! $budget->isApproved()) {
-            return response()->json([
-                'message' => 'Hanya anggaran yang sudah disetujui yang bisa ditutup.',
-            ], 422);
-        }
-
-        $budget->close();
+        $budget = $this->budgetService->close($budget);
 
         return response()->json([
             'message' => 'Anggaran berhasil ditutup.',
-            'data' => new BudgetResource($budget->fresh(['fiscalPeriod'])),
+            'data' => new BudgetResource($budget),
         ]);
     }
 
@@ -292,13 +220,6 @@ class BudgetController extends Controller
         ]);
 
         $newPeriod = FiscalPeriod::findOrFail($request->input('fiscal_period_id'));
-
-        // Check if budget already exists for this period
-        if (Budget::where('fiscal_period_id', $newPeriod->id)->exists()) {
-            return response()->json([
-                'message' => 'Sudah ada anggaran untuk periode ini.',
-            ], 422);
-        }
 
         $newBudget = $this->budgetService->copyBudget(
             $budget,
