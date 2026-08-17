@@ -229,6 +229,32 @@ describe('BudgetService lifecycle', function () {
         ]))->toThrow(BusinessRuleException::class, 'Anggaran yang sudah disetujui tidak bisa diubah.');
     });
 
+    it('refuses to update a line on an approved budget', function () {
+        $budget = Budget::factory()->approved()->create([
+            'fiscal_period_id' => $this->fiscalPeriod->id,
+        ]);
+        $line = BudgetLine::factory()->create([
+            'budget_id' => $budget->id,
+            'account_id' => $this->expenseAccount->id,
+        ]);
+
+        expect(fn () => $this->service->updateBudgetLine($budget, $line, ['jan_amount' => 1]))
+            ->toThrow(BusinessRuleException::class, 'Anggaran yang sudah disetujui tidak bisa diubah.');
+    });
+
+    it('refuses to delete a line on an approved budget', function () {
+        $budget = Budget::factory()->approved()->create([
+            'fiscal_period_id' => $this->fiscalPeriod->id,
+        ]);
+        $line = BudgetLine::factory()->create([
+            'budget_id' => $budget->id,
+            'account_id' => $this->expenseAccount->id,
+        ]);
+
+        expect(fn () => $this->service->deleteBudgetLine($budget, $line))
+            ->toThrow(BusinessRuleException::class, 'Anggaran yang sudah disetujui tidak bisa diubah.');
+    });
+
     it('refuses a duplicate account on the same budget', function () {
         $budget = Budget::factory()->draft()->create([
             'fiscal_period_id' => $this->fiscalPeriod->id,
@@ -302,6 +328,16 @@ describe('BudgetService lifecycle', function () {
         $other = BudgetLine::factory()->create();
 
         expect(fn () => $this->service->updateBudgetLine($budget, $other, ['jan_amount' => 1]))
+            ->toThrow(EntityNotFoundException::class);
+    });
+
+    it('refuses to delete a line that does not belong to the budget', function () {
+        $budget = Budget::factory()->draft()->create([
+            'fiscal_period_id' => $this->fiscalPeriod->id,
+        ]);
+        $other = BudgetLine::factory()->create();
+
+        expect(fn () => $this->service->deleteBudgetLine($budget, $other))
             ->toThrow(EntityNotFoundException::class);
     });
 });
