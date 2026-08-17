@@ -401,7 +401,7 @@ it('runs full manufacturing browser chain with stock asserts', function () {
         ->where('type', 'out')
         ->first();
     expect($mrMovement)->not->toBeNull()
-        ->and((int) $mrMovement->quantity)->toBe($requiredMaterial);
+        ->and((int) $mrMovement->quantity)->toBe(-$requiredMaterial);
 
     // --- UI: Complete WO ---
     $page = loginAndVisit("/work-orders/{$woId}");
