@@ -20,6 +20,21 @@ use Illuminate\Validation\Rule;
 
 class QuotationFollowUpController extends Controller
 {
+    /**
+     * Columns the client may sort by.
+     *
+     * @var list<string>
+     */
+    private const ALLOWED_SORT_FIELDS = [
+        'next_follow_up_at',
+        'quotation_date',
+        'valid_until',
+        'total_amount',
+        'status',
+        'created_at',
+        'updated_at',
+    ];
+
     public function __construct(
         private QuotationOutcomeService $outcomeService,
         private QuotationFollowUpService $followUpService,
@@ -55,9 +70,14 @@ class QuotationFollowUpController extends Controller
             $query->overdueFollowUp();
         }
 
-        // Sort options
-        $sortField = $request->input('sort_by', 'next_follow_up_at');
-        $sortDir = $request->input('sort_dir', 'asc');
+        // Sort options. Both field and direction are allowlisted: they are
+        // interpolated into raw SQL below, so untrusted input must never reach it.
+        $sortField = (string) $request->input('sort_by', 'next_follow_up_at');
+        $sortDir = strtolower((string) $request->input('sort_dir', 'asc')) === 'desc' ? 'desc' : 'asc';
+
+        if (! in_array($sortField, self::ALLOWED_SORT_FIELDS, true)) {
+            $sortField = 'next_follow_up_at';
+        }
 
         if ($sortField === 'next_follow_up_at') {
             // Put nulls at the end when sorting ascending

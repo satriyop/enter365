@@ -19,7 +19,6 @@ class SpecValidationRuleSetFactory extends Factory
             'code' => strtoupper($this->faker->unique()->bothify('RS-???-##')),
             'name' => $this->faker->words(3, true),
             'description' => $this->faker->optional()->sentence(),
-            'context' => $this->faker->randomElement(['solar_epc', 'industrial', 'residential', 'commercial']),
             'is_default' => false,
             'is_active' => true,
             'created_by' => null,
@@ -37,13 +36,6 @@ class SpecValidationRuleSetFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'is_default' => true,
-        ]);
-    }
-
-    public function forContext(string $context): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'context' => $context,
         ]);
     }
 

@@ -138,13 +138,28 @@ Route::prefix('v1')->group(function () {
         Route::get('contacts/{contact}/credit-status', [ContactController::class, 'creditStatus']);
 
         // Company Profiles (Profil Perusahaan)
-        Route::apiResource('company-profiles', CompanyProfileController::class);
-        Route::delete('company-profiles/{company_profile}/logo', [CompanyProfileController::class, 'removeLogo']);
-        Route::delete('company-profiles/{company_profile}/cover', [CompanyProfileController::class, 'removeCover']);
+        Route::get('company-profiles', [CompanyProfileController::class, 'index']);
+        Route::get('company-profiles/{company_profile}', [CompanyProfileController::class, 'show']);
+        Route::middleware('permission:settings.company_profile')->group(function () {
+            Route::post('company-profiles', [CompanyProfileController::class, 'store']);
+            Route::match(['put', 'patch'], 'company-profiles/{company_profile}', [CompanyProfileController::class, 'update']);
+            Route::delete('company-profiles/{company_profile}', [CompanyProfileController::class, 'destroy']);
+            Route::delete('company-profiles/{company_profile}/logo', [CompanyProfileController::class, 'removeLogo']);
+            Route::delete('company-profiles/{company_profile}/cover', [CompanyProfileController::class, 'removeCover']);
+        });
 
         // Product Categories (Kategori Produk)
-        Route::apiResource('product-categories', ProductCategoryController::class);
-        Route::get('product-categories-tree', [ProductCategoryController::class, 'tree']);
+        Route::middleware('permission:products.view')->group(function () {
+            Route::get('product-categories', [ProductCategoryController::class, 'index']);
+            Route::get('product-categories/{product_category}', [ProductCategoryController::class, 'show']);
+            Route::get('product-categories-tree', [ProductCategoryController::class, 'tree']);
+        });
+        Route::post('product-categories', [ProductCategoryController::class, 'store'])
+            ->middleware('permission:products.create');
+        Route::match(['put', 'patch'], 'product-categories/{product_category}', [ProductCategoryController::class, 'update'])
+            ->middleware('permission:products.edit');
+        Route::delete('product-categories/{product_category}', [ProductCategoryController::class, 'destroy'])
+            ->middleware('permission:products.delete');
 
         // Products (Produk & Jasa)
         Route::apiResource('products', ProductController::class);
@@ -156,23 +171,41 @@ Route::prefix('v1')->group(function () {
 
         // Warehouses (Gudang)
         Route::middleware('feature:warehouses')->group(function () {
-            Route::apiResource('warehouses', WarehouseController::class);
-            Route::post('warehouses/{warehouse}/set-default', [WarehouseController::class, 'setDefault']);
-            Route::get('warehouses/{warehouse}/stock-summary', [WarehouseController::class, 'stockSummary']);
+            Route::get('warehouses', [WarehouseController::class, 'index'])
+                ->middleware('permission:warehouses.view');
+            Route::get('warehouses/{warehouse}', [WarehouseController::class, 'show'])
+                ->middleware('permission:warehouses.view');
+            Route::get('warehouses/{warehouse}/stock-summary', [WarehouseController::class, 'stockSummary'])
+                ->middleware('permission:warehouses.view');
+            Route::post('warehouses', [WarehouseController::class, 'store'])
+                ->middleware('permission:warehouses.create');
+            Route::match(['put', 'patch'], 'warehouses/{warehouse}', [WarehouseController::class, 'update'])
+                ->middleware('permission:warehouses.edit');
+            Route::post('warehouses/{warehouse}/set-default', [WarehouseController::class, 'setDefault'])
+                ->middleware('permission:warehouses.edit');
+            Route::delete('warehouses/{warehouse}', [WarehouseController::class, 'destroy'])
+                ->middleware('permission:warehouses.delete');
         });
 
         // Inventory (Inventori)
         Route::middleware('feature:inventory')->prefix('inventory')->group(function () {
-            Route::get('movements', [InventoryController::class, 'movements']);
-            Route::post('stock-in', [InventoryController::class, 'stockIn']);
-            Route::post('stock-out', [InventoryController::class, 'stockOut']);
-            Route::post('adjust', [InventoryController::class, 'adjust']);
-            Route::post('transfer', [InventoryController::class, 'transfer']);
-            Route::get('stock-card/{product}', [InventoryController::class, 'stockCard']);
-            Route::get('valuation', [InventoryController::class, 'valuation']);
-            Route::get('summary', [InventoryController::class, 'summary']);
-            Route::get('movement-summary', [InventoryController::class, 'movementSummary']);
-            Route::get('stock-levels', [InventoryController::class, 'stockLevels']);
+            Route::middleware('permission:inventory.view')->group(function () {
+                Route::get('movements', [InventoryController::class, 'movements']);
+                Route::get('stock-card/{product}', [InventoryController::class, 'stockCard']);
+                Route::get('valuation', [InventoryController::class, 'valuation']);
+                Route::get('summary', [InventoryController::class, 'summary']);
+                Route::get('movement-summary', [InventoryController::class, 'movementSummary']);
+                Route::get('stock-levels', [InventoryController::class, 'stockLevels']);
+            });
+
+            Route::post('stock-in', [InventoryController::class, 'stockIn'])
+                ->middleware('permission:inventory.stock_in');
+            Route::post('stock-out', [InventoryController::class, 'stockOut'])
+                ->middleware('permission:inventory.stock_out');
+            Route::post('adjust', [InventoryController::class, 'adjust'])
+                ->middleware('permission:inventory.adjust');
+            Route::post('transfer', [InventoryController::class, 'transfer'])
+                ->middleware('permission:inventory.transfer');
         });
 
         // Journal Entries (Jurnal Umum)
@@ -206,18 +239,22 @@ Route::prefix('v1')->group(function () {
             Route::get('quotations/{quotation}/variant-comparison', [QuotationController::class, 'variantComparison']);
 
             // Quotation Follow-Up & Sales Pipeline
-            Route::prefix('quotation-follow-up')->group(function () {
-                Route::get('/', [QuotationFollowUpController::class, 'index']);
-                Route::get('/statistics', [QuotationFollowUpController::class, 'statistics']);
-                Route::get('/summary', [QuotationFollowUpController::class, 'followUpSummary']);
+            Route::middleware('permission:quotations.view')->group(function () {
+                Route::prefix('quotation-follow-up')->group(function () {
+                    Route::get('/', [QuotationFollowUpController::class, 'index']);
+                    Route::get('/statistics', [QuotationFollowUpController::class, 'statistics']);
+                    Route::get('/summary', [QuotationFollowUpController::class, 'followUpSummary']);
+                });
+                Route::get('quotations/{quotation}/activities', [QuotationFollowUpController::class, 'activities']);
             });
-            Route::get('quotations/{quotation}/activities', [QuotationFollowUpController::class, 'activities']);
-            Route::post('quotations/{quotation}/activities', [QuotationFollowUpController::class, 'storeActivity']);
-            Route::post('quotations/{quotation}/schedule-follow-up', [QuotationFollowUpController::class, 'scheduleFollowUp']);
-            Route::post('quotations/{quotation}/assign', [QuotationFollowUpController::class, 'assign']);
-            Route::post('quotations/{quotation}/priority', [QuotationFollowUpController::class, 'updatePriority']);
-            Route::post('quotations/{quotation}/mark-won', [QuotationFollowUpController::class, 'markAsWon']);
-            Route::post('quotations/{quotation}/mark-lost', [QuotationFollowUpController::class, 'markAsLost']);
+            Route::middleware('permission:quotations.edit')->group(function () {
+                Route::post('quotations/{quotation}/activities', [QuotationFollowUpController::class, 'storeActivity']);
+                Route::post('quotations/{quotation}/schedule-follow-up', [QuotationFollowUpController::class, 'scheduleFollowUp']);
+                Route::post('quotations/{quotation}/assign', [QuotationFollowUpController::class, 'assign']);
+                Route::post('quotations/{quotation}/priority', [QuotationFollowUpController::class, 'updatePriority']);
+                Route::post('quotations/{quotation}/mark-won', [QuotationFollowUpController::class, 'markAsWon']);
+                Route::post('quotations/{quotation}/mark-lost', [QuotationFollowUpController::class, 'markAsLost']);
+            });
         });
 
         // Invoices - Sales (Faktur Penjualan)
@@ -228,15 +265,22 @@ Route::prefix('v1')->group(function () {
             Route::post('invoices/{invoice}/make-recurring', [InvoiceController::class, 'makeRecurring']);
 
             Route::prefix('payment-reminders')->group(function () {
-                Route::get('/', [PaymentReminderController::class, 'index']);
-                Route::get('/summary', [PaymentReminderController::class, 'summary']);
-                Route::get('/{payment_reminder}', [PaymentReminderController::class, 'show']);
-                Route::post('/{payment_reminder}/send', [PaymentReminderController::class, 'send']);
-                Route::post('/{payment_reminder}/cancel', [PaymentReminderController::class, 'cancel']);
+                Route::middleware('permission:invoices.view')->group(function () {
+                    Route::get('/', [PaymentReminderController::class, 'index']);
+                    Route::get('/summary', [PaymentReminderController::class, 'summary']);
+                    Route::get('/{payment_reminder}', [PaymentReminderController::class, 'show']);
+                });
+                Route::middleware('permission:invoices.edit')->group(function () {
+                    Route::post('/{payment_reminder}/send', [PaymentReminderController::class, 'send']);
+                    Route::post('/{payment_reminder}/cancel', [PaymentReminderController::class, 'cancel']);
+                });
             });
-            Route::get('invoices/{invoice}/reminders', [PaymentReminderController::class, 'forInvoice']);
-            Route::post('invoices/{invoice}/reminders', [PaymentReminderController::class, 'store']);
-            Route::post('invoices/{invoice}/send-reminder', [PaymentReminderController::class, 'sendImmediate']);
+            Route::get('invoices/{invoice}/reminders', [PaymentReminderController::class, 'forInvoice'])
+                ->middleware('permission:invoices.view');
+            Route::post('invoices/{invoice}/reminders', [PaymentReminderController::class, 'store'])
+                ->middleware('permission:invoices.edit');
+            Route::post('invoices/{invoice}/send-reminder', [PaymentReminderController::class, 'sendImmediate'])
+                ->middleware('permission:invoices.edit');
         });
 
         // Purchase Orders (Pesanan Pembelian)
@@ -299,7 +343,7 @@ Route::prefix('v1')->group(function () {
         });
 
         // Purchase Returns (Retur Pembelian)
-        Route::middleware('feature:purchase_returns')->group(function () {
+        Route::middleware(['feature:purchase_returns', 'permission:purchase_returns.view'])->group(function () {
             Route::apiResource('purchase-returns', PurchaseReturnController::class);
             Route::post('purchase-returns/{purchase_return}/submit', [PurchaseReturnController::class, 'submit']);
             Route::post('purchase-returns/{purchase_return}/approve', [PurchaseReturnController::class, 'approve']);
@@ -312,7 +356,7 @@ Route::prefix('v1')->group(function () {
         });
 
         // Bill of Materials (BOM)
-        Route::middleware('feature:bom')->group(function () {
+        Route::middleware(['feature:bom', 'permission:boms.view'])->group(function () {
             Route::apiResource('boms', BomController::class);
             Route::post('boms/{bom}/activate', [BomController::class, 'activate']);
             Route::post('boms/{bom}/deactivate', [BomController::class, 'deactivate']);
@@ -415,7 +459,7 @@ Route::prefix('v1')->group(function () {
         });
 
         // Material Requisitions (Permintaan Material)
-        Route::middleware('feature:material_requisitions')->group(function () {
+        Route::middleware(['feature:material_requisitions', 'permission:material_requisitions.view'])->group(function () {
             Route::get('material-requisitions', [MaterialRequisitionController::class, 'index']);
             Route::post('work-orders/{work_order}/material-requisitions', [MaterialRequisitionController::class, 'createForWorkOrder']);
             Route::get('material-requisitions/{material_requisition}', [MaterialRequisitionController::class, 'show']);
@@ -435,7 +479,7 @@ Route::prefix('v1')->group(function () {
         });
 
         // Recurring Templates (Template Berulang)
-        Route::middleware('feature:recurring')->group(function () {
+        Route::middleware(['feature:recurring', 'permission:invoices.view'])->group(function () {
             Route::apiResource('recurring-templates', RecurringTemplateController::class);
             Route::post('recurring-templates/{recurring_template}/generate', [RecurringTemplateController::class, 'generate']);
             Route::post('recurring-templates/{recurring_template}/pause', [RecurringTemplateController::class, 'pause']);
@@ -481,7 +525,7 @@ Route::prefix('v1')->group(function () {
         });
 
         // Bank Statement Import (Impor Mutasi Bank)
-        Route::middleware('feature:bank_reconciliation')->prefix('bank-statements')->group(function () {
+        Route::middleware(['feature:bank_reconciliation', 'permission:journals.view'])->prefix('bank-statements')->group(function () {
             Route::post('/detect-format', [BankStatementImportController::class, 'detectFormat'])->name('bank-statements.detect-format');
             Route::post('/validate', [BankStatementImportController::class, 'validate'])->name('bank-statements.validate');
             Route::post('/import', [BankStatementImportController::class, 'import'])->name('bank-statements.import');
@@ -586,14 +630,18 @@ Route::prefix('v1')->group(function () {
         });
 
         // Roles & Permissions (Peran & Hak Akses)
-        Route::apiResource('roles', RoleController::class);
-        Route::post('roles/{role}/sync-permissions', [RoleController::class, 'syncPermissions']);
-        Route::get('roles/{role}/users', [RoleController::class, 'users']);
+        // Granting permissions is itself a privilege-escalation vector: every one
+        // of these routes must require users.manage_roles.
+        Route::middleware('permission:users.manage_roles')->group(function () {
+            Route::apiResource('roles', RoleController::class);
+            Route::post('roles/{role}/sync-permissions', [RoleController::class, 'syncPermissions']);
+            Route::get('roles/{role}/users', [RoleController::class, 'users']);
 
-        Route::get('permissions', [PermissionController::class, 'index']);
-        Route::get('permissions/grouped', [PermissionController::class, 'grouped']);
-        Route::get('permissions/groups', [PermissionController::class, 'groups']);
-        Route::get('permissions/{permission}', [PermissionController::class, 'show']);
+            Route::get('permissions', [PermissionController::class, 'index']);
+            Route::get('permissions/grouped', [PermissionController::class, 'grouped']);
+            Route::get('permissions/groups', [PermissionController::class, 'groups']);
+            Route::get('permissions/{permission}', [PermissionController::class, 'show']);
+        });
 
         // MRP (Material Requirements Planning)
         Route::middleware('feature:mrp')->group(function () {
@@ -614,7 +662,7 @@ Route::prefix('v1')->group(function () {
         });
 
         // Subcontractor Work Orders (Perintah Kerja Subkontraktor)
-        Route::middleware('feature:subcontracting')->group(function () {
+        Route::middleware(['feature:subcontracting', 'permission:subcontractor_work_orders.view'])->group(function () {
             Route::apiResource('subcontractor-work-orders', SubcontractorWorkOrderController::class)
                 ->parameters(['subcontractor-work-orders' => 'subcontractorWorkOrder']);
             Route::post('subcontractor-work-orders/{subcontractorWorkOrder}/assign', [SubcontractorWorkOrderController::class, 'assign']);
@@ -637,7 +685,7 @@ Route::prefix('v1')->group(function () {
         });
 
         // Stock Opname (Stock Opname / Physical Inventory)
-        Route::middleware('feature:stock_opname')->group(function () {
+        Route::middleware(['feature:stock_opname', 'permission:stock_opnames.view'])->group(function () {
             Route::apiResource('stock-opnames', StockOpnameController::class)
                 ->parameters(['stock-opnames' => 'stockOpname']);
             Route::post('stock-opnames/{stockOpname}/generate-items', [StockOpnameController::class, 'generateItems']);
@@ -646,26 +694,32 @@ Route::prefix('v1')->group(function () {
             Route::delete('stock-opnames/{stockOpname}/items/{item}', [StockOpnameController::class, 'removeItem']);
             Route::post('stock-opnames/{stockOpname}/start-counting', [StockOpnameController::class, 'startCounting']);
             Route::post('stock-opnames/{stockOpname}/submit-review', [StockOpnameController::class, 'submitForReview']);
-            Route::post('stock-opnames/{stockOpname}/approve', [StockOpnameController::class, 'approve']);
-            Route::post('stock-opnames/{stockOpname}/reject', [StockOpnameController::class, 'reject']);
+            Route::post('stock-opnames/{stockOpname}/approve', [StockOpnameController::class, 'approve'])
+                ->middleware('permission:stock_opnames.approve');
+            Route::post('stock-opnames/{stockOpname}/reject', [StockOpnameController::class, 'reject'])
+                ->middleware('permission:stock_opnames.approve');
             Route::post('stock-opnames/{stockOpname}/cancel', [StockOpnameController::class, 'cancel']);
             Route::get('stock-opnames/{stockOpname}/variance-report', [StockOpnameController::class, 'varianceReport']);
         });
 
         // Goods Receipt Notes (Surat Penerimaan Barang)
-        Route::middleware('feature:goods_receipt_notes')->group(function () {
+        Route::middleware(['feature:goods_receipt_notes', 'permission:goods_receipt_notes.view'])->group(function () {
             Route::apiResource('goods-receipt-notes', GoodsReceiptNoteController::class)
                 ->parameters(['goods-receipt-notes' => 'goodsReceiptNote']);
             Route::post('purchase-orders/{purchaseOrder}/create-grn', [GoodsReceiptNoteController::class, 'createFromPurchaseOrder']);
             Route::put('goods-receipt-notes/{goodsReceiptNote}/items/{item}', [GoodsReceiptNoteController::class, 'updateItem']);
             Route::post('goods-receipt-notes/{goodsReceiptNote}/start-receiving', [GoodsReceiptNoteController::class, 'startReceiving']);
-            Route::post('goods-receipt-notes/{goodsReceiptNote}/complete', [GoodsReceiptNoteController::class, 'complete']);
+            Route::post('goods-receipt-notes/{goodsReceiptNote}/complete', [GoodsReceiptNoteController::class, 'complete'])
+                ->middleware('permission:goods_receipt_notes.edit');
             Route::post('goods-receipt-notes/{goodsReceiptNote}/cancel', [GoodsReceiptNoteController::class, 'cancel']);
             Route::get('purchase-orders/{purchaseOrder}/goods-receipt-notes', [GoodsReceiptNoteController::class, 'forPurchaseOrder']);
         });
 
         // NSFP Ranges (Nomor Seri Faktur Pajak)
+        // No destroy(): NSFP numbers are DJP-assigned and must never be deleted,
+        // only deactivated. Registering it would route to a missing method.
         Route::apiResource('nsfp-ranges', \App\Http\Controllers\Api\V1\NsfpRangeController::class)
+            ->except(['destroy'])
             ->parameters(['nsfp-ranges' => 'nsfpRange']);
         Route::post('nsfp-ranges/{nsfpRange}/deactivate', [\App\Http\Controllers\Api\V1\NsfpRangeController::class, 'deactivate']);
         Route::get('nsfp-ranges-utilization', [\App\Http\Controllers\Api\V1\NsfpRangeController::class, 'utilization']);
@@ -679,8 +733,10 @@ Route::prefix('v1')->group(function () {
         Route::put('accounting-policies', [AccountingPolicyController::class, 'update'])->name('accounting-policies.update');
 
         Route::middleware('feature:pos')->prefix('pos')->group(function () {
-            Route::get('outlets', [PosSessionController::class, 'outlets']);
-            Route::post('sessions', [PosSessionController::class, 'store']);
+            Route::get('outlets', [PosSessionController::class, 'outlets'])
+                ->middleware('permission:pos.session.open,message:Anda tidak boleh membuka sesi kasir.');
+            Route::post('sessions', [PosSessionController::class, 'store'])
+                ->middleware('permission:pos.session.open,message:Anda tidak boleh membuka sesi kasir.');
             Route::get('sessions/current', [PosSessionController::class, 'current']);
             Route::get('sessions/{pos_session}', [PosSessionController::class, 'show']);
             Route::post('sessions/{pos_session}/close', [PosSessionController::class, 'close']);

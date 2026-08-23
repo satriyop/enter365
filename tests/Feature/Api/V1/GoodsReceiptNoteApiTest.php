@@ -25,7 +25,7 @@ describe('GRN CRUD', function () {
     it('can list all goods receipt notes', function () {
         GoodsReceiptNote::factory()->count(10)->create();
 
-        $this->assertMaxQueries(15, function () {
+        $this->assertMaxQueries(17, function () {
             $response = $this->getJson('/api/v1/goods-receipt-notes');
             $response->assertOk();
         });

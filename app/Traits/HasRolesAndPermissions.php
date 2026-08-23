@@ -17,6 +17,66 @@ trait HasRolesAndPermissions
     }
 
     /**
+     * Request-lifetime cache of this user's role and permission names.
+     *
+     * Authorization is checked many times per request (route middleware,
+     * policies, resource visibility). Resolving it from the database each
+     * time cost 2-3 queries per check; this collapses it to one.
+     *
+     * @var array{roles: list<string>, permissions: list<string>}|null
+     */
+    protected ?array $authorizationCache = null;
+
+    /**
+     * Request-level cache of the full permission catalogue, used for admins.
+     *
+     * @var \Illuminate\Support\Collection<int, Permission>|null
+     */
+    protected static ?\Illuminate\Support\Collection $allPermissionsCache = null;
+
+    /**
+     * Load this user's role and permission names in a single query.
+     *
+     * @return array{roles: list<string>, permissions: list<string>}
+     */
+    protected function authorizationSet(): array
+    {
+        if ($this->authorizationCache !== null) {
+            return $this->authorizationCache;
+        }
+
+        $roles = $this->relationLoaded('roles') && $this->roles->every(fn ($role) => $role->relationLoaded('permissions'))
+            ? $this->roles
+            : $this->roles()->with('permissions:id,name')->get();
+
+        return $this->authorizationCache = [
+            'roles' => $roles->pluck('name')->all(),
+            'permissions' => $roles
+                ->pluck('permissions')
+                ->flatten()
+                ->pluck('name')
+                ->unique()
+                ->values()
+                ->all(),
+        ];
+    }
+
+    /**
+     * Drop the memoized authorization set.
+     *
+     * Call after any role or permission change so later checks in the same
+     * request see the new state.
+     */
+    public function flushAuthorizationCache(): static
+    {
+        $this->authorizationCache = null;
+        static::$allPermissionsCache = null;
+        $this->unsetRelation('roles');
+
+        return $this;
+    }
+
+    /**
      * Scope query to users with a specific role.
      *
      * @param  \Illuminate\Database\Eloquent\Builder<$this>  $query
@@ -33,7 +93,7 @@ trait HasRolesAndPermissions
      */
     public function hasRole(string $roleName): bool
     {
-        return $this->roles()->where('name', $roleName)->exists();
+        return in_array($roleName, $this->authorizationSet()['roles'], true);
     }
 
     /**
@@ -43,7 +103,7 @@ trait HasRolesAndPermissions
      */
     public function hasAnyRole(array $roles): bool
     {
-        return $this->roles()->whereIn('name', $roles)->exists();
+        return array_intersect($roles, $this->authorizationSet()['roles']) !== [];
     }
 
     /**
@@ -53,9 +113,15 @@ trait HasRolesAndPermissions
      */
     public function hasAllRoles(array $roles): bool
     {
-        $count = $this->roles()->whereIn('name', $roles)->count();
+        $held = $this->authorizationSet()['roles'];
 
-        return $count === count($roles);
+        foreach ($roles as $role) {
+            if (! in_array($role, $held, true)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -71,19 +137,14 @@ trait HasRolesAndPermissions
      */
     public function hasPermission(string $permission): bool
     {
+        $set = $this->authorizationSet();
+
         // Admin has all permissions
-        if ($this->isAdmin()) {
+        if (in_array(Role::ADMIN, $set['roles'], true)) {
             return true;
         }
 
-        // Check through roles
-        foreach ($this->roles as $role) {
-            if ($role->hasPermission($permission)) {
-                return true;
-            }
-        }
-
-        return false;
+        return in_array($permission, $set['permissions'], true);
     }
 
     /**
@@ -133,16 +194,27 @@ trait HasRolesAndPermissions
      */
     public function getAllPermissions(): \Illuminate\Support\Collection
     {
+        // Admins hold no permission rows — they bypass checks in hasPermission() —
+        // so the full catalogue stands in. Cached per request: serialising a list
+        // of users would otherwise re-fetch it once per row.
         if ($this->isAdmin()) {
-            return Permission::all();
+            return static::$allPermissionsCache ??= Permission::all();
         }
 
-        return $this->roles()
-            ->with('permissions')
-            ->get()
+        // Reuse the eager-loaded relation when the caller provided it
+        // (->with('roles.permissions')), which keeps list endpoints at O(1) queries.
+        $roles = $this->relationLoaded('roles') && $this->roles->every(fn ($role) => $role->relationLoaded('permissions'))
+            ? $this->roles
+            : $this->roles()->with('permissions')->get();
+
+        /** @var \Illuminate\Support\Collection<int, Permission> $permissions */
+        $permissions = $roles
             ->pluck('permissions')
             ->flatten()
-            ->unique('id');
+            ->unique('id')
+            ->values();
+
+        return $permissions;
     }
 
     /**
@@ -155,6 +227,7 @@ trait HasRolesAndPermissions
         }
 
         $this->roles()->syncWithoutDetaching($role->id);
+        $this->flushAuthorizationCache();
     }
 
     /**
@@ -168,6 +241,7 @@ trait HasRolesAndPermissions
 
         if ($role) {
             $this->roles()->detach($role->id);
+            $this->flushAuthorizationCache();
         }
     }
 
@@ -195,6 +269,7 @@ trait HasRolesAndPermissions
             ->pluck('id');
 
         $this->roles()->sync($resolvedIds);
+        $this->flushAuthorizationCache();
     }
 
     /**

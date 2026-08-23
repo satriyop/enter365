@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'feature' => \App\Http\Middleware\EnsureFeatureEnabled::class,
+            'permission' => \App\Http\Middleware\EnsurePermission::class,
         ]);
 
         // Bind OperationContext to container for all HTTP requests (Laravel way)

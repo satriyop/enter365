@@ -29,7 +29,7 @@ class UserController extends Controller
         $this->authorize('viewAny', User::class);
 
         $users = User::query()
-            ->with(['roles'])
+            ->with(['roles.permissions'])
             ->filter($filter)
             ->orderBy('name')
             ->paginate($filter->getRequest()->input('per_page', 15));

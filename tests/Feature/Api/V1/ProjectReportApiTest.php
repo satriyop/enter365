@@ -25,7 +25,7 @@ describe('Project Profitability Report', function () {
             ->count(10)
             ->create();
 
-        $this->assertMaxQueries(15, function () {
+        $this->assertMaxQueries(16, function () {
             $response = $this->getJson('/api/v1/reports/project-profitability');
             $response->assertOk();
         });

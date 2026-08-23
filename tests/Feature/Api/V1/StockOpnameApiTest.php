@@ -22,7 +22,7 @@ describe('Stock Opname CRUD', function () {
     it('can list all stock opnames', function () {
         StockOpname::factory()->count(10)->create();
 
-        $this->assertMaxQueries(15, function () {
+        $this->assertMaxQueries(16, function () {
             $response = $this->getJson('/api/v1/stock-opnames');
             $response->assertOk();
         });

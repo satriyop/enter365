@@ -32,7 +32,7 @@ if ($context === 'public') {
     return;
 }
 
-Route::middleware('feature:solar_proposals')->group(function () {
+Route::middleware(['feature:solar_proposals', 'permission:quotations.view'])->group(function () {
     Route::apiResource('solar-proposals', SolarProposalController::class)
         ->parameters(['solar-proposals' => 'solarProposal']);
     Route::post('solar-proposals/{solarProposal}/calculate', [SolarProposalController::class, 'calculate']);

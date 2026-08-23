@@ -28,11 +28,18 @@ class UserResource extends JsonResource
                     'display_name' => $role->display_name,
                 ]);
             }),
-            'permissions' => $this->getAllPermissions()->map(fn ($permission) => [
-                'id' => $permission->id,
-                'name' => $permission->name,
-                'display_name' => $permission->display_name,
-            ])->values(),
+            // Only when the caller explicitly eager-loaded roles. Emitting this
+            // unconditionally made every embedded user (an invoice creator, a
+            // proposal author) cost a permission lookup, and leaked that user's
+            // full permission set into unrelated list responses.
+            'permissions' => $this->when(
+                $this->resource->relationLoaded('roles'),
+                fn () => $this->getAllPermissions()->map(fn ($permission) => [
+                    'id' => $permission->id,
+                    'name' => $permission->name,
+                    'display_name' => $permission->display_name,
+                ])->values()
+            ),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

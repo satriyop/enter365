@@ -2,12 +2,14 @@
 
 namespace App\Models\ElectricalPanel;
 
+use App\Models\Manufacturing\Bom;
 use App\Models\User;
 use App\Traits\HasActiveStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SpecValidationRuleSet extends Model
@@ -40,11 +42,32 @@ class SpecValidationRuleSet extends Model
     }
 
     /**
-     * @return HasMany<Bom, $this>
+     * Panel metadata rows pointing at this rule set.
+     *
+     * @return HasMany<BomPanelMeta, $this>
      */
-    public function boms(): HasMany
+    public function panelMetas(): HasMany
     {
-        return $this->hasMany(Bom::class, 'spec_rule_set_id');
+        return $this->hasMany(BomPanelMeta::class, 'spec_rule_set_id');
+    }
+
+    /**
+     * BOMs that use this rule set.
+     *
+     * The link lives on electrical_panel_bom_meta, not on boms itself.
+     *
+     * @return HasManyThrough<Bom, BomPanelMeta, $this>
+     */
+    public function boms(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            Bom::class,
+            BomPanelMeta::class,
+            'spec_rule_set_id',
+            'id',
+            'id',
+            'bom_id'
+        );
     }
 
     /**
