@@ -255,10 +255,12 @@ describe('POS HTTP', function () {
     it('returns catalog products with button prices', function () {
         $sessionId = openSessionHttp();
 
-        $this->getJson("/api/v1/pos/sessions/{$sessionId}/catalog")
-            ->assertOk()
+        $catalog = $this->getJson("/api/v1/pos/sessions/{$sessionId}/catalog");
+        $catalog->assertOk()
             ->assertJsonFragment(['id' => $this->product->id])
             ->assertJsonFragment(['button_price' => 111_00]);
+
+        expect($catalog->json('data.0'))->toHaveKey('image_url');
     });
 
     it('omits sellable products that are not in the session warehouse', function () {

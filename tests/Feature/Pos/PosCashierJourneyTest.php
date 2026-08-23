@@ -115,7 +115,8 @@ describe('Kasir full-day journey', function () {
             ->and($sku)->not->toHaveKey('dpp_amount')
             ->and($sku)->not->toHaveKey('ppn_amount')
             ->and($sku['button_price'])->toBe(8_000)
-            ->and($sku['quantity'])->toBe(10);
+            ->and($sku['quantity'])->toBe(10)
+            ->and($sku)->toHaveKey('image_url');
 
         $jasa = collect($catalog->json('data'))->firstWhere('id', test()->jasa->id);
         expect($jasa)->not->toBeNull()

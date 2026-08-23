@@ -14,17 +14,27 @@ use App\Models\User;
 use App\Support\Features;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 
 /**
- * Stand-in till catalog for first-customer day: Kopitiam 57.
+ * Kopitiam 57 till catalog.
  *
- * Prices are typical Indonesian kopitiam board amounts (rupiah integers),
- * not a scraped menu. PPN is off until the shop confirms they are PKP —
- * the button is exactly the seeded selling_price.
+ * Pastry & Bread SKUs follow the shop board (Menu Pastry Bread.pdf).
+ * The board says "Harga belum termasuk tax & service". V1 has no service
+ * line and the till button is the amount paid (ADR-0056), so we seed the
+ * printed K number with PPN off until they confirm PKP + service.
+ * Drinks / makanan / jasa stay stand-in until those menus arrive.
  */
 class PosKopitiamDemoSeeder extends Seeder
 {
+    /** @var list<string> */
+    private const RETIRED_STANDIN_SKUS = [
+        'KT57-KAYA',
+        'KT57-TELUR',
+        'KT57-ROTI-CK',
+    ];
+
     public function run(): void
     {
         if (Features::disabled('pos')) {
@@ -33,20 +43,30 @@ class PosKopitiamDemoSeeder extends Seeder
 
         $this->call(\Database\Seeders\RolesAndPermissionsSeeder::class);
 
-        $admin = User::query()->where('email', 'admin@demo.com')->first()
-            ?? User::query()->where('email', 'admin@example.com')->first()
-            ?? User::query()->first();
-
-        if ($admin === null) {
-            throw new \RuntimeException('POS kopitiam demo needs a user. Run foundation seeders first.');
-        }
-
+        $admin = $this->ensureOwner();
         $this->seedKasir($admin);
         $warehouse = $this->seedOutlet();
         $categories = $this->seedCategories();
         $this->seedCatalog($categories, $warehouse, $admin);
+        $this->publishPastryPhotos();
+        $this->retireStandinRoti();
 
-        $this->command?->info('  ✓ Kopitiam 57 stand-in till (DEMO — bukan harga toko)');
+        $this->command?->info('  ✓ Kopitiam 57 till — pastry from shop board; minuman/makanan still stand-in');
+    }
+
+    private function ensureOwner(): User
+    {
+        $admin = User::query()->updateOrCreate(
+            ['email' => 'admin@example.com'],
+            [
+                'name' => 'Admin Kopitiam 57',
+                'password' => Hash::make('password'),
+                'is_active' => true,
+            ]
+        );
+        $admin->assignRole(Role::ADMIN);
+
+        return $admin;
     }
 
     private function seedKasir(User $admin): void
@@ -68,24 +88,20 @@ class PosKopitiamDemoSeeder extends Seeder
 
     private function seedOutlet(): Warehouse
     {
-        $warehouse = Warehouse::query()->updateOrCreate(
+        Warehouse::query()->where('is_default', true)->update(['is_default' => false]);
+
+        return Warehouse::query()->updateOrCreate(
             ['code' => 'KT57-TOKO'],
             [
                 'name' => 'Kopitiam 57 — Toko Depan',
                 'address' => 'Stand-in alamat demo (bukan alamat toko)',
                 'phone' => '021-000057',
                 'contact_person' => 'Siti Kasir',
-                'is_default' => false,
+                'is_default' => true,
                 'is_active' => true,
-                'notes' => 'DEMO POS: outlet till Kopitiam 57. Bukan data toko asli. Must not steal the ERP default gudang.',
+                'notes' => 'Outlet till Kopitiam 57. Default gudang on the POS-first tenant.',
             ]
         );
-
-        if (Warehouse::query()->where('is_default', true)->doesntExist()) {
-            Warehouse::query()->where('code', 'WH-001')->update(['is_default' => true]);
-        }
-
-        return $warehouse;
     }
 
     /**
@@ -106,7 +122,7 @@ class PosKopitiamDemoSeeder extends Seeder
         $children = [
             'POS-MIN' => 'Minuman',
             'POS-MAK' => 'Makanan',
-            'POS-ROT' => 'Roti',
+            'POS-ROT' => 'Pastry',
             'POS-JSA' => 'Jasa',
         ];
 
@@ -184,9 +200,30 @@ class PosKopitiamDemoSeeder extends Seeder
         }
     }
 
+    private function publishPastryPhotos(): void
+    {
+        $from = database_path('seeders/Demo/assets/kopitiam');
+        $to = public_path('pos/kopitiam');
+        File::ensureDirectoryExists($to);
+
+        foreach (File::files($from) as $file) {
+            File::copy($file->getPathname(), $to.DIRECTORY_SEPARATOR.$file->getFilename());
+        }
+    }
+
+    private function retireStandinRoti(): void
+    {
+        Product::query()
+            ->whereIn('sku', self::RETIRED_STANDIN_SKUS)
+            ->update([
+                'is_active' => false,
+                'is_sellable' => false,
+            ]);
+    }
+
     /**
-     * Typical kedai board (rupiah integers). Taxable flag false so the till
-     * button equals the papan; confirm PKP before turning PPN on.
+     * Pastry prices are the printed K number (rupiah integers). PPN off so
+     * the till button matches the board; HPP is a stand-in ~40% until recipe cost.
      *
      * @return list<array{sku: string, name: string, category: string, price: int, cost: int, qty: int, track: bool, taxable: bool, barcode: string}>
      */
@@ -198,9 +235,13 @@ class PosKopitiamDemoSeeder extends Seeder
             ['sku' => 'KT57-TEH-TRK', 'name' => 'Teh Tarik', 'category' => 'POS-MIN', 'price' => 12_000, 'cost' => 3_500, 'qty' => 80, 'track' => true, 'taxable' => false, 'barcode' => '899057000003'],
             ['sku' => 'KT57-MILO', 'name' => 'Milo', 'category' => 'POS-MIN', 'price' => 14_000, 'cost' => 5_000, 'qty' => 60, 'track' => true, 'taxable' => false, 'barcode' => '899057000004'],
             ['sku' => 'KT57-ESTEH', 'name' => 'Es Teh Manis', 'category' => 'POS-MIN', 'price' => 6_000, 'cost' => 1_500, 'qty' => 100, 'track' => true, 'taxable' => false, 'barcode' => '899057000005'],
-            ['sku' => 'KT57-KAYA', 'name' => 'Kaya Butter Toast', 'category' => 'POS-ROT', 'price' => 18_000, 'cost' => 7_000, 'qty' => 40, 'track' => true, 'taxable' => false, 'barcode' => '899057000006'],
-            ['sku' => 'KT57-TELUR', 'name' => 'Telur ½ Matang (2)', 'category' => 'POS-ROT', 'price' => 10_000, 'cost' => 4_000, 'qty' => 50, 'track' => true, 'taxable' => false, 'barcode' => '899057000007'],
-            ['sku' => 'KT57-ROTI-CK', 'name' => 'Roti Bakar Cokelat', 'category' => 'POS-ROT', 'price' => 15_000, 'cost' => 6_000, 'qty' => 40, 'track' => true, 'taxable' => false, 'barcode' => '899057000008'],
+            ['sku' => 'KT57-SB-GARLIC', 'name' => 'Salt Bread Garlic Cheese', 'category' => 'POS-ROT', 'price' => 28_000, 'cost' => 11_000, 'qty' => 20, 'track' => true, 'taxable' => false, 'barcode' => '899057000016'],
+            ['sku' => 'KT57-SB-DBL', 'name' => 'Salt Bread Double Cheese', 'category' => 'POS-ROT', 'price' => 23_000, 'cost' => 9_000, 'qty' => 20, 'track' => true, 'taxable' => false, 'barcode' => '899057000017'],
+            ['sku' => 'KT57-SB-ORI', 'name' => 'Salt Bread Original', 'category' => 'POS-ROT', 'price' => 18_000, 'cost' => 7_000, 'qty' => 20, 'track' => true, 'taxable' => false, 'barcode' => '899057000018'],
+            ['sku' => 'KT57-SMEER', 'name' => 'Roti Smeer Meses', 'category' => 'POS-ROT', 'price' => 22_000, 'cost' => 9_000, 'qty' => 20, 'track' => true, 'taxable' => false, 'barcode' => '899057000019'],
+            ['sku' => 'KT57-CROISS-BT', 'name' => 'Butter Croissant', 'category' => 'POS-ROT', 'price' => 23_000, 'cost' => 9_000, 'qty' => 20, 'track' => true, 'taxable' => false, 'barcode' => '899057000020'],
+            ['sku' => 'KT57-SB-BEEF', 'name' => 'Salt Bread Smoked Beef & Cheese', 'category' => 'POS-ROT', 'price' => 40_000, 'cost' => 16_000, 'qty' => 20, 'track' => true, 'taxable' => false, 'barcode' => '899057000021'],
+            ['sku' => 'KT57-CROISS-CH', 'name' => 'Double Choco Croissant', 'category' => 'POS-ROT', 'price' => 45_000, 'cost' => 18_000, 'qty' => 20, 'track' => true, 'taxable' => false, 'barcode' => '899057000022'],
             ['sku' => 'KT57-NLEM', 'name' => 'Nasi Lemak', 'category' => 'POS-MAK', 'price' => 22_000, 'cost' => 10_000, 'qty' => 30, 'track' => true, 'taxable' => false, 'barcode' => '899057000009'],
             ['sku' => 'KT57-HAINAN', 'name' => 'Nasi Ayam Hainan', 'category' => 'POS-MAK', 'price' => 28_000, 'cost' => 14_000, 'qty' => 30, 'track' => true, 'taxable' => false, 'barcode' => '899057000010'],
             ['sku' => 'KT57-INDO', 'name' => 'Indomie Goreng', 'category' => 'POS-MAK', 'price' => 12_000, 'cost' => 5_000, 'qty' => 60, 'track' => true, 'taxable' => false, 'barcode' => '899057000011'],

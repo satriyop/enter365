@@ -9,8 +9,10 @@ declare(strict_types=1);
  * and asserts defining must/must-not data for that product posture.
  */
 
+use App\Models\Contacts\Contact;
 use App\Models\ElectricalPanel\ComponentStandard;
 use App\Models\Inventory\Product;
+use App\Models\Inventory\Warehouse;
 use App\Models\Manufacturing\Bom;
 use App\Models\Manufacturing\WorkOrder;
 use App\Models\Projects\Project;
@@ -98,7 +100,11 @@ it('runs DemoSeeder for feature set and asserts defining seed outcomes', functio
         DemoSeeder::DEMO_POS => expect($componentStandards)->toBe(0)
             ->and($solarProposals)->toBe(0)
             ->and($invoices)->toBe(0)
+            ->and(Contact::query()->count())->toBe(0)
+            ->and(Warehouse::query()->where('code', 'KT57-TOKO')->where('is_default', true)->exists())->toBeTrue()
+            ->and(Warehouse::query()->where('code', 'WH-001')->exists())->toBeFalse()
             ->and(Product::where('sku', 'KT57-KOPI-O')->exists())->toBeTrue()
+            ->and(Product::where('sku', 'AC-AMMETER')->exists())->toBeFalse()
             ->and(User::where('email', 'siti@kopitiam57.test')->exists())->toBeTrue(),
 
         default => throw new InvalidArgumentException("Unknown profile {$profile}"),

@@ -123,6 +123,7 @@ class PosSessionController extends Controller
                     'quantity' => $product->track_inventory
                         ? (int) ($stocks[$product->id]->quantity ?? 0)
                         : null,
+                    'image_url' => $this->catalogImageUrl($product->sku),
                 ];
             });
 
@@ -173,6 +174,20 @@ class PosSessionController extends Controller
         $this->assertOwnSession($request, $pos_session);
 
         return new PosSessionHoldResource($this->posService->takeHold($pos_session, $hold));
+    }
+
+    private function catalogImageUrl(?string $sku): ?string
+    {
+        if ($sku === null || $sku === '') {
+            return null;
+        }
+
+        $relative = 'pos/kopitiam/'.$sku.'.jpg';
+        if (! is_file(public_path($relative))) {
+            return null;
+        }
+
+        return '/'.$relative;
     }
 
     private function ensurePermission(Request $request, string $permission, string $message): void

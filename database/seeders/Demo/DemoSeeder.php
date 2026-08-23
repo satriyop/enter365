@@ -101,10 +101,22 @@ class DemoSeeder extends Seeder
         $this->command->info('╚═══════════════════════════════════════════════════════════════════╝');
         $this->command->info('');
 
-        // Seed master data first (shared)
-        $this->command->info('📦 Seeding Master Data...');
-        $this->call(MasterDataSeeder::class);
-        $this->command->info('');
+        // POS-first tenant is Kopitiam only — skip industrial master data
+        // (WH-001, panel categories, demo trading users).
+        if ($demoChoice !== self::DEMO_POS) {
+            $this->command->info('📦 Seeding Master Data...');
+            $this->call(MasterDataSeeder::class);
+            $this->command->info('');
+        }
+
+        if ($demoChoice === self::DEMO_POS) {
+            $this->command->info('☕ Seeding Kopitiam 57 POS-first tenant...');
+            $this->call(PosKopitiamDemoSeeder::class);
+            $this->command->info('');
+            $this->showCompletionMessage($demoChoice);
+
+            return;
+        }
 
         // Component library = Vahana electrical_panel only
         $seedPanelLibrary = Features::enabled('electrical_panel')
@@ -125,15 +137,6 @@ class DemoSeeder extends Seeder
 
         if ($demoChoice === self::DEMO_NEX || $demoChoice === self::DEMO_ALL) {
             $this->seedNex();
-        }
-
-        if ($demoChoice === self::DEMO_POS) {
-            $this->command->info('☕ Seeding Kopitiam 57 stand-in till (DEMO — bukan harga toko)...');
-            $this->call(PosKopitiamDemoSeeder::class);
-            $this->command->info('');
-            $this->showCompletionMessage($demoChoice);
-
-            return;
         }
 
         // Core trading for non-vertical-only paths (also used as base for services/enterprise/mfg)
@@ -343,14 +346,16 @@ class DemoSeeder extends Seeder
         $this->command->info('║                      Demo Data Complete!                           ║');
         $this->command->info('╠═══════════════════════════════════════════════════════════════════╣');
         $this->command->info('║  Demo Users:                                                       ║');
-        $this->command->info('║    admin@demo.com      (password: password)                        ║');
-        $this->command->info('║    sales@demo.com      (password: password)                        ║');
-        $this->command->info('║    purchasing@demo.com (password: password)                        ║');
-        $this->command->info('║    produksi@demo.com   (password: password)                        ║');
-        $this->command->info('║    finance@demo.com    (password: password)                        ║');
-        $this->command->info('║    gudang@demo.com     (password: password)                        ║');
         if ($demoChoice === self::DEMO_POS) {
-            $this->command->info('║    siti@kopitiam57.test (password: password)  Kasir                 ║');
+            $this->command->info('║    admin@example.com     (password: password)  Owner                ║');
+            $this->command->info('║    siti@kopitiam57.test  (password: password)  Kasir                ║');
+        } else {
+            $this->command->info('║    admin@demo.com      (password: password)                        ║');
+            $this->command->info('║    sales@demo.com      (password: password)                        ║');
+            $this->command->info('║    purchasing@demo.com (password: password)                        ║');
+            $this->command->info('║    produksi@demo.com   (password: password)                        ║');
+            $this->command->info('║    finance@demo.com    (password: password)                        ║');
+            $this->command->info('║    gudang@demo.com     (password: password)                        ║');
         }
         $this->command->info('╠═══════════════════════════════════════════════════════════════════╣');
         $this->command->info('║  Data Seeded:                                                      ║');
@@ -361,7 +366,7 @@ class DemoSeeder extends Seeder
             self::DEMO_MANUFACTURING => $this->command->info('║    ⚙️  Manufacturing: generic BOM/WO (no industry vertical)         ║'),
             self::DEMO_ENTERPRISE => $this->command->info('║    🏭 Enterprise: packs (MFG/projects); no solar/panel masters      ║'),
             self::DEMO_VAHANA, self::DEMO_ALL => $this->command->info('║    ⚡ PT Vahana: panel library + BOM + brand-capable masters         ║'),
-            self::DEMO_POS => $this->command->info('║    ☕ Kopitiam 57 till catalog (DEMO papan, bukan harga toko)       ║'),
+            self::DEMO_POS => $this->command->info('║    ☕ Kopitiam 57 POS tenant (pastry board + stand-in minuman)     ║'),
             default => null,
         };
 
