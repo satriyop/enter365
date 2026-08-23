@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PROTOTIPE B — Satu Langkah</title>
+<!--
+  PROTOTIPE / THROWAWAY. Bukan produksi. Tidak pakai ERP AppLayout.
+  Model interaksi: WIZARD. Satu pertanyaan per layar, dinomori, selalu bisa mundur.
+  Untuk kasir yang baru pertama kali pegang tablet: tidak ada layar yang menuntut
+  dua keputusan sekaligus. Lebih lambat dari A, tapi hampir tidak bisa salah.
+  Aturan domain yang dipatuhi (sama dengan A):
+    ADR-0051 harga tombol = yang dibayar · ADR-0055 periode dicek saat buka sesi
+    ADR-0056 diskon header · ADR-0058 stok dijaga saat tap · ADR-0059 hitung buta
+-->
+<style>
+:root{
+  --bg:#f6f7f5; --card:#fff; --ink:#0e1512; --ink2:#5a665f; --ink3:#93a09a;
+  --line:#d3dad6; --go:#0f8a4f; --go-d:#0a6e3e; --go-bg:#e6f4ec;
+  --warn:#8a5a00; --warn-bg:#fdf3de; --bad:#b01c10; --bad-bg:#fceae7;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-tap-highlight-color:transparent}
+button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+input,select{font:inherit}
+.hide{display:none!important}
+
+.dev{position:fixed;bottom:0;left:0;right:0;height:38px;z-index:60;background:#0e1512;color:#8fe0b4;
+  display:flex;align-items:center;gap:10px;padding:0 12px;font:11px/1 var(--mono)}
+.dev b{color:#fff;letter-spacing:.06em}
+.dev button{border:1px solid #2c3a34;padding:6px 9px;border-radius:5px;color:#8fe0b4}
+.dev button.on{background:#8fe0b4;color:#0e1512;font-weight:700}
+
+.app{height:calc(100dvh - 38px);display:grid;grid-template-rows:auto 1fr}
+
+/* ---- step header ---- */
+.head{background:var(--card);border-bottom:3px solid var(--line);padding:12px 20px 0}
+.hrow{display:flex;align-items:center;gap:16px;margin-bottom:12px}
+.back{height:52px;padding:0 20px;border:3px solid var(--line);border-radius:11px;
+  font-weight:800;font-size:16px;background:var(--bg)}
+.back:active{background:var(--line)}
+.ask{flex:1}
+.ask .step{font-size:13px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--go)}
+.ask h1{margin:2px 0 0;font-size:27px;line-height:1.15;letter-spacing:-.015em}
+.hmeta{text-align:right;font-size:13px;color:var(--ink2);white-space:nowrap}
+.hmeta b{display:block;font-size:15px;color:var(--ink)}
+.rail{display:flex;gap:6px;padding-bottom:12px}
+.rail div{flex:1;height:7px;border-radius:4px;background:var(--line)}
+.rail div.on{background:var(--go)}
+.rail div.done{background:#9dcdb4}
+
+.body{overflow:auto;min-height:0}
+.pad{padding:20px}
+
+/* ---- step 1: barang ---- */
+.s1{display:grid;grid-template-rows:auto 1fr auto;height:100%;min-height:0}
+.find{padding:14px 20px;display:flex;gap:12px}
+.find input{flex:1;height:64px;border:3px solid var(--ink);border-radius:12px;
+  padding:0 18px;font-size:20px;font-weight:600;background:var(--card)}
+.find input:focus{outline:5px solid var(--go-bg);border-color:var(--go)}
+.chips{display:flex;gap:8px;padding:0 20px 12px;overflow-x:auto}
+.chips button{height:48px;padding:0 18px;border-radius:24px;border:3px solid var(--line);
+  background:var(--card);font-weight:800;font-size:15px;white-space:nowrap}
+.chips button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.grid{overflow:auto;padding:0 20px 16px;display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(196px,1fr));gap:12px;align-content:start}
+.card{background:var(--card);border:3px solid var(--line);border-radius:14px;padding:16px;
+  text-align:left;min-height:130px;display:flex;flex-direction:column;justify-content:space-between}
+.card:active{border-color:var(--go);background:var(--go-bg)}
+.card.out{opacity:.45}
+.card .cn{font-weight:800;font-size:17px;line-height:1.25}
+.card .cp{font:800 22px var(--mono);color:var(--go);margin-top:10px}
+.card .cs{font-size:13px;font-weight:700;color:var(--ink3);margin-top:4px}
+.card .cs.thin{color:var(--warn)} .card .cs.zero{color:var(--bad)}
+.card .inbag{position:relative}
+.bagpill{display:inline-block;margin-top:8px;background:var(--go);color:#fff;
+  font:800 13px var(--sans);padding:5px 11px;border-radius:20px}
+
+.strip{background:var(--card);border-top:3px solid var(--line);padding:12px 20px 14px}
+.slines{display:flex;gap:9px;overflow-x:auto;padding-bottom:11px;min-height:74px}
+.sl{flex:0 0 auto;border:3px solid var(--line);border-radius:11px;padding:8px 10px;
+  background:var(--bg);min-width:158px}
+.sl .n{font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:170px}
+.sl .r{display:flex;align-items:center;gap:7px;margin-top:6px}
+.sl .r button{width:38px;height:38px;border:2px solid var(--line);border-radius:8px;
+  background:var(--card);font-weight:800;font-size:17px}
+.sl .r .q{font:800 17px var(--mono);min-width:26px;text-align:center}
+.sl .r .a{margin-left:auto;font:700 14px var(--mono);color:var(--ink2)}
+.slempty{display:flex;align-items:center;color:var(--ink3);font-size:16px;font-weight:600}
+.next{display:flex;align-items:center;gap:16px}
+.next .tot{flex:1}
+.next .tot span{font-size:14px;font-weight:700;color:var(--ink2)}
+.next .tot b{display:block;font:800 36px/1.05 var(--mono);letter-spacing:-.025em}
+.go{height:82px;min-width:330px;border-radius:14px;background:var(--go);color:#fff;
+  font-weight:800;font-size:23px}
+.go:disabled{background:#c8d0cb;color:#8e9a94}
+.go:active:not(:disabled){background:var(--go-d)}
+.linkbtn{background:none;color:var(--ink2);font-weight:700;font-size:15px;
+  text-decoration:underline;padding:10px 4px}
+
+/* ---- step 2: cara bayar ---- */
+.ways{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;padding:26px 20px;align-items:stretch}
+.waywrap{display:flex;flex-direction:column;justify-content:center;min-height:calc(100dvh - 260px)}
+.way{background:var(--card);border:4px solid var(--line);border-radius:18px;padding:30px 22px;
+  min-height:340px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+.way:active{border-color:var(--go);background:var(--go-bg)}
+.way .ic{font-size:64px;line-height:1}
+.way .t{font-weight:800;font-size:26px}
+.way .d{font-size:15px;color:var(--ink2);text-align:center;line-height:1.45}
+.owe{margin:0 20px;padding:20px 24px;background:var(--ink);color:#fff;border-radius:14px;
+  display:flex;justify-content:space-between;align-items:baseline}
+.owe span{font-size:17px;font-weight:700}
+.owe b{font:800 40px var(--mono);letter-spacing:-.025em}
+
+/* ---- step 3: uang ---- */
+.money{display:grid;grid-template-columns:1fr 430px;gap:20px;padding:20px;height:100%;min-height:0}
+.mleft{display:flex;flex-direction:column;gap:16px;justify-content:center}
+.big{background:var(--card);border:3px solid var(--line);border-radius:16px;padding:24px 28px}
+.big .l{font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--ink2)}
+.big .v{font:800 58px/1 var(--mono);letter-spacing:-.03em;margin-top:8px}
+.big.res{background:var(--go-bg);border-color:var(--go)}
+.big.res .l,.big.res .v{color:var(--go-d)}
+.big.res.short{background:var(--bad-bg);border-color:var(--bad)}
+.big.res.short .l,.big.res.short .v{color:var(--bad)}
+.mright{display:flex;flex-direction:column;gap:10px;min-height:0}
+.notes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.notes button{height:62px;border:3px solid var(--line);border-radius:12px;background:var(--card);
+  font:800 18px var(--mono)}
+.notes button:active{background:var(--go-bg);border-color:var(--go)}
+.notes .exact{grid-column:1/-1;background:var(--ink);color:#fff;border-color:var(--ink);
+  font-family:var(--sans);font-size:19px}
+.pad3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;flex:1;min-height:200px}
+.pad3 button{border:3px solid var(--line);border-radius:12px;background:var(--card);
+  font:800 28px var(--mono)}
+.pad3 button:active{background:var(--line)}
+
+/* ---- step 4 done ---- */
+.done{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:100%;gap:8px;padding:20px}
+.done .tick{width:104px;height:104px;border-radius:52px;background:var(--go);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:56px;margin-bottom:10px}
+.done h2{margin:0;font-size:30px}
+.done .kl{font-size:18px;font-weight:700;color:var(--ink2);margin-top:22px}
+.done .kv{font:800 86px/1 var(--mono);color:var(--go);letter-spacing:-.035em;margin-top:6px}
+.done .row{display:flex;gap:14px;margin-top:34px}
+.done .row button{height:76px;padding:0 34px;border-radius:14px;font-weight:800;font-size:19px}
+.done .p{background:var(--go);color:#fff;min-width:300px}
+.done .s{border:3px solid var(--line);background:var(--card)}
+
+/* shared bits */
+.banner{margin:0 0 18px;padding:15px 18px;border-radius:12px;font-size:16px;line-height:1.5;
+  display:flex;gap:12px;align-items:flex-start}
+.banner.warn{background:var(--warn-bg);border:3px solid #e5c176;color:var(--warn)}
+.banner.bad{background:var(--bad-bg);border:3px solid #e8a79f;color:var(--bad)}
+.banner b{display:block;margin-bottom:3px}
+.scrim{position:fixed;inset:0;z-index:50;background:rgba(14,21,18,.62);
+  display:flex;align-items:center;justify-content:center;padding:26px}
+.dlg{background:var(--card);border-radius:16px;padding:26px;width:min(580px,100%)}
+.dlg h2{margin:0 0 8px;font-size:24px}
+.dlg p{margin:0 0 18px;font-size:17px;line-height:1.5;color:var(--ink2)}
+.dlg .row{display:flex;gap:12px}
+.dlg .row button{flex:1;height:66px;border-radius:12px;font-weight:800;font-size:17px}
+.prim{background:var(--go);color:#fff} .sec{border:3px solid var(--line);background:var(--bg)}
+.dang{background:var(--bad);color:#fff}
+.field{margin-bottom:18px}
+.field label{display:block;font-weight:800;font-size:16px;margin-bottom:7px}
+.field input,.field select{width:100%;height:64px;border:3px solid var(--line);border-radius:12px;
+  padding:0 16px;font-size:19px;background:var(--card)}
+.field .hint{font-size:14px;color:var(--ink3);margin-top:6px;line-height:1.45}
+.toast{position:fixed;left:50%;bottom:64px;transform:translateX(-50%);z-index:70;background:var(--ink);
+  color:#fff;padding:17px 26px;border-radius:12px;font-size:17px;font-weight:700;max-width:78vw;
+  box-shadow:0 14px 38px rgba(0,0,0,.3)}
+.toast.bad{background:var(--bad)}
+.den{display:grid;grid-template-columns:160px 1fr 140px;align-items:center;gap:14px;
+  padding:10px 0;border-bottom:2px solid var(--line)}
+.den .dl{font:800 18px var(--mono)}
+.den input{width:100%;height:58px;border:3px solid var(--line);border-radius:11px;
+  text-align:center;font:800 21px var(--mono);background:var(--card)}
+.den .dt{text-align:right;font:700 17px var(--mono);color:var(--ink2)}
+.ctot{display:flex;justify-content:space-between;align-items:baseline;margin:22px 0;
+  padding:20px;background:var(--ink);color:#fff;border-radius:14px}
+.ctot span{font-size:17px;font-weight:700} .ctot b{font:800 38px var(--mono)}
+.rr{display:flex;justify-content:space-between;padding:16px 18px;background:var(--card);
+  border:3px solid var(--line);border-radius:12px;font-size:18px;margin-bottom:10px}
+.rr b{font:800 22px var(--mono)}
+.rr.plus{border-color:var(--warn);background:var(--warn-bg)}
+.rr.minus{border-color:var(--bad);background:var(--bad-bg)}
+.rr.okk{border-color:var(--go);background:var(--go-bg)}
+.srow{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:16px;
+  padding:17px 18px;border:3px solid var(--line);border-radius:12px;background:var(--card);margin-bottom:10px}
+.srow .no{font:800 16px var(--mono)} .srow .tm{font-size:14px;color:var(--ink2);margin-top:3px}
+.srow .tt{font:800 22px var(--mono)}
+.srow button{height:56px;padding:0 22px;border-radius:11px;background:var(--bad-bg);
+  color:var(--bad);font-weight:800;border:3px solid #eeb6ae}
+.srow.v{opacity:.5} .srow .vd{font-weight:800;color:var(--bad)}
+.reasons{display:grid;gap:10px;margin-bottom:18px}
+.reasons button{height:64px;border:3px solid var(--line);border-radius:12px;background:var(--bg);
+  font-weight:800;font-size:17px;text-align:left;padding:0 18px}
+.reasons button.on{border-color:var(--ink);background:var(--ink);color:#fff}
+.idem{font:12px var(--mono);color:var(--ink3);margin-top:12px;word-break:break-all}
+.mid{max-width:660px;margin:0 auto}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast" class="toast hide"></div>
+<div class="dev">
+  <b>PROTOTIPE B · SATU LANGKAH</b><span>simulasi:</span>
+  <button id="dvLock">Periode terkunci</button>
+  <button id="dvNet">Jaringan putus</button>
+  <button id="dvReset">Ulang</button>
+</div>
+
+<script>
+const CATS=['Semua','Minuman','Makanan','Sembako','Jasa'];
+const PRODUCTS=[
+  {id:1,n:'Aqua 600ml',bc:'899001',p:400000,tax:true,trk:true,st:36,c:'Minuman'},
+  {id:2,n:'Teh Botol Sosro',bc:'899002',p:500000,tax:true,trk:true,st:12,c:'Minuman'},
+  {id:3,n:'Kopi Kapal Api',bc:'899003',p:150000,tax:true,trk:true,st:2,c:'Minuman'},
+  {id:4,n:'Indomie Goreng',bc:'899004',p:350000,tax:true,trk:true,st:48,c:'Makanan'},
+  {id:5,n:'Roti Tawar',bc:'899005',p:1600000,tax:true,trk:true,st:1,c:'Makanan'},
+  {id:6,n:'Biskuit Roma',bc:'899006',p:900000,tax:true,trk:true,st:0,c:'Makanan'},
+  {id:7,n:'Gula Pasir 1kg',bc:'899007',p:1800000,tax:true,trk:true,st:9,c:'Sembako'},
+  {id:8,n:'Telur 1kg',bc:'899008',p:2800000,tax:true,trk:true,st:7,c:'Sembako'},
+  {id:9,n:'Minyak Goreng 1L',bc:'899009',p:1900000,tax:true,trk:true,st:14,c:'Sembako'},
+  {id:10,n:'Beras 5kg',bc:'899010',p:7200000,tax:true,trk:true,st:5,c:'Sembako'},
+  {id:11,n:'Jasa Packing',bc:'',p:200000,tax:false,trk:false,st:null,c:'Jasa'},
+  {id:12,n:'Kantong Plastik',bc:'899012',p:20000,tax:false,trk:false,st:null,c:'Jasa'},
+];
+const DENOMS=[10000000,5000000,2000000,1000000,500000,200000,100000,50000,20000,10000];
+const NOTES=[2000000,5000000,10000000,20000000];
+
+let S;
+const fresh=()=>({
+  screen:'open', dev:{lock:false,net:false}, sesi:null,
+  stock:Object.fromEntries(PRODUCTS.map(p=>[p.id,p.st])),
+  cart:[],discount:0,held:[],sales:[],seq:0,cat:'Semua',search:'',
+  way:null,recv:0,qris:0,key:null,lastChange:0,lastNo:'',
+  voidPick:null,voidReason:null,
+  count:Object.fromEntries(DENOMS.map(d=>[d,0])),countDone:false,dlg:null,
+});
+S=fresh();
+const rp=s=>'Rp'+Math.round(s/100).toLocaleString('id-ID');
+const el=document.getElementById('app');
+const P=id=>PRODUCTS.find(p=>p.id===id);
+const avail=id=>P(id).trk?S.stock[id]:Infinity;
+const inCart=id=>S.cart.find(l=>l.id===id)?.q||0;
+function toast(m,bad){const t=document.getElementById('toast');t.textContent=m;
+  t.className='toast'+(bad?' bad':'');clearTimeout(t._h);t._h=setTimeout(()=>t.className='toast hide',2700);}
+
+function totals(){
+  const gross=S.cart.reduce((a,l)=>a+P(l.id).p*l.q,0);
+  const disc=Math.min(S.discount,gross), payable=gross-disc;
+  let alloc=0,ppn=0;
+  S.cart.forEach((l,i)=>{const line=P(l.id).p*l.q;
+    const d=i===S.cart.length-1?disc-alloc:Math.round(disc*line/(gross||1));alloc+=d;
+    const inc=line-d; if(P(l.id).tax) ppn+=inc-Math.round(inc/1.11);});
+  return {gross,disc,payable,ppn};
+}
+const cashDue=()=>{const t=totals();
+  return S.way==='qris'?0:S.way==='bagi'?t.payable-S.qris:t.payable;};
+
+function add(id){
+  const p=P(id),q=inCart(id)+1;
+  if(p.trk&&q>avail(id)){
+    toast(avail(id)===0?`${p.n} habis — tidak bisa dijual.`:`${p.n} tinggal ${avail(id)}.`,true);return;}
+  const c=S.cart.find(l=>l.id===id); c?c.q=q:S.cart.push({id,q:1}); render();
+}
+function bump(id,d){const l=S.cart.find(x=>x.id===id);if(!l)return;const q=l.q+d;
+  if(q<=0){S.cart=S.cart.filter(x=>x.id!==id);return render();}
+  if(P(id).trk&&q>avail(id)){toast(`${P(id).n} tinggal ${avail(id)}.`,true);return;}
+  l.q=q;render();}
+
+function checkout(){
+  const t=totals();
+  if(!S.key)S.key='pos_'+Math.random().toString(36).slice(2,10);
+  if(S.dev.net){S.dlg={type:'netfail'};return render();}
+  const short=S.cart.find(l=>P(l.id).trk&&l.q>avail(l.id));
+  if(short){S.dlg={type:'short',id:short.id};return render();}
+  S.seq++;
+  const cash=cashDue();
+  S.lastNo='POS-202608-'+String(S.seq).padStart(4,'0');
+  S.sales.push({no:S.lastNo,at:new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}),
+    lines:S.cart.map(l=>({...l})),total:t.payable,cash,voided:false});
+  S.cart.forEach(l=>{if(P(l.id).trk)S.stock[l.id]-=l.q;});
+  S.lastChange=S.way==='qris'?0:S.recv-cash;
+  S.cart=[];S.discount=0;S.key=null;S.screen='done';render();
+}
+function doVoid(){const s=S.sales.find(x=>x.no===S.voidPick);if(!s)return;
+  s.voided=true;s.reason=S.voidReason;
+  s.lines.forEach(l=>{if(P(l.id).trk)S.stock[l.id]+=l.q;});
+  S.voidPick=S.voidReason=null;S.dlg=null;toast(s.no+' dibatalkan. Stok dikembalikan.');render();}
+const expCash=()=>S.sesi.modal+S.sales.filter(s=>!s.voided).reduce((a,s)=>a+s.cash,0);
+const expQris=()=>S.sales.filter(s=>!s.voided).reduce((a,s)=>a+(s.total-s.cash),0);
+const counted=()=>DENOMS.reduce((a,d)=>a+d*(S.count[d]||0),0);
+
+/* ---------- shell ---------- */
+function shell(step,total,kicker,title,bodyHtml,back){
+  const rail=Array.from({length:total},(_,i)=>
+    `<div class="${i+1===step?'on':i+1<step?'done':''}"></div>`).join('');
+  return `<div class="app">
+    <div class="head">
+      <div class="hrow">
+        ${back?`<button class="back" data-go="${back}">← Kembali</button>`:''}
+        <div class="ask"><div class="step">${kicker}</div><h1>${title}</h1></div>
+        <div class="hmeta"><b>Siti Rahayu</b>${S.sesi?S.sesi.no:''}</div>
+      </div><div class="rail">${rail}</div></div>
+    <div class="body">${bodyHtml}</div></div>`;
+}
+
+function render(){
+  el.innerHTML=({open:vOpen,shop:vShop,way:vWay,cash:vCash,qris:vQris,done:vDone,
+    voids:vVoids,close:vClose,closed:vClosed}[S.screen])()+(S.dlg?vDlg():'');
+  document.getElementById('dvLock').className=S.dev.lock?'on':'';
+  document.getElementById('dvNet').className=S.dev.net?'on':'';
+  const f=document.getElementById('find');if(f)f.focus();
+}
+
+function vOpen(){
+  return shell(1,1,'Sebelum mulai','Buka kasir dulu',`<div class="pad"><div class="mid">
+    ${S.dev.lock?`<div class="banner bad"><span style="font-size:22px">✕</span><div>
+      <b>Periode Agustus 2026 masih terkunci</b>
+      Kasir belum bisa jualan. Hubungi bagian akuntansi untuk membuka periode.
+      <span style="display:block;margin-top:8px;font-size:14px;opacity:.85">
+      Dicek di sini supaya tidak gagal saat pelanggan sudah menyerahkan uang.</span></div></div>`:''}
+    <div class="field"><label>Toko / gudang</label>
+      <select><option>Toko Depan</option><option>Gudang Belakang</option></select></div>
+    <div class="field"><label>Uang modal di laci — hitung dulu</label>
+      <input id="modal" inputmode="numeric" value="200000">
+      <div class="hint">Uang kecil untuk kembalian. Nanti dicocokkan waktu tutup kasir.
+      Akun kas dan QRIS diambil otomatis dari setelan perusahaan — kasir tidak perlu pilih akun.</div></div>
+    <button class="go" style="width:100%" ${S.dev.lock?'disabled':''} data-go="doopen">Mulai jualan</button>
+  </div></div>`,null);
+}
+
+function vShop(){
+  const t=totals();
+  const list=PRODUCTS.filter(p=>(S.cat==='Semua'||p.c===S.cat)&&
+    (!S.search||(p.n+p.bc).toLowerCase().includes(S.search.toLowerCase())));
+  const body=`<div class="s1">
+    <div>
+      <div class="find"><input id="find" placeholder="Tembak barcode atau ketik nama barang…"
+        value="${S.search.replace(/"/g,'&quot;')}" autocomplete="off">
+        <button class="back" data-go="voids" ${S.sales.length?'':'disabled'}>Batalkan penjualan</button>
+        <button class="back" data-go="close">Tutup kasir</button></div>
+      <div class="chips">${CATS.map(c=>
+        `<button data-cat="${c}" class="${S.cat===c?'on':''}">${c}</button>`).join('')}</div>
+    </div>
+    <div class="grid">${list.map(p=>{
+      const a=p.trk?S.stock[p.id]:null,out=p.trk&&a<=0,q=inCart(p.id);
+      return `<button class="card ${out?'out':''}" data-add="${p.id}">
+        <div class="cn">${p.n}</div>
+        <div><div class="cp">${rp(p.p)}</div>
+        <div class="cs ${out?'zero':(p.trk&&a<=3?'thin':'')}">${
+          !p.trk?'jasa · tanpa stok':out?'HABIS':'stok '+a}</div>
+        ${q?`<div class="bagpill">${q} di keranjang</div>`:''}</div></button>`;}).join('')}</div>
+    <div class="strip">
+      <div class="slines">${S.cart.length?S.cart.map(l=>`<div class="sl">
+        <div class="n">${P(l.id).n}</div>
+        <div class="r"><button data-b="${l.id}|-1">−</button><span class="q">${l.q}</span>
+          <button data-b="${l.id}|1">+</button><span class="a">${rp(P(l.id).p*l.q)}</span></div></div>`).join('')
+        :'<div class="slempty">Keranjang masih kosong — ketuk barang di atas.</div>'}</div>
+      <div class="next">
+        <div class="tot"><span>${S.cart.length} barang${t.disc?' · diskon '+rp(t.disc):''}</span>
+          <b>${rp(t.payable)}</b></div>
+        <button class="linkbtn" data-go="disc" ${S.cart.length?'':'disabled'}>Diskon</button>
+        <button class="linkbtn" data-go="hold" ${S.cart.length?'':'disabled'}>Tahan dulu</button>
+        ${S.held.length?`<button class="linkbtn" data-go="resume">Ambil ditahan (${S.held.length})</button>`:''}
+        <button class="go" data-go="way" ${S.cart.length?'':'disabled'}>Lanjut ke bayar →</button>
+      </div></div></div>`;
+  return shell(1,3,'Langkah 1 dari 3','Barang apa yang dibeli?',body,null);
+}
+
+function vWay(){
+  const t=totals();
+  const body=`<div class="owe"><span>Yang harus dibayar</span><b>${rp(t.payable)}</b></div>
+    <div class="waywrap"><div class="ways">
+      <button class="way" data-w="tunai"><div class="ic" style="font-weight:800;font-size:52px;letter-spacing:-.02em">Rp</div><div class="t">TUNAI</div>
+        <div class="d">Pelanggan bayar pakai uang kertas atau koin</div></button>
+      <button class="way" data-w="qris"><div class="ic">▦</div><div class="t">QRIS</div>
+        <div class="d">Pelanggan scan QR. Jumlahnya pas, tidak ada kembalian</div></button>
+      <button class="way" data-w="bagi"><div class="ic" style="font-size:44px"><span style="font-weight:800;letter-spacing:-.02em">Rp</span> + ▦</div><div class="t">BAGI DUA</div>
+        <div class="d">Sebagian QRIS, sisanya tunai</div></button></div></div>
+    <div class="pad" style="padding-top:0;text-align:center;color:var(--ink3);font-size:14px">
+      Sudah termasuk PPN ${rp(t.ppn)} — kasir tidak perlu menambah pajak apa pun.</div>`;
+  return shell(2,3,'Langkah 2 dari 3','Pelanggan mau bayar pakai apa?',body,'shop');
+}
+
+function vCash(){
+  const due=cashDue(),chg=S.recv-due,ok=S.recv>=due;
+  const body=`<div class="money">
+    <div class="mleft">
+      <div class="big"><div class="l">${S.way==='bagi'?'Sisa tunai setelah QRIS '+rp(S.qris):'Harus dibayar tunai'}</div>
+        <div class="v">${rp(due)}</div></div>
+      <div class="big"><div class="l">Uang diterima dari pelanggan</div>
+        <div class="v">${rp(S.recv)}</div></div>
+      <div class="big res ${ok?'':'short'}"><div class="l">${ok?'Kembalian':'Masih kurang'}</div>
+        <div class="v">${rp(Math.abs(chg))}</div></div></div>
+    <div class="mright">
+      <div class="notes"><button class="exact" data-r="${due}">UANG PAS · ${rp(due)}</button>
+        ${NOTES.map(n=>`<button data-r="${n}">${rp(n)}</button>`).join('')}</div>
+      <div class="pad3">${[1,2,3,4,5,6,7,8,9].map(k=>`<button data-k="${k}">${k}</button>`).join('')}
+        <button data-k="000">000</button><button data-k="0">0</button>
+        <button data-k="del" style="font-size:22px">⌫</button></div>
+      <button class="go" style="min-width:0;width:100%" data-go="commit" ${ok?'':'disabled'}>
+        ${ok?'Selesai — terima uang':'Uang belum cukup'}</button></div></div>`;
+  return shell(3,3,'Langkah 3 dari 3','Berapa uang yang diterima?',body,'way');
+}
+
+function vQris(){
+  const t=totals();
+  const body=`<div class="pad"><div class="mid" style="text-align:center">
+    <div style="border:4px dashed var(--line);border-radius:18px;padding:38px 24px;background:var(--card)">
+      <div style="font-size:96px;line-height:1">▦</div>
+      <div style="font-weight:800;font-size:24px;margin-top:14px">Minta pelanggan scan QR</div>
+      <div style="font:800 46px var(--mono);color:var(--go);margin-top:14px">${rp(t.payable)}</div></div>
+    <div class="banner warn" style="margin-top:22px;text-align:left"><span style="font-size:22px">!</span>
+      <div><b>Tekan Selesai hanya setelah uang benar-benar masuk</b>
+      Cek notifikasi di HP atau mesin QRIS. Sistem tidak bisa mengeceknya sendiri di versi ini.</div></div>
+    <button class="go" style="width:100%" data-go="commit">Uang sudah masuk — Selesai</button>
+  </div></div>`;
+  return shell(3,3,'Langkah 3 dari 3','Sudah dibayar lewat QRIS?',body,'way');
+}
+
+function vDone(){
+  return `<div class="app" style="grid-template-rows:1fr"><div class="done">
+    <div class="tick">✓</div><h2>Selesai</h2>
+    <div style="color:var(--ink2);font:700 16px var(--mono);margin-top:6px">${S.lastNo}</div>
+    ${S.lastChange>0?`<div class="kl">Kembalian untuk pelanggan</div><div class="kv">${rp(S.lastChange)}</div>`
+      :`<div class="kl" style="margin-top:26px">Uang pas — tidak ada kembalian</div>`}
+    <div class="row"><button class="s" data-go="print">Cetak struk</button>
+      <button class="p" data-go="shop">Pelanggan berikutnya →</button></div>
+  </div></div>`;
+}
+
+function vVoids(){
+  const body=`<div class="pad"><div class="mid">
+    <div class="banner warn"><span style="font-size:22px">!</span><div>
+      <b>Hanya bisa selama sesi ini masih buka</b>
+      Setelah tutup kasir, penjualan tidak bisa dibatalkan. Seluruh struk dibatalkan sekaligus —
+      tidak bisa satu barang saja. Kalau salah satu barang, batalkan lalu jual ulang.</div></div>
+    ${S.sales.slice().reverse().map(s=>`<div class="srow ${s.voided?'v':''}">
+      <div><div class="no">${s.no}</div><div class="tm">${s.at} · ${s.lines.length} barang${s.voided?' · '+s.reason:''}</div></div>
+      <div class="tt">${rp(s.total)}</div>
+      ${s.voided?'<div class="vd">DIBATALKAN</div>':`<button data-void="${s.no}">Batalkan</button>`}
+    </div>`).join('')||'<p style="text-align:center;color:var(--ink3)">Belum ada penjualan.</p>'}
+  </div></div>`;
+  return shell(1,1,'Perbaikan','Penjualan mana yang salah?',body,'shop');
+}
+
+function vClose(){
+  const c=counted();
+  if(!S.countDone){
+    const body=`<div class="pad"><div class="mid">
+      <div class="banner warn"><span style="font-size:22px">!</span><div>
+        <b>Hitung dulu, baru sistem cocokkan</b>
+        Jumlah seharusnya sengaja belum ditampilkan supaya hitunganmu jujur apa adanya.</div></div>
+      ${DENOMS.map(d=>`<div class="den"><div class="dl">${rp(d)}</div>
+        <input inputmode="numeric" data-d="${d}" value="${S.count[d]||''}" placeholder="0">
+        <div class="dt">${S.count[d]?rp(d*S.count[d]):'—'}</div></div>`).join('')}
+      <div class="ctot"><span>Uang yang kamu hitung</span><b>${rp(c)}</b></div>
+      <button class="go" style="width:100%" data-go="countdone">Lanjut</button></div></div>`;
+    return shell(1,2,'Tutup kasir · langkah 1 dari 2','Hitung uang di laci',body,'shop');
+  }
+  const e=expCash(),d=c-e;
+  const body=`<div class="pad"><div class="mid">
+    <div class="rr"><span>Modal awal</span><b>${rp(S.sesi.modal)}</b></div>
+    <div class="rr"><span>Tunai dari penjualan</span><b>${rp(e-S.sesi.modal)}</b></div>
+    <div class="rr"><span>Seharusnya ada di laci</span><b>${rp(e)}</b></div>
+    <div class="rr"><span>Kamu hitung</span><b>${rp(c)}</b></div>
+    <div class="rr ${d>0?'plus':d<0?'minus':'okk'}">
+      <span>${d===0?'Cocok':d>0?'Lebih':'Kurang'}</span><b>${rp(Math.abs(d))}</b></div>
+    <div class="rr" style="opacity:.65"><span>QRIS hari ini (info saja, tidak dihitung)</span><b>${rp(expQris())}</b></div>
+    ${d!==0?`<div class="banner ${d<0?'bad':'warn'}" style="margin-top:18px"><span style="font-size:22px">!</span>
+      <div><b>Selisih dicatat apa adanya</b>Sesi tetap boleh ditutup. Selisih jadi catatan untuk pemilik.</div></div>`:''}
+    <button class="go" style="width:100%;margin-top:8px" data-go="doclose">Tutup sesi sekarang</button>
+    <button class="back" style="width:100%;margin-top:12px;height:60px" data-go="recount">Hitung ulang</button>
+  </div></div>`;
+  return shell(2,2,'Tutup kasir · langkah 2 dari 2','Hasil pencocokan',body,'recount');
+}
+
+function vClosed(){
+  const c=counted(),e=expCash(),d=c-e;
+  return `<div class="app" style="grid-template-rows:1fr"><div class="done">
+    <div class="tick">✓</div><h2>Sesi ditutup</h2>
+    <div style="color:var(--ink2);font-size:17px;margin-top:8px">
+      ${S.sesi.no} · ${S.sales.filter(s=>!s.voided).length} penjualan</div>
+    <div class="kl">${d===0?'Kas cocok':d>0?'Lebih':'Kurang'}</div>
+    <div class="kv" style="color:${d?'var(--bad)':'var(--go)'}">${rp(Math.abs(d))}</div>
+    <div class="row"><button class="p" data-go="reset">Buka sesi baru</button></div></div></div>`;
+}
+
+function vDlg(){
+  const d=S.dlg,t=totals();
+  if(d.type==='disc') return `<div class="scrim"><div class="dlg"><h2>Beri diskon</h2>
+    <p>Potongan untuk seluruh struk. Harga barang tidak berubah.</p>
+    <div class="field"><label>Potongan (Rp)</label>
+      <input id="dv" inputmode="numeric" value="${S.discount?S.discount/100:''}" placeholder="0"></div>
+    <div class="banner warn"><span>!</span><div><b>Batas kasir 10% (${rp(Math.round(t.gross*0.1))})</b>
+      Di atas itu perlu PIN penyelia. <i>Aturan ini belum ada di ADR — temuan #6.</i></div></div>
+    <div class="row"><button class="sec" data-go="nodlg">Batal</button>
+      <button class="prim" data-go="setdisc">Simpan</button></div></div></div>`;
+  if(d.type==='void'){const R=['Salah barang','Salah jumlah','Salah cara bayar','Pelanggan batal'];
+    return `<div class="scrim"><div class="dlg"><h2>Batalkan ${S.voidPick}?</h2>
+      <p>Seluruh struk dibatalkan, stok kembali, jurnal dibalik. Pilih alasannya.</p>
+      <div class="reasons">${R.map(r=>`<button class="${S.voidReason===r?'on':''}" data-rs="${r}">${r}</button>`).join('')}</div>
+      <div class="row"><button class="sec" data-go="nodlg">Tidak jadi</button>
+        <button class="dang" data-go="dovoid" ${S.voidReason?'':'disabled'}>Ya, batalkan</button></div></div></div>`;}
+  if(d.type==='short'){const p=P(d.id);
+    return `<div class="scrim"><div class="dlg"><h2>Stok ${p.n} kurang</h2>
+      <p>Tersisa ${avail(d.id)}, di keranjang ${inCart(d.id)}. Kasir lain mungkin baru menjualnya.
+      Uang belum diambil — kurangi dulu jumlahnya.</p>
+      <div class="row"><button class="prim" data-go="fixshort">Sesuaikan jadi ${Math.max(avail(d.id),0)}</button></div>
+      </div></div>`;}
+  if(d.type==='netfail') return `<div class="scrim"><div class="dlg"><h2>Belum terkirim</h2>
+    <p>Jaringan putus. Penjualan <b>belum</b> tercatat. Tekan Coba lagi —
+    aman, tidak akan tercatat dua kali.</p>
+    <div class="row"><button class="sec" data-go="nodlg">Nanti</button>
+      <button class="prim" data-go="retry">Coba lagi</button></div>
+    <div class="idem">Idempotency-Key: ${S.key}</div></div></div>`;
+  return '';
+}
+
+document.addEventListener('click',e=>{
+  const q=s=>e.target.closest(s);let n;
+  if(n=q('[data-add]'))return add(+n.dataset.add);
+  if(n=q('[data-b]')){const[i,d]=n.dataset.b.split('|');return bump(+i,+d);}
+  if(n=q('[data-cat]')){S.cat=n.dataset.cat;return render();}
+  if(n=q('[data-w]')){S.way=n.dataset.w;S.recv=0;
+    if(S.way==='bagi')S.qris=Math.round(totals().payable/2);
+    S.screen=S.way==='qris'?'qris':'cash';return render();}
+  if(n=q('[data-r]')){S.recv=+n.dataset.r;return render();}
+  if(n=q('[data-k]')){const k=n.dataset.k;let v=String(Math.round(S.recv/100));
+    v=k==='del'?v.slice(0,-1):(v==='0'?'':v)+k;S.recv=(+v||0)*100;return render();}
+  if(n=q('[data-void]')){S.voidPick=n.dataset.void;S.dlg={type:'void'};return render();}
+  if(n=q('[data-rs]')){S.voidReason=n.dataset.rs;return render();}
+  const g=q('[data-go]')?.dataset.go;if(!g)return;
+  switch(g){
+    case 'doopen': if(S.dev.lock)return;
+      S.sesi={no:'PSS-202608-0007',modal:(+document.getElementById('modal').value||0)*100};
+      S.screen='shop';break;
+    case 'shop': S.screen='shop';S.way=null;S.recv=0;break;
+    case 'way': S.screen='way';break;
+    case 'commit': return checkout();
+    case 'retry': S.dev.net=false;S.dlg=null;return checkout();
+    case 'fixshort':{const a=avail(S.dlg.id);
+      if(a<=0)S.cart=S.cart.filter(x=>x.id!==S.dlg.id);else S.cart.find(x=>x.id===S.dlg.id).q=a;
+      S.dlg=null;S.screen=S.cart.length?'way':'shop';break;}
+    case 'disc': S.dlg={type:'disc'};break;
+    case 'setdisc': S.discount=(+document.getElementById('dv').value||0)*100;S.dlg=null;break;
+    case 'nodlg': S.dlg=null;S.voidPick=S.voidReason=null;break;
+    case 'dovoid': return doVoid();
+    case 'hold': S.held.push({lines:S.cart,disc:S.discount});S.cart=[];S.discount=0;
+      toast('Keranjang ditahan.');break;
+    case 'resume':{const h=S.held.pop();S.cart=h.lines;S.discount=h.disc;break;}
+    case 'voids': S.screen='voids';break;
+    case 'close': S.screen='close';S.countDone=false;break;
+    case 'countdone': S.countDone=true;break;
+    case 'recount': S.countDone=false;break;
+    case 'doclose': S.screen='closed';break;
+    case 'print': toast('Struk dicetak (simulasi) — cetak belum ada di ADR, temuan #9.');return;
+    case 'reset': S=fresh();break;
+  }
+  render();
+});
+document.addEventListener('input',e=>{
+  if(e.target.id==='find'){S.search=e.target.value;render();}
+  if(e.target.dataset.d){S.count[e.target.dataset.d]=+e.target.value||0;
+    document.querySelector('.ctot b').textContent=rp(counted());
+    e.target.nextElementSibling.textContent=e.target.value?rp(e.target.dataset.d*e.target.value):'—';}
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&e.target.id==='find'){
+    const hit=PRODUCTS.find(p=>p.bc===S.search.trim());
+    if(hit){S.search='';add(hit.id);}else toast('Barcode tidak dikenal.',true);}
+});
+document.getElementById('dvLock').onclick=()=>{S.dev.lock=!S.dev.lock;render();};
+document.getElementById('dvNet').onclick=()=>{S.dev.net=!S.dev.net;render();};
+document.getElementById('dvReset').onclick=()=>{S=fresh();render();};
+render();
+</script>
+</body>
+</html>

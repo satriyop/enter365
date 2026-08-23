@@ -80,6 +80,19 @@ function authenticatedAdmin(): User
 }
 
 /**
+ * Authenticate a Kasir (role cashier). Requires RolesAndPermissionsSeeder.
+ */
+function authenticatedCashier(): User
+{
+    $user = User::factory()->create();
+    $role = Role::query()->where('name', Role::CASHIER)->firstOrFail();
+    $user->roles()->attach($role);
+    Sanctum::actingAs($user);
+
+    return $user;
+}
+
+/**
  * Create and authenticate a regular user for API tests.
  */
 function authenticatedUser(): User
@@ -137,6 +150,7 @@ function applyFeaturePreset(string $preset): void
             'projects' => true,
             'solar_proposals' => true,
             'electrical_panel' => true,
+            'pos' => true,
         ],
         'enterprise' => [
             'manufacturing' => true,
@@ -148,6 +162,7 @@ function applyFeaturePreset(string $preset): void
             'projects' => true,
             'solar_proposals' => false,
             'electrical_panel' => false,
+            'pos' => false,
         ],
         'manufacturing' => [
             'manufacturing' => true,
@@ -159,6 +174,7 @@ function applyFeaturePreset(string $preset): void
             'projects' => false,
             'solar_proposals' => false,
             'electrical_panel' => false,
+            'pos' => false,
         ],
         'vahana' => [
             'manufacturing' => true,
@@ -170,6 +186,7 @@ function applyFeaturePreset(string $preset): void
             'projects' => false,
             'solar_proposals' => false,
             'electrical_panel' => true,
+            'pos' => false,
         ],
         'services' => [
             'manufacturing' => false,
@@ -181,6 +198,22 @@ function applyFeaturePreset(string $preset): void
             'projects' => true,
             'solar_proposals' => false,
             'electrical_panel' => false,
+            'pos' => false,
+        ],
+        'pos' => [
+            'manufacturing' => false,
+            'bom' => false,
+            'work_orders' => false,
+            'material_requisitions' => false,
+            'mrp' => false,
+            'subcontracting' => false,
+            'projects' => false,
+            'solar_proposals' => false,
+            'electrical_panel' => false,
+            'pos' => true,
+            'quotations' => false,
+            'invoices' => false,
+            'payments' => false,
         ],
         'solar' => [
             'manufacturing' => false,
@@ -192,6 +225,7 @@ function applyFeaturePreset(string $preset): void
             'projects' => true,
             'solar_proposals' => true,
             'electrical_panel' => false,
+            'pos' => false,
         ],
         default => [ // general
             'manufacturing' => false,
@@ -203,6 +237,7 @@ function applyFeaturePreset(string $preset): void
             'projects' => false,
             'solar_proposals' => false,
             'electrical_panel' => false,
+            'pos' => false,
         ],
     };
 

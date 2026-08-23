@@ -11,6 +11,7 @@
 - [Accounting Terms](#accounting-terms)
 - [Tax & Compliance](#tax--compliance)
 - [Sales & Receivables](#sales--receivables)
+- [Point of Sale (kasir)](#point-of-sale-kasir)
 - [Purchasing & Payables](#purchasing--payables)
 - [Inventory & Warehousing](#inventory--warehousing)
 - [Manufacturing](#manufacturing)
@@ -99,6 +100,27 @@ Indonesian Financial Accounting Standard for Micro, Small, and Medium Entities. 
 | **Umur Piutang** | Aging | Days since invoice | `AgingReportService` |
 | **Syarat Pembayaran** | Payment Terms | e.g., Net 30 | `payment_terms` |
 | **Termin** | Payment Terms | Same as above | Config setting |
+
+---
+
+## Point of Sale (kasir)
+
+Counter sales are **not** Faktur. See `CONTEXT.md` and ADR-0051.
+
+| Indonesian | English | Description | Code Usage |
+|------------|---------|-------------|------------|
+| **Penjualan Kasir** | POS Sale | Completed counter sale, paid at the till; tracked lines post HPP | `App\Models\Pos\PosSale` `POS-YYYYMM-NNNN` |
+| **Sesi Kasir** | POS Session | One kasir, one till, `open`/`closed` | `App\Models\Pos\PosSession` `PSS-YYYYMM-NNNN` |
+| **Tender Kasir** | Tender | Applied to payable (cash/QRIS); not cash handed over | `pos_sale_tenders` (not `Payment`) |
+| **Kembalian** | Change | Cash received − cash tender; not a tender line | `pos_sales.change_amount` |
+| **Selisih Kas** | Cash difference | Counted − expected at tutup kasir; does not block close | `pos_sessions.cash_difference_amount` |
+| **Diskon Kasir** | POS discount | Header cut off inclusive payable; PPN after, per line | Not on V1 till (no Diskon control / column) |
+| **Batal** | Void | Whole POS Sale reversed while session open | `PosService::voidSale()` while session `open` |
+| **Keranjang Ditahan** | Held cart | Parked basket; not a document | `pos_session_holds` (max 5) |
+| **Paket POS** | POS pack | Optional pack; preset `pos` + `full` on; not an add-on | `FEATURE_POS` / `FEATURE_PRESET=pos` |
+| **Kasir** | Cashier (role) | Till operator: own session + checkout/void, not Faktur | `Role::CASHIER`; `pos.*` (ADR-0061) |
+
+_Avoid for kasir:_ Faktur, Invoice, Sales Order, dummy Pelanggan “UMUM”, treating checkout Tender as Pembayaran (AR collection), pay-later at the till, Retur Penjualan as kasir void.
 
 ---
 
@@ -208,6 +230,8 @@ Indonesian Financial Accounting Standard for Micro, Small, and Medium Entities. 
 | Pembayaran | Payment | `PAY-YYYYMM-XXXX` (send) |
 | Jurnal | Journal Entry | `JE-YYYYMM-XXXX` |
 | MRP Run | MRP Run | `MRP-YYYYMM-XXXX` |
+| Penjualan Kasir | POS Sale | `POS-YYYYMM-NNNN` |
+| Sesi Kasir | POS Session | `PSS-YYYYMM-NNNN` |
 
 ---
 

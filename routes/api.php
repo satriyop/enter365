@@ -30,6 +30,7 @@ use App\Http\Controllers\Api\V1\MrpController;
 use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\PaymentReminderController;
 use App\Http\Controllers\Api\V1\PermissionController;
+use App\Http\Controllers\Api\V1\Pos\PosSessionController;
 use App\Http\Controllers\Api\V1\ProductCategoryController;
 use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\ProjectController;
@@ -220,22 +221,23 @@ Route::prefix('v1')->group(function () {
         });
 
         // Invoices - Sales (Faktur Penjualan)
-        Route::apiResource('invoices', InvoiceController::class);
-        Route::post('invoices/{invoice}/post', [InvoiceController::class, 'post']);
-        Route::post('invoices/{invoice}/void', [InvoiceController::class, 'void']);
-        Route::post('invoices/{invoice}/make-recurring', [InvoiceController::class, 'makeRecurring']);
+        Route::middleware('feature:invoices')->group(function () {
+            Route::apiResource('invoices', InvoiceController::class);
+            Route::post('invoices/{invoice}/post', [InvoiceController::class, 'post']);
+            Route::post('invoices/{invoice}/void', [InvoiceController::class, 'void']);
+            Route::post('invoices/{invoice}/make-recurring', [InvoiceController::class, 'makeRecurring']);
 
-        // Payment Reminders (Pengingat Pembayaran)
-        Route::prefix('payment-reminders')->group(function () {
-            Route::get('/', [PaymentReminderController::class, 'index']);
-            Route::get('/summary', [PaymentReminderController::class, 'summary']);
-            Route::get('/{payment_reminder}', [PaymentReminderController::class, 'show']);
-            Route::post('/{payment_reminder}/send', [PaymentReminderController::class, 'send']);
-            Route::post('/{payment_reminder}/cancel', [PaymentReminderController::class, 'cancel']);
+            Route::prefix('payment-reminders')->group(function () {
+                Route::get('/', [PaymentReminderController::class, 'index']);
+                Route::get('/summary', [PaymentReminderController::class, 'summary']);
+                Route::get('/{payment_reminder}', [PaymentReminderController::class, 'show']);
+                Route::post('/{payment_reminder}/send', [PaymentReminderController::class, 'send']);
+                Route::post('/{payment_reminder}/cancel', [PaymentReminderController::class, 'cancel']);
+            });
+            Route::get('invoices/{invoice}/reminders', [PaymentReminderController::class, 'forInvoice']);
+            Route::post('invoices/{invoice}/reminders', [PaymentReminderController::class, 'store']);
+            Route::post('invoices/{invoice}/send-reminder', [PaymentReminderController::class, 'sendImmediate']);
         });
-        Route::get('invoices/{invoice}/reminders', [PaymentReminderController::class, 'forInvoice']);
-        Route::post('invoices/{invoice}/reminders', [PaymentReminderController::class, 'store']);
-        Route::post('invoices/{invoice}/send-reminder', [PaymentReminderController::class, 'sendImmediate']);
 
         // Purchase Orders (Pesanan Pembelian)
         Route::middleware('feature:purchase_orders')->group(function () {
@@ -425,10 +427,12 @@ Route::prefix('v1')->group(function () {
         });
 
         // Payments (Pembayaran)
-        Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
-        Route::post('payments', [PaymentController::class, 'store'])->name('payments.store');
-        Route::get('payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
-        Route::post('payments/{payment}/void', [PaymentController::class, 'void'])->name('payments.void');
+        Route::middleware('feature:payments')->group(function () {
+            Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
+            Route::post('payments', [PaymentController::class, 'store'])->name('payments.store');
+            Route::get('payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
+            Route::post('payments/{payment}/void', [PaymentController::class, 'void'])->name('payments.void');
+        });
 
         // Recurring Templates (Template Berulang)
         Route::middleware('feature:recurring')->group(function () {
@@ -673,6 +677,20 @@ Route::prefix('v1')->group(function () {
         // Accounting Policies (Kebijakan Akuntansi)
         Route::get('accounting-policies', [AccountingPolicyController::class, 'show'])->name('accounting-policies.show');
         Route::put('accounting-policies', [AccountingPolicyController::class, 'update'])->name('accounting-policies.update');
+
+        Route::middleware('feature:pos')->prefix('pos')->group(function () {
+            Route::get('outlets', [PosSessionController::class, 'outlets']);
+            Route::post('sessions', [PosSessionController::class, 'store']);
+            Route::get('sessions/current', [PosSessionController::class, 'current']);
+            Route::get('sessions/{pos_session}', [PosSessionController::class, 'show']);
+            Route::post('sessions/{pos_session}/close', [PosSessionController::class, 'close']);
+            Route::get('sessions/{pos_session}/catalog', [PosSessionController::class, 'catalog']);
+            Route::post('sessions/{pos_session}/checkout', [PosSessionController::class, 'checkout']);
+            Route::post('sessions/{pos_session}/sales/{sale}/void', [PosSessionController::class, 'voidSale']);
+            Route::post('sessions/{pos_session}/holds', [PosSessionController::class, 'storeHold']);
+            Route::get('sessions/{pos_session}/holds', [PosSessionController::class, 'holds']);
+            Route::post('sessions/{pos_session}/holds/{hold}/take', [PosSessionController::class, 'takeHold']);
+        });
 
     }); // End of auth:sanctum middleware group
 

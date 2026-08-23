@@ -28,10 +28,11 @@ class UserResource extends JsonResource
                     'display_name' => $role->display_name,
                 ]);
             }),
-            'permissions' => $this->when(
-                $request->routeIs('auth.me'),
-                fn () => $this->getAllPermissions()->pluck('name')
-            ),
+            'permissions' => $this->getAllPermissions()->map(fn ($permission) => [
+                'id' => $permission->id,
+                'name' => $permission->name,
+                'display_name' => $permission->display_name,
+            ])->values(),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

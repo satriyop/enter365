@@ -39,7 +39,8 @@ describe('DemoSeeder profile mapping', function () {
             ->and(DemoSeeder::profileFromFeaturePreset('vahana'))->toBe(DemoSeeder::DEMO_VAHANA)
             ->and(DemoSeeder::profileFromFeaturePreset('solar'))->toBe(DemoSeeder::DEMO_NEX)
             ->and(DemoSeeder::profileFromFeaturePreset('nex'))->toBe(DemoSeeder::DEMO_NEX)
-            ->and(DemoSeeder::profileFromFeaturePreset('full'))->toBe(DemoSeeder::DEMO_ALL);
+            ->and(DemoSeeder::profileFromFeaturePreset('full'))->toBe(DemoSeeder::DEMO_ALL)
+            ->and(DemoSeeder::profileFromFeaturePreset('pos'))->toBe(DemoSeeder::DEMO_POS);
     });
 });
 

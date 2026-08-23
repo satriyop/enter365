@@ -68,6 +68,8 @@ class Permission extends Model
 
     public const GROUP_MRP = 'mrp';
 
+    public const GROUP_POS = 'pos';
+
     protected $fillable = [
         'name',
         'display_name',
@@ -295,6 +297,12 @@ class Permission extends Model
             ['name' => 'mrp.edit', 'display_name' => 'Edit MRP', 'group' => self::GROUP_MRP, 'description' => 'Mengubah MRP run'],
             ['name' => 'mrp.delete', 'display_name' => 'Hapus MRP', 'group' => self::GROUP_MRP, 'description' => 'Menghapus MRP run'],
             ['name' => 'mrp.execute', 'display_name' => 'Eksekusi MRP', 'group' => self::GROUP_MRP, 'description' => 'Menjalankan kalkulasi MRP'],
+
+            ['name' => 'pos.session.open', 'display_name' => 'Buka Sesi Kasir', 'group' => self::GROUP_POS, 'description' => 'Membuka sesi kasir'],
+            ['name' => 'pos.session.close', 'display_name' => 'Tutup Sesi Kasir', 'group' => self::GROUP_POS, 'description' => 'Menutup sesi kasir'],
+            ['name' => 'pos.sale.checkout', 'display_name' => 'Checkout Kasir', 'group' => self::GROUP_POS, 'description' => 'Menyelesaikan penjualan kasir'],
+            ['name' => 'pos.sale.void', 'display_name' => 'Batal Penjualan Kasir', 'group' => self::GROUP_POS, 'description' => 'Membatalkan penjualan kasir'],
+            ['name' => 'pos.reports.view', 'display_name' => 'Lihat Laporan Kasir', 'group' => self::GROUP_POS, 'description' => 'Melihat laporan sesi kasir'],
         ];
     }
 

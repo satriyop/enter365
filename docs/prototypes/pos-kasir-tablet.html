@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>PROTOTYPE — Kasir tablet shell</title>
+  <!--
+    DISCARDED as IA — see pos-c-gaya-moka.html and ADR-0062.
+    PROTOTYPE / THROWAY. Not production.
+    Three variants of the V1 kasir tablet shell, switchable via ?variant=A|B|C
+    Question: landscape till — session bar, product grid, cart, pay, hold, void, diskon, tutup kasir.
+    Variant A follows Moka POS muscle memory (split grid | pesanan | Bayar), not Moka brand.
+    Must not use ERP AppLayout.
+  -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@500;600&family=Noto+Sans:wght@400;600;700;800&family=Teko:wght@500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root { --tap: 72px; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body { min-height: 100dvh; overflow: hidden; }
+    button { font: inherit; cursor: pointer; }
+    input { font: inherit; }
+    .proto-banner {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 40;
+      background: #111; color: #f5d76e; font: 12px/1.3 "IBM Plex Mono", monospace;
+      padding: 6px 12px; letter-spacing: .02em;
+    }
+    #app { height: 100dvh; padding-top: 28px; padding-bottom: 64px; }
+    .switcher {
+      position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
+      z-index: 50; display: flex; align-items: center; gap: 8px;
+      background: #111; color: #fff; border-radius: 999px; padding: 8px 10px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.4); font: 13px/1 "IBM Plex Mono", monospace;
+    }
+    .switcher button {
+      width: 40px; height: 40px; border: 0; border-radius: 50%;
+      background: #f5d76e; color: #111; font-weight: 700;
+    }
+    .switcher .lbl { min-width: 220px; text-align: center; padding: 0 8px; }
+    .state-dock {
+      position: fixed; top: 28px; right: 0; width: min(320px, 34vw); max-height: 42vh;
+      overflow: auto; z-index: 35; background: #0b0b0b; color: #9f9; font: 11px/1.35 "IBM Plex Mono", monospace;
+      padding: 8px; border-left: 3px solid #f5d76e; display: none;
+    }
+    .state-dock.open { display: block; }
+    .state-toggle {
+      position: fixed; top: 32px; right: 8px; z-index: 36;
+      background: #111; color: #f5d76e; border: 0; padding: 6px 8px; font: 11px "IBM Plex Mono", monospace;
+    }
+    .modal-scrim {
+      position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 30;
+      display: flex; align-items: center; justify-content: center; padding: 24px;
+    }
+    .hidden { display: none !important; }
+    .toast {
+      position: fixed; left: 50%; bottom: 88px; transform: translateX(-50%);
+      background: #111; color: #fff; padding: 12px 18px; border-radius: 8px; z-index: 45;
+      font: 15px/1.3 "Noto Sans", sans-serif;
+    }
+    /* ——— A: Moka-like split till (IA, not brand) ——— */
+    .A { height: 100%; display: grid; grid-template-rows: 56px 1fr;
+      background: #eef1f4; color: #1f2933;
+      font-family: "Noto Sans", sans-serif; }
+    .A .bar { display: flex; align-items: center; gap: 12px; padding: 0 12px;
+      background: #fff; border-bottom: 1px solid #dfe5ea; }
+    .A .bar .brand { font-weight: 800; font-size: 16px; color: #0f766e; }
+    .A .bar input { flex: 1; min-height: 40px; border: 1px solid #dfe5ea; border-radius: 8px; padding: 0 12px; background: #f7f9fb; }
+    .A .bar .meta { font-size: 13px; color: #5b6b76; white-space: nowrap; }
+    .A .bar .ghost { min-height: 40px; border: 1px solid #dfe5ea; background: #fff; border-radius: 8px; padding: 0 12px; font-weight: 700; }
+    .A .body { display: grid; grid-template-columns: 88px 1fr 340px; min-height: 0; }
+    .A .cats { background: #fff; border-right: 1px solid #dfe5ea; display: flex; flex-direction: column; overflow: auto; }
+    .A .cats button { min-height: 64px; border: 0; background: transparent; border-left: 3px solid transparent; font-weight: 700; font-size: 12px; color: #5b6b76; }
+    .A .cats button.on { background: #e6f7f4; border-left-color: #0f766e; color: #0f766e; }
+    .A .grid { padding: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+      gap: 10px; overflow: auto; align-content: start; }
+    .A .sku {
+      min-height: 132px; border: 0; border-radius: 10px; text-align: left; padding: 0;
+      background: #fff; box-shadow: 0 1px 2px rgba(16,24,40,.08); display: flex; flex-direction: column; overflow: hidden;
+    }
+    .A .sku .ph { height: 64px; background: linear-gradient(135deg, #cde8e3, #e8f4f2); }
+    .A .sku .n { font-weight: 700; font-size: 13px; padding: 8px 8px 0; }
+    .A .sku .p { font-size: 13px; color: #0f766e; font-weight: 800; padding: 4px 8px 10px; }
+    .A .cart { background: #fff; border-left: 1px solid #dfe5ea; display: flex; flex-direction: column; min-height: 0; }
+    .A .cart h3 { margin: 0; padding: 12px 14px; font-size: 15px; border-bottom: 1px solid #eef1f4; }
+    .A .held-list {
+      margin: 8px 12px 0; min-height: 44px; border: 1px dashed #0f766e; border-radius: 8px;
+      background: #e6f7f4; color: #0f766e; font-weight: 700; font-size: 13px;
+    }
+    .A .acts button[disabled] { opacity: .4; pointer-events: none; }
+    .A .lines { flex: 1; overflow: auto; }
+    .A .line { display: grid; grid-template-columns: 1fr auto; gap: 4px; padding: 10px 14px;
+      border-bottom: 1px solid #eef1f4; font-size: 14px; }
+    .A .qty { display: flex; align-items: center; gap: 6px; }
+    .A .qty button { width: 36px; height: 36px; border: 1px solid #dfe5ea; background: #f7f9fb; border-radius: 8px; font-weight: 800; }
+    .A .paybar { padding: 12px; display: grid; gap: 8px; border-top: 1px solid #eef1f4; }
+    .A .paybar .row { display: flex; justify-content: space-between; font-size: 13px; color: #5b6b76; }
+    .A .paybar .total { display: flex; justify-content: space-between; font-size: 22px; font-weight: 800; }
+    .A .paybar .acts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .A .big { min-height: 48px; border: 0; border-radius: 10px; font-weight: 800; font-size: 15px; }
+    .A .bayar { grid-column: 1 / -1; min-height: var(--tap); background: #0f766e; color: #fff; font-size: 20px; }
+    .A .ghost { background: #f7f9fb; color: #1f2933; border: 1px solid #dfe5ea; }
+    .A .payfull {
+      position: absolute; inset: 0; z-index: 25;
+      background: #eef1f4;
+      display: grid; grid-template-rows: 56px 1fr;
+    }
+    .A .payfull .payhead {
+      display: flex; align-items: center; gap: 12px; padding: 0 12px;
+      background: #fff; border-bottom: 1px solid #dfe5ea; font-weight: 800;
+    }
+    .A .payfull .payhead button { min-height: 40px; border: 1px solid #dfe5ea; background: #fff; border-radius: 8px; padding: 0 14px; font-weight: 700; }
+    .A .payfull .paybody { display: grid; grid-template-columns: 1fr 380px; min-height: 0; }
+    .A .payfull .due { display: flex; flex-direction: column; justify-content: center; padding: 48px 56px; gap: 8px; }
+    .A .payfull .due .lbl { font-size: 14px; color: #5b6b76; font-weight: 600; }
+    .A .payfull .due .amt { font-size: 64px; font-weight: 800; color: #0f766e; line-height: 1; letter-spacing: -0.03em; }
+    .A .payfull .due .sub { font-size: 15px; color: #5b6b76; margin-top: 20px; }
+    .A .payfull .due .chg { font-size: 28px; font-weight: 800; }
+    .A .payfull .pad { background: #fff; padding: 16px; display: flex; flex-direction: column; gap: 8px; border-left: 1px solid #dfe5ea; }
+    .A .keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; flex: 1; }
+    .A .keys button { min-height: 56px; border: 0; border-radius: 10px; background: #f7f9fb; font-size: 22px; font-weight: 800; }
+    .A .payfull .methods {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+      align-content: center; justify-content: center;
+      max-width: 860px; margin: 0 auto; padding: 32px; width: 100%;
+    }
+    .A .payfull .method {
+      min-height: 220px; border: 0; border-radius: 16px; background: #fff;
+      box-shadow: 0 2px 8px rgba(16,24,40,.08);
+      font-weight: 800; font-size: 28px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 8px; color: #1f2933;
+    }
+    .A .payfull .method small { font-size: 15px; font-weight: 600; color: #5b6b76; }
+    .A .payfull .method.tunai { outline: 3px solid #0f766e; }
+    .A .payfull .method.qris { outline: 3px solid #0369a1; }
+    .A .payfull .mix {
+      grid-column: 1 / -1; background: none; border: 0; color: #5b6b76;
+      font-weight: 700; font-size: 15px; min-height: 44px; text-decoration: underline;
+    }
+    .A .payfull .recv {
+      font-family: "IBM Plex Mono", monospace; font-size: 36px; text-align: right;
+      padding: 8px 12px; background: #f7f9fb; border-radius: 10px; font-weight: 700;
+    }
+    .A .payfull .hint { font-size: 13px; color: #5b6b76; font-weight: 600; }
+    .A .payfull .go[disabled] { opacity: .45; pointer-events: none; }
+    /* ——— B: product wall, ticket strip ——— */
+    .B { height: 100%; display: grid; grid-template-rows: 48px 1fr auto;
+      background: #12161c; color: #e8eef6; font-family: "Noto Sans", sans-serif; }
+    .B .bar { display: flex; align-items: center; gap: 20px; padding: 0 16px;
+      background: #0b0e12; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; }
+    .B .wall { padding: 8px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; overflow: auto; }
+    .B .sku {
+      min-height: 110px; border: 1px solid #2a3340; background: #1a212b; color: #e8eef6;
+      border-radius: 12px; font-size: 16px; font-weight: 700; text-align: left; padding: 12px;
+    }
+    .B .sku .p { display: block; margin-top: 8px; font-family: "IBM Plex Mono", monospace; color: #7dd3a0; font-size: 18px; }
+    .B .dock { background: #0b0e12; border-top: 1px solid #2a3340; padding: 8px 12px 10px; }
+    .B .dock .lines { max-height: 88px; overflow: auto; font-size: 13px; opacity: .85; margin-bottom: 8px; }
+    .B .strip { display: flex; align-items: stretch; gap: 8px; }
+    .B .strip .sum { flex: 1; padding: 4px 8px; }
+    .B .strip .sum b { font-size: 28px; font-family: "IBM Plex Mono", monospace; }
+    .B .strip .go { width: 28%; min-width: 160px; min-height: var(--tap); border: 0; background: #7dd3a0; color: #0b0e12;
+      font-weight: 800; font-size: 22px; border-radius: 8px; }
+    .B .acts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 8px; }
+    .B .acts button { min-height: 52px; border: 0; border-radius: 8px; font-weight: 700; background: #1a212b; color: #e8eef6; }
+    /* ——— C: register / keypad first ——— */
+    .C { height: 100%; display: grid; grid-template-columns: 1.1fr 1fr; grid-template-rows: 52px 1fr;
+      background: #e6dfd2; color: #222; font-family: "Noto Sans", sans-serif; }
+    .C .bar { grid-column: 1 / -1; background: #3f4f3a; color: #f3efe4; display: flex; align-items: center;
+      gap: 16px; padding: 0 16px; font-family: "Teko", sans-serif; font-size: 22px; letter-spacing: .04em; }
+    .C .left { display: flex; flex-direction: column; min-height: 0; background: #f3efe4; }
+    .C .chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px; }
+    .C .chips button { min-height: 48px; padding: 0 14px; border: 2px solid #3f4f3a; background: #fff; font-weight: 700; }
+    .C .lines { flex: 1; overflow: auto; padding: 8px 12px; }
+    .C .line { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #d5ccbb; font-size: 16px; }
+    .C .right { display: flex; flex-direction: column; padding: 12px; gap: 8px; background: #2b2b28; color: #f3efe4; }
+    .C .disp { font-family: "IBM Plex Mono", monospace; font-size: 36px; text-align: right; padding: 8px;
+      background: #111; border-radius: 4px; }
+    .C .keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; flex: 1; }
+    .C .keys button { min-height: 56px; font-size: 22px; font-weight: 800; border: 0; background: #4a4a44; color: #fff; }
+    .C .tenders { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .C .tenders button { min-height: var(--tap); border: 0; font-weight: 800; font-size: 18px; }
+    .C .tunai { background: #c4a35a; color: #1a1408; }
+    .C .qris { background: #4a7c9b; color: #fff; }
+    .paybox { background: #fff; color: #111; padding: 20px; border-radius: 12px; width: min(520px, 100%);
+      font-family: "Noto Sans", sans-serif; }
+    .paybox h2 { margin: 0 0 12px; }
+    .paybox .row { display: flex; gap: 8px; margin: 8px 0; }
+    .paybox input { flex: 1; min-height: 48px; font-size: 20px; padding: 8px; }
+    .paybox button { min-height: 48px; padding: 0 16px; font-weight: 800; border: 0; background: #2d6a4f; color: #fff; }
+  </style>
+</head>
+<body>
+  <div class="proto-banner">PROTOTYPE · bukan produksi · tidak ada sidebar ERP · landscape tablet · panah ← → ganti layout</div>
+  <button class="state-toggle" type="button" id="stateToggle">STATE</button>
+  <pre class="state-dock" id="stateDock"></pre>
+  <div id="app"></div>
+  <div class="switcher" id="switcher">
+    <button type="button" id="prev" aria-label="varian sebelumnya">←</button>
+    <div class="lbl" id="switchLabel"></div>
+    <button type="button" id="next" aria-label="varian berikutnya">→</button>
+  </div>
+  <div id="toast" class="toast hidden"></div>
+
+  <script>
+    const NAMES = { A: "A — Moka-like split", B: "B — Dinding produk", C: "C — Mesin kasir" };
+    const PRODUCTS = [
+      { id: 1, name: "Indomie Goreng", price: 350000, sku: "IDM", cat: "Makanan", taxable: true, track: true },
+      { id: 2, name: "Aqua 600ml", price: 400000, sku: "AQA", cat: "Minuman", taxable: true, track: true },
+      { id: 3, name: "Teh Botol", price: 500000, sku: "TBT", cat: "Minuman", taxable: true, track: true },
+      { id: 4, name: "Gula 1kg", price: 1800000, sku: "GLA", cat: "Sembako", taxable: true, track: true },
+      { id: 5, name: "Telur 1kg", price: 2800000, sku: "TLR", cat: "Sembako", taxable: true, track: true },
+      { id: 6, name: "Kopi Kapal Api", price: 1500000, sku: "KPA", cat: "Makanan", taxable: true, track: true },
+      { id: 7, name: "Sabun Lifebuoy", price: 800000, sku: "SBN", cat: "Sembako", taxable: true, track: true },
+      { id: 8, name: "Jasa packing", price: 200000, sku: "JPK", cat: "Jasa", taxable: false, track: false },
+    ];
+    const CATS = ["Semua", "Makanan", "Minuman", "Sembako", "Jasa"];
+
+    const state = {
+      variant: "A",
+      session: { number: "PSS-202608-0001", kasir: "Siti", gudang: "Toko depan", opening: 20000000, open: true },
+      cart: [],
+      discountRp: 0,
+      held: [],
+      sales: [],
+      lastSale: null,
+      screen: "shop", // shop | pay | close
+      cashReceived: 0,
+      qrisAmount: 0,
+      keypad: "",
+      cat: "Semua",
+      search: "",
+      payStep: "pick",
+    };
+
+    const rp = (sen) => "Rp " + Math.round(sen / 100).toLocaleString("id-ID");
+
+    function subtotal() {
+      return state.cart.reduce((s, l) => s + l.price * l.qty, 0);
+    }
+    function payable() {
+      return Math.max(0, subtotal() - state.discountRp);
+    }
+
+    function toast(msg) {
+      const el = document.getElementById("toast");
+      el.textContent = msg;
+      el.classList.remove("hidden");
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => el.classList.add("hidden"), 2200);
+    }
+
+    function addSku(p) {
+      const line = state.cart.find((l) => l.id === p.id);
+      if (line) line.qty += 1;
+      else state.cart.push({ ...p, qty: 1 });
+      render();
+    }
+
+    function checkout() {
+      const pay = payable();
+      if (!state.cart.length || pay <= 0) { toast("Keranjang kosong"); return; }
+      const cashTender = Math.min(state.cashReceived, Math.max(0, pay - state.qrisAmount));
+      const qris = Math.min(state.qrisAmount, pay);
+      if (cashTender + qris !== pay) { toast("Tender harus sama dengan total"); return; }
+      if (state.cashReceived < cashTender) { toast("Uang tunai kurang"); return; }
+      const change = state.cashReceived - cashTender;
+      const sale = {
+        number: "POS-202608-" + String(state.sales.length + 1).padStart(4, "0"),
+        payable: pay,
+        cashTender, qris, change,
+        lines: state.cart.map((l) => ({ ...l })),
+      };
+      state.sales.push(sale);
+      state.lastSale = sale;
+      state.cart = [];
+      state.discountRp = 0;
+      state.cashReceived = 0;
+      state.qrisAmount = 0;
+      state.screen = "shop";
+      toast("Lunas " + sale.number + (change ? " · kembalian " + rp(change) : ""));
+      render();
+    }
+
+    function voidLast() {
+      if (!state.lastSale) { toast("Tidak ada penjualan untuk dibatal"); return; }
+      state.sales = state.sales.filter((s) => s !== state.lastSale);
+      state.lastSale = null;
+      toast("Penjualan dibatalkan");
+      render();
+    }
+
+    function holdCart() {
+      if (!state.cart.length) { toast("Tidak ada yang ditahan"); return; }
+      state.held.push({ lines: state.cart, discountRp: state.discountRp });
+      state.cart = [];
+      state.discountRp = 0;
+      toast("Keranjang ditahan (" + state.held.length + ")");
+      render();
+    }
+
+    function resumeHold() {
+      const h = state.held.pop();
+      if (!h) { toast("Tidak ada keranjang ditahan"); return; }
+      state.cart = h.lines;
+      state.discountRp = h.discountRp;
+      render();
+    }
+
+    function expectedCash() {
+      const cashSales = state.sales.reduce((s, x) => s + x.cashTender, 0);
+      return state.session.opening + cashSales;
+    }
+
+    function dumpState() {
+      document.getElementById("stateDock").textContent = JSON.stringify({
+        variant: state.variant,
+        session: state.session,
+        cart: state.cart.map((l) => ({ sku: l.sku, qty: l.qty })),
+        payable: payable(),
+        discountRp: state.discountRp,
+        held: state.held.length,
+        sales: state.sales.length,
+        lastSale: state.lastSale && state.lastSale.number,
+        expectedCash: expectedCash(),
+        screen: state.screen,
+        payStep: state.payStep,
+      }, null, 2);
+    }
+
+    function sessionBar(extraClass) {
+      return `<div class="${extraClass}">
+        <span>${state.session.number}</span>
+        <span>${state.session.kasir} · ${state.session.gudang}</span>
+        <span>Modal ${rp(state.session.opening)}</span>
+        <span>Sesi terbuka</span>
+      </div>`;
+    }
+
+    function payModal() {
+      if (state.screen !== "pay") return "";
+      const pay = payable();
+      const cashTender = Math.max(0, pay - state.qrisAmount);
+      const change = Math.max(0, state.cashReceived - cashTender);
+      const enough = state.cashReceived >= cashTender && cashTender + state.qrisAmount === pay;
+      const step = state.payStep || "pick";
+      if (state.variant !== "A") {
+        return `<div class="modal-scrim" data-close-pay>
+          <div class="paybox" onclick="event.stopPropagation()">
+            <h2>Bayar ${rp(pay)}</h2>
+            <p>Pilih cara bayar di layout A (Moka-like).</p>
+            <button type="button" data-close-pay>Kembali</button>
+          </div>
+        </div>`;
+      }
+      if (step === "pick") {
+        return `<div class="payfull">
+          <div class="payhead">
+            <button type="button" data-close-pay>← Pesanan</button>
+            <span>Bayar ${rp(pay)}</span>
+          </div>
+          <div class="methods">
+            <button class="method tunai" data-step-tunai>Tunai<small>Terima uang tunai</small></button>
+            <button class="method qris" data-step-qris>QRIS<small>Tandai sudah bayar di HP</small></button>
+            <button class="mix" data-step-campur>Campur tunai + QRIS</button>
+          </div>
+        </div>`;
+      }
+      if (step === "qris") {
+        return `<div class="payfull">
+          <div class="payhead">
+            <button type="button" data-step-pick>← Cara bayar</button>
+            <span>QRIS</span>
+          </div>
+          <div class="due">
+            <div class="lbl">Minta pelanggan bayar</div>
+            <div class="amt">${rp(pay)}</div>
+            <div class="sub">Pakai QRIS di HP-nya. Setelah berhasil, tandai di sini.</div>
+            <button class="big bayar" data-qris-done style="margin-top:28px;max-width:360px">Sudah lunas</button>
+          </div>
+        </div>`;
+      }
+      const keys = ["1","2","3","4","5","6","7","8","9","C","0","000"].map((k) => `<button data-paykey="${k}">${k}</button>`).join("");
+      const campur = step === "campur";
+      const confirmLabel = enough
+        ? (change > 0 ? `Terima · kembalian ${rp(change)}` : "Terima")
+        : "Uang tunai kurang";
+      return `<div class="payfull">
+        <div class="payhead">
+          <button type="button" data-step-pick>← Cara bayar</button>
+          <span>${campur ? "Campur tunai + QRIS" : "Tunai"}</span>
+        </div>
+        <div class="paybody">
+          <div class="due">
+            <div class="lbl">Total tagihan</div>
+            <div class="amt">${rp(pay)}</div>
+            ${campur ? `<div class="sub">QRIS ${rp(state.qrisAmount)} · tunai ${rp(cashTender)}</div>` : ""}
+            <div class="lbl" style="margin-top:16px">Kembalian</div>
+            <div class="chg">${rp(change)}</div>
+          </div>
+          <div class="pad">
+            <div class="hint">Uang diterima (tunai)</div>
+            <div class="recv">${rp(state.cashReceived)}</div>
+            <div class="keys">${keys}</div>
+            <button class="big ghost" data-set-cash="exact">Pas dengan total</button>
+            ${campur ? `<button class="big ghost" data-set-qris="rest">Sisa tagihan ke QRIS</button>` : ""}
+            <button class="big bayar go" data-do-pay ${enough ? "" : "disabled"}>${confirmLabel}</button>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    function closeModal() {
+      if (state.screen !== "close") return "";
+      const exp = expectedCash();
+      const qris = state.sales.reduce((s, x) => s + x.qris, 0);
+      return `<div class="modal-scrim" data-close-x>
+        <div class="paybox">
+          <h2>Tutup kasir</h2>
+          <p>Kas di laci (sistem): <b>${rp(exp)}</b></p>
+          <p>QRIS (info, tidak dihitung): <b>${rp(qris)}</b></p>
+          <p>Penjualan selesai: ${state.sales.length}</p>
+          <label>Hitung tunai</label>
+          <input id="counted" type="number" value="${Math.round(exp/100)}" />
+          <div class="row" style="margin-top:12px">
+            <button type="button" data-do-close>Tutup sesi</button>
+            <button type="button" data-close-x style="background:#444">Kembali</button>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    function filteredProducts() {
+      const q = (state.search || "").toLowerCase();
+      return PRODUCTS.filter((p) => {
+        if (state.cat !== "Semua" && p.cat !== state.cat) return false;
+        if (q && !p.name.toLowerCase().includes(q) && !p.sku.toLowerCase().includes(q)) return false;
+        return true;
+      });
+    }
+
+    function renderA() {
+      const cats = CATS.map((c) => `<button data-cat="${c}" class="${state.cat === c ? "on" : ""}">${c}</button>`).join("");
+      const skus = filteredProducts().map((p) => `<button class="sku" data-add="${p.id}"><span class="ph"></span><span class="n">${p.name}</span><span class="p">${rp(p.price)}</span></button>`).join("");
+      const lines = state.cart.map((l) => `<div class="line"><div><b>${l.name}</b><div class="qty"><button data-dec="${l.id}">−</button><span>${l.qty}</span><button data-inc="${l.id}">+</button></div></div><div>${rp(l.price * l.qty)}</div></div>`).join("") || `<div class="line">Belum ada item. Ketuk produk.</div>`;
+      return `<div class="A" style="position:relative">
+        <div class="bar">
+          <div class="brand">Enter365 Kasir</div>
+          <input placeholder="Cari nama atau SKU…" value="${state.search.replace(/"/g, "")}" data-search />
+          <div class="meta">${state.session.gudang} · ${state.session.kasir} · ${state.session.number}</div>
+          <button class="ghost" data-void>Batal</button>
+          <button class="ghost" data-open-close>Tutup kasir</button>
+        </div>
+        <div class="body">
+          <div class="cats">${cats}</div>
+          <div class="grid">${skus}</div>
+          <div class="cart">
+            <h3>Pesanan</h3>
+            ${state.held.length ? `<button class="held-list" data-resume type="button">Ambil yang ditahan (${state.held.length})</button>` : ""}
+            <div class="lines">${lines}</div>
+            <div class="paybar">
+              <div class="row"><span>Subtotal</span><span>${rp(subtotal())}</span></div>
+              <div class="row"><span>Diskon</span><span>− ${rp(state.discountRp)}</span></div>
+              <div class="total"><span>Total</span><span>${rp(payable())}</span></div>
+              <div class="acts">
+                <button class="big ghost" data-disc>Diskon</button>
+                <button class="big ghost" data-hold ${state.cart.length ? "" : "disabled"}>Tahan pesanan ini</button>
+                <button class="big bayar" data-open-pay>Bayar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        ${payModal()}${closeModal()}
+      </div>`;
+    }
+
+    function renderB() {
+      const skus = PRODUCTS.map((p) => `<button class="sku" data-add="${p.id}">${p.name}<span class="p">${rp(p.price)}</span></button>`).join("");
+      const lines = state.cart.map((l) => `<div>${l.qty}× ${l.name} — ${rp(l.price * l.qty)}</div>`).join("");
+      return `<div class="B">
+        <div class="bar"><span>${state.session.kasir}</span><span>${state.session.gudang}</span><span>${state.session.number}</span><span style="margin-left:auto">Modal ${rp(state.session.opening)}</span></div>
+        <div class="wall">${skus}</div>
+        <div class="dock">
+          <div class="lines">${lines || "Ketuk produk di dinding."}</div>
+          <div class="strip">
+            <div class="sum">${state.cart.length} item<br><b>${rp(payable())}</b></div>
+            <button class="go" data-open-pay>BAYAR</button>
+          </div>
+          <div class="acts">
+            <button data-disc>Diskon</button>
+            <button data-hold ${state.cart.length ? "" : "disabled"}>Tahan pesanan</button>
+            ${state.held.length ? `<button data-resume>Ambil ditahan (${state.held.length})</button>` : ""}
+            <button data-void>Batal</button>
+            <button data-open-close>Tutup</button>
+          </div>
+        </div>
+        ${payModal()}${closeModal()}
+      </div>`;
+    }
+
+    function renderC() {
+      const chips = PRODUCTS.map((p) => `<button data-add="${p.id}">${p.name}</button>`).join("");
+      const lines = state.cart.map((l) => `<div class="line"><span>${l.qty}× ${l.name}</span><span>${rp(l.price * l.qty)}</span></div>`).join("") || `<div class="line">—</div>`;
+      const keys = ["1","2","3","4","5","6","7","8","9","C","0","←"].map((k) => `<button data-key="${k}">${k}</button>`).join("");
+      return `<div class="C">
+        <div class="bar">${state.session.number} · ${state.session.kasir} · ${state.session.gudang} · Modal ${rp(state.session.opening)}</div>
+        <div class="left">
+          <div class="chips">${chips}</div>
+          <div class="lines">${lines}</div>
+          <div style="padding:12px;font-size:28px;font-family:Teko,sans-serif">TOTAL ${rp(payable())}</div>
+        </div>
+        <div class="right">
+          <div class="disp">${state.keypad || "0"}</div>
+          <div class="keys">${keys}</div>
+          <div class="tenders">
+            <button class="tunai" data-c-cash>TUNAI + lunas</button>
+            <button class="qris" data-c-qris>QRIS pas + lunas</button>
+            <button data-disc style="background:#5c4033;color:#fff;min-height:48px;border:0;font-weight:800">DISKON</button>
+            <button data-hold style="background:#5c4033;color:#fff;min-height:48px;border:0;font-weight:800">TAHAN</button>
+            <button data-void style="background:#5c4033;color:#fff;min-height:48px;border:0;font-weight:800">BATAL</button>
+            <button data-open-close style="background:#5c4033;color:#fff;min-height:48px;border:0;font-weight:800">TUTUP</button>
+          </div>
+        </div>
+        ${state.screen === "close" ? closeModal() : ""}
+      </div>`;
+    }
+
+    function render() {
+      const app = document.getElementById("app");
+      app.innerHTML = state.variant === "B" ? renderB() : state.variant === "C" ? renderC() : renderA();
+      document.getElementById("switchLabel").textContent = NAMES[state.variant];
+      dumpState();
+    }
+
+    function setVariant(v) {
+      state.variant = v;
+      const u = new URL(location.href);
+      u.searchParams.set("variant", v);
+      history.replaceState(null, "", u);
+      render();
+    }
+
+    function cycle(d) {
+      const order = ["A", "B", "C"];
+      const i = order.indexOf(state.variant);
+      setVariant(order[(i + d + 3) % 3]);
+    }
+
+    document.getElementById("prev").onclick = () => cycle(-1);
+    document.getElementById("next").onclick = () => cycle(1);
+    document.getElementById("stateToggle").onclick = () => document.getElementById("stateDock").classList.toggle("open");
+
+    document.addEventListener("keydown", (e) => {
+      const t = e.target;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+      if (e.key === "ArrowLeft") cycle(-1);
+      if (e.key === "ArrowRight") cycle(1);
+    });
+
+    document.getElementById("app").addEventListener("input", (e) => {
+      const s = e.target.closest("[data-search]");
+      if (s) { state.search = s.value; render(); const el = document.querySelector("[data-search]"); if (el) { el.focus(); el.value = state.search; } }
+    });
+
+    document.getElementById("app").addEventListener("click", (e) => {
+      const add = e.target.closest("[data-add]");
+      if (add) addSku(PRODUCTS.find((p) => p.id === +add.dataset.add));
+      if (e.target.closest("[data-open-pay]")) {
+        state.screen = "pay";
+        state.payStep = "pick";
+        state.cashReceived = payable();
+        state.qrisAmount = 0;
+        render();
+      }
+      if (e.target.closest("[data-step-pick]")) { state.payStep = "pick"; render(); }
+      if (e.target.closest("[data-step-tunai]")) {
+        state.payStep = "tunai";
+        state.qrisAmount = 0;
+        state.cashReceived = payable();
+        render();
+      }
+      if (e.target.closest("[data-step-qris]")) { state.payStep = "qris"; render(); }
+      if (e.target.closest("[data-step-campur]")) {
+        state.payStep = "campur";
+        state.cashReceived = 0;
+        state.qrisAmount = 0;
+        render();
+      }
+      if (e.target.closest("[data-qris-done]")) {
+        state.qrisAmount = payable();
+        state.cashReceived = 0;
+        checkout();
+      }
+      if (e.target.closest("[data-open-close]")) { state.screen = "close"; render(); }
+      if (e.target.closest("[data-close-pay],[data-close-x]")) { state.screen = "shop"; render(); }
+      if (e.target.closest("[data-hold]")) holdCart();
+      if (e.target.closest("[data-resume]")) resumeHold();
+      if (e.target.closest("[data-void]")) voidLast();
+      if (e.target.closest("[data-disc]")) { state.discountRp = Math.min(payable(), 500000); render(); }
+      if (e.target.closest("[data-set-cash]")) { state.cashReceived = payable() - state.qrisAmount; render(); }
+      if (e.target.closest('[data-set-qris="all"]')) {
+        state.qrisAmount = payable();
+        state.cashReceived = 0;
+        checkout();
+        return;
+      }
+      if (e.target.closest("[data-set-qris]")) { state.qrisAmount = Math.max(0, payable() - state.cashReceived); render(); }
+      const cat = e.target.closest("[data-cat]");
+      if (cat) { state.cat = cat.dataset.cat; render(); }
+      const inc = e.target.closest("[data-inc]");
+      if (inc) addSku(PRODUCTS.find((p) => p.id === +inc.dataset.inc));
+      const dec = e.target.closest("[data-dec]");
+      if (dec) {
+        const line = state.cart.find((l) => l.id === +dec.dataset.dec);
+        if (line) {
+          line.qty -= 1;
+          if (line.qty <= 0) state.cart = state.cart.filter((l) => l !== line);
+          render();
+        }
+      }
+      const pk = e.target.closest("[data-paykey]");
+      if (pk) {
+        const k = pk.dataset.paykey;
+        let n = String(Math.round(state.cashReceived / 100));
+        if (k === "C") n = "0";
+        else n = String(parseInt((n === "0" ? "" : n) + k, 10) || 0);
+        state.cashReceived = parseInt(n, 10) * 100;
+        render();
+      }
+      if (e.target.closest("[data-do-pay]")) {
+        const c = document.getElementById("cashIn");
+        const q = document.getElementById("qrisIn");
+        if (c) state.cashReceived = Math.round(+c.value * 100);
+        if (q) state.qrisAmount = Math.round(+q.value * 100);
+        checkout();
+      }
+      if (e.target.closest("[data-do-close]")) {
+        const counted = document.getElementById("counted");
+        const c = counted ? Math.round(+counted.value * 100) : expectedCash();
+        const diff = c - expectedCash();
+        toast("Sesi ditutup · selisih " + rp(diff) + " (tetap boleh tutup)");
+        state.screen = "shop";
+        render();
+      }
+      if (e.target.closest("[data-c-cash]")) {
+        const n = parseInt(state.keypad || "0", 10);
+        state.cashReceived = (n || Math.round(payable() / 100)) * 100;
+        state.qrisAmount = 0;
+        checkout();
+      }
+      if (e.target.closest("[data-c-qris]")) {
+        state.qrisAmount = payable();
+        state.cashReceived = 0;
+        checkout();
+      }
+      const key = e.target.closest("[data-key]");
+      if (key) {
+        const k = key.dataset.key;
+        if (k === "C") state.keypad = "";
+        else if (k === "←") state.keypad = state.keypad.slice(0, -1);
+        else state.keypad += k;
+        render();
+      }
+    });
+
+    const q = new URLSearchParams(location.search).get("variant") || "A";
+    state.variant = ["A", "B", "C"].includes(q) ? q : "A";
+    render();
+  </script>
+</body>
+</html>

@@ -18,6 +18,7 @@ use App\Models\Purchasing\PurchaseOrder;
 use App\Models\Sales\Invoice;
 use App\Models\Solar\IndonesiaSolarData;
 use App\Models\Solar\SolarProposal;
+use App\Models\User;
 use Database\Seeders\Demo\DemoSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -34,6 +35,7 @@ dataset('feature_set_demo_profiles', [
     'vahana' => ['vahana', DemoSeeder::DEMO_VAHANA],
     'solar' => ['solar', DemoSeeder::DEMO_NEX],
     'full' => ['full', DemoSeeder::DEMO_ALL],
+    'pos' => ['pos', DemoSeeder::DEMO_POS],
 ]);
 
 it('runs DemoSeeder for feature set and asserts defining seed outcomes', function (string $preset, string $profile) {
@@ -92,6 +94,12 @@ it('runs DemoSeeder for feature set and asserts defining seed outcomes', functio
             ->and($solarProposals)->toBeGreaterThan(0)
             ->and($genericBom)->toBeTrue()
             ->and($irradiance)->toBeGreaterThan(0),
+
+        DemoSeeder::DEMO_POS => expect($componentStandards)->toBe(0)
+            ->and($solarProposals)->toBe(0)
+            ->and($invoices)->toBe(0)
+            ->and(Product::where('sku', 'KT57-KOPI-O')->exists())->toBeTrue()
+            ->and(User::where('email', 'siti@kopitiam57.test')->exists())->toBeTrue(),
 
         default => throw new InvalidArgumentException("Unknown profile {$profile}"),
     };

@@ -13,7 +13,7 @@ class SeedDemoCommand extends Command
      * @var string
      */
     protected $signature = 'seed:demo
-                            {--demo= : Which demo (general, services, manufacturing, enterprise, vahana, nex, all). Default: from FEATURE_PRESET}
+                            {--demo= : Which demo (general, services, manufacturing, enterprise, vahana, nex, pos, all). Default: from FEATURE_PRESET}
                             {--fresh : Run migrate:fresh before seeding}';
 
     /**
@@ -21,7 +21,7 @@ class SeedDemoCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Seed demo data aligned with FEATURE_PRESET (general/services/manufacturing/enterprise/vahana/nex/all)';
+    protected $description = 'Seed demo data aligned with FEATURE_PRESET (general/services/manufacturing/enterprise/vahana/nex/pos/all)';
 
     /**
      * Execute the console command.
@@ -70,6 +70,7 @@ class SeedDemoCommand extends Command
                     DemoSeeder::DEMO_VAHANA => '⚡ Vahana - Electrical Panel (electrical_panel)',
                     DemoSeeder::DEMO_NEX => '☀️  NEX - Solar EPC (solar_proposals)',
                     DemoSeeder::DEMO_ALL => '🔄 Full - Vahana + NEX + packs',
+                    DemoSeeder::DEMO_POS => '☕ POS - Kopitiam 57 stand-in till',
                 ],
                 $recommended
             );

@@ -44,6 +44,27 @@ describe('Login', function () {
         expect($response->json('token'))->not->toBeEmpty();
     });
 
+    it('includes cashier pos permissions on login so the till can open', function () {
+        $user = User::factory()->create([
+            'email' => 'siti@kasir.test',
+            'password' => bcrypt('password'),
+        ]);
+        $cashier = Role::query()->where('name', Role::CASHIER)->firstOrFail();
+        $user->roles()->attach($cashier);
+
+        $response = $this->postJson('/api/v1/auth/login', [
+            'email' => 'siti@kasir.test',
+            'password' => 'password',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('user.roles.0.name', Role::CASHIER);
+
+        $names = collect($response->json('user.permissions'))->pluck('name');
+        expect($names)->toContain('pos.sale.checkout')
+            ->and($names)->toContain('pos.session.open');
+    });
+
     it('cannot login with invalid email', function () {
         User::factory()->create([
             'email' => 'test@example.com',

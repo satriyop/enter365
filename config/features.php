@@ -15,6 +15,7 @@
  *   enterprise    — core + manufacturing + projects (Odoo Enterprise–like pitch)
  *   solar | nex   — solar EPC add-on (+ projects, light BOM)
  *   vahana        — manufacturing + electrical_panel add-on
+ *   pos           — kasir-first acquisition (POS pack; document sales hidden)
  *   full          — everything (demo / tests)
  *
  * Explicit FEATURE_* env always overrides preset defaults when set.
@@ -31,24 +32,28 @@ $preset = match ($preset) {
     default => $preset,
 };
 
+$posAcquisition = $preset === 'pos';
+
 /** @var array<string, bool> $core Always-on SME ERP modules */
 $core = [
     'products' => env('FEATURE_PRODUCTS', true),
-    'quotations' => env('FEATURE_QUOTATIONS', true),
-    'delivery_orders' => env('FEATURE_DELIVERY_ORDERS', true),
-    'sales_returns' => env('FEATURE_SALES_RETURNS', true),
-    'down_payments' => env('FEATURE_DOWN_PAYMENTS', true),
-    'purchase_orders' => env('FEATURE_PURCHASE_ORDERS', true),
-    'goods_receipt_notes' => env('FEATURE_GRN', true),
-    'purchase_returns' => env('FEATURE_PURCHASE_RETURNS', true),
+    'quotations' => env('FEATURE_QUOTATIONS', ! $posAcquisition),
+    'delivery_orders' => env('FEATURE_DELIVERY_ORDERS', ! $posAcquisition),
+    'sales_returns' => env('FEATURE_SALES_RETURNS', ! $posAcquisition),
+    'down_payments' => env('FEATURE_DOWN_PAYMENTS', ! $posAcquisition),
+    'invoices' => env('FEATURE_INVOICES', ! $posAcquisition),
+    'payments' => env('FEATURE_PAYMENTS', ! $posAcquisition),
+    'purchase_orders' => env('FEATURE_PURCHASE_ORDERS', ! $posAcquisition),
+    'goods_receipt_notes' => env('FEATURE_GRN', ! $posAcquisition),
+    'purchase_returns' => env('FEATURE_PURCHASE_RETURNS', ! $posAcquisition),
     'inventory' => env('FEATURE_INVENTORY', true),
     'stock_opname' => env('FEATURE_STOCK_OPNAME', true),
     'warehouses' => env('FEATURE_WAREHOUSES', true),
     // Accounting power tools (Odoo-like, not industry-specific)
-    'budgeting' => env('FEATURE_BUDGETING', true),
-    'recurring' => env('FEATURE_RECURRING', true),
-    'multi_currency' => env('FEATURE_MULTI_CURRENCY', true),
-    'bank_reconciliation' => env('FEATURE_BANK_RECONCILIATION', true),
+    'budgeting' => env('FEATURE_BUDGETING', ! $posAcquisition),
+    'recurring' => env('FEATURE_RECURRING', ! $posAcquisition),
+    'multi_currency' => env('FEATURE_MULTI_CURRENCY', ! $posAcquisition),
+    'bank_reconciliation' => env('FEATURE_BANK_RECONCILIATION', ! $posAcquisition),
     // Tax pack-ID (opt-in)
     'pph_withholding' => env('FEATURE_PPH_WITHHOLDING', false),
 ];
@@ -80,6 +85,7 @@ $packDefaults = match ($preset) {
         'projects' => true,
         'solar_proposals' => true,
         'electrical_panel' => true,
+        'pos' => true,
     ],
     'enterprise' => [
         // Odoo Enterprise–like suite (no industry verticals)
@@ -92,6 +98,7 @@ $packDefaults = match ($preset) {
         'projects' => true,
         'solar_proposals' => false,
         'electrical_panel' => false,
+        'pos' => false,
     ],
     'manufacturing' => [
         // Generic shop floor / factory (not Vahana-specific)
@@ -104,6 +111,7 @@ $packDefaults = match ($preset) {
         'projects' => false,
         'solar_proposals' => false,
         'electrical_panel' => false,
+        'pos' => false,
     ],
     'vahana' => [
         // Panel electrical company: manufacturing + brand/spec add-on
@@ -116,6 +124,7 @@ $packDefaults = match ($preset) {
         'projects' => false,
         'solar_proposals' => false,
         'electrical_panel' => true,
+        'pos' => false,
     ],
     'services' => [
         'manufacturing' => false,
@@ -127,6 +136,7 @@ $packDefaults = match ($preset) {
         'projects' => true,
         'solar_proposals' => false,
         'electrical_panel' => false,
+        'pos' => false,
     ],
     'solar' => [
         // NEX-style solar EPC
@@ -139,6 +149,19 @@ $packDefaults = match ($preset) {
         'projects' => true,
         'solar_proposals' => true,
         'electrical_panel' => false,
+        'pos' => false,
+    ],
+    'pos' => [
+        'manufacturing' => false,
+        'bom' => false,
+        'work_orders' => false,
+        'material_requisitions' => false,
+        'mrp' => false,
+        'subcontracting' => false,
+        'projects' => false,
+        'solar_proposals' => false,
+        'electrical_panel' => false,
+        'pos' => true,
     ],
     default => [ // general
         'manufacturing' => false,
@@ -150,6 +173,7 @@ $packDefaults = match ($preset) {
         'projects' => false,
         'solar_proposals' => false,
         'electrical_panel' => false,
+        'pos' => false,
     ],
 };
 
@@ -165,6 +189,7 @@ $packs = [
     // Industry add-ons
     'solar_proposals' => filter_var(env('FEATURE_SOLAR_PROPOSALS', $packDefaults['solar_proposals']), FILTER_VALIDATE_BOOLEAN),
     'electrical_panel' => filter_var(env('FEATURE_ELECTRICAL_PANEL', $packDefaults['electrical_panel']), FILTER_VALIDATE_BOOLEAN),
+    'pos' => filter_var(env('FEATURE_POS', $packDefaults['pos']), FILTER_VALIDATE_BOOLEAN),
 ];
 
 foreach ($core as $key => $value) {

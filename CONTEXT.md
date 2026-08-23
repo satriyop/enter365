@@ -1,45 +1,69 @@
 # Enter365
 
-Indonesian SME ERP: sales, purchasing, inventory, accounting, manufacturing, and projects, with optional industry add-ons.
+Indonesian SME ERP (Sales, Purchase, Inventory, Accounting, Manufacturing, Projects) with optional industry add-ons. Counter cash-and-carry is a separate language from document sales.
 
 ## Language
 
-### Inventory
+### Document sales (existing)
 
-**Stock**:
-Quantity of a product held in a warehouse. Always product × warehouse.
-_Avoid_: Inventory balance (as a synonym for quantity), global stock without warehouse
+**Faktur**:
+A sales invoice to a named Pelanggan, usually after a Penawaran, often with piutang. Creating one requires a Pelanggan.
+_Avoid_: using this for a kasir tap-and-pay; POS Sale; Invoice-as-kasir-shortcut
 
-**Free stock**:
-Stock quantity not held for a work order; available for delivery, transfer, or unreserved issue.
-_Avoid_: Available stock (ambiguous with on-hand including reserved)
+**Penawaran**:
+A price quote sent to a Pelanggan before a Faktur.
+_Avoid_: POS Sale, order
 
-**Reserved stock**:
-Stock quantity earmarked for a work order so other documents cannot take it as free stock.
-_Avoid_: Allocated stock, blocked stock, soft lock
+**Surat Jalan**:
+A delivery document that ships goods against a Faktur.
+_Avoid_: POS Sale fulfilment (counter sales hand over goods at the till)
 
-**Stock reservation**:
-The act of increasing reserved stock for a work order (and releasing it when cancelled or issued).
-_Avoid_: Booking, hold, allocate (unless talking to finance)
+**Pelanggan**:
+A named buyer stored as a Contact of type customer. Required on a Faktur. Optional on a POS Sale; most till sales have none.
+_Avoid_: dummy “UMUM” contacts; requiring a Pelanggan to finish checkout
 
-**Stock mutation**:
-Any change to on-hand quantity and/or cost at product × warehouse (receipt, issue, adjustment, transfer, production receipt).
-_Avoid_: Stock movement (reserved for the audit/document trail of a mutation), inventory transaction
+**Pembayaran**:
+Money received against a Faktur (collection of piutang), numbered as a receipt.
+_Avoid_: kasir tender at checkout (cash, QRIS, and similar)
 
-**Issue against reservation**:
-An outbound stock mutation that consumes free stock only after releasing reserved stock belonging to the issuing work order.
-_Avoid_: Force issue, override reserved
+**Retur Penjualan**:
+A return of goods against a Faktur.
+_Avoid_: voiding or returning a POS Sale
 
-**Production receipt**:
-Inbound stock mutation of finished goods from a completed work order, at a unit cost determined by manufacturing.
-_Avoid_: FG stock-in as a separate business concept from stock mutation
+### Counter sales (POS)
 
-### Accounting
+**POS Sale**:
+A completed counter sale, paid when it happens, with goods handed over at the till. It belongs to an open POS Session. Numbered `POS-YYYYMM-NNNN`. Status is `completed` at insert or `voided` — never draft. Created only by one atomic **checkout** command (cart stays on the tablet until Pay). It cannot be piutang. The button is the amount paid: tax-inclusive (`selling_price_with_tax`) when the product is taxable, otherwise `selling_price`. Catalog storage stays tax-exclusive. V1 till has **no diskon control**. Lines with inventory tracking stock-out on the session’s gudang and cannot sell below available qty; those lines also post HPP (Dr HPP Cr Persediaan) from the movement’s cost. Jasa and untracked lines do not move stok or HPP. A POS Session cannot be opened, and checkout fails, if the fiscal period is Closed or Locked. Pelanggan is optional.
+_Avoid_: Invoice, Faktur, Sales Order, order, transaction, receipt (the paper struk is not the document); draft POS Sale; server cart / line-as-you-tap documents; reserving stok on tap; negative stok; adding PPN on the pay screen; creating a Faktur to represent the sale; pay-later / catat dulu at the till; calling Faktur COGS strategy from the till; selling into a locked period; Penawaran-style discount-then-PPN
 
-**Budget**:
-A fiscal-period planning document of revenue and expense lines. Status is draft, approved, or closed.
-_Avoid_: Project cost plan, stock reservation
+**POS discount**:
+Header cut off inclusive payable, PPN extracted per line after. **Not on the V1 till** (no Diskon button). Arithmetic kept if a later till version adds it. Does not change HPP.
+_Avoid_: teaching diskon on day-one kasir; line discount; discount off exclusive DPP
 
-**Budget lifecycle**:
-The write path that creates, edits, approves, reopens, closes, copies, or deletes a budget and its lines.
-_Avoid_: Budget report (comparison / over-budget is read-only)
+**POS Session**:
+The period when one kasir is responsible for one till. Status is `open` or `closed` only — no reopen. Opened with modal, one gudang, and snapshotted `cash_account_id` + `qris_account_id`. Expected cash = modal + cash tenders on **completed** sales (voided excluded; kembalian not subtracted again). Close stores counted cash, expected cash, and selisih; selisih does not block close. QRIS total is shown, not counted. Numbered `PSS-YYYYMM-NNNN`. Handover is close then open. Two tablets may hold two open sessions on the same gudang at once.
+_Avoid_: shift (synonym only); a shop-wide day with many kasirs; drawer; cash-up as a synonym for the session itself; one-session-per-gudang; a POS clearing account; reopening a closed session; a `counting` status; putting QRIS into expected cash
+
+**Kasir**:
+The till operator. Signs in with the same Sanctum user/password as the ERP (no till PIN in V1). Role `cashier`: `pos.session.open`, `pos.session.close`, `pos.sale.checkout`, `pos.sale.void` (own session only), plus `products.view` and `contacts.view`. Not a Faktur clerk. Admin may close/void any session. Accountant may `pos.reports.view` only. Sales get no `pos.*`.
+_Avoid_: `invoices.create` / `payments.create` as the meaning of Kasir; a second role named pos_kasir; outlet-wide PIN; Kasir creating products at the till
+
+**Void**:
+Cancels a whole POS Sale while its POS Session is still open. The sale becomes `voided` (reason and timestamps kept). Reverses stok, both journals, and tenders. After tutup kasir there is no void. Partial-line cancel and next-day return are not this (those would be a future POS Return, not Retur Penjualan).
+_Avoid_: editing a completed POS Sale; deleting the row; Retur Penjualan; credit note; void after close
+
+**Held cart**:
+A parked till basket in `pos_session_holds` on the **open POS Session** (max 5). **Simpan** parks this pesanan; **Ambil** picks from a list. Survives tablet reload on the same session. Other sessions cannot see it. Tutup kasir discards holds. Not a POS Sale. No stok or journal until checkout.
+_Avoid_: draft POS Sale; tablet-memory-only hold; two buttons both named Tahan; hold-as-document; unlimited holds
+
+**Tender**:
+How the customer pays a POS Sale. V1 till is **Tunai or QRIS**, not both on one sale. Tender `amount` is applied to payable. Kembalian = cash received − cash tender; QRIS is exact. Not a Pembayaran against a Faktur.
+_Avoid_: Payment; four competing pay buttons; split on the first-timer till; QRIS change
+
+**Kasir shell**:
+The V1 tablet IA is pinned to `docs/prototypes/pos-c-gaya-moka.html`: rail kategori | grid produk | panel Pesanan | Bayar. Moka *habits*, not Moka brand. Kasir sees Total, not DPP/PPN.
+_Avoid_: ERP AppLayout on the till; `pos-kasir-tablet.html` as the source of truth
+
+**POS pack**:
+An optional Enter365 pack (`pos` / `FEATURE_POS`), like manufacturing — generic, not an industry vertical. Default off except presets `pos` (acquisition) and `full` (demo). The `pos` preset keeps products, stok, gudang, opname, and accounting reports; it hides Penawaran, Faktur, Surat Jalan, purchasing documents, and other ERP packs. Restock is stok masuk / opname. An ERP tenant may set `FEATURE_POS=true` without switching preset.
+_Avoid_: industry add-on (Vahana/NEX); `config/addons.php`; a second ledger; a menu item inside the Faktur UI; leaving Penawaran in the nav for a kasir-first tenant

@@ -7,6 +7,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -38,6 +39,28 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->render(function (HttpException $e, Request $request) {
+            if (! in_array($e->getStatusCode(), [401, 403], true)) {
+                return null;
+            }
+
+            if ($request->expectsJson() || $request->is('api/*')) {
+                $message = trim($e->getMessage());
+                if ($message === '') {
+                    $message = $e->getStatusCode() === 401
+                        ? 'Silakan masuk terlebih dahulu.'
+                        : 'Anda tidak diizinkan melakukan ini.';
+                }
+
+                return response()->json([
+                    'success' => false,
+                    'message' => $message,
+                ], $e->getStatusCode());
+            }
+
+            return null;
+        });
+
         // Handle domain exceptions with structured JSON response
         $exceptions->render(function (DomainException $e, Request $request) {
             if ($request->expectsJson() || $request->is('api/*')) {

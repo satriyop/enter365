@@ -256,6 +256,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(\App\Contracts\Shared\ContactServiceInterface::class, \App\Services\Shared\ContactService::class);
         $this->app->bind(\App\Contracts\Shared\ReminderServiceInterface::class, \App\Services\Sales\ReminderService::class);
         $this->app->bind(\App\Contracts\Shared\OverdueServiceInterface::class, \App\Services\Sales\OverdueService::class);
+
+        $this->app->bind(\App\Contracts\Pos\PosServiceInterface::class, \App\Services\Pos\PosService::class);
     }
 
     /**
@@ -426,6 +428,9 @@ class AppServiceProvider extends ServiceProvider
 
             // Contacts Domain
             'contact' => \App\Models\Contacts\Contact::class,
+
+            'pos_session' => \App\Models\Pos\PosSession::class,
+            'pos_sale' => \App\Models\Pos\PosSale::class,
 
             // Tax Domain
             'nsfp_range' => \App\Models\Tax\NsfpRange::class,

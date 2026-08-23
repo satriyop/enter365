@@ -32,6 +32,9 @@ class DemoSeeder extends Seeder
 
     public const DEMO_ALL = 'all';
 
+    /** Kasir-first stand-in: Kopitiam 57 till catalog */
+    public const DEMO_POS = 'pos';
+
     /**
      * @return list<string>
      */
@@ -45,6 +48,7 @@ class DemoSeeder extends Seeder
             self::DEMO_VAHANA,
             self::DEMO_NEX,
             self::DEMO_ALL,
+            self::DEMO_POS,
         ];
     }
 
@@ -62,6 +66,7 @@ class DemoSeeder extends Seeder
             'vahana' => self::DEMO_VAHANA,
             'solar', 'nex' => self::DEMO_NEX,
             'full' => self::DEMO_ALL,
+            'pos' => self::DEMO_POS,
             default => self::DEMO_GENERAL,
         };
     }
@@ -120,6 +125,15 @@ class DemoSeeder extends Seeder
 
         if ($demoChoice === self::DEMO_NEX || $demoChoice === self::DEMO_ALL) {
             $this->seedNex();
+        }
+
+        if ($demoChoice === self::DEMO_POS) {
+            $this->command->info('☕ Seeding Kopitiam 57 stand-in till (DEMO — bukan harga toko)...');
+            $this->call(PosKopitiamDemoSeeder::class);
+            $this->command->info('');
+            $this->showCompletionMessage($demoChoice);
+
+            return;
         }
 
         // Core trading for non-vertical-only paths (also used as base for services/enterprise/mfg)
@@ -241,6 +255,7 @@ class DemoSeeder extends Seeder
                     self::DEMO_VAHANA => '⚡ Vahana - Electrical Panel (electrical_panel)',
                     self::DEMO_NEX => '☀️  NEX - Solar EPC (solar_proposals)',
                     self::DEMO_ALL => '🔄 Full - Vahana + NEX + packs',
+                    self::DEMO_POS => '☕ POS - Kopitiam 57 stand-in till',
                 ],
                 self::profileFromFeaturePreset()
             );
@@ -334,6 +349,9 @@ class DemoSeeder extends Seeder
         $this->command->info('║    produksi@demo.com   (password: password)                        ║');
         $this->command->info('║    finance@demo.com    (password: password)                        ║');
         $this->command->info('║    gudang@demo.com     (password: password)                        ║');
+        if ($demoChoice === self::DEMO_POS) {
+            $this->command->info('║    siti@kopitiam57.test (password: password)  Kasir                 ║');
+        }
         $this->command->info('╠═══════════════════════════════════════════════════════════════════╣');
         $this->command->info('║  Data Seeded:                                                      ║');
 
@@ -343,6 +361,7 @@ class DemoSeeder extends Seeder
             self::DEMO_MANUFACTURING => $this->command->info('║    ⚙️  Manufacturing: generic BOM/WO (no industry vertical)         ║'),
             self::DEMO_ENTERPRISE => $this->command->info('║    🏭 Enterprise: packs (MFG/projects); no solar/panel masters      ║'),
             self::DEMO_VAHANA, self::DEMO_ALL => $this->command->info('║    ⚡ PT Vahana: panel library + BOM + brand-capable masters         ║'),
+            self::DEMO_POS => $this->command->info('║    ☕ Kopitiam 57 till catalog (DEMO papan, bukan harga toko)       ║'),
             default => null,
         };
 

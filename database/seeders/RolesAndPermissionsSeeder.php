@@ -41,7 +41,7 @@ class RolesAndPermissionsSeeder extends Seeder
             ['name' => Role::CASHIER],
             [
                 'display_name' => 'Kasir',
-                'description' => 'Akses ke faktur dan pembayaran',
+                'description' => 'Operator till POS: sesi, checkout, void',
                 'is_system' => true,
             ]
         );
@@ -102,6 +102,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'fiscal_periods.view', 'fiscal_periods.create', 'fiscal_periods.edit', 'fiscal_periods.close', 'fiscal_periods.reopen',
             'sales_returns.view',
             'purchase_returns.view',
+            'pos.reports.view',
         ])->pluck('id');
         $accountantRole->permissions()->sync($accountantPermissions);
 
@@ -109,9 +110,10 @@ class RolesAndPermissionsSeeder extends Seeder
         $cashierPermissions = Permission::whereIn('name', [
             'contacts.view',
             'products.view',
-            'invoices.view', 'invoices.create',
-            'bills.view',
-            'payments.view', 'payments.create',
+            'pos.session.open',
+            'pos.session.close',
+            'pos.sale.checkout',
+            'pos.sale.void',
         ])->pluck('id');
         $cashierRole->permissions()->sync($cashierPermissions);
 

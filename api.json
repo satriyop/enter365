@@ -2572,8 +2572,7 @@
                                             "type": "string"
                                         },
                                         "reconciled_count": {
-                                            "type": "integer",
-                                            "minimum": 0
+                                            "type": "integer"
                                         }
                                     },
                                     "required": [
@@ -2778,8 +2777,7 @@
                                     "type": "object",
                                     "properties": {
                                         "message": {
-                                            "type": "string",
-                                            "const": "Transaksi sudah di-match atau direkonsiliasi."
+                                            "type": "string"
                                         }
                                     },
                                     "required": [
@@ -2850,8 +2848,7 @@
                                     "type": "object",
                                     "properties": {
                                         "message": {
-                                            "type": "string",
-                                            "const": "Tidak dapat unmatch transaksi yang sudah direkonsiliasi."
+                                            "type": "string"
                                         }
                                     },
                                     "required": [
@@ -8069,7 +8066,18 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/components/schemas/BudgetResource"
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/BudgetResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "fiscal_period",
+                                                        "lines"
+                                                    ]
+                                                }
+                                            ]
                                         }
                                     },
                                     "required": [
@@ -8201,9 +8209,6 @@
                             }
                         }
                     },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
-                    },
                     "403": {
                         "$ref": "#/components/responses/AuthorizationException"
                     },
@@ -8212,6 +8217,9 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     }
                 }
             },
@@ -8243,25 +8251,6 @@
                                         "message": {
                                             "type": "string",
                                             "const": "Anggaran berhasil dihapus."
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Anggaran yang sudah disetujui atau ditutup tidak bisa dihapus."
                                         }
                                     },
                                     "required": [
@@ -8345,9 +8334,6 @@
                             }
                         }
                     },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
-                    },
                     "403": {
                         "$ref": "#/components/responses/AuthorizationException"
                     },
@@ -8356,6 +8342,9 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     }
                 }
             }
@@ -8420,17 +8409,17 @@
                             }
                         }
                     },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
                     },
-                    "403": {
-                        "$ref": "#/components/responses/AuthorizationException"
-                    },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     }
                 }
             },
@@ -8480,30 +8469,11 @@
                             }
                         }
                     },
-                    "422": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Anggaran yang sudah disetujui tidak bisa diubah."
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
-                    },
-                    "403": {
-                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -8548,41 +8518,6 @@
                                     "required": [
                                         "message",
                                         "data"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "anyOf": [
-                                        {
-                                            "type": "object",
-                                            "properties": {
-                                                "message": {
-                                                    "type": "string",
-                                                    "const": "Anggaran harus memiliki minimal satu baris."
-                                                }
-                                            },
-                                            "required": [
-                                                "message"
-                                            ]
-                                        },
-                                        {
-                                            "type": "object",
-                                            "properties": {
-                                                "message": {
-                                                    "type": "string",
-                                                    "const": "Anggaran ini sudah disetujui atau ditutup."
-                                                }
-                                            },
-                                            "required": [
-                                                "message"
-                                            ]
-                                        }
                                     ]
                                 }
                             }
@@ -8642,25 +8577,6 @@
                             }
                         }
                     },
-                    "422": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Anggaran yang sudah ditutup tidak bisa dibuka kembali."
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
                     "403": {
                         "$ref": "#/components/responses/AuthorizationException"
                     },
@@ -8710,25 +8626,6 @@
                                     "required": [
                                         "message",
                                         "data"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Hanya anggaran yang sudah disetujui yang bisa ditutup."
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
                                     ]
                                 }
                             }
@@ -8813,11 +8710,11 @@
                             }
                         }
                     },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
-                    },
                     "403": {
                         "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
@@ -8881,9 +8778,7 @@
                                         },
                                         "comparison": {
                                             "type": "array",
-                                            "items": {
-                                                "type": "string"
-                                            }
+                                            "items": {}
                                         }
                                     },
                                     "required": [
@@ -8954,87 +8849,10 @@
                                         },
                                         "monthly_breakdown": {
                                             "type": "array",
-                                            "prefixItems": [
-                                                {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "month": {
-                                                            "type": "integer",
-                                                            "const": 1
-                                                        },
-                                                        "month_name": {
-                                                            "type": "string"
-                                                        },
-                                                        "budget": {
-                                                            "type": "object",
-                                                            "properties": {
-                                                                "revenue": {
-                                                                    "type": "integer"
-                                                                },
-                                                                "expense": {
-                                                                    "type": "integer"
-                                                                },
-                                                                "net": {
-                                                                    "type": "string"
-                                                                }
-                                                            },
-                                                            "required": [
-                                                                "revenue",
-                                                                "expense",
-                                                                "net"
-                                                            ]
-                                                        },
-                                                        "actual": {
-                                                            "type": "object",
-                                                            "properties": {
-                                                                "revenue": {
-                                                                    "type": "integer"
-                                                                },
-                                                                "expense": {
-                                                                    "type": "integer"
-                                                                },
-                                                                "net": {
-                                                                    "type": "string"
-                                                                }
-                                                            },
-                                                            "required": [
-                                                                "revenue",
-                                                                "expense",
-                                                                "net"
-                                                            ]
-                                                        },
-                                                        "variance": {
-                                                            "type": "object",
-                                                            "properties": {
-                                                                "revenue": {
-                                                                    "type": "string"
-                                                                },
-                                                                "expense": {
-                                                                    "type": "string"
-                                                                },
-                                                                "net": {
-                                                                    "type": "string"
-                                                                }
-                                                            },
-                                                            "required": [
-                                                                "revenue",
-                                                                "expense",
-                                                                "net"
-                                                            ]
-                                                        }
-                                                    },
-                                                    "required": [
-                                                        "month",
-                                                        "month_name",
-                                                        "budget",
-                                                        "actual",
-                                                        "variance"
-                                                    ]
-                                                }
-                                            ],
-                                            "minItems": 1,
-                                            "maxItems": 1,
-                                            "additionalItems": false
+                                            "items": {
+                                                "type": "object",
+                                                "additionalProperties": {}
+                                            }
                                         }
                                     },
                                     "required": [
@@ -9082,106 +8900,7 @@
                             "application/json": {
                                 "schema": {
                                     "type": "object",
-                                    "properties": {
-                                        "budget": {
-                                            "type": "object",
-                                            "properties": {
-                                                "name": {
-                                                    "type": "string"
-                                                },
-                                                "type": {
-                                                    "type": "string"
-                                                },
-                                                "status": {
-                                                    "$ref": "#/components/schemas/BudgetStatus"
-                                                },
-                                                "fiscal_period": {
-                                                    "type": "string"
-                                                }
-                                            },
-                                            "required": [
-                                                "name",
-                                                "type",
-                                                "status",
-                                                "fiscal_period"
-                                            ]
-                                        },
-                                        "annual": {
-                                            "type": "object",
-                                            "properties": {
-                                                "budget_revenue": {
-                                                    "type": "integer"
-                                                },
-                                                "budget_expense": {
-                                                    "type": "integer"
-                                                },
-                                                "budget_net": {
-                                                    "type": "integer"
-                                                }
-                                            },
-                                            "required": [
-                                                "budget_revenue",
-                                                "budget_expense",
-                                                "budget_net"
-                                            ]
-                                        },
-                                        "ytd": {
-                                            "type": "object",
-                                            "properties": {
-                                                "through_month": {
-                                                    "type": "string"
-                                                },
-                                                "through_month_name": {
-                                                    "type": "string"
-                                                },
-                                                "budget_revenue": {
-                                                    "type": "integer"
-                                                },
-                                                "budget_expense": {
-                                                    "type": "integer"
-                                                },
-                                                "budget_net": {
-                                                    "type": "string"
-                                                },
-                                                "actual_revenue": {
-                                                    "type": "integer"
-                                                },
-                                                "actual_expense": {
-                                                    "type": "integer"
-                                                },
-                                                "actual_net": {
-                                                    "type": "string"
-                                                },
-                                                "variance_revenue": {
-                                                    "type": "string"
-                                                },
-                                                "variance_expense": {
-                                                    "type": "string"
-                                                },
-                                                "variance_net": {
-                                                    "type": "string"
-                                                }
-                                            },
-                                            "required": [
-                                                "through_month",
-                                                "through_month_name",
-                                                "budget_revenue",
-                                                "budget_expense",
-                                                "budget_net",
-                                                "actual_revenue",
-                                                "actual_expense",
-                                                "actual_net",
-                                                "variance_revenue",
-                                                "variance_expense",
-                                                "variance_net"
-                                            ]
-                                        }
-                                    },
-                                    "required": [
-                                        "budget",
-                                        "annual",
-                                        "ytd"
-                                    ]
+                                    "additionalProperties": {}
                                 }
                             }
                         }
@@ -9251,9 +8970,7 @@
                                         },
                                         "accounts": {
                                             "type": "array",
-                                            "items": {
-                                                "type": "string"
-                                            }
+                                            "items": {}
                                         }
                                     },
                                     "required": [
@@ -27112,6 +26829,709 @@
                     },
                     "403": {
                         "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/pos/outlets": {
+            "get": {
+                "operationId": "posSession.outlets",
+                "tags": [
+                    "PosSession"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operasi berhasil."
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Warehouse"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/pos/sessions": {
+            "post": {
+                "operationId": "posSession.store",
+                "tags": [
+                    "PosSession"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OpenPosSessionRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`PosSessionResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/PosSessionResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "warehouse_name"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    }
+                }
+            }
+        },
+        "/pos/sessions/current": {
+            "get": {
+                "operationId": "posSession.current",
+                "tags": [
+                    "PosSession"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`PosSessionResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/PosSessionResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "warehouse_name",
+                                                        "holds",
+                                                        "sales"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Tidak ada sesi kasir yang terbuka."
+                                        },
+                                        "errors": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "errors"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/pos/sessions/{pos_session}": {
+            "get": {
+                "operationId": "posSession.show",
+                "tags": [
+                    "PosSession"
+                ],
+                "parameters": [
+                    {
+                        "name": "pos_session",
+                        "in": "path",
+                        "required": true,
+                        "description": "The pos session ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`PosSessionResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/PosSessionResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "warehouse_name",
+                                                        "holds",
+                                                        "sales"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/pos/sessions/{pos_session}/close": {
+            "post": {
+                "operationId": "posSession.close",
+                "tags": [
+                    "PosSession"
+                ],
+                "parameters": [
+                    {
+                        "name": "pos_session",
+                        "in": "path",
+                        "required": true,
+                        "description": "The pos session ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ClosePosSessionRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`PosSessionResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/PosSessionResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "warehouse_name"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    }
+                }
+            }
+        },
+        "/pos/sessions/{pos_session}/catalog": {
+            "get": {
+                "operationId": "posSession.catalog",
+                "tags": [
+                    "PosSession"
+                ],
+                "parameters": [
+                    {
+                        "name": "pos_session",
+                        "in": "path",
+                        "required": true,
+                        "description": "The pos session ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operasi berhasil."
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    },
+                                                    "sku": {
+                                                        "type": "string"
+                                                    },
+                                                    "barcode": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "category": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "button_price": {
+                                                        "type": "integer"
+                                                    },
+                                                    "is_taxable": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "track_inventory": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "quantity": {
+                                                        "type": [
+                                                            "integer",
+                                                            "null"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "id",
+                                                    "name",
+                                                    "sku",
+                                                    "barcode",
+                                                    "category",
+                                                    "button_price",
+                                                    "is_taxable",
+                                                    "track_inventory",
+                                                    "quantity"
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/pos/sessions/{pos_session}/checkout": {
+            "post": {
+                "operationId": "posSession.checkout",
+                "tags": [
+                    "PosSession"
+                ],
+                "parameters": [
+                    {
+                        "name": "pos_session",
+                        "in": "path",
+                        "required": true,
+                        "description": "The pos session ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CheckoutPosSaleRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`PosSaleResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/PosSaleResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    }
+                }
+            }
+        },
+        "/pos/sessions/{pos_session}/sales/{sale}/void": {
+            "post": {
+                "operationId": "posSession.voidSale",
+                "tags": [
+                    "PosSession"
+                ],
+                "parameters": [
+                    {
+                        "name": "pos_session",
+                        "in": "path",
+                        "required": true,
+                        "description": "The pos session ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "sale",
+                        "in": "path",
+                        "required": true,
+                        "description": "The sale ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/VoidPosSaleRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`PosSaleResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/PosSaleResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    }
+                }
+            }
+        },
+        "/pos/sessions/{pos_session}/holds": {
+            "post": {
+                "operationId": "posSession.storeHold",
+                "tags": [
+                    "PosSession"
+                ],
+                "parameters": [
+                    {
+                        "name": "pos_session",
+                        "in": "path",
+                        "required": true,
+                        "description": "The pos session ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HoldPosCartRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`PosSessionHoldResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/PosSessionHoldResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    }
+                }
+            },
+            "get": {
+                "operationId": "posSession.holds",
+                "tags": [
+                    "PosSession"
+                ],
+                "parameters": [
+                    {
+                        "name": "pos_session",
+                        "in": "path",
+                        "required": true,
+                        "description": "The pos session ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operasi berhasil."
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {}
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/pos/sessions/{pos_session}/holds/{hold}/take": {
+            "post": {
+                "operationId": "posSession.takeHold",
+                "tags": [
+                    "PosSession"
+                ],
+                "parameters": [
+                    {
+                        "name": "pos_session",
+                        "in": "path",
+                        "required": true,
+                        "description": "The pos session ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "hold",
+                        "in": "path",
+                        "required": true,
+                        "description": "The hold ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`PosSessionHoldResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/PosSessionHoldResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
@@ -48528,15 +48948,6 @@
                 ],
                 "title": "BudgetResource"
             },
-            "BudgetStatus": {
-                "type": "string",
-                "enum": [
-                    "draft",
-                    "approved",
-                    "closed"
-                ],
-                "title": "BudgetStatus"
-            },
             "BulkAcceptSuggestionsRequest": {
                 "type": "object",
                 "properties": {
@@ -48591,6 +49002,60 @@
                     }
                 },
                 "title": "CancelQuotationRequest"
+            },
+            "CheckoutPosSaleRequest": {
+                "type": "object",
+                "properties": {
+                    "way": {
+                        "type": "string",
+                        "enum": [
+                            "cash",
+                            "qris"
+                        ]
+                    },
+                    "cash_received_amount": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "lines": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "product_id": {
+                                    "type": "integer"
+                                },
+                                "quantity": {
+                                    "type": "integer",
+                                    "minimum": 1
+                                }
+                            },
+                            "required": [
+                                "product_id",
+                                "quantity"
+                            ]
+                        },
+                        "minItems": 1
+                    }
+                },
+                "required": [
+                    "way",
+                    "lines"
+                ],
+                "title": "CheckoutPosSaleRequest"
+            },
+            "ClosePosSessionRequest": {
+                "type": "object",
+                "properties": {
+                    "counted_cash_amount": {
+                        "type": "integer",
+                        "minimum": 0
+                    }
+                },
+                "required": [
+                    "counted_cash_amount"
+                ],
+                "title": "ClosePosSessionRequest"
             },
             "CompanyProfileResource": {
                 "type": "object",
@@ -50524,6 +50989,35 @@
                     "updated_at"
                 ],
                 "title": "GoodsReceiptNoteResource"
+            },
+            "HoldPosCartRequest": {
+                "type": "object",
+                "properties": {
+                    "lines": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "product_id": {
+                                    "type": "integer"
+                                },
+                                "quantity": {
+                                    "type": "integer",
+                                    "minimum": 1
+                                }
+                            },
+                            "required": [
+                                "product_id",
+                                "quantity"
+                            ]
+                        },
+                        "minItems": 1
+                    }
+                },
+                "required": [
+                    "lines"
+                ],
+                "title": "HoldPosCartRequest"
             },
             "IndonesiaSolarDataResource": {
                 "type": "object",
@@ -52680,6 +53174,23 @@
                 ],
                 "title": "NsfpRangeResource"
             },
+            "OpenPosSessionRequest": {
+                "type": "object",
+                "properties": {
+                    "warehouse_id": {
+                        "type": "integer"
+                    },
+                    "opening_cash_amount": {
+                        "type": "integer",
+                        "minimum": 0
+                    }
+                },
+                "required": [
+                    "warehouse_id",
+                    "opening_cash_amount"
+                ],
+                "title": "OpenPosSessionRequest"
+            },
             "PaymentReminderResource": {
                 "type": "object",
                 "properties": {
@@ -53285,6 +53796,289 @@
                     "notes"
                 ],
                 "title": "PlnTariffResource"
+            },
+            "PosSaleResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "sale_number": {
+                        "type": "string"
+                    },
+                    "pos_session_id": {
+                        "type": "integer"
+                    },
+                    "status": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "$ref": "#/components/schemas/PosSaleStatus"
+                            }
+                        ]
+                    },
+                    "payable_amount": {
+                        "type": "integer"
+                    },
+                    "cash_received_amount": {
+                        "type": "integer"
+                    },
+                    "change_amount": {
+                        "type": "integer"
+                    },
+                    "sold_at": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            }
+                        ]
+                    },
+                    "void_reason": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "integer"
+                                },
+                                "product_id": {
+                                    "type": "integer"
+                                },
+                                "quantity": {
+                                    "type": "integer"
+                                },
+                                "payable_amount": {
+                                    "type": "integer"
+                                }
+                            },
+                            "required": [
+                                "id",
+                                "product_id",
+                                "quantity",
+                                "payable_amount"
+                            ]
+                        }
+                    },
+                    "tenders": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "type": {
+                                    "anyOf": [
+                                        {
+                                            "type": "string"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/PosTenderType"
+                                        }
+                                    ]
+                                },
+                                "amount": {
+                                    "type": "integer"
+                                }
+                            },
+                            "required": [
+                                "type",
+                                "amount"
+                            ]
+                        }
+                    }
+                },
+                "required": [
+                    "id",
+                    "sale_number",
+                    "pos_session_id",
+                    "status",
+                    "payable_amount",
+                    "cash_received_amount",
+                    "change_amount",
+                    "sold_at",
+                    "void_reason"
+                ],
+                "title": "PosSaleResource"
+            },
+            "PosSaleStatus": {
+                "type": "string",
+                "enum": [
+                    "completed",
+                    "voided"
+                ],
+                "title": "PosSaleStatus"
+            },
+            "PosSessionHoldResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "pos_session_id": {
+                        "type": "integer"
+                    },
+                    "lines": {
+                        "type": "array",
+                        "items": {}
+                    },
+                    "created_at": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "pos_session_id",
+                    "lines",
+                    "created_at"
+                ],
+                "title": "PosSessionHoldResource"
+            },
+            "PosSessionResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "session_number": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "$ref": "#/components/schemas/PosSessionStatus"
+                            }
+                        ]
+                    },
+                    "warehouse_id": {
+                        "type": "integer"
+                    },
+                    "warehouse_name": {
+                        "type": "string"
+                    },
+                    "cash_account_id": {
+                        "type": "integer"
+                    },
+                    "qris_account_id": {
+                        "type": "integer"
+                    },
+                    "opening_cash_amount": {
+                        "type": "integer"
+                    },
+                    "expected_cash_amount": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "counted_cash_amount": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "cash_difference_amount": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "opened_by": {
+                        "type": "integer"
+                    },
+                    "opened_at": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            }
+                        ]
+                    },
+                    "closed_at": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "holds": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PosSessionHoldResource"
+                        }
+                    },
+                    "sales": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PosSaleResource"
+                        }
+                    }
+                },
+                "required": [
+                    "id",
+                    "session_number",
+                    "status",
+                    "warehouse_id",
+                    "cash_account_id",
+                    "qris_account_id",
+                    "opening_cash_amount",
+                    "expected_cash_amount",
+                    "counted_cash_amount",
+                    "cash_difference_amount",
+                    "opened_by",
+                    "opened_at",
+                    "closed_at"
+                ],
+                "title": "PosSessionResource"
+            },
+            "PosSessionStatus": {
+                "type": "string",
+                "enum": [
+                    "open",
+                    "closed"
+                ],
+                "title": "PosSessionStatus"
+            },
+            "PosTenderType": {
+                "type": "string",
+                "enum": [
+                    "cash",
+                    "qris"
+                ],
+                "title": "PosTenderType"
             },
             "PphCategory": {
                 "type": "string",
@@ -66966,7 +67760,25 @@
                     },
                     "permissions": {
                         "type": "array",
-                        "items": {}
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "integer"
+                                },
+                                "name": {
+                                    "type": "string"
+                                },
+                                "display_name": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "id",
+                                "name",
+                                "display_name"
+                            ]
+                        }
                     },
                     "created_at": {
                         "type": [
@@ -66987,6 +67799,7 @@
                     "email",
                     "email_verified_at",
                     "is_active",
+                    "permissions",
                     "created_at",
                     "updated_at"
                 ],
@@ -67040,6 +67853,99 @@
                     "reason"
                 ],
                 "title": "VoidInvoiceRequest"
+            },
+            "VoidPosSaleRequest": {
+                "type": "object",
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "maxLength": 255
+                    }
+                },
+                "required": [
+                    "reason"
+                ],
+                "title": "VoidPosSaleRequest"
+            },
+            "Warehouse": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "code": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "address": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "phone": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "contact_person": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "is_default": {
+                        "type": "boolean"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "notes": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "deleted_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "id",
+                    "code",
+                    "name",
+                    "address",
+                    "phone",
+                    "contact_person",
+                    "is_default",
+                    "is_active",
+                    "notes",
+                    "created_at",
+                    "updated_at",
+                    "deleted_at"
+                ],
+                "title": "Warehouse"
             },
             "WarehouseResource": {
                 "type": "object",
