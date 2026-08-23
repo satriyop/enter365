@@ -1983,7 +1983,8 @@
                                                 {
                                                     "type": "object",
                                                     "required": [
-                                                        "roles"
+                                                        "roles",
+                                                        "permissions"
                                                     ]
                                                 }
                                             ]
@@ -2117,7 +2118,8 @@
                                                 {
                                                     "type": "object",
                                                     "required": [
-                                                        "roles"
+                                                        "roles",
+                                                        "permissions"
                                                     ]
                                                 }
                                             ]
@@ -6353,7 +6355,22 @@
                                         }
                                     },
                                     "target_brand": {
-                                        "type": "string"
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "enum": [
+                                            "schneider",
+                                            "abb",
+                                            "siemens",
+                                            "chint",
+                                            "ls",
+                                            "legrand",
+                                            "eaton",
+                                            "hager",
+                                            "mitsubishi",
+                                            null
+                                        ]
                                     }
                                 }
                             }
@@ -9861,7 +9878,7 @@
         },
         "/company-profiles": {
             "get": {
-                "operationId": "company-profiles.index",
+                "operationId": "companyProfile.index",
                 "tags": [
                     "CompanyProfile"
                 ],
@@ -10011,7 +10028,7 @@
                 }
             },
             "post": {
-                "operationId": "company-profiles.store",
+                "operationId": "companyProfile.store",
                 "tags": [
                     "CompanyProfile"
                 ],
@@ -10055,7 +10072,7 @@
         },
         "/company-profiles/{companyProfile}": {
             "get": {
-                "operationId": "company-profiles.show",
+                "operationId": "companyProfile.show",
                 "tags": [
                     "CompanyProfile"
                 ],
@@ -10098,7 +10115,7 @@
                 }
             },
             "put": {
-                "operationId": "company-profiles.update",
+                "operationId": "companyProfile.update",
                 "tags": [
                     "CompanyProfile"
                 ],
@@ -10153,7 +10170,7 @@
                 }
             },
             "delete": {
-                "operationId": "company-profiles.destroy",
+                "operationId": "companyProfile.destroy",
                 "tags": [
                     "CompanyProfile"
                 ],
@@ -20514,214 +20531,6 @@
                 }
             }
         },
-        "/inventory/stock-in": {
-            "post": {
-                "operationId": "inventory.stockIn",
-                "summary": "Record stock in",
-                "tags": [
-                    "Inventory"
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/StockInRequest"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        },
-                                        "data": {
-                                            "$ref": "#/components/schemas/InventoryMovementResource"
-                                        }
-                                    },
-                                    "required": [
-                                        "message",
-                                        "data"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/AuthenticationException"
-                    },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
-                    }
-                }
-            }
-        },
-        "/inventory/stock-out": {
-            "post": {
-                "operationId": "inventory.stockOut",
-                "summary": "Record stock out",
-                "tags": [
-                    "Inventory"
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/StockOutRequest"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        },
-                                        "data": {
-                                            "$ref": "#/components/schemas/InventoryMovementResource"
-                                        }
-                                    },
-                                    "required": [
-                                        "message",
-                                        "data"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/AuthenticationException"
-                    },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
-                    }
-                }
-            }
-        },
-        "/inventory/adjust": {
-            "post": {
-                "operationId": "inventory.adjust",
-                "summary": "Adjust stock",
-                "tags": [
-                    "Inventory"
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/StockAdjustmentRequest"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        },
-                                        "data": {
-                                            "$ref": "#/components/schemas/InventoryMovementResource"
-                                        }
-                                    },
-                                    "required": [
-                                        "message",
-                                        "data"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/AuthenticationException"
-                    },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
-                    }
-                }
-            }
-        },
-        "/inventory/transfer": {
-            "post": {
-                "operationId": "inventory.transfer",
-                "summary": "Transfer stock between warehouses",
-                "tags": [
-                    "Inventory"
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/StockTransferRequest"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        },
-                                        "data": {
-                                            "type": "object",
-                                            "properties": {
-                                                "out": {
-                                                    "$ref": "#/components/schemas/InventoryMovementResource"
-                                                },
-                                                "in": {
-                                                    "$ref": "#/components/schemas/InventoryMovementResource"
-                                                }
-                                            },
-                                            "required": [
-                                                "out",
-                                                "in"
-                                            ]
-                                        }
-                                    },
-                                    "required": [
-                                        "message",
-                                        "data"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/AuthenticationException"
-                    },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
-                    }
-                }
-            }
-        },
         "/inventory/stock-card/{product}": {
             "get": {
                 "operationId": "inventory.stockCard",
@@ -21235,6 +21044,214 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/inventory/stock-in": {
+            "post": {
+                "operationId": "inventory.stockIn",
+                "summary": "Record stock in",
+                "tags": [
+                    "Inventory"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StockInRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/InventoryMovementResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/inventory/stock-out": {
+            "post": {
+                "operationId": "inventory.stockOut",
+                "summary": "Record stock out",
+                "tags": [
+                    "Inventory"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StockOutRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/InventoryMovementResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/inventory/adjust": {
+            "post": {
+                "operationId": "inventory.adjust",
+                "summary": "Adjust stock",
+                "tags": [
+                    "Inventory"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StockAdjustmentRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/InventoryMovementResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/inventory/transfer": {
+            "post": {
+                "operationId": "inventory.transfer",
+                "summary": "Transfer stock between warehouses",
+                "tags": [
+                    "Inventory"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StockTransferRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "out": {
+                                                    "$ref": "#/components/schemas/InventoryMovementResource"
+                                                },
+                                                "in": {
+                                                    "$ref": "#/components/schemas/InventoryMovementResource"
+                                                }
+                                            },
+                                            "required": [
+                                                "out",
+                                                "in"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     }
                 }
             }
@@ -27209,6 +27226,12 @@
                                                             "integer",
                                                             "null"
                                                         ]
+                                                    },
+                                                    "image_url": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
                                                     }
                                                 },
                                                 "required": [
@@ -27220,7 +27243,8 @@
                                                     "button_price",
                                                     "is_taxable",
                                                     "track_inventory",
-                                                    "quantity"
+                                                    "quantity",
+                                                    "image_url"
                                                 ]
                                             }
                                         }
@@ -28390,7 +28414,7 @@
         },
         "/product-categories": {
             "get": {
-                "operationId": "product-categories.index",
+                "operationId": "productCategory.index",
                 "tags": [
                     "ProductCategory"
                 ],
@@ -28550,7 +28574,7 @@
                 }
             },
             "post": {
-                "operationId": "product-categories.store",
+                "operationId": "productCategory.store",
                 "tags": [
                     "ProductCategory"
                 ],
@@ -28604,7 +28628,7 @@
         },
         "/product-categories/{productCategory}": {
             "get": {
-                "operationId": "product-categories.show",
+                "operationId": "productCategory.show",
                 "tags": [
                     "ProductCategory"
                 ],
@@ -28659,7 +28683,7 @@
                 }
             },
             "put": {
-                "operationId": "product-categories.update",
+                "operationId": "productCategory.update",
                 "tags": [
                     "ProductCategory"
                 ],
@@ -28714,7 +28738,7 @@
                 }
             },
             "delete": {
-                "operationId": "product-categories.destroy",
+                "operationId": "productCategory.destroy",
                 "tags": [
                     "ProductCategory"
                 ],
@@ -31352,15 +31376,13 @@
                                             "integer",
                                             "null"
                                         ],
-                                        "description": "Min Rp 5 juta for B2B",
                                         "minimum": 5500
                                     },
                                     "pln_category": {
                                         "type": [
                                             "string",
                                             "null"
-                                        ],
-                                        "description": "Min 5.5 kVA for B2B"
+                                        ]
                                     },
                                     "target_savings": {
                                         "type": [
@@ -35201,23 +35223,6 @@
                         "schema": {
                             "type": "integer",
                             "default": 0
-                        }
-                    },
-                    {
-                        "name": "sort_by",
-                        "in": "query",
-                        "description": "Sort options",
-                        "schema": {
-                            "type": "string",
-                            "default": "next_follow_up_at"
-                        }
-                    },
-                    {
-                        "name": "sort_dir",
-                        "in": "query",
-                        "schema": {
-                            "type": "string",
-                            "default": "asc"
                         }
                     },
                     {
@@ -44528,7 +44533,8 @@
                                                     {
                                                         "type": "object",
                                                         "required": [
-                                                            "roles"
+                                                            "roles",
+                                                            "permissions"
                                                         ]
                                                     }
                                                 ]
@@ -44749,7 +44755,8 @@
                                                 {
                                                     "type": "object",
                                                     "required": [
-                                                        "roles"
+                                                        "roles",
+                                                        "permissions"
                                                     ]
                                                 }
                                             ]
@@ -45145,7 +45152,7 @@
         },
         "/warehouses": {
             "get": {
-                "operationId": "warehouses.index",
+                "operationId": "warehouse.index",
                 "tags": [
                     "Warehouse"
                 ],
@@ -45295,7 +45302,7 @@
                 }
             },
             "post": {
-                "operationId": "warehouses.store",
+                "operationId": "warehouse.store",
                 "tags": [
                     "Warehouse"
                 ],
@@ -45339,7 +45346,7 @@
         },
         "/warehouses/{warehouse}": {
             "get": {
-                "operationId": "warehouses.show",
+                "operationId": "warehouse.show",
                 "tags": [
                     "Warehouse"
                 ],
@@ -45392,7 +45399,7 @@
                 }
             },
             "put": {
-                "operationId": "warehouses.update",
+                "operationId": "warehouse.update",
                 "tags": [
                     "Warehouse"
                 ],
@@ -45447,7 +45454,7 @@
                 }
             },
             "delete": {
-                "operationId": "warehouses.destroy",
+                "operationId": "warehouse.destroy",
                 "tags": [
                     "Warehouse"
                 ],
@@ -45477,57 +45484,6 @@
                                     },
                                     "required": [
                                         "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "$ref": "#/components/responses/ModelNotFoundException"
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/AuthenticationException"
-                    }
-                }
-            }
-        },
-        "/warehouses/{warehouse}/set-default": {
-            "post": {
-                "operationId": "warehouse.setDefault",
-                "summary": "Set warehouse as default",
-                "tags": [
-                    "Warehouse"
-                ],
-                "parameters": [
-                    {
-                        "name": "warehouse",
-                        "in": "path",
-                        "required": true,
-                        "description": "The warehouse ID",
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Gudang berhasil ditetapkan sebagai default."
-                                        },
-                                        "data": {
-                                            "$ref": "#/components/schemas/WarehouseResource"
-                                        }
-                                    },
-                                    "required": [
-                                        "message",
-                                        "data"
                                     ]
                                 }
                             }
@@ -45650,6 +45606,57 @@
                                         "warehouse",
                                         "summary",
                                         "stocks"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/warehouses/{warehouse}/set-default": {
+            "post": {
+                "operationId": "warehouse.setDefault",
+                "summary": "Set warehouse as default",
+                "tags": [
+                    "Warehouse"
+                ],
+                "parameters": [
+                    {
+                        "name": "warehouse",
+                        "in": "path",
+                        "required": true,
+                        "description": "The warehouse ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Gudang berhasil ditetapkan sebagai default."
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/WarehouseResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
                                     ]
                                 }
                             }
@@ -49692,7 +49699,22 @@
                         }
                     },
                     "target_brand": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "schneider",
+                            "abb",
+                            "siemens",
+                            "chint",
+                            "ls",
+                            "legrand",
+                            "eaton",
+                            "hager",
+                            "mitsubishi",
+                            null
+                        ]
                     }
                 },
                 "required": [
@@ -50301,7 +50323,10 @@
                         "type": "integer"
                     },
                     "remaining_amount": {
-                        "type": "integer"
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
                     },
                     "payment_method": {
                         "type": "string"
@@ -58196,7 +58221,8 @@
                         "minimum": 0
                     },
                     "boms_count": {
-                        "type": "string"
+                        "type": "integer",
+                        "minimum": 0
                     },
                     "creator": {
                         "type": "object",
@@ -59261,7 +59287,10 @@
                         "maxLength": 500
                     },
                     "component_standard_id": {
-                        "type": "string"
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
                     }
                 },
                 "required": [
@@ -59318,7 +59347,10 @@
                         ]
                     },
                     "default_rule_set_id": {
-                        "type": "string"
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
                     }
                 },
                 "required": [
@@ -64547,7 +64579,10 @@
                         "maxLength": 500
                     },
                     "component_standard_id": {
-                        "type": "string"
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
                     }
                 },
                 "title": "UpdateBomTemplateItemRequest"
@@ -64600,7 +64635,10 @@
                         ]
                     },
                     "default_rule_set_id": {
-                        "type": "string"
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
                     }
                 },
                 "title": "UpdateBomTemplateRequest"
@@ -67760,6 +67798,7 @@
                     },
                     "permissions": {
                         "type": "array",
+                        "description": "Only when the caller explicitly eager-loaded roles. Emitting this\nunconditionally made every embedded user (an invoice creator, a\nproposal author) cost a permission lookup, and leaked that user's\nfull permission set into unrelated list responses.",
                         "items": {
                             "type": "object",
                             "properties": {
@@ -67799,7 +67838,6 @@
                     "email",
                     "email_verified_at",
                     "is_active",
-                    "permissions",
                     "created_at",
                     "updated_at"
                 ],

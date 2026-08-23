@@ -188,19 +188,11 @@ class Payment extends Model
      */
     public static function generatePaymentNumber(string $type): string
     {
+        // Delegates to DocumentNumbers: reading the sequence back out with
+        // substr(-4) reset the counter at 10,000 payments in a month, and
+        // descending text order never surfaced the five-digit number anyway.
         $prefix = ($type === self::TYPE_RECEIVE ? 'RCV' : 'PAY').'-'.now()->format('Ym').'-';
-        $lastPayment = static::query()
-            ->where('payment_number', 'like', $prefix.'%')
-            ->orderBy('payment_number', 'desc')
-            ->first();
 
-        if ($lastPayment) {
-            $lastNumber = (int) substr($lastPayment->payment_number, -4);
-            $nextNumber = $lastNumber + 1;
-        } else {
-            $nextNumber = 1;
-        }
-
-        return $prefix.str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
+        return \App\Domain\Shared\DocumentNumbers::generate($prefix, 'payments', 'payment_number');
     }
 }

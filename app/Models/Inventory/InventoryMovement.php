@@ -132,6 +132,10 @@ class InventoryMovement extends Model
 
     /**
      * Generate the next movement number.
+     *
+     * Delegates to DocumentNumbers rather than sorting movement_number as text:
+     * "…-9999" ranks above "…-10000" lexicographically, so the old scan handed
+     * out a duplicate once a prefix passed 10,000 movements in a day.
      */
     public static function generateMovementNumber(string $type): string
     {
@@ -139,24 +143,16 @@ class InventoryMovement extends Model
             self::TYPE_IN => 'IN',
             self::TYPE_OUT => 'OUT',
             self::TYPE_ADJUSTMENT => 'ADJ',
-            self::TYPE_TRANSFER_IN, self::TYPE_TRANSFER_OUT => 'TRF',
+            self::TYPE_TRANSFER_OUT => 'TRF',
+            self::TYPE_TRANSFER_IN => 'TRI',
             default => 'MOV',
         };
 
-        $date = now()->format('Ymd');
-        $pattern = "{$prefix}-{$date}-%";
-
-        $last = static::where('movement_number', 'like', $pattern)
-            ->orderByDesc('movement_number')
-            ->first();
-
-        if ($last && preg_match('/-(\d+)$/', $last->movement_number, $matches)) {
-            $nextNum = (int) $matches[1] + 1;
-
-            return "{$prefix}-{$date}-".str_pad((string) $nextNum, 4, '0', STR_PAD_LEFT);
-        }
-
-        return "{$prefix}-{$date}-0001";
+        return \App\Domain\Shared\DocumentNumbers::generate(
+            "{$prefix}-".now()->format('Ymd').'-',
+            'inventory_movements',
+            'movement_number'
+        );
     }
 
     /**

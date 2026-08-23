@@ -324,7 +324,7 @@ class InventoryService extends BaseService implements InventoryServiceInterface
 
             // Create incoming movement
             $inMovement = InventoryMovement::create([
-                'movement_number' => str_replace('TRF', 'TRI', $transferNumber),
+                'movement_number' => InventoryMovement::generateMovementNumber(InventoryMovement::TYPE_TRANSFER_IN),
                 'product_id' => $product->id,
                 'warehouse_id' => $toWarehouse->id,
                 'type' => InventoryMovement::TYPE_TRANSFER_IN,
