@@ -79,7 +79,7 @@ describe('Purchase Return CRUD', function () {
 
         $response = $this->postJson('/api/v1/purchase-returns', [
             'contact_id' => $contact->id,
-            'return_date' => '2025-12-26',
+            'return_date' => now()->toDateString(),
             'reason' => 'damaged',
             'tax_rate' => 11,
             'items' => [
@@ -308,7 +308,7 @@ describe('Purchase Return from Bill', function () {
         BillItem::factory()->for($bill)->count(2)->create();
 
         $response = $this->postJson("/api/v1/bills/{$bill->id}/create-purchase-return", [
-            'return_date' => '2025-12-26',
+            'return_date' => now()->toDateString(),
             'reason' => 'wrong_item',
         ]);
 
@@ -340,7 +340,7 @@ describe('Purchase Return with Warehouse', function () {
         $response = $this->postJson('/api/v1/purchase-returns', [
             'contact_id' => $contact->id,
             'warehouse_id' => $warehouse->id,
-            'return_date' => '2025-12-26',
+            'return_date' => now()->toDateString(),
             'reason' => 'excess_quantity',
             'items' => [
                 [

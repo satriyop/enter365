@@ -16,6 +16,7 @@ beforeEach(function () {
 describe('Fiscal Period API', function () {
 
     it('can list all fiscal periods', function () {
+        FiscalPeriod::query()->forceDelete();
         FiscalPeriod::factory()->count(10)->create();
 
         $this->assertMaxQueries(15, function () {

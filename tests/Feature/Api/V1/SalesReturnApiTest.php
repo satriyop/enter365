@@ -79,7 +79,7 @@ describe('Sales Return CRUD', function () {
 
         $response = $this->postJson('/api/v1/sales-returns', [
             'contact_id' => $contact->id,
-            'return_date' => '2025-12-26',
+            'return_date' => now()->toDateString(),
             'reason' => 'damaged',
             'tax_rate' => 11,
             'items' => [
@@ -317,7 +317,7 @@ describe('Sales Return from Invoice', function () {
         InvoiceItem::factory()->for($invoice)->count(2)->create();
 
         $response = $this->postJson("/api/v1/invoices/{$invoice->id}/create-sales-return", [
-            'return_date' => '2025-12-26',
+            'return_date' => now()->toDateString(),
             'reason' => 'damaged',
         ]);
 
@@ -349,7 +349,7 @@ describe('Sales Return with Warehouse', function () {
         $response = $this->postJson('/api/v1/sales-returns', [
             'contact_id' => $contact->id,
             'warehouse_id' => $warehouse->id,
-            'return_date' => '2025-12-26',
+            'return_date' => now()->toDateString(),
             'reason' => 'damaged',
             'items' => [
                 [

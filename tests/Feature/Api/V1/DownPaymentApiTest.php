@@ -120,7 +120,7 @@ describe('Down Payment CRUD', function () {
         $response = $this->postJson('/api/v1/down-payments', [
             'type' => 'receivable',
             'contact_id' => $contact->id,
-            'dp_date' => '2025-12-26',
+            'dp_date' => now()->toDateString(),
             'amount' => 10000000,
             'payment_method' => 'bank_transfer',
             'cash_account_id' => $bankAccount->id,
@@ -145,7 +145,7 @@ describe('Down Payment CRUD', function () {
         $response = $this->postJson('/api/v1/down-payments', [
             'type' => 'payable',
             'contact_id' => $contact->id,
-            'dp_date' => '2025-12-26',
+            'dp_date' => now()->toDateString(),
             'amount' => 5000000,
             'payment_method' => 'bank_transfer',
             'cash_account_id' => $bankAccount->id,

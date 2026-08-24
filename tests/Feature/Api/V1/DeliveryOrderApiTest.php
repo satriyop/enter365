@@ -86,7 +86,7 @@ describe('Delivery Order CRUD', function () {
 
         $response = $this->postJson('/api/v1/delivery-orders', [
             'contact_id' => $contact->id,
-            'do_date' => '2025-12-26',
+            'do_date' => now()->toDateString(),
             'shipping_address' => 'Jl. Sudirman No. 123',
             'shipping_method' => 'courier',
             'driver_name' => 'Budi',
@@ -380,7 +380,7 @@ describe('Delivery Order from Invoice', function () {
         InvoiceItem::factory()->for($invoice)->count(2)->create();
 
         $response = $this->postJson("/api/v1/invoices/{$invoice->id}/create-delivery-order", [
-            'do_date' => '2025-12-26',
+            'do_date' => now()->toDateString(),
             'shipping_address' => 'Customer Address',
         ]);
 
@@ -456,7 +456,7 @@ describe('Delivery Order with Warehouse', function () {
         $response = $this->postJson('/api/v1/delivery-orders', [
             'contact_id' => $contact->id,
             'warehouse_id' => $warehouse->id,
-            'do_date' => '2025-12-26',
+            'do_date' => now()->toDateString(),
             'items' => [
                 [
                     'description' => 'Test Item',

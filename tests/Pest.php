@@ -1,6 +1,8 @@
 <?php
 
+use App\Domain\Accounting\FiscalPeriods\Enums\FiscalPeriodStatus;
 use App\Enums\DocumentStatus;
+use App\Models\Accounting\FiscalPeriod;
 use App\Models\Contacts\Contact;
 use App\Models\Core\Role;
 use App\Models\Manufacturing\WorkOrder;
@@ -8,6 +10,7 @@ use App\Models\Manufacturing\WorkOrderItem;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\InvoiceItem;
 use App\Models\User;
+use Illuminate\Support\Facades\Schema;
 use Laravel\Sanctum\Sanctum;
 
 /*
@@ -23,6 +26,10 @@ use Laravel\Sanctum\Sanctum;
 
 uses(Tests\TestCase::class)->in('Feature', 'Unit', 'Contract', 'Browser');
 uses()->group('browser')->in('Browser');
+
+uses()->beforeEach(function (): void {
+    seedOpenFiscalPeriodForTests();
+})->in('Feature', 'Contract');
 
 fake()->seed(4242);
 
@@ -67,6 +74,32 @@ expect()->extend('toBeOne', function () {
 /**
  * Create and authenticate an admin user for API tests.
  */
+/**
+ * Posting a journal requires an Open fiscal period (ACC-01 / skill #39).
+ * Feature tests that never seed FiscalPeriodSeeder used to pass because
+ * missing periods were silent. Create the current year as Open when absent.
+ */
+function seedOpenFiscalPeriodForTests(): void
+{
+    if (! Schema::hasTable('fiscal_periods')) {
+        return;
+    }
+
+    $today = now()->toDateString();
+
+    $hasOpen = FiscalPeriod::query()
+        ->where('status', FiscalPeriodStatus::Open)
+        ->whereDate('start_date', '<=', $today)
+        ->whereDate('end_date', '>=', $today)
+        ->exists();
+
+    if ($hasOpen) {
+        return;
+    }
+
+    FiscalPeriod::factory()->current()->create();
+}
+
 function authenticatedAdmin(): User
 {
     $user = User::factory()->create();
@@ -720,7 +753,10 @@ function createDraftInvoice(): Invoice
  */
 function createSentInvoice(int $itemCount = 1): Invoice
 {
-    $invoice = Invoice::factory()->sent()->create();
+    $invoice = Invoice::factory()->sent()->create([
+        'invoice_date' => now()->toDateString(),
+        'due_date' => now()->addDays(30)->toDateString(),
+    ]);
 
     // Create items that match the invoice subtotal
     $lineTotal = (int) ($invoice->subtotal / $itemCount);

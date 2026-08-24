@@ -15,25 +15,31 @@ class FiscalPeriodSeeder extends Seeder
     {
         $currentYear = now()->year;
 
-        // Previous year (closed)
-        FiscalPeriod::create([
-            'name' => 'Tahun Fiskal '.($currentYear - 1),
-            'start_date' => ($currentYear - 1).'-01-01',
-            'end_date' => ($currentYear - 1).'-12-31',
-            'status' => FiscalPeriodStatus::Closed,
-            'is_closed' => true,
-            'is_locked' => true,
-            'closed_at' => now(),
-        ]);
+        FiscalPeriod::query()->firstOrCreate(
+            [
+                'start_date' => ($currentYear - 1).'-01-01',
+                'end_date' => ($currentYear - 1).'-12-31',
+            ],
+            [
+                'name' => 'Tahun Fiskal '.($currentYear - 1),
+                'status' => FiscalPeriodStatus::Closed,
+                'is_closed' => true,
+                'is_locked' => true,
+                'closed_at' => now(),
+            ]
+        );
 
-        // Current year (open)
-        FiscalPeriod::create([
-            'name' => 'Tahun Fiskal '.$currentYear,
-            'start_date' => $currentYear.'-01-01',
-            'end_date' => $currentYear.'-12-31',
-            'status' => FiscalPeriodStatus::Open,
-            'is_closed' => false,
-            'is_locked' => false,
-        ]);
+        FiscalPeriod::query()->firstOrCreate(
+            [
+                'start_date' => $currentYear.'-01-01',
+                'end_date' => $currentYear.'-12-31',
+            ],
+            [
+                'name' => 'Tahun Fiskal '.$currentYear,
+                'status' => FiscalPeriodStatus::Open,
+                'is_closed' => false,
+                'is_locked' => false,
+            ]
+        );
     }
 }
