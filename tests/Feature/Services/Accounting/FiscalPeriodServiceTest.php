@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domain\Accounting\FiscalPeriods\Enums\FiscalPeriodStatus;
 use App\Exceptions\Domain\BusinessRuleException;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\FiscalPeriod;
@@ -311,11 +312,13 @@ describe('FiscalPeriodService - getClosingChecklist', function () {
 describe('FiscalPeriodService - business rules', function () {
 
     it('cannot post to closed fiscal period', function () {
-        $closedPeriod = FiscalPeriod::factory()->closed()->create();
+        $closedPeriod = FiscalPeriod::factory()->closed()->create([
+            'start_date' => '1998-01-01',
+            'end_date' => '1998-12-31',
+        ]);
 
-        $entry = JournalEntry::factory()->create([
+        $entry = JournalEntry::factory()->forFiscalPeriod($closedPeriod)->create([
             'is_posted' => false,
-            'fiscal_period_id' => $closedPeriod->id,
         ]);
 
         JournalEntryLine::factory()->count(2)->create([
@@ -380,4 +383,31 @@ describe('FiscalPeriodService - business rules', function () {
         expect($result['closing_entry']->source_type)->toBe(JournalEntry::SOURCE_CLOSING);
     });
 
+});
+
+describe('FiscalPeriod status is the source of truth', function () {
+    it('does not treat a locked overlapping period as current', function () {
+        FiscalPeriod::query()->delete();
+
+        FiscalPeriod::factory()->locked()->create([
+            'name' => 'Terkunci sekarang',
+            'start_date' => now()->startOfYear(),
+            'end_date' => now()->endOfYear(),
+            'is_closed' => false,
+        ]);
+
+        expect(FiscalPeriod::current())->toBeNull();
+    });
+
+    it('rewrites stale is_closed from status on save', function () {
+        $period = FiscalPeriod::factory()->create([
+            'status' => FiscalPeriodStatus::Closed,
+            'is_closed' => false,
+            'is_locked' => false,
+        ]);
+
+        expect($period->is_closed)->toBeTrue()
+            ->and($period->is_locked)->toBeTrue()
+            ->and($period->getStatus())->toBe(FiscalPeriodStatus::Closed);
+    });
 });

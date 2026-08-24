@@ -3,11 +3,13 @@
 namespace App\Http\Requests\Api\V1;
 
 use App\Enums\PphCategory;
+use App\Exceptions\Domain\BusinessRuleException;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\FiscalPeriod;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
 use App\Models\Shared\Payment;
+use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -83,15 +85,12 @@ class StorePaymentRequest extends FormRequest
                 }
             }
 
-            // Validate fiscal period for payment_date (only reject if period exists and is closed/locked)
             $paymentDate = $this->input('payment_date');
             if ($paymentDate && ! $validator->errors()->has('payment_date')) {
-                $period = FiscalPeriod::forDate(\Carbon\Carbon::parse($paymentDate));
-
-                if ($period && $period->is_closed) {
-                    $validator->errors()->add('payment_date', "Periode fiskal '{$period->name}' sudah ditutup.");
-                } elseif ($period && $period->is_locked) {
-                    $validator->errors()->add('payment_date', "Periode fiskal '{$period->name}' sedang dikunci.");
+                try {
+                    FiscalPeriod::assertOpenForPosting(Carbon::parse($paymentDate));
+                } catch (BusinessRuleException $exception) {
+                    $validator->errors()->add('payment_date', $exception->getMessage());
                 }
             }
 

@@ -6,6 +6,7 @@ use App\Domain\Sales\Events\PaymentVoided;
 use App\Domain\Sales\Invoices\Events\InvoiceFullyPaid;
 use App\Enums\DocumentStatus;
 use App\Models\Accounting\Account;
+use App\Models\Accounting\FiscalPeriod;
 use App\Models\Contacts\Contact;
 use App\Models\Purchasing\Bill;
 use App\Models\Purchasing\BillItem;
@@ -69,7 +70,7 @@ describe('Payment API', function () {
         $response = $this->postJson('/api/v1/payments', [
             'type' => Payment::TYPE_RECEIVE,
             'contact_id' => $customer->id,
-            'payment_date' => '2024-12-25',
+            'payment_date' => now()->toDateString(),
             'amount' => 1000000,
             'payment_method' => Payment::METHOD_TRANSFER,
             'reference' => 'TRF-123456',
@@ -93,7 +94,7 @@ describe('Payment API', function () {
         $response = $this->postJson('/api/v1/payments', [
             'type' => Payment::TYPE_SEND,
             'contact_id' => $supplier->id,
-            'payment_date' => '2024-12-25',
+            'payment_date' => now()->toDateString(),
             'amount' => 500000,
             'payment_method' => Payment::METHOD_TRANSFER,
             'cash_account_id' => $bankAccount->id,
@@ -125,7 +126,7 @@ describe('Payment API', function () {
         $response = $this->postJson('/api/v1/payments', [
             'type' => Payment::TYPE_RECEIVE,
             'contact_id' => $customer->id,
-            'payment_date' => '2024-12-25',
+            'payment_date' => now()->toDateString(),
             'amount' => 500000,
             'payment_method' => Payment::METHOD_TRANSFER,
             'cash_account_id' => $bankAccount->id,
@@ -162,7 +163,7 @@ describe('Payment API', function () {
         $response = $this->postJson('/api/v1/payments', [
             'type' => Payment::TYPE_SEND,
             'contact_id' => $supplier->id,
-            'payment_date' => '2024-12-25',
+            'payment_date' => now()->toDateString(),
             'amount' => 1110000,
             'payment_method' => Payment::METHOD_TRANSFER,
             'cash_account_id' => $bankAccount->id,
@@ -216,7 +217,7 @@ describe('Payment API', function () {
         $response = $this->postJson('/api/v1/payments', [
             'type' => Payment::TYPE_RECEIVE,
             'contact_id' => $customer->id,
-            'payment_date' => '2024-12-25',
+            'payment_date' => now()->toDateString(),
             'amount' => 100000,
             'payment_method' => Payment::METHOD_TRANSFER,
             'cash_account_id' => $revenueAccount->id,
@@ -234,7 +235,7 @@ describe('Payment API', function () {
         $response = $this->postJson('/api/v1/payments', [
             'type' => Payment::TYPE_RECEIVE, // Wrong type
             'contact_id' => $supplier->id,
-            'payment_date' => '2024-12-25',
+            'payment_date' => now()->toDateString(),
             'amount' => 100000,
             'cash_account_id' => $bankAccount->id,
             'bill_id' => $bill->id,
@@ -309,7 +310,7 @@ describe('Payment API', function () {
         $response = $this->postJson('/api/v1/payments', [
             'type' => Payment::TYPE_RECEIVE,
             'contact_id' => $customer->id,
-            'payment_date' => '2024-12-25',
+            'payment_date' => now()->toDateString(),
             'amount' => 500000,
             'payment_method' => Payment::METHOD_TRANSFER,
             'cash_account_id' => $bankAccount->id,
@@ -343,7 +344,7 @@ describe('Payment API', function () {
         $this->postJson('/api/v1/payments', [
             'type' => Payment::TYPE_RECEIVE,
             'contact_id' => $customer->id,
-            'payment_date' => '2024-12-25',
+            'payment_date' => now()->toDateString(),
             'amount' => 1110000,
             'payment_method' => Payment::METHOD_TRANSFER,
             'cash_account_id' => $bankAccount->id,
@@ -375,7 +376,7 @@ describe('Payment API', function () {
         $this->postJson('/api/v1/payments', [
             'type' => Payment::TYPE_RECEIVE,
             'contact_id' => $customer->id,
-            'payment_date' => '2024-12-25',
+            'payment_date' => now()->toDateString(),
             'amount' => 500000,
             'payment_method' => Payment::METHOD_TRANSFER,
             'cash_account_id' => $bankAccount->id,
@@ -452,7 +453,7 @@ describe('Payment API', function () {
         $this->postJson('/api/v1/payments', [
             'type' => Payment::TYPE_SEND,
             'contact_id' => $supplier->id,
-            'payment_date' => '2024-12-25',
+            'payment_date' => now()->toDateString(),
             'amount' => 1000000,
             'payment_method' => Payment::METHOD_TRANSFER,
             'cash_account_id' => $bankAccount->id,
@@ -484,7 +485,7 @@ describe('Payment API', function () {
         $this->postJson('/api/v1/payments', [
             'type' => Payment::TYPE_SEND,
             'contact_id' => $supplier->id,
-            'payment_date' => '2024-12-25',
+            'payment_date' => now()->toDateString(),
             'amount' => 500000,
             'payment_method' => Payment::METHOD_TRANSFER,
             'cash_account_id' => $bankAccount->id,
@@ -492,5 +493,69 @@ describe('Payment API', function () {
         ]);
 
         Event::assertNotDispatched(BillFullyPaid::class);
+    });
+
+    it('rejects a payment dated outside any fiscal period', function () {
+        $customer = Contact::factory()->customer()->create();
+        $bankAccount = Account::where('code', '1-1001')->first();
+
+        $response = $this->postJson('/api/v1/payments', [
+            'type' => Payment::TYPE_RECEIVE,
+            'contact_id' => $customer->id,
+            'payment_date' => '1990-01-15',
+            'amount' => 100000,
+            'payment_method' => Payment::METHOD_TRANSFER,
+            'cash_account_id' => $bankAccount->id,
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['payment_date']);
+        expect((string) $response->json('errors.payment_date.0'))->toContain('Tidak ada periode fiskal');
+    });
+
+    it('rejects a payment in a closed fiscal period', function () {
+        $customer = Contact::factory()->customer()->create();
+        $bankAccount = Account::where('code', '1-1001')->first();
+        $closedDate = now()->subYear()->startOfYear()->toDateString();
+
+        $response = $this->postJson('/api/v1/payments', [
+            'type' => Payment::TYPE_RECEIVE,
+            'contact_id' => $customer->id,
+            'payment_date' => $closedDate,
+            'amount' => 100000,
+            'payment_method' => Payment::METHOD_TRANSFER,
+            'cash_account_id' => $bankAccount->id,
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['payment_date']);
+    });
+
+    it('rejects a payment in a locked period even when is_closed is stale false', function () {
+        FiscalPeriod::factory()->locked()->create([
+            'name' => 'Terkunci 1995',
+            'start_date' => '1995-01-01',
+            'end_date' => '1995-12-31',
+            'is_closed' => false,
+        ]);
+
+        $period = FiscalPeriod::query()->where('name', 'Terkunci 1995')->firstOrFail();
+        expect($period->is_locked)->toBeTrue()
+            ->and($period->is_closed)->toBeFalse();
+
+        $customer = Contact::factory()->customer()->create();
+        $bankAccount = Account::where('code', '1-1001')->first();
+
+        $response = $this->postJson('/api/v1/payments', [
+            'type' => Payment::TYPE_RECEIVE,
+            'contact_id' => $customer->id,
+            'payment_date' => '1995-06-15',
+            'amount' => 100000,
+            'payment_method' => Payment::METHOD_TRANSFER,
+            'cash_account_id' => $bankAccount->id,
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['payment_date']);
     });
 });

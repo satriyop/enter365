@@ -31,7 +31,7 @@ describe('Fiscal Period API', function () {
 
     it('can filter fiscal periods by is_closed', function () {
         FiscalPeriod::factory()->count(2)->create(['is_closed' => false]);
-        FiscalPeriod::factory()->count(3)->create(['is_closed' => true]);
+        FiscalPeriod::factory()->count(3)->closed()->create();
 
         $response = $this->getJson('/api/v1/fiscal-periods?is_closed=1');
 

@@ -64,6 +64,33 @@ class FiscalPeriod extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::saving(function (FiscalPeriod $period): void {
+            $status = $period->status ?? $period->statusFromLegacyBooleans();
+            $period->status = $status;
+            $period->is_closed = $status === FiscalPeriodStatus::Closed;
+            $period->is_locked = in_array($status, [
+                FiscalPeriodStatus::Locked,
+                FiscalPeriodStatus::Closing,
+                FiscalPeriodStatus::Closed,
+            ], true);
+        });
+    }
+
+    private function statusFromLegacyBooleans(): FiscalPeriodStatus
+    {
+        if ($this->is_closed) {
+            return FiscalPeriodStatus::Closed;
+        }
+
+        if ($this->is_locked) {
+            return FiscalPeriodStatus::Locked;
+        }
+
+        return FiscalPeriodStatus::Open;
+    }
+
     /**
      * @return HasMany<JournalEntry, $this>
      */
@@ -150,7 +177,7 @@ class FiscalPeriod extends Model
     public static function current(): ?self
     {
         return static::query()
-            ->where('is_closed', false)
+            ->where('status', FiscalPeriodStatus::Open)
             ->where('start_date', '<=', now())
             ->where('end_date', '>=', now())
             ->first();

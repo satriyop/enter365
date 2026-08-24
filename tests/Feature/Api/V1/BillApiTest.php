@@ -255,7 +255,7 @@ describe('Bill API', function () {
         $this->postJson('/api/v1/payments', [
             'type' => Payment::TYPE_SEND,
             'contact_id' => $supplier->id,
-            'payment_date' => '2024-12-25',
+            'payment_date' => now()->toDateString(),
             'amount' => 500000,
             'payment_method' => Payment::METHOD_TRANSFER,
             'cash_account_id' => $bankAccount->id,
@@ -282,7 +282,7 @@ describe('Bill API', function () {
         $this->postJson('/api/v1/payments', [
             'type' => Payment::TYPE_SEND,
             'contact_id' => $supplier->id,
-            'payment_date' => '2024-12-25',
+            'payment_date' => now()->toDateString(),
             'amount' => 1000000,
             'payment_method' => Payment::METHOD_TRANSFER,
             'cash_account_id' => $bankAccount->id,
