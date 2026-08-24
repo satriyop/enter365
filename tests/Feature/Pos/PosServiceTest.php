@@ -10,15 +10,19 @@ use App\Enums\Pos\PosTenderType;
 use App\Exceptions\Domain\BusinessRuleException;
 use App\Exceptions\Domain\InsufficientStockException;
 use App\Models\Accounting\Account;
+use App\Models\Accounting\AccountingPolicy;
 use App\Models\Accounting\FiscalPeriod;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Accounting\JournalEntryLine;
+use App\Models\Inventory\InventoryCostLayer;
+use App\Models\Inventory\InventoryMovement;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\ProductStock;
 use App\Models\Inventory\Warehouse;
 use App\Models\Pos\PosSale;
 use App\Models\Pos\PosSession;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Once;
 
 uses(RefreshDatabase::class);
 
@@ -312,6 +316,35 @@ describe('PosService checkout', function () {
             ],
         ], 'inactive-sku'))->toThrow(BusinessRuleException::class, 'tidak bisa dijual');
     });
+
+    it('rejects checkout of a zero-priced tracked product without moving stock', function () {
+        $session = openTill();
+        $free = Product::factory()->create([
+            'name' => 'Sample gratis',
+            'selling_price' => 0,
+            'is_taxable' => false,
+            'track_inventory' => true,
+            'is_sellable' => true,
+            'is_active' => true,
+        ]);
+        test()->inventory->stockIn($free, test()->warehouse, 5, 50_00, 'Modal sample');
+
+        expect(fn () => test()->pos->checkout($session, [
+            'way' => PosTenderType::Cash->value,
+            'cash_received_amount' => 0,
+            'lines' => [
+                ['product_id' => $free->id, 'quantity' => 1],
+            ],
+        ], 'zero-price'))->toThrow(BusinessRuleException::class, 'Sample gratis');
+
+        $stock = ProductStock::query()
+            ->where('product_id', $free->id)
+            ->where('warehouse_id', test()->warehouse->id)
+            ->first();
+
+        expect((int) $stock->quantity)->toBe(5)
+            ->and(InventoryMovement::query()->where('product_id', $free->id)->where('type', InventoryMovement::TYPE_OUT)->count())->toBe(0);
+    });
 });
 
 describe('PosService void', function () {
@@ -336,6 +369,53 @@ describe('PosService void', function () {
             ->first();
         expect($stock->quantity)->toBe(10)
             ->and(test()->pos->expectedCash($session->fresh()))->toBe(200_000_00);
+    });
+
+    it('voids an uneven FIFO sale without leaking a sen of inventory value', function () {
+        AccountingPolicy::query()->update(['costing_method' => 'fifo']);
+        Once::flush();
+
+        $product = Product::factory()->create([
+            'name' => 'Kopi FIFO',
+            'selling_price' => 100_00,
+            'tax_rate' => 11.00,
+            'is_taxable' => true,
+            'track_inventory' => true,
+            'is_sellable' => true,
+            'is_active' => true,
+        ]);
+        test()->inventory->stockIn($product, test()->warehouse, 2, 333);
+        test()->inventory->stockIn($product, test()->warehouse, 1, 334);
+
+        $session = openTill();
+        $sale = test()->pos->checkout($session, [
+            'way' => PosTenderType::Cash->value,
+            'cash_received_amount' => 333_00,
+            'lines' => [
+                ['product_id' => $product->id, 'quantity' => 3],
+            ],
+        ], 'fifo-uneven-void');
+
+        $outMovement = $sale->items->first()->inventoryMovement;
+        expect(abs((int) $outMovement->total_cost))->toBe(1000);
+
+        test()->pos->voidSale($session->fresh(), $sale, 'Salah barang');
+
+        $restock = InventoryMovement::query()
+            ->where('reference_type', PosSale::class)
+            ->where('reference_id', $sale->id)
+            ->where('type', InventoryMovement::TYPE_IN)
+            ->first();
+
+        $layerValue = (int) InventoryCostLayer::query()
+            ->where('product_id', $product->id)
+            ->where('warehouse_id', test()->warehouse->id)
+            ->get()
+            ->sum(fn (InventoryCostLayer $layer) => $layer->quantity * $layer->unit_cost);
+
+        expect($restock)->not->toBeNull()
+            ->and((int) $restock->total_cost)->toBe(1000)
+            ->and($layerValue)->toBe(1000);
     });
 
     it('rejects void when the fiscal period is locked', function () {

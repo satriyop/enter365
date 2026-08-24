@@ -18,13 +18,50 @@ use App\Models\Inventory\ProductStock;
  */
 class FIFOCostingStrategy implements CostingStrategy
 {
-    public function recordStockIn(ProductStock $stock, int $quantity, int $unitCost, ?string $referenceType = null, ?int $referenceId = null): void
+    public function recordStockIn(ProductStock $stock, int $quantity, int $unitCost, ?string $referenceType = null, ?int $referenceId = null, ?int $totalCost = null): void
     {
         if ($quantity <= 0) {
             return;
         }
 
-        // Create a new cost layer for this batch
+        $exactTotal = $totalCost ?? ($quantity * $unitCost);
+        $this->writeLayersForTotal($stock, $quantity, $exactTotal, $referenceType, $referenceId);
+        $stock->addStock($quantity, $unitCost, $exactTotal);
+    }
+
+    /**
+     * Persist FIFO layers whose qty × unit_cost sums to $totalCost.
+     *
+     * Integer unit costs cannot represent an uneven total in one layer
+     * (3 × 333 = 999, not 1000). Put the remainder on the last unit.
+     */
+    private function writeLayersForTotal(
+        ProductStock $stock,
+        int $quantity,
+        int $totalCost,
+        ?string $referenceType,
+        ?int $referenceId,
+    ): void {
+        $baseUnit = intdiv($totalCost, $quantity);
+        $lastUnit = $totalCost - ($baseUnit * ($quantity - 1));
+
+        if ($quantity === 1 || $lastUnit === $baseUnit) {
+            $this->createLayer($stock, $quantity, $baseUnit, $referenceType, $referenceId);
+
+            return;
+        }
+
+        $this->createLayer($stock, $quantity - 1, $baseUnit, $referenceType, $referenceId);
+        $this->createLayer($stock, 1, $lastUnit, $referenceType, $referenceId);
+    }
+
+    private function createLayer(
+        ProductStock $stock,
+        int $quantity,
+        int $unitCost,
+        ?string $referenceType,
+        ?int $referenceId,
+    ): void {
         InventoryCostLayer::create([
             'product_id' => $stock->product_id,
             'warehouse_id' => $stock->warehouse_id,
@@ -35,9 +72,6 @@ class FIFOCostingStrategy implements CostingStrategy
             'reference_type' => $referenceType,
             'reference_id' => $referenceId,
         ]);
-
-        // Update ProductStock quantity and recalculate average cost for reporting
-        $stock->addStock($quantity, $unitCost);
     }
 
     public function recordStockOut(ProductStock $stock, int $quantity): int

@@ -17,10 +17,11 @@ interface CostingStrategy
     /**
      * Record stock addition and update cost tracking.
      *
-     * Called during stock-in operations (purchase, receiving, transfer in).
-     * Updates ProductStock quantity and any strategy-specific records.
+     * Called during stock-in operations (purchase, receiving, transfer in, void).
+     * Pass $totalCost when the inbound value is already known (FIFO restock /
+     * transfer) so layers sum to that integer, not qty × a rounded unit.
      */
-    public function recordStockIn(ProductStock $stock, int $quantity, int $unitCost, ?string $referenceType = null, ?int $referenceId = null): void;
+    public function recordStockIn(ProductStock $stock, int $quantity, int $unitCost, ?string $referenceType = null, ?int $referenceId = null, ?int $totalCost = null): void;
 
     /**
      * Record stock removal and return the exact integer total cost of the issuance.

@@ -15,9 +15,9 @@ use App\Models\Inventory\ProductStock;
  */
 class WeightedAverageCostingStrategy implements CostingStrategy
 {
-    public function recordStockIn(ProductStock $stock, int $quantity, int $unitCost, ?string $referenceType = null, ?int $referenceId = null): void
+    public function recordStockIn(ProductStock $stock, int $quantity, int $unitCost, ?string $referenceType = null, ?int $referenceId = null, ?int $totalCost = null): void
     {
-        $stock->addStock($quantity, $unitCost);
+        $stock->addStock($quantity, $unitCost, $totalCost ?? ($quantity * $unitCost));
     }
 
     public function recordStockOut(ProductStock $stock, int $quantity): int

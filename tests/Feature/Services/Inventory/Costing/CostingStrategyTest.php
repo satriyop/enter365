@@ -319,6 +319,32 @@ describe('InventoryService with FIFO policy', function () {
             ->and($destLayers[0]->unit_cost)->toBe(10000);
     });
 
+    it('transfers an uneven FIFO issue without leaking a sen', function () {
+        $product = Product::factory()->create(['track_inventory' => true, 'purchase_price' => 333]);
+        $from = Warehouse::factory()->create();
+        $to = Warehouse::factory()->create();
+
+        /** @var InventoryService $service */
+        $service = app(InventoryService::class);
+
+        $service->stockIn($product, $from, 2, 333);
+        $service->stockIn($product, $from, 1, 334);
+
+        $result = $service->transfer($product, $from, $to, 3);
+
+        expect($result['out']->total_cost)->toBe(1000)
+            ->and($result['in']->total_cost)->toBe(1000);
+
+        $destValue = (int) InventoryCostLayer::query()
+            ->where('product_id', $product->id)
+            ->where('warehouse_id', $to->id)
+            ->get()
+            ->sum(fn (InventoryCostLayer $layer) => $layer->quantity * $layer->unit_cost);
+
+        expect($destValue)->toBe(1000)
+            ->and((int) $result['in']->quantity * (int) $result['in']->unit_cost)->not->toBe(1000);
+    });
+
     it('keeps FIFO layers in sync with adjust()', function () {
         $product = Product::factory()->create(['track_inventory' => true, 'purchase_price' => 10000]);
         $warehouse = Warehouse::factory()->create();

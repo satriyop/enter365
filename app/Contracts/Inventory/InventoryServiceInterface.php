@@ -30,6 +30,7 @@ interface InventoryServiceInterface
         ?string $referenceType = null,
         ?int $referenceId = null,
         string $type = InventoryMovement::TYPE_IN,
+        ?int $totalCost = null,
     ): InventoryMovement;
 
     /**

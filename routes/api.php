@@ -741,6 +741,7 @@ Route::prefix('v1')->group(function () {
             Route::get('sessions/{pos_session}', [PosSessionController::class, 'show']);
             Route::post('sessions/{pos_session}/close', [PosSessionController::class, 'close']);
             Route::get('sessions/{pos_session}/catalog', [PosSessionController::class, 'catalog']);
+            Route::get('sessions/{pos_session}/sales', [PosSessionController::class, 'sales']);
             Route::post('sessions/{pos_session}/checkout', [PosSessionController::class, 'checkout']);
             Route::post('sessions/{pos_session}/sales/{sale}/void', [PosSessionController::class, 'voidSale']);
             Route::post('sessions/{pos_session}/holds', [PosSessionController::class, 'storeHold']);

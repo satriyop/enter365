@@ -22,6 +22,7 @@ use App\Models\Pos\PosSession;
 use App\Models\Pos\PosSessionHold;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class PosSessionController extends Controller
 {
@@ -61,7 +62,7 @@ class PosSessionController extends Controller
             return $this->error('Tidak ada sesi kasir yang terbuka.', 404);
         }
 
-        return new PosSessionResource($session->load('warehouse', 'holds', 'sales.items', 'sales.tenders'));
+        return new PosSessionResource($session->load('warehouse', 'holds'));
     }
 
     public function show(Request $request, PosSession $pos_session): PosSessionResource
@@ -69,7 +70,23 @@ class PosSessionController extends Controller
         $this->ensurePermission($request, 'pos.sale.checkout', 'Anda tidak boleh memakai kasir.');
         $this->assertOwnSession($request, $pos_session);
 
-        return new PosSessionResource($pos_session->load('warehouse', 'holds', 'sales.items', 'sales.tenders'));
+        return new PosSessionResource($pos_session->load('warehouse', 'holds'));
+    }
+
+    public function sales(Request $request, PosSession $pos_session): AnonymousResourceCollection
+    {
+        $this->ensurePermission($request, 'pos.sale.checkout', 'Anda tidak boleh memakai kasir.');
+        $this->assertOwnSession($request, $pos_session);
+
+        $perPage = min(100, max(1, (int) $request->integer('per_page', 20)));
+
+        $sales = $pos_session->sales()
+            ->with(['items', 'tenders'])
+            ->latest('sold_at')
+            ->latest('id')
+            ->paginate($perPage);
+
+        return PosSaleResource::collection($sales);
     }
 
     public function close(ClosePosSessionRequest $request, PosSession $pos_session): PosSessionResource
@@ -184,12 +201,27 @@ class PosSessionController extends Controller
             return null;
         }
 
-        $relative = 'pos/kopitiam/'.$sku.'.jpg';
-        if (! is_file(public_path($relative))) {
+        $safe = basename(str_replace('\\', '/', $sku));
+        if ($safe !== $sku || preg_match('/[^A-Za-z0-9._-]/', $safe) === 1) {
             return null;
         }
 
-        return '/'.$relative;
+        $directory = public_path('pos/kopitiam');
+        $path = $directory.DIRECTORY_SEPARATOR.$safe.'.jpg';
+        if (! is_file($path)) {
+            return null;
+        }
+
+        $realDirectory = realpath($directory);
+        $realPath = realpath($path);
+        if ($realDirectory === false || $realPath === false) {
+            return null;
+        }
+        if (! str_starts_with($realPath, $realDirectory.DIRECTORY_SEPARATOR) && $realPath !== $realDirectory) {
+            return null;
+        }
+
+        return '/pos/kopitiam/'.$safe.'.jpg';
     }
 
     private function ensurePermission(Request $request, string $permission, string $message): void

@@ -197,9 +197,9 @@ describe('Kasir full-day journey', function () {
             ->value('quantity');
         expect((int) $stock)->toBe(8);
 
-        $show = $this->getJson("/api/v1/pos/sessions/{$sessionId}");
-        $show->assertOk();
-        $completedCash = collect($show->json('data.sales'))
+        $sales = $this->getJson("/api/v1/pos/sessions/{$sessionId}/sales?per_page=50");
+        $sales->assertOk();
+        $completedCash = collect($sales->json('data'))
             ->where('status', 'completed')
             ->flatMap(fn ($sale) => $sale['tenders'] ?? [])
             ->where('type', 'cash')

@@ -67,15 +67,17 @@ class ProductStock extends Model
 
     /**
      * Add stock with weighted average cost calculation.
+     *
+     * $totalCost is the exact inbound value when it does not equal qty × unit.
      */
-    public function addStock(int $quantity, int $unitCost): void
+    public function addStock(int $quantity, int $unitCost, ?int $totalCost = null): void
     {
         if ($quantity <= 0) {
             return;
         }
 
         $currentValue = $this->quantity * $this->average_cost;
-        $addedValue = $quantity * $unitCost;
+        $addedValue = $totalCost ?? ($quantity * $unitCost);
         $newQuantity = $this->quantity + $quantity;
 
         if ($newQuantity > 0) {

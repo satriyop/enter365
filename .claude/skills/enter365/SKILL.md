@@ -1108,20 +1108,21 @@ return $this->executeInTransaction('complete', function () use ($grn, $userId) {
 
 **Problem:** `FIFOCostingStrategy::recordStockOut()` returned `round($totalCost / $quantity)`. Callers then wrote `total_cost = quantity * unitCost`. 3 units costing Rp 1,000 became unit 333 and COGS 999 — Inventory GL and the FIFO sub-ledger permanently diverge. POS COGS reads `abs($movement->total_cost)`.
 
-**Solution:** The costing contract returns the exact integer `$totalCost`. Movements persist that total. Display `unit_cost` may be `round(total / qty)`. Negative `recordAdjustment()` is `-recordStockOut()`, not `-(qty * roundedUnit)`.
+**Solution:** The costing contract returns the exact integer `$totalCost`. Movements persist that total. Display `unit_cost` may be `round(total / qty)`. Negative `recordAdjustment()` is `-recordStockOut()`, not `-(qty * roundedUnit)`. **Inbound is the same seam:** `stockIn(..., totalCost:)` / `recordStockIn(..., $totalCost)` split the remainder onto the last FIFO unit so 3 units costing 1000 restock as 2×333+1×334, not 3×333. Void a sale with `abs($movement->total_cost)`, never `$movement->unit_cost`. Transfers pass the outbound total into the destination layers.
 
 ```php
 // ❌ BAD
 return (int) round($totalCost / $quantity);
 $movement->total_cost = $quantity * $unitCost;
+$this->inventoryService->stockIn($product, $wh, $qty, $movement->unit_cost, ...);
 
 // ✅ GOOD
 return $totalCost;
 $movement->total_cost = $totalCost;
-$movement->unit_cost = $quantity > 0 ? (int) round($totalCost / $quantity) : 0;
+$this->inventoryService->stockIn($product, $wh, $qty, $unitCost, totalCost: abs($movement->total_cost));
 ```
 
-**Tests:** `tests/Feature/Services/Inventory/Costing/CostingStrategyTest.php`
+**Tests:** `tests/Feature/Services/Inventory/Costing/CostingStrategyTest.php`, `tests/Feature/Pos/PosServiceTest.php` (uneven FIFO void)
 
 ### 38. Inventory Locks: Product Cache, Warehouse Order, Unique Retry, Free Stock
 
@@ -1162,6 +1163,16 @@ $entry->fiscal_period_id = $period->id;
 **Solution:** `assertOwnSession()` on every session-scoped endpoint (admin may inspect). Mark `taken_at` instead of deleting holds; retries return the same id. Lock the cashier's open row; unique index `pos_sessions_one_open_per_user` where `status = 'open'`. If an open session exists at another warehouse, throw. Snapshot `qris` from `1-1112` Piutang QRIS — settlement/MDR is a later JE, not a sale-time Bank debit.
 
 **Tests:** `tests/Feature/Pos/PosServiceTest.php`, `tests/Feature/Pos/PosOwnerJourneyTest.php`
+
+### 41. POS Till Polls Must Not Dump the Shift; Zero Price Is Not Free Stock; SKU Is Not a Path
+
+**Context:** `GET /pos/sessions/current` (till poll), `buildLines()`, `catalogImageUrl()`.
+
+**Problem:** `current()` / `show()` eager-loaded every `sales.items` and `sales.tenders` for the shift — hundreds of receipts on a poll. `buildLines()` allowed `$unit <= 0`, so a tracked SKU with no selling price stocked out and posted Rp 0 revenue. Catalog concatenated the raw SKU into `public_path('pos/kopitiam/'.$sku.'.jpg')`, so `../` left that directory.
+
+**Solution:** Session resources load warehouse + holds only. List receipts from `GET /pos/sessions/{id}/sales` (paginated). Throw `BusinessRuleException` naming the product when unit price is not positive — no movement. `catalogImageUrl()` uses `basename()`, allowlists `[A-Za-z0-9._-]`, and requires the resolved file to stay under `public/pos/kopitiam`.
+
+**Tests:** `tests/Feature/Pos/PosCheckoutHttpTest.php`, `tests/Feature/Pos/PosServiceTest.php` (zero-priced checkout)
 
 ---
 

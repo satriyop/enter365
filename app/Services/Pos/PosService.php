@@ -332,11 +332,12 @@ class PosService extends BaseService implements PosServiceInterface
                     $this->inventoryService->stockIn(
                         $item->product,
                         $warehouse,
-                        $item->quantity,
+                        (int) $item->quantity,
                         (int) $item->inventoryMovement->unit_cost,
                         'Void '.$sale->sale_number,
                         PosSale::class,
                         $sale->id,
+                        totalCost: abs((int) $item->inventoryMovement->total_cost),
                     );
                 }
             }
@@ -584,6 +585,12 @@ class PosService extends BaseService implements PosServiceInterface
             $unit = (! $addOn && $product->is_taxable)
                 ? (int) $product->selling_price_with_tax
                 : (int) $product->selling_price;
+            if ($unit <= 0) {
+                throw BusinessRuleException::operationNotAllowed(
+                    'checkout',
+                    "{$product->name} tidak punya harga jual."
+                );
+            }
             $payable = $unit * $qty;
             $dpp = $payable;
             $ppn = 0;

@@ -240,12 +240,16 @@ describe('POS HTTP', function () {
 
         $show = $this->getJson("/api/v1/pos/sessions/{$sessionId}");
         $show->assertOk()
-            ->assertJsonPath('data.sales.0.status', 'completed')
-            ->assertJsonPath('data.sales.0.tenders.0.type', 'cash')
-            ->assertJsonPath('data.sales.0.payable_amount', 111_00);
+            ->assertJsonMissingPath('data.sales');
 
-        expect($show->json('data.sales.0.sold_at'))->toBeString()
-            ->and($show->json('data.sales.0.sold_at'))->toContain('T');
+        $sales = $this->getJson("/api/v1/pos/sessions/{$sessionId}/sales");
+        $sales->assertOk()
+            ->assertJsonPath('data.0.status', 'completed')
+            ->assertJsonPath('data.0.tenders.0.type', 'cash')
+            ->assertJsonPath('data.0.payable_amount', 111_00);
+
+        expect($sales->json('data.0.sold_at'))->toBeString()
+            ->and($sales->json('data.0.sold_at'))->toContain('T');
 
         $this->getJson("/api/v1/pos/sessions/{$sessionId}/catalog")
             ->assertOk()
@@ -302,5 +306,48 @@ describe('POS HTTP', function () {
         $this->getJson('/api/v1/pos/outlets')
             ->assertOk()
             ->assertJsonMissing(['code' => 'WH-E2E-XXXX']);
+    });
+
+    it('does not serialize every sale of the shift on current or show', function () {
+        $sessionId = openSessionHttp();
+        PosSale::factory()->count(25)->create([
+            'pos_session_id' => $sessionId,
+            'created_by' => $this->user->id,
+        ]);
+
+        $current = $this->getJson('/api/v1/pos/sessions/current')->assertOk();
+        expect($current->json('data'))->not->toHaveKey('sales');
+
+        $show = $this->getJson("/api/v1/pos/sessions/{$sessionId}")->assertOk();
+        expect($show->json('data'))->not->toHaveKey('sales');
+
+        $page = $this->getJson("/api/v1/pos/sessions/{$sessionId}/sales?per_page=20")->assertOk();
+        expect($page->json('data'))->toHaveCount(20)
+            ->and($page->json('meta.total'))->toBe(25)
+            ->and($page->json('meta.per_page'))->toBe(20);
+    });
+
+    it('does not resolve catalog images from a SKU that leaves pos/kopitiam', function () {
+        $sessionId = openSessionHttp();
+        $escapeDir = public_path('pos');
+        if (! is_dir($escapeDir)) {
+            mkdir($escapeDir, 0755, true);
+        }
+        $bait = $escapeDir.'/escape.jpg';
+        file_put_contents($bait, 'not-an-image');
+
+        $this->product->update(['sku' => '../escape']);
+
+        try {
+            $catalog = $this->getJson("/api/v1/pos/sessions/{$sessionId}/catalog")->assertOk();
+            $row = collect($catalog->json('data'))->firstWhere('id', $this->product->id);
+
+            expect($row)->not->toBeNull()
+                ->and($row['image_url'])->toBeNull();
+        } finally {
+            if (is_file($bait)) {
+                unlink($bait);
+            }
+        }
     });
 });

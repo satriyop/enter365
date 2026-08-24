@@ -45,13 +45,15 @@ class InventoryService extends BaseService implements InventoryServiceInterface
         ?string $referenceType = null,
         ?int $referenceId = null,
         string $type = InventoryMovement::TYPE_IN,
+        ?int $totalCost = null,
     ): InventoryMovement {
-        return $this->executeInTransaction('stock_in', function () use ($product, $warehouse, $quantity, $unitCost, $notes, $referenceType, $referenceId, $type) {
+        return $this->executeInTransaction('stock_in', function () use ($product, $warehouse, $quantity, $unitCost, $notes, $referenceType, $referenceId, $type, $totalCost) {
             $stock = ProductStock::lockForStock($product, $warehouse);
             $quantityBefore = $stock->quantity;
+            $exactTotal = $totalCost ?? ($quantity * $unitCost);
+            $displayUnit = $quantity > 0 ? (int) round($exactTotal / $quantity) : 0;
 
-            // Add stock using configured costing strategy (Weighted Average or FIFO)
-            $this->policyManager->costing()->recordStockIn($stock, $quantity, $unitCost, $referenceType, $referenceId);
+            $this->policyManager->costing()->recordStockIn($stock, $quantity, $displayUnit, $referenceType, $referenceId, $exactTotal);
 
             // Create movement record
             $movement = InventoryMovement::create([
@@ -62,8 +64,8 @@ class InventoryService extends BaseService implements InventoryServiceInterface
                 'quantity' => $quantity,
                 'quantity_before' => $quantityBefore,
                 'quantity_after' => $stock->quantity,
-                'unit_cost' => $unitCost,
-                'total_cost' => $quantity * $unitCost,
+                'unit_cost' => $displayUnit,
+                'total_cost' => $exactTotal,
                 'reference_type' => $referenceType,
                 'reference_id' => $referenceId,
                 'movement_date' => now(),
@@ -372,7 +374,7 @@ class InventoryService extends BaseService implements InventoryServiceInterface
 
             $totalCost = $costingStrategy->recordStockOut($fromStock, $quantity);
             $unitCost = $quantity > 0 ? (int) round($totalCost / $quantity) : 0;
-            $costingStrategy->recordStockIn($toStock, $quantity, $unitCost);
+            $costingStrategy->recordStockIn($toStock, $quantity, $unitCost, null, null, $totalCost);
 
             $transferNumber = InventoryMovement::generateMovementNumber(InventoryMovement::TYPE_TRANSFER_OUT);
 
