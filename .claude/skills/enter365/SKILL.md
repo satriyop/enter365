@@ -1196,6 +1196,70 @@ $ppn = $payable - $dpp;
 
 **Tests:** `tests/Feature/Pos/PosServiceTest.php` (catalogue DPP, prune idempotency), `tests/Feature/Pos/PosCheckoutHttpTest.php` (is_test outlets)
 
+### 43. Fiscal Period `status` Is Canonical — Booleans Are Derived
+
+**Context:** `fiscal_periods.status` (Open / Locked / Closing / Closed) plus legacy `is_closed` / `is_locked`. Payments, journals, and `FiscalPeriod::current()` used to pick one or the other.
+
+**Problem:** `StorePaymentRequest` only rejected a period that *existed* and had `is_closed` / `is_locked`. A missing period was a silent pass — the HTTP layer re-opened [ACC-01](#39-journals-need-an-open-period-lines-are-signed-and-exclusive). `current()` queried `is_closed = false`, so a **Locked** year still counted as current. Direct updates to only the booleans desynced from the enum.
+
+**Solution:** `status` is the source of truth. A `saving` hook rewrites the booleans from the enum. `current()` is `status = Open`. HTTP payment validation calls `FiscalPeriod::assertOpenForPosting()` — missing / closed / locked is a 422 on `payment_date`.
+
+```php
+// ❌ BAD — missing period is fine; locked looks "current"
+if ($period && $period->is_closed) { ... }
+FiscalPeriod::query()->where('is_closed', false)->first();
+
+// ✅ GOOD
+FiscalPeriod::assertOpenForPosting($date);
+FiscalPeriod::query()->where('status', FiscalPeriodStatus::Open)->first();
+```
+
+**Tests:** `tests/Feature/Api/V1/PaymentApiTest.php`, `tests/Feature/Services/Accounting/FiscalPeriodServiceTest.php`
+
+### 44. `removeStock()` Must Not Clamp — Valuation Shows Every Non-Zero Row
+
+**Context:** FIFO/WA costing writes on-hand through `ProductStock::removeStock()`. `getStockValuation()` is the stock-vs-GL report.
+
+**Problem:** `max(0, qty - requested)` swallowed an oversell and Weighted Average still returned `requested × average_cost` for units that never left. Valuation hid `quantity <= 0`, so negative on-hand (the rows an accountant needs) disappeared.
+
+**Solution:** Throw when requested > on-hand. Show any row with non-zero quantity **or** non-zero `total_value`. `startCounting()` batch-loads `product_stocks` for the opname — do not query per item.
+
+**Tests:** `tests/Feature/Services/Inventory/InventoryServiceTest.php`, `tests/Feature/Services/Inventory/Costing/CostingStrategyTest.php`
+
+### 45. Invoice Void Collects Child Ids First; Audit Counts This Operation
+
+**Context:** `InvoiceVoidService::void()` cancels DOs and SRs, then writes an `AuditLog`.
+
+**Problem:** `Builder::each()` chunks by **offset**. Each callback changes `status`, the filtered page shrinks, and later children are skipped. The audit then re-queried `status = Cancelled`, counting cancellations that already existed.
+
+**Solution:** `pluck('id')` in id order, then `lockForUpdate()->findOrFail()` each. The audit stores the count of ids this void processed.
+
+**Tests:** `tests/Feature/Services/Sales/InvoiceServiceTest.php`
+
+### 46. Journal Entries Use `SoftDeletes`; Posted Rows Still Cannot Be Deleted
+
+**Context:** `journal_entries.deleted_at` existed; reports filtered `whereNull('je.deleted_at')`; the model did not use `SoftDeletes`. Hard deletes left the filter a no-op.
+
+**Solution:** `SoftDeletes` on `JournalEntry`. Unposted drafts are recoverable. The existing `deleting` guard still throws on posted entries — reverse, do not delete, posted money.
+
+**Tests:** `tests/Feature/Services/Accounting/JournalServiceTest.php`
+
+### 47. All Document Numbers Go Through `DocumentNumbers` Sequences
+
+**Context:** `DocumentNumbers` (F-02) owns `document_sequences`. `SequentialNumberStrategy` / `ProjectBasedNumberStrategy` were a parallel, unused subsystem. Project-based `orderByRaw` used MySQL `SUBSTRING_INDEX` + `CAST AS UNSIGNED` — fatal on PostgreSQL.
+
+**Solution:** Both strategies delegate to `DocumentNumbers::generate()`. Do not add a third numbering path. Do not string-sort formatted numbers.
+
+**Tests:** `tests/Feature/Domain/Shared/DocumentNumbersTest.php`
+
+### 48. Movement `total_cost` Is Unsigned Magnitude; `quantity` Carries the Sign
+
+**Context:** `stockOut` / transfer-out write `quantity` negative and `total_cost` positive. POS COGS uses `abs($movement->total_cost)`.
+
+**Problem:** `SUM(total_cost)` across mixed types is meaningless. That is convention, not a leak — do not flip outbound `total_cost` negative without updating every consumer.
+
+**Solution:** Filter by `type` (or `abs(quantity)`). Outbound value in reports is `SUM(total_cost)` of `TYPE_OUT` rows, not a signed mix.
+
 ---
 
 ## Indonesian Business Context
