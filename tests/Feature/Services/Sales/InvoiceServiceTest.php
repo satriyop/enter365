@@ -15,6 +15,7 @@ use App\Exceptions\Domain\StateTransitionException;
 use App\Infrastructure\Events\RecordingEventDispatcher;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Contacts\Contact;
+use App\Models\Core\AuditLog;
 use App\Models\Inventory\Product;
 use App\Models\Sales\DeliveryOrder;
 use App\Models\Sales\DeliveryOrderItem;
@@ -298,6 +299,38 @@ describe('InvoiceService void operations', function () {
         $service->void($invoice, 'Test cancellation reason');
 
         expect($eventDispatcher->dispatchCount(InvoiceVoided::class))->toBeGreaterThanOrEqual(1);
+    });
+
+    it('audits only the delivery orders this void cancelled', function () {
+        $journalService = Mockery::mock(JournalServiceInterface::class);
+        $journalService->shouldReceive('reverseEntry')->never();
+        $this->app->instance(JournalServiceInterface::class, $journalService);
+
+        $invoice = Invoice::factory()
+            ->has(InvoiceItem::factory(), 'items')
+            ->sent()
+            ->create(['journal_entry_id' => null]);
+
+        DeliveryOrder::factory()->draft()->create([
+            'invoice_id' => $invoice->id,
+            'contact_id' => $invoice->contact_id,
+        ]);
+        DeliveryOrder::factory()->cancelled()->create([
+            'invoice_id' => $invoice->id,
+            'contact_id' => $invoice->contact_id,
+        ]);
+
+        app(InvoiceService::class)->void($invoice, 'Batal uji');
+
+        $log = AuditLog::query()
+            ->where('action', AuditLog::ACTION_VOIDED)
+            ->where('auditable_id', $invoice->id)
+            ->latest('id')
+            ->first();
+
+        expect($log)->not->toBeNull()
+            ->and($log->new_values['cancelled_delivery_orders'])->toBe(1)
+            ->and($log->new_values['cancelled_sales_returns'])->toBe(0);
     });
 });
 

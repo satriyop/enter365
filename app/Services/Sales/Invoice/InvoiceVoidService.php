@@ -114,36 +114,8 @@ class InvoiceVoidService
             // Reverse Shipped DOs (inventory + COGS JE reversal)
             $cascadeReason = "Faktur dibatalkan: {$reason}";
 
-            DeliveryOrder::where('invoice_id', $invoice->id)
-                ->where('status', DocumentStatus::Shipped)
-                ->each(function (DeliveryOrder $do) use ($cascadeReason) {
-                    $this->deliveryOrderService->reverseShipment($do, $cascadeReason);
-                });
-
-            // Cancel Draft/Confirmed delivery orders
-            DeliveryOrder::where('invoice_id', $invoice->id)
-                ->whereIn('status', [DocumentStatus::Draft, DocumentStatus::Confirmed])
-                ->each(function (DeliveryOrder $do) use ($cascadeReason) {
-                    $do->transitionTo(DocumentStatus::Cancelled, $this->getUserId(), [
-                        'cancellation_reason' => $cascadeReason,
-                    ]);
-                });
-
-            // Cancel Approved SRs via service (triggers reverseApprovalSideEffects)
-            SalesReturn::where('invoice_id', $invoice->id)
-                ->where('status', DocumentStatus::Approved)
-                ->each(function (SalesReturn $sr) use ($cascadeReason) {
-                    $this->salesReturnService->cancel($sr, $cascadeReason);
-                });
-
-            // Cancel Draft/Submitted sales returns
-            SalesReturn::where('invoice_id', $invoice->id)
-                ->whereIn('status', [DocumentStatus::Draft, DocumentStatus::Submitted])
-                ->each(function (SalesReturn $sr) use ($cascadeReason) {
-                    $sr->transitionTo(DocumentStatus::Cancelled, $this->getUserId(), [
-                        'cancellation_reason' => $cascadeReason,
-                    ]);
-                });
+            $cancelledDeliveryOrders = $this->cascadeDeliveryOrders($invoice->id, $cascadeReason);
+            $cancelledSalesReturns = $this->cascadeSalesReturns($invoice->id, $cascadeReason);
 
             // Void all active payments
             $activePayments = $invoice->payments()
@@ -213,16 +185,76 @@ class InvoiceVoidService
                 'status' => DocumentStatus::Cancelled->value,
                 'reason' => $reason,
                 'voided_payments' => $activePayments->count(),
-                'cancelled_delivery_orders' => DeliveryOrder::where('invoice_id', $invoice->id)
-                    ->where('status', DocumentStatus::Cancelled)->count(),
-                'cancelled_sales_returns' => SalesReturn::where('invoice_id', $invoice->id)
-                    ->where('status', DocumentStatus::Cancelled)->count(),
+                'cancelled_delivery_orders' => $cancelledDeliveryOrders,
+                'cancelled_sales_returns' => $cancelledSalesReturns,
                 'reversed_cogs_entries' => $cogsJournalEntries->count(),
             ]);
 
             /** @var Invoice */
             return $this->loadRelations($invoice);
         }, ['invoice_id' => $invoice->id, 'reason' => $reason]);
+    }
+
+    /**
+     * Collect ids first — Builder::each() chunks by offset, so mutating status
+     * while iterating skips rows once the result set shrinks.
+     */
+    private function cascadeDeliveryOrders(int $invoiceId, string $reason): int
+    {
+        $shippedIds = DeliveryOrder::query()
+            ->where('invoice_id', $invoiceId)
+            ->where('status', DocumentStatus::Shipped)
+            ->orderBy('id')
+            ->pluck('id');
+
+        foreach ($shippedIds as $id) {
+            $do = DeliveryOrder::query()->lockForUpdate()->findOrFail($id);
+            $this->deliveryOrderService->reverseShipment($do, $reason);
+        }
+
+        $openIds = DeliveryOrder::query()
+            ->where('invoice_id', $invoiceId)
+            ->whereIn('status', [DocumentStatus::Draft, DocumentStatus::Confirmed])
+            ->orderBy('id')
+            ->pluck('id');
+
+        foreach ($openIds as $id) {
+            $do = DeliveryOrder::query()->lockForUpdate()->findOrFail($id);
+            $do->transitionTo(DocumentStatus::Cancelled, $this->getUserId(), [
+                'cancellation_reason' => $reason,
+            ]);
+        }
+
+        return $shippedIds->count() + $openIds->count();
+    }
+
+    private function cascadeSalesReturns(int $invoiceId, string $reason): int
+    {
+        $approvedIds = SalesReturn::query()
+            ->where('invoice_id', $invoiceId)
+            ->where('status', DocumentStatus::Approved)
+            ->orderBy('id')
+            ->pluck('id');
+
+        foreach ($approvedIds as $id) {
+            $sr = SalesReturn::query()->lockForUpdate()->findOrFail($id);
+            $this->salesReturnService->cancel($sr, $reason);
+        }
+
+        $openIds = SalesReturn::query()
+            ->where('invoice_id', $invoiceId)
+            ->whereIn('status', [DocumentStatus::Draft, DocumentStatus::Submitted])
+            ->orderBy('id')
+            ->pluck('id');
+
+        foreach ($openIds as $id) {
+            $sr = SalesReturn::query()->lockForUpdate()->findOrFail($id);
+            $sr->transitionTo(DocumentStatus::Cancelled, $this->getUserId(), [
+                'cancellation_reason' => $reason,
+            ]);
+        }
+
+        return $approvedIds->count() + $openIds->count();
     }
 
     protected function loadRelations(Model $document): Model
