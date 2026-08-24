@@ -19,6 +19,7 @@ use App\Models\Manufacturing\WorkOrder;
 use App\Models\Manufacturing\WorkOrderItem;
 use App\Services\Accounting\AccountingPolicyManager;
 use App\Services\Base\BaseService;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 /**
  * Service for work order material management.
@@ -234,12 +235,28 @@ class WorkOrderMaterialService extends BaseService
         $this->executeInTransaction('record_consumption', function () use ($wo, $consumptions) {
             $strategy = $this->policyManager->manufacturing();
 
+            $workOrderItems = WorkOrderItem::query()
+                ->whereIn(
+                    'id',
+                    collect($consumptions)->pluck('work_order_item_id')->filter()->unique()->all()
+                )
+                ->get()
+                ->keyBy('id');
+            $products = Product::query()
+                ->whereIn('id', collect($consumptions)->pluck('product_id')->unique()->all())
+                ->get()
+                ->keyBy('id');
+
             foreach ($consumptions as $consumptionData) {
                 $woItem = isset($consumptionData['work_order_item_id'])
-                    ? WorkOrderItem::find($consumptionData['work_order_item_id'])
+                    ? $workOrderItems->get($consumptionData['work_order_item_id'])
                     : null;
 
-                $product = Product::findOrFail($consumptionData['product_id']);
+                $product = $products->get($consumptionData['product_id']);
+
+                if (! $product) {
+                    throw (new ModelNotFoundException)->setModel(Product::class, [$consumptionData['product_id']]);
+                }
 
                 $consumption = new MaterialConsumption([
                     'work_order_id' => $wo->id,

@@ -1260,6 +1260,14 @@ FiscalPeriod::query()->where('status', FiscalPeriodStatus::Open)->first();
 
 **Solution:** Filter by `type` (or `abs(quantity)`). Outbound value in reports is `SUM(total_cost)` of `TYPE_OUT` rows, not a signed mix.
 
+### 49. Do Not Query Per Row in a `foreach`
+
+**Context:** MRP explode/shortage, task reorder, BOM variant attach, work-order consumption.
+
+**Problem:** `Bom::where('product_id', $id)->first()` / `Product::find($id)` / `Task::where('id', $id)->update()` inside a loop is an N+1. It is also the same lost-update shape as unbatched status updates.
+
+**Solution:** Load with `whereIn`, `keyBy`, then map. Reorder with one `CASE id ... END` update scoped to the parent project. `converted` on solar proposals is `DocumentStatus::Converted`; PostgreSQL CHECK matches the enum — SQLite cannot ALTER CHECK, so the enum is the suite's net (same as journal line exclusivity).
+
 ---
 
 ## Indonesian Business Context

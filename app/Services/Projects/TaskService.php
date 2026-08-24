@@ -15,6 +15,7 @@ use App\Models\Projects\Project;
 use App\Models\Projects\Task;
 use App\Services\Base\BaseService;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class TaskService extends BaseService implements TaskServiceInterface
 {
@@ -176,11 +177,22 @@ class TaskService extends BaseService implements TaskServiceInterface
     public function reorder(Project $project, array $orderedIds): void
     {
         $this->executeInTransaction('reorder_tasks', function () use ($project, $orderedIds) {
-            foreach ($orderedIds as $index => $taskId) {
-                Task::where('id', $taskId)
-                    ->where('project_id', $project->id)
-                    ->update(['sort_order' => $index]);
+            $ids = array_values(array_map(intval(...), $orderedIds));
+
+            if ($ids === []) {
+                return;
             }
+
+            $cases = collect($ids)
+                ->map(fn (int $id, int $index) => "WHEN {$id} THEN {$index}")
+                ->implode(' ');
+
+            Task::query()
+                ->where('project_id', $project->id)
+                ->whereIn('id', $ids)
+                ->update([
+                    'sort_order' => DB::raw("CASE id {$cases} END"),
+                ]);
         }, ['project_id' => $project->id]);
     }
 

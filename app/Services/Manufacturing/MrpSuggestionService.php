@@ -314,8 +314,13 @@ class MrpSuggestionService extends BaseService
     {
         $count = 0;
 
+        $suggestions = MrpSuggestion::query()
+            ->whereIn('id', $suggestionIds)
+            ->get()
+            ->keyBy('id');
+
         foreach ($suggestionIds as $id) {
-            $suggestion = MrpSuggestion::find($id);
+            $suggestion = $suggestions->get($id);
             if ($suggestion && $suggestion->canBeAccepted()) {
                 $suggestion->accept();
                 $count++;
@@ -334,8 +339,13 @@ class MrpSuggestionService extends BaseService
     {
         $count = 0;
 
+        $suggestions = MrpSuggestion::query()
+            ->whereIn('id', $suggestionIds)
+            ->get()
+            ->keyBy('id');
+
         foreach ($suggestionIds as $id) {
-            $suggestion = MrpSuggestion::find($id);
+            $suggestion = $suggestions->get($id);
             if ($suggestion && $suggestion->canBeRejected()) {
                 $suggestion->reject($reason);
                 $count++;

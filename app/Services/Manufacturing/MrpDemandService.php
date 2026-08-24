@@ -77,6 +77,11 @@ class MrpDemandService
     {
         $demands = $run->demands()->get();
 
+        $stocksByProduct = ProductStock::query()
+            ->whereIn('product_id', $demands->pluck('product_id')->unique()->filter())
+            ->get()
+            ->groupBy('product_id');
+
         // Group by product and warehouse
         $grouped = $demands->groupBy(fn ($d) => $d->product_id.'-'.($d->warehouse_id ?? 'all'));
 
@@ -85,13 +90,10 @@ class MrpDemandService
             $productId = $firstDemand->product_id;
             $warehouseId = $firstDemand->warehouse_id;
 
-            // Get current stock
-            $stockQuery = ProductStock::where('product_id', $productId);
-            if ($warehouseId) {
-                $stockQuery->where('warehouse_id', $warehouseId);
-            }
-
-            $stock = $stockQuery->first();
+            $productStocks = $stocksByProduct->get($productId, collect());
+            $stock = $warehouseId
+                ? $productStocks->firstWhere('warehouse_id', $warehouseId)
+                : $productStocks->first();
             $onHand = $stock ? (float) $stock->quantity : 0;
             $reserved = $stock ? (float) $stock->reserved_quantity : 0;
 
@@ -126,20 +128,26 @@ class MrpDemandService
             ->with(['product'])
             ->get();
 
+        $makeProductIds = $demandsToExplode
+            ->filter(fn (MrpDemand $demand) => $demand->product?->procurement_type === 'make')
+            ->pluck('product_id')
+            ->unique()
+            ->values();
+
+        $boms = Bom::query()
+            ->whereIn('product_id', $makeProductIds)
+            ->where('status', DocumentStatus::Active)
+            ->with(['materialItems.product'])
+            ->get()
+            ->keyBy('product_id');
+
         foreach ($demandsToExplode as $demand) {
             $product = $demand->product;
-            if (! $product) {
+            if (! $product || $product->procurement_type !== 'make') {
                 continue;
             }
 
-            // Only explode if product is manufactured (make) or has a BOM
-            if ($product->procurement_type !== 'make') {
-                continue;
-            }
-
-            $bom = Bom::where('product_id', $product->id)
-                ->where('status', DocumentStatus::Active)
-                ->first();
+            $bom = $boms->get($product->id);
 
             if (! $bom) {
                 continue;
@@ -226,9 +234,13 @@ class MrpDemandService
 
         // Calculate shortages by product
         $grouped = $demands->groupBy('product_id');
+        $products = Product::query()
+            ->whereIn('id', $grouped->keys())
+            ->get()
+            ->keyBy('id');
 
         foreach ($grouped as $productId => $productDemands) {
-            $product = Product::find($productId);
+            $product = $products->get($productId);
             if (! $product) {
                 continue;
             }

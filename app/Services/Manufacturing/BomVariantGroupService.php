@@ -295,8 +295,10 @@ class BomVariantGroupService extends BaseService implements BomVariantGroupServi
     private function addBomsToGroup(BomVariantGroup $group, array $bomIds, array $variantNames = []): void
     {
         $sortOrder = 0;
+        $boms = Bom::query()->whereIn('id', $bomIds)->get()->keyBy('id');
+
         foreach ($bomIds as $bomId) {
-            $bom = Bom::find($bomId);
+            $bom = $boms->get($bomId);
             if ($bom && $bom->product_id === $group->product_id) {
                 // Direct update within existing transaction (already inside executeInTransaction)
                 $bom->variant_group_id = $group->id;
