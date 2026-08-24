@@ -20,6 +20,7 @@ use App\Models\Inventory\InventoryMovement;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\ProductStock;
 use App\Models\Inventory\Warehouse;
+use App\Models\Pos\PosCheckoutIdempotency;
 use App\Models\Pos\PosSale;
 use App\Models\Pos\PosSession;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -347,6 +348,34 @@ describe('PosService checkout', function () {
         expect((int) $stock->quantity)->toBe(5)
             ->and(InventoryMovement::query()->where('product_id', $free->id)->where('type', InventoryMovement::TYPE_OUT)->count())->toBe(0);
     });
+
+    it('posts catalogue exclusive as DPP so list price ties to GL revenue', function () {
+        $product = Product::factory()->create([
+            'name' => 'Roti 9091',
+            'selling_price' => 9_091,
+            'tax_rate' => 11.00,
+            'is_taxable' => true,
+            'track_inventory' => false,
+            'is_sellable' => true,
+            'is_active' => true,
+        ]);
+        $session = openTill();
+        $button = (int) $product->selling_price_with_tax;
+
+        $sale = test()->pos->checkout($session, [
+            'way' => PosTenderType::Cash->value,
+            'cash_received_amount' => $button,
+            'lines' => [
+                ['product_id' => $product->id, 'quantity' => 1],
+            ],
+        ], 'catalogue-dpp');
+
+        expect($sale->dpp_amount)->toBe(9_091)
+            ->and($sale->payable_amount)->toBe($button)
+            ->and($sale->ppn_amount)->toBe($button - 9_091)
+            ->and($sale->dpp_amount + $sale->ppn_amount)->toBe($sale->payable_amount)
+            ->and($sale->items->first()->dpp_amount)->toBe(9_091);
+    });
 });
 
 describe('PosService void', function () {
@@ -536,6 +565,27 @@ describe('PosService holds', function () {
         expect(fn () => test()->pos->hold($session, [
             ['product_id' => test()->product->id, 'quantity' => 0],
         ]))->toThrow(BusinessRuleException::class, 'Kuantitas');
+    });
+
+    it('prunes checkout idempotency rows older than one day', function () {
+        $session = openTill();
+        test()->pos->checkout($session, [
+            'way' => PosTenderType::Cash->value,
+            'cash_received_amount' => 111_00,
+            'lines' => [
+                ['product_id' => test()->product->id, 'quantity' => 1],
+            ],
+        ], 'prune-key');
+
+        expect(PosCheckoutIdempotency::query()->count())->toBe(1);
+
+        PosCheckoutIdempotency::query()->update(['created_at' => now()->subDays(2)]);
+
+        test()->artisan('model:prune', [
+            '--model' => [PosCheckoutIdempotency::class],
+        ]);
+
+        expect(PosCheckoutIdempotency::query()->count())->toBe(0);
     });
 
     it('rejects a sixth hold', function () {

@@ -1176,6 +1176,26 @@ $entry->fiscal_period_id = $period->id;
 
 **Tests:** `tests/Feature/Pos/PosCheckoutHttpTest.php`, `tests/Feature/Pos/PosServiceTest.php` (zero-priced checkout)
 
+### 42. POS Inclusive Button Is What the Customer Pays; Catalogue Exclusive Is GL Revenue
+
+**Context:** Inclusive kopitiam prices. `selling_price` is exclusive. `selling_price_with_tax` is `round(exclusive × 1.11)`. Checkout used to extract DPP from that rounded button (`round(payable / 1.11)`).
+
+**Problem:** Exclusive 9,091 → button 10,091 → extracted DPP 9,090. The JE still balanced (`tax = total − base`), but a sales-at-list-price report never tied to GL revenue.
+
+**Solution:** Payable stays the rounded button. DPP is `selling_price × qty`. PPN is the residual (`payable − dpp`) so the JE still balances and revenue equals the catalogue exclusive. Do not extract DPP from the button. Test warehouses are `is_test`, not `code LIKE 'WH-E2E-%'`. Checkout idempotency rows are `MassPrunable` after 24h.
+
+```php
+// ❌ BAD
+$dpp = round($payable / 1.11);
+$ppn = $payable - $dpp; // 9091 list becomes 9090 revenue
+
+// ✅ GOOD
+$dpp = (int) $product->selling_price * $qty;
+$ppn = $payable - $dpp;
+```
+
+**Tests:** `tests/Feature/Pos/PosServiceTest.php` (catalogue DPP, prune idempotency), `tests/Feature/Pos/PosCheckoutHttpTest.php` (is_test outlets)
+
 ---
 
 ## Indonesian Business Context

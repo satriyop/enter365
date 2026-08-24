@@ -42,9 +42,7 @@ class PosSessionController extends Controller
         $this->ensurePermission($request, 'pos.session.open', 'Anda tidak boleh membuka sesi kasir.');
 
         $outlets = Warehouse::query()
-            ->where('is_active', true)
-            ->where('code', 'not like', 'WH-E2E-%')
-            ->where('code', 'not like', 'WH-OP-%')
+            ->visibleToPos()
             ->orderByDesc('is_default')
             ->orderBy('name')
             ->get(['id', 'code', 'name']);

@@ -43,6 +43,7 @@ function seedPureUiOpnameFixture(): array
         'code' => "WH-OP-{$suffix}",
         'name' => "E2E Opname WH {$suffix}",
         'is_active' => true,
+        'is_test' => true,
         'is_default' => false,
         'created_at' => now(),
         'updated_at' => now(),

@@ -21,6 +21,7 @@ class Warehouse extends Model
         'contact_person',
         'is_default',
         'is_active',
+        'is_test',
         'notes',
     ];
 
@@ -29,7 +30,17 @@ class Warehouse extends Model
         return [
             'is_default' => 'boolean',
             'is_active' => 'boolean',
+            'is_test' => 'boolean',
         ];
+    }
+
+    /**
+     * @param  \Illuminate\Database\Eloquent\Builder<Warehouse>  $query
+     * @return \Illuminate\Database\Eloquent\Builder<Warehouse>
+     */
+    public function scopeVisibleToPos($query)
+    {
+        return $query->where('is_active', true)->where('is_test', false);
     }
 
     /**

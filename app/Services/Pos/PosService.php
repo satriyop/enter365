@@ -595,11 +595,17 @@ class PosService extends BaseService implements PosServiceInterface
             $dpp = $payable;
             $ppn = 0;
             if (! $addOn && $product->is_taxable) {
-                $inclusive = new TaxInclusiveStrategy;
-                $total = Money::of($payable);
-                $rate = (float) $product->tax_rate;
-                $dpp = $inclusive->getBaseAmount($total, $rate)->amount;
-                $ppn = $inclusive->calculate($total, $rate)->amount;
+                $catalogueExclusive = (int) $product->selling_price * $qty;
+                if ($catalogueExclusive > 0 && $catalogueExclusive <= $payable) {
+                    $dpp = $catalogueExclusive;
+                    $ppn = $payable - $dpp;
+                } else {
+                    $inclusive = new TaxInclusiveStrategy;
+                    $total = Money::of($payable);
+                    $rate = (float) $product->tax_rate;
+                    $dpp = $inclusive->getBaseAmount($total, $rate)->amount;
+                    $ppn = $inclusive->calculate($total, $rate)->amount;
+                }
             }
 
             $built[] = [

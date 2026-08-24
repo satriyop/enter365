@@ -296,16 +296,23 @@ describe('POS HTTP', function () {
             ->assertJsonPath('message', 'Anda tidak boleh membuka sesi kasir.');
     });
 
-    it('lists till outlets without e2e warehouse codes', function () {
-        Warehouse::factory()->create([
+    it('lists till outlets without test warehouses even when the code looks real', function () {
+        Warehouse::factory()->testFixture()->create([
             'code' => 'WH-E2E-XXXX',
             'name' => 'E2E junk',
             'is_active' => true,
         ]);
+        Warehouse::factory()->create([
+            'code' => 'WH-E2E-SHOP',
+            'name' => 'Real E2E-named outlet',
+            'is_active' => true,
+            'is_test' => false,
+        ]);
 
-        $this->getJson('/api/v1/pos/outlets')
-            ->assertOk()
-            ->assertJsonMissing(['code' => 'WH-E2E-XXXX']);
+        $codes = collect($this->getJson('/api/v1/pos/outlets')->assertOk()->json('data'))->pluck('code');
+
+        expect($codes)->toContain('WH-E2E-SHOP')
+            ->and($codes)->not->toContain('WH-E2E-XXXX');
     });
 
     it('does not serialize every sale of the shift on current or show', function () {

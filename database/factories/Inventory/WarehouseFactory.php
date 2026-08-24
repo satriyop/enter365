@@ -22,8 +22,16 @@ class WarehouseFactory extends Factory
             'contact_person' => $this->faker->name(),
             'is_default' => false,
             'is_active' => true,
+            'is_test' => false,
             'notes' => $this->faker->optional(0.3)->sentence(),
         ];
+    }
+
+    public function testFixture(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_test' => true,
+        ]);
     }
 
     public function default(): static

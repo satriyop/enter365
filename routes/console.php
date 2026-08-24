@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Pos\PosCheckoutIdempotency;
 use Illuminate\Support\Facades\Schedule;
 
 /*
@@ -31,3 +32,9 @@ Schedule::command('accounting:send-reminders')
     ->withoutOverlapping()
     ->onOneServer()
     ->appendOutputTo(storage_path('logs/reminders.log'));
+
+Schedule::command('model:prune', [
+    '--model' => [PosCheckoutIdempotency::class],
+])->dailyAt('03:00')
+    ->withoutOverlapping()
+    ->onOneServer();
