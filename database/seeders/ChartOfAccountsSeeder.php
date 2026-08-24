@@ -136,6 +136,7 @@ class ChartOfAccountsSeeder extends Seeder
             ['code' => '5-2700', 'name' => 'Beban Pemeliharaan', 'type' => Account::TYPE_EXPENSE, 'subtype' => Account::SUBTYPE_OPERATING_EXPENSE, 'is_system' => false, 'parent' => '5-2000'],
             ['code' => '5-2800', 'name' => 'Beban Iklan & Promosi', 'type' => Account::TYPE_EXPENSE, 'subtype' => Account::SUBTYPE_OPERATING_EXPENSE, 'is_system' => false, 'parent' => '5-2000'],
             ['code' => '5-2900', 'name' => 'Beban Operasional Lainnya', 'type' => Account::TYPE_EXPENSE, 'subtype' => Account::SUBTYPE_OPERATING_EXPENSE, 'is_system' => false, 'parent' => '5-2000'],
+            ['code' => '5-2910', 'name' => 'Selisih Kas', 'type' => Account::TYPE_EXPENSE, 'subtype' => Account::SUBTYPE_OPERATING_EXPENSE, 'is_system' => true, 'parent' => '5-2000'],
 
             // 5.3 Beban Lain-lain
             ['code' => '5-3000', 'name' => 'Beban Lain-lain', 'type' => Account::TYPE_EXPENSE, 'subtype' => Account::SUBTYPE_OTHER_EXPENSE, 'is_system' => true, 'parent' => '5-0000'],

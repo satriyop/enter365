@@ -87,20 +87,26 @@ class PosService extends BaseService implements PosServiceInterface
         return $this->executeInTransaction('pos_close_session', function () use ($session, $data) {
             $session = PosSession::query()->lockForUpdate()->findOrFail($session->id);
             $this->assertOpen($session);
+            $this->assertPeriodAllowsTill(now());
 
             $expected = $this->expectedCash($session);
             $counted = (int) $data['counted_cash_amount'];
+            $difference = $counted - $expected;
 
             $session->update([
                 'status' => PosSessionStatus::Closed,
                 'expected_cash_amount' => $expected,
                 'counted_cash_amount' => $counted,
-                'cash_difference_amount' => $counted - $expected,
+                'cash_difference_amount' => $difference,
                 'closed_by' => $this->getUserId(),
                 'closed_at' => now(),
             ]);
 
             $session->holds()->delete();
+
+            if ($difference !== 0) {
+                $this->postCashOverShort($session->fresh(), $difference);
+            }
 
             return $session->fresh();
         }, ['pos_session_id' => $session->id]);
@@ -428,6 +434,42 @@ class PosService extends BaseService implements PosServiceInterface
         if (! $session->isOpen()) {
             throw BusinessRuleException::operationNotAllowed('sesi kasir', 'Sesi kasir sudah ditutup.');
         }
+    }
+
+    /**
+     * Book the till count vs expected cash. Sales already debited Kas for the
+     * expected amount; without this entry the GL cash balance is a fiction.
+     */
+    private function postCashOverShort(PosSession $session, int $difference): void
+    {
+        $amount = abs($difference);
+        $overShortCode = (string) config('accounting.default_accounts.cash_over_short');
+        $cashAccountId = (int) $session->cash_account_id;
+        $label = $difference < 0 ? 'selisih kurang' : 'selisih lebih';
+
+        $overShortLine = [
+            'account_code' => $overShortCode,
+            'debit' => $difference < 0 ? $amount : 0,
+            'credit' => $difference > 0 ? $amount : 0,
+            'description' => "Selisih kas sesi {$session->session_number} ({$label})",
+        ];
+        $cashLine = [
+            'account_id' => $cashAccountId,
+            'debit' => $difference > 0 ? $amount : 0,
+            'credit' => $difference < 0 ? $amount : 0,
+            'description' => "Selisih kas sesi {$session->session_number} ({$label})",
+        ];
+
+        $this->journalService->createEntry([
+            'entry_date' => now()->toDateString(),
+            'description' => "Selisih kas kasir {$session->session_number}",
+            'reference' => $session->session_number,
+            'source_type' => PosSession::class,
+            'source_id' => $session->id,
+            'lines' => $difference < 0
+                ? [$overShortLine, $cashLine]
+                : [$cashLine, $overShortLine],
+        ], autoPost: true);
     }
 
     private function assertPeriodAllowsTill(\DateTimeInterface $date): void

@@ -10,6 +10,7 @@ use App\Enums\Pos\PosTenderType;
 use App\Exceptions\Domain\BusinessRuleException;
 use App\Exceptions\Domain\InsufficientStockException;
 use App\Models\Accounting\FiscalPeriod;
+use App\Models\Accounting\JournalEntry;
 use App\Models\Accounting\JournalEntryLine;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\ProductStock;
@@ -108,6 +109,38 @@ describe('PosService session', function () {
             ->and($closed->counted_cash_amount)->toBe(200_000_00)
             ->and($closed->cash_difference_amount)->toBe(0)
             ->and($closed->holds()->count())->toBe(0);
+
+        expect(JournalEntry::query()
+            ->where('source_type', PosSession::class)
+            ->where('source_id', $closed->id)
+            ->exists())->toBeFalse();
+    });
+
+    it('journals a cash shortage so GL kas matches the counted drawer', function () {
+        $session = openTill();
+
+        $closed = test()->pos->closeSession($session, [
+            'counted_cash_amount' => 150_000_00,
+        ]);
+
+        expect($closed->cash_difference_amount)->toBe(-50_000_00);
+
+        $entry = JournalEntry::query()
+            ->where('source_type', PosSession::class)
+            ->where('source_id', $closed->id)
+            ->with('lines.account')
+            ->first();
+
+        expect($entry)->not->toBeNull()
+            ->and($entry->is_posted)->toBeTrue();
+
+        $cashLine = $entry->lines->firstWhere('account_id', $closed->cash_account_id);
+        $overShort = $entry->lines->first(fn ($line) => $line->account?->code === '5-2910');
+
+        expect($cashLine->credit)->toBe(50_000_00)
+            ->and($cashLine->debit)->toBe(0)
+            ->and($overShort->debit)->toBe(50_000_00)
+            ->and($overShort->credit)->toBe(0);
     });
 });
 

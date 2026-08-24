@@ -336,6 +336,7 @@ return [
         'raw_materials' => '1-1400', // Bahan Baku (alias for inventory)
         'cogs' => '5-1001', // Harga Pokok Penjualan
         'inventory_adjustment' => '5-2900', // Penyesuaian Persediaan (Beban Operasional Lainnya)
+        'cash_over_short' => env('ACCOUNTING_CASH_OVER_SHORT_ACCOUNT', '5-2910'),
         'sales_returns' => '4-1004', // Retur Penjualan
         'purchase_returns' => '5-1004', // Retur Pembelian
         'dp_receivable' => '2-1700', // Uang Muka Penjualan (current liability)

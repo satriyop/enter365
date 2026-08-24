@@ -1055,6 +1055,16 @@ $description = filled($description) ? trim($description) : 'Reversal of '.$entry
 
 **Tests:** `tests/Feature/Services/Accounting/JournalServiceTest.php` (reverseEntry)
 
+### 34. POS Session Close Must Journal Cash Over/Short
+
+**Context:** `PosService::closeSession()`. Sales already debit Kas for every cash tender. `cash_difference_amount = counted - expected` is stored on the session.
+
+**Problem:** The difference never posted. A short drawer left GL Kas at the expected amount — books claimed cash the till did not have.
+
+**Solution:** When the difference is non-zero, post a balanced JE: shortage `Dr Selisih Kas (5-2910) / Cr Kas`; overage the reverse. `source_type` is `PosSession`. Skip the JE when counted equals expected. Opening float and end-of-shift deposit are not extra JEs while till cash is the same `Kas` account as sales — they need a till-vs-safe split first.
+
+**Tests:** `tests/Feature/Pos/PosServiceTest.php`
+
 ---
 
 ## Indonesian Business Context
