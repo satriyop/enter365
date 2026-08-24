@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Contracts\Inventory\InventoryServiceInterface;
 use App\Contracts\Pos\PosServiceInterface;
+use App\Domain\Accounting\FiscalPeriods\Enums\FiscalPeriodStatus;
 use App\Enums\Pos\PosSaleStatus;
 use App\Enums\Pos\PosSessionStatus;
 use App\Enums\Pos\PosTenderType;
@@ -22,6 +23,7 @@ use App\Models\Inventory\Warehouse;
 use App\Models\Pos\PosSale;
 use App\Models\Pos\PosSession;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Once;
 
 uses(RefreshDatabase::class);
@@ -416,6 +418,61 @@ describe('PosService void', function () {
         expect($restock)->not->toBeNull()
             ->and((int) $restock->total_cost)->toBe(1000)
             ->and($layerValue)->toBe(1000);
+    });
+
+    it('voids a sale from a closed period by reversing into the current open period', function () {
+        FiscalPeriod::query()->delete();
+
+        $lastMonth = now()->subMonth();
+        $pastPeriod = FiscalPeriod::factory()->create([
+            'name' => 'Bulan lalu',
+            'start_date' => $lastMonth->copy()->startOfMonth()->toDateString(),
+            'end_date' => $lastMonth->copy()->endOfMonth()->toDateString(),
+            'status' => FiscalPeriodStatus::Open,
+            'is_closed' => false,
+            'is_locked' => false,
+        ]);
+        FiscalPeriod::factory()->create([
+            'name' => 'Bulan ini',
+            'start_date' => now()->startOfMonth()->toDateString(),
+            'end_date' => now()->endOfMonth()->toDateString(),
+            'status' => FiscalPeriodStatus::Open,
+            'is_closed' => false,
+            'is_locked' => false,
+        ]);
+
+        Carbon::setTestNow($lastMonth->copy()->startOfMonth()->addDays(10));
+
+        try {
+            $session = openTill();
+            $sale = test()->pos->checkout($session, [
+                'way' => PosTenderType::Cash->value,
+                'cash_received_amount' => 111_00,
+                'lines' => [
+                    ['product_id' => test()->product->id, 'quantity' => 1],
+                ],
+            ], 'void-closed-period');
+
+            $pastPeriod->update([
+                'status' => FiscalPeriodStatus::Closed,
+                'is_closed' => true,
+                'is_locked' => true,
+            ]);
+
+            Carbon::setTestNow();
+
+            $voided = test()->pos->voidSale($session->fresh(), $sale, 'Salah input bulan lalu');
+
+            $reversal = JournalEntry::query()
+                ->where('reversal_of_id', $sale->journal_entry_id)
+                ->first();
+
+            expect($voided->status)->toBe(PosSaleStatus::Voided)
+                ->and($reversal)->not->toBeNull()
+                ->and($reversal->entry_date->toDateString())->toBe(now()->toDateString());
+        } finally {
+            Carbon::setTestNow();
+        }
     });
 
     it('rejects void when the fiscal period is locked', function () {

@@ -1134,6 +1134,8 @@ $this->inventoryService->stockIn($product, $wh, $qty, $unitCost, totalCost: abs(
 
 **Tests:** `tests/Feature/Services/Inventory/InventoryServiceTest.php`, `tests/Feature/Services/Inventory/InventoryServiceReservationTest.php`
 
+`getMovementSummary()` must aggregate in SQL (`COUNT`/`SUM` by type). Do not `get()` every movement and filter in PHP. Count transfers as `TYPE_TRANSFER_OUT` globally, and as the matching IN or OUT leg when filtered by warehouse — never `count / 2` (warehouse filters yield 0.5). Reverse shipment / sales-return restock must pass `totalCost: abs($outMovement->total_cost)` into `stockIn()`, same as POS void.
+
 ### 39. Journals Need an Open Period; Lines Are Signed and Exclusive
 
 **Context:** `JournalEntryService::createEntry()` / `postEntry()`. POS already refused a missing period; the rest of the app did not.

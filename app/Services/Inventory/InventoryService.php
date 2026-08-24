@@ -587,14 +587,33 @@ class InventoryService extends BaseService implements InventoryServiceInterface
      */
     public function getMovementSummary(string $startDate, string $endDate, ?Warehouse $warehouse = null): array
     {
-        $query = InventoryMovement::query()
+        $base = InventoryMovement::query()
             ->whereBetween('movement_date', [$startDate, $endDate.' 23:59:59']);
 
         if ($warehouse) {
-            $query->where('warehouse_id', $warehouse->id);
+            $base->where('warehouse_id', $warehouse->id);
         }
 
-        $movements = $query->get();
+        $aggregate = function (string $type) use ($base): object {
+            $row = (clone $base)
+                ->where('type', $type)
+                ->selectRaw('COUNT(*) as aggregate_count')
+                ->selectRaw('COALESCE(SUM(quantity), 0) as aggregate_quantity')
+                ->selectRaw('COALESCE(SUM(total_cost), 0) as aggregate_value')
+                ->first();
+
+            return $row ?? (object) ['aggregate_count' => 0, 'aggregate_quantity' => 0, 'aggregate_value' => 0];
+        };
+
+        $stockIn = $aggregate(InventoryMovement::TYPE_IN);
+        $stockOut = $aggregate(InventoryMovement::TYPE_OUT);
+        $adjustments = $aggregate(InventoryMovement::TYPE_ADJUSTMENT);
+        $transferCount = $warehouse === null
+            ? (int) (clone $base)->where('type', InventoryMovement::TYPE_TRANSFER_OUT)->count()
+            : (int) (clone $base)->whereIn('type', [
+                InventoryMovement::TYPE_TRANSFER_IN,
+                InventoryMovement::TYPE_TRANSFER_OUT,
+            ])->count();
 
         return [
             'period' => [
@@ -602,23 +621,20 @@ class InventoryService extends BaseService implements InventoryServiceInterface
                 'end_date' => $endDate,
             ],
             'stock_in' => [
-                'count' => $movements->where('type', InventoryMovement::TYPE_IN)->count(),
-                'quantity' => $movements->where('type', InventoryMovement::TYPE_IN)->sum('quantity'),
-                'value' => $movements->where('type', InventoryMovement::TYPE_IN)->sum('total_cost'),
+                'count' => (int) $stockIn->aggregate_count,
+                'quantity' => (int) $stockIn->aggregate_quantity,
+                'value' => (int) $stockIn->aggregate_value,
             ],
             'stock_out' => [
-                'count' => $movements->where('type', InventoryMovement::TYPE_OUT)->count(),
-                'quantity' => abs($movements->where('type', InventoryMovement::TYPE_OUT)->sum('quantity')),
-                'value' => $movements->where('type', InventoryMovement::TYPE_OUT)->sum('total_cost'),
+                'count' => (int) $stockOut->aggregate_count,
+                'quantity' => abs((int) $stockOut->aggregate_quantity),
+                'value' => (int) $stockOut->aggregate_value,
             ],
             'adjustments' => [
-                'count' => $movements->where('type', InventoryMovement::TYPE_ADJUSTMENT)->count(),
+                'count' => (int) $adjustments->aggregate_count,
             ],
             'transfers' => [
-                'count' => $movements->whereIn('type', [
-                    InventoryMovement::TYPE_TRANSFER_IN,
-                    InventoryMovement::TYPE_TRANSFER_OUT,
-                ])->count() / 2, // Divide by 2 because each transfer creates 2 records
+                'count' => $transferCount,
             ],
         ];
     }

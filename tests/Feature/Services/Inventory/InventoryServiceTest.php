@@ -223,4 +223,30 @@ describe('InventoryService reporting', function () {
         expect($summary['stock_in']['count'])->toBe(1);
         expect($summary['stock_out']['count'])->toBe(1);
     });
+
+    it('counts a warehouse-filtered transfer as one transfer not a half', function () {
+        $toWarehouse = Warehouse::factory()->create();
+        $this->service->stockIn($this->product, $this->warehouse, 40, 10000);
+        $this->service->transfer($this->product, $this->warehouse, $toWarehouse, 10);
+
+        $fromSummary = $this->service->getMovementSummary(
+            now()->subDay()->toDateString(),
+            now()->toDateString(),
+            $this->warehouse
+        );
+        $toSummary = $this->service->getMovementSummary(
+            now()->subDay()->toDateString(),
+            now()->toDateString(),
+            $toWarehouse
+        );
+
+        $all = $this->service->getMovementSummary(
+            now()->subDay()->toDateString(),
+            now()->toDateString()
+        );
+
+        expect($fromSummary['transfers']['count'])->toBe(1)
+            ->and($toSummary['transfers']['count'])->toBe(1)
+            ->and($all['transfers']['count'])->toBe(1);
+    });
 });

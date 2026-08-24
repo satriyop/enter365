@@ -309,25 +309,30 @@ class DeliveryOrderWorkflowService
                 continue;
             }
 
-            // Look up original stock-out movement to get unit_cost
-            $originalMovement = InventoryMovement::where('reference_type', DeliveryOrder::class)
+            $originalMovement = InventoryMovement::query()
+                ->where('reference_type', DeliveryOrder::class)
                 ->where('reference_id', $deliveryOrder->id)
                 ->where('product_id', $item->product_id)
                 ->where('type', InventoryMovement::TYPE_OUT)
                 ->first();
 
+            $quantity = (int) round((float) $item->quantity);
             $unitCost = $originalMovement
-                ? $originalMovement->unit_cost
-                : ($product->purchase_price ?? 0);
+                ? (int) $originalMovement->unit_cost
+                : (int) ($product->purchase_price ?? 0);
+            $totalCost = $originalMovement
+                ? abs((int) $originalMovement->total_cost)
+                : $quantity * $unitCost;
 
             $this->inventoryService->stockIn(
                 $product,
                 $warehouse,
-                (int) round((float) $item->quantity),
-                (int) $unitCost,
+                $quantity,
+                $unitCost,
                 'Pembatalan pengiriman: '.$deliveryOrder->do_number,
                 DeliveryOrder::class,
-                $deliveryOrder->id
+                $deliveryOrder->id,
+                totalCost: $totalCost,
             );
         }
     }

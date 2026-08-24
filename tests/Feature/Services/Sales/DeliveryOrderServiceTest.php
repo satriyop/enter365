@@ -9,8 +9,11 @@ use App\Enums\DocumentStatus;
 use App\Exceptions\Domain\DocumentLockedException;
 use App\Exceptions\Domain\InsufficientStockException;
 use App\Exceptions\Domain\StateTransitionException;
+use App\Models\Accounting\AccountingPolicy;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Contacts\Contact;
+use App\Models\Inventory\InventoryCostLayer;
+use App\Models\Inventory\InventoryMovement;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\ProductStock;
 use App\Models\Inventory\Warehouse;
@@ -389,6 +392,54 @@ describe('Reverse Shipment', function () {
 
         expect($result->status)->toBe(DocumentStatus::Cancelled);
         expect($result->cancellation_reason)->toBe('Faktur dibatalkan');
+    });
+
+    test('restocks the exact outbound FIFO total when reversing a shipment', function () {
+        $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\ChartOfAccountsSeeder']);
+        $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\FiscalPeriodSeeder']);
+        AccountingPolicy::query()->update(['costing_method' => 'fifo']);
+        \Illuminate\Support\Once::flush();
+
+        $product = Product::factory()->create(['track_inventory' => true, 'purchase_price' => 333]);
+        $inventory = app(InventoryServiceInterface::class);
+        $inventory->stockIn($product, $this->warehouse, 2, 333);
+        $inventory->stockIn($product, $this->warehouse, 1, 334);
+
+        $do = DeliveryOrder::factory()
+            ->has(DeliveryOrderItem::factory()->state([
+                'product_id' => $product->id,
+                'quantity' => 3,
+            ]), 'items')
+            ->shipped()
+            ->create(['warehouse_id' => $this->warehouse->id]);
+
+        $out = $inventory->stockOut(
+            $product,
+            $this->warehouse,
+            3,
+            'Pengiriman',
+            DeliveryOrder::class,
+            $do->id
+        );
+        expect((int) $out->total_cost)->toBe(1000);
+
+        $this->service->reverseShipment($do, 'Faktur dibatalkan');
+
+        $restock = InventoryMovement::query()
+            ->where('reference_type', DeliveryOrder::class)
+            ->where('reference_id', $do->id)
+            ->where('type', InventoryMovement::TYPE_IN)
+            ->first();
+
+        $layerValue = (int) InventoryCostLayer::query()
+            ->where('product_id', $product->id)
+            ->where('warehouse_id', $this->warehouse->id)
+            ->get()
+            ->sum(fn (InventoryCostLayer $layer) => $layer->quantity * $layer->unit_cost);
+
+        expect($restock)->not->toBeNull()
+            ->and((int) $restock->total_cost)->toBe(1000)
+            ->and($layerValue)->toBe(1000);
     });
 
     test('reverses COGS JE during shipment reversal', function () {
