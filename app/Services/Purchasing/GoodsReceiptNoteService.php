@@ -247,11 +247,23 @@ class GoodsReceiptNoteService extends BaseService implements GoodsReceiptNoteSer
         }
 
         return $this->executeInTransaction('complete', function () use ($grn, $userId) {
+            $grn = GoodsReceiptNote::query()->lockForUpdate()->findOrFail($grn->id);
+            $grn->load(['items.product', 'items.purchaseOrderItem', 'purchaseOrder']);
+
+            if (! $grn->stateMachine()->canComplete()) {
+                throw \App\Exceptions\Domain\StateTransitionException::wrongStateForOperation(
+                    'GRN',
+                    'diselesaikan',
+                    $grn->status->value,
+                    'receiving dengan item yang telah diterima'
+                );
+            }
+
             $warehouse = Warehouse::findOrFail($grn->warehouse_id);
             $purchaseOrder = $grn->purchaseOrder;
 
             // Process each item with received quantity
-            foreach ($grn->items()->where('quantity_received', '>', 0)->get() as $item) {
+            foreach ($grn->items->where('quantity_received', '>', 0) as $item) {
                 $product = $item->product;
 
                 // Only create inventory movement for products that track inventory
@@ -259,8 +271,8 @@ class GoodsReceiptNoteService extends BaseService implements GoodsReceiptNoteSer
                     $this->inventoryService->stockIn(
                         $product,
                         $warehouse,
-                        $item->quantity_received,
-                        $item->unit_price,
+                        (int) $item->quantity_received,
+                        $item->inventoryUnitCost(),
                         "GRN: {$grn->grn_number}",
                         GoodsReceiptNote::class,
                         $grn->id
@@ -270,7 +282,7 @@ class GoodsReceiptNoteService extends BaseService implements GoodsReceiptNoteSer
                 // Update PO item received quantity
                 $poItem = $item->purchaseOrderItem;
                 if ($poItem) {
-                    $poItem->receive($item->quantity_received);
+                    $poItem->receive((int) $item->quantity_received);
                 }
             }
 

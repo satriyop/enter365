@@ -148,11 +148,21 @@ class PurchaseOrderItem extends Model
 
     /**
      * Receive items.
+     *
+     * Locks the row and increments in SQL so two GRNs completing the same
+     * PO line cannot lose an update from a stale in-memory quantity_received.
      */
-    public function receive(float $quantity): void
+    public function receive(int|float $quantity): void
     {
-        $this->quantity_received += $quantity;
-        $this->last_received_at = now();
-        $this->save();
+        if ($quantity <= 0) {
+            return;
+        }
+
+        static::query()->lockForUpdate()->findOrFail($this->id);
+        static::query()->whereKey($this->id)->increment('quantity_received', $quantity, [
+            'last_received_at' => now(),
+        ]);
+
+        $this->refresh();
     }
 }

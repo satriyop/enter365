@@ -50,7 +50,7 @@ class PerpetualInventoryStrategy implements InventoryAccountingStrategy
                 continue;
             }
 
-            $totalValue += (int) round($item->quantity_received * $item->unit_price);
+            $totalValue += $item->inventoryTotalCost();
         }
 
         if ($totalValue <= 0) {

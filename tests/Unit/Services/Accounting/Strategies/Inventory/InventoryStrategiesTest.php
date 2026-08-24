@@ -372,6 +372,39 @@ describe('PerpetualInventoryStrategy', function () {
             $this->journalService->shouldHaveReceived('createEntry')->once();
         });
 
+        it('journals inventory at net-of-discount tax-exclusive cost', function () {
+            $product = Product::factory()->create(['track_inventory' => true]);
+
+            $grn = GoodsReceiptNote::factory()->create([
+                'grn_number' => 'GRN-202402-0099',
+                'receipt_date' => '2024-02-15',
+            ]);
+
+            GoodsReceiptNoteItem::factory()
+                ->forGoodsReceiptNote($grn)
+                ->create([
+                    'product_id' => $product->id,
+                    'quantity_received' => 10,
+                    'unit_price' => 10000,
+                    'discount_percent' => 10,
+                    'tax_rate' => 11,
+                ]);
+
+            $this->journalService
+                ->shouldReceive('createEntry')
+                ->once()
+                ->withArgs(function ($data, $autoPost) {
+                    expect($data['lines'][0]['debit'])->toBe(90000)
+                        ->and($data['lines'][1]['credit'])->toBe(90000)
+                        ->and($autoPost)->toBeTrue();
+
+                    return true;
+                })
+                ->andReturn(new JournalEntry(['id' => 1]));
+
+            $this->strategy->onGoodsReceived($grn);
+        });
+
         it('returns null when total value is zero', function () {
             $product = Product::factory()
                 ->create([

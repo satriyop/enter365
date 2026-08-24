@@ -11,7 +11,9 @@ use App\Exceptions\Domain\StateTransitionException;
 use App\Models\Accounting\AccountingPolicy;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Contacts\Contact;
+use App\Models\Inventory\InventoryMovement;
 use App\Models\Inventory\Product;
+use App\Models\Inventory\ProductStock;
 use App\Models\Inventory\Warehouse;
 use App\Models\Purchasing\GoodsReceiptNote;
 use App\Models\Purchasing\GoodsReceiptNoteItem;
@@ -468,5 +470,112 @@ describe('Inventory Accounting Strategy', function () {
             ->first();
 
         expect($journalEntry)->toBeNull();
+    });
+});
+
+describe('Completion integrity', function () {
+    test('refuses a second complete so inventory is received once', function () {
+        $this->product->update(['track_inventory' => true]);
+
+        $po = PurchaseOrder::factory()
+            ->has(PurchaseOrderItem::factory()->state([
+                'product_id' => $this->product->id,
+                'quantity' => 50,
+                'quantity_received' => 0,
+                'unit_price' => 100000,
+            ]), 'items')
+            ->create(['status' => DocumentStatus::Approved]);
+
+        $grn = GoodsReceiptNote::factory()
+            ->for($po, 'purchaseOrder')
+            ->has(GoodsReceiptNoteItem::factory()->state([
+                'purchase_order_item_id' => $po->items->first()->id,
+                'product_id' => $this->product->id,
+                'quantity_ordered' => 50,
+                'quantity_received' => 50,
+                'unit_price' => 100000,
+                'discount_percent' => 0,
+            ]), 'items')
+            ->create([
+                'status' => DocumentStatus::Receiving,
+                'warehouse_id' => $this->warehouse->id,
+            ]);
+
+        $this->service->complete($grn, $this->user->id);
+
+        $stock = ProductStock::query()
+            ->where('product_id', $this->product->id)
+            ->where('warehouse_id', $this->warehouse->id)
+            ->first();
+
+        expect($stock)->not->toBeNull()
+            ->and((int) $stock->quantity)->toBe(50);
+
+        expect(fn () => $this->service->complete($grn->fresh(), $this->user->id))
+            ->toThrow(StateTransitionException::class);
+
+        expect((int) $stock->fresh()->quantity)->toBe(50)
+            ->and(InventoryMovement::query()->where('reference_type', GoodsReceiptNote::class)->where('reference_id', $grn->id)->count())->toBe(1)
+            ->and((float) $po->items()->first()->fresh()->quantity_received)->toBe(50.0);
+    });
+
+    test('capitalises inventory at net-of-discount tax-exclusive cost', function () {
+        $this->product->update(['track_inventory' => true]);
+
+        $po = PurchaseOrder::factory()
+            ->has(PurchaseOrderItem::factory()->state([
+                'product_id' => $this->product->id,
+                'quantity' => 10,
+                'quantity_received' => 0,
+                'unit_price' => 10000,
+                'discount_percent' => 10,
+                'tax_rate' => 11,
+            ]), 'items')
+            ->create(['status' => DocumentStatus::Approved]);
+
+        $grn = GoodsReceiptNote::factory()
+            ->for($po, 'purchaseOrder')
+            ->has(GoodsReceiptNoteItem::factory()->state([
+                'purchase_order_item_id' => $po->items->first()->id,
+                'product_id' => $this->product->id,
+                'quantity_ordered' => 10,
+                'quantity_received' => 10,
+                'unit_price' => 10000,
+                'discount_percent' => 10,
+                'tax_rate' => 11,
+            ]), 'items')
+            ->create([
+                'status' => DocumentStatus::Receiving,
+                'warehouse_id' => $this->warehouse->id,
+            ]);
+
+        $this->service->complete($grn, $this->user->id);
+
+        $movement = InventoryMovement::query()
+            ->where('reference_type', GoodsReceiptNote::class)
+            ->where('reference_id', $grn->id)
+            ->first();
+
+        expect($movement)->not->toBeNull()
+            ->and((int) $movement->unit_cost)->toBe(9000)
+            ->and((int) $movement->total_cost)->toBe(90000)
+            ->and((int) $movement->unit_cost)->not->toBe(10000);
+    });
+});
+
+describe('PurchaseOrderItem::receive', function () {
+    test('increments from the locked row so a stale in-memory quantity is not lost', function () {
+        $item = PurchaseOrderItem::factory()->create([
+            'quantity' => 100,
+            'quantity_received' => 0,
+        ]);
+
+        $stale = PurchaseOrderItem::query()->findOrFail($item->id);
+        $fresh = PurchaseOrderItem::query()->findOrFail($item->id);
+
+        $fresh->receive(10);
+        $stale->receive(5);
+
+        expect((float) $item->fresh()->quantity_received)->toBe(15.0);
     });
 });

@@ -115,6 +115,37 @@ class GoodsReceiptNoteItem extends Model
     }
 
     /**
+     * Inventory capitalisation: after line discount, excluding PPN.
+     *
+     * unit_price is tax-exclusive. PPN is recoverable input tax, not stock cost.
+     */
+    public function inventoryTotalCost(): int
+    {
+        $quantity = (int) $this->quantity_received;
+        if ($quantity <= 0) {
+            return 0;
+        }
+
+        $subtotal = $quantity * (int) $this->unit_price;
+        $discountAmount = (int) round($subtotal * ((float) ($this->discount_percent ?? 0)) / 100);
+
+        return max(0, $subtotal - $discountAmount);
+    }
+
+    /**
+     * Per-unit inventory cost used by stockIn / FIFO layers.
+     */
+    public function inventoryUnitCost(): int
+    {
+        $quantity = (int) $this->quantity_received;
+        if ($quantity <= 0) {
+            return 0;
+        }
+
+        return (int) round($this->inventoryTotalCost() / $quantity);
+    }
+
+    /**
      * Fill from purchase order item.
      */
     public function fillFromPurchaseOrderItem(PurchaseOrderItem $poItem): void
