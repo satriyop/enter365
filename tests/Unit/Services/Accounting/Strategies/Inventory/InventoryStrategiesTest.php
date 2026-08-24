@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Contracts\Accounting\JournalServiceInterface;
 use App\Models\Accounting\JournalEntry;
+use App\Models\Inventory\InventoryMovement;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\StockOpname;
 use App\Models\Inventory\StockOpnameItem;
@@ -19,6 +20,18 @@ use Database\Seeders\FiscalPeriodSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
+
+function stockOpnameAppliedMovement(StockOpname $opname, int $quantity, int $unitCost): InventoryMovement
+{
+    return InventoryMovement::factory()->create([
+        'type' => InventoryMovement::TYPE_ADJUSTMENT,
+        'quantity' => $quantity,
+        'unit_cost' => $unitCost,
+        'total_cost' => abs($quantity) * $unitCost,
+        'reference_type' => StockOpname::class,
+        'reference_id' => $opname->id,
+    ]);
+}
 
 beforeEach(function () {
     authenticatedAdmin();
@@ -80,6 +93,9 @@ describe('HybridInventoryStrategy', function () {
                     'variance_value' => 50000, // 5 * 10000
                 ]);
 
+            stockOpnameAppliedMovement($stockOpname, 10, 5000);
+            stockOpnameAppliedMovement($stockOpname, 5, 10000);
+
             $totalVariance = 100000; // 50000 + 50000
 
             $expectedEntry = new JournalEntry(['id' => 1]);
@@ -139,6 +155,9 @@ describe('HybridInventoryStrategy', function () {
                     'system_cost' => 10000,
                     'variance_value' => -80000, // -8 * 10000
                 ]);
+
+            stockOpnameAppliedMovement($stockOpname, -10, 5000);
+            stockOpnameAppliedMovement($stockOpname, -8, 10000);
 
             $totalVariance = -130000; // -50000 + -80000
             $absVariance = 130000;
@@ -224,6 +243,9 @@ describe('HybridInventoryStrategy', function () {
                     'variance_value' => -30000,
                 ]);
 
+            stockOpnameAppliedMovement($stockOpname, 10, 5000);
+            stockOpnameAppliedMovement($stockOpname, -5, 6000);
+
             $netVariance = 20000; // 50000 + (-30000)
 
             $expectedEntry = new JournalEntry(['id' => 3]);
@@ -258,6 +280,8 @@ describe('HybridInventoryStrategy', function () {
                 ->forStockOpname($stockOpname)
                 ->withSurplus(5)
                 ->create(['variance_value' => 25000]);
+
+            stockOpnameAppliedMovement($stockOpname, 5, 5000);
 
             $expectedEntry = new JournalEntry(['id' => 4]);
 

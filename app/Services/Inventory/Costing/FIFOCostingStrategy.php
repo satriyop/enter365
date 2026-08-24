@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Inventory\Costing;
 
 use App\Contracts\Inventory\CostingStrategy;
+use App\Exceptions\Domain\BusinessRuleException;
 use App\Models\Inventory\InventoryCostLayer;
 use App\Models\Inventory\ProductStock;
 
@@ -68,9 +69,10 @@ class FIFOCostingStrategy implements CostingStrategy
         }
 
         if ($remaining > 0) {
-            // This shouldn't happen if stock validation passed, but handle gracefully
-            // Use the last known average cost for the remaining quantity
-            $totalCost += $remaining * $stock->average_cost;
+            throw BusinessRuleException::operationNotAllowed(
+                'pengeluaran stok FIFO',
+                'Lapisan biaya FIFO tidak mencukupi kuantitas stok. Periksa penyesuaian stok sebelumnya.'
+            );
         }
 
         // Update ProductStock
@@ -78,6 +80,24 @@ class FIFOCostingStrategy implements CostingStrategy
 
         // Return weighted average FIFO cost for this issuance
         return (int) round($totalCost / $quantity);
+    }
+
+    public function recordAdjustment(ProductStock $stock, int $delta, int $unitCost): int
+    {
+        if ($delta > 0) {
+            $this->recordStockIn($stock, $delta, $unitCost);
+
+            return $delta * $unitCost;
+        }
+
+        if ($delta < 0) {
+            $quantity = abs($delta);
+            $outCost = $this->recordStockOut($stock, $quantity);
+
+            return -($quantity * $outCost);
+        }
+
+        return 0;
     }
 
     public function getCurrentUnitCost(ProductStock $stock): int

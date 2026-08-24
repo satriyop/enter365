@@ -28,6 +28,24 @@ class WeightedAverageCostingStrategy implements CostingStrategy
         return $unitCost;
     }
 
+    public function recordAdjustment(ProductStock $stock, int $delta, int $unitCost): int
+    {
+        if ($delta > 0) {
+            $this->recordStockIn($stock, $delta, $unitCost);
+
+            return $delta * $unitCost;
+        }
+
+        if ($delta < 0) {
+            $quantity = abs($delta);
+            $outCost = $this->recordStockOut($stock, $quantity);
+
+            return -($quantity * $outCost);
+        }
+
+        return 0;
+    }
+
     public function getCurrentUnitCost(ProductStock $stock): int
     {
         return $stock->average_cost;

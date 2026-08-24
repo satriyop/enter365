@@ -70,13 +70,29 @@ interface InventoryServiceInterface
     ): InventoryMovement;
 
     /**
-     * Record stock adjustment.
+     * Record stock adjustment to an absolute on-hand quantity.
      */
     public function adjust(
         Product $product,
         Warehouse $warehouse,
         int $newQuantity,
         ?int $newUnitCost = null,
+        ?string $notes = null,
+        ?string $referenceType = null,
+        ?int $referenceId = null
+    ): InventoryMovement;
+
+    /**
+     * Apply a signed on-hand delta (stock opname variance).
+     *
+     * Does not overwrite live quantity with a counted absolute. Intervening
+     * receipts and issues stay; only the frozen count-time variance is applied.
+     */
+    public function adjustByDelta(
+        Product $product,
+        Warehouse $warehouse,
+        int $delta,
+        ?int $unitCost = null,
         ?string $notes = null,
         ?string $referenceType = null,
         ?int $referenceId = null

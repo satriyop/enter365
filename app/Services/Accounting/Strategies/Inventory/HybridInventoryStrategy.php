@@ -7,6 +7,7 @@ namespace App\Services\Accounting\Strategies\Inventory;
 use App\Contracts\Accounting\JournalServiceInterface;
 use App\Contracts\Accounting\Strategies\InventoryAccountingStrategy;
 use App\Models\Accounting\JournalEntry;
+use App\Models\Inventory\InventoryMovement;
 use App\Models\Inventory\StockOpname;
 use App\Models\Purchasing\GoodsReceiptNote;
 use App\Models\Sales\DeliveryOrder;
@@ -117,17 +118,26 @@ class HybridInventoryStrategy implements InventoryAccountingStrategy
     }
 
     /**
-     * Calculate the total adjustment value from stock opname items.
+     * Inventory GL amount is the value actually applied on the stock seam.
      *
-     * Uses the pre-calculated variance_value from items, which is computed as:
-     * (counted_quantity - system_quantity) * system_cost
+     * Item.variance_value is a count-time worksheet estimate. After approval,
+     * movements are the source of truth (same delta, costing-method cost).
      */
     private function calculateAdjustmentValue(StockOpname $stockOpname): int
     {
-        $stockOpname->loadMissing('items');
+        return (int) InventoryMovement::query()
+            ->where('reference_type', StockOpname::class)
+            ->where('reference_id', $stockOpname->id)
+            ->where('type', InventoryMovement::TYPE_ADJUSTMENT)
+            ->get()
+            ->sum(function (InventoryMovement $movement): int {
+                if ($movement->quantity === 0) {
+                    return 0;
+                }
 
-        // Sum the pre-calculated variance values
-        // Positive = found more inventory, Negative = shrinkage
-        return (int) $stockOpname->items->sum('variance_value');
+                return $movement->quantity > 0
+                    ? (int) $movement->total_cost
+                    : -(int) $movement->total_cost;
+            });
     }
 }

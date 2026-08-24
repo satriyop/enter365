@@ -305,24 +305,22 @@ class StockOpnameService extends BaseService implements StockOpnameServiceInterf
         return $this->executeInTransaction('approve', function () use ($opname, $userId) {
             $warehouse = Warehouse::findOrFail($opname->warehouse_id);
 
-            // Apply adjustments for items with variance
+            // Apply the frozen count-time variance as a delta. Never set
+            // on-hand to counted_quantity — that would erase sales/receipts
+            // that happened after the snapshot.
             foreach ($opname->items()->where('variance_quantity', '!=', 0)->get() as $item) {
-                $product = $item->product;
-
-                // Create inventory adjustment
-                $this->inventoryService->adjust(
-                    $product,
+                $this->inventoryService->adjustByDelta(
+                    $item->product,
                     $warehouse,
-                    $item->counted_quantity,
-                    null, // newUnitCost - keep existing
+                    $item->variance_quantity,
+                    $item->system_cost,
                     "Stock Opname: {$opname->opname_number}".($item->notes ? " - {$item->notes}" : ''),
                     StockOpname::class,
                     $opname->id
                 );
             }
 
-            // Create adjustment journal entry (if strategy is configured)
-            // The journal entry links back to stock_opname via source_id
+            // Journal from the movements just written, not from worksheet variance_value.
             $this->inventoryStrategy->onStockAdjustment($opname);
 
             // Use state machine: REVIEWED -> APPROVED -> COMPLETED

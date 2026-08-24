@@ -31,6 +31,16 @@ interface CostingStrategy
     public function recordStockOut(ProductStock $stock, int $quantity): int;
 
     /**
+     * Apply a signed quantity delta and return the signed inventory value change.
+     *
+     * Positive delta adds a layer / weighted-average receipt at $unitCost.
+     * Negative delta consumes stock the same way as a stock-out.
+     * Callers (stock opname, manual adjust) must not write ProductStock
+     * quantity or FIFO layers themselves.
+     */
+    public function recordAdjustment(ProductStock $stock, int $delta, int $unitCost): int;
+
+    /**
      * Get the current unit cost for a product-warehouse combination.
      */
     public function getCurrentUnitCost(ProductStock $stock): int;

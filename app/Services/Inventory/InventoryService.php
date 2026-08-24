@@ -11,6 +11,7 @@ use App\Domain\Inventory\Movements\Events\InventoryAdjusted;
 use App\Domain\Inventory\Movements\Events\InventoryIssued;
 use App\Domain\Inventory\Movements\Events\InventoryReceived;
 use App\Domain\Inventory\Movements\Events\InventoryTransferred;
+use App\Exceptions\Domain\BusinessRuleException;
 use App\Exceptions\Domain\InsufficientStockException;
 use App\Models\Inventory\InventoryMovement;
 use App\Models\Inventory\Product;
@@ -209,7 +210,7 @@ class InventoryService extends BaseService implements InventoryServiceInterface
     }
 
     /**
-     * Record stock adjustment.
+     * Record stock adjustment to an absolute on-hand quantity.
      */
     public function adjust(
         Product $product,
@@ -222,50 +223,112 @@ class InventoryService extends BaseService implements InventoryServiceInterface
     ): InventoryMovement {
         return $this->executeInTransaction('adjust', function () use ($product, $warehouse, $newQuantity, $newUnitCost, $notes, $referenceType, $referenceId) {
             $stock = ProductStock::lockForStock($product, $warehouse);
-            $quantityBefore = $stock->quantity;
-            $quantityDiff = $newQuantity - $quantityBefore;
 
-            // Update stock
-            $stock->quantity = $newQuantity;
-            if ($newUnitCost !== null) {
-                $stock->average_cost = $newUnitCost;
-            }
-            $stock->total_value = $stock->quantity * $stock->average_cost;
-            $stock->save();
-
-            // Create movement record
-            $movement = InventoryMovement::create([
-                'movement_number' => InventoryMovement::generateMovementNumber(InventoryMovement::TYPE_ADJUSTMENT),
-                'product_id' => $product->id,
-                'warehouse_id' => $warehouse->id,
-                'type' => InventoryMovement::TYPE_ADJUSTMENT,
-                'quantity' => $quantityDiff,
-                'quantity_before' => $quantityBefore,
-                'quantity_after' => $newQuantity,
-                'unit_cost' => $stock->average_cost,
-                'total_cost' => abs($quantityDiff) * $stock->average_cost,
-                'reference_type' => $referenceType,
-                'reference_id' => $referenceId,
-                'movement_date' => now(),
-                'notes' => $notes ?? 'Penyesuaian stok',
-                'created_by' => $this->getUserId(),
-            ]);
-
-            // Sync product's current_stock
-            $product->syncCurrentStock();
-
-            $this->dispatch(new InventoryAdjusted(
-                productId: $product->id,
-                warehouseId: $warehouse->id,
-                adjustmentQuantity: $quantityDiff,
-                previousQuantity: $quantityBefore,
-                newQuantity: $newQuantity,
-                movementId: $movement->id,
-                userId: $this->getUserId(),
-            ));
-
-            return $movement;
+            return $this->applyLockedAdjustment(
+                $product,
+                $warehouse,
+                $stock,
+                $newQuantity - $stock->quantity,
+                $newUnitCost,
+                $notes,
+                $referenceType,
+                $referenceId,
+            );
         }, ['product_id' => $product->id, 'warehouse_id' => $warehouse->id, 'new_quantity' => $newQuantity]);
+    }
+
+    public function adjustByDelta(
+        Product $product,
+        Warehouse $warehouse,
+        int $delta,
+        ?int $unitCost = null,
+        ?string $notes = null,
+        ?string $referenceType = null,
+        ?int $referenceId = null
+    ): InventoryMovement {
+        return $this->executeInTransaction('adjust_by_delta', function () use ($product, $warehouse, $delta, $unitCost, $notes, $referenceType, $referenceId) {
+            $stock = ProductStock::lockForStock($product, $warehouse);
+
+            return $this->applyLockedAdjustment(
+                $product,
+                $warehouse,
+                $stock,
+                $delta,
+                $unitCost,
+                $notes,
+                $referenceType,
+                $referenceId,
+            );
+        }, ['product_id' => $product->id, 'warehouse_id' => $warehouse->id, 'delta' => $delta]);
+    }
+
+    private function applyLockedAdjustment(
+        Product $product,
+        Warehouse $warehouse,
+        ProductStock $stock,
+        int $delta,
+        ?int $unitCost,
+        ?string $notes,
+        ?string $referenceType,
+        ?int $referenceId,
+    ): InventoryMovement {
+        $quantityBefore = $stock->quantity;
+        $newQuantity = $quantityBefore + $delta;
+
+        if ($newQuantity < 0) {
+            throw BusinessRuleException::operationNotAllowed(
+                'penyesuaian stok',
+                'Stok tidak bisa negatif.'
+            );
+        }
+
+        if ($newQuantity < (int) $stock->reserved_quantity) {
+            throw BusinessRuleException::operationNotAllowed(
+                'penyesuaian stok',
+                "Penyesuaian akan membawa stok di bawah kuantitas yang sudah direservasi ({$stock->reserved_quantity})."
+            );
+        }
+
+        $costing = $this->policyManager->costing();
+        $appliedUnitCost = $unitCost ?? $costing->getCurrentUnitCost($stock);
+        $valueDelta = $delta === 0 ? 0 : $costing->recordAdjustment($stock, $delta, $appliedUnitCost);
+        $stock->refresh();
+
+        $absValue = abs($valueDelta);
+        $movementUnitCost = $delta !== 0
+            ? (int) round($absValue / abs($delta))
+            : $appliedUnitCost;
+
+        $movement = InventoryMovement::create([
+            'movement_number' => InventoryMovement::generateMovementNumber(InventoryMovement::TYPE_ADJUSTMENT),
+            'product_id' => $product->id,
+            'warehouse_id' => $warehouse->id,
+            'type' => InventoryMovement::TYPE_ADJUSTMENT,
+            'quantity' => $delta,
+            'quantity_before' => $quantityBefore,
+            'quantity_after' => $stock->quantity,
+            'unit_cost' => $movementUnitCost,
+            'total_cost' => $absValue,
+            'reference_type' => $referenceType,
+            'reference_id' => $referenceId,
+            'movement_date' => now(),
+            'notes' => $notes ?? 'Penyesuaian stok',
+            'created_by' => $this->getUserId(),
+        ]);
+
+        $product->syncCurrentStock();
+
+        $this->dispatch(new InventoryAdjusted(
+            productId: $product->id,
+            warehouseId: $warehouse->id,
+            adjustmentQuantity: $delta,
+            previousQuantity: $quantityBefore,
+            newQuantity: $stock->quantity,
+            movementId: $movement->id,
+            userId: $this->getUserId(),
+        ));
+
+        return $movement;
     }
 
     /**

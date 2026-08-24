@@ -995,6 +995,28 @@ if ($reflection->getDeclaringClass()->getName() === self::class && $method !== '
 
 **Tests:** `tests/Unit/Filters/QueryFilterTest.php`, `tests/Feature/Filters/QueryFilterDispatchTest.php`
 
+### 31. Stock Opname Applies Frozen Variance as a Delta Through Costing
+
+**Context:** Approving a stock opname while sales/receipts continue (POS-first). ADR-0049: all quantity/cost writes go through `InventoryServiceInterface` + `CostingStrategy`.
+
+**Problem:** `approve()` passed `counted_quantity` into `adjust()` as an absolute target. Intervening sales were overwritten (system 40 → sold 15 → approve count 38 set stock to 38 instead of 23). `adjust()` wrote `product_stocks` directly and skipped FIFO layers. The JE summed `items.variance_value` (count-time worksheet), so Inventory GL and stock valuation drifted.
+
+**Solution:** Apply the frozen snapshot variance: `InventoryService::adjustByDelta($varianceQuantity, $systemCost)`. `CostingStrategy::recordAdjustment()` owns quantity and layers. `HybridInventoryStrategy::onStockAdjustment()` journals from the movements just written, not from `variance_value`. Worksheet `variance_value` is a preview only.
+
+```php
+// ❌ BAD — absolute counted qty; bypasses costing; JE from worksheet
+$this->inventoryService->adjust($product, $warehouse, $item->counted_quantity, ...);
+$this->inventoryStrategy->onStockAdjustment($opname); // sums items.variance_value
+
+// ✅ GOOD
+$this->inventoryService->adjustByDelta($product, $warehouse, $item->variance_quantity, $item->system_cost, ...);
+$this->inventoryStrategy->onStockAdjustment($opname); // sums adjustment movements
+```
+
+**Do not** restore a silent FIFO fallback when layers cannot cover quantity — that hides a desync. Throw.
+
+**Tests:** `tests/Feature/Services/Inventory/StockOpnameServiceTest.php`, `tests/Feature/Services/Inventory/Costing/CostingStrategyTest.php`
+
 ---
 
 ## Indonesian Business Context

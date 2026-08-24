@@ -151,6 +151,40 @@ describe('FIFOCostingStrategy', function () {
 
         expect($strategy->getCurrentUnitCost($stock))->toBe(16000);
     });
+
+    it('creates a layer for a positive adjustment and consumes oldest on a negative one', function () {
+        $strategy = new FIFOCostingStrategy;
+        $product = Product::factory()->create();
+        $warehouse = Warehouse::factory()->create();
+        $stock = ProductStock::getOrCreate($product, $warehouse);
+
+        $strategy->recordStockIn($stock, 100, 10000);
+
+        expect($strategy->recordAdjustment($stock, 20, 12000))->toBe(240000)
+            ->and($stock->quantity)->toBe(120);
+
+        expect($strategy->recordAdjustment($stock, -30, 12000))->toBe(-300000)
+            ->and($stock->quantity)->toBe(90);
+
+        $layers = InventoryCostLayer::where('product_id', $product->id)
+            ->orderBy('id')
+            ->get();
+
+        expect($layers[0]->quantity)->toBe(70)
+            ->and($layers[1]->quantity)->toBe(20);
+    });
+
+    it('fails loudly when FIFO layers cannot cover a stock-out', function () {
+        $strategy = new FIFOCostingStrategy;
+        $product = Product::factory()->create();
+        $warehouse = Warehouse::factory()->create();
+        $stock = ProductStock::getOrCreate($product, $warehouse);
+        $stock->quantity = 50;
+        $stock->average_cost = 10000;
+        $stock->save();
+
+        $strategy->recordStockOut($stock, 10);
+    })->throws(\App\Exceptions\Domain\BusinessRuleException::class);
 });
 
 describe('InventoryService with FIFO policy', function () {
@@ -260,6 +294,26 @@ describe('InventoryService with FIFO policy', function () {
         expect($destLayers)->toHaveCount(1)
             ->and($destLayers[0]->quantity)->toBe(30)
             ->and($destLayers[0]->unit_cost)->toBe(10000);
+    });
+
+    it('keeps FIFO layers in sync with adjust()', function () {
+        $product = Product::factory()->create(['track_inventory' => true, 'purchase_price' => 10000]);
+        $warehouse = Warehouse::factory()->create();
+
+        /** @var InventoryService $service */
+        $service = app(InventoryService::class);
+
+        $service->stockIn($product, $warehouse, 100, 10000);
+        $service->adjust($product, $warehouse, 120);
+
+        $layers = InventoryCostLayer::where('product_id', $product->id)
+            ->where('warehouse_id', $warehouse->id)
+            ->orderBy('id')
+            ->get();
+
+        expect($layers->sum('quantity'))->toBe(120)
+            ->and($layers)->toHaveCount(2)
+            ->and($layers[1]->quantity)->toBe(20);
     });
 });
 

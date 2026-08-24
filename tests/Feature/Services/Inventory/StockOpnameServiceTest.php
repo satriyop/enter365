@@ -3,21 +3,31 @@
 declare(strict_types=1);
 
 use App\Enums\DocumentStatus;
+use App\Models\Accounting\AccountingPolicy;
+use App\Models\Accounting\JournalEntry;
+use App\Models\Inventory\InventoryCostLayer;
+use App\Models\Inventory\InventoryMovement;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\ProductStock;
 use App\Models\Inventory\StockOpname;
 use App\Models\Inventory\StockOpnameItem;
 use App\Models\Inventory\Warehouse;
 use App\Models\User;
+use App\Services\Inventory\InventoryService;
 use App\Services\Inventory\StockOpnameService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Once;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
+    $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\ChartOfAccountsSeeder']);
+    $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\FiscalPeriodSeeder']);
+
     $this->user = User::factory()->create();
     $this->actingAs($this->user);
     $this->service = app(StockOpnameService::class);
+    $this->inventory = app(InventoryService::class);
     $this->warehouse = Warehouse::factory()->create();
 });
 
@@ -139,5 +149,94 @@ describe('StockOpnameService workflow', function () {
         expect($report['summary']['items_with_variance'])->toBe(1);
         expect($report['summary']['items_with_shortage'])->toBe(1);
         expect($report['variances'])->toHaveCount(1);
+    });
+
+    it('applies count-time variance as a delta so intervening sales are kept', function () {
+        $product = Product::factory()->create(['track_inventory' => true, 'purchase_price' => 10000]);
+        $this->inventory->stockIn($product, $this->warehouse, 40, 10000);
+
+        $opname = $this->service->create(['warehouse_id' => $this->warehouse->id]);
+        $item = $this->service->addItem($opname, ['product_id' => $product->id]);
+        $opname = $this->service->startCounting($opname, $this->user->id);
+        $this->service->updateItem($item->fresh(), ['counted_quantity' => 38]);
+        $opname = $this->service->submitForReview($opname->fresh(), $this->user->id);
+
+        $this->inventory->stockOut($product, $this->warehouse, 15);
+
+        $opname = $this->service->approve($opname->fresh(), $this->user->id);
+
+        $stock = ProductStock::where('product_id', $product->id)
+            ->where('warehouse_id', $this->warehouse->id)
+            ->first();
+
+        expect($opname->status)->toBe(DocumentStatus::Completed)
+            ->and($stock->quantity)->toBe(23);
+
+        $movement = InventoryMovement::where('reference_type', StockOpname::class)
+            ->where('reference_id', $opname->id)
+            ->first();
+
+        expect($movement)->not->toBeNull()
+            ->and($movement->quantity)->toBe(-2)
+            ->and($movement->total_cost)->toBe(20000);
+
+        $entry = JournalEntry::where('source_type', StockOpname::class)
+            ->where('source_id', $opname->id)
+            ->with('lines')
+            ->first();
+
+        expect($entry)->not->toBeNull()
+            ->and((int) $entry->lines->sum('debit'))->toBe(20000)
+            ->and((int) $entry->lines->sum('credit'))->toBe(20000);
+    });
+
+    it('does not move stock when the count matches the snapshot after intervening sales', function () {
+        $product = Product::factory()->create(['track_inventory' => true, 'purchase_price' => 10000]);
+        $this->inventory->stockIn($product, $this->warehouse, 40, 10000);
+
+        $opname = $this->service->create(['warehouse_id' => $this->warehouse->id]);
+        $item = $this->service->addItem($opname, ['product_id' => $product->id]);
+        $opname = $this->service->startCounting($opname, $this->user->id);
+        $this->service->updateItem($item->fresh(), ['counted_quantity' => 40]);
+        $opname = $this->service->submitForReview($opname->fresh(), $this->user->id);
+
+        $this->inventory->stockOut($product, $this->warehouse, 15);
+        $this->service->approve($opname->fresh(), $this->user->id);
+
+        $stock = ProductStock::where('product_id', $product->id)
+            ->where('warehouse_id', $this->warehouse->id)
+            ->first();
+
+        expect($stock->quantity)->toBe(25);
+
+        expect(InventoryMovement::where('reference_type', StockOpname::class)
+            ->where('reference_id', $opname->id)
+            ->exists())->toBeFalse();
+    });
+
+    it('keeps FIFO layers in sync with an opname surplus', function () {
+        AccountingPolicy::query()->update(['costing_method' => 'fifo']);
+        Once::flush();
+
+        $product = Product::factory()->create(['track_inventory' => true, 'purchase_price' => 10000]);
+        $this->inventory->stockIn($product, $this->warehouse, 40, 10000);
+
+        $opname = $this->service->create(['warehouse_id' => $this->warehouse->id]);
+        $item = $this->service->addItem($opname, ['product_id' => $product->id]);
+        $opname = $this->service->startCounting($opname, $this->user->id);
+        $this->service->updateItem($item->fresh(), ['counted_quantity' => 45]);
+        $opname = $this->service->submitForReview($opname->fresh(), $this->user->id);
+        $this->service->approve($opname->fresh(), $this->user->id);
+
+        $layers = InventoryCostLayer::where('product_id', $product->id)
+            ->where('warehouse_id', $this->warehouse->id)
+            ->orderBy('id')
+            ->get();
+
+        expect($layers)->toHaveCount(2)
+            ->and($layers[0]->quantity)->toBe(40)
+            ->and($layers[1]->quantity)->toBe(5)
+            ->and($layers[1]->unit_cost)->toBe(10000)
+            ->and($layers->sum('quantity'))->toBe(45);
     });
 });
