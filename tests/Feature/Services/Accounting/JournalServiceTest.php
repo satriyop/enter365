@@ -1133,3 +1133,54 @@ describe('IS-M1: Currency tracking on JE lines', function () {
             ->and((float) $reversalArLine->exchange_rate)->toBe(15000.0);
     });
 });
+
+describe('JournalEntry soft deletes', function () {
+    it('soft-deletes an unposted entry so the ledger filter is real', function () {
+        $entry = $this->service->createEntry([
+            'entry_date' => now()->toDateString(),
+            'description' => 'Draft to discard',
+            'lines' => [
+                [
+                    'account_code' => '1-1000',
+                    'debit' => 1000,
+                    'credit' => 0,
+                ],
+                [
+                    'account_code' => '4-1001',
+                    'debit' => 0,
+                    'credit' => 1000,
+                ],
+            ],
+        ]);
+
+        $id = $entry->id;
+        $entry->delete();
+
+        expect(JournalEntry::query()->find($id))->toBeNull()
+            ->and(JournalEntry::withTrashed()->find($id)?->trashed())->toBeTrue();
+    });
+
+    it('still refuses to delete a posted entry', function () {
+        $entry = $this->service->createEntry([
+            'entry_date' => now()->toDateString(),
+            'description' => 'Posted entry',
+            'lines' => [
+                [
+                    'account_code' => '1-1000',
+                    'debit' => 1000,
+                    'credit' => 0,
+                ],
+                [
+                    'account_code' => '4-1001',
+                    'debit' => 0,
+                    'credit' => 1000,
+                ],
+            ],
+        ]);
+
+        $this->service->postEntry($entry);
+
+        expect(fn () => $entry->fresh()->delete())
+            ->toThrow(DocumentLockedException::class);
+    });
+});
