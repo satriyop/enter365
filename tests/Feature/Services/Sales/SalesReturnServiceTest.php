@@ -252,6 +252,52 @@ describe('Approval Pipeline', function () {
 
         expect($approved->status)->toBe(DocumentStatus::Approved);
     });
+
+    test('credit note relieves the invoice without treating the return as cash', function () {
+        $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\FiscalPeriodSeeder']);
+
+        $invoice = Invoice::factory()->create([
+            'contact_id' => $this->contact->id,
+            'status' => DocumentStatus::Sent,
+            'total_amount' => 1_000_000,
+            'paid_amount' => 0,
+        ]);
+
+        $return = SalesReturn::factory()
+            ->has(SalesReturnItem::factory()->state([
+                'product_id' => $this->product->id,
+                'quantity' => 1,
+                'unit_price' => 1_000_000,
+                'line_total' => 1_000_000,
+            ]), 'items')
+            ->create([
+                'status' => DocumentStatus::Submitted,
+                'invoice_id' => $invoice->id,
+                'contact_id' => $this->contact->id,
+                'warehouse_id' => $this->warehouse->id,
+                'subtotal' => 1_000_000,
+                'tax_amount' => 0,
+                'tax_rate' => 0,
+                'total_amount' => 1_000_000,
+            ]);
+
+        $this->service->approve($return, $this->user->id);
+
+        $invoice->refresh();
+
+        expect($invoice->paid_amount)->toBe(0)
+            ->and($invoice->credited_amount)->toBe(1_000_000)
+            ->and($invoice->getOutstandingAmount())->toBe(0)
+            ->and($invoice->status)->toBe(DocumentStatus::Paid);
+
+        $this->service->cancel($return->fresh(), 'Dibatalkan');
+
+        $invoice->refresh();
+
+        expect($invoice->credited_amount)->toBe(0)
+            ->and($invoice->paid_amount)->toBe(0)
+            ->and($invoice->getOutstandingAmount())->toBe(1_000_000);
+    });
 });
 
 describe('Query Methods', function () {

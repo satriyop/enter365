@@ -9,6 +9,7 @@ use App\Contracts\Accounting\JournalServiceInterface;
 use App\Domain\Sales\SalesReturns\Contracts\ApprovalHandlerInterface;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Sales\SalesReturn;
+use App\Services\Sales\Invoice\InvoicePaymentStatusService;
 
 /**
  * Handles journal entry creation when a sales return is approved.
@@ -24,7 +25,8 @@ class JournalEntryHandler implements ApprovalHandlerInterface
 {
     public function __construct(
         private JournalServiceInterface $journalService,
-        private AccountLookupServiceInterface $accountLookup
+        private AccountLookupServiceInterface $accountLookup,
+        private InvoicePaymentStatusService $invoicePaymentStatus,
     ) {}
 
     public function handle(SalesReturn $salesReturn): void
@@ -91,11 +93,11 @@ class JournalEntryHandler implements ApprovalHandlerInterface
         $salesReturn->journal_entry_id = $entry->id;
         $salesReturn->save();
 
-        // Update invoice subsidiary ledger to match AR credit
         if ($salesReturn->invoice_id && $salesReturn->invoice) {
-            $invoice = $salesReturn->invoice;
-            $invoice->paid_amount += $salesReturn->total_amount;
-            $invoice->save();
+            $this->invoicePaymentStatus->applyCreditNote(
+                $salesReturn->invoice,
+                $salesReturn->total_amount
+            );
         }
     }
 

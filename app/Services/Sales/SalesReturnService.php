@@ -21,6 +21,7 @@ use App\Services\Base\Traits\WithDocuments;
 use App\Services\Base\Traits\WithEventDispatching;
 use App\Services\Base\Traits\WithOperationContext;
 use App\Services\Base\Traits\WithTransaction;
+use App\Services\Sales\Invoice\InvoicePaymentStatusService;
 use Illuminate\Database\Eloquent\Model;
 
 class SalesReturnService implements SalesReturnServiceInterface
@@ -47,6 +48,7 @@ class SalesReturnService implements SalesReturnServiceInterface
         JournalServiceInterface $journalService,
         InventoryServiceInterface $inventoryService,
         private SalesReturnDomainFactory $domainFactory,
+        private InvoicePaymentStatusService $invoicePaymentStatus,
     ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->logger = $logger;
@@ -356,11 +358,11 @@ class SalesReturnService implements SalesReturnServiceInterface
             $salesReturn->journal_entry_id = null;
         }
 
-        // Reverse invoice paid_amount adjustment
         if ($salesReturn->invoice_id && $salesReturn->invoice) {
-            $invoice = $salesReturn->invoice;
-            $invoice->paid_amount = max(0, $invoice->paid_amount - $salesReturn->total_amount);
-            $invoice->save();
+            $this->invoicePaymentStatus->reverseCreditNote(
+                $salesReturn->invoice,
+                $salesReturn->total_amount
+            );
         }
 
         // Reverse inventory stock-in

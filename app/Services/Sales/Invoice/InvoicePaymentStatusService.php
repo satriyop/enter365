@@ -134,8 +134,8 @@ class InvoicePaymentStatusService
             return $invoice;
         }
 
-        // Determine target status based on payment
-        if ($invoice->paid_amount >= $invoice->total_amount) {
+        // Determine target status from cash + credit-note relief
+        if ($invoice->getOutstandingAmount() === 0) {
             // Already paid? No change needed
             if ($invoice->status === DocumentStatus::Paid) {
                 return $invoice;
@@ -144,7 +144,7 @@ class InvoicePaymentStatusService
             return $this->markAsPaid($invoice);
         }
 
-        if ($invoice->paid_amount > 0) {
+        if ($invoice->getSettledAmount() > 0) {
             // Already partial? No change needed
             if ($invoice->status === DocumentStatus::Partial) {
                 return $invoice;
@@ -154,7 +154,7 @@ class InvoicePaymentStatusService
         }
 
         // No payment remaining - revert to Sent or Overdue
-        if ($invoice->paid_amount === 0) {
+        if ($invoice->getSettledAmount() === 0) {
             // If was paid or partial, revert back to appropriate status
             if (in_array($invoice->status, [DocumentStatus::Paid, DocumentStatus::Partial])) {
                 // Check if overdue
@@ -177,5 +177,34 @@ class InvoicePaymentStatusService
         }
 
         return $invoice;
+    }
+
+    /**
+     * Apply a credit note against AR. Does not treat the amount as cash.
+     */
+    public function applyCreditNote(Invoice $invoice, int $amount): Invoice
+    {
+        return $this->executeInTransaction('apply_credit_note', function () use ($invoice, $amount) {
+            $locked = Invoice::query()->lockForUpdate()->findOrFail($invoice->id);
+            $credit = min(max(0, $amount), $locked->getOutstandingAmount());
+            $locked->credited_amount = (int) $locked->credited_amount + $credit;
+            $locked->save();
+
+            return $this->updatePaymentStatus($locked);
+        }, ['invoice_id' => $invoice->id]);
+    }
+
+    /**
+     * Reverse a previously applied credit note.
+     */
+    public function reverseCreditNote(Invoice $invoice, int $amount): Invoice
+    {
+        return $this->executeInTransaction('reverse_credit_note', function () use ($invoice, $amount) {
+            $locked = Invoice::query()->lockForUpdate()->findOrFail($invoice->id);
+            $locked->credited_amount = max(0, (int) $locked->credited_amount - max(0, $amount));
+            $locked->save();
+
+            return $this->updatePaymentStatus($locked);
+        }, ['invoice_id' => $invoice->id]);
     }
 }

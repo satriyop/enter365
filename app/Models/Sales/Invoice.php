@@ -50,6 +50,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $exchange_rate
  * @property int $base_currency_total
  * @property int $paid_amount
+ * @property int $credited_amount
  * @property DocumentStatus $status
  * @property int $reminder_count
  * @property Carbon|null $last_reminder_at
@@ -134,6 +135,7 @@ class Invoice extends Model
             'exchange_rate' => 'decimal:4',
             'base_currency_total' => 'integer',
             'paid_amount' => 'integer',
+            'credited_amount' => 'integer',
             'last_reminder_at' => 'datetime',
             'nsfp_assigned_at' => 'datetime',
             'is_nsfp_cancelled' => 'boolean',
@@ -242,7 +244,15 @@ class Invoice extends Model
      */
     public function getOutstandingAmount(): int
     {
-        return $this->total_amount - $this->paid_amount;
+        return max(0, $this->total_amount - $this->getSettledAmount());
+    }
+
+    /**
+     * Cash collected plus credit-note relief.
+     */
+    public function getSettledAmount(): int
+    {
+        return (int) $this->paid_amount + (int) $this->credited_amount;
     }
 
     /**
@@ -250,7 +260,7 @@ class Invoice extends Model
      */
     public function isFullyPaid(): bool
     {
-        return $this->paid_amount >= $this->total_amount;
+        return $this->getOutstandingAmount() === 0;
     }
 
     /**

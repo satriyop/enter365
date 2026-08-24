@@ -48,7 +48,7 @@ class InvoiceStateMachine extends AbstractStateMachine
             DocumentStatus::Sent->value,
             DocumentStatus::Paid->value,
             fn () => [
-                'passes' => $this->invoice->paid_amount >= $this->invoice->total_amount,
+                'passes' => $this->invoice->getOutstandingAmount() === 0,
                 'message' => 'Jumlah pembayaran belum mencukupi.',
             ]
         );
@@ -57,7 +57,7 @@ class InvoiceStateMachine extends AbstractStateMachine
             DocumentStatus::Partial->value,
             DocumentStatus::Paid->value,
             fn () => [
-                'passes' => $this->invoice->paid_amount >= $this->invoice->total_amount,
+                'passes' => $this->invoice->getOutstandingAmount() === 0,
                 'message' => 'Jumlah pembayaran belum mencukupi.',
             ]
         );
@@ -66,7 +66,7 @@ class InvoiceStateMachine extends AbstractStateMachine
             DocumentStatus::Overdue->value,
             DocumentStatus::Paid->value,
             fn () => [
-                'passes' => $this->invoice->paid_amount >= $this->invoice->total_amount,
+                'passes' => $this->invoice->getOutstandingAmount() === 0,
                 'message' => 'Jumlah pembayaran belum mencukupi.',
             ]
         );
@@ -95,7 +95,7 @@ class InvoiceStateMachine extends AbstractStateMachine
             DocumentStatus::Sent->value,
             DocumentStatus::Partial->value,
             fn () => [
-                'passes' => $this->invoice->paid_amount > 0 && $this->invoice->paid_amount < $this->invoice->total_amount,
+                'passes' => $this->invoice->getSettledAmount() > 0 && $this->invoice->getOutstandingAmount() > 0,
                 'message' => 'Status partial membutuhkan pembayaran sebagian.',
             ]
         );
@@ -104,7 +104,7 @@ class InvoiceStateMachine extends AbstractStateMachine
             DocumentStatus::Overdue->value,
             DocumentStatus::Partial->value,
             fn () => [
-                'passes' => $this->invoice->paid_amount > 0 && $this->invoice->paid_amount < $this->invoice->total_amount,
+                'passes' => $this->invoice->getSettledAmount() > 0 && $this->invoice->getOutstandingAmount() > 0,
                 'message' => 'Status partial membutuhkan pembayaran sebagian.',
             ]
         );
@@ -114,7 +114,7 @@ class InvoiceStateMachine extends AbstractStateMachine
             DocumentStatus::Paid->value,
             DocumentStatus::Partial->value,
             fn () => [
-                'passes' => $this->invoice->paid_amount > 0 && $this->invoice->paid_amount < $this->invoice->total_amount,
+                'passes' => $this->invoice->getSettledAmount() > 0 && $this->invoice->getOutstandingAmount() > 0,
                 'message' => 'Status partial membutuhkan pembayaran sebagian.',
             ]
         );
@@ -124,7 +124,7 @@ class InvoiceStateMachine extends AbstractStateMachine
             DocumentStatus::Paid->value,
             DocumentStatus::Sent->value,
             fn () => [
-                'passes' => $this->invoice->paid_amount === 0,
+                'passes' => $this->invoice->getSettledAmount() === 0,
                 'message' => 'Faktur masih memiliki pembayaran.',
             ]
         );
@@ -134,7 +134,7 @@ class InvoiceStateMachine extends AbstractStateMachine
             DocumentStatus::Partial->value,
             DocumentStatus::Sent->value,
             fn () => [
-                'passes' => $this->invoice->paid_amount === 0,
+                'passes' => $this->invoice->getSettledAmount() === 0,
                 'message' => 'Faktur masih memiliki pembayaran.',
             ]
         );

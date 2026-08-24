@@ -1065,6 +1065,16 @@ $description = filled($description) ? trim($description) : 'Reversal of '.$entry
 
 **Tests:** `tests/Feature/Pos/PosServiceTest.php`
 
+### 35. Credit Notes Are Not Cash — Use `credited_amount`
+
+**Context:** Approving a sales return credits AR. Invoice `paid_amount` is cash collected.
+
+**Problem:** The SR journal handler did `$invoice->paid_amount += $sr->total_amount` with no lock, no cap, and no status transition. Collection reports treated credit notes as cash. State-machine Paid guards also checked `paid_amount` only, so a fully returned invoice stayed Sent/Overdue and kept getting dunned.
+
+**Solution:** `invoices.credited_amount`. Outstanding = total − paid − credited. `InvoicePaymentStatusService::applyCreditNote()` / `reverseCreditNote()` lock the invoice, cap at outstanding, then `updatePaymentStatus()`. InvoiceStateMachine Paid/Partial/Sent guards use `getSettledAmount()` / `getOutstandingAmount()`, not `paid_amount` alone.
+
+**Tests:** `tests/Feature/Services/Sales/SalesReturnServiceTest.php`
+
 ---
 
 ## Indonesian Business Context
