@@ -13,9 +13,6 @@ use App\Domain\Sales\Pricing\MarginBasedPricingStrategy;
 use App\Domain\Sales\Pricing\StandardPricingStrategy;
 use App\Domain\Shared\Approval\AmountBasedApprovalStrategy;
 use App\Domain\Shared\Approval\AutoApproveStrategy;
-use App\Domain\Shared\NumberGeneration\ProjectBasedNumberStrategy;
-use App\Domain\Shared\NumberGeneration\SequentialNumberStrategy;
-use App\Services\Shared\NumberGenerationManager;
 use Illuminate\Support\ServiceProvider;
 
 /**

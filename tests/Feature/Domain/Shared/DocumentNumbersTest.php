@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Domain\Shared\DocumentNumbers;
+use App\Domain\Shared\NumberGeneration\ProjectBasedNumberStrategy;
+use App\Domain\Shared\NumberGeneration\SequentialNumberStrategy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 
@@ -121,5 +123,25 @@ describe('DocumentNumbers', function () {
         DB::disableQueryLog();
 
         expect($queries)->not->toContain('like');
+    });
+});
+
+describe('NumberGeneration strategies delegate to DocumentNumbers', function () {
+    it('issues sequential numbers from the sequence table', function () {
+        $strategy = new SequentialNumberStrategy;
+
+        expect($strategy->generate('JE-202608-', 'journal_entries', 'entry_number'))->toBe('JE-202608-0001')
+            ->and($strategy->generate('JE-202608-', 'journal_entries', 'entry_number'))->toBe('JE-202608-0002');
+    });
+
+    it('issues project-based numbers without MySQL SUBSTRING_INDEX', function () {
+        $strategy = new ProjectBasedNumberStrategy;
+
+        expect($strategy->generateWithContext('WO', 'journal_entries', 'entry_number', [
+            'project_number' => 'PRJ-001',
+        ]))->toBe('PRJ-001/WO/001')
+            ->and($strategy->generateWithContext('WO', 'journal_entries', 'entry_number', [
+                'project_number' => 'PRJ-001',
+            ]))->toBe('PRJ-001/WO/002');
     });
 });
