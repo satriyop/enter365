@@ -43,10 +43,19 @@ class InvoicePaymentService extends BaseService
     public function recordPayment(Invoice $invoice, int $amount): Invoice
     {
         return $this->executeInTransaction('record_payment', function () use ($invoice, $amount) {
-            $invoice->paid_amount += $amount;
-            $invoice->save();
+            $locked = Invoice::query()->lockForUpdate()->findOrFail($invoice->id);
+            $outstanding = $locked->getOutstandingAmount();
 
-            return $this->updatePaymentStatus($invoice);
+            if ($amount < 1 || $amount > $outstanding) {
+                throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                    'pencatatan pembayaran',
+                    "Jumlah pembayaran harus antara 1 dan sisa tagihan ({$outstanding})."
+                );
+            }
+
+            $locked->increment('paid_amount', $amount);
+
+            return $this->updatePaymentStatus($locked->fresh());
         }, ['invoice_id' => $invoice->id, 'amount' => $amount]);
     }
 
@@ -56,10 +65,10 @@ class InvoicePaymentService extends BaseService
     public function reversePayment(Invoice $invoice, int $amount): Invoice
     {
         return $this->executeInTransaction('reverse_payment', function () use ($invoice, $amount) {
-            $invoice->paid_amount = max(0, $invoice->paid_amount - $amount);
-            $invoice->save();
+            $locked = Invoice::query()->lockForUpdate()->findOrFail($invoice->id);
+            $locked->increment('paid_amount', -min($amount, (int) $locked->paid_amount));
 
-            return $this->updatePaymentStatus($invoice);
+            return $this->updatePaymentStatus($locked->fresh());
         }, ['invoice_id' => $invoice->id, 'amount' => $amount]);
     }
 

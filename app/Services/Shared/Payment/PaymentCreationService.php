@@ -289,8 +289,15 @@ class PaymentCreationService extends BaseService
         }
 
         $payables = collect();
+        $allocations = $allocations->sortBy('allocatable_id')->values();
 
         foreach ($allocations as $allocation) {
+            if ($allocation['amount'] < 1) {
+                throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                    'alokasi pembayaran',
+                    'Jumlah alokasi harus lebih dari 0.'
+                );
+            }
             /** @var class-string<Invoice|Bill> $modelClass */
             $modelClass = $allocation['model_class'];
             $payable = $modelClass::lockForUpdate()->findOrFail($allocation['allocatable_id']);
@@ -399,10 +406,17 @@ class PaymentCreationService extends BaseService
     private function transitionPayableStatus(Model $payable, int $previousPaidAmount): void
     {
         /** @var Invoice|Bill $payable */
-        $isFullyPaid = $payable->paid_amount >= $payable->total_amount;
+        $isFullyPaid = $payable->getOutstandingAmount() <= 0;
         $targetStatus = $isFullyPaid ? DocumentStatus::Paid : DocumentStatus::Partial;
 
-        if ($payable->stateMachine()->canTransitionTo($targetStatus)) {
+        if ($payable->status !== $targetStatus) {
+            if (! $payable->stateMachine()->canTransitionTo($targetStatus)) {
+                throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                    'status pembayaran',
+                    "Tidak bisa mengubah status dokumen ke {$targetStatus->value} setelah pembayaran."
+                );
+            }
+
             $payable->stateMachine()->transitionTo($targetStatus, [
                 'user_id' => $this->getUserId(),
             ]);

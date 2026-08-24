@@ -1075,6 +1075,94 @@ $description = filled($description) ? trim($description) : 'Reversal of '.$entry
 
 **Tests:** `tests/Feature/Services/Sales/SalesReturnServiceTest.php`
 
+### 36. Completing a Receipt Locks the Document; Inventory Cost Is Net of Discount, Exclusive of Tax
+
+**Context:** `GoodsReceiptNoteService::complete()` writes stock and PO `quantity_received`. GRN `unit_price` is tax-exclusive; `calculateLineTotal()` adds PPN after the line discount.
+
+**Problem:** `canComplete()` ran outside the transaction with no `lockForUpdate()` on the GRN, so a retried Complete posted `stockIn()` twice. `PurchaseOrderItem::receive()` did `$this->quantity_received += $qty` on a stale model. `stockIn(..., $item->unit_price)` ignored the discount and, if anyone treated list price as tax-inclusive, would capitalise PPN into inventory. The perpetual GRNI journal summed `qty * unit_price` the same way, so Inventory GL diverged from stock valuation.
+
+**Solution:** Lock the GRN inside `executeInTransaction()`, then re-check `canComplete()`. `receive()` locks the PO line and `increment()`s in SQL. Capitalise with `GoodsReceiptNoteItem::inventoryTotalCost()` / `inventoryUnitCost()` (after discount, no tax). Perpetual `onGoodsReceived()` journals that same net amount.
+
+```php
+// ❌ BAD
+if (! $grn->stateMachine()->canComplete()) { throw ...; }
+DB::transaction(function () use ($grn) {
+    $this->inventoryService->stockIn($product, $wh, $qty, $item->unit_price, ...);
+    $poItem->quantity_received += $qty; // stale in-memory
+});
+
+// ✅ GOOD
+return $this->executeInTransaction('complete', function () use ($grn, $userId) {
+    $grn = GoodsReceiptNote::query()->lockForUpdate()->findOrFail($grn->id);
+    if (! $grn->stateMachine()->canComplete()) { throw ...; }
+    $this->inventoryService->stockIn($product, $wh, $qty, $item->inventoryUnitCost(), ...);
+    $poItem->receive($qty); // lock + increment
+});
+```
+
+**Tests:** `tests/Feature/Services/Purchasing/GoodsReceiptNoteServiceTest.php` (Completion integrity, PurchaseOrderItem::receive)
+
+### 37. `recordStockOut()` Returns Exact Total Cost — Never `qty × round(total/qty)`
+
+**Context:** FIFO layers store integer `unit_cost`. An issue that spans layers (or uneven sen) has a true total that does not divide evenly.
+
+**Problem:** `FIFOCostingStrategy::recordStockOut()` returned `round($totalCost / $quantity)`. Callers then wrote `total_cost = quantity * unitCost`. 3 units costing Rp 1,000 became unit 333 and COGS 999 — Inventory GL and the FIFO sub-ledger permanently diverge. POS COGS reads `abs($movement->total_cost)`.
+
+**Solution:** The costing contract returns the exact integer `$totalCost`. Movements persist that total. Display `unit_cost` may be `round(total / qty)`. Negative `recordAdjustment()` is `-recordStockOut()`, not `-(qty * roundedUnit)`.
+
+```php
+// ❌ BAD
+return (int) round($totalCost / $quantity);
+$movement->total_cost = $quantity * $unitCost;
+
+// ✅ GOOD
+return $totalCost;
+$movement->total_cost = $totalCost;
+$movement->unit_cost = $quantity > 0 ? (int) round($totalCost / $quantity) : 0;
+```
+
+**Tests:** `tests/Feature/Services/Inventory/Costing/CostingStrategyTest.php`
+
+### 38. Inventory Locks: Product Cache, Warehouse Order, Unique Retry, Free Stock
+
+**Context:** Every stock mutation goes through `ProductStock::lockForStock()` and `Product::syncCurrentStock()`.
+
+**Problem:** `lockForStock()` ended in `first()` (nullable vs `: self`) and `firstOrCreate` raced the unique `(product_id, warehouse_id)` index. `transfer()` locked from-warehouse then to-warehouse (AB-BA deadlock) and checked `quantity` instead of `getAvailableQuantity()`, so reserved stock could be transferred away. `syncCurrentStock()` summed unlocked warehouse rows — two outlets selling the same SKU both wrote a stale SUM.
+
+**Solution:** `lockForStock()` retries unique collisions and never returns null. Transfers lock warehouses by ascending `id` and validate free stock. `syncCurrentStock()` `lockForUpdate()`s the product row then writes `SUM(product_stocks.quantity)`. Deadlock-prone transfers pass `DB::transaction($callback, 3)`.
+
+**Tests:** `tests/Feature/Services/Inventory/InventoryServiceTest.php`, `tests/Feature/Services/Inventory/InventoryServiceReservationTest.php`
+
+### 39. Journals Need an Open Period; Lines Are Signed and Exclusive
+
+**Context:** `JournalEntryService::createEntry()` / `postEntry()`. POS already refused a missing period; the rest of the app did not.
+
+**Problem:** No matching fiscal period stored `fiscal_period_id = null`. Period-scoped reports and year-end skipped the entry while the trial balance included it. Lines allowed `debit` and `credit` both non-zero, or negatives, so `isBalanced()` could pass while `SUM(debit)` on the TB was garbage.
+
+**Solution:** `FiscalPeriod::assertOpenForPosting($date)` — missing / closed / locked is an error. Use it from journal create/post and POS tills. `JournalEntryLine::saving` rejects negatives and both-sides lines. PostgreSQL CHECK `journal_entry_lines_signed_exclusive` matches the model guard (SQLite has no ALTER CHECK — the model is the suite's net).
+
+```php
+// ❌ BAD
+$period = FiscalPeriod::forDate($date);
+$entry->fiscal_period_id = $period?->id; // null is fine
+
+// ✅ GOOD
+$period = FiscalPeriod::assertOpenForPosting($date);
+$entry->fiscal_period_id = $period->id;
+```
+
+**Tests:** `tests/Feature/Services/Accounting/JournalServiceTest.php`
+
+### 40. POS Session Methods Are Owner-Scoped; Holds Are Taken, Not Copied; QRIS Is Clearing
+
+**Context:** Every session-scoped POS HTTP method. `takeHold()`. `openSession()`. QRIS tender.
+
+**Problem:** `show()` and `catalog()` checked permission only — any cashier could read another till's sales and stock. `takeHold()` `replicate()`d then deleted, so retries returned `id: null` and a lost response destroyed the cart. Two open sessions per user were allowed (no partial unique index), and reopening silently reused the wrong warehouse. QRIS defaulted to the bank/kas-kecil code, so T+1 QRIS receipts inflated Bank on sale date.
+
+**Solution:** `assertOwnSession()` on every session-scoped endpoint (admin may inspect). Mark `taken_at` instead of deleting holds; retries return the same id. Lock the cashier's open row; unique index `pos_sessions_one_open_per_user` where `status = 'open'`. If an open session exists at another warehouse, throw. Snapshot `qris` from `1-1112` Piutang QRIS — settlement/MDR is a later JE, not a sale-time Bank debit.
+
+**Tests:** `tests/Feature/Pos/PosServiceTest.php`, `tests/Feature/Pos/PosOwnerJourneyTest.php`
+
 ---
 
 ## Indonesian Business Context

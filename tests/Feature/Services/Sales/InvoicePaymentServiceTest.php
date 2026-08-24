@@ -60,6 +60,13 @@ describe('InvoicePaymentService - recordPayment', function () {
             ->and($result->status)->toBe(DocumentStatus::Paid);
     });
 
+    it('rejects a payment larger than outstanding', function () {
+        $invoice = createSentInvoice();
+        $invoice->forceFill(['total_amount' => 1000000, 'paid_amount' => 0])->save();
+
+        $this->service->recordPayment($invoice, 1000001);
+    })->throws(\App\Exceptions\Domain\BusinessRuleException::class);
+
 });
 
 describe('InvoicePaymentService - reversePayment', function () {

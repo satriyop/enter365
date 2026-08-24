@@ -22,6 +22,9 @@ use Laravel\Sanctum\Sanctum;
 */
 
 uses(Tests\TestCase::class)->in('Feature', 'Unit', 'Contract', 'Browser');
+uses()->group('browser')->in('Browser');
+
+fake()->seed(4242);
 
 /*
 |--------------------------------------------------------------------------

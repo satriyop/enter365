@@ -17,6 +17,7 @@ use App\Exceptions\Domain\StateTransitionException;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Core\AuditLog;
 use App\Models\Sales\DeliveryOrder;
+use App\Models\Sales\DownPayment;
 use App\Models\Sales\DownPaymentApplication;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\SalesReturn;
@@ -164,9 +165,8 @@ class InvoiceVoidService
                     $this->journalService->reverseEntry($application->journalEntry);
                 }
 
-                // Restore down payment balance
-                $dp = $application->downPayment;
-                $dp->applied_amount -= $application->amount;
+                $dp = DownPayment::query()->lockForUpdate()->findOrFail($application->down_payment_id);
+                $dp->applied_amount = max(0, (int) $dp->applied_amount - (int) $application->amount);
                 $dp->updateStatus();
                 $dp->save();
 

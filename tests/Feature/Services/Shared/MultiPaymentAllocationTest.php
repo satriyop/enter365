@@ -470,6 +470,29 @@ describe('FX multi-allocation', function () {
 
 describe('allocation total mismatch', function () {
 
+    it('rejects a negative allocation even when the totals match', function () {
+        $invoice1 = Invoice::factory()->sent()->create(['total_amount' => 2_000_000, 'paid_amount' => 0]);
+        InvoiceItem::factory()->create(['invoice_id' => $invoice1->id, 'line_total' => 2_000_000]);
+        $invoice2 = Invoice::factory()->sent()->create([
+            'total_amount' => 1_000_000,
+            'paid_amount' => 0,
+            'contact_id' => $invoice1->contact_id,
+        ]);
+        InvoiceItem::factory()->create(['invoice_id' => $invoice2->id, 'line_total' => 1_000_000]);
+
+        $this->service->create([
+            'type' => Payment::TYPE_RECEIVE,
+            'contact_id' => $invoice1->contact_id,
+            'cash_account_id' => $this->cashAccount->id,
+            'amount' => 1_000_000,
+            'payment_date' => now()->toDateString(),
+            'allocations' => [
+                ['allocatable_type' => 'invoice', 'allocatable_id' => $invoice1->id, 'amount' => 2_000_000],
+                ['allocatable_type' => 'invoice', 'allocatable_id' => $invoice2->id, 'amount' => -1_000_000],
+            ],
+        ]);
+    })->throws(BusinessRuleException::class);
+
     it('rejects payment when allocations sum less than total', function () {
         $invoice = Invoice::factory()->sent()->create(['total_amount' => 300000, 'paid_amount' => 0]);
         InvoiceItem::factory()->create(['invoice_id' => $invoice->id, 'line_total' => 300000]);
