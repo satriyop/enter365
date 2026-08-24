@@ -235,10 +235,15 @@ class StockOpnameService extends BaseService implements StockOpnameServiceInterf
 
         // Refresh system quantities before starting
         return $this->executeInTransaction('start_counting', function () use ($opname, $userId) {
-            foreach ($opname->items as $item) {
-                $stock = ProductStock::where('warehouse_id', $opname->warehouse_id)
-                    ->where('product_id', $item->product_id)
-                    ->first();
+            $items = $opname->items()->get();
+            $stocks = ProductStock::query()
+                ->where('warehouse_id', $opname->warehouse_id)
+                ->whereIn('product_id', $items->pluck('product_id'))
+                ->get()
+                ->keyBy('product_id');
+
+            foreach ($items as $item) {
+                $stock = $stocks->get($item->product_id);
 
                 if ($stock) {
                     $item->captureSystemQuantities($stock);

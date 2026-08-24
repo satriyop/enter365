@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Exceptions\Domain\BusinessRuleException;
 use App\Models\Accounting\AccountingPolicy;
 use App\Models\Inventory\InventoryCostLayer;
 use App\Models\Inventory\InventoryMovement;
@@ -55,6 +56,20 @@ describe('WeightedAverageCostingStrategy', function () {
 
         expect($totalCost)->toBe(360000)
             ->and($stock->quantity)->toBe(120);
+    });
+
+    it('does not report cost for units that were never on hand', function () {
+        $strategy = new WeightedAverageCostingStrategy;
+        $product = Product::factory()->create();
+        $warehouse = Warehouse::factory()->create();
+        $stock = ProductStock::getOrCreate($product, $warehouse);
+
+        $strategy->recordStockIn($stock, 2, 10000);
+
+        expect(fn () => $strategy->recordStockOut($stock, 10))
+            ->toThrow(BusinessRuleException::class, 'Stok tidak mencukupi');
+
+        expect((int) $stock->fresh()->quantity)->toBe(2);
     });
 });
 

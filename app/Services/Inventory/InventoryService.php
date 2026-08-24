@@ -528,7 +528,10 @@ class InventoryService extends BaseService implements InventoryServiceInterface
     {
         $query = ProductStock::query()
             ->with(['product', 'warehouse'])
-            ->where('quantity', '>', 0);
+            ->where(function ($stocks) {
+                $stocks->where('quantity', '!=', 0)
+                    ->orWhere('total_value', '!=', 0);
+            });
 
         if ($warehouse) {
             $query->where('warehouse_id', $warehouse->id);

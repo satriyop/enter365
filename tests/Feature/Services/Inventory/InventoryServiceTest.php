@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Exceptions\Domain\BusinessRuleException;
 use App\Models\Inventory\InventoryMovement;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\ProductStock;
@@ -197,6 +198,37 @@ describe('InventoryService reporting', function () {
 
         expect($valuation)->toHaveCount(2);
         expect($valuation->first()->total_value)->toBe(1000000);
+    });
+
+    it('includes negative on-hand rows in stock valuation', function () {
+        $this->service->stockIn($this->product, $this->warehouse, 10, 10000);
+
+        $stock = ProductStock::query()
+            ->where('product_id', $this->product->id)
+            ->where('warehouse_id', $this->warehouse->id)
+            ->firstOrFail();
+        $stock->forceFill([
+            'quantity' => -3,
+            'total_value' => -30000,
+        ])->save();
+
+        $valuation = $this->service->getStockValuation($this->warehouse);
+
+        expect($valuation->firstWhere('product_id', $this->product->id)->quantity)->toBe(-3);
+    });
+
+    it('refuses to clamp an oversell to zero', function () {
+        $stock = ProductStock::getOrCreate($this->product, $this->warehouse);
+        $stock->forceFill([
+            'quantity' => 2,
+            'average_cost' => 1000,
+            'total_value' => 2000,
+        ])->save();
+
+        expect(fn () => $stock->removeStock(5))
+            ->toThrow(BusinessRuleException::class, 'Stok tidak mencukupi');
+
+        expect((int) $stock->fresh()->quantity)->toBe(2);
     });
 
     it('gets inventory summary', function () {

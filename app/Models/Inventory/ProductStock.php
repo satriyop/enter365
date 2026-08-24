@@ -2,6 +2,7 @@
 
 namespace App\Models\Inventory;
 
+use App\Exceptions\Domain\BusinessRuleException;
 use App\Traits\Filterable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -91,6 +92,9 @@ class ProductStock extends Model
 
     /**
      * Remove stock (average cost remains unchanged).
+     *
+     * Oversell is an error, not a clamp to zero. Costing already ran against
+     * this quantity — hiding a shortfall here desyncs layers from on-hand.
      */
     public function removeStock(int $quantity): void
     {
@@ -98,7 +102,14 @@ class ProductStock extends Model
             return;
         }
 
-        $this->quantity = max(0, $this->quantity - $quantity);
+        if ($this->quantity < $quantity) {
+            throw BusinessRuleException::operationNotAllowed(
+                'pengurangan stok',
+                "Stok tidak mencukupi (tersedia {$this->quantity}, diminta {$quantity})."
+            );
+        }
+
+        $this->quantity -= $quantity;
         $this->total_value = $this->quantity * $this->average_cost;
         $this->save();
     }
