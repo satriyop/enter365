@@ -22,17 +22,18 @@ trait WithTransaction
      * @param  string  $operation  Operation name for logging
      * @param  callable(): T  $callback
      * @param  array<string, mixed>  $context  Additional context for logging
+     * @param  int  $attempts  Deadlock retries (Laravel retries only deadlock / serialization failures)
      * @return T
      *
      * @throws \Throwable
      */
-    protected function executeInTransaction(string $operation, callable $callback, array $context = []): mixed
+    protected function executeInTransaction(string $operation, callable $callback, array $context = [], int $attempts = 3): mixed
     {
         $this->logger->logEntry(static::class, $operation, $context);
         $start = microtime(true);
 
         try {
-            $result = DB::transaction($callback);
+            $result = DB::transaction($callback, $attempts);
 
             $this->logger->logPerformance(
                 $operation,

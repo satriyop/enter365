@@ -2,6 +2,7 @@
 
 namespace App\Models\Accounting;
 
+use App\Exceptions\Domain\BusinessRuleException;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -43,6 +44,21 @@ class JournalEntryLine extends Model
             'amount_currency' => 'integer',
             'exchange_rate' => 'decimal:4',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (self $line): void {
+            $debit = (int) $line->debit;
+            $credit = (int) $line->credit;
+
+            if ($debit < 0 || $credit < 0 || ($debit !== 0 && $credit !== 0)) {
+                throw BusinessRuleException::operationNotAllowed(
+                    'baris jurnal',
+                    'Baris jurnal harus debit atau kredit (bukan keduanya), dan tidak boleh negatif.'
+                );
+            }
+        });
     }
 
     /**

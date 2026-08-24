@@ -149,6 +149,30 @@ describe('InventoryService stock movements', function () {
         $this->product->refresh();
         expect($this->product->current_stock)->toBe(8);
     });
+
+    it('rebuilds current_stock from locked warehouse sums so a transfer does not drift the cache', function () {
+        $warehouse2 = Warehouse::factory()->create();
+
+        $this->service->stockIn($this->product, $this->warehouse, 10, 10000);
+        $this->service->stockIn($this->product, $warehouse2, 10, 10000);
+
+        expect((int) $this->product->fresh()->current_stock)->toBe(20);
+
+        $this->service->transfer($this->product, $this->warehouse, $warehouse2, 4);
+
+        expect((int) $this->product->fresh()->current_stock)->toBe(20);
+    });
+
+    it('lockForStock always returns a persisted row', function () {
+        \Illuminate\Support\Facades\DB::transaction(function () {
+            $stock = ProductStock::lockForStock($this->product, $this->warehouse);
+
+            expect($stock)->toBeInstanceOf(ProductStock::class)
+                ->and($stock->id)->not->toBeNull()
+                ->and($stock->product_id)->toBe($this->product->id)
+                ->and($stock->warehouse_id)->toBe($this->warehouse->id);
+        });
+    });
 });
 
 describe('InventoryService reporting', function () {

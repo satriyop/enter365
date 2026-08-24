@@ -40,23 +40,8 @@ class JournalEntryService extends BaseService
     public function createEntry(array $data, bool $autoPost = false): JournalEntry
     {
         return $this->executeInTransaction('create_entry', function () use ($data, $autoPost) {
-            // Resolve fiscal period by entry_date, not today's date
             $entryDate = Carbon::parse($data['entry_date']);
-            $fiscalPeriod = FiscalPeriod::forDate($entryDate);
-
-            if ($fiscalPeriod && $fiscalPeriod->getStatus() === \App\Domain\Accounting\FiscalPeriods\Enums\FiscalPeriodStatus::Closed) {
-                throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
-                    'membuat jurnal',
-                    "Periode fiskal '{$fiscalPeriod->name}' sudah ditutup untuk tanggal {$entryDate->toDateString()}."
-                );
-            }
-
-            if ($fiscalPeriod && $fiscalPeriod->getStatus() === \App\Domain\Accounting\FiscalPeriods\Enums\FiscalPeriodStatus::Locked) {
-                throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
-                    'membuat jurnal',
-                    "Periode fiskal '{$fiscalPeriod->name}' sedang dikunci untuk tanggal {$entryDate->toDateString()}."
-                );
-            }
+            $fiscalPeriod = FiscalPeriod::assertOpenForPosting($entryDate);
 
             $entry = JournalEntry::create([
                 'entry_number' => $data['entry_number'] ?? \App\Domain\Shared\DocumentNumbers::generate(
@@ -69,7 +54,7 @@ class JournalEntryService extends BaseService
                 'reference' => $data['reference'] ?? null,
                 'source_type' => $data['source_type'] ?? JournalEntry::SOURCE_MANUAL,
                 'source_id' => $data['source_id'] ?? null,
-                'fiscal_period_id' => $fiscalPeriod?->id,
+                'fiscal_period_id' => $fiscalPeriod->id,
                 'is_posted' => false,
                 'created_by' => $this->getUserId(),
             ]);
@@ -114,13 +99,6 @@ class JournalEntryService extends BaseService
             throw \App\Exceptions\Domain\DocumentLockedException::cannotEdit($entry, 'Journal entry is already posted.');
         }
 
-        if (! $entry->isBalanced()) {
-            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
-                'posting journal entry',
-                'Journal entry is not balanced. Debit: '.$entry->getTotalDebit().', Credit: '.$entry->getTotalCredit()
-            );
-        }
-
         if ($entry->lines()->count() < 2) {
             throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
                 'posting journal entry',
@@ -128,22 +106,17 @@ class JournalEntryService extends BaseService
             );
         }
 
-        // Check fiscal period is open for posting
-        if ($entry->fiscalPeriod) {
-            if ($entry->fiscalPeriod->getStatus() === \App\Domain\Accounting\FiscalPeriods\Enums\FiscalPeriodStatus::Closed) {
-                throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
-                    'posting journal entry',
-                    "Tidak bisa posting ke periode fiskal '{$entry->fiscalPeriod->name}' yang sudah ditutup."
-                );
-            }
-
-            if ($entry->fiscalPeriod->getStatus() === \App\Domain\Accounting\FiscalPeriods\Enums\FiscalPeriodStatus::Locked) {
-                throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
-                    'posting journal entry',
-                    "Tidak bisa posting ke periode fiskal '{$entry->fiscalPeriod->name}' yang sedang dikunci."
-                );
-            }
+        if (! $entry->isBalanced()) {
+            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
+                'posting journal entry',
+                'Journal entry is not balanced. Debit: '.$entry->getTotalDebit().', Credit: '.$entry->getTotalCredit()
+            );
         }
+
+        $entryDate = $entry->entry_date instanceof \DateTimeInterface
+            ? $entry->entry_date
+            : Carbon::parse((string) $entry->entry_date);
+        FiscalPeriod::assertOpenForPosting($entryDate);
 
         $entry->update(['is_posted' => true]);
 

@@ -78,8 +78,7 @@ class FIFOCostingStrategy implements CostingStrategy
         // Update ProductStock
         $stock->removeStock($quantity);
 
-        // Return weighted average FIFO cost for this issuance
-        return (int) round($totalCost / $quantity);
+        return $totalCost;
     }
 
     public function recordAdjustment(ProductStock $stock, int $delta, int $unitCost): int
@@ -91,10 +90,7 @@ class FIFOCostingStrategy implements CostingStrategy
         }
 
         if ($delta < 0) {
-            $quantity = abs($delta);
-            $outCost = $this->recordStockOut($stock, $quantity);
-
-            return -($quantity * $outCost);
+            return -$this->recordStockOut($stock, abs($delta));
         }
 
         return 0;

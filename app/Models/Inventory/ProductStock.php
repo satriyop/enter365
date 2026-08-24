@@ -6,6 +6,8 @@ use App\Traits\Filterable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\UniqueConstraintViolationException;
+use RuntimeException;
 
 class ProductStock extends Model
 {
@@ -120,17 +122,42 @@ class ProductStock extends Model
     /**
      * Get or create stock record with pessimistic lock for concurrent safety.
      *
-     * Must be called within a database transaction.
+     * Must be called within a database transaction. Retries when two cashiers
+     * first-sell the same SKU in the same warehouse and collide on the unique
+     * (product_id, warehouse_id) index.
      */
     public static function lockForStock(Product $product, Warehouse $warehouse): self
     {
-        // First ensure the record exists
-        $stock = static::getOrCreate($product, $warehouse);
+        for ($attempt = 1; $attempt <= 3; $attempt++) {
+            try {
+                static::firstOrCreate(
+                    [
+                        'product_id' => $product->id,
+                        'warehouse_id' => $warehouse->id,
+                    ],
+                    [
+                        'quantity' => 0,
+                        'average_cost' => $product->purchase_price,
+                        'total_value' => 0,
+                    ]
+                );
+            } catch (UniqueConstraintViolationException) {
+                // Lost the insert race; the other transaction committed the row.
+            }
 
-        // Then re-fetch with a pessimistic lock to prevent race conditions
-        return static::where('product_id', $product->id)
-            ->where('warehouse_id', $warehouse->id)
-            ->lockForUpdate()
-            ->first();
+            $stock = static::query()
+                ->where('product_id', $product->id)
+                ->where('warehouse_id', $warehouse->id)
+                ->lockForUpdate()
+                ->first();
+
+            if ($stock !== null) {
+                return $stock;
+            }
+        }
+
+        throw new RuntimeException(
+            "Unable to lock stock for product {$product->id} in warehouse {$warehouse->id}."
+        );
     }
 }

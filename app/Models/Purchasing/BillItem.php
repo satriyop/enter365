@@ -68,6 +68,32 @@ class BillItem extends Model
     }
 
     /**
+     * Inventory capitalisation: after line discount, excluding PPN.
+     */
+    public function inventoryTotalCost(): int
+    {
+        $quantity = (int) $this->quantity;
+        if ($quantity <= 0) {
+            return 0;
+        }
+
+        $subtotal = (int) round($this->quantity * (int) $this->unit_price);
+        $discountAmount = $this->discount_amount ?: (int) round($subtotal * ((float) ($this->discount_percent ?? 0)) / 100);
+
+        return max(0, $subtotal - $discountAmount);
+    }
+
+    public function inventoryUnitCost(): int
+    {
+        $quantity = (int) $this->quantity;
+        if ($quantity <= 0) {
+            return 0;
+        }
+
+        return (int) round($this->inventoryTotalCost() / $quantity);
+    }
+
+    /**
      * Calculate and set the line total.
      */
     public function calculateLineTotal(): void

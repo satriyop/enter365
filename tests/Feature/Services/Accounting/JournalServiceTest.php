@@ -135,6 +135,39 @@ describe('JournalService - createEntry', function () {
             ->and($entry->fiscalPeriod)->toBeInstanceOf(FiscalPeriod::class);
     });
 
+    it('rejects an entry dated outside every fiscal period', function () {
+        $this->service->createEntry([
+            'entry_date' => '1990-01-15',
+            'description' => 'Orphan period entry',
+            'lines' => [
+                ['account_code' => '1-1000', 'debit' => 100000, 'credit' => 0],
+                ['account_code' => '4-1001', 'debit' => 0, 'credit' => 100000],
+            ],
+        ]);
+    })->throws(BusinessRuleException::class, 'Tidak ada periode fiskal');
+
+    it('rejects a journal line with both debit and credit', function () {
+        $this->service->createEntry([
+            'entry_date' => now()->toDateString(),
+            'description' => 'Both sides on one line',
+            'lines' => [
+                ['account_code' => '1-1000', 'debit' => 100000, 'credit' => 100000],
+                ['account_code' => '4-1001', 'debit' => 0, 'credit' => 0],
+            ],
+        ]);
+    })->throws(BusinessRuleException::class, 'Baris jurnal');
+
+    it('rejects a journal line with a negative debit', function () {
+        $this->service->createEntry([
+            'entry_date' => now()->toDateString(),
+            'description' => 'Negative debit',
+            'lines' => [
+                ['account_code' => '1-1000', 'debit' => -100000, 'credit' => 0],
+                ['account_code' => '4-1001', 'debit' => 0, 'credit' => -100000],
+            ],
+        ]);
+    })->throws(BusinessRuleException::class, 'Baris jurnal');
+
 });
 
 describe('JournalService - postEntry', function () {
@@ -219,20 +252,20 @@ describe('JournalService - postEntry', function () {
             'journal_entry_id' => $entry->id,
             'account_id' => $cashAccount->id,
             'debit' => 100000,
-            'credit' => 100000,
+            'credit' => 0,
         ]);
 
         $this->service->postEntry($entry);
     })->throws(BusinessRuleException::class, 'at least two lines');
 
     it('throws exception when posting to closed fiscal period', function () {
-        $closedPeriod = FiscalPeriod::factory()->closed()->create();
         $cashAccount = Account::where('code', '1-1000')->first();
         $revenueAccount = Account::where('code', '4-1001')->first();
+        $closedDate = now()->subYear()->startOfYear()->toDateString();
 
         $entry = JournalEntry::factory()->create([
             'is_posted' => false,
-            'fiscal_period_id' => $closedPeriod->id,
+            'entry_date' => $closedDate,
         ]);
 
         JournalEntryLine::factory()->create([

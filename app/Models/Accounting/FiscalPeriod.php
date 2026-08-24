@@ -5,6 +5,7 @@ namespace App\Models\Accounting;
 use App\Domain\Accounting\FiscalPeriods\Enums\FiscalPeriodStatus;
 use App\Domain\Accounting\FiscalPeriods\FiscalPeriodStateMachine;
 use App\Enums\DocumentStatus;
+use App\Exceptions\Domain\BusinessRuleException;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
 use App\Models\User;
@@ -164,6 +165,38 @@ class FiscalPeriod extends Model
             ->where('start_date', '<=', $date)
             ->where('end_date', '>=', $date)
             ->first();
+    }
+
+    /**
+     * Require an Open fiscal period for posting on $date.
+     *
+     * Missing / closed / locked periods are errors. POS tills and journal
+     * create/post must share this guard so entries cannot land with
+     * fiscal_period_id = null.
+     */
+    public static function assertOpenForPosting(\DateTimeInterface $date): self
+    {
+        $period = static::forDate($date);
+
+        if ($period === null) {
+            throw BusinessRuleException::operationNotAllowed(
+                'periode fiskal',
+                'Tidak ada periode fiskal untuk tanggal '.$date->format('Y-m-d').'.'
+            );
+        }
+
+        if ($period->getStatus() === FiscalPeriodStatus::Closed) {
+            throw BusinessRuleException::fiscalPeriodClosed($period->name);
+        }
+
+        if ($period->getStatus() === FiscalPeriodStatus::Locked) {
+            throw BusinessRuleException::operationNotAllowed(
+                'periode fiskal',
+                "Periode fiskal '{$period->name}' sedang dikunci."
+            );
+        }
+
+        return $period;
     }
 
     /**

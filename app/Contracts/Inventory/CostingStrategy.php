@@ -23,10 +23,11 @@ interface CostingStrategy
     public function recordStockIn(ProductStock $stock, int $quantity, int $unitCost, ?string $referenceType = null, ?int $referenceId = null): void;
 
     /**
-     * Record stock removal and return the unit cost to use for COGS.
+     * Record stock removal and return the exact integer total cost of the issuance.
      *
-     * Called during stock-out operations (sale, delivery, transfer out).
-     * Returns the calculated unit cost based on the costing method.
+     * Callers must persist that total on the movement / COGS journal.
+     * Never reconstruct it as quantity × a rounded unit cost — integer
+     * division leaks sen out of Inventory on every uneven FIFO issue.
      */
     public function recordStockOut(ProductStock $stock, int $quantity): int;
 

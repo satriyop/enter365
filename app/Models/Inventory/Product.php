@@ -274,10 +274,16 @@ class Product extends Model
 
     /**
      * Sync current_stock from product_stocks table.
+     *
+     * Must run inside a transaction. Locks this product row so two
+     * warehouses selling the same SKU cannot both write a stale SUM.
      */
     public function syncCurrentStock(): void
     {
-        $this->update(['current_stock' => $this->total_stock]);
+        $locked = static::query()->lockForUpdate()->findOrFail($this->id);
+        $total = (int) $locked->stocks()->sum('quantity');
+        $locked->update(['current_stock' => $total]);
+        $this->current_stock = $total;
     }
 
     /**

@@ -79,6 +79,14 @@ it('refuses stock-out when only reserved stock remains', function () {
     $this->service->stockOut($this->product, $this->warehouse, 10);
 })->throws(InsufficientStockException::class);
 
+it('refuses to transfer reserved stock away from the source warehouse', function () {
+    $toWarehouse = Warehouse::factory()->create();
+    $this->service->stockIn($this->product, $this->warehouse, 100, 10000);
+    $this->service->reserve($this->product, $this->warehouse, 80);
+
+    $this->service->transfer($this->product, $this->warehouse, $toWarehouse, 30);
+})->throws(InsufficientStockException::class);
+
 it('issues against reservation and lowers on-hand and reserved', function () {
     $this->service->stockIn($this->product, $this->warehouse, 100, 10000);
     $this->service->reserve($this->product, $this->warehouse, 40);

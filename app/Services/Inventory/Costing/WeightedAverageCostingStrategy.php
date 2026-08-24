@@ -25,7 +25,7 @@ class WeightedAverageCostingStrategy implements CostingStrategy
         $unitCost = $stock->average_cost;
         $stock->removeStock($quantity);
 
-        return $unitCost;
+        return $quantity * $unitCost;
     }
 
     public function recordAdjustment(ProductStock $stock, int $delta, int $unitCost): int
@@ -37,10 +37,7 @@ class WeightedAverageCostingStrategy implements CostingStrategy
         }
 
         if ($delta < 0) {
-            $quantity = abs($delta);
-            $outCost = $this->recordStockOut($stock, $quantity);
-
-            return -($quantity * $outCost);
+            return -$this->recordStockOut($stock, abs($delta));
         }
 
         return 0;

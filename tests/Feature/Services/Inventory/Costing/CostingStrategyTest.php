@@ -51,9 +51,9 @@ describe('WeightedAverageCostingStrategy', function () {
         $strategy->recordStockIn($stock, 100, 10000);
         $strategy->recordStockIn($stock, 50, 16000);
 
-        $unitCost = $strategy->recordStockOut($stock, 30);
+        $totalCost = $strategy->recordStockOut($stock, 30);
 
-        expect($unitCost)->toBe(12000)
+        expect($totalCost)->toBe(360000)
             ->and($stock->quantity)->toBe(120);
     });
 });
@@ -94,9 +94,9 @@ describe('FIFOCostingStrategy', function () {
         $strategy->recordStockIn($stock, 50, 16000);
 
         // Remove 80 units — should consume 80 from batch 1 (at 10,000 each)
-        $unitCost = $strategy->recordStockOut($stock, 80);
+        $totalCost = $strategy->recordStockOut($stock, 80);
 
-        expect($unitCost)->toBe(10000)
+        expect($totalCost)->toBe(800000)
             ->and($stock->quantity)->toBe(70);
 
         $layers = InventoryCostLayer::where('product_id', $product->id)
@@ -120,10 +120,10 @@ describe('FIFOCostingStrategy', function () {
         $strategy->recordStockIn($stock, 50, 16000);
 
         // Remove 120 units — should consume 100 from batch 1 + 20 from batch 2
-        // Weighted cost: (100*10000 + 20*16000) / 120 = (1,000,000 + 320,000) / 120 = 11,000
-        $unitCost = $strategy->recordStockOut($stock, 120);
+        // Exact total: 100*10000 + 20*16000 = 1,320,000
+        $totalCost = $strategy->recordStockOut($stock, 120);
 
-        expect($unitCost)->toBe(11000)
+        expect($totalCost)->toBe(1320000)
             ->and($stock->quantity)->toBe(30);
 
         $layers = InventoryCostLayer::where('product_id', $product->id)
@@ -172,6 +172,20 @@ describe('FIFOCostingStrategy', function () {
 
         expect($layers[0]->quantity)->toBe(70)
             ->and($layers[1]->quantity)->toBe(20);
+    });
+
+    it('returns the exact layer total when unit cost does not divide evenly', function () {
+        $strategy = new FIFOCostingStrategy;
+        $product = Product::factory()->create();
+        $warehouse = Warehouse::factory()->create();
+        $stock = ProductStock::getOrCreate($product, $warehouse);
+
+        $strategy->recordStockIn($stock, 2, 333);
+        $strategy->recordStockIn($stock, 1, 334);
+
+        $totalCost = $strategy->recordStockOut($stock, 3);
+
+        expect($totalCost)->toBe(1000);
     });
 
     it('fails loudly when FIFO layers cannot cover a stock-out', function () {
@@ -253,7 +267,16 @@ describe('InventoryService with FIFO policy', function () {
         // Stock out 80 — should use FIFO cost (10,000 from batch 1)
         $movement = $service->stockOut($product, $warehouse, 80, 'Sale');
 
-        expect($movement->unit_cost)->toBe(10000);
+        expect($movement->unit_cost)->toBe(10000)
+            ->and($movement->total_cost)->toBe(800000);
+
+        $unevenProduct = Product::factory()->create(['track_inventory' => true, 'purchase_price' => 333]);
+        $service->stockIn($unevenProduct, $warehouse, 2, 333);
+        $service->stockIn($unevenProduct, $warehouse, 1, 334);
+        $uneven = $service->stockOut($unevenProduct, $warehouse, 3, 'Uneven FIFO');
+
+        expect($uneven->total_cost)->toBe(1000)
+            ->and($uneven->unit_cost)->toBe(333);
 
         // Verify cost layers updated
         $layers = InventoryCostLayer::where('product_id', $product->id)

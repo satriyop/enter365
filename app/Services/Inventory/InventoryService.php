@@ -173,8 +173,9 @@ class InventoryService extends BaseService implements InventoryServiceInterface
 
             $quantityBefore = $stock->quantity;
 
-            // Get unit cost and remove stock using configured costing strategy
-            $unitCost = $this->policyManager->costing()->recordStockOut($stock, $quantity);
+            // Exact layer total — do not reconstruct as quantity × rounded unit cost
+            $totalCost = $this->policyManager->costing()->recordStockOut($stock, $quantity);
+            $unitCost = $quantity > 0 ? (int) round($totalCost / $quantity) : 0;
 
             // Create movement record
             $movement = InventoryMovement::create([
@@ -186,7 +187,7 @@ class InventoryService extends BaseService implements InventoryServiceInterface
                 'quantity_before' => $quantityBefore,
                 'quantity_after' => $stock->quantity,
                 'unit_cost' => $unitCost,
-                'total_cost' => $quantity * $unitCost,
+                'total_cost' => $totalCost,
                 'reference_type' => $referenceType,
                 'reference_id' => $referenceId,
                 'movement_date' => now(),
@@ -344,26 +345,33 @@ class InventoryService extends BaseService implements InventoryServiceInterface
         ?string $notes = null
     ): array {
         return $this->executeInTransaction('transfer', function () use ($product, $fromWarehouse, $toWarehouse, $quantity, $notes) {
-            $fromStock = ProductStock::lockForStock($product, $fromWarehouse);
+            if ($fromWarehouse->id === $toWarehouse->id) {
+                throw BusinessRuleException::operationNotAllowed(
+                    'transfer stok',
+                    'Gudang asal dan tujuan tidak boleh sama.'
+                );
+            }
 
-            if ($fromStock->quantity < $quantity) {
+            $stocks = $this->lockStocksInWarehouseOrder($product, $fromWarehouse, $toWarehouse);
+            $fromStock = $stocks[$fromWarehouse->id];
+            $toStock = $stocks[$toWarehouse->id];
+            $available = $fromStock->getAvailableQuantity();
+
+            if ($available < $quantity) {
                 throw InsufficientStockException::forTransfer(
                     $product,
                     $fromWarehouse,
                     $quantity,
-                    $fromStock->quantity
+                    $available
                 );
             }
 
             $costingStrategy = $this->policyManager->costing();
             $fromQuantityBefore = $fromStock->quantity;
-
-            // Remove from source warehouse using costing strategy
-            $unitCost = $costingStrategy->recordStockOut($fromStock, $quantity);
-
-            // Add to destination warehouse (also locked)
-            $toStock = ProductStock::lockForStock($product, $toWarehouse);
             $toQuantityBefore = $toStock->quantity;
+
+            $totalCost = $costingStrategy->recordStockOut($fromStock, $quantity);
+            $unitCost = $quantity > 0 ? (int) round($totalCost / $quantity) : 0;
             $costingStrategy->recordStockIn($toStock, $quantity, $unitCost);
 
             $transferNumber = InventoryMovement::generateMovementNumber(InventoryMovement::TYPE_TRANSFER_OUT);
@@ -378,7 +386,7 @@ class InventoryService extends BaseService implements InventoryServiceInterface
                 'quantity_before' => $fromQuantityBefore,
                 'quantity_after' => $fromStock->quantity,
                 'unit_cost' => $unitCost,
-                'total_cost' => $quantity * $unitCost,
+                'total_cost' => $totalCost,
                 'transfer_warehouse_id' => $toWarehouse->id,
                 'movement_date' => now(),
                 'notes' => $notes ?? "Transfer ke {$toWarehouse->name}",
@@ -395,7 +403,7 @@ class InventoryService extends BaseService implements InventoryServiceInterface
                 'quantity_before' => $toQuantityBefore,
                 'quantity_after' => $toStock->quantity,
                 'unit_cost' => $unitCost,
-                'total_cost' => $quantity * $unitCost,
+                'total_cost' => $totalCost,
                 'transfer_warehouse_id' => $fromWarehouse->id,
                 'movement_date' => now(),
                 'notes' => $notes ?? "Transfer dari {$fromWarehouse->name}",
@@ -416,7 +424,26 @@ class InventoryService extends BaseService implements InventoryServiceInterface
             ));
 
             return ['out' => $outMovement, 'in' => $inMovement];
-        }, ['product_id' => $product->id, 'from_warehouse_id' => $fromWarehouse->id, 'to_warehouse_id' => $toWarehouse->id]);
+        }, ['product_id' => $product->id, 'from_warehouse_id' => $fromWarehouse->id, 'to_warehouse_id' => $toWarehouse->id], 3);
+    }
+
+    /**
+     * Lock stock rows in ascending warehouse_id order to avoid AB-BA deadlocks.
+     *
+     * @return array<int, ProductStock>
+     */
+    private function lockStocksInWarehouseOrder(Product $product, Warehouse ...$warehouses): array
+    {
+        $stocks = [];
+
+        collect($warehouses)
+            ->unique('id')
+            ->sortBy('id')
+            ->each(function (Warehouse $warehouse) use ($product, &$stocks): void {
+                $stocks[$warehouse->id] = ProductStock::lockForStock($product, $warehouse);
+            });
+
+        return $stocks;
     }
 
     /**
@@ -454,7 +481,7 @@ class InventoryService extends BaseService implements InventoryServiceInterface
                 $item->product,
                 $warehouse,
                 (int) $item->quantity,
-                $item->unit_price,
+                $item->inventoryUnitCost(),
                 "Pembelian: {$bill->bill_number}",
                 Bill::class,
                 $bill->id
