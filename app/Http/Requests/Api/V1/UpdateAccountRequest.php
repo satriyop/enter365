@@ -27,7 +27,6 @@ class UpdateAccountRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'parent_id' => ['nullable', 'integer', 'exists:accounts,id'],
             'is_active' => ['boolean'],
-            'opening_balance' => ['integer'],
         ];
     }
 

@@ -22,18 +22,17 @@ beforeEach(function () {
 
 describe('AccountBalanceService - getBalance', function () {
 
-    it('returns balance for account with no movements', function () {
+    it('returns zero for account with no posted movements even if opening_balance is set', function () {
         $account = Account::where('code', '1-1001')->first();
-        $account->update(['opening_balance' => 500000]);
+        $account->forceFill(['opening_balance' => 500000])->save();
 
         $balance = $this->service->getBalance($account);
 
-        expect($balance)->toBe(500000);
+        expect($balance)->toBe(0);
     });
 
     it('calculates balance for debit-normal account with movements', function () {
         $account = Account::where('code', '1-1001')->first(); // Cash (debit normal)
-        $account->update(['opening_balance' => 1000000]);
 
         // Create posted journal entry
         $entry = JournalEntry::factory()->create(['is_posted' => true]);
@@ -54,13 +53,11 @@ describe('AccountBalanceService - getBalance', function () {
 
         $balance = $this->service->getBalance($account);
 
-        // Opening: 1,000,000 + Debit: 500,000 - Credit: 200,000 = 1,300,000
-        expect($balance)->toBe(1300000);
+        expect($balance)->toBe(300000);
     });
 
     it('calculates balance for credit-normal account with movements', function () {
         $account = Account::where('code', '4-1001')->first(); // Revenue (credit normal)
-        $account->update(['opening_balance' => 0]);
 
         $entry = JournalEntry::factory()->create(['is_posted' => true]);
 
@@ -86,7 +83,6 @@ describe('AccountBalanceService - getBalance', function () {
 
     it('only includes posted journal entries', function () {
         $account = Account::where('code', '1-1001')->first();
-        $account->update(['opening_balance' => 1000000]);
 
         // Unposted entry (should be ignored)
         $unpostedEntry = JournalEntry::factory()->create(['is_posted' => false]);
@@ -99,12 +95,11 @@ describe('AccountBalanceService - getBalance', function () {
 
         $balance = $this->service->getBalance($account);
 
-        expect($balance)->toBe(1000000); // No change from opening balance
+        expect($balance)->toBe(0);
     });
 
     it('calculates balance as of specific date', function () {
         $account = Account::where('code', '1-1001')->first();
-        $account->update(['opening_balance' => 1000000]);
 
         // Entry on Jan 15
         $entry1 = JournalEntry::factory()->create([
@@ -133,7 +128,7 @@ describe('AccountBalanceService - getBalance', function () {
         $balance = $this->service->getBalance($account, '2024-01-31');
 
         // Should only include Jan entry
-        expect($balance)->toBe(1300000);
+        expect($balance)->toBe(300000);
     });
 
 });
@@ -142,16 +137,13 @@ describe('AccountBalanceService - getBalances', function () {
 
     it('returns balances for multiple accounts', function () {
         $cash = Account::where('code', '1-1001')->first();
-        $cash->update(['opening_balance' => 1000000]);
-
         $revenue = Account::where('code', '4-1001')->first();
-        $revenue->update(['opening_balance' => 0]);
 
         $accounts = collect([$cash, $revenue]);
         $balances = $this->service->getBalances($accounts);
 
         expect($balances)->toBeArray()
-            ->and($balances[$cash->id])->toBe(1000000)
+            ->and($balances[$cash->id])->toBe(0)
             ->and($balances[$revenue->id])->toBe(0);
     });
 
@@ -161,7 +153,6 @@ describe('AccountBalanceService - getLedger', function () {
 
     it('returns ledger entries with running balance', function () {
         $account = Account::where('code', '1-1001')->first();
-        $account->update(['opening_balance' => 1000000]);
 
         // Create entries
         $entry1 = JournalEntry::factory()->create([
@@ -197,12 +188,12 @@ describe('AccountBalanceService - getLedger', function () {
         $first = $ledger->first();
         expect($first['debit'])->toBe(500000)
             ->and($first['credit'])->toBe(0)
-            ->and($first['balance'])->toBe(1500000); // 1M + 500K
+            ->and($first['balance'])->toBe(500000);
 
         $second = $ledger->get(1);
         expect($second['debit'])->toBe(0)
             ->and($second['credit'])->toBe(200000)
-            ->and($second['balance'])->toBe(1300000); // 1.5M - 200K
+            ->and($second['balance'])->toBe(300000);
     });
 
     it('filters ledger by date range', function () {
@@ -386,7 +377,7 @@ describe('AccountBalanceService - getTrialBalance', function () {
         expect($cashRow['debit_balance'])->toBe(1000000);
     });
 
-    it('excludes inactive accounts from trial balance', function () {
+    it('includes inactive accounts that still hold posted movements', function () {
         $inactiveAccount = Account::factory()->create([
             'code' => '9-9999',
             'name' => 'Inactive Test Account',
@@ -406,7 +397,38 @@ describe('AccountBalanceService - getTrialBalance', function () {
         $trialBalance = $this->service->getTrialBalance();
 
         $inactiveRow = $trialBalance->firstWhere('code', '9-9999');
-        expect($inactiveRow)->toBeNull();
+        expect($inactiveRow)->not->toBeNull()
+            ->and($inactiveRow['is_active'])->toBeFalse()
+            ->and($inactiveRow['debit_balance'])->toBe(100000);
+    });
+
+    it('does not let a writable opening_balance column unbalance the trial balance', function () {
+        $cash = Account::where('code', '1-1001')->first();
+        $revenue = Account::where('code', '4-1001')->first();
+
+        $entry = JournalEntry::factory()->create([
+            'is_posted' => true,
+            'entry_date' => now()->toDateString(),
+        ]);
+        JournalEntryLine::factory()->create([
+            'journal_entry_id' => $entry->id,
+            'account_id' => $cash->id,
+            'debit' => 1000000,
+            'credit' => 0,
+        ]);
+        JournalEntryLine::factory()->create([
+            'journal_entry_id' => $entry->id,
+            'account_id' => $revenue->id,
+            'debit' => 0,
+            'credit' => 1000000,
+        ]);
+
+        $cash->forceFill(['opening_balance' => 500000000])->save();
+
+        $trialBalance = $this->service->getTrialBalance();
+
+        expect($trialBalance->sum('debit_balance'))->toBe($trialBalance->sum('credit_balance'))
+            ->and($trialBalance->firstWhere('code', '1-1001')['debit_balance'])->toBe(1000000);
     });
 
     it('excludes accounts with zero balance and no activity', function () {

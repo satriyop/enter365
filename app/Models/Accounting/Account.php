@@ -56,7 +56,6 @@ class Account extends Model
         'parent_id',
         'is_active',
         'is_system',
-        'opening_balance',
     ];
 
     protected function casts(): array
@@ -119,7 +118,7 @@ class Account extends Model
             ->whereHas('journalEntry', function ($q) use ($asOfDate) {
                 $q->where('is_posted', true);
                 if ($asOfDate) {
-                    $q->where('entry_date', '<=', $asOfDate);
+                    $q->where('entry_date', '<=', $asOfDate.' 23:59:59');
                 }
             });
 
@@ -131,7 +130,7 @@ class Account extends Model
             : $totalCredit - $totalDebit;
 
         return [
-            'balance' => (int) $this->opening_balance + $netMovement,
+            'balance' => $netMovement,
             'total_debit' => $totalDebit,
             'total_credit' => $totalCredit,
         ];
@@ -146,7 +145,7 @@ class Account extends Model
             ->whereHas('journalEntry', function ($q) use ($asOfDate) {
                 $q->where('is_posted', true);
                 if ($asOfDate) {
-                    $q->where('entry_date', '<=', $asOfDate);
+                    $q->where('entry_date', '<=', $asOfDate.' 23:59:59');
                 }
             });
 
@@ -157,7 +156,7 @@ class Account extends Model
             ? $totalDebit - $totalCredit
             : $totalCredit - $totalDebit;
 
-        return $this->opening_balance + $netMovement;
+        return $netMovement;
     }
 
     /**

@@ -28,7 +28,30 @@ function findSectionFRS(\Illuminate\Support\Collection|array $sections, string $
 function sectionAccountsFRS(\Illuminate\Support\Collection|array $sections, string $name): \Illuminate\Support\Collection
 {
     $section = findSectionFRS($sections, $name);
+
     return $section ? collect($section['accounts']) : collect();
+}
+
+/**
+ * @param  list<array{0: Account, 1: int, 2: int}>  $lines
+ */
+function postBalancedFRS(string $date, array $lines): JournalEntry
+{
+    $je = JournalEntry::factory()->create([
+        'entry_date' => $date,
+        'is_posted' => true,
+    ]);
+
+    foreach ($lines as [$account, $debit, $credit]) {
+        JournalEntryLine::factory()->create([
+            'journal_entry_id' => $je->id,
+            'account_id' => $account->id,
+            'debit' => $debit,
+            'credit' => $credit,
+        ]);
+    }
+
+    return $je;
 }
 
 describe('getBalanceSheet', function () {
@@ -43,49 +66,52 @@ describe('getBalanceSheet', function () {
     });
 
     test('groups accounts by type correctly', function () {
-        Account::factory()->create([
+        $cash = Account::factory()->create([
             'type' => Account::TYPE_ASSET,
             'subtype' => Account::SUBTYPE_CURRENT_ASSET,
             'code' => '1-1001',
             'name' => 'Cash',
             'is_active' => true,
-            'opening_balance' => 5000000,
         ]);
 
-        Account::factory()->create([
+        $equipment = Account::factory()->create([
             'type' => Account::TYPE_ASSET,
             'subtype' => Account::SUBTYPE_FIXED_ASSET,
             'code' => '1-2001',
             'name' => 'Equipment',
             'is_active' => true,
-            'opening_balance' => 20000000,
         ]);
 
-        Account::factory()->create([
+        $ap = Account::factory()->create([
             'type' => Account::TYPE_LIABILITY,
             'subtype' => Account::SUBTYPE_CURRENT_LIABILITY,
             'code' => '2-1001',
             'name' => 'Accounts Payable',
             'is_active' => true,
-            'opening_balance' => 3000000,
         ]);
 
-        Account::factory()->create([
+        $loan = Account::factory()->create([
             'type' => Account::TYPE_LIABILITY,
             'subtype' => Account::SUBTYPE_LONG_TERM_LIABILITY,
             'code' => '2-2001',
             'name' => 'Long Term Loan',
             'is_active' => true,
-            'opening_balance' => 10000000,
         ]);
 
-        Account::factory()->create([
+        $capital = Account::factory()->create([
             'type' => Account::TYPE_EQUITY,
             'subtype' => Account::SUBTYPE_EQUITY,
             'code' => '3-1001',
             'name' => 'Owner Capital',
             'is_active' => true,
-            'opening_balance' => 12000000,
+        ]);
+
+        postBalancedFRS('2020-01-01', [
+            [$cash, 5000000, 0],
+            [$equipment, 20000000, 0],
+            [$ap, 0, 3000000],
+            [$loan, 0, 10000000],
+            [$capital, 0, 12000000],
         ]);
 
         $result = $this->service->getBalanceSheet();
@@ -105,7 +131,6 @@ describe('getBalanceSheet', function () {
             'code' => '1-1001',
             'name' => 'Cash',
             'is_active' => true,
-            'opening_balance' => 5000000,
         ]);
 
         $apAccount = Account::factory()->create([
@@ -114,7 +139,20 @@ describe('getBalanceSheet', function () {
             'code' => '2-1001',
             'name' => 'Accounts Payable',
             'is_active' => true,
-            'opening_balance' => 3000000,
+        ]);
+
+        $capital = Account::factory()->create([
+            'type' => Account::TYPE_EQUITY,
+            'subtype' => Account::SUBTYPE_EQUITY,
+            'code' => '3-1001',
+            'name' => 'Modal',
+            'is_active' => true,
+        ]);
+
+        postBalancedFRS('2020-01-01', [
+            [$cashAccount, 5000000, 0],
+            [$apAccount, 0, 3000000],
+            [$capital, 0, 2000000],
         ]);
 
         $je = JournalEntry::factory()->create([
@@ -147,40 +185,43 @@ describe('getBalanceSheet', function () {
     });
 
     test('balance equation holds - assets equal liabilities plus equity', function () {
-        Account::factory()->create([
+        $cash = Account::factory()->create([
             'type' => Account::TYPE_ASSET,
             'subtype' => Account::SUBTYPE_CURRENT_ASSET,
             'code' => '1-1001',
             'name' => 'Cash',
             'is_active' => true,
-            'opening_balance' => 10000000,
         ]);
 
-        Account::factory()->create([
+        $equipment = Account::factory()->create([
             'type' => Account::TYPE_ASSET,
             'subtype' => Account::SUBTYPE_FIXED_ASSET,
             'code' => '1-2001',
             'name' => 'Equipment',
             'is_active' => true,
-            'opening_balance' => 15000000,
         ]);
 
-        Account::factory()->create([
+        $ap = Account::factory()->create([
             'type' => Account::TYPE_LIABILITY,
             'subtype' => Account::SUBTYPE_CURRENT_LIABILITY,
             'code' => '2-1001',
             'name' => 'Accounts Payable',
             'is_active' => true,
-            'opening_balance' => 8000000,
         ]);
 
-        Account::factory()->create([
+        $capital = Account::factory()->create([
             'type' => Account::TYPE_EQUITY,
             'subtype' => Account::SUBTYPE_EQUITY,
             'code' => '3-1001',
             'name' => 'Modal Pemilik',
             'is_active' => true,
-            'opening_balance' => 17000000,
+        ]);
+
+        postBalancedFRS('2020-01-01', [
+            [$cash, 10000000, 0],
+            [$equipment, 15000000, 0],
+            [$ap, 0, 8000000],
+            [$capital, 0, 17000000],
         ]);
 
         $result = $this->service->getBalanceSheet();
@@ -376,25 +417,28 @@ describe('getComparativeBalanceSheet', function () {
             'code' => '1-1001',
             'name' => 'Cash',
             'is_active' => true,
-            'opening_balance' => 10000000,
         ]);
 
-        Account::factory()->create([
+        $apOpen = Account::factory()->create([
             'type' => Account::TYPE_LIABILITY,
             'subtype' => Account::SUBTYPE_CURRENT_LIABILITY,
             'code' => '2-1001',
             'name' => 'Accounts Payable',
             'is_active' => true,
-            'opening_balance' => 5000000,
         ]);
 
-        Account::factory()->create([
+        $equityOpen = Account::factory()->create([
             'type' => Account::TYPE_EQUITY,
             'subtype' => Account::SUBTYPE_EQUITY,
             'code' => '3-1001',
             'name' => 'Modal Pemilik',
             'is_active' => true,
-            'opening_balance' => 5000000,
+        ]);
+
+        postBalancedFRS('2024-01-01', [
+            [$cashAccount, 10000000, 0],
+            [$apOpen, 0, 5000000],
+            [$equityOpen, 0, 5000000],
         ]);
 
         // Add transaction before current date but after previous date
@@ -497,7 +541,6 @@ describe('getStatementOfChangesInEquity', function () {
             'code' => '3-1001',
             'name' => 'Modal Pemilik',
             'is_active' => true,
-            'opening_balance' => 50000000,
         ]);
 
         $cashAccount = Account::factory()->create([
@@ -506,7 +549,11 @@ describe('getStatementOfChangesInEquity', function () {
             'code' => '1-1001',
             'name' => 'Cash',
             'is_active' => true,
-            'opening_balance' => 50000000,
+        ]);
+
+        postBalancedFRS('2023-12-31', [
+            [$cashAccount, 50000000, 0],
+            [$capitalAccount, 0, 50000000],
         ]);
 
         // Record additional capital contribution

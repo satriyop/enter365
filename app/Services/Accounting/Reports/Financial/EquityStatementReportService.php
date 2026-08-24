@@ -39,7 +39,6 @@ class EquityStatementReportService
         $openingDate = date('Y-m-d', strtotime($startDate.' -1 day'));
 
         $equityAccounts = Account::query()
-            ->where('is_active', true)
             ->where('type', Account::TYPE_EQUITY)
             ->orderBy('code')
             ->get();

@@ -93,7 +93,7 @@ class BankReconciliationReportService
         $totalCredit = (clone $query)->sum('credit');
 
         // Bank accounts are assets (debit normal)
-        return (int) ($account->opening_balance + $totalDebit - $totalCredit);
+        return (int) ($totalDebit - $totalCredit);
     }
 
     /**

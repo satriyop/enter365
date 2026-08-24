@@ -18,7 +18,6 @@ class GeneralLedgerReportService
     public function getGeneralLedger(?string $startDate = null, ?string $endDate = null): Collection
     {
         $accounts = Account::query()
-            ->where('is_active', true)
             ->orderBy('code')
             ->get();
 

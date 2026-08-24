@@ -78,26 +78,9 @@ class AccountBalanceService
 
         $entries = $query->get();
 
-        // Calculate running balance
-        $runningBalance = (int) $account->opening_balance;
-
-        // If start date is provided, calculate opening balance as of that date
-        if ($startDate) {
-            $priorMovements = DB::table('journal_entry_lines as jel')
-                ->join('journal_entries as je', 'je.id', '=', 'jel.journal_entry_id')
-                ->where('jel.account_id', $account->id)
-                ->where('je.is_posted', true)
-                ->where('je.entry_date', '<', $startDate)
-                ->whereNull('je.deleted_at')
-                ->selectRaw('COALESCE(SUM(jel.debit), 0) as total_debit, COALESCE(SUM(jel.credit), 0) as total_credit')
-                ->first();
-
-            $priorBalance = $account->isDebitNormal()
-                ? ($priorMovements->total_debit ?? 0) - ($priorMovements->total_credit ?? 0)
-                : ($priorMovements->total_credit ?? 0) - ($priorMovements->total_debit ?? 0);
-
-            $runningBalance = (int) $account->opening_balance + $priorBalance;
-        }
+        $runningBalance = $startDate
+            ? $this->postedNetBefore($account, $startDate)
+            : 0;
 
         return $entries->map(function (\stdClass $entry) use ($account, &$runningBalance) {
             $movement = $account->isDebitNormal()
@@ -159,34 +142,11 @@ class AccountBalanceService
 
         $allEntries = $query->get()->groupBy('account_id');
 
-        // Calculate opening balances for all accounts
         $openingBalances = [];
-        if ($startDate) {
-            $priorMovements = DB::table('journal_entry_lines as jel')
-                ->join('journal_entries as je', 'je.id', '=', 'jel.journal_entry_id')
-                ->whereIn('jel.account_id', $accountIds)
-                ->where('je.is_posted', true)
-                ->where('je.entry_date', '<', $startDate)
-                ->whereNull('je.deleted_at')
-                ->selectRaw('jel.account_id, SUM(jel.debit) as total_debit, SUM(jel.credit) as total_credit')
-                ->groupBy('jel.account_id')
-                ->get()
-                ->keyBy('account_id');
-
-            foreach ($accounts as $account) {
-                $movement = $priorMovements->get($account->id);
-                $totalDebit = $movement ? (int) $movement->total_debit : 0;
-                $totalCredit = $movement ? (int) $movement->total_credit : 0;
-                $priorBalance = $account->isDebitNormal()
-                    ? ($totalDebit - $totalCredit)
-                    : ($totalCredit - $totalDebit);
-
-                $openingBalances[$account->id] = (int) $account->opening_balance + $priorBalance;
-            }
-        } else {
-            foreach ($accounts as $account) {
-                $openingBalances[$account->id] = (int) $account->opening_balance;
-            }
+        foreach ($accounts as $account) {
+            $openingBalances[$account->id] = $startDate
+                ? $this->postedNetBefore($account, $startDate)
+                : 0;
         }
 
         return $accounts->map(function (Account $account) use ($allEntries, $openingBalances) {
@@ -226,47 +186,72 @@ class AccountBalanceService
     }
 
     /**
-     * Get trial balance for all active accounts.
+     * Get trial balance from posted journal lines.
      *
-     * @return Collection<int, array{account_id: int, code: string, name: string, type: string, debit_balance: int, credit_balance: int}>
+     * Includes inactive accounts that still hold movements. Opening is the
+     * ledger, not accounts.opening_balance.
+     *
+     * @return Collection<int, mixed>
      */
     public function getTrialBalance(?string $asOfDate = null): Collection
     {
         $asOfDate = $asOfDate ?? now()->toDateString();
 
-        $accounts = Account::query()
-            ->where('is_active', true)
-            ->orderBy('code')
-            ->get();
-
-        // Get all balances in one query
         $balances = DB::table('journal_entry_lines as jel')
             ->join('journal_entries as je', 'je.id', '=', 'jel.journal_entry_id')
             ->where('je.is_posted', true)
-            ->where('je.entry_date', '<=', $asOfDate)
+            ->where('je.entry_date', '<=', $asOfDate.' 23:59:59')
             ->whereNull('je.deleted_at')
             ->selectRaw('jel.account_id, SUM(jel.debit) as total_debit, SUM(jel.credit) as total_credit')
             ->groupBy('jel.account_id')
             ->get()
             ->keyBy('account_id');
 
+        $accounts = Account::query()
+            ->whereIn('id', $balances->keys())
+            ->orderBy('code')
+            ->get();
+
         return $accounts->map(function (Account $account) use ($balances) {
             $movement = $balances->get($account->id);
             $totalDebit = (int) ($movement->total_debit ?? 0);
             $totalCredit = (int) ($movement->total_credit ?? 0);
 
-            $balance = (int) $account->opening_balance + ($account->isDebitNormal()
+            $balance = $account->isDebitNormal()
                 ? $totalDebit - $totalCredit
-                : $totalCredit - $totalDebit);
+                : $totalCredit - $totalDebit;
 
             return [
                 'account_id' => (int) $account->id,
                 'code' => (string) $account->code,
                 'name' => (string) $account->name,
                 'type' => (string) $account->type,
+                'is_active' => (bool) $account->is_active,
                 'debit_balance' => (int) ($account->isDebitNormal() ? max(0, $balance) : max(0, -$balance)),
                 'credit_balance' => (int) ($account->isCreditNormal() ? max(0, $balance) : max(0, -$balance)),
             ];
-        })->filter(fn ($row) => $row['debit_balance'] > 0 || $row['credit_balance'] > 0 || (isset($balances[$row['account_id']]) && ($balances[$row['account_id']]->total_debit > 0 || $balances[$row['account_id']]->total_credit > 0)));
+        })->filter(fn ($row) => $row['debit_balance'] > 0 || $row['credit_balance'] > 0);
+    }
+
+    /**
+     * Posted net movement (in the account's normal direction) before a date.
+     */
+    public function postedNetBefore(Account $account, string $beforeDate): int
+    {
+        $priorMovements = DB::table('journal_entry_lines as jel')
+            ->join('journal_entries as je', 'je.id', '=', 'jel.journal_entry_id')
+            ->where('jel.account_id', $account->id)
+            ->where('je.is_posted', true)
+            ->where('je.entry_date', '<', $beforeDate)
+            ->whereNull('je.deleted_at')
+            ->selectRaw('COALESCE(SUM(jel.debit), 0) as total_debit, COALESCE(SUM(jel.credit), 0) as total_credit')
+            ->first();
+
+        $totalDebit = (int) ($priorMovements->total_debit ?? 0);
+        $totalCredit = (int) ($priorMovements->total_credit ?? 0);
+
+        return $account->isDebitNormal()
+            ? $totalDebit - $totalCredit
+            : $totalCredit - $totalDebit;
     }
 }

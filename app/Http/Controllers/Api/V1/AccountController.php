@@ -124,7 +124,9 @@ class AccountController extends Controller
             'type' => $account->type,
             'start_date' => $startDate,
             'end_date' => $endDate,
-            'opening_balance' => $account->opening_balance,
+            'opening_balance' => $startDate
+                ? $this->balanceService->postedNetBefore($account, $startDate)
+                : 0,
             'entries' => $ledger,
         ]);
     }

@@ -1017,6 +1017,26 @@ $this->inventoryStrategy->onStockAdjustment($opname); // sums adjustment movemen
 
 **Tests:** `tests/Feature/Services/Inventory/StockOpnameServiceTest.php`, `tests/Feature/Services/Inventory/Costing/CostingStrategyTest.php`
 
+### 32. The Ledger Is Journal Lines — Never `accounts.opening_balance` or `is_active`
+
+**Context:** Trial balance, balance sheet, income statement, equity statement, general ledger, bank book balance.
+
+**Problem:** Balances were `opening_balance` (a fillable API field with no offsetting entry) plus posted movements. `PATCH /accounts/{id}` with `opening_balance` invented money and unbalanced the TB. Reports also loaded `where('is_active', true)`, so deactivating an account with posted movements dropped one side of the TB.
+
+**Solution:** Posted journal lines are the only ledger. Remove `opening_balance` from `$fillable` and FormRequests. Do not add the column into `getBalance()`, trial balance, or reports. Opening capital is a balanced `source_type = opening` JE (year-end close already posts these). `is_active` hides accounts from pickers, never from the ledger. Compare `entry_date` with `<= $asOfDate.' 23:59:59'` so datetime values on the as-of day are included.
+
+```php
+// ❌ BAD
+$accounts = Account::where('is_active', true)->get();
+$balance = $account->opening_balance + $netMovement;
+
+// ✅ GOOD
+$accounts = Account::query()->whereIn('id', $postedAccountIds)->get();
+$balance = $netMovement; // posted JE lines only
+```
+
+**Tests:** `tests/Feature/Services/Accounting/AccountBalanceServiceTest.php`
+
 ---
 
 ## Indonesian Business Context

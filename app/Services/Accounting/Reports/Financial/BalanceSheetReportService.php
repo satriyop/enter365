@@ -32,7 +32,6 @@ class BalanceSheetReportService
         $asOfDate = $asOfDate ?? now()->toDateString();
 
         $accounts = Account::query()
-            ->where('is_active', true)
             ->whereIn('type', [Account::TYPE_ASSET, Account::TYPE_LIABILITY, Account::TYPE_EQUITY])
             ->orderBy('code')
             ->get();
@@ -53,9 +52,9 @@ class BalanceSheetReportService
             $totalDebit = (int) ($movement->total_debit ?? 0);
             $totalCredit = (int) ($movement->total_credit ?? 0);
 
-            $balance = (int) $account->opening_balance + ($account->isDebitNormal()
+            $balance = $account->isDebitNormal()
                 ? $totalDebit - $totalCredit
-                : $totalCredit - $totalDebit);
+                : $totalCredit - $totalDebit;
 
             return (object) [
                 'account_id' => $account->id,

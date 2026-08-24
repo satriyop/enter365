@@ -32,7 +32,6 @@ class IncomeStatementReportService
         $startDate = $startDate ?? now()->startOfYear()->toDateString();
 
         $accounts = Account::query()
-            ->where('is_active', true)
             ->whereIn('type', [Account::TYPE_REVENUE, Account::TYPE_EXPENSE])
             ->orderBy('code')
             ->get();
