@@ -63,6 +63,7 @@ it('loads warehouses list without JS errors', function () {
 // --- Sales pages ---
 
 it('loads quotations list without JS errors', function () {
+    skipUnlessLiveFeature('quotations');
     $page = loginAndVisit('/quotations');
 
     $page->assertSee('Quotations');
@@ -70,6 +71,7 @@ it('loads quotations list without JS errors', function () {
 });
 
 it('loads invoices list without JS errors', function () {
+    skipUnlessLiveFeature('invoices');
     $page = loginAndVisit('/invoices');
 
     $page->assertSee('Invoices');
@@ -77,6 +79,7 @@ it('loads invoices list without JS errors', function () {
 });
 
 it('loads delivery orders list without JS errors', function () {
+    skipUnlessLiveFeature('delivery_orders');
     $page = loginAndVisit('/sales/delivery-orders');
 
     $page->assertSee('Delivery Orders');
@@ -84,6 +87,7 @@ it('loads delivery orders list without JS errors', function () {
 });
 
 it('loads sales returns list without JS errors', function () {
+    skipUnlessLiveFeature('sales_returns');
     $page = loginAndVisit('/sales/sales-returns');
 
     $page->assertSee('Sales Returns');
@@ -93,6 +97,7 @@ it('loads sales returns list without JS errors', function () {
 // --- Purchasing pages ---
 
 it('loads purchase orders list without JS errors', function () {
+    skipUnlessLiveFeature('purchase_orders');
     $page = loginAndVisit('/purchasing/purchase-orders');
 
     $page->assertSee('Purchase Orders');
@@ -100,6 +105,7 @@ it('loads purchase orders list without JS errors', function () {
 });
 
 it('loads goods receipt notes list without JS errors', function () {
+    skipUnlessLiveFeature('goods_receipt_notes');
     $page = loginAndVisit('/purchasing/goods-receipt-notes');
 
     $page->assertSee('Goods Receipt Notes');
@@ -114,6 +120,7 @@ it('loads bills list without JS errors', function () {
 });
 
 it('loads purchase returns list without JS errors', function () {
+    skipUnlessLiveFeature('purchase_returns');
     $page = loginAndVisit('/purchasing/purchase-returns');
 
     $page->assertSee('Purchase Returns');
@@ -188,6 +195,7 @@ it('loads fiscal periods list without JS errors', function () {
 });
 
 it('loads payments list without JS errors', function () {
+    skipUnlessLiveFeature('payments');
     $page = loginAndVisit('/payments');
 
     $page->assertSee('Payments');
@@ -195,6 +203,7 @@ it('loads payments list without JS errors', function () {
 });
 
 it('loads down payments list without JS errors', function () {
+    skipUnlessLiveFeature('down_payments');
     $page = loginAndVisit('/finance/down-payments');
 
     $page->assertSee('Down Payments');

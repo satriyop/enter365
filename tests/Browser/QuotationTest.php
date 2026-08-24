@@ -14,6 +14,7 @@ declare(strict_types=1);
  * automatically refresh the detail page. A page reload is needed to see the
  * updated status.
  */
+beforeEach(fn () => skipUnlessLiveFeature('quotations'));
 
 /**
  * Helper: fill and submit the quotation form, returning the page on the detail view.

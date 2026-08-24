@@ -318,6 +318,8 @@ return [
         'accounts_receivable' => '1-1100',
         'accounts_payable' => '2-1100',
         'sales_revenue' => '4-1001',
+        'service_charge' => env('ACCOUNTING_SERVICE_CHARGE_ACCOUNT', '4-1005'),
+        'pbjt_payable' => env('ACCOUNTING_PBJT_ACCOUNT', '2-1210'),
         'purchase_expense' => '5-1002',
         'tax_payable' => '2-1200', // PPN Keluaran
         'tax_receivable' => '1-1300', // PPN Masukan

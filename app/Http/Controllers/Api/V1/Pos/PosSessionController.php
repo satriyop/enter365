@@ -106,8 +106,8 @@ class PosSessionController extends Controller
             ->with('category')
             ->orderBy('name')
             ->get()
-            ->map(function (Product $product) use ($stocks) {
-                $button = $product->is_taxable
+            ->map(function (Product $product) use ($stocks, $pos_session) {
+                $button = (! $pos_session->usesAddOnPricing() && $product->is_taxable)
                     ? (int) $product->selling_price_with_tax
                     : (int) $product->selling_price;
 

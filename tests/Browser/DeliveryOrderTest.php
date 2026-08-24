@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+beforeEach(fn () => skipUnlessLiveFeature('delivery_orders'));
+
 /**
  * SALES-PEST-03: Delivery order from invoice browser tests.
  *

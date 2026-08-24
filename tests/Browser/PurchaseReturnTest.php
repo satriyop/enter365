@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+beforeEach(fn () => skipUnlessLiveFeature('purchase_returns'));
+
 /**
  * PURCH-PEST-04: Purchase return workflow browser tests.
  *

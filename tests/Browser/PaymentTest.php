@@ -20,6 +20,7 @@ declare(strict_types=1);
  * Shared helpers (realDb, loginAndVisit, spaUrl, createInvoice, postInvoice,
  * getInvoiceIdFromUrl) are in tests/Pest.php.
  */
+beforeEach(fn () => skipUnlessLiveFeature('payments'));
 
 // ---------------------------------------------------------------------------
 // Bill Helpers (shared with BillTest.php, guarded to prevent redefinition)

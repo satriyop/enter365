@@ -22,6 +22,8 @@ class PosSale extends Model
         'pos_session_id',
         'status',
         'subtotal_amount',
+        'service_amount',
+        'tax_amount',
         'dpp_amount',
         'ppn_amount',
         'payable_amount',
@@ -41,6 +43,8 @@ class PosSale extends Model
         return [
             'status' => PosSaleStatus::class,
             'subtotal_amount' => 'integer',
+            'service_amount' => 'integer',
+            'tax_amount' => 'integer',
             'dpp_amount' => 'integer',
             'ppn_amount' => 'integer',
             'payable_amount' => 'integer',

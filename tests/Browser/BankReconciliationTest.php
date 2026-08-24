@@ -18,6 +18,7 @@ declare(strict_types=1);
  *
  * Related backlog: tasks/backlog/003-browser-bank-recon.md
  */
+beforeEach(fn () => skipUnlessLiveFeature('bank_reconciliation'));
 if (! function_exists('waitForBankTxnStatus')) {
     function waitForBankTxnStatus(int $txnId, string $expectedStatus, int $maxRetries = 40): void
     {

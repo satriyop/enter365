@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+beforeEach(fn () => skipUnlessLiveFeature('goods_receipt_notes'));
+
 /**
  * PURCH-PEST-02: GRN (Goods Receipt Note) from PO — browser tests.
  *

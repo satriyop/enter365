@@ -17,6 +17,7 @@ declare(strict_types=1);
  *
  * Shared helpers (realDb, loginAndVisit, spaUrl, etc.) are in tests/Pest.php.
  */
+beforeEach(fn () => skipUnlessLiveFeature('purchase_orders'));
 
 // ---------------------------------------------------------------------------
 // Helpers

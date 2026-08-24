@@ -5,11 +5,11 @@ declare(strict_types=1);
 use App\Models\Contacts\Contact;
 use App\Models\Core\Role;
 use App\Models\Inventory\Product;
-use App\Models\Inventory\ProductStock;
 use App\Models\Inventory\Warehouse;
 use App\Models\Sales\Invoice;
 use App\Models\User;
 use Database\Seeders\Demo\DemoSeeder;
+use Database\Seeders\Demo\KopitiamCafeMenu;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 
@@ -23,9 +23,11 @@ it('seeds Kopitiam 57 stand-in till without invoices', function () {
     $kasir = User::query()->where('email', 'siti@kopitiam57.test')->first();
     $warehouse = Warehouse::query()->where('code', 'KT57-TOKO')->first();
     $kopi = Product::query()->where('sku', 'KT57-KOPI-O')->first();
+    $hakau = Product::query()->where('sku', 'KT57-HAKAU')->first();
     $garlic = Product::query()->where('sku', 'KT57-SB-GARLIC')->first();
     $packing = Product::query()->where('sku', 'KT57-PACK')->first();
     $retiredKaya = Product::query()->where('sku', 'KT57-KAYA')->first();
+    $menuCount = count(KopitiamCafeMenu::items());
 
     expect($kasir)->not->toBeNull()
         ->and($kasir->hasRole(Role::CASHIER))->toBeTrue()
@@ -35,26 +37,23 @@ it('seeds Kopitiam 57 stand-in till without invoices', function () {
         ->and(Contact::query()->count())->toBe(0)
         ->and(Product::query()->where('sku', 'AC-AMMETER')->exists())->toBeFalse()
         ->and($kopi)->not->toBeNull()
-        ->and($kopi->selling_price)->toBe(8_000)
+        ->and($kopi->selling_price)->toBe(15_000)
         ->and($kopi->is_taxable)->toBeFalse()
-        ->and($kopi->track_inventory)->toBeTrue()
+        ->and($kopi->track_inventory)->toBeFalse()
+        ->and($hakau)->not->toBeNull()
+        ->and($hakau->selling_price)->toBe(22_000)
         ->and($garlic)->not->toBeNull()
         ->and($garlic->selling_price)->toBe(28_000)
         ->and($garlic->is_taxable)->toBeFalse()
         ->and($garlic->is_active)->toBeTrue()
+        ->and($garlic->track_inventory)->toBeTrue()
         ->and(is_file(public_path('pos/kopitiam/KT57-SB-GARLIC.jpg')))->toBeTrue()
-        ->and($packing->track_inventory)->toBeFalse()
-        ->and(Product::query()->where('sku', 'like', 'KT57-%')->where('is_sellable', true)->count())->toBe(19)
+        ->and($packing === null || $packing->is_sellable === false)->toBeTrue()
+        ->and(Product::query()->where('sku', 'like', 'KT57-%')->where('is_sellable', true)->count())->toBe($menuCount)
         ->and($retiredKaya === null || $retiredKaya->is_sellable === false)->toBeTrue()
-        ->and(Invoice::query()->count())->toBe(0);
-
-    $stock = ProductStock::query()
-        ->where('product_id', $kopi->id)
-        ->where('warehouse_id', $warehouse->id)
-        ->first();
-
-    expect($stock)->not->toBeNull()
-        ->and($stock->quantity)->toBeGreaterThan(0);
+        ->and(Invoice::query()->count())->toBe(0)
+        ->and(User::query()->where('email', 'rina@kopitiam57.test')->first()?->hasRole(Role::ACCOUNTANT))->toBeTrue()
+        ->and(User::query()->where('email', 'dewi@kopitiam57.test')->first()?->hasRole(Role::INVENTORY))->toBeTrue();
 
     $owner = User::query()->where('email', 'admin@example.com')->firstOrFail();
     Sanctum::actingAs($owner);

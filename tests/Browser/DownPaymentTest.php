@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+beforeEach(fn () => skipUnlessLiveFeature('down_payments'));
+
 /**
  * FIN-PEST-02: Down payment browser tests (LIMITED scope).
  *

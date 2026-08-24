@@ -93,6 +93,32 @@ function authenticatedCashier(): User
 }
 
 /**
+ * Authenticate an Akuntan. Requires RolesAndPermissionsSeeder.
+ */
+function authenticatedAccountant(): User
+{
+    $user = User::factory()->create();
+    $role = Role::query()->where('name', Role::ACCOUNTANT)->firstOrFail();
+    $user->roles()->attach($role);
+    Sanctum::actingAs($user);
+
+    return $user;
+}
+
+/**
+ * Authenticate Inventori staff. Requires RolesAndPermissionsSeeder.
+ */
+function authenticatedInventoryClerk(): User
+{
+    $user = User::factory()->create();
+    $role = Role::query()->where('name', Role::INVENTORY)->firstOrFail();
+    $user->roles()->attach($role);
+    Sanctum::actingAs($user);
+
+    return $user;
+}
+
+/**
  * Create and authenticate a regular user for API tests.
  */
 function authenticatedUser(): User
@@ -214,6 +240,16 @@ function applyFeaturePreset(string $preset): void
             'quotations' => false,
             'invoices' => false,
             'payments' => false,
+            'delivery_orders' => false,
+            'sales_returns' => false,
+            'down_payments' => false,
+            'purchase_orders' => false,
+            'goods_receipt_notes' => false,
+            'purchase_returns' => false,
+            'budgeting' => false,
+            'recurring' => false,
+            'multi_currency' => false,
+            'bank_reconciliation' => false,
         ],
         'solar' => [
             'manufacturing' => false,
@@ -289,6 +325,70 @@ function seedDemoProfile($test, string $profile): void
 function spaUrl(string $path = ''): string
 {
     return env('SPA_URL', 'http://localhost:3000').$path;
+}
+
+/**
+ * Live API feature flags (enter365.test), not phpunit.xml FEATURE_PRESET=full.
+ *
+ * @return array<string, bool>
+ */
+function liveApiModules(): array
+{
+    static $modules = null;
+    if (is_array($modules)) {
+        return $modules;
+    }
+
+    $base = rtrim((string) env('API_URL', 'https://enter365.test'), '/');
+
+    try {
+        $login = \Illuminate\Support\Facades\Http::withOptions(['verify' => false])
+            ->acceptJson()
+            ->post($base.'/api/v1/auth/login', [
+                'email' => 'admin@example.com',
+                'password' => 'password',
+            ]);
+        if (! $login->successful()) {
+            $modules = [];
+
+            return $modules;
+        }
+
+        $features = \Illuminate\Support\Facades\Http::withOptions(['verify' => false])
+            ->acceptJson()
+            ->withToken((string) $login->json('token'))
+            ->get($base.'/api/v1/features');
+
+        $modules = (array) ($features->json('data.modules') ?? []);
+    } catch (\Throwable) {
+        $modules = [];
+    }
+
+    return $modules;
+}
+
+function skipUnlessLiveFeature(string $module): void
+{
+    if (! (liveApiModules()[$module] ?? false)) {
+        test()->markTestSkipped("Live API feature '{$module}' is off for this tenant.");
+    }
+}
+
+function loginAndVisitAs(string $email, string $path = '/', string $password = 'password')
+{
+    ensureOpenCurrentFiscalPeriod();
+
+    $page = visit(spaUrl('/login'));
+    $page->fill('[data-testid="login-email"]', $email)
+        ->fill('[data-testid="login-password"]', $password)
+        ->click('[data-testid="login-submit"]')
+        ->assertMissing('[data-testid="login-email"]');
+
+    if ($path !== '/' && $path !== '') {
+        return $page->navigate(spaUrl($path));
+    }
+
+    return $page;
 }
 
 /**

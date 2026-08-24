@@ -53822,6 +53822,14 @@
                 ],
                 "title": "PlnTariffResource"
             },
+            "PosPricingMode": {
+                "type": "string",
+                "enum": [
+                    "inclusive",
+                    "add"
+                ],
+                "title": "PosPricingMode"
+            },
             "PosSaleResource": {
                 "type": "object",
                 "properties": {
@@ -53843,6 +53851,15 @@
                                 "$ref": "#/components/schemas/PosSaleStatus"
                             }
                         ]
+                    },
+                    "subtotal_amount": {
+                        "type": "integer"
+                    },
+                    "service_amount": {
+                        "type": "integer"
+                    },
+                    "tax_amount": {
+                        "type": "integer"
                     },
                     "payable_amount": {
                         "type": "integer"
@@ -53927,6 +53944,9 @@
                     "sale_number",
                     "pos_session_id",
                     "status",
+                    "subtotal_amount",
+                    "service_amount",
+                    "tax_amount",
                     "payable_amount",
                     "cash_received_amount",
                     "change_amount",
@@ -54010,6 +54030,25 @@
                     "qris_account_id": {
                         "type": "integer"
                     },
+                    "pricing_mode": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "$ref": "#/components/schemas/PosPricingMode"
+                            }
+                        ]
+                    },
+                    "service_rate": {
+                        "type": "number"
+                    },
+                    "tax_add_rate": {
+                        "type": "number"
+                    },
+                    "tax_add_name": {
+                        "type": "string"
+                    },
                     "opening_cash_amount": {
                         "type": "integer"
                     },
@@ -54079,6 +54118,10 @@
                     "warehouse_id",
                     "cash_account_id",
                     "qris_account_id",
+                    "pricing_mode",
+                    "service_rate",
+                    "tax_add_rate",
+                    "tax_add_name",
                     "opening_cash_amount",
                     "expected_cash_amount",
                     "counted_cash_amount",

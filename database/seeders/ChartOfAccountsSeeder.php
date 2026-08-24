@@ -59,6 +59,7 @@ class ChartOfAccountsSeeder extends Seeder
             ['code' => '2-1000', 'name' => 'Liabilitas Jangka Pendek', 'type' => Account::TYPE_LIABILITY, 'subtype' => Account::SUBTYPE_CURRENT_LIABILITY, 'is_system' => true, 'parent' => '2-0000'],
             ['code' => '2-1100', 'name' => 'Utang Usaha', 'type' => Account::TYPE_LIABILITY, 'subtype' => Account::SUBTYPE_CURRENT_LIABILITY, 'is_system' => true, 'parent' => '2-1000'],
             ['code' => '2-1200', 'name' => 'PPN Keluaran', 'type' => Account::TYPE_LIABILITY, 'subtype' => Account::SUBTYPE_CURRENT_LIABILITY, 'is_system' => true, 'parent' => '2-1000'],
+            ['code' => '2-1210', 'name' => 'Utang PBJT', 'type' => Account::TYPE_LIABILITY, 'subtype' => Account::SUBTYPE_CURRENT_LIABILITY, 'is_system' => true, 'parent' => '2-1000'],
             ['code' => '2-1300', 'name' => 'Utang Pajak', 'type' => Account::TYPE_LIABILITY, 'subtype' => Account::SUBTYPE_CURRENT_LIABILITY, 'is_system' => false, 'parent' => '2-1000'],
             ['code' => '2-1301', 'name' => 'Utang PPh 21', 'type' => Account::TYPE_LIABILITY, 'subtype' => Account::SUBTYPE_CURRENT_LIABILITY, 'is_system' => false, 'parent' => '2-1300'],
             ['code' => '2-1302', 'name' => 'Utang PPh 23', 'type' => Account::TYPE_LIABILITY, 'subtype' => Account::SUBTYPE_CURRENT_LIABILITY, 'is_system' => false, 'parent' => '2-1300'],
@@ -93,6 +94,7 @@ class ChartOfAccountsSeeder extends Seeder
             // 4.1 Pendapatan Usaha (Operating Revenue)
             ['code' => '4-1000', 'name' => 'Pendapatan Usaha', 'type' => Account::TYPE_REVENUE, 'subtype' => Account::SUBTYPE_OPERATING_REVENUE, 'is_system' => true, 'parent' => '4-0000'],
             ['code' => '4-1001', 'name' => 'Pendapatan Penjualan', 'type' => Account::TYPE_REVENUE, 'subtype' => Account::SUBTYPE_OPERATING_REVENUE, 'is_system' => true, 'parent' => '4-1000'],
+            ['code' => '4-1005', 'name' => 'Pendapatan Service Charge', 'type' => Account::TYPE_REVENUE, 'subtype' => Account::SUBTYPE_OPERATING_REVENUE, 'is_system' => true, 'parent' => '4-1000'],
             ['code' => '4-1002', 'name' => 'Pendapatan Jasa', 'type' => Account::TYPE_REVENUE, 'subtype' => Account::SUBTYPE_OPERATING_REVENUE, 'is_system' => false, 'parent' => '4-1000'],
             ['code' => '4-1003', 'name' => 'Diskon Penjualan', 'type' => Account::TYPE_REVENUE, 'subtype' => Account::SUBTYPE_OPERATING_REVENUE, 'is_system' => false, 'parent' => '4-1000'],
             ['code' => '4-1004', 'name' => 'Retur Penjualan', 'type' => Account::TYPE_REVENUE, 'subtype' => Account::SUBTYPE_OPERATING_REVENUE, 'is_system' => false, 'parent' => '4-1000'],

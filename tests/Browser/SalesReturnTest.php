@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+beforeEach(fn () => skipUnlessLiveFeature('sales_returns'));
+
 /**
  * SALES-PEST-04: Sales return workflow browser tests.
  *

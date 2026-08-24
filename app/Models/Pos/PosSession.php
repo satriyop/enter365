@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\Pos;
 
+use App\Enums\Pos\PosPricingMode;
 use App\Enums\Pos\PosSessionStatus;
 use App\Models\Accounting\Account;
 use App\Models\Inventory\Warehouse;
@@ -24,6 +25,10 @@ class PosSession extends Model
         'warehouse_id',
         'cash_account_id',
         'qris_account_id',
+        'pricing_mode',
+        'service_rate',
+        'tax_add_rate',
+        'tax_add_name',
         'opening_cash_amount',
         'expected_cash_amount',
         'counted_cash_amount',
@@ -38,6 +43,9 @@ class PosSession extends Model
     {
         return [
             'status' => PosSessionStatus::class,
+            'pricing_mode' => PosPricingMode::class,
+            'service_rate' => 'float',
+            'tax_add_rate' => 'float',
             'opening_cash_amount' => 'integer',
             'expected_cash_amount' => 'integer',
             'counted_cash_amount' => 'integer',
@@ -98,5 +106,10 @@ class PosSession extends Model
     public function isOpen(): bool
     {
         return $this->status === PosSessionStatus::Open;
+    }
+
+    public function usesAddOnPricing(): bool
+    {
+        return $this->pricing_mode === PosPricingMode::Add;
     }
 }

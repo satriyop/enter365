@@ -12,8 +12,10 @@ use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Pos\PosServiceInterface;
 use App\Domain\Accounting\FiscalPeriods\Enums\FiscalPeriodStatus;
 use App\Domain\Accounting\Tax\TaxInclusiveStrategy;
+use App\Domain\Pos\PosAddOnBill;
 use App\Domain\Shared\DocumentNumbers;
 use App\Domain\Shared\ValueObjects\Money;
+use App\Enums\Pos\PosPricingMode;
 use App\Enums\Pos\PosSaleStatus;
 use App\Enums\Pos\PosSessionStatus;
 use App\Enums\Pos\PosTenderType;
@@ -69,6 +71,10 @@ class PosService extends BaseService implements PosServiceInterface
                 'warehouse_id' => $warehouse->id,
                 'cash_account_id' => $cash->id,
                 'qris_account_id' => $qris->id,
+                'pricing_mode' => PosPricingMode::from((string) config('pos.pricing_mode', PosPricingMode::Inclusive->value)),
+                'service_rate' => (float) config('pos.service_rate', 0),
+                'tax_add_rate' => (float) config('pos.tax_rate', 0),
+                'tax_add_name' => (string) config('pos.tax_name', 'PBJT'),
                 'opening_cash_amount' => (int) $data['opening_cash_amount'],
                 'opened_by' => $this->getUserId(),
                 'opened_at' => now(),
@@ -131,10 +137,24 @@ class PosService extends BaseService implements PosServiceInterface
                 throw BusinessRuleException::operationNotAllowed('checkout', 'Pesanan kosong.');
             }
 
-            $built = $this->buildLines($lines);
-            $payable = (int) array_sum(array_column($built, 'payable_amount'));
+            $built = $this->buildLines($lines, $session);
+            $linePayable = (int) array_sum(array_column($built, 'payable_amount'));
             $dpp = (int) array_sum(array_column($built, 'dpp_amount'));
             $ppn = (int) array_sum(array_column($built, 'ppn_amount'));
+            $serviceAmount = 0;
+            $taxAmount = 0;
+            $subtotal = $linePayable;
+            $payable = $linePayable;
+
+            if ($session->usesAddOnPricing()) {
+                $bill = PosAddOnBill::of($linePayable, (float) $session->service_rate, (float) $session->tax_add_rate);
+                $subtotal = $bill->subtotal;
+                $serviceAmount = $bill->serviceAmount;
+                $taxAmount = $bill->taxAmount;
+                $payable = $bill->payable;
+                $dpp = $subtotal;
+                $ppn = 0;
+            }
 
             $cashReceived = 0;
             $change = 0;
@@ -156,7 +176,9 @@ class PosService extends BaseService implements PosServiceInterface
                 'sale_number' => DocumentNumbers::generate('POS-'.now()->format('Ym').'-', 'pos_sales', 'sale_number'),
                 'pos_session_id' => $session->id,
                 'status' => PosSaleStatus::Completed,
-                'subtotal_amount' => $payable,
+                'subtotal_amount' => $subtotal,
+                'service_amount' => $serviceAmount,
+                'tax_amount' => $taxAmount,
                 'dpp_amount' => $dpp,
                 'ppn_amount' => $ppn,
                 'payable_amount' => $payable,
@@ -207,30 +229,16 @@ class PosService extends BaseService implements PosServiceInterface
                 ? $session->cash_account_id
                 : $session->qris_account_id;
 
-            $revenueLines = [
-                [
-                    'account_id' => $cashAccountId,
-                    'debit' => $payable,
-                    'credit' => 0,
-                    'description' => 'POS '.$sale->sale_number,
-                ],
-                [
-                    'account_code' => config('accounting.default_accounts.sales_revenue'),
-                    'debit' => 0,
-                    'credit' => $dpp,
-                    'description' => 'Pendapatan '.$sale->sale_number,
-                ],
-            ];
-            if ($ppn > 0) {
-                $revenueLines[] = [
-                    'account_code' => config('accounting.default_accounts.tax_payable'),
-                    'debit' => 0,
-                    'credit' => $ppn,
-                    'description' => 'PPN '.$sale->sale_number,
-                ];
-            } else {
-                $revenueLines[1]['credit'] = $payable;
-            }
+            $revenueLines = $this->revenueJournalLines(
+                $sale,
+                $cashAccountId,
+                $payable,
+                $dpp,
+                $ppn,
+                $serviceAmount,
+                $taxAmount,
+                $session,
+            );
 
             $saleJe = $this->journalService->createEntry([
                 'entry_date' => now()->toDateString(),
@@ -443,12 +451,77 @@ class PosService extends BaseService implements PosServiceInterface
     }
 
     /**
+     * @return list<array<string, mixed>>
+     */
+    private function revenueJournalLines(
+        PosSale $sale,
+        int $cashAccountId,
+        int $payable,
+        int $dpp,
+        int $ppn,
+        int $serviceAmount,
+        int $taxAmount,
+        PosSession $session,
+    ): array {
+        $number = $sale->sale_number;
+        $lines = [
+            [
+                'account_id' => $cashAccountId,
+                'debit' => $payable,
+                'credit' => 0,
+                'description' => 'POS '.$number,
+            ],
+            [
+                'account_code' => config('accounting.default_accounts.sales_revenue'),
+                'debit' => 0,
+                'credit' => $dpp,
+                'description' => 'Pendapatan '.$number,
+            ],
+        ];
+
+        if ($session->usesAddOnPricing()) {
+            if ($serviceAmount > 0) {
+                $lines[] = [
+                    'account_code' => config('accounting.default_accounts.service_charge'),
+                    'debit' => 0,
+                    'credit' => $serviceAmount,
+                    'description' => 'Service '.$number,
+                ];
+            }
+            if ($taxAmount > 0) {
+                $lines[] = [
+                    'account_code' => config('accounting.default_accounts.pbjt_payable'),
+                    'debit' => 0,
+                    'credit' => $taxAmount,
+                    'description' => ($session->tax_add_name ?: 'PBJT').' '.$number,
+                ];
+            }
+
+            return $lines;
+        }
+
+        if ($ppn > 0) {
+            $lines[] = [
+                'account_code' => config('accounting.default_accounts.tax_payable'),
+                'debit' => 0,
+                'credit' => $ppn,
+                'description' => 'PPN '.$number,
+            ];
+        } else {
+            $lines[1]['credit'] = $payable;
+        }
+
+        return $lines;
+    }
+
+    /**
      * @param  list<array{product_id: int, quantity: int}>  $lines
      * @return list<array<string, mixed>>
      */
-    private function buildLines(array $lines): array
+    private function buildLines(array $lines, PosSession $session): array
     {
         $built = [];
+        $addOn = $session->usesAddOnPricing();
         foreach ($lines as $line) {
             $product = Product::query()->findOrFail($line['product_id']);
             $qty = (int) $line['quantity'];
@@ -461,13 +534,13 @@ class PosService extends BaseService implements PosServiceInterface
                     "{$product->name} tidak bisa dijual."
                 );
             }
-            $unit = $product->is_taxable
+            $unit = (! $addOn && $product->is_taxable)
                 ? (int) $product->selling_price_with_tax
                 : (int) $product->selling_price;
             $payable = $unit * $qty;
             $dpp = $payable;
             $ppn = 0;
-            if ($product->is_taxable) {
+            if (! $addOn && $product->is_taxable) {
                 $inclusive = new TaxInclusiveStrategy;
                 $total = Money::of($payable);
                 $rate = (float) $product->tax_rate;
@@ -482,7 +555,7 @@ class PosService extends BaseService implements PosServiceInterface
                 'payable_amount' => $payable,
                 'dpp_amount' => $dpp,
                 'ppn_amount' => $ppn,
-                'is_taxable' => (bool) $product->is_taxable,
+                'is_taxable' => $addOn ? false : (bool) $product->is_taxable,
                 'track_inventory' => (bool) $product->track_inventory,
             ];
         }

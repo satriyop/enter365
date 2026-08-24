@@ -27,6 +27,8 @@ class PosSaleFactory extends Factory
             'pos_session_id' => PosSession::factory(),
             'status' => PosSaleStatus::Completed,
             'subtotal_amount' => $payable,
+            'service_amount' => 0,
+            'tax_amount' => 0,
             'dpp_amount' => 100_00,
             'ppn_amount' => 11_00,
             'payable_amount' => $payable,

@@ -14,6 +14,8 @@ declare(strict_types=1);
  * Shared helpers (realDb, createInvoice, postInvoice, getInvoiceIdFromUrl)
  * are defined in tests/Pest.php.
  */
+beforeEach(fn () => skipUnlessLiveFeature('invoices'));
+
 it('can create an invoice and verify it in the list', function () {
     $page = createInvoice('Invoice Create Test');
 

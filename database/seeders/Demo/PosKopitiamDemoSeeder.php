@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace Database\Seeders\Demo;
 
 use App\Contracts\Inventory\InventoryServiceInterface;
+use App\Enums\Pos\PosPricingMode;
+use App\Enums\Pos\PosSessionStatus;
 use App\Models\Core\Role;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\ProductCategory;
 use App\Models\Inventory\ProductStock;
 use App\Models\Inventory\Warehouse;
+use App\Models\Pos\PosSession;
 use App\Models\User;
 use App\Support\Features;
 use Illuminate\Database\Seeder;
@@ -20,11 +23,9 @@ use Illuminate\Support\Facades\Hash;
 /**
  * Kopitiam 57 till catalog.
  *
- * Pastry & Bread SKUs follow the shop board (Menu Pastry Bread.pdf).
- * The board says "Harga belum termasuk tax & service". V1 has no service
- * line and the till button is the amount paid (ADR-0056), so we seed the
- * printed K number with PPN off until they confirm PKP + service.
- * Drinks / makanan / jasa stay stand-in until those menus arrive.
+ * Cafe prices from Menu Kopitiam 57 Maju. The till is Moka Add: tile =
+ * Harga Cafe, bill adds 5% service then 10% PBJT (ADR-0065). Pastry
+ * prices stay the PDF board K number (also cafe).
  */
 class PosKopitiamDemoSeeder extends Seeder
 {
@@ -33,6 +34,13 @@ class PosKopitiamDemoSeeder extends Seeder
         'KT57-KAYA',
         'KT57-TELUR',
         'KT57-ROTI-CK',
+        'KT57-ESTEH',
+        'KT57-INDO',
+        'KT57-KWET',
+        'KT57-NLEM',
+        'KT57-MILO',
+        'KT57-KANTONG',
+        'KT57-PACK',
     ];
 
     public function run(): void
@@ -45,13 +53,16 @@ class PosKopitiamDemoSeeder extends Seeder
 
         $admin = $this->ensureOwner();
         $this->seedKasir($admin);
+        $this->seedAccountant();
+        $this->seedInventoryClerk();
         $warehouse = $this->seedOutlet();
         $categories = $this->seedCategories();
         $this->seedCatalog($categories, $warehouse, $admin);
         $this->publishPastryPhotos();
         $this->retireStandinRoti();
+        $this->lockOpenSessionsToAddOn();
 
-        $this->command?->info('  ✓ Kopitiam 57 till — pastry from shop board; minuman/makanan still stand-in');
+        $this->command?->info('  ✓ Kopitiam 57 till — cafe menu + pastry; bill adds service 5% and PBJT 10%');
     }
 
     private function ensureOwner(): User
@@ -84,6 +95,32 @@ class PosKopitiamDemoSeeder extends Seeder
         if ($admin->email !== $kasir->email) {
             $admin->assignRole(Role::ADMIN);
         }
+    }
+
+    private function seedAccountant(): void
+    {
+        $akuntan = User::query()->updateOrCreate(
+            ['email' => 'rina@kopitiam57.test'],
+            [
+                'name' => 'Rina Akuntan',
+                'password' => Hash::make('password'),
+                'is_active' => true,
+            ]
+        );
+        $akuntan->assignRole(Role::ACCOUNTANT);
+    }
+
+    private function seedInventoryClerk(): void
+    {
+        $gudang = User::query()->updateOrCreate(
+            ['email' => 'dewi@kopitiam57.test'],
+            [
+                'name' => 'Dewi Gudang',
+                'password' => Hash::make('password'),
+                'is_active' => true,
+            ]
+        );
+        $gudang->assignRole(Role::INVENTORY);
     }
 
     private function seedOutlet(): Warehouse
@@ -120,10 +157,21 @@ class PosKopitiamDemoSeeder extends Seeder
         );
 
         $children = [
-            'POS-MIN' => 'Minuman',
-            'POS-MAK' => 'Makanan',
+            'POS-DIM' => 'Dimsum',
+            'POS-APP' => 'Appetizer',
+            'POS-TOS' => 'Toast',
+            'POS-BUB' => 'Bubur & Sup',
+            'POS-NAS' => 'Nasi',
+            'POS-MIE' => 'Mie',
+            'POS-TOF' => 'Tofu',
+            'POS-KOP' => 'Kopi',
+            'POS-TEH' => 'Teh',
+            'POS-MLK' => 'Milk Based',
+            'POS-JUS' => 'Jus',
+            'POS-SMH' => 'Smoothies',
+            'POS-FLT' => 'Float',
+            'POS-XTR' => 'Extra',
             'POS-ROT' => 'Pastry',
-            'POS-JSA' => 'Jasa',
         ];
 
         $map = [];
@@ -158,7 +206,7 @@ class PosKopitiamDemoSeeder extends Seeder
                     ['sku' => $row['sku']],
                     [
                         'name' => $row['name'],
-                        'description' => 'DEMO Kopitiam 57 — harga papan stand-in, bukan harga toko.',
+                        'description' => 'Kopitiam 57 — harga cafe. Bill menambah service 5% dan PBJT 10%.',
                         'type' => $row['track'] ? Product::TYPE_PRODUCT : Product::TYPE_SERVICE,
                         'category_id' => $categories[$row['category']]->id,
                         'unit' => 'pcs',
@@ -221,34 +269,23 @@ class PosKopitiamDemoSeeder extends Seeder
             ]);
     }
 
+    private function lockOpenSessionsToAddOn(): void
+    {
+        PosSession::query()
+            ->where('status', PosSessionStatus::Open)
+            ->update([
+                'pricing_mode' => PosPricingMode::Add,
+                'service_rate' => 5,
+                'tax_add_rate' => 10,
+                'tax_add_name' => 'PBJT',
+            ]);
+    }
+
     /**
-     * Pastry prices are the printed K number (rupiah integers). PPN off so
-     * the till button matches the board; HPP is a stand-in ~40% until recipe cost.
-     *
      * @return list<array{sku: string, name: string, category: string, price: int, cost: int, qty: int, track: bool, taxable: bool, barcode: string}>
      */
     private function skus(): array
     {
-        return [
-            ['sku' => 'KT57-KOPI-O', 'name' => 'Kopi O', 'category' => 'POS-MIN', 'price' => 8_000, 'cost' => 2_500, 'qty' => 80, 'track' => true, 'taxable' => false, 'barcode' => '899057000001'],
-            ['sku' => 'KT57-KOPI-TRK', 'name' => 'Kopi Tarik', 'category' => 'POS-MIN', 'price' => 12_000, 'cost' => 4_000, 'qty' => 80, 'track' => true, 'taxable' => false, 'barcode' => '899057000002'],
-            ['sku' => 'KT57-TEH-TRK', 'name' => 'Teh Tarik', 'category' => 'POS-MIN', 'price' => 12_000, 'cost' => 3_500, 'qty' => 80, 'track' => true, 'taxable' => false, 'barcode' => '899057000003'],
-            ['sku' => 'KT57-MILO', 'name' => 'Milo', 'category' => 'POS-MIN', 'price' => 14_000, 'cost' => 5_000, 'qty' => 60, 'track' => true, 'taxable' => false, 'barcode' => '899057000004'],
-            ['sku' => 'KT57-ESTEH', 'name' => 'Es Teh Manis', 'category' => 'POS-MIN', 'price' => 6_000, 'cost' => 1_500, 'qty' => 100, 'track' => true, 'taxable' => false, 'barcode' => '899057000005'],
-            ['sku' => 'KT57-SB-GARLIC', 'name' => 'Salt Bread Garlic Cheese', 'category' => 'POS-ROT', 'price' => 28_000, 'cost' => 11_000, 'qty' => 20, 'track' => true, 'taxable' => false, 'barcode' => '899057000016'],
-            ['sku' => 'KT57-SB-DBL', 'name' => 'Salt Bread Double Cheese', 'category' => 'POS-ROT', 'price' => 23_000, 'cost' => 9_000, 'qty' => 20, 'track' => true, 'taxable' => false, 'barcode' => '899057000017'],
-            ['sku' => 'KT57-SB-ORI', 'name' => 'Salt Bread Original', 'category' => 'POS-ROT', 'price' => 18_000, 'cost' => 7_000, 'qty' => 20, 'track' => true, 'taxable' => false, 'barcode' => '899057000018'],
-            ['sku' => 'KT57-SMEER', 'name' => 'Roti Smeer Meses', 'category' => 'POS-ROT', 'price' => 22_000, 'cost' => 9_000, 'qty' => 20, 'track' => true, 'taxable' => false, 'barcode' => '899057000019'],
-            ['sku' => 'KT57-CROISS-BT', 'name' => 'Butter Croissant', 'category' => 'POS-ROT', 'price' => 23_000, 'cost' => 9_000, 'qty' => 20, 'track' => true, 'taxable' => false, 'barcode' => '899057000020'],
-            ['sku' => 'KT57-SB-BEEF', 'name' => 'Salt Bread Smoked Beef & Cheese', 'category' => 'POS-ROT', 'price' => 40_000, 'cost' => 16_000, 'qty' => 20, 'track' => true, 'taxable' => false, 'barcode' => '899057000021'],
-            ['sku' => 'KT57-CROISS-CH', 'name' => 'Double Choco Croissant', 'category' => 'POS-ROT', 'price' => 45_000, 'cost' => 18_000, 'qty' => 20, 'track' => true, 'taxable' => false, 'barcode' => '899057000022'],
-            ['sku' => 'KT57-NLEM', 'name' => 'Nasi Lemak', 'category' => 'POS-MAK', 'price' => 22_000, 'cost' => 10_000, 'qty' => 30, 'track' => true, 'taxable' => false, 'barcode' => '899057000009'],
-            ['sku' => 'KT57-HAINAN', 'name' => 'Nasi Ayam Hainan', 'category' => 'POS-MAK', 'price' => 28_000, 'cost' => 14_000, 'qty' => 30, 'track' => true, 'taxable' => false, 'barcode' => '899057000010'],
-            ['sku' => 'KT57-INDO', 'name' => 'Indomie Goreng', 'category' => 'POS-MAK', 'price' => 12_000, 'cost' => 5_000, 'qty' => 60, 'track' => true, 'taxable' => false, 'barcode' => '899057000011'],
-            ['sku' => 'KT57-KWET', 'name' => 'Kwetiau', 'category' => 'POS-MAK', 'price' => 25_000, 'cost' => 11_000, 'qty' => 25, 'track' => true, 'taxable' => false, 'barcode' => '899057000012'],
-            ['sku' => 'KT57-SIOMAY', 'name' => 'Siomay', 'category' => 'POS-MAK', 'price' => 18_000, 'cost' => 8_000, 'qty' => 25, 'track' => true, 'taxable' => false, 'barcode' => '899057000013'],
-            ['sku' => 'KT57-KANTONG', 'name' => 'Kantong Plastik', 'category' => 'POS-JSA', 'price' => 500, 'cost' => 0, 'qty' => 0, 'track' => false, 'taxable' => false, 'barcode' => '899057000014'],
-            ['sku' => 'KT57-PACK', 'name' => 'Jasa Packing', 'category' => 'POS-JSA', 'price' => 2_000, 'cost' => 0, 'qty' => 0, 'track' => false, 'taxable' => false, 'barcode' => '899057000015'],
-        ];
+        return KopitiamCafeMenu::items();
     }
 }
