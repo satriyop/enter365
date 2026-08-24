@@ -43,18 +43,44 @@ function waitForJePosted(int $jeId, int $maxRetries = 30): void
 function generateJeNumber(): string
 {
     $prefix = 'JE-'.now()->format('Ym').'-';
-    $lastNumber = realDb()->table('journal_entries')
-        ->where('entry_number', 'like', $prefix.'%')
-        ->orderByDesc('entry_number')
-        ->value('entry_number');
+    $db = realDb();
 
-    if ($lastNumber) {
-        $seq = (int) substr($lastNumber, strlen($prefix)) + 1;
-    } else {
-        $seq = 1;
-    }
+    return $db->transaction(function () use ($db, $prefix) {
+        $current = $db->table('document_sequences')
+            ->where('prefix', $prefix)
+            ->lockForUpdate()
+            ->value('next_value');
 
-    return $prefix.str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
+        $highest = 0;
+        $prefixLength = strlen($prefix);
+        $db->table('journal_entries')
+            ->where('entry_number', 'like', $prefix.'%')
+            ->orderBy('id')
+            ->pluck('entry_number')
+            ->each(function ($number) use ($prefixLength, &$highest): void {
+                $suffix = substr((string) $number, $prefixLength);
+                if ($suffix !== '' && ctype_digit($suffix)) {
+                    $highest = max($highest, (int) $suffix);
+                }
+            });
+
+        $next = max((int) ($current ?? 0), $highest) + 1;
+
+        if ($current === null) {
+            $db->table('document_sequences')->insert([
+                'prefix' => $prefix,
+                'next_value' => $next,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } else {
+            $db->table('document_sequences')
+                ->where('prefix', $prefix)
+                ->update(['next_value' => $next, 'updated_at' => now()]);
+        }
+
+        return $prefix.str_pad((string) $next, 4, '0', STR_PAD_LEFT);
+    });
 }
 
 /**

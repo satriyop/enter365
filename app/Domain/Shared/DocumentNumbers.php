@@ -53,7 +53,7 @@ class DocumentNumbers
 
     private static function doGenerate(string $prefix, string $table, string $column, int $pad): string
     {
-        $next = self::claimNext($prefix, $table, $column);
+        $next = self::claimNext($prefix, $table, $column, $pad);
 
         return $prefix.str_pad((string) $next, $pad, '0', STR_PAD_LEFT);
     }
@@ -61,29 +61,61 @@ class DocumentNumbers
     /**
      * Atomically claim the next value for a prefix, seeding the counter on
      * first use from any numbers that already exist in the target table.
+     *
+     * Out-of-band inserts (imports, browser fixtures) can leave the counter
+     * behind the table. When the claimed number is already taken, jump to
+     * one past the highest existing suffix rather than colliding.
      */
-    private static function claimNext(string $prefix, string $table, string $column): int
+    private static function claimNext(string $prefix, string $table, string $column, int $pad): int
     {
         $next = self::incrementSequence($prefix);
 
-        if ($next !== null) {
-            return $next;
-        }
-
-        DB::table('document_sequences')->insertOrIgnore([
-            'prefix' => $prefix,
-            'next_value' => self::highestExisting($prefix, $table, $column),
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        $next = self::incrementSequence($prefix);
-
         if ($next === null) {
-            throw new RuntimeException("Gagal membuat nomor dokumen untuk awalan '{$prefix}'.");
+            DB::table('document_sequences')->insertOrIgnore([
+                'prefix' => $prefix,
+                'next_value' => self::highestExisting($prefix, $table, $column),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $next = self::incrementSequence($prefix);
+
+            if ($next === null) {
+                throw new RuntimeException("Gagal membuat nomor dokumen untuk awalan '{$prefix}'.");
+            }
         }
 
-        return $next;
+        return self::ensureUnused($prefix, $table, $column, $pad, $next);
+    }
+
+    private static function ensureUnused(
+        string $prefix,
+        string $table,
+        string $column,
+        int $pad,
+        int $next
+    ): int {
+        for ($attempt = 0; $attempt < 8; $attempt++) {
+            $candidate = $prefix.str_pad((string) $next, $pad, '0', STR_PAD_LEFT);
+
+            if (! DB::table($table)->where($column, $candidate)->exists()) {
+                return $next;
+            }
+
+            $highest = max($next, self::highestExisting($prefix, $table, $column));
+
+            DB::table('document_sequences')
+                ->where('prefix', $prefix)
+                ->update(['next_value' => $highest, 'updated_at' => now()]);
+
+            $next = self::incrementSequence($prefix);
+
+            if ($next === null) {
+                throw new RuntimeException("Gagal membuat nomor dokumen untuk awalan '{$prefix}'.");
+            }
+        }
+
+        throw new RuntimeException("Gagal membuat nomor dokumen untuk awalan '{$prefix}'.");
     }
 
     /**

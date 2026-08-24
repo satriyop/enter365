@@ -97,7 +97,22 @@ describe('DocumentNumbers', function () {
         expect(generateEntryNumber('JE-202608-'))->toBe('JE-202608-0005');
     });
 
-    it('only scans the target table once per prefix', function () {
+    it('skips ahead when the sequence row lags numbers already in the table', function () {
+        DB::table('document_sequences')->insert([
+            'prefix' => 'JE-202608-',
+            'next_value' => 66,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        seedEntryNumber('JE-202608-0067');
+        seedEntryNumber('JE-202608-0072');
+
+        expect(generateEntryNumber('JE-202608-'))->toBe('JE-202608-0073')
+            ->and(generateEntryNumber('JE-202608-'))->toBe('JE-202608-0074');
+    });
+
+    it('does not rescan existing numbers on the happy path', function () {
         generateEntryNumber('JE-202608-');
 
         DB::enableQueryLog();
@@ -105,6 +120,6 @@ describe('DocumentNumbers', function () {
         $queries = collect(DB::getQueryLog())->pluck('query')->implode(' ');
         DB::disableQueryLog();
 
-        expect($queries)->not->toContain('from "journal_entries"');
+        expect($queries)->not->toContain('like');
     });
 });
