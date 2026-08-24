@@ -7,6 +7,8 @@ namespace App\Services\Accounting\Journal;
 use App\Contracts\Accounting\AccountLookupServiceInterface;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
+use App\Domain\Accounting\FiscalPeriods\Enums\FiscalPeriodStatus;
+use App\Exceptions\Domain\BusinessRuleException;
 use App\Models\Accounting\FiscalPeriod;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Accounting\JournalEntryLine;
@@ -150,58 +152,93 @@ class JournalEntryService extends BaseService
 
     /**
      * Reverse a posted journal entry.
+     *
+     * Locks the original row, keeps the caller's reason on the ledger, and
+     * posts into an open fiscal period (original date if that period is still
+     * open; otherwise today).
      */
     public function reverseEntry(JournalEntry $entry, ?string $description = null): JournalEntry
     {
-        if (! $entry->is_posted) {
-            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
-                'reversing journal entry',
-                'Cannot reverse an unposted journal entry'
-            );
-        }
-
-        if ($entry->is_reversed) {
-            throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
-                'reversing journal entry',
-                'Journal entry is already reversed'
-            );
-        }
-
         return $this->executeInTransaction('reverse_entry', function () use ($entry, $description) {
-            // Create reversal entry with swapped debits/credits
+            $locked = JournalEntry::query()->lockForUpdate()->findOrFail($entry->id);
+
+            if (! $locked->is_posted) {
+                throw BusinessRuleException::operationNotAllowed(
+                    'reversing journal entry',
+                    'Cannot reverse an unposted journal entry'
+                );
+            }
+
+            if ($locked->is_reversed) {
+                throw BusinessRuleException::operationNotAllowed(
+                    'reversing journal entry',
+                    'Journal entry is already reversed'
+                );
+            }
+
+            $locked->load('lines');
+
             $reversalLines = [];
-            foreach ($entry->lines as $line) {
+            foreach ($locked->lines as $line) {
                 $reversalLines[] = [
                     'account_id' => $line->account_id,
                     'description' => $line->description,
-                    'debit' => $line->credit, // Swap
-                    'credit' => $line->debit, // Swap
+                    'debit' => $line->credit,
+                    'credit' => $line->debit,
                     'currency_code' => $line->currency_code,
                     'amount_currency' => $line->amount_currency,
                     'exchange_rate' => $line->exchange_rate,
                 ];
             }
 
-            $entryDate = $entry->entry_date;
-            $description = 'Reversal of '.$entry->entry_number.': '.$entry->description;
+            $reversalDescription = ($description !== null && trim($description) !== '')
+                ? trim($description)
+                : 'Reversal of '.$locked->entry_number.': '.$locked->description;
 
             $reversalEntry = $this->createEntry([
-                'entry_date' => $entryDate instanceof \Carbon\Carbon ? $entryDate->toDateString() : (string) $entryDate,
-                'description' => $description,
-                'reference' => $entry->entry_number,
+                'entry_date' => $this->reversalEntryDate($locked),
+                'description' => $reversalDescription,
+                'reference' => $locked->entry_number,
                 'source_type' => JournalEntry::SOURCE_REVERSAL,
-                'source_id' => $entry->id,
+                'source_id' => $locked->id,
                 'lines' => $reversalLines,
             ], autoPost: true);
 
-            // Update reversal relationships
-            $reversalEntry->update(['reversal_of_id' => $entry->id]);
-            $entry->update([
+            $reversalEntry->update(['reversal_of_id' => $locked->id]);
+            $locked->update([
                 'is_reversed' => true,
                 'reversed_by_id' => $reversalEntry->id,
             ]);
 
             return $reversalEntry->fresh(['lines', 'lines.account']);
         }, ['entry_id' => $entry->id]);
+    }
+
+    /**
+     * Same-period reversal when the original period is still open; otherwise
+     * post into the current open period so a closed month cannot block a void.
+     */
+    private function reversalEntryDate(JournalEntry $entry): string
+    {
+        $originalDate = $entry->entry_date instanceof \DateTimeInterface
+            ? Carbon::parse($entry->entry_date)
+            : Carbon::parse((string) $entry->entry_date);
+
+        $originalPeriod = FiscalPeriod::forDate($originalDate);
+
+        if ($originalPeriod !== null && $originalPeriod->getStatus() === FiscalPeriodStatus::Open) {
+            return $originalDate->toDateString();
+        }
+
+        $current = FiscalPeriod::current();
+
+        if ($current === null || $current->getStatus() !== FiscalPeriodStatus::Open) {
+            throw BusinessRuleException::operationNotAllowed(
+                'membalik jurnal',
+                'Tidak ada periode fiskal terbuka untuk mencatat pembalikan.'
+            );
+        }
+
+        return now()->toDateString();
     }
 }

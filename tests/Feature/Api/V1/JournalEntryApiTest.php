@@ -195,7 +195,8 @@ describe('Journal Entry API', function () {
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.is_posted', true);
+            ->assertJsonPath('data.is_posted', true)
+            ->assertJsonPath('data.description', 'Custom reversal description');
 
         // Verify original entry is marked as reversed
         $this->assertDatabaseHas('journal_entries', [

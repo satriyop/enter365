@@ -1037,6 +1037,24 @@ $balance = $netMovement; // posted JE lines only
 
 **Tests:** `tests/Feature/Services/Accounting/AccountBalanceServiceTest.php`
 
+### 33. `reverseEntry()` Is a State Transition — Lock, Honour the Reason, Post Into an Open Period
+
+**Context:** Every void (POS, invoice, payment, DO, SR) calls `JournalEntryService::reverseEntry($entry, $reason)`.
+
+**Problem:** The `$description` argument was overwritten with a restatement of the original JE, so the GL never stored *why*. Guards ran outside the transaction with no `lockForUpdate()`, so two concurrent voids could reverse twice. The reversal reused the original `entry_date`, so a void after period close failed entirely.
+
+**Solution:** Inside `executeInTransaction()`, lock the original row, keep a non-empty caller reason, and post the reversal on the original date only if that fiscal period is still Open; otherwise post today into `FiscalPeriod::current()`. Missing/closed current period is an error.
+
+```php
+// ❌ BAD
+$description = 'Reversal of '.$entry->entry_number.': '.$entry->description;
+
+// ✅ GOOD
+$description = filled($description) ? trim($description) : 'Reversal of '.$entry->entry_number.': '.$entry->description;
+```
+
+**Tests:** `tests/Feature/Services/Accounting/JournalServiceTest.php` (reverseEntry)
+
 ---
 
 ## Indonesian Business Context

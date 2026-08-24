@@ -344,6 +344,72 @@ describe('JournalService - reverseEntry', function () {
         expect($reversal->description)->toContain('Reversal of JE-001');
     });
 
+    it('keeps the caller reversal reason on the ledger', function () {
+        $cashAccount = Account::where('code', '1-1000')->first();
+        $revenueAccount = Account::where('code', '4-1001')->first();
+
+        $entry = JournalEntry::factory()->create([
+            'is_posted' => true,
+            'entry_number' => 'JE-REASON',
+            'description' => 'Original sale',
+        ]);
+
+        JournalEntryLine::factory()->create([
+            'journal_entry_id' => $entry->id,
+            'account_id' => $cashAccount->id,
+            'debit' => 100000,
+            'credit' => 0,
+        ]);
+        JournalEntryLine::factory()->create([
+            'journal_entry_id' => $entry->id,
+            'account_id' => $revenueAccount->id,
+            'debit' => 0,
+            'credit' => 100000,
+        ]);
+        $entry->load('lines');
+
+        $reversal = $this->service->reverseEntry($entry, 'Void POS-202608-0042');
+
+        expect($reversal->description)->toBe('Void POS-202608-0042');
+    });
+
+    it('posts the reversal into the current open period when the original period is closed', function () {
+        $closedPeriod = FiscalPeriod::factory()->closed()->create([
+            'start_date' => '2020-01-01',
+            'end_date' => '2020-01-31',
+        ]);
+
+        $cashAccount = Account::where('code', '1-1000')->first();
+        $revenueAccount = Account::where('code', '4-1001')->first();
+
+        $entry = JournalEntry::factory()->create([
+            'is_posted' => true,
+            'entry_date' => '2020-01-15',
+            'fiscal_period_id' => $closedPeriod->id,
+            'description' => 'Old sale',
+        ]);
+
+        JournalEntryLine::factory()->create([
+            'journal_entry_id' => $entry->id,
+            'account_id' => $cashAccount->id,
+            'debit' => 100000,
+            'credit' => 0,
+        ]);
+        JournalEntryLine::factory()->create([
+            'journal_entry_id' => $entry->id,
+            'account_id' => $revenueAccount->id,
+            'debit' => 0,
+            'credit' => 100000,
+        ]);
+        $entry->load('lines');
+
+        $reversal = $this->service->reverseEntry($entry, 'Void after close');
+
+        expect($reversal->description)->toBe('Void after close')
+            ->and($reversal->entry_date->toDateString())->toBe(now()->toDateString())
+            ->and($reversal->is_posted)->toBeTrue();
+    });
+
 });
 
 describe('JournalService - postInvoice', function () {

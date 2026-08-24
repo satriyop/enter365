@@ -642,7 +642,7 @@ This project has detailed architecture documentation in `.claude/skills/enter365
 
 | Skill File | Purpose |
 |------------|---------|
-| **SKILL.md** | Main entry with 32 gotchas, architecture overview |
+| **SKILL.md** | Main entry with 33 gotchas, architecture overview |
 | **STATE_MACHINES.md** | 16 state machines with transitions, events, templates |
 | **STRATEGIES.md** | COGS, Inventory, Manufacturing accounting strategies |
 | **EVENTS.md** | 95 domain events, event dispatcher pattern |
