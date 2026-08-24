@@ -113,6 +113,14 @@ describe('Owner POS journeys', function () {
         ])->assertForbidden()
             ->assertJsonPath('message', 'Sesi kasir milik kasir lain.');
 
+        $this->getJson("/api/v1/pos/sessions/{$sessionId}")
+            ->assertForbidden()
+            ->assertJsonPath('message', 'Sesi kasir milik kasir lain.');
+
+        $this->getJson("/api/v1/pos/sessions/{$sessionId}/catalog")
+            ->assertForbidden()
+            ->assertJsonPath('message', 'Sesi kasir milik kasir lain.');
+
         Sanctum::actingAs($this->owner);
         $this->getJson("/api/v1/pos/sessions/{$sessionId}")
             ->assertOk()

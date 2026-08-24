@@ -25,6 +25,7 @@ beforeEach(function () {
 
     // Seed chart of accounts for journal entry tests
     $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\ChartOfAccountsSeeder']);
+    $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\FiscalPeriodSeeder']);
 
     $this->service = app(SalesReturnServiceInterface::class);
     $this->actingAs($this->user);

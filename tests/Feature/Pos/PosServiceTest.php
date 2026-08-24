@@ -9,6 +9,7 @@ use App\Enums\Pos\PosSessionStatus;
 use App\Enums\Pos\PosTenderType;
 use App\Exceptions\Domain\BusinessRuleException;
 use App\Exceptions\Domain\InsufficientStockException;
+use App\Models\Accounting\Account;
 use App\Models\Accounting\FiscalPeriod;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Accounting\JournalEntryLine;
@@ -65,6 +66,19 @@ describe('PosService session', function () {
 
         expect($second->id)->toBe($first->id)
             ->and(\App\Models\Pos\PosSession::query()->count())->toBe(1);
+    });
+
+    it('refuses to reopen the same kasir at a different warehouse', function () {
+        $first = openTill();
+        $otherWarehouse = Warehouse::factory()->create();
+
+        expect(fn () => test()->pos->openSession([
+            'warehouse_id' => $otherWarehouse->id,
+            'opening_cash_amount' => 50_000_00,
+        ]))->toThrow(BusinessRuleException::class, 'gudang lain');
+
+        expect(\App\Models\Pos\PosSession::query()->where('status', PosSessionStatus::Open)->count())->toBe(1)
+            ->and($first->fresh()->warehouse_id)->toBe(test()->warehouse->id);
     });
 
     it('opens a session with cash and qris accounts snapshotted', function () {
@@ -201,9 +215,20 @@ describe('PosService checkout', function () {
             ],
         ], 'pos_key_qris_1');
 
+        $qrisAccount = Account::query()->findOrFail($session->qris_account_id);
+        $debited = JournalEntryLine::query()
+            ->where('journal_entry_id', $sale->journal_entry_id)
+            ->where('debit', '>', 0)
+            ->with('account')
+            ->get()
+            ->pluck('account.code');
+
         expect($sale->change_amount)->toBe(0)
             ->and($sale->tenders->first()->type)->toBe(PosTenderType::Qris)
-            ->and(test()->pos->expectedCash($session->fresh()))->toBe(200_000_00);
+            ->and(test()->pos->expectedCash($session->fresh()))->toBe(200_000_00)
+            ->and($qrisAccount->code)->toBe('1-1112')
+            ->and($debited->all())->toContain('1-1112')
+            ->and($debited->all())->not->toContain('1-1002');
     });
 
     it('does not move stock or post cogs for untracked jasa', function () {
@@ -357,9 +382,23 @@ describe('PosService holds', function () {
 
         $taken = test()->pos->takeHold($session, $hold);
 
-        expect($taken->lines[0]['product_id'])->toBe(test()->product->id)
+        expect($taken->id)->toBe($hold->id)
+            ->and($taken->lines[0]['product_id'])->toBe(test()->product->id)
             ->and($taken->lines[0]['quantity'])->toBe(2)
+            ->and($taken->taken_at)->not->toBeNull()
             ->and(test()->pos->listHolds($session->fresh()))->toHaveCount(0);
+
+        $retried = test()->pos->takeHold($session, $hold);
+        expect($retried->id)->toBe($hold->id)
+            ->and($retried->taken_at)->not->toBeNull();
+    });
+
+    it('rejects a hold with non-positive quantity', function () {
+        $session = openTill();
+
+        expect(fn () => test()->pos->hold($session, [
+            ['product_id' => test()->product->id, 'quantity' => 0],
+        ]))->toThrow(BusinessRuleException::class, 'Kuantitas');
     });
 
     it('rejects a sixth hold', function () {

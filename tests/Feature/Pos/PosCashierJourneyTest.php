@@ -172,6 +172,7 @@ describe('Kasir full-day journey', function () {
 
         $taken = $this->postJson("/api/v1/pos/sessions/{$sessionId}/holds/{$holdId}/take");
         $taken->assertOk()
+            ->assertJsonPath('data.id', $holdId)
             ->assertJsonPath('data.lines.0.product_id', test()->tracked->id)
             ->assertJsonPath('data.lines.0.quantity', 2);
 

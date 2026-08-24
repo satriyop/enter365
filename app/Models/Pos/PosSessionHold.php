@@ -16,12 +16,14 @@ class PosSessionHold extends Model
     protected $fillable = [
         'pos_session_id',
         'lines',
+        'taken_at',
     ];
 
     protected function casts(): array
     {
         return [
             'lines' => 'array',
+            'taken_at' => 'datetime',
         ];
     }
 

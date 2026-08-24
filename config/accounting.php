@@ -314,7 +314,7 @@ return [
     'default_accounts' => [
         'cash' => '1-1001',
         'bank' => '1-1002',
-        'qris' => env('ACCOUNTING_QRIS_ACCOUNT', '1-1002'),
+        'qris' => env('ACCOUNTING_QRIS_ACCOUNT', '1-1112'),
         'accounts_receivable' => '1-1100',
         'accounts_payable' => '2-1100',
         'sales_revenue' => '4-1001',

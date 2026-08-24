@@ -67,6 +67,7 @@ class PosSessionController extends Controller
     public function show(Request $request, PosSession $pos_session): PosSessionResource
     {
         $this->ensurePermission($request, 'pos.sale.checkout', 'Anda tidak boleh memakai kasir.');
+        $this->assertOwnSession($request, $pos_session);
 
         return new PosSessionResource($pos_session->load('warehouse', 'holds', 'sales.items', 'sales.tenders'));
     }
@@ -83,6 +84,7 @@ class PosSessionController extends Controller
     public function catalog(Request $request, PosSession $pos_session): JsonResponse
     {
         $this->ensurePermission($request, 'pos.sale.checkout', 'Anda tidak boleh memakai kasir.');
+        $this->assertOwnSession($request, $pos_session);
 
         $stocks = ProductStock::query()
             ->where('warehouse_id', $pos_session->warehouse_id)

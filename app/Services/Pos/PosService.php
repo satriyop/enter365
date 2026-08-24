@@ -10,7 +10,6 @@ use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Inventory\InventoryServiceInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Pos\PosServiceInterface;
-use App\Domain\Accounting\FiscalPeriods\Enums\FiscalPeriodStatus;
 use App\Domain\Accounting\Tax\TaxInclusiveStrategy;
 use App\Domain\Pos\PosAddOnBill;
 use App\Domain\Shared\DocumentNumbers;
@@ -47,8 +46,20 @@ class PosService extends BaseService implements PosServiceInterface
         return $this->executeInTransaction('pos_open_session', function () use ($data) {
             $userId = $this->getUserId();
             if ($userId !== null) {
-                $existing = $this->currentOpenSession($userId);
+                $existing = PosSession::query()
+                    ->where('opened_by', $userId)
+                    ->where('status', PosSessionStatus::Open)
+                    ->lockForUpdate()
+                    ->first();
+
                 if ($existing !== null) {
+                    if ((int) $existing->warehouse_id !== (int) $data['warehouse_id']) {
+                        throw BusinessRuleException::operationNotAllowed(
+                            'buka sesi kasir',
+                            'Masih ada sesi kasir terbuka di gudang lain. Tutup sesi itu terlebih dahulu.'
+                        );
+                    }
+
                     return $existing->load('warehouse');
                 }
             }
@@ -366,6 +377,12 @@ class PosService extends BaseService implements PosServiceInterface
             }
 
             foreach ($lines as $line) {
+                if ((int) $line['quantity'] < 1) {
+                    throw BusinessRuleException::operationNotAllowed(
+                        'simpan',
+                        'Kuantitas harus lebih dari 0.'
+                    );
+                }
                 Product::query()->findOrFail($line['product_id']);
             }
 
@@ -398,10 +415,13 @@ class PosService extends BaseService implements PosServiceInterface
                 throw BusinessRuleException::operationNotAllowed('ambil', 'Pesanan ditahan bukan milik sesi ini.');
             }
 
-            $copy = $hold->replicate();
-            $hold->delete();
+            if ($hold->taken_at !== null) {
+                return $hold;
+            }
 
-            return $copy;
+            $hold->update(['taken_at' => now()]);
+
+            return $hold->fresh();
         });
     }
 
@@ -474,22 +494,7 @@ class PosService extends BaseService implements PosServiceInterface
 
     private function assertPeriodAllowsTill(\DateTimeInterface $date): void
     {
-        $period = FiscalPeriod::forDate($date);
-        if ($period === null) {
-            throw BusinessRuleException::operationNotAllowed(
-                'periode fiskal',
-                'Tidak ada periode fiskal untuk tanggal ini.'
-            );
-        }
-        if ($period->getStatus() === FiscalPeriodStatus::Closed) {
-            throw BusinessRuleException::fiscalPeriodClosed($period->name);
-        }
-        if ($period->getStatus() === FiscalPeriodStatus::Locked) {
-            throw BusinessRuleException::operationNotAllowed(
-                'periode fiskal',
-                "Periode fiskal '{$period->name}' sedang dikunci."
-            );
-        }
+        FiscalPeriod::assertOpenForPosting($date);
     }
 
     /**

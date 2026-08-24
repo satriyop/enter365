@@ -100,7 +100,7 @@ class PosSession extends Model
      */
     public function holds(): HasMany
     {
-        return $this->hasMany(PosSessionHold::class);
+        return $this->hasMany(PosSessionHold::class)->whereNull('taken_at');
     }
 
     public function isOpen(): bool

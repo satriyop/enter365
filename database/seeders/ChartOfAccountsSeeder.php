@@ -27,6 +27,7 @@ class ChartOfAccountsSeeder extends Seeder
             ['code' => '1-1011', 'name' => 'Bank Mandiri', 'type' => Account::TYPE_ASSET, 'subtype' => Account::SUBTYPE_CURRENT_ASSET, 'is_system' => false, 'parent' => '1-1000'],
             ['code' => '1-1012', 'name' => 'Bank BNI', 'type' => Account::TYPE_ASSET, 'subtype' => Account::SUBTYPE_CURRENT_ASSET, 'is_system' => false, 'parent' => '1-1000'],
             ['code' => '1-1100', 'name' => 'Piutang Usaha', 'type' => Account::TYPE_ASSET, 'subtype' => Account::SUBTYPE_CURRENT_ASSET, 'is_system' => true, 'parent' => '1-1000'],
+            ['code' => '1-1112', 'name' => 'Piutang QRIS', 'type' => Account::TYPE_ASSET, 'subtype' => Account::SUBTYPE_CURRENT_ASSET, 'is_system' => true, 'parent' => '1-1000'],
             ['code' => '1-1101', 'name' => 'Cadangan Kerugian Piutang', 'type' => Account::TYPE_ASSET, 'subtype' => Account::SUBTYPE_CURRENT_ASSET, 'is_system' => false, 'parent' => '1-1000'],
             ['code' => '1-1200', 'name' => 'Piutang Lain-lain', 'type' => Account::TYPE_ASSET, 'subtype' => Account::SUBTYPE_CURRENT_ASSET, 'is_system' => false, 'parent' => '1-1000'],
             ['code' => '1-1300', 'name' => 'PPN Masukan', 'type' => Account::TYPE_ASSET, 'subtype' => Account::SUBTYPE_CURRENT_ASSET, 'is_system' => true, 'parent' => '1-1000'],
