@@ -26,6 +26,11 @@ class TestProductFilter extends QueryFilter
         return ['id', 'name', 'created_at', 'price'];
     }
 
+    protected function getAllowedIncludes(): array
+    {
+        return ['category'];
+    }
+
     public function categoryId(int|string $value): void
     {
         $this->builder->where('category_id', $value);
@@ -147,6 +152,75 @@ describe('QueryFilter Base Class', function () {
             ->with('invalid_field', \Mockery::any());
         $builder->shouldReceive('orderBy')
             ->never();
+
+        $filter->apply($builder);
+    });
+
+    it('does not invoke infrastructure methods named by request parameters', function (string $parameter) {
+        $request = Request::create('/', 'GET', [$parameter => '1']);
+        $filter = new TestProductFilter($request);
+
+        $builder = mock(Builder::class);
+        $builder->shouldReceive('orderBy')
+            ->with('created_at', 'desc')
+            ->once()
+            ->andReturnSelf();
+
+        $filter->apply($builder);
+    })->with([
+        'apply',
+        'apply_sorting',
+        'should_apply_filter',
+        'get_request',
+        'get_builder',
+        'get_filterable_parameters',
+        'get_allowed_includes',
+        'get_default_sort_field',
+    ]);
+
+    it('still dispatches include from the request', function () {
+        $request = Request::create('/', 'GET', ['include' => 'category']);
+        $filter = new TestProductFilter($request);
+
+        $builder = mock(Builder::class);
+        $builder->shouldReceive('with')
+            ->with(['category'])
+            ->once()
+            ->andReturnSelf();
+        $builder->shouldReceive('orderBy')
+            ->andReturnSelf();
+
+        $filter->apply($builder);
+    });
+
+    it('falls back to the default sort direction when the request direction is invalid', function () {
+        $request = Request::create('/', 'GET', [
+            'sort' => 'name',
+            'direction' => 'DROP TABLE products',
+        ]);
+        $filter = new TestProductFilter($request);
+
+        $builder = mock(Builder::class);
+        $builder->shouldReceive('orderBy')
+            ->with('name', 'desc')
+            ->once()
+            ->andReturnSelf();
+
+        $filter->apply($builder);
+    });
+
+    it('accepts a case-insensitive sort direction', function () {
+        $request = Request::create('/', 'GET', [
+            'sort' => 'name',
+            'direction' => 'ASC',
+        ]);
+        $filter = new TestProductFilter($request);
+
+        $builder = mock(Builder::class);
+        $builder->shouldReceive('orderBy')
+            ->with('name', 'asc')
+            ->once()
+            ->andReturnSelf();
 
         $filter->apply($builder);
     });

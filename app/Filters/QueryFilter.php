@@ -7,6 +7,8 @@ namespace App\Filters;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use ReflectionException;
+use ReflectionMethod;
 
 /**
  * Base class for query filters.
@@ -56,6 +58,13 @@ abstract class QueryFilter
         'offset',
     ];
 
+    /**
+     * Public methods declared on this base class that are legitimate request filters.
+     *
+     * @var list<string>
+     */
+    private const BASE_REQUEST_FILTERS = ['include'];
+
     public function __construct(Request $request)
     {
         $this->request = $request;
@@ -70,7 +79,7 @@ abstract class QueryFilter
 
         foreach ($this->getFilterableParameters() as $name => $value) {
             $method = Str::camel($name);
-            
+
             if ($this->shouldApplyFilter($method, $value)) {
                 $this->{$method}($value);
             }
@@ -98,7 +107,7 @@ abstract class QueryFilter
     /**
      * Explicitly load relationships (e.g., ?include=items,contact)
      *
-     * @param string $value Comma-separated list of relationships
+     * @param  string  $value  Comma-separated list of relationships
      */
     public function include(string $value): void
     {
@@ -127,12 +136,38 @@ abstract class QueryFilter
 
     /**
      * Check if a filter method should be applied.
+     *
+     * Only public instance methods with at most one required parameter are
+     * callable from the request. Methods declared on QueryFilter itself are
+     * infrastructure (apply, applySorting, getters) except include().
      */
     protected function shouldApplyFilter(string $method, mixed $value): bool
     {
-        return method_exists($this, $method)
-            && $value !== null
-            && $value !== '';
+        if ($value === null || $value === '') {
+            return false;
+        }
+
+        try {
+            $reflection = new ReflectionMethod($this, $method);
+        } catch (ReflectionException) {
+            return false;
+        }
+
+        if (! $reflection->isPublic() || $reflection->isStatic() || str_starts_with($method, '__')) {
+            return false;
+        }
+
+        if ($reflection->getNumberOfRequiredParameters() > 1) {
+            return false;
+        }
+
+        $declaredOn = $reflection->getDeclaringClass()->getName();
+
+        if ($declaredOn === self::class && ! in_array($method, self::BASE_REQUEST_FILTERS, true)) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -141,9 +176,13 @@ abstract class QueryFilter
     protected function applySorting(): void
     {
         $sortField = $this->request->input('sort', $this->getDefaultSortField());
-        $sortDirection = $this->request->input('direction', $this->getDefaultSortDirection());
+        $sortDirection = strtolower((string) $this->request->input('direction', $this->getDefaultSortDirection()));
 
-        if ($sortField && $this->isValidSortField($sortField)) {
+        if (! in_array($sortDirection, ['asc', 'desc'], true)) {
+            $sortDirection = $this->getDefaultSortDirection();
+        }
+
+        if (is_string($sortField) && $sortField !== '' && $this->isValidSortField($sortField)) {
             $this->builder->orderBy($sortField, $sortDirection);
         }
     }

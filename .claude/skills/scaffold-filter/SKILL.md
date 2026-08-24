@@ -188,6 +188,12 @@ class {Model}Filter extends QueryFilter
 
 ---
 
+## Request Dispatch Rules (do not regress)
+
+`QueryFilter` maps kebab-case query params onto **public** methods on the concrete filter and its traits. Do not change `shouldApplyFilter()` back to `method_exists()` — that reopens infrastructure methods (`apply`, getters) as `?apply=1` 500s. Sort `direction` is allowlisted to `asc`/`desc`. `HasSearchFilter::keyword()` must stay driver-aware (no MySQL-only `REGEXP`). See [Gotcha #30](../enter365/SKILL.md#30-queryfilter-method_exists-is-not-an-allowlist).
+
+---
+
 ## Adding Custom Filter Methods
 
 ### Filter by Enum/Type

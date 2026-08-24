@@ -278,6 +278,7 @@ See: `/docs/07-code-patterns/state-machine-pattern.md`
 2. Add `Filterable` trait to model
 3. Use traits: `HasDateRangeFilter`, `HasSearchFilter`, `HasStatusFilter`
 4. Inject filter in controller
+5. Custom filter methods must be `public` — kebab-case query params dispatch them. See [Gotcha #30](#30-queryfilter-method_exists-is-not-an-allowlist).
 
 See: `/docs/07-code-patterns/filter-pattern.md`
 
@@ -967,6 +968,32 @@ grep -rn "DB::transaction" app/Services/ | grep -v "BaseService"
 ```
 
 See: [REFACTORING_HISTORY.md](REFACTORING_HISTORY.md#p4-complete-pattern-a-migration-jan-2026)
+
+### 30. QueryFilter `method_exists` Is Not an Allowlist
+
+**Context:** Every list endpoint runs `Model::query()->filter($filter)`. Request keys are camelCased and invoked as methods on the filter.
+
+**Problem:** `method_exists()` is true for private/protected methods, and inside the class those are callable. Public methods on `QueryFilter` itself (`apply`, `applySorting`, getters) also match. `?apply=1` TypeErrors (500). `?keyword=` used to emit MySQL-only `REGEXP`, which 500s on both SQLite tests and PostgreSQL production; unescaped input is also a ReDoS vector. Unvalidated `direction` makes `orderBy()` throw instead of 422.
+
+**Solution:** Do not restore `method_exists` in `QueryFilter::shouldApplyFilter()`. Keep reflection: public, non-static, ≤1 required arg, declared **below** `QueryFilter` (trait methods count as the using class). `include` is the only base-class request filter. Allowlist `direction` to `asc`/`desc`. `HasSearchFilter::keyword()` must stay driver-aware (`~*` / `REGEXP` / space-padded `LIKE`) and must `preg_quote` the term.
+
+```php
+// ❌ BAD — infrastructure methods become query params
+return method_exists($this, $method) && $value !== null && $value !== '';
+
+// ✅ GOOD — already in QueryFilter::shouldApplyFilter()
+$reflection = new ReflectionMethod($this, $method);
+if (! $reflection->isPublic() || $reflection->isStatic()) {
+    return false;
+}
+if ($reflection->getDeclaringClass()->getName() === self::class && $method !== 'include') {
+    return false;
+}
+```
+
+**When adding a filter method:** `public function foo($value)` is reachable as `?foo=`. Keep helpers `protected`. Do not add public methods that are not filters.
+
+**Tests:** `tests/Unit/Filters/QueryFilterTest.php`, `tests/Feature/Filters/QueryFilterDispatchTest.php`
 
 ---
 
