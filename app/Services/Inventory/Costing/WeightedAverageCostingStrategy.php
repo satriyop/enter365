@@ -40,7 +40,12 @@ class WeightedAverageCostingStrategy implements CostingStrategy
             return -$this->recordStockOut($stock, abs($delta));
         }
 
-        return 0;
+        $oldValue = $stock->quantity * $stock->average_cost;
+        $stock->average_cost = $unitCost;
+        $stock->total_value = $stock->quantity * $unitCost;
+        $stock->save();
+
+        return $stock->total_value - $oldValue;
     }
 
     public function getCurrentUnitCost(ProductStock $stock): int

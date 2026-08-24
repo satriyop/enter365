@@ -679,12 +679,6 @@ describe('IncomeSummaryStrategy', function () {
 
     describe('closeDividends', function () {
         it('creates closing journal entry for dividends', function () {
-            // NOTE: This test reveals a bug in IncomeSummaryStrategy.closeDividends()
-            // The method uses getAccountBalance() which returns credit - debit,
-            // resulting in negative balance for debit-normal accounts like dividends.
-            // This causes incorrect credit amounts in the closing entry.
-            // DirectClosingStrategy doesn't have this issue as it uses debit - credit.
-
             // Create dividend entry
             $dividendJournal = JournalEntry::factory()->create([
                 'entry_number' => ($this->generateEntryNumber)(),
@@ -713,17 +707,14 @@ describe('IncomeSummaryStrategy', function () {
                 ->and($closingEntry->reference)->toBe("CLOSE-DIV-{$this->fiscalPeriod->id}")
                 ->and($closingEntry->lines)->toHaveCount(2);
 
-            // BUG: Due to getAccountBalance() returning credit - debit, the dividends
-            // line has a negative credit (-1000000) instead of positive credit (1000000)
             $dividendsLine = $closingEntry->lines->firstWhere('account_id', $this->dividendsAccount->id);
             expect($dividendsLine)->not->toBeNull()
                 ->and($dividendsLine->debit)->toBe(0)
-                ->and($dividendsLine->credit)->toBe(-1000000); // BUG: Should be 1000000
+                ->and($dividendsLine->credit)->toBe(1000000);
 
-            // BUG: Retained earnings also has negative debit
             $retainedEarningsLine = $closingEntry->lines->firstWhere('account_id', $this->retainedEarningsAccount->id);
             expect($retainedEarningsLine)->not->toBeNull()
-                ->and($retainedEarningsLine->debit)->toBe(-1000000) // BUG: Should be 1000000
+                ->and($retainedEarningsLine->debit)->toBe(1000000)
                 ->and($retainedEarningsLine->credit)->toBe(0);
         });
 

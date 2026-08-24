@@ -181,26 +181,26 @@ class IncomeSummaryStrategy implements ClosingStrategy
             return null;
         }
 
-        // Get dividends balance for this period
+        // credit − debit: a debit-normal dividends account is negative.
         $dividendsBalance = $this->getAccountBalance($period, $dividendsAccount->id);
 
-        if ($dividendsBalance == 0) {
+        if ($dividendsBalance >= 0) {
             return null;
         }
 
+        $amount = abs($dividendsBalance);
+
         $lines = [
-            // Credit dividends to close (dividends has debit balance)
             [
                 'account_id' => $dividendsAccount->id,
                 'description' => "Penutupan dividen/prive periode {$period->name}",
                 'debit' => 0,
-                'credit' => $dividendsBalance,
+                'credit' => $amount,
             ],
-            // Debit retained earnings
             [
                 'account_id' => $retainedEarnings->id,
                 'description' => "Penutupan dividen ke laba ditahan periode {$period->name}",
-                'debit' => $dividendsBalance,
+                'debit' => $amount,
                 'credit' => 0,
             ],
         ];

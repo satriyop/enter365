@@ -71,6 +71,21 @@ describe('WeightedAverageCostingStrategy', function () {
 
         expect((int) $stock->fresh()->quantity)->toBe(2);
     });
+
+    it('revalues on-hand stock when quantity is unchanged', function () {
+        $strategy = new WeightedAverageCostingStrategy;
+        $product = Product::factory()->create();
+        $warehouse = Warehouse::factory()->create();
+        $stock = ProductStock::getOrCreate($product, $warehouse);
+
+        $strategy->recordStockIn($stock, 10, 10000);
+
+        $valueDelta = $strategy->recordAdjustment($stock, 0, 12000);
+
+        expect($valueDelta)->toBe(20000)
+            ->and((int) $stock->fresh()->average_cost)->toBe(12000)
+            ->and((int) $stock->fresh()->total_value)->toBe(120000);
+    });
 });
 
 describe('FIFOCostingStrategy', function () {

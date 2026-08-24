@@ -127,7 +127,25 @@ class FIFOCostingStrategy implements CostingStrategy
             return -$this->recordStockOut($stock, abs($delta));
         }
 
-        return 0;
+        $layers = InventoryCostLayer::query()
+            ->where('product_id', $stock->product_id)
+            ->where('warehouse_id', $stock->warehouse_id)
+            ->where('quantity', '>', 0)
+            ->lockForUpdate()
+            ->get();
+
+        $oldValue = 0;
+        foreach ($layers as $layer) {
+            $oldValue += $layer->quantity * $layer->unit_cost;
+            $layer->unit_cost = $unitCost;
+            $layer->save();
+        }
+
+        $stock->average_cost = $unitCost;
+        $stock->total_value = $stock->quantity * $unitCost;
+        $stock->save();
+
+        return $stock->total_value - $oldValue;
     }
 
     public function getCurrentUnitCost(ProductStock $stock): int

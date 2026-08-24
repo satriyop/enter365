@@ -294,7 +294,9 @@ class InventoryService extends BaseService implements InventoryServiceInterface
 
         $costing = $this->policyManager->costing();
         $appliedUnitCost = $unitCost ?? $costing->getCurrentUnitCost($stock);
-        $valueDelta = $delta === 0 ? 0 : $costing->recordAdjustment($stock, $delta, $appliedUnitCost);
+        $valueDelta = ($delta === 0 && $unitCost === null)
+            ? 0
+            : $costing->recordAdjustment($stock, $delta, $appliedUnitCost);
         $stock->refresh();
 
         $absValue = abs($valueDelta);
