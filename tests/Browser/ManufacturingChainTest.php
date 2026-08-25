@@ -297,7 +297,7 @@ it('runs full manufacturing browser chain with stock asserts', function () {
     foreach (['bom', 'work_orders', 'material_requisitions'] as $feature) {
         if (! ($modules[$feature] ?? false)) {
             test()->markTestSkipped(
-                "FEATURE pack '{$feature}' is disabled on live API. Set FEATURE_PRESET=manufacturing (or full/enterprise) in .env."
+                "FEATURE pack '{$feature}' is disabled on live API. Keep FEATURE_PRESET=general and set FEATURE_BOM=true, FEATURE_WORK_ORDERS=true, FEATURE_MATERIAL_REQUISITIONS=true (do not use preset pos)."
             );
         }
     }

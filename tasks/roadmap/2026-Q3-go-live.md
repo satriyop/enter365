@@ -1,10 +1,11 @@
 ---
 status: open
 date: 2026-08-11
-updated: 2026-08-25
+updated: 2026-08-26
 type: roadmap
 source_audit: tasks/audit/2026-08-11-go-live-persona-matrix.md
 phase_1: go
+phase_2: go
 ---
 
 # Roadmap — Pre-Prod → Pilot Go-Live
@@ -36,10 +37,10 @@ Ordered by evidence gaps. Only promote a phase when **Strong** tests (DB side ef
 
 ## Phase 2 — Prove manufacturing side effects
 
-- [ ] Assert FG `ProductStock` (and movements) on WO complete in integration test
-- [ ] Assert WIP/FG JE if strategy expects journals
-- [ ] Browser E2E: BOM → WO → MR issue → complete (or hybrid if dialogs block)
-- [ ] Move backlog items to done when Strong
+- [x] Assert FG `ProductStock` (and movements) on WO complete in integration test — `WorkOrderFinishedGoodsReceiptTest` (3 passed, 2026-08-26)
+- [x] Assert WIP/FG JE if strategy expects journals — `WorkOrderManufacturingCostStrategyWiringTest` (job_costing Inventory→WIP / WIP→FG; project_based may skip JE)
+- [x] Browser E2E: BOM → WO → MR issue → complete — `tests/Browser/ManufacturingChainTest.php` 1 passed / 34 assertions on live SPA (raw ↓ on MR issue, FG ↑ on complete, no second raw OUT)
+- [x] Move backlog items to done when Strong — `tasks/done/2026-08-26-phase-2-manufacturing-go.md`
 
 **Exit criteria:** Produksi Soft → near Go for panel shop pilot.
 

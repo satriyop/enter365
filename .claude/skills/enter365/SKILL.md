@@ -1307,6 +1307,24 @@ FEATURE_POS=true
 
 **Tests:** `tests/Browser/InvoiceTest.php` (and Payment/DO/GRN/PO/Quotation/Bill) against SPA_URL + live API.
 
+### 52. Manufacturing Pack Overrides, Not a Preset Flip
+
+**Context:** Phase 2 shop floor (BOM → WO → MR issue → WO complete) on a tenant that already trades.
+
+**Problem:** `FEATURE_PRESET=manufacturing` turns the pack on but defaults `pos` off. `FEATURE_PRESET=pos` turns manufacturing **and** trading documents off. Browser `ManufacturingChainTest` skipped when `bom` / `work_orders` / `material_requisitions` were false on a `general` tenant — that is the preset, not a broken WO form.
+
+**Solution:** Keep `FEATURE_PRESET=general`. Turn the pack on with explicit `FEATURE_BOM`, `FEATURE_WORK_ORDERS`, `FEATURE_MATERIAL_REQUISITIONS` (`FEATURE_MANUFACTURING` for the family flag). `php artisan optimize:clear`. Raw stock must drop on **MR issue**, not again on WO complete. FG stock and `TYPE_PRODUCTION` movement land on complete via `FinishedGoodsHandler`. Job costing posts Inventory→WIP on consume and WIP→FG on complete; default `project_based` may skip those JEs — do not assert a JE that the strategy does not own.
+
+```
+FEATURE_PRESET=general
+FEATURE_POS=true
+FEATURE_BOM=true
+FEATURE_WORK_ORDERS=true
+FEATURE_MATERIAL_REQUISITIONS=true
+```
+
+**Tests:** `tests/Browser/ManufacturingChainTest.php`, `tests/Feature/Services/Manufacturing/WorkOrderFinishedGoodsReceiptTest.php`, `WorkOrderManufacturingCostStrategyWiringTest.php`
+
 ---
 
 ## Indonesian Business Context
