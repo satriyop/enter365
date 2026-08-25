@@ -1325,6 +1325,16 @@ FEATURE_MATERIAL_REQUISITIONS=true
 
 **Tests:** `tests/Browser/ManufacturingChainTest.php`, `tests/Feature/Services/Manufacturing/WorkOrderFinishedGoodsReceiptTest.php`, `WorkOrderManufacturingCostStrategyWiringTest.php`
 
+### 53. Budget Comparison Is `data.comparison` With SPA Field Names
+
+**Context:** Budget detail tab **Budget vs Actual**. `useBudgetComparison` reads `response.data.data`.
+
+**Problem:** `GET /budgets/{id}/comparison` returned an unwrapped `{ comparison: [{ budget_amount, actual_amount, variance_percent }] }` with no `totals`. The SPA looked at `data.comparison[].budgeted` and `data.totals.total_budgeted`, so the table stayed on “Loading comparison data…” or threw on `variance_percentage.toFixed`. Service objects can keep `budget_amount`; HTTP must match the Vue types.
+
+**Solution:** Wrap in `data`. Map rows to `budgeted` / `actual` / `variance` / `variance_percentage`. Add `totals.total_budgeted|total_actual|total_variance`. Do not restore the unwrapped payload.
+
+**Tests:** `tests/Feature/Api/V1/BudgetApiTest.php` (comparison), `tests/Browser/BudgetCompareTest.php`
+
 ---
 
 ## Indonesian Business Context

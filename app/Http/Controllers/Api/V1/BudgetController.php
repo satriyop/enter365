@@ -244,14 +244,39 @@ class BudgetController extends Controller
 
         $comparison = $this->budgetService->getBudgetVsActual($budget, $month);
 
+        $rows = [];
+        foreach ($comparison as $row) {
+            $rows[] = [
+                'account_id' => (int) $row->account_id,
+                'account_code' => $row->account_code,
+                'account_name' => $row->account_name,
+                'account_type' => $row->account_type,
+                'budgeted' => (int) $row->budget_amount,
+                'actual' => (int) $row->actual_amount,
+                'variance' => (int) $row->variance,
+                'variance_percentage' => (float) $row->variance_percent,
+                'is_over_budget' => (bool) $row->is_over_budget,
+            ];
+        }
+
+        $totalBudgeted = (int) array_sum(array_column($rows, 'budgeted'));
+        $totalActual = (int) array_sum(array_column($rows, 'actual'));
+
         return response()->json([
-            'budget' => [
-                'id' => $budget->id,
-                'name' => $budget->name,
-                'fiscal_period' => $budget->fiscalPeriod->name,
+            'data' => [
+                'budget' => [
+                    'id' => $budget->id,
+                    'name' => $budget->name,
+                    'fiscal_period' => $budget->fiscalPeriod?->name,
+                ],
+                'month' => $month,
+                'comparison' => $rows,
+                'totals' => [
+                    'total_budgeted' => $totalBudgeted,
+                    'total_actual' => $totalActual,
+                    'total_variance' => $totalBudgeted - $totalActual,
+                ],
             ],
-            'month' => $month,
-            'comparison' => $comparison,
         ]);
     }
 

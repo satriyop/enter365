@@ -380,18 +380,26 @@ describe('Budget Reports', function () {
         $response = $this->getJson("/api/v1/budgets/{$budget->id}/comparison");
 
         $response->assertOk()
-            ->assertJsonPath('budget.id', $budget->id)
+            ->assertJsonPath('data.budget.id', $budget->id)
+            ->assertJsonPath('data.totals.total_budgeted', 12000000)
             ->assertJsonStructure([
-                'comparison' => [
-                    '*' => [
-                        'account_id',
-                        'account_code',
-                        'account_name',
-                        'budget_amount',
-                        'actual_amount',
-                        'variance',
-                        'variance_percent',
-                        'is_over_budget',
+                'data' => [
+                    'comparison' => [
+                        '*' => [
+                            'account_id',
+                            'account_code',
+                            'account_name',
+                            'budgeted',
+                            'actual',
+                            'variance',
+                            'variance_percentage',
+                            'is_over_budget',
+                        ],
+                    ],
+                    'totals' => [
+                        'total_budgeted',
+                        'total_actual',
+                        'total_variance',
                     ],
                 ],
             ]);

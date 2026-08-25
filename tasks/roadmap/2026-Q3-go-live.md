@@ -6,6 +6,7 @@ type: roadmap
 source_audit: tasks/audit/2026-08-11-go-live-persona-matrix.md
 phase_1: go
 phase_2: go
+phase_3: go
 ---
 
 # Roadmap — Pre-Prod → Pilot Go-Live
@@ -46,9 +47,9 @@ Ordered by evidence gaps. Only promote a phase when **Strong** tests (DB side ef
 
 ## Phase 3 — Accounting power features
 
-- [ ] Browser E2E bank recon: import/match/reconcile + book balance sanity
-- [ ] Browser E2E budget create/compare (smoke + one strong number check)
-- [ ] Recurring generate smoke + DB document created
+- [x] Browser E2E bank recon: import/match/reconcile + book balance sanity — `BankReconciliationTest` 2 passed (match→unmatch→rematch→reconcile; report Book Balance)
+- [x] Browser E2E budget create/compare (smoke + one strong number check) — comparison API now `data.comparison`/`budgeted`/`totals`; `BudgetCompareTest` asserts 12.345.000
+- [x] Recurring generate smoke + DB document created — `RecurringGenerateTest` Generate Now creates invoice; `RecurringServiceTest` amounts
 
 ## Phase 4 — Project / Solar SPA proof
 
