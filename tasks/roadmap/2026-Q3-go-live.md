@@ -1,8 +1,10 @@
 ---
 status: open
 date: 2026-08-11
+updated: 2026-08-25
 type: roadmap
 source_audit: tasks/audit/2026-08-11-go-live-persona-matrix.md
+phase_1: go
 ---
 
 # Roadmap — Pre-Prod → Pilot Go-Live
@@ -25,10 +27,10 @@ Ordered by evidence gaps. Only promote a phase when **Strong** tests (DB side ef
 
 **Target personas:** Sales, Purchasing, Gudang, Accounting (core only)
 
-- [ ] One documented “happy path” script for pilot users (artifact)
+- [x] One documented “happy path” script for pilot users (artifact) — `tasks/artifact/2026-08-25-trading-pilot-happy-path.md`
 - [x] Ensure browser chain still green with SPA running (Invoice/Payment/DO/GRN/Inventory/Report) — 2026-08-25: 54 passed after live `FEATURE_PRESET=general` (was `pos`, which hid documents). Also PO/Quotation/Bill.
 - [x] Fix any flake that blocks pilot (quotation valid_until already fixed 2026-08-11; preset `pos` skip/login-redirect on 2026-08-25)
-- [ ] Pilot go/no-go decision recorded under `tasks/done/`
+- [x] Pilot go/no-go decision recorded under `tasks/done/` — **Go** `tasks/done/2026-08-25-phase-1-trading-pilot-go.md`
 
 **Exit criteria:** Core **Go** flows only; no MFG/Solar required.
 
