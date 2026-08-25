@@ -38,6 +38,17 @@ jobs:
       - name: Copy .env
         run: php -r "file_exists('.env') || copy('.env.example', '.env');"
 
+      - name: Configure Environment for Schema Generation
+        run: |
+          # Override database-dependent config to avoid DB connection during schema export
+          echo "" >> .env
+          echo "# CI overrides for schema generation" >> .env
+          echo "DB_CONNECTION=sqlite" >> .env
+          echo "DB_DATABASE=:memory:" >> .env
+          echo "SESSION_DRIVER=array" >> .env
+          echo "QUEUE_CONNECTION=sync" >> .env
+          echo "CACHE_STORE=array" >> .env
+
       - name: Install Dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
