@@ -196,11 +196,12 @@ class SolarProposalController extends Controller
     public function convertToQuotation(SolarProposal $solarProposal): JsonResponse
     {
         $quotation = $this->service->convertToQuotation($solarProposal);
+        $proposal = $solarProposal->fresh();
 
         return response()->json([
             'message' => 'Proposal berhasil dikonversi ke quotation.',
-            'quotation' => new QuotationResource($quotation),
-            'proposal' => new SolarProposalResource($solarProposal->fresh()),
+            'quotation' => (new QuotationResource($quotation))->resolve(),
+            'proposal' => (new SolarProposalResource($proposal))->resolve(),
         ]);
     }
 

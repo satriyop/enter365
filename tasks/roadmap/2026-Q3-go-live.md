@@ -7,6 +7,7 @@ source_audit: tasks/audit/2026-08-11-go-live-persona-matrix.md
 phase_1: go
 phase_2: go
 phase_3: go
+phase_4: go
 ---
 
 # Roadmap — Pre-Prod → Pilot Go-Live
@@ -53,8 +54,8 @@ Ordered by evidence gaps. Only promote a phase when **Strong** tests (DB side ef
 
 ## Phase 4 — Project / Solar SPA proof
 
-- [ ] Browser project lifecycle + cost line
-- [ ] Browser solar wizard → convert to quotation (or public accept if product-critical)
+- [x] Browser project lifecycle + cost line — `ProjectLifecycleTest`: Start Project then Add Cost (qty×unit_cost persisted)
+- [x] Browser solar wizard → convert to quotation — `SolarConvertTest`: wizard Site Info; accepted+BOM **Convert to Quotation** writes `quotations` + `converted_quotation_id`
 
 ## Phase 5 — Hardening
 

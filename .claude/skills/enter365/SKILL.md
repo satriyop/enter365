@@ -1335,6 +1335,20 @@ FEATURE_MATERIAL_REQUISITIONS=true
 
 **Tests:** `tests/Feature/Api/V1/BudgetApiTest.php` (comparison), `tests/Browser/BudgetCompareTest.php`
 
+### 54. Nested Addon API Modules Import `@/api/client`, Not `./client`
+
+**Context:** Vue files under `src/api/addons/solar/` and `electrical-panel/`. Vite resolves `./client` next to the file.
+
+**Problem:** Those modules copied core-api imports (`from './client'`, `'./factory'`, `'./types'`). There is no `addons/solar/client.ts`. Opening `/solar-proposals/new` threw a Vite overlay: failed to resolve `./client`. Electrical-panel hooks had the same break.
+
+**Solution:** Import `@/api/client`, `@/api/factory`, `@/api/types`. Sibling `useBomTemplatePanel.ts` already does this.
+
+Vee-validate: `v-model="values.description"` does **not** register the field. Playwright can fill the DOM and submit still sees `""`. Use `defineField('description')`.
+
+Convert solar→quotation JSON must expose `quotation.id` at the top of `quotation` (resolve the resource). Nested `JsonResource` wrapping makes `quotation.id` undefined and the SPA navigates to `/quotations/undefined`.
+
+**Tests:** `tests/Browser/SolarConvertTest.php`, `tests/Browser/ProjectLifecycleTest.php`
+
 ---
 
 ## Indonesian Business Context

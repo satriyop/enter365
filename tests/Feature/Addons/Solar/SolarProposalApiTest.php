@@ -454,17 +454,14 @@ describe('Solar Proposal Workflow', function () {
 
         $response = $this->postJson("/api/v1/solar-proposals/{$proposal->id}/convert-to-quotation");
 
-        // May fail if BOM has no items, but should not throw server error
-        if ($response->status() === 200) {
-            $response->assertJsonPath('message', 'Proposal berhasil dikonversi ke quotation.');
-            expect($response->json('quotation'))->not->toBeNull();
+        $response->assertOk()
+            ->assertJsonPath('message', 'Proposal berhasil dikonversi ke quotation.');
 
-            $proposal->refresh();
-            expect($proposal->converted_quotation_id)->not->toBeNull();
-        } else {
-            // Acceptable failure - BOM has no items for quotation conversion
-            $response->assertUnprocessable();
-        }
+        $quotationId = (int) $response->json('quotation.id');
+        expect($quotationId)->toBeGreaterThan(0);
+
+        $proposal->refresh();
+        expect($proposal->converted_quotation_id)->toBe($quotationId);
     });
 
     it('cannot convert a non-accepted proposal', function () {
