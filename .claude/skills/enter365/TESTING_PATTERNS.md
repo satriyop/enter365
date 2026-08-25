@@ -569,6 +569,8 @@ composer test:pgsql
 
 `tests/Pgsql` must not use `RefreshDatabase`. Its wrapping transaction hides fixture rows from a second PDO session. Use `DatabaseTruncation` and `Tests\Support\PostgresRowLock`.
 
+Browser tests hit `SPA_URL` + live `enter365.test`, not phpunit sqlite. `skipUnlessLiveFeature()` reads the **Valet** `FEATURE_PRESET`. Preset `pos` hides invoices/payments/PO/DO/GRN — tests skip or `/payments/new` bounces to login. Trading chain needs `FEATURE_PRESET=general` on the live API (`php artisan optimize:clear`). See skill gotcha #51.
+
 ---
 
 ## API Contract Testing

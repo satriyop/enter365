@@ -208,16 +208,21 @@ describe('Siti kasir — live till', function () {
 });
 
 describe('Owner — live shop', function () {
-    it('lands on Dashboard with Kasir and Products, never Faktur', function () {
+    it('lands on Dashboard with Kasir and Products', function () {
         $page = loginAndVisitAs('admin@example.com');
 
         $page->assertSee('Dashboard')
             ->assertSee('Kasir')
             ->assertSee('Products')
-            ->assertDontSee('Quotations')
-            ->assertDontSee('Invoices')
-            ->assertDontSee('Purchase Orders')
             ->assertNoJavascriptErrors();
+
+        if (liveApiModules()['quotations'] ?? false) {
+            $page->assertSee('Quotations');
+        } else {
+            $page->assertDontSee('Quotations')
+                ->assertDontSee('Invoices')
+                ->assertDontSee('Purchase Orders');
+        }
     });
 
     it('Products shows pastry and not busbars', function () {
@@ -292,8 +297,11 @@ describe('Akuntan Rina — live back office', function () {
 
         $page->assertSee('Dashboard')
             ->assertDontSee('Kasir')
-            ->assertDontSee('Quotations')
             ->assertNoJavascriptErrors();
+
+        if (! (liveApiModules()['quotations'] ?? false)) {
+            $page->assertDontSee('Quotations');
+        }
 
         $page->navigate(spaUrl('/reports/trial-balance'))
             ->assertSee('Neraca Saldo')

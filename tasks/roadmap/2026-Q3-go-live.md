@@ -26,8 +26,8 @@ Ordered by evidence gaps. Only promote a phase when **Strong** tests (DB side ef
 **Target personas:** Sales, Purchasing, Gudang, Accounting (core only)
 
 - [ ] One documented “happy path” script for pilot users (artifact)
-- [ ] Ensure browser chain still green with SPA running (Invoice/Payment/DO/GRN/Inventory/Report)
-- [ ] Fix any flake that blocks pilot (quotation valid_until already fixed 2026-08-11)
+- [x] Ensure browser chain still green with SPA running (Invoice/Payment/DO/GRN/Inventory/Report) — 2026-08-25: 54 passed after live `FEATURE_PRESET=general` (was `pos`, which hid documents). Also PO/Quotation/Bill.
+- [x] Fix any flake that blocks pilot (quotation valid_until already fixed 2026-08-11; preset `pos` skip/login-redirect on 2026-08-25)
 - [ ] Pilot go/no-go decision recorded under `tasks/done/`
 
 **Exit criteria:** Core **Go** flows only; no MFG/Solar required.

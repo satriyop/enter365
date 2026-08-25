@@ -1286,6 +1286,27 @@ Do not add `tests/Pgsql` to the default `phpunit.xml` suite.
 
 **Tests:** `tests/Pgsql/`
 
+### 51. `FEATURE_PRESET=pos` Hides the Trading Documents
+
+**Context:** Live Valet API (`enter365.test`) is what Pest browser tests hit via `skipUnlessLiveFeature()` / `liveApiModules()`. `phpunit.xml` `FEATURE_PRESET=full` only affects the in-process SQLite suite.
+
+**Problem:** Preset `pos` sets `$posAcquisition`, which defaults invoices, payments, quotations, PO, DO, GRN, and returns **off**. Browser tests then skip (`Live API feature 'invoices' is off`). Bill create still works (bills are core) but `/payments/new` is gated and the SPA dumps the session back to `/login` — a fail, not a skip. That is not a broken invoice form.
+
+**Solution:** A trading pilot uses `FEATURE_PRESET=general` (core documents on). Keep `FEATURE_POS=true` if the Kopitiam till must stay. `pos` is kasir-only acquisition, not “POS plus ERP”. After changing `.env`, `php artisan optimize:clear` so PHP-FPM sees it.
+
+Ship the audit migrations onto the **live** Valet DB (`akuntansi`), not only sqlite tests. `visibleToPos()` filters `is_test = false`; if the column is missing the outlets endpoint 500s and the till opens with an empty gudang list. Backfill E2E codes (`WH-E2E-%`, `WH-OP-%`) to `is_test`.
+
+```
+# ❌ BAD — trading E2E against a kasir-only tenant
+FEATURE_PRESET=pos
+
+# ✅ GOOD — Phase 1 trading; till remains if FEATURE_POS=true
+FEATURE_PRESET=general
+FEATURE_POS=true
+```
+
+**Tests:** `tests/Browser/InvoiceTest.php` (and Payment/DO/GRN/PO/Quotation/Bill) against SPA_URL + live API.
+
 ---
 
 ## Indonesian Business Context
