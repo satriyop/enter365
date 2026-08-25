@@ -123,4 +123,17 @@ describe('team notifications', function () {
 
         Notification::assertNothingSent();
     });
+
+    it('dispatches InvoiceSent through Laravel events to the mail listener', function () {
+        $contact = Contact::factory()->create(['email' => 'buyer@example.com']);
+        $invoice = Invoice::factory()->create(['contact_id' => $contact->id]);
+
+        app(\App\Contracts\Events\EventDispatcherInterface::class)
+            ->dispatch(InvoiceSent::fromInvoice($invoice));
+
+        Notification::assertSentOnDemand(InvoiceSentNotification::class, function ($notification, $channels, $notifiable) use ($invoice) {
+            return $notification->invoice->is($invoice)
+                && ($notifiable->routes['mail'] ?? null) === 'buyer@example.com';
+        });
+    });
 });

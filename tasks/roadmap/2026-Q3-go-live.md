@@ -8,6 +8,7 @@ phase_1: go
 phase_2: go
 phase_3: go
 phase_4: go
+phase_5: go
 ---
 
 # Roadmap — Pre-Prod → Pilot Go-Live
@@ -59,9 +60,9 @@ Ordered by evidence gaps. Only promote a phase when **Strong** tests (DB side ef
 
 ## Phase 5 — Hardening
 
-- [ ] Replace native `confirm()`/`prompt()` on Stock Opname for pure UI E2E
-- [ ] Notification infrastructure or remove stub listeners from “ready” claims
-- [ ] PPh product decision (enable + tests, or keep off and document)
+- [x] Replace native `confirm()`/`prompt()` on Stock Opname for pure UI E2E — `StockOpnameTest` 5 passed (create → generate → count → approve; stock +5)
+- [x] Notification infrastructure or remove stub listeners from “ready” claims — listeners send mail; dispatch-through-Laravel test proves discovery
+- [x] PPh product decision — **keep off** (`FEATURE_PPH_WITHHOLDING=false`); documented in `tasks/done/2026-08-26-phase-5-hardening-go.md`
 
 ## Out of roadmap (explicitly later)
 

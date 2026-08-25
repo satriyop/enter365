@@ -1349,6 +1349,18 @@ Convert solar→quotation JSON must expose `quotation.id` at the top of `quotati
 
 **Tests:** `tests/Browser/SolarConvertTest.php`, `tests/Browser/ProjectLifecycleTest.php`
 
+### 55. Document Emails Are Real Listeners — Production Needs a Mailer
+
+**Context:** `LaravelEventDispatcher` calls `Event::dispatch()`. `EventServiceProvider` discovers `app/Infrastructure/Listeners`.
+
+**Problem:** The 2026-08-11 audit called notification listeners stubs. They send `InvoiceSentNotification` / team quotation / bill-received mail and are auto-wired (`handle(InvoiceSent $event)`). Tests that only `new Listener()->handle()` do not prove discovery. MAIL in phpunit is `array`; a live tenant with `MAIL_MAILER=log` never reaches the customer.
+
+**Solution:** Dispatch through `EventDispatcherInterface` in tests. Production: SMTP/SES + `NOTIFICATION_TEAM_EMAIL`. Disable per event with `accounting.notifications.*.enabled`. Do not re-stub these listeners.
+
+PPh withholding stays **off** (`FEATURE_PPH_WITHHOLDING=false`) until a product decision enables it with tests. `PphCalculationService` is pack-ID, not core trading.
+
+**Tests:** `tests/Feature/Infrastructure/DocumentLifecycleNotificationTest.php` (includes dispatch-through-Laravel)
+
 ---
 
 ## Indonesian Business Context
