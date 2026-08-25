@@ -1268,6 +1268,24 @@ FiscalPeriod::query()->where('status', FiscalPeriodStatus::Open)->first();
 
 **Solution:** Load with `whereIn`, `keyBy`, then map. Reorder with one `CASE id ... END` update scoped to the parent project. `converted` on solar proposals is `DocumentStatus::Converted`; PostgreSQL CHECK matches the enum — SQLite cannot ALTER CHECK, so the enum is the suite's net (same as journal line exclusivity).
 
+### 50. `lockForUpdate()` Is a No-Op on SQLite — Prove Locks on PostgreSQL
+
+**Context:** Production is PostgreSQL. `phpunit.xml` uses SQLite `:memory:`. `SELECT … FOR UPDATE` does nothing there, so every concurrency test that runs sequentially on SQLite is theatre.
+
+**Problem:** POS checkout, FIFO `lockForStock()`, payment allocation, GRN complete, and `reverseEntry()` all serialize on row locks. None of that is exercised by the default suite.
+
+**Solution:** Keep SQLite for the fast inner loop. The F-14 lane is `tests/Pgsql` + `phpunit.pgsql.xml` (`DB_DATABASE=enter365_test`). Tests use a **second PDO session** and `lock_timeout = 500ms`. If `FOR UPDATE` is missing, the second session takes the row and the test fails. Do not use `RefreshDatabase` for these tests — its wrapping transaction hides fixture rows from the peer connection. Use `DatabaseTruncation`.
+
+```bash
+./scripts/test-pgsql-locks.sh
+# or: composer test:pgsql
+# CI: .github/workflows/pgsql-locks.yml (Postgres 16)
+```
+
+Do not add `tests/Pgsql` to the default `phpunit.xml` suite.
+
+**Tests:** `tests/Pgsql/`
+
 ---
 
 ## Indonesian Business Context
@@ -1308,6 +1326,10 @@ See: `/docs/GLOSSARY.md`
 ```bash
 # Run specific tests
 php artisan test --filter=InvoiceService
+
+# PostgreSQL lock suite (F-14; DB enter365_test)
+./scripts/test-pgsql-locks.sh
+# composer test:pgsql
 
 # Format code
 vendor/bin/pint --dirty

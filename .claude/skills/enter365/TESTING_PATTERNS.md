@@ -561,7 +561,13 @@ php artisan test --parallel
 
 # With coverage
 php artisan test --coverage
+
+# PostgreSQL lock suite (F-14). Not in the default phpunit.xml.
+./scripts/test-pgsql-locks.sh
+composer test:pgsql
 ```
+
+`tests/Pgsql` must not use `RefreshDatabase`. Its wrapping transaction hides fixture rows from a second PDO session. Use `DatabaseTruncation` and `Tests\Support\PostgresRowLock`.
 
 ---
 

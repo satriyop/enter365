@@ -24,12 +24,19 @@ use Laravel\Sanctum\Sanctum;
 |
 */
 
-uses(Tests\TestCase::class)->in('Feature', 'Unit', 'Contract', 'Browser');
+uses(Tests\TestCase::class)->in('Feature', 'Unit', 'Contract', 'Browser', 'Pgsql');
+uses(Illuminate\Foundation\Testing\DatabaseTruncation::class)->in('Pgsql');
 uses()->group('browser')->in('Browser');
+uses()->group('pgsql')->in('Pgsql');
 
 uses()->beforeEach(function (): void {
     seedOpenFiscalPeriodForTests();
 })->in('Feature', 'Contract');
+
+uses()->beforeEach(function (): void {
+    \Tests\Support\PostgresRowLock::skipUnlessPgsql();
+    seedOpenFiscalPeriodForTests();
+})->in('Pgsql');
 
 fake()->seed(4242);
 
