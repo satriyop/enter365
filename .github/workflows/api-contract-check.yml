@@ -8,6 +8,7 @@ on:
       - 'routes/api.php'
       - 'api.json'
       - 'check-api-mismatches.php'
+      - '.github/workflows/api-contract-check.yml'
   push:
     branches:
       - main
@@ -18,6 +19,7 @@ on:
       - 'routes/api.php'
       - 'api.json'
       - 'check-api-mismatches.php'
+      - '.github/workflows/api-contract-check.yml'
 
 jobs:
   check-api-contracts:
