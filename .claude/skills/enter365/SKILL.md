@@ -1385,7 +1385,19 @@ if (error) {
 
 Do not restore `:disabled` for an unbound outlet. Do not treat `type=submit`/`form===null` as “Vue is dead” until `elementFromPoint` and `disabled` are checked.
 
-**Tests (SPA):** `src/pages/pos/__tests__/tillSession.test.ts`, `src/utils/__tests__/hardNavigate.test.ts`, `src/stores/__tests__/auth.test.ts` in `front-end-enter365`. Live: first paint Mulai jualan `disabled=false`.
+The 800ms post-login quiet period must **not** skip `pointerdown`. That leftover Sign-in click has no pointerdown on the new document; the user's first sidebar click does (FE#9). Swallow only orphan clicks during quiet.
+
+**Tests (SPA):** `src/pages/pos/__tests__/tillSession.test.ts`, `src/utils/__tests__/hardNavigate.test.ts`, `src/utils/__tests__/clickRescue.test.ts`, `src/stores/__tests__/auth.test.ts` in `front-end-enter365`. Live: first paint Mulai jualan `disabled=false`.
+
+### 57. Manual Stock-In `unit_cost` 0 Means Keep Current Average
+
+**Context:** Gudang Stock In (`POST /inventory/stock-in`). Hint says optional / keep current. SPA prefills 0.
+
+**Problem:** Client rejected `unit_cost <= 0` (“Unit cost is required for stock in”) while the API allowed `min:0`. Sending 0 would also dilute average cost (Garlic restock at Rp 0). FE#10.
+
+**Solution:** `ManualStockInUnitCost::resolve()`: explicit `> 0` wins; `0` uses warehouse `average_cost` then `purchase_price`; neither is 422 `Harga satuan wajib diisi untuk stok masuk.`. SPA hint matches; do not client-block 0.
+
+**Tests:** `tests/Feature/Services/Inventory/ManualStockInUnitCostTest.php`, `tests/Feature/Api/V1/InventoryApiTest.php`, SPA `src/pages/inventory/__tests__/stockInCost.test.ts`.
 
 ---
 

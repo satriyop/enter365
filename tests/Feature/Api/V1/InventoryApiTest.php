@@ -113,6 +113,74 @@ describe('Inventory Stock In', function () {
         expect($stock->quantity)->toBe(20)
             ->and($stock->average_cost)->toBe(150000);
     });
+
+    it('keeps current average when unit cost is zero', function () {
+        $warehouse = Warehouse::factory()->default()->create();
+        $product = Product::factory()->create([
+            'track_inventory' => true,
+            'purchase_price' => 5000,
+        ]);
+
+        $this->postJson('/api/v1/inventory/stock-in', [
+            'product_id' => $product->id,
+            'warehouse_id' => $warehouse->id,
+            'quantity' => 10,
+            'unit_cost' => 11000,
+        ])->assertCreated();
+
+        $response = $this->postJson('/api/v1/inventory/stock-in', [
+            'product_id' => $product->id,
+            'warehouse_id' => $warehouse->id,
+            'quantity' => 1,
+            'unit_cost' => 0,
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.unit_cost', 11000);
+
+        $stock = ProductStock::where('product_id', $product->id)
+            ->where('warehouse_id', $warehouse->id)
+            ->first();
+
+        expect($stock->quantity)->toBe(11)
+            ->and($stock->average_cost)->toBe(11000);
+    });
+
+    it('uses purchase price when unit cost is zero and there is no stock', function () {
+        $warehouse = Warehouse::factory()->default()->create();
+        $product = Product::factory()->create([
+            'track_inventory' => true,
+            'purchase_price' => 11000,
+        ]);
+
+        $response = $this->postJson('/api/v1/inventory/stock-in', [
+            'product_id' => $product->id,
+            'warehouse_id' => $warehouse->id,
+            'quantity' => 1,
+            'unit_cost' => 0,
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.unit_cost', 11000);
+    });
+
+    it('rejects zero unit cost when there is no current cost', function () {
+        $warehouse = Warehouse::factory()->default()->create();
+        $product = Product::factory()->create([
+            'track_inventory' => true,
+            'purchase_price' => 0,
+        ]);
+
+        $response = $this->postJson('/api/v1/inventory/stock-in', [
+            'product_id' => $product->id,
+            'warehouse_id' => $warehouse->id,
+            'quantity' => 1,
+            'unit_cost' => 0,
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['unit_cost']);
+    });
 });
 
 describe('Inventory Stock Out', function () {
