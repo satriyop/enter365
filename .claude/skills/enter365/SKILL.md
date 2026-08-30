@@ -1387,6 +1387,8 @@ Do not restore `:disabled` for an unbound outlet. Do not treat `type=submit`/`fo
 
 The 800ms post-login quiet period must **not** skip `pointerdown`. That leftover Sign-in click has no pointerdown on the new document; the user's first sidebar click does (FE#9). Swallow only orphan clicks during quiet.
 
+A worse leftover: after **Sign in submit**, Radix/`RemoveScroll` can leave `body { pointer-events: none }` with **no overlay**. Pointer events never fire, so unlock-on-click is a no-op and the tab stays click-dead. A tab that skipped Sign in (deep link / new tab with token) is fine. Hold-unlock after `hardNavigate` (`data-e365-unlock` + interval + MutationObserver) and keep `#app { pointer-events: auto }` so inheritance cannot hide the shell.
+
 **Tests (SPA):** `src/pages/pos/__tests__/tillSession.test.ts`, `src/utils/__tests__/hardNavigate.test.ts`, `src/utils/__tests__/clickRescue.test.ts`, `src/stores/__tests__/auth.test.ts` in `front-end-enter365`. Live: first paint Mulai jualan `disabled=false`.
 
 ### 57. Manual Stock-In `unit_cost` 0 Means Keep Current Average
