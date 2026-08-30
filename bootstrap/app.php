@@ -18,6 +18,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->trustProxies(at: '*');
+
         $middleware->alias([
             'feature' => \App\Http\Middleware\EnsureFeatureEnabled::class,
             'permission' => \App\Http\Middleware\EnsurePermission::class,

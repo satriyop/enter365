@@ -32,6 +32,12 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        if (app()->isProduction()) {
+            throw new \RuntimeException(
+                'DatabaseSeeder is blocked in production (demo admin@example.com / password). Use ./scripts/prod.sh seed-pos for the Kopitiam catalog, or seed named classes explicitly.'
+            );
+        }
+
         // Create admin user
         User::updateOrCreate(
             ['email' => 'admin@example.com'],

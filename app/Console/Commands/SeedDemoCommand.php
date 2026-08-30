@@ -28,6 +28,12 @@ class SeedDemoCommand extends Command
      */
     public function handle(): int
     {
+        if ($this->option('fresh') && $this->laravel->isProduction()) {
+            $this->error('migrate:fresh is blocked in production.');
+
+            return self::FAILURE;
+        }
+
         // Run fresh migration if requested
         if ($this->option('fresh')) {
             $this->info('Running migrate:fresh...');

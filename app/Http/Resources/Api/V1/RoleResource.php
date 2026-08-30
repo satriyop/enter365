@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Models\Core\Role;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -11,13 +12,13 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class RoleResource extends JsonResource
 {
     /**
-     * @param  \Illuminate\Http\Request  $request
      * @return array{
      *   id: int,
      *   name: string,
      *   display_name: string,
      *   description: string|null,
      *   is_system: bool,
+     *   grants_all_permissions: bool,
      *   permissions?: \Illuminate\Http\Resources\Json\AnonymousResourceCollection,
      *   permissions_count?: int,
      *   users_count?: int,
@@ -33,6 +34,7 @@ class RoleResource extends JsonResource
             'display_name' => $this->display_name,
             'description' => $this->description,
             'is_system' => $this->is_system,
+            'grants_all_permissions' => $this->name === Role::ADMIN,
 
             // Related
             'permissions' => PermissionResource::collection($this->whenLoaded('permissions')),

@@ -72,6 +72,7 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -269,6 +270,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureRateLimiting();
         $this->configurePolicies();
         $this->registerObservers();
+        $this->forceHttpsWhenConfigured();
 
         // Events are now handled by EventServiceProvider via subscribers
         // See: app/Providers/EventServiceProvider.php
@@ -280,6 +282,13 @@ class AppServiceProvider extends ServiceProvider
                         ->setDescription('Sanctum Bearer Token. Obtain via POST /api/v1/auth/login')
                 );
             });
+    }
+
+    private function forceHttpsWhenConfigured(): void
+    {
+        if (str_starts_with((string) config('app.url'), 'https://')) {
+            URL::forceScheme('https');
+        }
     }
 
     /**
