@@ -1361,6 +1361,32 @@ PPh withholding stays **off** (`FEATURE_PPH_WITHHOLDING=false`) until a product 
 
 **Tests:** `tests/Feature/Infrastructure/DocumentLifecycleNotificationTest.php` (includes dispatch-through-Laravel)
 
+### 56. Do Not Disable a CTA While Vue `v-model` Is Still Unbound
+
+**Context:** Kopitiam till (`/kasir` in `front-end-enter365`). Native `<select>` + Vue `v-model` for outlet, then **Mulai jualan**. Same shape anywhere options load after first paint.
+
+**Problem:** `:disabled="warehouseId == null"` was meant to stop a silent start. On first paint the native select *looks* filled (browser shows the first `<option>`) while `v-model` is still `null`. The button is disabled (`pointer-events` none). A human click is a no-op (FE#3). Playwright retries until the bind lands, so e2e stayed green. `type=submit` with `form === null` is a red herring — Vue `@click` fires once the control is enabled.
+
+A second, tab-wide failure (FE#8) looked like “Vue clicks are dead for Kasir/Akuntan/Gudang”: always-mounted Radix `DialogPortal` (Command Palette, shortcuts, SessionTimeout, Modal) can leave `pointer-events: none` on `body` after Owner used AppLayout; a PWA `StaleWhileRevalidate` on JS plus a cached `index.html` keeps old handlers. Native `<select>`/`<input>` still work (keyboard or OS widget). Clean Chromium was fine.
+
+**Solution:** Keep the button enabled except for in-flight / period-lock. On click, bind the default outlet or toast in Indonesian. `type="button"`. Unmount closed Radix portals (`v-if` on `DialogPortal`). Restore `body`/`html` pointer-events on every route change. Login and logout `window.location.assign` so a lock cannot survive a role switch. Do not SWR hashed JS/CSS; auto-apply waiting service workers.
+
+```ts
+// ❌ BAD — first paint is a silent no-op; Playwright will not catch it
+:disabled="warehouseId == null"
+
+// ✅ GOOD — click binds or explains
+const { warehouseId, error } = resolveStartWarehouse(outlets, current)
+if (error) {
+  showToast(error, true)
+  return
+}
+```
+
+Do not restore `:disabled` for an unbound outlet. Do not treat `type=submit`/`form===null` as “Vue is dead” until `elementFromPoint` and `disabled` are checked.
+
+**Tests (SPA):** `src/pages/pos/__tests__/tillSession.test.ts`, `src/utils/__tests__/hardNavigate.test.ts`, `src/stores/__tests__/auth.test.ts` in `front-end-enter365`. Live: first paint Mulai jualan `disabled=false`.
+
 ---
 
 ## Indonesian Business Context
