@@ -16,7 +16,7 @@ class PosShopHomeService
      * Read-only Kopitiam shop home. Does not open or close tills.
      *
      * @return array{
-     *     open_sessions: list<array{id: int, session_number: string, cashier_name: string, warehouse_name: string, hold_count: int, opened_at: string|null}>,
+     *     open_sessions: list<array{id: int, session_number: string, cashier_name: string, warehouse_name: string, hold_count: int, opened_at: string|null, booked_cash_amount: int}>,
      *     open_hold_count: int,
      *     today: array{sale_count: int, omzet_amount: int, last_sale_number: string|null, last_sold_at: string|null},
      *     recent: array{yesterday_sale_count: int, yesterday_omzet_amount: int, week_sale_count: int, week_omzet_amount: int, last_sale_number: string|null, last_sold_at: string|null},
@@ -40,7 +40,7 @@ class PosShopHomeService
     }
 
     /**
-     * @return list<array{id: int, session_number: string, cashier_name: string, warehouse_name: string, hold_count: int, opened_at: string|null}>
+     * @return list<array{id: int, session_number: string, cashier_name: string, warehouse_name: string, hold_count: int, opened_at: string|null, booked_cash_amount: int}>
      */
     private function openSessions(): array
     {
@@ -55,6 +55,7 @@ class PosShopHomeService
                 'u.name as cashier_name',
                 'w.name as warehouse_name',
                 's.opened_at',
+                's.opening_cash_amount',
             ]);
 
         $holdCounts = DB::table('pos_session_holds as h')
@@ -65,7 +66,16 @@ class PosShopHomeService
             ->select('h.pos_session_id', DB::raw('count(*) as hold_count'))
             ->pluck('hold_count', 'pos_session_id');
 
-        return $rows->map(function (object $row) use ($holdCounts): array {
+        $cashBySession = DB::table('pos_sale_tenders as t')
+            ->join('pos_sales as sa', 'sa.id', '=', 't.pos_sale_id')
+            ->where('sa.status', PosSaleStatus::Completed->value)
+            ->where('t.type', 'cash')
+            ->whereIn('sa.pos_session_id', $rows->pluck('id')->all() ?: [0])
+            ->groupBy('sa.pos_session_id')
+            ->select('sa.pos_session_id', DB::raw('coalesce(sum(t.amount), 0) as cash_amount'))
+            ->pluck('cash_amount', 'pos_session_id');
+
+        return $rows->map(function (object $row) use ($holdCounts, $cashBySession): array {
             return [
                 'id' => (int) $row->id,
                 'session_number' => (string) $row->session_number,
@@ -73,6 +83,7 @@ class PosShopHomeService
                 'warehouse_name' => (string) ($row->warehouse_name ?: ''),
                 'hold_count' => (int) ($holdCounts[$row->id] ?? 0),
                 'opened_at' => $row->opened_at ? (string) $row->opened_at : null,
+                'booked_cash_amount' => (int) $row->opening_cash_amount + (int) ($cashBySession[$row->id] ?? 0),
             ];
         })->all();
     }

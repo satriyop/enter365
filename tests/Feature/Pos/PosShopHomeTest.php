@@ -113,6 +113,7 @@ it('reports yesterday omzet when today is quiet and does not close the till', fu
         'warehouse_id' => $this->warehouse->id,
         'opened_by' => $this->kasir->id,
         'opened_at' => now()->subDay(),
+        'opening_cash_amount' => 200_000,
     ]);
     PosSale::factory()->create([
         'pos_session_id' => $session->id,
@@ -129,9 +130,36 @@ it('reports yesterday omzet when today is quiet and does not close the till', fu
         ->assertJsonPath('data.today.omzet_amount', 0)
         ->assertJsonPath('data.recent.yesterday_omzet_amount', 40_000)
         ->assertJsonPath('data.recent.last_sale_number', 'POS-202608-0001')
-        ->assertJsonPath('data.open_sessions.0.id', $session->id);
+        ->assertJsonPath('data.open_sessions.0.id', $session->id)
+        ->assertJsonPath('data.open_sessions.0.booked_cash_amount', 200_000);
 
     expect($session->fresh()->status)->toBe(PosSessionStatus::Open);
+});
+
+it('lets the owner close a stale till from shop-home booked cash after confirm payload', function () {
+    $session = PosSession::factory()->create([
+        'status' => PosSessionStatus::Open,
+        'warehouse_id' => $this->warehouse->id,
+        'opened_by' => $this->kasir->id,
+        'opened_at' => now()->subDay(),
+        'opening_cash_amount' => 200_000,
+    ]);
+    \App\Models\Pos\PosSessionHold::factory()->create([
+        'pos_session_id' => $session->id,
+        'taken_at' => null,
+        'lines' => [['product_id' => $this->pastry->id, 'quantity' => 1]],
+    ]);
+
+    Sanctum::actingAs($this->owner);
+    $home = $this->getJson('/api/v1/pos/shop-home')->assertOk();
+    $booked = (int) $home->json('data.open_sessions.0.booked_cash_amount');
+
+    $this->postJson("/api/v1/pos/sessions/{$session->id}/close", [
+        'counted_cash_amount' => $booked,
+    ])->assertOk();
+
+    expect($session->fresh()->status)->toBe(PosSessionStatus::Closed)
+        ->and(\App\Models\Pos\PosSessionHold::query()->where('pos_session_id', $session->id)->count())->toBe(0);
 });
 
 it('forbids the cashier from the owner shop home', function () {

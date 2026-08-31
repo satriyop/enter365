@@ -27004,6 +27004,9 @@
                                                                     "string",
                                                                     "null"
                                                                 ]
+                                                            },
+                                                            "booked_cash_amount": {
+                                                                "type": "string"
                                                             }
                                                         },
                                                         "required": [
@@ -27012,7 +27015,8 @@
                                                             "cashier_name",
                                                             "warehouse_name",
                                                             "hold_count",
-                                                            "opened_at"
+                                                            "opened_at",
+                                                            "booked_cash_amount"
                                                         ]
                                                     }
                                                 },
