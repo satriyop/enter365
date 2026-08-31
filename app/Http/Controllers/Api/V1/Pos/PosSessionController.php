@@ -20,13 +20,34 @@ use App\Models\Inventory\Warehouse;
 use App\Models\Pos\PosSale;
 use App\Models\Pos\PosSession;
 use App\Models\Pos\PosSessionHold;
+use App\Services\Pos\PosShopHomeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class PosSessionController extends Controller
 {
-    public function __construct(private PosServiceInterface $posService) {}
+    public function __construct(
+        private PosServiceInterface $posService,
+        private PosShopHomeService $shopHome,
+    ) {}
+
+    /**
+     * Owner/akuntan shop home: open tills, holds, today's omzet, low pastry.
+     * Read-only — does not close sessions.
+     */
+    public function shopHome(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        abort_unless(
+            (bool) $user?->hasPermission('dashboard.view')
+            || (bool) $user?->hasPermission('pos.reports.view'),
+            403,
+            'Anda tidak boleh melihat ringkasan toko.'
+        );
+
+        return $this->success($this->shopHome->summary());
+    }
 
     public function store(OpenPosSessionRequest $request): JsonResponse
     {

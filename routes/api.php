@@ -735,6 +735,7 @@ Route::prefix('v1')->group(function () {
         Route::middleware('feature:pos')->prefix('pos')->group(function () {
             Route::get('outlets', [PosSessionController::class, 'outlets'])
                 ->middleware('permission:pos.session.open,message:Anda tidak boleh membuka sesi kasir.');
+            Route::get('shop-home', [PosSessionController::class, 'shopHome']);
             Route::post('sessions', [PosSessionController::class, 'store'])
                 ->middleware('permission:pos.session.open,message:Anda tidak boleh membuka sesi kasir.');
             Route::get('sessions/current', [PosSessionController::class, 'current']);

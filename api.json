@@ -6355,22 +6355,7 @@
                                         }
                                     },
                                     "target_brand": {
-                                        "type": [
-                                            "string",
-                                            "null"
-                                        ],
-                                        "enum": [
-                                            "schneider",
-                                            "abb",
-                                            "siemens",
-                                            "chint",
-                                            "ls",
-                                            "legrand",
-                                            "eaton",
-                                            "hager",
-                                            "mitsubishi",
-                                            null
-                                        ]
+                                        "type": "string"
                                     }
                                 }
                             }
@@ -8768,40 +8753,110 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "budget": {
+                                        "data": {
                                             "type": "object",
                                             "properties": {
-                                                "id": {
-                                                    "type": "integer"
+                                                "budget": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer"
+                                                        },
+                                                        "name": {
+                                                            "type": "string"
+                                                        },
+                                                        "fiscal_period": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "id",
+                                                        "name",
+                                                        "fiscal_period"
+                                                    ]
                                                 },
-                                                "name": {
-                                                    "type": "string"
+                                                "month": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ]
                                                 },
-                                                "fiscal_period": {
-                                                    "type": "string"
+                                                "comparison": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "account_id": {
+                                                                "type": "integer"
+                                                            },
+                                                            "account_code": {
+                                                                "type": "string"
+                                                            },
+                                                            "account_name": {
+                                                                "type": "string"
+                                                            },
+                                                            "account_type": {
+                                                                "type": "string"
+                                                            },
+                                                            "budgeted": {
+                                                                "type": "integer"
+                                                            },
+                                                            "actual": {
+                                                                "type": "integer"
+                                                            },
+                                                            "variance": {
+                                                                "type": "integer"
+                                                            },
+                                                            "variance_percentage": {
+                                                                "type": "number"
+                                                            },
+                                                            "is_over_budget": {
+                                                                "type": "boolean"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "account_id",
+                                                            "account_code",
+                                                            "account_name",
+                                                            "account_type",
+                                                            "budgeted",
+                                                            "actual",
+                                                            "variance",
+                                                            "variance_percentage",
+                                                            "is_over_budget"
+                                                        ]
+                                                    }
+                                                },
+                                                "totals": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "total_budgeted": {
+                                                            "type": "integer"
+                                                        },
+                                                        "total_actual": {
+                                                            "type": "integer"
+                                                        },
+                                                        "total_variance": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "total_budgeted",
+                                                        "total_actual",
+                                                        "total_variance"
+                                                    ]
                                                 }
                                             },
                                             "required": [
-                                                "id",
-                                                "name",
-                                                "fiscal_period"
+                                                "budget",
+                                                "month",
+                                                "comparison",
+                                                "totals"
                                             ]
-                                        },
-                                        "month": {
-                                            "type": [
-                                                "integer",
-                                                "null"
-                                            ]
-                                        },
-                                        "comparison": {
-                                            "type": "array",
-                                            "items": {}
                                         }
                                     },
                                     "required": [
-                                        "budget",
-                                        "month",
-                                        "comparison"
+                                        "data"
                                     ]
                                 }
                             }
@@ -26899,6 +26954,169 @@
                 }
             }
         },
+        "/pos/shop-home": {
+            "get": {
+                "operationId": "posSession.shopHome",
+                "summary": "Owner/akuntan shop home: open tills, holds, today's omzet, low pastry.\nRead-only \u2014 does not close sessions",
+                "tags": [
+                    "PosSession"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operasi berhasil."
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "open_sessions": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer"
+                                                            },
+                                                            "session_number": {
+                                                                "type": "string"
+                                                            },
+                                                            "cashier_name": {
+                                                                "type": "string"
+                                                            },
+                                                            "warehouse_name": {
+                                                                "type": "string"
+                                                            },
+                                                            "hold_count": {
+                                                                "type": "integer"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "id",
+                                                            "session_number",
+                                                            "cashier_name",
+                                                            "warehouse_name",
+                                                            "hold_count"
+                                                        ]
+                                                    }
+                                                },
+                                                "open_hold_count": {
+                                                    "type": "integer"
+                                                },
+                                                "today": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "sale_count": {
+                                                            "type": "integer"
+                                                        },
+                                                        "omzet_amount": {
+                                                            "type": "integer"
+                                                        },
+                                                        "last_sale_number": {
+                                                            "type": [
+                                                                "string",
+                                                                "null"
+                                                            ]
+                                                        },
+                                                        "last_sold_at": {
+                                                            "type": [
+                                                                "string",
+                                                                "null"
+                                                            ]
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "sale_count",
+                                                        "omzet_amount",
+                                                        "last_sale_number",
+                                                        "last_sold_at"
+                                                    ]
+                                                },
+                                                "low_stock": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "product_id": {
+                                                                "type": "integer"
+                                                            },
+                                                            "sku": {
+                                                                "type": "string"
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            },
+                                                            "quantity": {
+                                                                "type": "integer"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "product_id",
+                                                            "sku",
+                                                            "name",
+                                                            "quantity"
+                                                        ]
+                                                    }
+                                                },
+                                                "draft_journal_count": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "open_sessions",
+                                                "open_hold_count",
+                                                "today",
+                                                "low_stock",
+                                                "draft_journal_count"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "examples": [
+                                                "Anda tidak boleh melihat ringkasan toko."
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/pos/sessions": {
             "post": {
                 "operationId": "posSession.store",
@@ -31551,13 +31769,15 @@
                                             "integer",
                                             "null"
                                         ],
+                                        "description": "Min Rp 5 juta for B2B",
                                         "minimum": 5500
                                     },
                                     "pln_category": {
                                         "type": [
                                             "string",
                                             "null"
-                                        ]
+                                        ],
+                                        "description": "Min 5.5 kVA for B2B"
                                     },
                                     "target_savings": {
                                         "type": [
@@ -39711,10 +39931,12 @@
                                             "const": "Proposal berhasil dikonversi ke quotation."
                                         },
                                         "quotation": {
-                                            "$ref": "#/components/schemas/QuotationResource"
+                                            "type": "array",
+                                            "items": {}
                                         },
                                         "proposal": {
-                                            "$ref": "#/components/schemas/SolarProposalResource"
+                                            "type": "array",
+                                            "items": {}
                                         }
                                     },
                                     "required": [
@@ -49874,22 +50096,7 @@
                         }
                     },
                     "target_brand": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "enum": [
-                            "schneider",
-                            "abb",
-                            "siemens",
-                            "chint",
-                            "ls",
-                            "legrand",
-                            "eaton",
-                            "hager",
-                            "mitsubishi",
-                            null
-                        ]
+                        "type": "string"
                     }
                 },
                 "required": [
@@ -50498,10 +50705,7 @@
                         "type": "integer"
                     },
                     "remaining_amount": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "integer"
                     },
                     "payment_method": {
                         "type": "string"
@@ -57311,6 +57515,9 @@
                     "is_system": {
                         "type": "boolean"
                     },
+                    "grants_all_permissions": {
+                        "type": "boolean"
+                    },
                     "permissions": {
                         "type": "array",
                         "description": "Related",
@@ -57343,6 +57550,7 @@
                     "display_name",
                     "description",
                     "is_system",
+                    "grants_all_permissions",
                     "created_at",
                     "updated_at"
                 ],
@@ -59502,10 +59710,7 @@
                         "maxLength": 500
                     },
                     "component_standard_id": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "string"
                     }
                 },
                 "required": [
@@ -59562,10 +59767,7 @@
                         ]
                     },
                     "default_rule_set_id": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "string"
                     }
                 },
                 "required": [
@@ -64818,10 +65020,7 @@
                         "maxLength": 500
                     },
                     "component_standard_id": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "string"
                     }
                 },
                 "title": "UpdateBomTemplateItemRequest"
@@ -64874,10 +65073,7 @@
                         ]
                     },
                     "default_rule_set_id": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "string"
                     }
                 },
                 "title": "UpdateBomTemplateRequest"
