@@ -1369,7 +1369,7 @@ PPh withholding stays **off** (`FEATURE_PPH_WITHHOLDING=false`) until a product 
 
 A second, tab-wide failure (FE#8) looked like “Vue clicks are dead for Kasir/Akuntan/Gudang”: always-mounted Radix `DialogPortal` (Command Palette, shortcuts, SessionTimeout, Modal) can leave `pointer-events: none` on `body` after Owner used AppLayout; a PWA `StaleWhileRevalidate` on JS plus a cached `index.html` keeps old handlers. Native `<select>`/`<input>` still work (keyboard or OS widget). Clean Chromium was fine.
 
-**Solution:** Keep the button enabled except for in-flight / period-lock. On click, bind the default outlet or toast in Indonesian. `type="button"`. Unmount closed Radix portals (`v-if` on `DialogPortal`). Restore `body`/`html` pointer-events on every route change. Login and logout `window.location.assign` so a lock cannot survive a role switch. Do not SWR hashed JS/CSS; auto-apply waiting service workers.
+**Solution:** Keep the button enabled except for in-flight / period-lock. On click, bind the default outlet or toast in Indonesian. `type="button"`. Unmount closed Radix portals (`v-if` on `DialogPortal`). Restore `body`/`html` pointer-events on every route change. Login and logout must `location.replace` a **unique** URL (`?boot=`) immediately after the token is stored — `assign('/')` is a no-op if the SPA already sits on `/`, so the Sign-in tab stays the same click-dead document (FE#9). Do not await `/features` on the login page. Do not SWR hashed JS/CSS; auto-apply waiting service workers.
 
 ```ts
 // ❌ BAD — first paint is a silent no-op; Playwright will not catch it
