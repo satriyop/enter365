@@ -21,7 +21,7 @@ First time
   ./scripts/prod.sh provision    PHP pool, Postgres DB, Caddy site (additive)
   ./scripts/prod.sh env-init     APP_KEY
   ./scripts/prod.sh deploy       rsync this laptop + composer + migrate --force
-  ./scripts/prod.sh seed-pos     Kopitiam catalog (once). Demo password Kopitiam57-kasir.
+  ./scripts/prod.sh seed-pos     Kopitiam catalog (once). Demo password is PosKopitiamDemoSeeder::DEMO_PASSWORD.
   ./scripts/prod.sh health
 
 Every release

@@ -34,7 +34,7 @@ class PosKopitiamDemoSeeder extends Seeder
      * treat it as a Have I Been Pwned breach of "password". Not a per-user
      * secret — still change it before handing a real till to Siti.
      */
-    public const DEMO_PASSWORD = 'Kopitiam57-kasir';
+    public const DEMO_PASSWORD = 'WRGKvh-WU#pL5ii#mufZXxpW';
 
     /** @var list<string> */
     public const DEMO_EMAILS = [
