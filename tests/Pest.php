@@ -385,13 +385,20 @@ function liveApiModules(): array
     $base = rtrim((string) env('API_URL', 'https://enter365.test'), '/');
 
     try {
-        $login = \Illuminate\Support\Facades\Http::withOptions(['verify' => false])
-            ->acceptJson()
-            ->post($base.'/api/v1/auth/login', [
-                'email' => 'admin@example.com',
-                'password' => 'password',
-            ]);
-        if (! $login->successful()) {
+        $login = null;
+        foreach ([kopitiamDemoPassword(), 'password'] as $password) {
+            $attempt = \Illuminate\Support\Facades\Http::withOptions(['verify' => false])
+                ->acceptJson()
+                ->post($base.'/api/v1/auth/login', [
+                    'email' => 'admin@example.com',
+                    'password' => $password,
+                ]);
+            if ($attempt->successful()) {
+                $login = $attempt;
+                break;
+            }
+        }
+        if ($login === null || ! $login->successful()) {
             $modules = [];
 
             return $modules;
@@ -417,13 +424,18 @@ function skipUnlessLiveFeature(string $module): void
     }
 }
 
-function loginAndVisitAs(string $email, string $path = '/', string $password = 'password')
+function kopitiamDemoPassword(): string
+{
+    return \Database\Seeders\Demo\PosKopitiamDemoSeeder::DEMO_PASSWORD;
+}
+
+function loginAndVisitAs(string $email, string $path = '/', ?string $password = null)
 {
     ensureOpenCurrentFiscalPeriod();
 
     $page = visit(spaUrl('/login'));
     $page->fill('[data-testid="login-email"]', $email)
-        ->fill('[data-testid="login-password"]', $password)
+        ->fill('[data-testid="login-password"]', $password ?? kopitiamDemoPassword())
         ->click('[data-testid="login-submit"]')
         ->assertMissing('[data-testid="login-email"]');
 

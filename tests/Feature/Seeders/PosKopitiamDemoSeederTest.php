@@ -10,7 +10,9 @@ use App\Models\Sales\Invoice;
 use App\Models\User;
 use Database\Seeders\Demo\DemoSeeder;
 use Database\Seeders\Demo\KopitiamCafeMenu;
+use Database\Seeders\Demo\PosKopitiamDemoSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
@@ -55,6 +57,24 @@ it('seeds Kopitiam 57 stand-in till without invoices', function () {
         ->and(User::query()->where('email', 'rina@kopitiam57.test')->first()?->hasRole(Role::ACCOUNTANT))->toBeTrue()
         ->and(User::query()->where('email', 'dewi@kopitiam57.test')->first()?->hasRole(Role::INVENTORY))->toBeTrue();
 
+    expect(PosKopitiamDemoSeeder::DEMO_PASSWORD)->not->toBe('password');
+
+    foreach (PosKopitiamDemoSeeder::DEMO_EMAILS as $email) {
+        $user = User::query()->where('email', $email)->firstOrFail();
+        expect(Hash::check(PosKopitiamDemoSeeder::DEMO_PASSWORD, $user->password))->toBeTrue()
+            ->and(Hash::check('password', $user->password))->toBeFalse();
+    }
+
+    $this->postJson('/api/v1/auth/login', [
+        'email' => 'siti@kopitiam57.test',
+        'password' => 'password',
+    ])->assertUnprocessable();
+
+    $this->postJson('/api/v1/auth/login', [
+        'email' => 'siti@kopitiam57.test',
+        'password' => PosKopitiamDemoSeeder::DEMO_PASSWORD,
+    ])->assertOk()->assertJsonPath('user.email', 'siti@kopitiam57.test');
+
     $owner = User::query()->where('email', 'admin@example.com')->firstOrFail();
     Sanctum::actingAs($owner);
 
@@ -66,4 +86,21 @@ it('seeds Kopitiam 57 stand-in till without invoices', function () {
     $busbars = $this->getJson('/api/v1/products?search=AC-AMMETER');
     $busbars->assertOk();
     expect(collect($busbars->json('data'))->pluck('sku')->all())->not->toContain('AC-AMMETER');
+});
+
+it('rotates demo passwords without reseeding catalog', function () {
+    applyFeaturePreset('pos');
+    seedDemoFoundation($this);
+    seedDemoProfile($this, DemoSeeder::DEMO_POS);
+
+    $siti = User::query()->where('email', 'siti@kopitiam57.test')->firstOrFail();
+    $siti->password = 'temporary-old';
+    $siti->save();
+
+    $skuCount = Product::query()->where('sku', 'like', 'KT57-%')->count();
+
+    expect(PosKopitiamDemoSeeder::rotatePasswords())->toBe(4)
+        ->and(Hash::check(PosKopitiamDemoSeeder::DEMO_PASSWORD, $siti->fresh()->password))->toBeTrue()
+        ->and(Hash::check('temporary-old', $siti->fresh()->password))->toBeFalse()
+        ->and(Product::query()->where('sku', 'like', 'KT57-%')->count())->toBe($skuCount);
 });

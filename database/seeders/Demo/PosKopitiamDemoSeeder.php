@@ -29,6 +29,21 @@ use Illuminate\Support\Facades\Hash;
  */
 class PosKopitiamDemoSeeder extends Seeder
 {
+    /**
+     * Shared Kopitiam demo password. Unique enough that Chrome does not
+     * treat it as a Have I Been Pwned breach of "password". Not a per-user
+     * secret — still change it before handing a real till to Siti.
+     */
+    public const DEMO_PASSWORD = 'Kopitiam57-kasir';
+
+    /** @var list<string> */
+    public const DEMO_EMAILS = [
+        'admin@example.com',
+        'siti@kopitiam57.test',
+        'rina@kopitiam57.test',
+        'dewi@kopitiam57.test',
+    ];
+
     /** @var list<string> */
     private const RETIRED_STANDIN_SKUS = [
         'KT57-KAYA',
@@ -63,6 +78,35 @@ class PosKopitiamDemoSeeder extends Seeder
         $this->lockOpenSessionsToAddOn();
 
         $this->command?->info('  ✓ Kopitiam 57 till — cafe menu + pastry; bill adds service 5% and PBJT 10%');
+        $this->command?->info('  Logins: '.implode(', ', self::DEMO_EMAILS));
+        $this->command?->info('  Password: '.self::DEMO_PASSWORD);
+    }
+
+    /**
+     * Hash-only update for the four demo users. Does not touch catalog,
+     * sessions, or holds — use this on a live till instead of re-seeding.
+     */
+    public static function rotatePasswords(): int
+    {
+        $updated = 0;
+
+        foreach (self::DEMO_EMAILS as $email) {
+            $user = User::query()->where('email', $email)->first();
+            if ($user === null) {
+                continue;
+            }
+
+            $user->password = Hash::make(self::DEMO_PASSWORD);
+            $user->save();
+            $updated++;
+        }
+
+        return $updated;
+    }
+
+    private function hashedDemoPassword(): string
+    {
+        return Hash::make(self::DEMO_PASSWORD);
     }
 
     private function ensureOwner(): User
@@ -71,7 +115,7 @@ class PosKopitiamDemoSeeder extends Seeder
             ['email' => 'admin@example.com'],
             [
                 'name' => 'Admin Kopitiam 57',
-                'password' => Hash::make('password'),
+                'password' => $this->hashedDemoPassword(),
                 'is_active' => true,
             ]
         );
@@ -86,7 +130,7 @@ class PosKopitiamDemoSeeder extends Seeder
             ['email' => 'siti@kopitiam57.test'],
             [
                 'name' => 'Siti Kasir',
-                'password' => Hash::make('password'),
+                'password' => $this->hashedDemoPassword(),
                 'is_active' => true,
             ]
         );
@@ -103,7 +147,7 @@ class PosKopitiamDemoSeeder extends Seeder
             ['email' => 'rina@kopitiam57.test'],
             [
                 'name' => 'Rina Akuntan',
-                'password' => Hash::make('password'),
+                'password' => $this->hashedDemoPassword(),
                 'is_active' => true,
             ]
         );
@@ -116,7 +160,7 @@ class PosKopitiamDemoSeeder extends Seeder
             ['email' => 'dewi@kopitiam57.test'],
             [
                 'name' => 'Dewi Gudang',
-                'password' => Hash::make('password'),
+                'password' => $this->hashedDemoPassword(),
                 'is_active' => true,
             ]
         );

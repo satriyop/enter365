@@ -347,8 +347,12 @@ class DemoSeeder extends Seeder
         $this->command->info('╠═══════════════════════════════════════════════════════════════════╣');
         $this->command->info('║  Demo Users:                                                       ║');
         if ($demoChoice === self::DEMO_POS) {
-            $this->command->info('║    admin@example.com     (password: password)  Owner                ║');
-            $this->command->info('║    siti@kopitiam57.test  (password: password)  Kasir                ║');
+            $pad = static fn (string $text): string => '║'.str_pad($text, 67, ' ').'║';
+            $this->command->info($pad('  Shared password: '.PosKopitiamDemoSeeder::DEMO_PASSWORD));
+            $this->command->info($pad('    admin@example.com  Owner'));
+            $this->command->info($pad('    siti@kopitiam57.test  Kasir'));
+            $this->command->info($pad('    rina@kopitiam57.test  Akuntan'));
+            $this->command->info($pad('    dewi@kopitiam57.test  Gudang'));
         } else {
             $this->command->info('║    admin@demo.com      (password: password)                        ║');
             $this->command->info('║    sales@demo.com      (password: password)                        ║');
