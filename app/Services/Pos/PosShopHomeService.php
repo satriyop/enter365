@@ -16,9 +16,10 @@ class PosShopHomeService
      * Read-only Kopitiam shop home. Does not open or close tills.
      *
      * @return array{
-     *     open_sessions: list<array{id: int, session_number: string, cashier_name: string, warehouse_name: string, hold_count: int}>,
+     *     open_sessions: list<array{id: int, session_number: string, cashier_name: string, warehouse_name: string, hold_count: int, opened_at: string|null}>,
      *     open_hold_count: int,
      *     today: array{sale_count: int, omzet_amount: int, last_sale_number: string|null, last_sold_at: string|null},
+     *     recent: array{yesterday_sale_count: int, yesterday_omzet_amount: int, week_sale_count: int, week_omzet_amount: int, last_sale_number: string|null, last_sold_at: string|null},
      *     low_stock: list<array{product_id: int, sku: string, name: string, quantity: int}>,
      *     draft_journal_count: int
      * }
@@ -31,14 +32,15 @@ class PosShopHomeService
         return [
             'open_sessions' => $openSessions,
             'open_hold_count' => $holdCount,
-            'today' => $this->todaySales(),
+            'today' => $this->salesForDate(now()->toDateString()),
+            'recent' => $this->recentSales(),
             'low_stock' => $this->lowTrackedStock(),
             'draft_journal_count' => $this->draftJournalCount(),
         ];
     }
 
     /**
-     * @return list<array{id: int, session_number: string, cashier_name: string, warehouse_name: string, hold_count: int}>
+     * @return list<array{id: int, session_number: string, cashier_name: string, warehouse_name: string, hold_count: int, opened_at: string|null}>
      */
     private function openSessions(): array
     {
@@ -52,6 +54,7 @@ class PosShopHomeService
                 's.session_number',
                 'u.name as cashier_name',
                 'w.name as warehouse_name',
+                's.opened_at',
             ]);
 
         $holdCounts = DB::table('pos_session_holds as h')
@@ -69,6 +72,7 @@ class PosShopHomeService
                 'cashier_name' => (string) ($row->cashier_name ?: ''),
                 'warehouse_name' => (string) ($row->warehouse_name ?: ''),
                 'hold_count' => (int) ($holdCounts[$row->id] ?? 0),
+                'opened_at' => $row->opened_at ? (string) $row->opened_at : null,
             ];
         })->all();
     }
@@ -76,19 +80,17 @@ class PosShopHomeService
     /**
      * @return array{sale_count: int, omzet_amount: int, last_sale_number: string|null, last_sold_at: string|null}
      */
-    private function todaySales(): array
+    private function salesForDate(string $date): array
     {
-        $today = now()->toDateString();
-
         $totals = DB::table('pos_sales')
             ->where('status', PosSaleStatus::Completed->value)
-            ->whereDate('sold_at', $today)
+            ->whereDate('sold_at', $date)
             ->selectRaw('count(*) as sale_count, coalesce(sum(payable_amount), 0) as omzet_amount')
             ->first();
 
         $last = DB::table('pos_sales')
             ->where('status', PosSaleStatus::Completed->value)
-            ->whereDate('sold_at', $today)
+            ->whereDate('sold_at', $date)
             ->orderByDesc('sold_at')
             ->orderByDesc('id')
             ->first(['sale_number', 'sold_at']);
@@ -96,6 +98,36 @@ class PosShopHomeService
         return [
             'sale_count' => (int) ($totals->sale_count ?? 0),
             'omzet_amount' => (int) ($totals->omzet_amount ?? 0),
+            'last_sale_number' => $last->sale_number ?? null,
+            'last_sold_at' => $last->sold_at ?? null,
+        ];
+    }
+
+    /**
+     * @return array{yesterday_sale_count: int, yesterday_omzet_amount: int, week_sale_count: int, week_omzet_amount: int, last_sale_number: string|null, last_sold_at: string|null}
+     */
+    private function recentSales(): array
+    {
+        $yesterday = $this->salesForDate(now()->subDay()->toDateString());
+
+        $weekFrom = now()->subDays(6)->toDateString();
+        $weekTotals = DB::table('pos_sales')
+            ->where('status', PosSaleStatus::Completed->value)
+            ->whereDate('sold_at', '>=', $weekFrom)
+            ->selectRaw('count(*) as sale_count, coalesce(sum(payable_amount), 0) as omzet_amount')
+            ->first();
+
+        $last = DB::table('pos_sales')
+            ->where('status', PosSaleStatus::Completed->value)
+            ->orderByDesc('sold_at')
+            ->orderByDesc('id')
+            ->first(['sale_number', 'sold_at']);
+
+        return [
+            'yesterday_sale_count' => $yesterday['sale_count'],
+            'yesterday_omzet_amount' => $yesterday['omzet_amount'],
+            'week_sale_count' => (int) ($weekTotals->sale_count ?? 0),
+            'week_omzet_amount' => (int) ($weekTotals->omzet_amount ?? 0),
             'last_sale_number' => $last->sale_number ?? null,
             'last_sold_at' => $last->sold_at ?? null,
         ];

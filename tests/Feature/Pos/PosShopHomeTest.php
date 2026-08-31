@@ -84,8 +84,11 @@ it('lists open tills, holds, today omzet, and low pastry without closing the ses
         ->assertJsonPath('data.open_sessions.0.session_number', 'PSS-202608-0007')
         ->assertJsonPath('data.open_sessions.0.hold_count', 1)
         ->assertJsonPath('data.open_sessions.0.cashier_name', $this->kasir->name)
+        ->assertJsonPath('data.recent.last_sale_number', 'POS-202608-0099')
         ->assertJsonPath('data.low_stock.0.sku', 'KT57-SB-GARLIC')
         ->assertJsonPath('data.low_stock.0.quantity', 3);
+
+    expect($response->json('data.open_sessions.0.opened_at'))->not->toBeEmpty();
 
     expect($session->fresh()->status)->toBe(PosSessionStatus::Open)
         ->and(PosSessionHold::query()->whereNull('taken_at')->count())->toBe(1);
@@ -102,6 +105,33 @@ it('is all-caught-up when tills, holds, low stock, and drafts are empty', functi
         ->assertJsonPath('data.draft_journal_count', 0)
         ->assertJsonPath('data.open_sessions', [])
         ->assertJsonPath('data.low_stock', []);
+});
+
+it('reports yesterday omzet when today is quiet and does not close the till', function () {
+    $session = PosSession::factory()->create([
+        'status' => PosSessionStatus::Open,
+        'warehouse_id' => $this->warehouse->id,
+        'opened_by' => $this->kasir->id,
+        'opened_at' => now()->subDay(),
+    ]);
+    PosSale::factory()->create([
+        'pos_session_id' => $session->id,
+        'status' => PosSaleStatus::Completed,
+        'payable_amount' => 40_000,
+        'sold_at' => now()->subDay(),
+        'sale_number' => 'POS-202608-0001',
+        'created_by' => $this->kasir->id,
+    ]);
+
+    Sanctum::actingAs($this->owner);
+    $this->getJson('/api/v1/pos/shop-home')
+        ->assertOk()
+        ->assertJsonPath('data.today.omzet_amount', 0)
+        ->assertJsonPath('data.recent.yesterday_omzet_amount', 40_000)
+        ->assertJsonPath('data.recent.last_sale_number', 'POS-202608-0001')
+        ->assertJsonPath('data.open_sessions.0.id', $session->id);
+
+    expect($session->fresh()->status)->toBe(PosSessionStatus::Open);
 });
 
 it('forbids the cashier from the owner shop home', function () {

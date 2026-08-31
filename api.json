@@ -26998,6 +26998,12 @@
                                                             },
                                                             "hold_count": {
                                                                 "type": "integer"
+                                                            },
+                                                            "opened_at": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
                                                             }
                                                         },
                                                         "required": [
@@ -27005,7 +27011,8 @@
                                                             "session_number",
                                                             "cashier_name",
                                                             "warehouse_name",
-                                                            "hold_count"
+                                                            "hold_count",
+                                                            "opened_at"
                                                         ]
                                                     }
                                                 },
@@ -27037,6 +27044,43 @@
                                                     "required": [
                                                         "sale_count",
                                                         "omzet_amount",
+                                                        "last_sale_number",
+                                                        "last_sold_at"
+                                                    ]
+                                                },
+                                                "recent": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "yesterday_sale_count": {
+                                                            "type": "integer"
+                                                        },
+                                                        "yesterday_omzet_amount": {
+                                                            "type": "integer"
+                                                        },
+                                                        "week_sale_count": {
+                                                            "type": "integer"
+                                                        },
+                                                        "week_omzet_amount": {
+                                                            "type": "integer"
+                                                        },
+                                                        "last_sale_number": {
+                                                            "type": [
+                                                                "string",
+                                                                "null"
+                                                            ]
+                                                        },
+                                                        "last_sold_at": {
+                                                            "type": [
+                                                                "string",
+                                                                "null"
+                                                            ]
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "yesterday_sale_count",
+                                                        "yesterday_omzet_amount",
+                                                        "week_sale_count",
+                                                        "week_omzet_amount",
                                                         "last_sale_number",
                                                         "last_sold_at"
                                                     ]
@@ -27075,6 +27119,7 @@
                                                 "open_sessions",
                                                 "open_hold_count",
                                                 "today",
+                                                "recent",
                                                 "low_stock",
                                                 "draft_journal_count"
                                             ]
