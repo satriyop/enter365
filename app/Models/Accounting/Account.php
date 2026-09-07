@@ -56,6 +56,8 @@ class Account extends Model
         'parent_id',
         'is_active',
         'is_system',
+        'allow_reconciliation',
+        'currency',
     ];
 
     protected function casts(): array
@@ -63,6 +65,7 @@ class Account extends Model
         return [
             'is_active' => 'boolean',
             'is_system' => 'boolean',
+            'allow_reconciliation' => 'boolean',
             'opening_balance' => 'integer',
         ];
     }

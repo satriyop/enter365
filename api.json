@@ -47676,6 +47676,15 @@
                     "is_system": {
                         "type": "boolean"
                     },
+                    "allow_reconciliation": {
+                        "type": "boolean"
+                    },
+                    "currency": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
                     "opening_balance": {
                         "type": "integer"
                     },
@@ -47721,6 +47730,8 @@
                     "parent_id",
                     "is_active",
                     "is_system",
+                    "allow_reconciliation",
+                    "currency",
                     "opening_balance",
                     "created_at",
                     "updated_at"
@@ -59275,6 +59286,17 @@
                     },
                     "is_active": {
                         "type": "boolean"
+                    },
+                    "allow_reconciliation": {
+                        "type": "boolean"
+                    },
+                    "currency": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 3,
+                        "minLength": 3
                     }
                 },
                 "required": [
@@ -64644,6 +64666,17 @@
                     },
                     "is_active": {
                         "type": "boolean"
+                    },
+                    "allow_reconciliation": {
+                        "type": "boolean"
+                    },
+                    "currency": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 3,
+                        "minLength": 3
                     }
                 },
                 "title": "UpdateAccountRequest"

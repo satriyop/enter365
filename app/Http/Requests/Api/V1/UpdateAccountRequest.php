@@ -14,6 +14,13 @@ class UpdateAccountRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('currency') && $this->input('currency') === '') {
+            $this->merge(['currency' => null]);
+        }
+    }
+
     public function rules(): array
     {
         $account = $this->route('account');
@@ -27,6 +34,13 @@ class UpdateAccountRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'parent_id' => ['nullable', 'integer', 'exists:accounts,id'],
             'is_active' => ['boolean'],
+            'allow_reconciliation' => ['boolean'],
+            'currency' => [
+                'nullable',
+                'string',
+                'size:3',
+                Rule::in(config('accounting.multi_currency.supported_currencies', [])),
+            ],
         ];
     }
 
