@@ -16,10 +16,12 @@ class JournalEntryLineResource extends JsonResource
      *   id: int,
      *   journal_entry_id: int,
      *   account_id: int,
+     *   partner_id: int|null,
      *   description: string|null,
      *   debit: int,
      *   credit: int,
      *   account?: AccountResource,
+     *   partner?: ContactResource|null,
      *   created_at: string|null,
      *   updated_at: string|null
      * }
@@ -30,10 +32,14 @@ class JournalEntryLineResource extends JsonResource
             'id' => $this->id,
             'journal_entry_id' => $this->journal_entry_id,
             'account_id' => $this->account_id,
+            'partner_id' => $this->partner_id,
             'description' => $this->description,
             'debit' => $this->debit,
             'credit' => $this->credit,
             'account' => new AccountResource($this->whenLoaded('account')),
+            'partner' => $this->whenLoaded('partner', fn () => $this->partner
+                ? new ContactResource($this->partner)
+                : null),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

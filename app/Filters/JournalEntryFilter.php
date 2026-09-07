@@ -47,6 +47,7 @@ class JournalEntryFilter extends QueryFilter
         return [
             'lines',
             'lines.account',
+            'lines.partner',
             'journal',
             'journal.defaultAccount',
             'fiscalPeriod',
@@ -86,6 +87,16 @@ class JournalEntryFilter extends QueryFilter
     {
         $this->builder->whereHas('journal', function ($query) use ($value) {
             $query->where('type', $value);
+        });
+    }
+
+    /**
+     * Filter entries that have a line for the given partner (contact).
+     */
+    public function partnerId(int|string $value): void
+    {
+        $this->builder->whereHas('lines', function ($query) use ($value) {
+            $query->where('partner_id', $value);
         });
     }
 }

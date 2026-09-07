@@ -3,6 +3,7 @@
 namespace App\Models\Accounting;
 
 use App\Exceptions\Domain\BusinessRuleException;
+use App\Models\Contacts\Contact;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $id
  * @property int $journal_entry_id
  * @property int $account_id
+ * @property int|null $partner_id
  * @property string $description
  * @property int $debit
  * @property int $credit
@@ -20,6 +22,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property float|null $exchange_rate
  * @property-read \App\Models\Accounting\JournalEntry $journalEntry
  * @property-read \App\Models\Accounting\Account $account
+ * @property-read \App\Models\Contacts\Contact|null $partner
  */
 class JournalEntryLine extends Model
 {
@@ -28,6 +31,7 @@ class JournalEntryLine extends Model
     protected $fillable = [
         'journal_entry_id',
         'account_id',
+        'partner_id',
         'description',
         'debit',
         'credit',
@@ -75,5 +79,15 @@ class JournalEntryLine extends Model
     public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);
+    }
+
+    /**
+     * Odoo-style partner dimension (enter365 Contact: customer/vendor/both).
+     *
+     * @return BelongsTo<Contact, $this>
+     */
+    public function partner(): BelongsTo
+    {
+        return $this->belongsTo(Contact::class, 'partner_id');
     }
 }

@@ -52700,6 +52700,12 @@
                     "account_id": {
                         "type": "integer"
                     },
+                    "partner_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
                     "description": {
                         "type": "string"
                     },
@@ -52711,6 +52717,16 @@
                     },
                     "account": {
                         "$ref": "#/components/schemas/AccountResource"
+                    },
+                    "partner": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/ContactResource"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
                     },
                     "created_at": {
                         "type": [
@@ -52729,6 +52745,7 @@
                     "id",
                     "journal_entry_id",
                     "account_id",
+                    "partner_id",
                     "description",
                     "debit",
                     "credit",
@@ -61714,6 +61731,12 @@
                             "properties": {
                                 "account_id": {
                                     "type": "integer"
+                                },
+                                "partner_id": {
+                                    "type": [
+                                        "integer",
+                                        "null"
+                                    ]
                                 },
                                 "description": {
                                     "type": [
