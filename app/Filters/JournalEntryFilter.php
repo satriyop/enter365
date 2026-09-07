@@ -47,6 +47,8 @@ class JournalEntryFilter extends QueryFilter
         return [
             'lines',
             'lines.account',
+            'journal',
+            'journal.defaultAccount',
             'fiscalPeriod',
             'reversedBy',
             'reversalOf',
@@ -69,3 +71,21 @@ class JournalEntryFilter extends QueryFilter
         $this->builder->where('source_type', $value);
     }
 }
+
+    /**
+     * Filter by journal id.
+     */
+    public function journalId(int|string $value): void
+    {
+        $this->builder->where('journal_id', $value);
+    }
+
+    /**
+     * Filter by journal type (sales|purchase|bank|cash|miscellaneous).
+     */
+    public function journalType(string $value): void
+    {
+        $this->builder->whereHas('journal', function ($query) use ($value) {
+            $query->where('type', $value);
+        });
+    }

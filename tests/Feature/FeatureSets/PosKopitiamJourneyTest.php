@@ -360,7 +360,11 @@ describe('Kasir Siti — must not', function () {
         $this->getJson('/api/v1/journal-entries')->assertForbidden();
         $cash = Account::query()->where('code', '1-1010')->firstOrFail();
         $expense = Account::query()->where('code', '5-1002')->firstOrFail();
+        $miscJournalId = \App\Models\Accounting\Journal::query()
+            ->where('type', \App\Models\Accounting\Journal::TYPE_MISCELLANEOUS)
+            ->value('id');
         $this->postJson('/api/v1/journal-entries', [
+            'journal_id' => $miscJournalId,
             'entry_date' => now()->toDateString(),
             'description' => 'Kasir tidak boleh jurnal',
             'lines' => [

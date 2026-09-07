@@ -18,6 +18,7 @@ class JournalEntryResource extends JsonResource
         return [
             'id' => $this->id,
             'entry_number' => $this->entry_number,
+            'journal_id' => $this->journal_id,
             'entry_date' => $this->entry_date->toDateString(),
             'description' => $this->description,
             'reference' => $this->reference,
@@ -30,6 +31,7 @@ class JournalEntryResource extends JsonResource
             'total_credit' => $this->getTotalCredit(),
             'is_balanced' => $this->isBalanced(),
             'lines' => JournalEntryLineResource::collection($this->whenLoaded('lines')),
+            'journal' => new JournalResource($this->whenLoaded('journal')),
             'fiscal_period' => new FiscalPeriodResource($this->whenLoaded('fiscalPeriod')),
             'reversed_by' => new JournalEntryResource($this->whenLoaded('reversedBy')),
             'reversal_of' => new JournalEntryResource($this->whenLoaded('reversalOf')),

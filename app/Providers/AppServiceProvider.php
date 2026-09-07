@@ -306,6 +306,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(\App\Models\Purchasing\Bill::class, \App\Policies\BillPolicy::class);
         Gate::policy(\App\Models\Purchasing\PurchaseOrder::class, \App\Policies\PurchaseOrderPolicy::class);
         Gate::policy(\App\Models\Shared\Payment::class, \App\Policies\PaymentPolicy::class);
+        Gate::policy(\App\Models\Accounting\Journal::class, \App\Policies\JournalPolicy::class);
         Gate::policy(\App\Models\Accounting\JournalEntry::class, \App\Policies\JournalEntryPolicy::class);
         Gate::policy(\App\Models\Accounting\Budget::class, \App\Policies\BudgetPolicy::class);
         Gate::policy(\App\Models\Sales\DeliveryOrder::class, \App\Policies\DeliveryOrderPolicy::class);
