@@ -27,6 +27,8 @@ class AccountFactory extends Factory
             'parent_id' => null,
             'is_active' => true,
             'is_system' => false,
+            'allow_reconciliation' => false,
+            'currency' => null,
             'opening_balance' => 0,
         ];
     }

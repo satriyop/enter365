@@ -162,6 +162,57 @@ describe('Account API', function () {
             ]);
     });
 
+
+    it('can create update and show allow_reconciliation and currency', function () {
+        $response = $this->postJson('/api/v1/accounts', [
+            'code' => '1-8888',
+            'name' => 'USD Bank Account',
+            'type' => Account::TYPE_ASSET,
+            'subtype' => Account::SUBTYPE_CURRENT_ASSET,
+            'allow_reconciliation' => true,
+            'currency' => 'USD',
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.allow_reconciliation', true)
+            ->assertJsonPath('data.currency', 'USD');
+
+        $accountId = $response->json('data.id');
+
+        $this->assertDatabaseHas('accounts', [
+            'id' => $accountId,
+            'allow_reconciliation' => true,
+            'currency' => 'USD',
+        ]);
+
+        $update = $this->putJson("/api/v1/accounts/{$accountId}", [
+            'allow_reconciliation' => false,
+            'currency' => 'EUR',
+        ]);
+
+        $update->assertOk()
+            ->assertJsonPath('data.allow_reconciliation', false)
+            ->assertJsonPath('data.currency', 'EUR');
+
+        $show = $this->getJson("/api/v1/accounts/{$accountId}");
+
+        $show->assertOk()
+            ->assertJsonPath('data.allow_reconciliation', false)
+            ->assertJsonPath('data.currency', 'EUR');
+    });
+
+    it('rejects unsupported account currency', function () {
+        $response = $this->postJson('/api/v1/accounts', [
+            'code' => '1-8889',
+            'name' => 'Bad Currency Account',
+            'type' => Account::TYPE_ASSET,
+            'currency' => 'XXX',
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['currency']);
+    });
+
     it('can get account ledger', function () {
         $account = Account::where('code', '1-1001')->first();
 
