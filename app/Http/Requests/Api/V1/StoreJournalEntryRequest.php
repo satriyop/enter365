@@ -20,6 +20,7 @@ class StoreJournalEntryRequest extends FormRequest
             'reference' => ['nullable', 'string', 'max:100'],
             'lines' => ['required', 'array', 'min:2'],
             'lines.*.account_id' => ['required', 'integer', 'exists:accounts,id'],
+            'lines.*.partner_id' => ['nullable', 'integer', 'exists:contacts,id'],
             'lines.*.description' => ['nullable', 'string', 'max:500'],
             'lines.*.debit' => ['required_without:lines.*.credit', 'integer', 'min:0'],
             'lines.*.credit' => ['required_without:lines.*.debit', 'integer', 'min:0'],
@@ -38,6 +39,7 @@ class StoreJournalEntryRequest extends FormRequest
             'lines.min' => 'Jurnal harus memiliki minimal 2 baris.',
             'lines.*.account_id.required' => 'Akun wajib diisi untuk setiap baris.',
             'lines.*.account_id.exists' => 'Akun tidak ditemukan.',
+            'lines.*.partner_id.exists' => 'Partner/kontak tidak ditemukan.',
         ];
     }
 

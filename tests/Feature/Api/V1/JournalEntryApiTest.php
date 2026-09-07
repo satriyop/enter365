@@ -269,4 +269,88 @@ describe('Journal Entry API', function () {
 
         $response->assertStatus(409);
     });
+    it('can create journal entry lines with optional partner_id', function () {
+        $cashAccount = Account::where('code', '1-1001')->first();
+        $arAccount = Account::where('code', '1-2001')->first()
+            ?? Account::where('code', '1-1101')->first()
+            ?? $cashAccount;
+        $revenueAccount = Account::where('code', '4-1001')->first();
+        $partner = \App\Models\Contacts\Contact::factory()->create();
+
+        $response = $this->postJson('/api/v1/journal-entries', [
+            'journal_id' => $this->miscJournal->id,
+            'entry_date' => now()->toDateString(),
+            'description' => 'JE with partner on line',
+            'lines' => [
+                [
+                    'account_id' => $arAccount->id,
+                    'partner_id' => $partner->id,
+                    'description' => 'AR line',
+                    'debit' => 250000,
+                    'credit' => 0,
+                ],
+                [
+                    'account_id' => $revenueAccount->id,
+                    'description' => 'Revenue',
+                    'debit' => 0,
+                    'credit' => 250000,
+                ],
+            ],
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.lines.0.partner_id', $partner->id)
+            ->assertJsonPath('data.lines.1.partner_id', null);
+
+        $this->assertDatabaseHas('journal_entry_lines', [
+            'journal_entry_id' => $response->json('data.id'),
+            'partner_id' => $partner->id,
+            'debit' => 250000,
+        ]);
+    });
+
+    it('shows partner on journal entry lines when loaded', function () {
+        $partner = \App\Models\Contacts\Contact::factory()->create(['name' => 'Partner Co']);
+        $entry = JournalEntry::factory()->create();
+        $account1 = Account::factory()->create();
+        $account2 = Account::factory()->create();
+        JournalEntryLine::factory()->forEntry($entry)->forAccount($account1)->debit(100000)->create([
+            'partner_id' => $partner->id,
+        ]);
+        JournalEntryLine::factory()->forEntry($entry)->forAccount($account2)->credit(100000)->create();
+
+        $response = $this->getJson("/api/v1/journal-entries/{$entry->id}");
+
+        $response->assertOk()
+            ->assertJsonPath('data.lines.0.partner_id', $partner->id)
+            ->assertJsonPath('data.lines.0.partner.id', $partner->id)
+            ->assertJsonPath('data.lines.0.partner.name', 'Partner Co')
+            ->assertJsonPath('data.lines.1.partner_id', null);
+    });
+
+    it('can filter journal entries by partner_id on lines', function () {
+        $partner = \App\Models\Contacts\Contact::factory()->create();
+        $other = \App\Models\Contacts\Contact::factory()->create();
+
+        $withPartner = JournalEntry::factory()->create();
+        $account1 = Account::factory()->create();
+        $account2 = Account::factory()->create();
+        JournalEntryLine::factory()->forEntry($withPartner)->forAccount($account1)->debit(50000)->create([
+            'partner_id' => $partner->id,
+        ]);
+        JournalEntryLine::factory()->forEntry($withPartner)->forAccount($account2)->credit(50000)->create();
+
+        $without = JournalEntry::factory()->create();
+        JournalEntryLine::factory()->forEntry($without)->forAccount($account1)->debit(50000)->create([
+            'partner_id' => $other->id,
+        ]);
+        JournalEntryLine::factory()->forEntry($without)->forAccount($account2)->credit(50000)->create();
+
+        $response = $this->getJson('/api/v1/journal-entries?partner_id='.$partner->id);
+
+        $response->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $withPartner->id);
+    });
+
 });
