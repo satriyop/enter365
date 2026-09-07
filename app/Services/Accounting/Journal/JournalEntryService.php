@@ -36,7 +36,7 @@ class JournalEntryService extends BaseService
      *     reference?: string,
      *     source_type?: string,
      *     source_id?: int,
-     *     lines: array<array{account_id: int, debit?: int, credit?: int, description?: string, currency_code?: string|null, amount_currency?: int|null, exchange_rate?: float|null}>
+     *     lines: array<array{account_id: int, partner_id?: int|null, debit?: int, credit?: int, description?: string, currency_code?: string|null, amount_currency?: int|null, exchange_rate?: float|null}>
      * } $data
      */
     public function createEntry(array $data, bool $autoPost = false): JournalEntry
@@ -82,6 +82,7 @@ class JournalEntryService extends BaseService
                 JournalEntryLine::create([
                     'journal_entry_id' => $entry->id,
                     'account_id' => $accountId,
+                    'partner_id' => $lineData['partner_id'] ?? null,
                     'description' => $lineData['description'] ?? null,
                     'debit' => $lineData['debit'] ?? 0,
                     'credit' => $lineData['credit'] ?? 0,
@@ -95,7 +96,7 @@ class JournalEntryService extends BaseService
                 $this->postEntry($entry);
             }
 
-            return $entry->fresh(['lines', 'lines.account', 'journal']);
+            return $entry->fresh(['lines', 'lines.account', 'lines.partner', 'journal']);
         }, ['source_type' => $data['source_type'] ?? 'manual', 'source_id' => $data['source_id'] ?? null]);
     }
 
@@ -164,6 +165,7 @@ class JournalEntryService extends BaseService
             foreach ($locked->lines as $line) {
                 $reversalLines[] = [
                     'account_id' => $line->account_id,
+                    'partner_id' => $line->partner_id,
                     'description' => $line->description,
                     'debit' => $line->credit,
                     'credit' => $line->debit,
@@ -193,7 +195,7 @@ class JournalEntryService extends BaseService
                 'reversed_by_id' => $reversalEntry->id,
             ]);
 
-            return $reversalEntry->fresh(['lines', 'lines.account']);
+            return $reversalEntry->fresh(['lines', 'lines.account', 'lines.partner']);
         }, ['entry_id' => $entry->id]);
     }
 

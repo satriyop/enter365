@@ -56,7 +56,7 @@ class JournalEntryController extends Controller
 
         $filter->apply($journalEntry->newQuery());
 
-        $journalEntry->loadMissing(['lines.account', 'journal', 'fiscalPeriod', 'reversedBy', 'reversalOf']);
+        $journalEntry->loadMissing(['lines.account', 'lines.partner', 'journal', 'fiscalPeriod', 'reversedBy', 'reversalOf']);
 
         return new JournalEntryResource($journalEntry);
     }
@@ -68,7 +68,7 @@ class JournalEntryController extends Controller
         try {
             $entry = $this->journalService->postEntry($journalEntry);
 
-            return new JournalEntryResource($entry->load(['lines.account']));
+            return new JournalEntryResource($entry->load(['lines.account', 'lines.partner']));
         } catch (InvalidArgumentException $e) {
             return response()->json([
                 'message' => $e->getMessage(),

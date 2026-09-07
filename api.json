@@ -16,6 +16,87 @@
         }
     ],
     "paths": {
+        "/accounts/import": {
+            "post": {
+                "operationId": "accounts.import",
+                "description": "Columns: code, name, type, subtype, parent (code or id), active,\nallow_reconciliation, currency.\n\nValid rows are created; invalid rows are returned with clear errors.",
+                "summary": "Import Chart of Accounts from CSV/XLSX",
+                "tags": [
+                    "Account"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ImportAccountsRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Import selesai."
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "created_count": {
+                                                    "type": "integer"
+                                                },
+                                                "error_count": {
+                                                    "type": "integer"
+                                                },
+                                                "errors": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    },
+                                                    "minItems": 0,
+                                                    "maxItems": 0,
+                                                    "additionalItems": false
+                                                },
+                                                "accounts": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                }
+                                            },
+                                            "required": [
+                                                "created_count",
+                                                "error_count",
+                                                "errors",
+                                                "accounts"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/accounts": {
             "get": {
                 "operationId": "accounts.index",
@@ -48082,10 +48163,7 @@
                         "type": "boolean"
                     },
                     "currency": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "opening_balance": {
                         "type": "integer"
@@ -51885,6 +51963,21 @@
                 ],
                 "title": "HoldPosCartRequest"
             },
+            "ImportAccountsRequest": {
+                "type": "object",
+                "properties": {
+                    "file": {
+                        "type": "string",
+                        "format": "binary",
+                        "contentMediaType": "application/octet-stream",
+                        "description": "Maximum file size: 10240 kilobytes."
+                    }
+                },
+                "required": [
+                    "file"
+                ],
+                "title": "ImportAccountsRequest"
+            },
             "IndonesiaSolarDataResource": {
                 "type": "object",
                 "properties": {
@@ -52711,6 +52804,12 @@
                     "account_id": {
                         "type": "integer"
                     },
+                    "partner_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
                     "description": {
                         "type": "string"
                     },
@@ -52722,6 +52821,16 @@
                     },
                     "account": {
                         "$ref": "#/components/schemas/AccountResource"
+                    },
+                    "partner": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/ContactResource"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
                     },
                     "created_at": {
                         "type": [
@@ -52740,6 +52849,7 @@
                     "id",
                     "journal_entry_id",
                     "account_id",
+                    "partner_id",
                     "description",
                     "debit",
                     "credit",
@@ -59757,8 +59867,17 @@
                             "string",
                             "null"
                         ],
-                        "maxLength": 3,
-                        "minLength": 3
+                        "enum": [
+                            "IDR",
+                            "USD",
+                            "EUR",
+                            "SGD",
+                            "JPY",
+                            "CNY",
+                            null
+                        ],
+                        "minLength": 3,
+                        "maxLength": 3
                     }
                 },
                 "required": [
@@ -61736,6 +61855,12 @@
                             "properties": {
                                 "account_id": {
                                     "type": "integer"
+                                },
+                                "partner_id": {
+                                    "type": [
+                                        "integer",
+                                        "null"
+                                    ]
                                 },
                                 "description": {
                                     "type": [
@@ -65196,8 +65321,17 @@
                             "string",
                             "null"
                         ],
-                        "maxLength": 3,
-                        "minLength": 3
+                        "enum": [
+                            "IDR",
+                            "USD",
+                            "EUR",
+                            "SGD",
+                            "JPY",
+                            "CNY",
+                            null
+                        ],
+                        "minLength": 3,
+                        "maxLength": 3
                     }
                 },
                 "title": "UpdateAccountRequest"
