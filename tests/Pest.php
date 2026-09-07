@@ -31,11 +31,13 @@ uses()->group('pgsql')->in('Pgsql');
 
 uses()->beforeEach(function (): void {
     seedOpenFiscalPeriodForTests();
+    seedDefaultJournalsForTests();
 })->in('Feature', 'Contract');
 
 uses()->beforeEach(function (): void {
     \Tests\Support\PostgresRowLock::skipUnlessPgsql();
     seedOpenFiscalPeriodForTests();
+    seedDefaultJournalsForTests();
 })->in('Pgsql');
 
 fake()->seed(4242);
@@ -105,6 +107,19 @@ function seedOpenFiscalPeriodForTests(): void
     }
 
     FiscalPeriod::factory()->current()->create();
+}
+
+/**
+ * Journal entries require a journals master row (createEntry / factory journal_id).
+ * RefreshDatabase re-runs the migration insert; DatabaseTruncation (F-14) wipes it.
+ */
+function seedDefaultJournalsForTests(): void
+{
+    if (! Schema::hasTable('journals')) {
+        return;
+    }
+
+    test()->seed(\Database\Seeders\JournalSeeder::class);
 }
 
 function authenticatedAdmin(): User
@@ -332,6 +347,7 @@ function seedDemoFoundation($test): void
 {
     $test->seed(\Database\Seeders\RolesAndPermissionsSeeder::class);
     $test->seed(\Database\Seeders\ChartOfAccountsSeeder::class);
+    $test->seed(\Database\Seeders\JournalSeeder::class);
     $test->seed(\Database\Seeders\FiscalPeriodSeeder::class);
     $test->seed(\Database\Seeders\IndonesiaSolarDataSeeder::class);
     $test->seed(\Database\Seeders\PlnTariffSeeder::class);

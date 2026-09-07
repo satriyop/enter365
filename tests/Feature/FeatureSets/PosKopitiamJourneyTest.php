@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Enums\Pos\PosPricingMode;
 use App\Models\Accounting\Account;
+use App\Models\Accounting\Journal;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Accounting\JournalEntryLine;
 use App\Models\Core\Role;
@@ -675,11 +676,13 @@ describe('Stock opname coffee-shop handoff', function () {
 });
 
 describe('Checkout survives a stale journal sequence', function () {
-    it('still posts Hakau when JE numbers already exist ahead of the counter', function () {
-        $prefix = 'JE-'.now()->format('Ym').'-';
+    it('still posts Hakau when journal numbers already exist ahead of the counter', function () {
+        $journal = Journal::query()->where('type', Journal::TYPE_MISCELLANEOUS)->firstOrFail();
+        $prefix = $journal->sequencePrefixForDate(now());
         foreach ([67, 72] as $suffix) {
             DB::table('journal_entries')->insert([
                 'entry_number' => $prefix.str_pad((string) $suffix, 4, '0', STR_PAD_LEFT),
+                'journal_id' => $journal->id,
                 'entry_date' => now()->toDateString(),
                 'description' => 'stale sequence fixture',
                 'is_posted' => false,

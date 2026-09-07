@@ -70,7 +70,6 @@ class JournalEntryFilter extends QueryFilter
     {
         $this->builder->where('source_type', $value);
     }
-}
 
     /**
      * Filter by journal id.
@@ -89,3 +88,4 @@ class JournalEntryFilter extends QueryFilter
             $query->where('type', $value);
         });
     }
+}
