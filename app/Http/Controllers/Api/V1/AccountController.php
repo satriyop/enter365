@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Filters\AccountFilter;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\ImportAccountsRequest;
 use App\Http\Requests\Api\V1\StoreAccountRequest;
 use App\Http\Requests\Api\V1\UpdateAccountRequest;
 use App\Http\Resources\Api\V1\AccountResource;
 use App\Models\Accounting\Account;
 use App\Services\Accounting\AccountBalanceService;
+use App\Services\Accounting\AccountImportService;
 use App\Services\Accounting\AccountService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,7 +20,8 @@ class AccountController extends Controller
 {
     public function __construct(
         private AccountBalanceService $balanceService,
-        private AccountService $accountService
+        private AccountService $accountService,
+        private AccountImportService $accountImportService
     ) {}
 
     public function index(AccountFilter $filter): AnonymousResourceCollection
@@ -77,6 +80,45 @@ class AccountController extends Controller
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         }
+    }
+
+    /**
+     * Import Chart of Accounts from CSV/XLSX.
+     *
+     * Columns: code, name, type, subtype, parent (code or id), active,
+     * allow_reconciliation, currency.
+     *
+     * Valid rows are created; invalid rows are returned with clear errors.
+     */
+    public function import(ImportAccountsRequest $request): JsonResponse
+    {
+        $this->authorize('create', Account::class);
+
+        $result = $this->accountImportService->import($request->file('file'));
+
+        if ($result['created_count'] === 0) {
+            return response()->json([
+                'message' => 'Tidak ada akun valid untuk diimport.',
+                'data' => [
+                    'created_count' => 0,
+                    'error_count' => $result['error_count'],
+                    'errors' => $result['errors'],
+                    'accounts' => [],
+                ],
+            ], 422);
+        }
+
+        return response()->json([
+            'message' => 'Import selesai.',
+            'data' => [
+                'created_count' => $result['created_count'],
+                'error_count' => $result['error_count'],
+                'errors' => $result['errors'],
+                'accounts' => AccountResource::collection(
+                    collect($result['accounts'])->each->loadMissing('parent')
+                )->resolve(),
+            ],
+        ], 201);
     }
 
     /**

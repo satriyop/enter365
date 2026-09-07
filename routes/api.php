@@ -128,6 +128,7 @@ Route::prefix('v1')->group(function () {
         Route::post('users/{user}/toggle-active', [UserController::class, 'toggleActive']);
 
         // Chart of Accounts (Bagan Akun)
+        Route::post('accounts/import', [AccountController::class, 'import'])->name('accounts.import');
         Route::apiResource('accounts', AccountController::class);
         Route::get('accounts/{account}/balance', [AccountController::class, 'balance'])->name('accounts.balance');
         Route::get('accounts/{account}/ledger', [AccountController::class, 'ledger'])->name('accounts.ledger');
