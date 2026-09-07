@@ -10,6 +10,7 @@ use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Domain\Accounting\FiscalPeriods\Enums\FiscalPeriodStatus;
 use App\Exceptions\Domain\BusinessRuleException;
 use App\Models\Accounting\FiscalPeriod;
+use App\Models\Accounting\Journal;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Accounting\JournalEntryLine;
 use App\Services\Base\BaseService;
@@ -29,6 +30,7 @@ class JournalEntryService extends BaseService
      * Create a journal entry with lines.
      *
      * @param array{
+     *     journal_id?: int,
      *     entry_date: string,
      *     description: string,
      *     reference?: string,
@@ -43,12 +45,19 @@ class JournalEntryService extends BaseService
             $entryDate = Carbon::parse($data['entry_date']);
             $fiscalPeriod = FiscalPeriod::assertOpenForPosting($entryDate);
 
+            $journal = isset($data['journal_id'])
+                ? Journal::query()->findOrFail($data['journal_id'])
+                : Journal::defaultForSourceType($data['source_type'] ?? JournalEntry::SOURCE_MANUAL);
+
+            $entryNumber = $data['entry_number'] ?? \App\Domain\Shared\DocumentNumbers::generate(
+                $journal->sequencePrefixForDate($entryDate),
+                'journal_entries',
+                'entry_number'
+            );
+
             $entry = JournalEntry::create([
-                'entry_number' => $data['entry_number'] ?? \App\Domain\Shared\DocumentNumbers::generate(
-                    'JE-'.now()->format('Ym').'-',
-                    'journal_entries',
-                    'entry_number'
-                ),
+                'entry_number' => $entryNumber,
+                'journal_id' => $journal->id,
                 'entry_date' => $data['entry_date'],
                 'description' => $data['description'],
                 'reference' => $data['reference'] ?? null,
@@ -86,7 +95,7 @@ class JournalEntryService extends BaseService
                 $this->postEntry($entry);
             }
 
-            return $entry->fresh(['lines', 'lines.account']);
+            return $entry->fresh(['lines', 'lines.account', 'journal']);
         }, ['source_type' => $data['source_type'] ?? 'manual', 'source_id' => $data['source_id'] ?? null]);
     }
 
@@ -169,6 +178,7 @@ class JournalEntryService extends BaseService
                 : 'Reversal of '.$locked->entry_number.': '.$locked->description;
 
             $reversalEntry = $this->createEntry([
+                'journal_id' => $locked->journal_id,
                 'entry_date' => $this->reversalEntryDate($locked),
                 'description' => $reversalDescription,
                 'reference' => $locked->entry_number,

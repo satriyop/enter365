@@ -3,6 +3,7 @@
 namespace Database\Factories\Accounting;
 
 use App\Models\Accounting\FiscalPeriod;
+use App\Models\Accounting\Journal;
 use App\Models\Accounting\JournalEntry;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -24,6 +25,7 @@ class JournalEntryFactory extends Factory
 
         return [
             'entry_number' => $entryNumber,
+            'journal_id' => Journal::query()->where('type', Journal::TYPE_MISCELLANEOUS)->value('id'),
             'entry_date' => $this->faker->dateTimeBetween('-1 month', 'now'),
             'description' => $this->faker->sentence(),
             'reference' => $this->faker->optional()->bothify('REF-####'),

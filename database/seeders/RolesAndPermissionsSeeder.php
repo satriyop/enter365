@@ -92,7 +92,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'bills.view', 'bills.create', 'bills.edit', 'bills.post',
             'purchase_orders.view',
             'payments.view', 'payments.create',
-            'journals.view', 'journals.create', 'journals.post', 'journals.reverse',
+            'journals.view', 'journals.create', 'journals.edit', 'journals.delete', 'journals.post', 'journals.reverse',
             'budgets.view', 'budgets.create', 'budgets.edit',
             'projects.view',
             'dashboard.view', 'dashboard.financials', 'dashboard.kpis',

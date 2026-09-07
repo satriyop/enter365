@@ -53,6 +53,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             FiscalPeriodSeeder::class,
             ChartOfAccountsSeeder::class,
+            JournalSeeder::class,
             RolesAndPermissionsSeeder::class,
             IndonesiaSolarDataSeeder::class,
             PlnTariffSeeder::class,

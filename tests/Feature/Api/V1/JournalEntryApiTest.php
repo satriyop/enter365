@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Accounting\Account;
+use App\Models\Accounting\Journal;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Accounting\JournalEntryLine;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -13,6 +14,8 @@ beforeEach(function () {
 
     // Authenticate as admin (has all permissions)
     authenticatedAdmin();
+
+    $this->miscJournal = Journal::query()->where('type', Journal::TYPE_MISCELLANEOUS)->firstOrFail();
 });
 
 describe('Journal Entry API', function () {
@@ -20,7 +23,7 @@ describe('Journal Entry API', function () {
     it('can list all journal entries', function () {
         JournalEntry::factory()->count(10)->create();
 
-        $this->assertMaxQueries(15, function () {
+        $this->assertMaxQueries(20, function () {
             $response = $this->getJson('/api/v1/journal-entries');
             $response->assertOk();
         });
@@ -68,6 +71,7 @@ describe('Journal Entry API', function () {
         $revenueAccount = Account::where('code', '4-1001')->first();
 
         $response = $this->postJson('/api/v1/journal-entries', [
+            'journal_id' => $this->miscJournal->id,
             'entry_date' => now()->toDateString(),
             'description' => 'Test Journal Entry',
             'reference' => 'TEST-001',
@@ -90,6 +94,7 @@ describe('Journal Entry API', function () {
         $response->assertCreated()
             ->assertJsonPath('data.description', 'Test Journal Entry')
             ->assertJsonPath('data.is_balanced', true)
+            ->assertJsonPath('data.journal_id', $this->miscJournal->id)
             ->assertJsonCount(2, 'data.lines');
     });
 
@@ -98,6 +103,7 @@ describe('Journal Entry API', function () {
         $revenueAccount = Account::where('code', '4-1001')->first();
 
         $response = $this->postJson('/api/v1/journal-entries', [
+            'journal_id' => $this->miscJournal->id,
             'entry_date' => now()->toDateString(),
             'description' => 'Auto-posted entry',
             'auto_post' => true,
@@ -116,6 +122,7 @@ describe('Journal Entry API', function () {
         $revenueAccount = Account::where('code', '4-1001')->first();
 
         $response = $this->postJson('/api/v1/journal-entries', [
+            'journal_id' => $this->miscJournal->id,
             'entry_date' => now()->toDateString(),
             'description' => 'Unbalanced entry',
             'lines' => [
@@ -132,6 +139,7 @@ describe('Journal Entry API', function () {
         $cashAccount = Account::where('code', '1-1001')->first();
 
         $response = $this->postJson('/api/v1/journal-entries', [
+            'journal_id' => $this->miscJournal->id,
             'entry_date' => now()->toDateString(),
             'description' => 'Single line entry',
             'lines' => [
@@ -141,6 +149,55 @@ describe('Journal Entry API', function () {
 
         $response->assertUnprocessable()
             ->assertJsonValidationErrors(['lines']);
+    });
+
+    it('requires journal_id when creating journal entry', function () {
+        $cashAccount = Account::where('code', '1-1001')->first();
+        $revenueAccount = Account::where('code', '4-1001')->first();
+
+        $response = $this->postJson('/api/v1/journal-entries', [
+            'entry_date' => now()->toDateString(),
+            'description' => 'Missing journal',
+            'lines' => [
+                ['account_id' => $cashAccount->id, 'debit' => 1000, 'credit' => 0],
+                ['account_id' => $revenueAccount->id, 'debit' => 0, 'credit' => 1000],
+            ],
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['journal_id']);
+    });
+
+    it('can filter journal entries by journal type', function () {
+        $sales = Journal::query()->where('type', Journal::TYPE_SALES)->firstOrFail();
+        $misc = $this->miscJournal;
+
+        JournalEntry::factory()->create(['journal_id' => $sales->id]);
+        JournalEntry::factory()->count(2)->create(['journal_id' => $misc->id]);
+
+        $response = $this->getJson('/api/v1/journal-entries?journal_type=sales');
+
+        $response->assertOk()
+            ->assertJsonCount(1, 'data');
+    });
+
+    it('numbers new entries with journal sequence prefix', function () {
+        $cashAccount = Account::where('code', '1-1001')->first();
+        $revenueAccount = Account::where('code', '4-1001')->first();
+
+        $response = $this->postJson('/api/v1/journal-entries', [
+            'journal_id' => $this->miscJournal->id,
+            'entry_date' => now()->toDateString(),
+            'description' => 'Prefixed entry',
+            'lines' => [
+                ['account_id' => $cashAccount->id, 'debit' => 1000, 'credit' => 0],
+                ['account_id' => $revenueAccount->id, 'debit' => 0, 'credit' => 1000],
+            ],
+        ]);
+
+        $response->assertCreated();
+        expect($response->json('data.entry_number'))->toStartWith('MISC-');
+        expect($response->json('data.journal_id'))->toBe($this->miscJournal->id);
     });
 
     it('can show a journal entry with lines', function () {

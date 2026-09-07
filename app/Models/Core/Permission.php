@@ -166,6 +166,8 @@ class Permission extends Model
             // Journals
             ['name' => 'journals.view', 'display_name' => 'Lihat Jurnal', 'group' => self::GROUP_JOURNALS, 'description' => 'Melihat daftar jurnal'],
             ['name' => 'journals.create', 'display_name' => 'Buat Jurnal', 'group' => self::GROUP_JOURNALS, 'description' => 'Membuat jurnal baru'],
+            ['name' => 'journals.edit', 'display_name' => 'Edit Jurnal', 'group' => self::GROUP_JOURNALS, 'description' => 'Mengubah konfigurasi jurnal'],
+            ['name' => 'journals.delete', 'display_name' => 'Hapus Jurnal', 'group' => self::GROUP_JOURNALS, 'description' => 'Menghapus konfigurasi jurnal'],
             ['name' => 'journals.post', 'display_name' => 'Posting Jurnal', 'group' => self::GROUP_JOURNALS, 'description' => 'Memposting jurnal'],
             ['name' => 'journals.reverse', 'display_name' => 'Reverse Jurnal', 'group' => self::GROUP_JOURNALS, 'description' => 'Membalik jurnal'],
 

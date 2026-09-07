@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\V1\FiscalPeriodController;
 use App\Http\Controllers\Api\V1\GoodsReceiptNoteController;
 use App\Http\Controllers\Api\V1\InventoryController;
 use App\Http\Controllers\Api\V1\InvoiceController;
+use App\Http\Controllers\Api\V1\JournalController;
 use App\Http\Controllers\Api\V1\JournalEntryController;
 use App\Http\Controllers\Api\V1\MaterialRequisitionController;
 use App\Http\Controllers\Api\V1\MrpController;
@@ -208,6 +209,9 @@ Route::prefix('v1')->group(function () {
             Route::post('transfer', [InventoryController::class, 'transfer'])
                 ->middleware('permission:inventory.transfer');
         });
+
+        // Journals master (Konfigurasi Jurnal)
+        Route::apiResource('journals', JournalController::class);
 
         // Journal Entries (Jurnal Umum)
         Route::get('journal-entries', [JournalEntryController::class, 'index'])->name('journal-entries.index');

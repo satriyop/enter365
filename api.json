@@ -21885,6 +21885,397 @@
                 }
             }
         },
+        "/journals": {
+            "get": {
+                "operationId": "journals.index",
+                "tags": [
+                    "Journal"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated set of `JournalResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "allOf": [
+                                                    {
+                                                        "$ref": "#/components/schemas/JournalResource"
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "required": [
+                                                            "default_account"
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        "links": {
+                                            "type": "object",
+                                            "properties": {
+                                                "first": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "last": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "prev": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "next": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "first",
+                                                "last",
+                                                "prev",
+                                                "next"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "minimum": 1
+                                                },
+                                                "from": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "minimum": 1
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "minimum": 1
+                                                },
+                                                "links": {
+                                                    "type": "array",
+                                                    "description": "Generated paginator links.",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "url": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "label": {
+                                                                "type": "string"
+                                                            },
+                                                            "active": {
+                                                                "type": "boolean"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "url",
+                                                            "label",
+                                                            "active"
+                                                        ]
+                                                    }
+                                                },
+                                                "path": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "description": "Base path for paginator generated URLs."
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "description": "Number of items shown per page.",
+                                                    "minimum": 0
+                                                },
+                                                "to": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "description": "Number of the last item in the slice.",
+                                                    "minimum": 1
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "description": "Total number of items being paginated.",
+                                                    "minimum": 0
+                                                }
+                                            },
+                                            "required": [
+                                                "current_page",
+                                                "from",
+                                                "last_page",
+                                                "links",
+                                                "path",
+                                                "per_page",
+                                                "to",
+                                                "total"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "links",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "journals.store",
+                "tags": [
+                    "Journal"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreJournalRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`JournalResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/JournalResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/journals/{journal}": {
+            "get": {
+                "operationId": "journals.show",
+                "tags": [
+                    "Journal"
+                ],
+                "parameters": [
+                    {
+                        "name": "journal",
+                        "in": "path",
+                        "required": true,
+                        "description": "The journal ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`JournalResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/JournalResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "default_account"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "journals.update",
+                "tags": [
+                    "Journal"
+                ],
+                "parameters": [
+                    {
+                        "name": "journal",
+                        "in": "path",
+                        "required": true,
+                        "description": "The journal ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateJournalRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "200": {
+                        "description": "`JournalResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/JournalResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "journals.destroy",
+                "tags": [
+                    "Journal"
+                ],
+                "parameters": [
+                    {
+                        "name": "journal",
+                        "in": "path",
+                        "required": true,
+                        "description": "The journal ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "422": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Jurnal berhasil dihapus."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/journal-entries": {
             "get": {
                 "operationId": "journal-entries.index",
@@ -21902,7 +22293,17 @@
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/components/schemas/JournalEntryResource"
+                                                "allOf": [
+                                                    {
+                                                        "$ref": "#/components/schemas/JournalEntryResource"
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "required": [
+                                                            "journal"
+                                                        ]
+                                                    }
+                                                ]
                                             }
                                         },
                                         "links": {
@@ -22119,6 +22520,7 @@
                                                     "type": "object",
                                                     "required": [
                                                         "lines",
+                                                        "journal",
                                                         "fiscal_period",
                                                         "reversed_by",
                                                         "reversal_of"
@@ -52355,6 +52757,9 @@
                     "entry_number": {
                         "type": "string"
                     },
+                    "journal_id": {
+                        "type": "string"
+                    },
                     "entry_date": {
                         "type": "string"
                     },
@@ -52405,6 +52810,9 @@
                         "items": {
                             "$ref": "#/components/schemas/JournalEntryLineResource"
                         }
+                    },
+                    "journal": {
+                        "$ref": "#/components/schemas/JournalResource"
                     },
                     "fiscal_period": {
                         "anyOf": [
@@ -52458,6 +52866,7 @@
                 "required": [
                     "id",
                     "entry_number",
+                    "journal_id",
                     "entry_date",
                     "description",
                     "reference",
@@ -52474,6 +52883,59 @@
                     "updated_at"
                 ],
                 "title": "JournalEntryResource"
+            },
+            "JournalResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string"
+                    },
+                    "sequence_prefix": {
+                        "type": "string"
+                    },
+                    "default_account_id": {
+                        "type": "string"
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
+                    "is_active": {
+                        "type": "string"
+                    },
+                    "default_account": {
+                        "$ref": "#/components/schemas/AccountResource"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "type",
+                    "sequence_prefix",
+                    "default_account_id",
+                    "currency",
+                    "is_active",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "JournalResource"
             },
             "JsonResource": {
                 "type": "string",
@@ -61249,6 +61711,9 @@
             "StoreJournalEntryRequest": {
                 "type": "object",
                 "properties": {
+                    "journal_id": {
+                        "type": "integer"
+                    },
                     "entry_date": {
                         "type": "string",
                         "format": "date-time"
@@ -61299,11 +61764,67 @@
                     }
                 },
                 "required": [
+                    "journal_id",
                     "entry_date",
                     "description",
                     "lines"
                 ],
                 "title": "StoreJournalEntryRequest"
+            },
+            "StoreJournalRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "sales",
+                            "purchase",
+                            "bank",
+                            "cash",
+                            "miscellaneous"
+                        ]
+                    },
+                    "sequence_prefix": {
+                        "type": "string",
+                        "maxLength": 32
+                    },
+                    "default_account_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "currency": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "IDR",
+                            "USD",
+                            "EUR",
+                            "SGD",
+                            "JPY",
+                            "CNY",
+                            null
+                        ],
+                        "minLength": 3,
+                        "maxLength": 3
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "name",
+                    "type",
+                    "sequence_prefix"
+                ],
+                "title": "StoreJournalRequest"
             },
             "StoreMaterialRequisitionRequest": {
                 "type": "object",
@@ -66283,6 +66804,56 @@
                     }
                 },
                 "title": "UpdateInvoiceRequest"
+            },
+            "UpdateJournalRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "sales",
+                            "purchase",
+                            "bank",
+                            "cash",
+                            "miscellaneous"
+                        ]
+                    },
+                    "sequence_prefix": {
+                        "type": "string",
+                        "maxLength": 32
+                    },
+                    "default_account_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "currency": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "IDR",
+                            "USD",
+                            "EUR",
+                            "SGD",
+                            "JPY",
+                            "CNY",
+                            null
+                        ],
+                        "minLength": 3,
+                        "maxLength": 3
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    }
+                },
+                "title": "UpdateJournalRequest"
             },
             "UpdateMaterialRequisitionRequest": {
                 "type": "object",

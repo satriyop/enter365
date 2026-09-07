@@ -56,6 +56,7 @@ class JournalService extends BaseService implements JournalServiceInterface
      * Create a journal entry with lines.
      *
      * @param array{
+     *     journal_id?: int,
      *     entry_date: string,
      *     description: string,
      *     reference?: string,

@@ -14,6 +14,7 @@ class StoreJournalEntryRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'journal_id' => ['required', 'integer', 'exists:journals,id'],
             'entry_date' => ['required', 'date'],
             'description' => ['required', 'string', 'max:1000'],
             'reference' => ['nullable', 'string', 'max:100'],
@@ -29,6 +30,8 @@ class StoreJournalEntryRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'journal_id.required' => 'Jurnal wajib dipilih.',
+            'journal_id.exists' => 'Jurnal tidak ditemukan.',
             'entry_date.required' => 'Tanggal jurnal wajib diisi.',
             'description.required' => 'Deskripsi jurnal wajib diisi.',
             'lines.required' => 'Baris jurnal wajib diisi.',

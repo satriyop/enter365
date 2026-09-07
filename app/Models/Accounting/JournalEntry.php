@@ -38,6 +38,7 @@ class JournalEntry extends Model
 
     protected $fillable = [
         'entry_number',
+        'journal_id',
         'entry_date',
         'description',
         'reference',
@@ -58,8 +59,15 @@ class JournalEntry extends Model
         static::creating(function (JournalEntry $entry) {
             // Always generate entry_number if not set (override empty check for safety)
             if (! isset($entry->entry_number) || $entry->entry_number === '') {
+                $prefix = 'JE-'.now()->format('Ym').'-';
+                if ($entry->journal_id) {
+                    $journal = Journal::query()->find($entry->journal_id);
+                    if ($journal) {
+                        $prefix = $journal->sequencePrefixForDate(now());
+                    }
+                }
                 $entry->entry_number = \App\Domain\Shared\DocumentNumbers::generate(
-                    'JE-'.now()->format('Ym').'-',
+                    $prefix,
                     'journal_entries',
                     'entry_number'
                 );
@@ -100,6 +108,15 @@ class JournalEntry extends Model
     {
         return $this->belongsTo(FiscalPeriod::class);
     }
+
+    /**
+     * @return BelongsTo<Journal, $this>
+     */
+    public function journal(): BelongsTo
+    {
+        return $this->belongsTo(Journal::class);
+    }
+
 
     /**
      * @return BelongsTo<User, $this>

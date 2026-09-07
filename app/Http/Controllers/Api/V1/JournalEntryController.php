@@ -24,6 +24,7 @@ class JournalEntryController extends Controller
         $this->authorize('viewAny', JournalEntry::class);
 
         $entries = JournalEntry::query()
+            ->with(['journal'])
             ->withCount(['lines'])
             ->withSum('lines as total_debit', 'debit')
             ->withSum('lines as total_credit', 'credit')
@@ -55,7 +56,7 @@ class JournalEntryController extends Controller
 
         $filter->apply($journalEntry->newQuery());
 
-        $journalEntry->loadMissing(['lines.account', 'fiscalPeriod', 'reversedBy', 'reversalOf']);
+        $journalEntry->loadMissing(['lines.account', 'journal', 'fiscalPeriod', 'reversedBy', 'reversalOf']);
 
         return new JournalEntryResource($journalEntry);
     }
