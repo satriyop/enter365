@@ -21,6 +21,7 @@ class ContactFactory extends Factory
             'type' => Contact::TYPE_CUSTOMER,
             'is_company' => true,
             'parent_id' => null,
+            'address_role' => null,
             'job_position' => null,
             'email' => $this->faker->unique()->companyEmail(),
             'phone' => $this->faker->phoneNumber(),

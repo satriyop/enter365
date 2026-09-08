@@ -44,6 +44,8 @@ class ContactController extends Controller
 
         $filter->apply($contact->newQuery());
 
+        $contact->load(['children', 'parent']);
+
         return new ContactResource($contact);
     }
 

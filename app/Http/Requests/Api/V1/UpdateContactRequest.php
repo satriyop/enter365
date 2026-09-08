@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Api\V1;
 
+use App\Enums\ContactAddressRole;
 use App\Models\Contacts\Contact;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -23,7 +24,8 @@ class UpdateContactRequest extends FormRequest
             'name' => ['sometimes', 'string', 'max:255'],
             'type' => ['sometimes', 'string', Rule::in([Contact::TYPE_CUSTOMER, Contact::TYPE_SUPPLIER, Contact::TYPE_BOTH])],
             'is_company' => ['boolean'],
-            'parent_id' => ['nullable', 'integer', 'exists:contacts,id', Rule::notIn([(int) $contactId])],
+            'parent_id' => ['nullable', 'integer', Rule::exists('contacts', 'id')->where('is_company', true), Rule::notIn([(int) $contactId])],
+            'address_role' => ['nullable', 'string', Rule::enum(ContactAddressRole::class)],
             'job_position' => ['nullable', 'string', 'max:100'],
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:30'],

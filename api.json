@@ -14277,7 +14277,18 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/components/schemas/ContactResource"
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/ContactResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "parent",
+                                                        "children"
+                                                    ]
+                                                }
+                                            ]
                                         }
                                     },
                                     "required": [
@@ -52996,6 +53007,15 @@
                 ],
                 "title": "ComponentStandardResource"
             },
+            "ContactAddressRole": {
+                "type": "string",
+                "enum": [
+                    "invoice",
+                    "delivery",
+                    "contact"
+                ],
+                "title": "ContactAddressRole"
+            },
             "ContactResource": {
                 "type": "object",
                 "properties": {
@@ -53016,6 +53036,12 @@
                     },
                     "parent_id": {
                         "type": "string"
+                    },
+                    "address_role": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "job_position": {
                         "type": "string"
@@ -53150,6 +53176,15 @@
                     "is_active": {
                         "type": "boolean"
                     },
+                    "parent": {
+                        "$ref": "#/components/schemas/ContactResource"
+                    },
+                    "children": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ContactResource"
+                        }
+                    },
                     "receivable_balance": {
                         "type": "string"
                     },
@@ -53176,6 +53211,7 @@
                     "type",
                     "is_company",
                     "parent_id",
+                    "address_role",
                     "job_position",
                     "email",
                     "phone",
@@ -64439,6 +64475,16 @@
                             "null"
                         ]
                     },
+                    "address_role": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/ContactAddressRole"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
                     "job_position": {
                         "type": [
                             "string",
@@ -70155,6 +70201,16 @@
                         "type": [
                             "integer",
                             "null"
+                        ]
+                    },
+                    "address_role": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/ContactAddressRole"
+                            },
+                            {
+                                "type": "null"
+                            }
                         ]
                     },
                     "job_position": {
