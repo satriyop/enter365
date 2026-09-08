@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Enums\DocumentStatus;
 use App\Filters\StockOpnameFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreStockOpnameRequest;
@@ -44,7 +43,7 @@ class StockOpnameController extends Controller
 
         return response()->json([
             'message' => 'Stock opname berhasil dibuat.',
-            'data' => new StockOpnameResource($opname->load(['warehouse', 'items'])),
+            'data' => new StockOpnameResource($opname->load(['warehouse', 'items.product'])),
         ], 201);
     }
 
