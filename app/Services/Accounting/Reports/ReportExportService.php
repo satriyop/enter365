@@ -90,24 +90,53 @@ class ReportExportService
     ): Response|JsonResponse|BinaryFileResponse {
         $startDate = $startDate ?? now()->startOfMonth()->toDateString();
         $endDate = $endDate ?? now()->toDateString();
+        $endBound = strlen($endDate) === 10 ? $endDate.' 23:59:59' : $endDate;
 
-        if (! $accountId) {
-            abort(422, 'account_id wajib diisi.');
+        if ($accountId) {
+            $account = Account::findOrFail($accountId);
+            $ledger = $this->balanceService->getLedger($account, $startDate, $endBound, $journalId, $analyticAccountId, $postedOnly);
+
+            $rows = $ledger->map(fn (array $entry) => [
+                'code' => $account->code,
+                'name' => $account->name,
+                'date' => $entry['date'],
+                'entry_number' => $entry['entry_number'],
+                'description' => $entry['description'],
+                'debit' => $entry['debit'],
+                'credit' => $entry['credit'],
+                'balance' => $entry['balance'],
+            ])->toArray();
+        } else {
+            $accounts = Account::query()->orderBy('code')->get();
+            $ledgers = $this->balanceService->getLedgers(
+                $accounts,
+                $startDate,
+                $endBound,
+                $journalId,
+                $analyticAccountId,
+                $postedOnly
+            );
+
+            $rows = [];
+            foreach ($ledgers as $ledger) {
+                foreach ($ledger->entries as $entry) {
+                    $rows[] = [
+                        'code' => $ledger->code,
+                        'name' => $ledger->name,
+                        'date' => $entry['date'],
+                        'entry_number' => $entry['entry_number'],
+                        'description' => $entry['description'],
+                        'debit' => $entry['debit'],
+                        'credit' => $entry['credit'],
+                        'balance' => $entry['balance'],
+                    ];
+                }
+            }
         }
 
-        $account = Account::findOrFail($accountId);
-        $ledger = $this->balanceService->getLedger($account, $startDate, $endDate, $journalId, $analyticAccountId, $postedOnly);
-
-        $rows = $ledger->map(fn (array $entry) => [
-            'date' => $entry['date'],
-            'entry_number' => $entry['entry_number'],
-            'description' => $entry['description'],
-            'debit' => $entry['debit'],
-            'credit' => $entry['credit'],
-            'balance' => $entry['balance'],
-        ])->toArray();
-
         return $this->exportReport($rows, 'general-ledger', $format, [
+            'code' => 'Kode',
+            'name' => 'Nama Akun',
             'date' => 'Tanggal',
             'entry_number' => 'No. Jurnal',
             'description' => 'Deskripsi',
