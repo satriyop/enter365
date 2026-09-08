@@ -66,7 +66,7 @@ class DemoSeeder extends Seeder
             'vahana' => self::DEMO_VAHANA,
             'solar', 'nex' => self::DEMO_NEX,
             'full' => self::DEMO_ALL,
-            'pos' => self::DEMO_POS,
+            'pos', 'parity' => self::DEMO_POS,
             default => self::DEMO_GENERAL,
         };
     }
