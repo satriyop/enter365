@@ -22443,7 +22443,9 @@
                                                             "default_account",
                                                             "suspense_account",
                                                             "outstanding_receipts_account",
-                                                            "outstanding_payments_account"
+                                                            "outstanding_payments_account",
+                                                            "profit_account",
+                                                            "loss_account"
                                                         ]
                                                     }
                                                 ]
@@ -22665,7 +22667,9 @@
                                                         "default_account",
                                                         "suspense_account",
                                                         "outstanding_receipts_account",
-                                                        "outstanding_payments_account"
+                                                        "outstanding_payments_account",
+                                                        "profit_account",
+                                                        "loss_account"
                                                     ]
                                                 }
                                             ]
@@ -53908,6 +53912,12 @@
                     "outstanding_payments_account_id": {
                         "type": "string"
                     },
+                    "profit_account_id": {
+                        "type": "string"
+                    },
+                    "loss_account_id": {
+                        "type": "string"
+                    },
                     "bank_account_number": {
                         "type": "string"
                     },
@@ -53942,6 +53952,12 @@
                     "outstanding_payments_account": {
                         "$ref": "#/components/schemas/AccountResource"
                     },
+                    "profit_account": {
+                        "$ref": "#/components/schemas/AccountResource"
+                    },
+                    "loss_account": {
+                        "$ref": "#/components/schemas/AccountResource"
+                    },
                     "created_at": {
                         "type": [
                             "string",
@@ -53964,6 +53980,8 @@
                     "suspense_account_id",
                     "outstanding_receipts_account_id",
                     "outstanding_payments_account_id",
+                    "profit_account_id",
+                    "loss_account_id",
                     "bank_account_number",
                     "dedicated_payment_sequence",
                     "currency",
@@ -62988,6 +63006,18 @@
                             "null"
                         ]
                     },
+                    "profit_account_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "loss_account_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
                     "bank_account_number": {
                         "type": [
                             "string",
@@ -68155,6 +68185,18 @@
                         ]
                     },
                     "outstanding_payments_account_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "profit_account_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "loss_account_id": {
                         "type": [
                             "integer",
                             "null"
