@@ -42,6 +42,7 @@ class Contact extends Model
         'province',
         'postal_code',
         'npwp',
+        'is_pkp',
         'nik',
         'credit_limit',
         'currency',
@@ -74,6 +75,7 @@ class Contact extends Model
             'early_discount_percent' => 'decimal:2',
             'early_discount_days' => 'integer',
             'is_active' => 'boolean',
+            'is_pkp' => 'boolean',
             'last_transaction_date' => 'date',
             // Subcontractor fields
             'is_subcontractor' => 'boolean',
