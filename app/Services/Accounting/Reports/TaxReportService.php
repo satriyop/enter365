@@ -3,6 +3,9 @@
 namespace App\Services\Accounting\Reports;
 
 use App\Enums\DocumentStatus;
+use App\Models\Accounting\JournalEntry;
+use App\Models\Accounting\JournalEntryLine;
+use App\Models\Accounting\TaxTag;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
 use Carbon\Carbon;
@@ -11,9 +14,9 @@ use Illuminate\Support\Collection;
 class TaxReportService
 {
     /**
-     * VAT / Tax Summary stay document-level (invoice and bill tax_amount).
-     * Journal-entry line tax_tag_ids classify misc/adjustment grids and are
-     * not rolled into this report.
+     * Document invoices/bills supply the trading VAT slice. Posted journal
+     * lines with tax_tag_ids supply adjustment grids (manual/misc/reversal)
+     * that are added into output/input tax.
      */
 
     /**
@@ -70,7 +73,15 @@ class TaxReportService
             'tax' => $bills->sum('tax_amount'),
         ];
 
-        // Net tax payable/receivable
+        $grids = $this->journalTaxGrids($startDate, $endDate);
+
+        $outputTax['base'] += $grids['output_base'];
+        $outputTax['tax'] += $grids['output_tax'];
+        $outputTax['count'] += $grids['output_count'];
+        $inputTax['base'] += $grids['input_base'];
+        $inputTax['tax'] += $grids['input_tax'];
+        $inputTax['count'] += $grids['input_count'];
+
         $netTax = $outputTax['tax'] - $inputTax['tax'];
 
         return [
@@ -102,6 +113,7 @@ class TaxReportService
                     'tax_rate' => $bill->tax_rate,
                     'tax' => $bill->tax_amount,
                 ]),
+                'journal_grids' => $grids['rows'],
             ],
         ];
     }
@@ -270,6 +282,102 @@ class TaxReportService
             'input_tax' => [
                 'bills' => $bills,
             ],
+        ];
+    }
+
+    /**
+     * @return array{
+     *     output_base: int,
+     *     output_tax: int,
+     *     output_count: int,
+     *     input_base: int,
+     *     input_tax: int,
+     *     input_count: int,
+     *     rows: list<array{date: string, entry_number: string, source_type: string|null, description: string, tag_code: string, applicability: string, side: string, amount: int}>
+     * }
+     */
+    private function journalTaxGrids(string $startDate, string $endDate): array
+    {
+        $lines = JournalEntryLine::query()
+            ->whereNotNull('tax_tag_ids')
+            ->whereHas('journalEntry', function ($query) use ($startDate, $endDate): void {
+                $query->where('is_posted', true)
+                    ->whereNull('deleted_at')
+                    ->whereBetween('entry_date', [$startDate, $endDate.' 23:59:59']);
+            })
+            ->with('journalEntry')
+            ->get()
+            ->filter(fn (JournalEntryLine $line): bool => is_array($line->tax_tag_ids) && $line->tax_tag_ids !== []);
+
+        $tagIds = $lines->flatMap(fn (JournalEntryLine $line) => $line->tax_tag_ids ?? [])->map(fn ($id) => (int) $id)->unique()->values()->all();
+        $tags = $tagIds === []
+            ? collect()
+            : TaxTag::query()->whereIn('id', $tagIds)->get()->keyBy('id');
+
+        $outputBase = 0;
+        $outputTax = 0;
+        $outputCount = 0;
+        $inputBase = 0;
+        $inputTax = 0;
+        $inputCount = 0;
+        $rows = [];
+
+        foreach ($lines as $line) {
+            $entry = $line->journalEntry;
+            $sourceType = $entry?->source_type;
+            $isDocumentSource = in_array($sourceType, [JournalEntry::SOURCE_INVOICE, JournalEntry::SOURCE_BILL], true);
+            $side = (int) $line->credit > 0 ? 'output' : 'input';
+            $amount = $side === 'output' ? (int) $line->credit : (int) $line->debit;
+
+            foreach ($line->tax_tag_ids ?? [] as $tagId) {
+                $tag = $tags->get((int) $tagId);
+                if ($tag === null) {
+                    continue;
+                }
+
+                $isTax = $tag->applicability === TaxTag::APPLICABILITY_TAX;
+
+                if (! $isDocumentSource) {
+                    if ($side === 'output') {
+                        if ($isTax) {
+                            $outputTax += $amount;
+                            $outputCount++;
+                        } else {
+                            $outputBase += $amount;
+                        }
+                    } else {
+                        if ($isTax) {
+                            $inputTax += $amount;
+                            $inputCount++;
+                        } else {
+                            $inputBase += $amount;
+                        }
+                    }
+                }
+
+                $rows[] = [
+                    'date' => $entry?->entry_date instanceof \DateTimeInterface
+                        ? $entry->entry_date->format('Y-m-d')
+                        : substr((string) $entry?->entry_date, 0, 10),
+                    'entry_number' => (string) ($entry?->entry_number ?? ''),
+                    'source_type' => $sourceType,
+                    'description' => (string) ($line->description ?? $entry?->description ?? ''),
+                    'tag_code' => (string) $tag->code,
+                    'applicability' => (string) $tag->applicability,
+                    'side' => $side,
+                    'amount' => $amount,
+                ];
+            }
+        }
+
+        return [
+            'output_base' => $outputBase,
+            'output_tax' => $outputTax,
+            'output_count' => $outputCount,
+            'input_base' => $inputBase,
+            'input_tax' => $inputTax,
+            'input_count' => $inputCount,
+            'rows' => $rows,
         ];
     }
 }
