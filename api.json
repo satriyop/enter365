@@ -28972,7 +28972,9 @@
                                                     {
                                                         "type": "object",
                                                         "required": [
-                                                            "category"
+                                                            "category",
+                                                            "sales_taxes",
+                                                            "purchase_taxes"
                                                         ]
                                                     }
                                                 ]
@@ -29194,6 +29196,8 @@
                                                     "type": "object",
                                                     "required": [
                                                         "category",
+                                                        "sales_taxes",
+                                                        "purchase_taxes",
                                                         "inventory_account",
                                                         "cogs_account",
                                                         "sales_account",
@@ -45377,6 +45381,224 @@
                 }
             }
         },
+        "/tax-records": {
+            "get": {
+                "operationId": "taxRecord.index",
+                "tags": [
+                    "TaxRecord"
+                ],
+                "parameters": [
+                    {
+                        "name": "is_active",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean",
+                            "default": false
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 50
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated set of `TaxRecordResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/TaxRecordResource"
+                                            }
+                                        },
+                                        "links": {
+                                            "type": "object",
+                                            "properties": {
+                                                "first": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "last": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "prev": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "next": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "first",
+                                                "last",
+                                                "prev",
+                                                "next"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "minimum": 1
+                                                },
+                                                "from": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "minimum": 1
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "minimum": 1
+                                                },
+                                                "links": {
+                                                    "type": "array",
+                                                    "description": "Generated paginator links.",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "url": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "label": {
+                                                                "type": "string"
+                                                            },
+                                                            "active": {
+                                                                "type": "boolean"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "url",
+                                                            "label",
+                                                            "active"
+                                                        ]
+                                                    }
+                                                },
+                                                "path": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "description": "Base path for paginator generated URLs."
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "description": "Number of items shown per page.",
+                                                    "minimum": 0
+                                                },
+                                                "to": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "description": "Number of the last item in the slice.",
+                                                    "minimum": 1
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "description": "Total number of items being paginated.",
+                                                    "minimum": 0
+                                                }
+                                            },
+                                            "required": [
+                                                "current_page",
+                                                "from",
+                                                "last_page",
+                                                "links",
+                                                "path",
+                                                "per_page",
+                                                "to",
+                                                "total"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "links",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "taxRecord.store",
+                "tags": [
+                    "TaxRecord"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreTaxRecordRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`TaxRecordResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/TaxRecordResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
         "/reports/ppn-summary": {
             "get": {
                 "operationId": "reports.ppn-summary",
@@ -56487,6 +56709,66 @@
                     "is_taxable": {
                         "type": "boolean"
                     },
+                    "sales_taxes": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "code": {
+                                    "type": "string"
+                                },
+                                "name": {
+                                    "type": "string"
+                                },
+                                "rate": {
+                                    "type": "number"
+                                },
+                                "applicability": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "id",
+                                "code",
+                                "name",
+                                "rate",
+                                "applicability"
+                            ]
+                        }
+                    },
+                    "purchase_taxes": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "code": {
+                                    "type": "string"
+                                },
+                                "name": {
+                                    "type": "string"
+                                },
+                                "rate": {
+                                    "type": "number"
+                                },
+                                "applicability": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "id",
+                                "code",
+                                "name",
+                                "rate",
+                                "applicability"
+                            ]
+                        }
+                    },
                     "profit_margin": {
                         "type": "string"
                     },
@@ -56632,6 +56914,8 @@
                     "selling_tax_amount",
                     "tax_rate",
                     "is_taxable",
+                    "sales_taxes",
+                    "purchase_taxes",
                     "profit_margin",
                     "markup",
                     "track_inventory",
@@ -63477,6 +63761,24 @@
                     "is_taxable": {
                         "type": "boolean"
                     },
+                    "sales_tax_ids": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "integer"
+                        }
+                    },
+                    "purchase_tax_ids": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "integer"
+                        }
+                    },
                     "track_inventory": {
                         "type": "boolean"
                     },
@@ -65318,6 +65620,42 @@
                 ],
                 "title": "StoreTaskRequest"
             },
+            "StoreTaxRecordRequest": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "maxLength": 30
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 200
+                    },
+                    "rate": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 100
+                    },
+                    "applicability": {
+                        "type": "string",
+                        "enum": [
+                            "sales",
+                            "purchase",
+                            "both"
+                        ]
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "code",
+                    "name",
+                    "rate",
+                    "applicability"
+                ],
+                "title": "StoreTaxRecordRequest"
+            },
             "StoreTaxTagRequest": {
                 "type": "object",
                 "properties": {
@@ -66373,6 +66711,38 @@
                     "updated_at"
                 ],
                 "title": "TaskResource"
+            },
+            "TaxRecordResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "code": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "rate": {
+                        "type": "number"
+                    },
+                    "applicability": {
+                        "type": "string"
+                    },
+                    "is_active": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "code",
+                    "name",
+                    "rate",
+                    "applicability",
+                    "is_active"
+                ],
+                "title": "TaxRecordResource"
             },
             "TaxTagResource": {
                 "type": "object",
@@ -68431,6 +68801,24 @@
                     },
                     "is_taxable": {
                         "type": "boolean"
+                    },
+                    "sales_tax_ids": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "integer"
+                        }
+                    },
+                    "purchase_tax_ids": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "integer"
+                        }
                     },
                     "track_inventory": {
                         "type": "boolean"
