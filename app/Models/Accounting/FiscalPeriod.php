@@ -292,11 +292,18 @@ class FiscalPeriod extends Model
             );
         }
 
+        // Odoo tax-return lock: sales + purchases + miscellaneous (not closing).
+        if (! $isClosing && $this->isInclusiveLockActive($this->lock_tax_until, $dateStr)) {
+            throw BusinessRuleException::operationNotAllowed(
+                'periode fiskal',
+                "Kunci Pajak aktif sampai {$this->lock_tax_until->toDateString()} pada periode '{$this->name}'."
+            );
+        }
+
         $scope = self::lockScopeForSource($sourceType);
         $until = match ($scope) {
             FiscalPeriodLockScope::Sales => $this->lock_sales_until,
             FiscalPeriodLockScope::Purchases => $this->lock_purchases_until,
-            FiscalPeriodLockScope::Tax => $this->lock_tax_until,
             default => null,
         };
 
@@ -304,7 +311,6 @@ class FiscalPeriod extends Model
             $label = match ($scope) {
                 FiscalPeriodLockScope::Sales => 'Penjualan',
                 FiscalPeriodLockScope::Purchases => 'Pembelian',
-                FiscalPeriodLockScope::Tax => 'Pajak',
                 default => 'Jurnal',
             };
 

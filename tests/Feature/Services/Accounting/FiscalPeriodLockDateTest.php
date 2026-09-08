@@ -76,6 +76,39 @@ it('blocks bills on lock_purchases_until without blocking invoices', function ()
     ))->toBeInstanceOf(FiscalPeriod::class);
 });
 
+it('blocks invoice, bill, and manual on lock_tax_until while allowing the day after and closing', function () {
+    $period = FiscalPeriod::factory()->current()->create([
+        'lock_tax_until' => '2026-05-31',
+    ]);
+
+    foreach ([
+        JournalEntry::SOURCE_INVOICE,
+        JournalEntry::SOURCE_BILL,
+        JournalEntry::SOURCE_MANUAL,
+        JournalEntry::SOURCE_PAYMENT,
+    ] as $source) {
+        expect(fn () => FiscalPeriod::assertOpenForPosting(
+            new DateTimeImmutable('2026-05-31'),
+            $source,
+        ))->toThrow(BusinessRuleException::class);
+    }
+
+    expect(FiscalPeriod::assertOpenForPosting(
+        new DateTimeImmutable('2026-06-01'),
+        JournalEntry::SOURCE_INVOICE,
+    )->id)->toBe($period->id);
+
+    expect(FiscalPeriod::assertOpenForPosting(
+        new DateTimeImmutable('2026-06-01'),
+        JournalEntry::SOURCE_MANUAL,
+    )->id)->toBe($period->id);
+
+    expect(FiscalPeriod::assertOpenForPosting(
+        new DateTimeImmutable('2026-05-31'),
+        JournalEntry::SOURCE_CLOSING,
+    ))->toBeInstanceOf(FiscalPeriod::class);
+});
+
 it('soft lock everything still allows closing entries while hard lock does not', function () {
     FiscalPeriod::factory()->current()->create([
         'lock_everything_until' => '2026-08-31',
