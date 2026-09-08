@@ -5116,6 +5116,128 @@
                 }
             }
         },
+        "/bills/{bill}/credit-note": {
+            "post": {
+                "operationId": "bill.creditNote",
+                "summary": "Create a vendor credit note (purchase return) from a posted bill",
+                "tags": [
+                    "Bill"
+                ],
+                "parameters": [
+                    {
+                        "name": "bill",
+                        "in": "path",
+                        "required": true,
+                        "description": "The bill ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreBillCreditNoteRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/bills/{bill}/match-purchase-order": {
+            "post": {
+                "operationId": "bill.matchPurchaseOrder",
+                "summary": "Match a posted bill to a purchase order (same vendor)",
+                "tags": [
+                    "Bill"
+                ],
+                "parameters": [
+                    {
+                        "name": "bill",
+                        "in": "path",
+                        "required": true,
+                        "description": "The bill ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MatchBillPurchaseOrderRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`BillResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "data": {
+                                                    "$ref": "#/components/schemas/BillResource"
+                                                }
+                                            },
+                                            "required": [
+                                                "data"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
         "/boms": {
             "get": {
                 "operationId": "boms.index",
@@ -49646,6 +49768,9 @@
                             "null"
                         ]
                     },
+                    "purchase_order_id": {
+                        "type": "string"
+                    },
                     "contact": {
                         "$ref": "#/components/schemas/ContactResource"
                     },
@@ -49713,6 +49838,7 @@
                     "status_label",
                     "journal_entry_id",
                     "payable_account_id",
+                    "purchase_order_id",
                     "created_by",
                     "created_at",
                     "updated_at"
@@ -53943,6 +54069,18 @@
                     "start_date"
                 ],
                 "title": "MakeRecurringRequest"
+            },
+            "MatchBillPurchaseOrderRequest": {
+                "type": "object",
+                "properties": {
+                    "purchase_order_id": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "purchase_order_id"
+                ],
+                "title": "MatchBillPurchaseOrderRequest"
             },
             "MaterialConsumptionResource": {
                 "type": "object",
@@ -60823,6 +60961,36 @@
                     "description"
                 ],
                 "title": "StoreBankTransactionRequest"
+            },
+            "StoreBillCreditNoteRequest": {
+                "type": "object",
+                "properties": {
+                    "return_date": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "warehouse_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "reason": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 50
+                    },
+                    "notes": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 1000
+                    }
+                },
+                "title": "StoreBillCreditNoteRequest"
             },
             "StoreBillRequest": {
                 "type": "object",

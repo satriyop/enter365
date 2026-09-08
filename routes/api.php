@@ -311,6 +311,10 @@ Route::prefix('v1')->group(function () {
         Route::post('bills/{bill}/post', [BillController::class, 'post']);
         Route::post('bills/{bill}/void', [BillController::class, 'void']);
         Route::post('bills/{bill}/make-recurring', [BillController::class, 'makeRecurring']);
+        Route::post('bills/{bill}/credit-note', [BillController::class, 'creditNote'])
+            ->middleware('feature:purchase_returns');
+        Route::post('bills/{bill}/match-purchase-order', [BillController::class, 'matchPurchaseOrder'])
+            ->middleware('feature:purchase_orders');
 
         // Down Payments (Uang Muka)
         Route::middleware('feature:down_payments')->group(function () {

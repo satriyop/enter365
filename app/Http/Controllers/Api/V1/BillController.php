@@ -3,14 +3,20 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Contracts\Purchasing\BillServiceInterface;
+use App\Contracts\Purchasing\PurchaseReturnServiceInterface;
+use App\Enums\DocumentStatus;
 use App\Filters\BillFilter;
 use App\Http\Requests\Api\V1\MakeRecurringRequest;
+use App\Http\Requests\Api\V1\MatchBillPurchaseOrderRequest;
+use App\Http\Requests\Api\V1\StoreBillCreditNoteRequest;
 use App\Http\Requests\Api\V1\StoreBillRequest;
 use App\Http\Requests\Api\V1\UpdateBillRequest;
 use App\Http\Requests\Api\V1\VoidBillRequest;
 use App\Http\Resources\Api\V1\BillResource;
+use App\Http\Resources\Api\V1\PurchaseReturnResource;
 use App\Http\Resources\Api\V1\RecurringTemplateResource;
 use App\Models\Purchasing\Bill;
+use App\Models\Purchasing\PurchaseOrder;
 use App\Services\Sales\RecurringService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -20,7 +26,8 @@ class BillController extends Controller
 {
     public function __construct(
         private BillServiceInterface $billService,
-        private RecurringService $recurringService
+        private RecurringService $recurringService,
+        private PurchaseReturnServiceInterface $purchaseReturnService
     ) {}
 
     /**
@@ -127,5 +134,67 @@ class BillController extends Controller
             new RecurringTemplateResource($template->load('contact')),
             'Template recurring berhasil dibuat dari tagihan.'
         );
+    }
+
+    /**
+     * Create a vendor credit note (purchase return) from a posted bill.
+     */
+    public function creditNote(StoreBillCreditNoteRequest $request, Bill $bill): JsonResponse
+    {
+        $this->authorize('update', $bill);
+
+        if ($blocked = $this->postedBillOrError($bill)) {
+            return $blocked;
+        }
+
+        $data = $request->validated();
+        $data['created_by'] = $request->user()?->id;
+
+        $creditNote = $this->purchaseReturnService->createFromBill($bill, $data);
+
+        return $this->created(
+            new PurchaseReturnResource($creditNote->load(['items', 'contact', 'bill'])),
+            'Nota kredit vendor berhasil dibuat.'
+        );
+    }
+
+    /**
+     * Match a posted bill to a purchase order (same vendor).
+     */
+    public function matchPurchaseOrder(MatchBillPurchaseOrderRequest $request, Bill $bill): BillResource|JsonResponse
+    {
+        $this->authorize('update', $bill);
+
+        if ($blocked = $this->postedBillOrError($bill)) {
+            return $blocked;
+        }
+
+        $purchaseOrder = PurchaseOrder::query()->findOrFail($request->integer('purchase_order_id'));
+
+        if ($purchaseOrder->contact_id !== $bill->contact_id) {
+            return $this->error('Purchase order harus dari vendor yang sama.', 422);
+        }
+
+        $bill->update(['purchase_order_id' => $purchaseOrder->id]);
+
+        return new BillResource(
+            $bill->fresh(['contact', 'items.expenseAccount', 'journalEntry.lines.account', 'payments', 'purchaseOrder'])
+        );
+    }
+
+    private function postedBillOrError(Bill $bill): ?JsonResponse
+    {
+        $posted = in_array($bill->status, [
+            DocumentStatus::Received,
+            DocumentStatus::Partial,
+            DocumentStatus::Paid,
+            DocumentStatus::Overdue,
+        ], true);
+
+        if ($posted) {
+            return null;
+        }
+
+        return $this->error('Hanya tagihan yang sudah diposting yang bisa diproses.', 422);
     }
 }

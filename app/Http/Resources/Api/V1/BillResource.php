@@ -46,6 +46,7 @@ class BillResource extends JsonResource
             'status_label' => $this->status->label(),
             'journal_entry_id' => $this->journal_entry_id,
             'payable_account_id' => $this->payable_account_id,
+            'purchase_order_id' => $this->purchase_order_id,
             'contact' => new ContactResource($this->whenLoaded('contact')),
             'items' => BillItemResource::collection($this->whenLoaded('items')),
             'journal_entry' => new JournalEntryResource($this->whenLoaded('journalEntry')),

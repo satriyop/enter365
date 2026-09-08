@@ -8,6 +8,7 @@ use App\Models\Accounting\TaxTag;
 use App\Models\Contacts\Contact;
 use App\Models\Purchasing\Bill;
 use App\Models\Purchasing\BillItem;
+use App\Models\Purchasing\PurchaseOrder;
 use App\Models\Shared\Payment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
@@ -381,5 +382,56 @@ describe('Bill API', function () {
 
         $bill->refresh();
         expect($bill->status)->toBe(DocumentStatus::Paid);
+    });
+
+    it('creates a vendor credit note from a posted bill', function () {
+        $supplier = Contact::factory()->supplier()->create();
+        $bill = Bill::factory()->received()->forContact($supplier)->create();
+        BillItem::factory()->forBill($bill)->create();
+
+        $response = $this->postJson("/api/v1/bills/{$bill->id}/credit-note", [
+            'reason' => 'vendor_request',
+            'notes' => 'Credit note from bill',
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.bill_id', $bill->id)
+            ->assertJsonPath('data.contact_id', $supplier->id);
+    });
+
+    it('cannot create a credit note from a draft bill', function () {
+        $bill = Bill::factory()->draft()->create();
+
+        $this->postJson("/api/v1/bills/{$bill->id}/credit-note")
+            ->assertUnprocessable();
+    });
+
+    it('matches a posted bill to a purchase order from the same vendor', function () {
+        $supplier = Contact::factory()->supplier()->create();
+        $bill = Bill::factory()->received()->forContact($supplier)->create();
+        $purchaseOrder = PurchaseOrder::factory()->create(['contact_id' => $supplier->id]);
+
+        $response = $this->postJson("/api/v1/bills/{$bill->id}/match-purchase-order", [
+            'purchase_order_id' => $purchaseOrder->id,
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.purchase_order_id', $purchaseOrder->id);
+
+        $this->assertDatabaseHas('bills', [
+            'id' => $bill->id,
+            'purchase_order_id' => $purchaseOrder->id,
+        ]);
+    });
+
+    it('rejects purchase matching when the PO belongs to another vendor', function () {
+        $supplier = Contact::factory()->supplier()->create();
+        $other = Contact::factory()->supplier()->create();
+        $bill = Bill::factory()->received()->forContact($supplier)->create();
+        $purchaseOrder = PurchaseOrder::factory()->create(['contact_id' => $other->id]);
+
+        $this->postJson("/api/v1/bills/{$bill->id}/match-purchase-order", [
+            'purchase_order_id' => $purchaseOrder->id,
+        ])->assertUnprocessable();
     });
 });
