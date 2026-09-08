@@ -35,6 +35,9 @@ class PartnerLedgerReportService
      *             account_name: string,
      *             description: string,
      *             reference: string|null,
+     *             invoice_date: string|null,
+     *             due_date: string|null,
+     *             matching: string|null,
      *             debit: int,
      *             credit: int,
      *             balance: int
@@ -53,7 +56,7 @@ class PartnerLedgerReportService
     ): array {
         $openings = $this->openingBalances($startDate, $contactId, $accountId, $journalId);
 
-        $lines = $this->postedPartnerLines()
+        $raw = $this->postedPartnerLines()
             ->when($startDate, fn ($q) => $q->where('je.entry_date', '>=', $startDate))
             ->when($endDate, fn ($q) => $q->where('je.entry_date', '<=', $endDate.' 23:59:59'))
             ->when($contactId, fn ($q) => $q->where('jel.partner_id', $contactId))
@@ -63,8 +66,10 @@ class PartnerLedgerReportService
             ->orderBy('je.entry_date')
             ->orderBy('je.id')
             ->orderBy('jel.id')
-            ->get()
-            ->groupBy('partner_id');
+            ->get();
+
+        $matching = $this->matchingBySource($raw);
+        $lines = $raw->groupBy('partner_id');
 
         $partners = [];
         $totalDebit = 0;
@@ -76,12 +81,15 @@ class PartnerLedgerReportService
             $periodDebit = 0;
             $periodCredit = 0;
 
-            $transformed = $entries->map(function (\stdClass $entry) use (&$running, &$periodDebit, &$periodCredit): array {
+            $transformed = $entries->map(function (\stdClass $entry) use (&$running, &$periodDebit, &$periodCredit, $matching): array {
                 $debit = (int) $entry->debit;
                 $credit = (int) $entry->credit;
                 $running += $debit - $credit;
                 $periodDebit += $debit;
                 $periodCredit += $credit;
+                $sourceKey = $entry->source_type && $entry->source_id
+                    ? $entry->source_type.':'.(int) $entry->source_id
+                    : null;
 
                 return [
                     'id' => (int) $entry->id,
@@ -93,6 +101,9 @@ class PartnerLedgerReportService
                     'account_name' => (string) $entry->account_name,
                     'description' => (string) ($entry->line_description ?: $entry->entry_description),
                     'reference' => $entry->reference ? (string) $entry->reference : null,
+                    'invoice_date' => $this->dateOrNull($entry->invoice_date ?? null),
+                    'due_date' => $this->dateOrNull($entry->due_date ?? null),
+                    'matching' => $sourceKey !== null ? ($matching[$sourceKey] ?? null) : null,
                     'debit' => $debit,
                     'credit' => $credit,
                     'balance' => $running,
@@ -157,6 +168,16 @@ class PartnerLedgerReportService
             ->join('contacts as c', 'c.id', '=', 'jel.partner_id')
             ->join('accounts as a', 'a.id', '=', 'jel.account_id')
             ->leftJoin('journals as j', 'j.id', '=', 'je.journal_id')
+            ->leftJoin('invoices as inv', function ($join): void {
+                $join->on('inv.id', '=', 'je.source_id')
+                    ->where('je.source_type', '=', 'invoice')
+                    ->whereNull('inv.deleted_at');
+            })
+            ->leftJoin('bills as b', function ($join): void {
+                $join->on('b.id', '=', 'je.source_id')
+                    ->where('je.source_type', '=', 'bill')
+                    ->whereNull('b.deleted_at');
+            })
             ->where('je.is_posted', true)
             ->whereNull('je.deleted_at')
             ->whereNull('c.deleted_at')
@@ -169,6 +190,8 @@ class PartnerLedgerReportService
                 'je.entry_number',
                 'je.description as entry_description',
                 'je.reference',
+                'je.source_type',
+                'je.source_id',
                 'jel.description as line_description',
                 'jel.debit',
                 'jel.credit',
@@ -177,6 +200,82 @@ class PartnerLedgerReportService
                 'a.code as account_code',
                 'a.name as account_name',
                 'j.name as journal_name',
-            ]);
+            ])
+            ->selectRaw('COALESCE(inv.invoice_date, b.bill_date) as invoice_date')
+            ->selectRaw('COALESCE(inv.due_date, b.due_date) as due_date');
+    }
+
+    /**
+     * @param  Collection<int, \stdClass>  $entries
+     * @return array<string, string>
+     */
+    private function matchingBySource(Collection $entries): array
+    {
+        $map = [];
+
+        $invoiceIds = $entries->where('source_type', 'invoice')->pluck('source_id')->filter()->unique()->values()->all();
+        $billIds = $entries->where('source_type', 'bill')->pluck('source_id')->filter()->unique()->values()->all();
+        $paymentIds = $entries->where('source_type', 'payment')->pluck('source_id')->filter()->unique()->values()->all();
+
+        if ($invoiceIds !== []) {
+            $rows = DB::table('payment_allocations as pa')
+                ->join('payments as p', 'p.id', '=', 'pa.payment_id')
+                ->where('pa.allocatable_type', 'invoice')
+                ->whereIn('pa.allocatable_id', $invoiceIds)
+                ->whereNull('p.deleted_at')
+                ->where('p.is_voided', false)
+                ->orderBy('p.payment_number')
+                ->get(['pa.allocatable_id', 'p.payment_number']);
+
+            foreach ($rows->groupBy('allocatable_id') as $id => $group) {
+                $map['invoice:'.(int) $id] = $group->pluck('payment_number')->unique()->implode(', ');
+            }
+        }
+
+        if ($billIds !== []) {
+            $rows = DB::table('payment_allocations as pa')
+                ->join('payments as p', 'p.id', '=', 'pa.payment_id')
+                ->where('pa.allocatable_type', 'bill')
+                ->whereIn('pa.allocatable_id', $billIds)
+                ->whereNull('p.deleted_at')
+                ->where('p.is_voided', false)
+                ->orderBy('p.payment_number')
+                ->get(['pa.allocatable_id', 'p.payment_number']);
+
+            foreach ($rows->groupBy('allocatable_id') as $id => $group) {
+                $map['bill:'.(int) $id] = $group->pluck('payment_number')->unique()->implode(', ');
+            }
+        }
+
+        if ($paymentIds !== []) {
+            $allocatedPaymentIds = DB::table('payment_allocations')
+                ->whereIn('payment_id', $paymentIds)
+                ->pluck('payment_id')
+                ->unique()
+                ->all();
+
+            if ($allocatedPaymentIds !== []) {
+                $numbers = DB::table('payments')
+                    ->whereIn('id', $allocatedPaymentIds)
+                    ->whereNull('deleted_at')
+                    ->where('is_voided', false)
+                    ->pluck('payment_number', 'id');
+
+                foreach ($numbers as $id => $number) {
+                    $map['payment:'.(int) $id] = (string) $number;
+                }
+            }
+        }
+
+        return $map;
+    }
+
+    private function dateOrNull(mixed $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return substr((string) $value, 0, 10);
     }
 }
