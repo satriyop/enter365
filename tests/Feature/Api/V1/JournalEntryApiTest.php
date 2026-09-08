@@ -405,6 +405,65 @@ describe('Journal Entry API', function () {
         expect($line->tax_tag_ids)->toEqual($taxTags);
     });
 
+    it('round-trips analytic_distribution as a JSON object map, not a value list', function () {
+        $expenseAccount = Account::where('code', '5-1001')->first()
+            ?? Account::where('code', '6-1001')->first()
+            ?? Account::where('code', '1-1001')->first();
+        $payableAccount = Account::where('code', '2-1001')->first()
+            ?? Account::where('code', '2-1101')->first()
+            ?? Account::where('code', '1-1001')->first();
+
+        $created = $this->postJson('/api/v1/journal-entries', [
+            'journal_id' => $this->miscJournal->id,
+            'entry_date' => now()->toDateString(),
+            'description' => 'Analytic distribution map fidelity',
+            'lines' => [
+                [
+                    'account_id' => $expenseAccount->id,
+                    'analytic_distribution' => ['10' => 60, '20' => 40],
+                    'tax_tag_ids' => [101],
+                    'description' => 'Expense with analytic map',
+                    'debit' => 100000,
+                    'credit' => 0,
+                ],
+                [
+                    'account_id' => $payableAccount->id,
+                    'description' => 'Payable',
+                    'debit' => 0,
+                    'credit' => 100000,
+                ],
+            ],
+        ]);
+
+        $created->assertCreated();
+        $createdBody = json_decode($created->getContent());
+        $createdLine = collect($createdBody->data->lines)->first(fn ($row) => isset($row->tax_tag_ids) && $row->tax_tag_ids == [101]);
+        expect($createdLine->analytic_distribution)->toBeObject();
+        expect(get_object_vars($createdLine->analytic_distribution))->toBe(['10' => 60, '20' => 40]);
+        expect($createdLine->tax_tag_ids)->toBe([101]);
+        $entryId = $created->json('data.id');
+
+        $show = $this->getJson("/api/v1/journal-entries/{$entryId}");
+        $show->assertOk();
+
+        $body = json_decode($show->getContent());
+        $line = collect($body->data->lines)->first(fn ($row) => isset($row->tax_tag_ids) && $row->tax_tag_ids == [101]);
+
+        expect($line)->not->toBeNull();
+        expect($line->analytic_distribution)->toBeObject();
+        expect(get_object_vars($line->analytic_distribution))->toBe(['10' => 60, '20' => 40]);
+        expect($line->tax_tag_ids)->toBeArray();
+        expect($line->tax_tag_ids)->toBe([101]);
+
+        $stored = JournalEntryLine::query()
+            ->where('journal_entry_id', $entryId)
+            ->where('debit', 100000)
+            ->first();
+        $raw = $stored?->getRawOriginal('analytic_distribution');
+        expect(is_string($raw) ? ltrim($raw) : json_encode($raw))->toStartWith('{');
+        expect($stored->analytic_distribution)->toMatchArray(['10' => 60, '20' => 40]);
+    });
+
     it('shows analytic_distribution and tax_tag_ids on journal entry lines', function () {
         $entry = JournalEntry::factory()->create();
         $account1 = Account::factory()->create();

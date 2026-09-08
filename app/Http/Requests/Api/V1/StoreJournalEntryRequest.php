@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Api\V1;
 
+use App\Casts\AnalyticDistributionCast;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreJournalEntryRequest extends FormRequest
@@ -64,5 +65,34 @@ class StoreJournalEntryRequest extends FormRequest
                 $validator->errors()->add('lines', 'Total debit harus sama dengan total kredit. Debit: '.$totalDebit.', Kredit: '.$totalCredit);
             }
         });
+    }
+
+    /**
+     * Keep analytic account-id keys. Laravel rebuilds validated nested arrays
+     * with numeric keys as lists ({"10":60,"20":40} -> [60,40]).
+     */
+    public function validated($key = null, $default = null): mixed
+    {
+        $validated = parent::validated($key, $default);
+
+        if ($key !== null || ! is_array($validated) || ! is_array($validated['lines'] ?? null)) {
+            return $validated;
+        }
+
+        $rawLines = $this->input('lines', []);
+
+        foreach ($validated['lines'] as $index => $line) {
+            if (! is_array($line) || ! array_key_exists('analytic_distribution', $line)) {
+                continue;
+            }
+
+            $raw = is_array($rawLines) && is_array($rawLines[$index] ?? null)
+                ? ($rawLines[$index]['analytic_distribution'] ?? null)
+                : $line['analytic_distribution'];
+
+            $validated['lines'][$index]['analytic_distribution'] = AnalyticDistributionCast::asObject($raw);
+        }
+
+        return $validated;
     }
 }
