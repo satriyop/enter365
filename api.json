@@ -17812,6 +17812,182 @@
                 }
             }
         },
+        "/export/partner-ledger": {
+            "get": {
+                "operationId": "export.partnerLedger",
+                "tags": [
+                    "Export"
+                ],
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "format",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "default": "csv"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "text/csv; charset=UTF-8": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            },
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "partner": {
+                                                        "type": "string"
+                                                    },
+                                                    "date": {
+                                                        "type": "string"
+                                                    },
+                                                    "entry_number": {
+                                                        "type": "string"
+                                                    },
+                                                    "journal": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "string"
+                                                            },
+                                                            {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    ""
+                                                                ]
+                                                            }
+                                                        ]
+                                                    },
+                                                    "account": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": {
+                                                        "type": "string"
+                                                    },
+                                                    "debit": {
+                                                        "type": "string"
+                                                    },
+                                                    "credit": {
+                                                        "type": "string"
+                                                    },
+                                                    "balance": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "partner",
+                                                    "date",
+                                                    "entry_number",
+                                                    "journal",
+                                                    "account",
+                                                    "description",
+                                                    "debit",
+                                                    "credit",
+                                                    "balance"
+                                                ]
+                                            }
+                                        },
+                                        "headers": {
+                                            "type": "object",
+                                            "properties": {
+                                                "partner": {
+                                                    "type": "string",
+                                                    "const": "Partner"
+                                                },
+                                                "date": {
+                                                    "type": "string",
+                                                    "const": "Tanggal"
+                                                },
+                                                "entry_number": {
+                                                    "type": "string",
+                                                    "const": "No. Jurnal"
+                                                },
+                                                "journal": {
+                                                    "type": "string",
+                                                    "const": "Jurnal"
+                                                },
+                                                "account": {
+                                                    "type": "string",
+                                                    "const": "Akun"
+                                                },
+                                                "description": {
+                                                    "type": "string",
+                                                    "const": "Uraian"
+                                                },
+                                                "debit": {
+                                                    "type": "string",
+                                                    "const": "Debit"
+                                                },
+                                                "credit": {
+                                                    "type": "string",
+                                                    "const": "Kredit"
+                                                },
+                                                "balance": {
+                                                    "type": "string",
+                                                    "const": "Saldo"
+                                                }
+                                            },
+                                            "required": [
+                                                "partner",
+                                                "date",
+                                                "entry_number",
+                                                "journal",
+                                                "account",
+                                                "description",
+                                                "debit",
+                                                "credit",
+                                                "balance"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "headers"
+                                    ]
+                                }
+                            }
+                        },
+                        "headers": {
+                            "Content-Disposition": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/export/receivable-aging": {
             "get": {
                 "operationId": "export.receivableAging",
@@ -19196,6 +19372,66 @@
                                         }
                                     },
                                     "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/reports/partner-ledger": {
+            "get": {
+                "operationId": "reports.partner-ledger",
+                "summary": "Buku Besar Partner (Partner Ledger)",
+                "tags": [
+                    "FinancialReport"
+                ],
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operasi berhasil."
+                                        },
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
                                         "data"
                                     ]
                                 }

@@ -23,6 +23,7 @@ describe('Report authorization - forbidden without permission', function () {
             '/api/v1/reports/balance-sheet',
             '/api/v1/reports/income-statement',
             '/api/v1/reports/general-ledger',
+            '/api/v1/reports/partner-ledger',
             '/api/v1/reports/changes-in-equity',
         ];
 
