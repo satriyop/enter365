@@ -19,7 +19,8 @@ class StoreProductRequest extends FormRequest
             'sku' => ['nullable', 'string', 'max:50', 'unique:products,sku'],
             'name' => ['required', 'string', 'max:200'],
             'description' => ['nullable', 'string'],
-            'type' => ['required', Rule::in([Product::TYPE_PRODUCT, Product::TYPE_SERVICE])],
+            'type' => ['required', Rule::in([Product::TYPE_PRODUCT, Product::TYPE_SERVICE, Product::TYPE_COMBO])],
+            'procurement_type' => ['nullable', Rule::in([Product::PROCUREMENT_BUY, Product::PROCUREMENT_MAKE, Product::PROCUREMENT_SUBCONTRACT])],
             'category_id' => ['nullable', 'exists:product_categories,id'],
             'unit' => ['required', 'string', 'max:20'],
             'purchase_price' => ['required', 'integer', 'min:0'],
@@ -61,7 +62,7 @@ class StoreProductRequest extends FormRequest
         return [
             'name.required' => 'Nama produk wajib diisi.',
             'type.required' => 'Tipe produk wajib diisi.',
-            'type.in' => 'Tipe produk harus product atau service.',
+            'type.in' => 'Tipe produk harus product, service, atau combo.',
             'unit.required' => 'Satuan wajib diisi.',
             'purchase_price.required' => 'Harga beli wajib diisi.',
             'selling_price.required' => 'Harga jual wajib diisi.',

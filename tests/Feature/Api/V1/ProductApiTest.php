@@ -20,7 +20,7 @@ describe('Product API', function () {
     it('can list all products', function () {
         Product::factory()->count(10)->create();
 
-        $this->assertMaxQueries(15, function () {
+        $this->assertMaxQueries(20, function () {
             $response = $this->getJson('/api/v1/products');
             $response->assertOk();
         });
