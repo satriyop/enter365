@@ -109,6 +109,52 @@ class ReportExportService
         ]);
     }
 
+    public function partnerLedger(
+        ?string $startDate = null,
+        ?string $endDate = null,
+        ?int $contactId = null,
+        ?int $accountId = null,
+        ?int $journalId = null,
+        string $format = 'csv',
+    ): Response|JsonResponse {
+        $report = $this->reportService->getPartnerLedger(
+            $startDate,
+            $endDate,
+            $contactId,
+            $accountId,
+            $journalId,
+        );
+
+        $rows = [];
+        foreach ($report['partners'] as $partner) {
+            foreach ($partner['entries'] as $entry) {
+                $rows[] = [
+                    'partner' => $partner['name'],
+                    'date' => $entry['date'],
+                    'entry_number' => $entry['entry_number'],
+                    'journal' => $entry['journal'] ?? '',
+                    'account' => $entry['account_code'].' '.$entry['account_name'],
+                    'description' => $entry['description'],
+                    'debit' => $entry['debit'],
+                    'credit' => $entry['credit'],
+                    'balance' => $entry['balance'],
+                ];
+            }
+        }
+
+        return $this->exportReport($rows, 'partner-ledger', $format, [
+            'partner' => 'Partner',
+            'date' => 'Tanggal',
+            'entry_number' => 'No. Jurnal',
+            'journal' => 'Jurnal',
+            'account' => 'Akun',
+            'description' => 'Uraian',
+            'debit' => 'Debit',
+            'credit' => 'Kredit',
+            'balance' => 'Saldo',
+        ]);
+    }
+
     public function receivableAging(string $format = 'csv'): Response|JsonResponse
     {
         $data = $this->agingService->getReceivableAging();

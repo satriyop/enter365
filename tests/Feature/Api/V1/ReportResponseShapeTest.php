@@ -85,6 +85,22 @@ it('income-statement has correct response shape', function () {
         ]);
 });
 
+it('partner-ledger has correct response shape', function () {
+    $this->getJson('/api/v1/reports/partner-ledger')
+        ->assertOk()
+        ->assertJsonStructure([
+            'success',
+            'data' => [
+                'report_name',
+                'start_date',
+                'end_date',
+                'partners',
+                'total_debit',
+                'total_credit',
+            ],
+        ]);
+});
+
 it('general-ledger has correct response shape', function () {
     $this->getJson('/api/v1/reports/general-ledger')
         ->assertOk()

@@ -576,6 +576,7 @@ Route::prefix('v1')->group(function () {
             Route::get('balance-sheet', [FinancialReportController::class, 'balanceSheet'])->name('reports.balance-sheet');
             Route::get('income-statement', [FinancialReportController::class, 'incomeStatement'])->name('reports.income-statement');
             Route::get('general-ledger', [FinancialReportController::class, 'generalLedger'])->name('reports.general-ledger');
+            Route::get('partner-ledger', [FinancialReportController::class, 'partnerLedger'])->name('reports.partner-ledger');
 
             // Aging Reports
             Route::get('receivable-aging', [AgingReportController::class, 'receivableAging'])->name('reports.receivable-aging');
@@ -636,6 +637,7 @@ Route::prefix('v1')->group(function () {
             Route::get('balance-sheet', [ExportController::class, 'balanceSheet']);
             Route::get('income-statement', [ExportController::class, 'incomeStatement']);
             Route::get('general-ledger', [ExportController::class, 'generalLedger']);
+            Route::get('partner-ledger', [ExportController::class, 'partnerLedger']);
             Route::get('receivable-aging', [ExportController::class, 'receivableAging']);
             Route::get('payable-aging', [ExportController::class, 'payableAging']);
             Route::get('invoices', [ExportController::class, 'invoices']);

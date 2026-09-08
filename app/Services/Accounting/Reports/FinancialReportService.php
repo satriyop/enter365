@@ -7,6 +7,7 @@ use App\Services\Accounting\Reports\Financial\BalanceSheetReportService;
 use App\Services\Accounting\Reports\Financial\EquityStatementReportService;
 use App\Services\Accounting\Reports\Financial\GeneralLedgerReportService;
 use App\Services\Accounting\Reports\Financial\IncomeStatementReportService;
+use App\Services\Accounting\Reports\Financial\PartnerLedgerReportService;
 use Illuminate\Support\Collection;
 
 class FinancialReportService
@@ -15,6 +16,7 @@ class FinancialReportService
         private BalanceSheetReportService $balanceSheetService,
         private IncomeStatementReportService $incomeStatementService,
         private GeneralLedgerReportService $generalLedgerService,
+        private PartnerLedgerReportService $partnerLedgerService,
         private EquityStatementReportService $equityStatementService,
         private AccountHierarchyBuilder $hierarchyBuilder
     ) {}
@@ -65,6 +67,32 @@ class FinancialReportService
     public function getGeneralLedger(?string $startDate = null, ?string $endDate = null): Collection
     {
         return $this->generalLedgerService->getGeneralLedger($startDate, $endDate);
+    }
+
+    /**
+     * @return array{
+     *     report_name: string,
+     *     start_date: string|null,
+     *     end_date: string|null,
+     *     partners: list<array<string, mixed>>,
+     *     total_debit: int,
+     *     total_credit: int
+     * }
+     */
+    public function getPartnerLedger(
+        ?string $startDate = null,
+        ?string $endDate = null,
+        ?int $contactId = null,
+        ?int $accountId = null,
+        ?int $journalId = null,
+    ): array {
+        return $this->partnerLedgerService->getPartnerLedger(
+            $startDate,
+            $endDate,
+            $contactId,
+            $accountId,
+            $journalId,
+        );
     }
 
     /**

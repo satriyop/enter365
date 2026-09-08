@@ -112,6 +112,32 @@ class FinancialReportController extends Controller
     }
 
     /**
+     * Buku Besar Partner (Partner Ledger).
+     *
+     * @queryParam start_date string Filter lines on/after this date. Example: 2026-01-01
+     * @queryParam end_date string Filter lines on/before this date. Example: 2026-12-31
+     * @queryParam contact_id int Filter to one partner. Example: 12
+     * @queryParam account_id int Filter to one account. Example: 4
+     * @queryParam journal_id int Filter to one journal. Example: 1
+     */
+    public function partnerLedger(Request $request): JsonResponse
+    {
+        $this->authorize('reports.financial');
+
+        $contactId = $request->integer('contact_id') ?: null;
+        $accountId = $request->integer('account_id') ?: null;
+        $journalId = $request->integer('journal_id') ?: null;
+
+        return $this->success($this->reports->financial()->getPartnerLedger(
+            $request->input('start_date'),
+            $request->input('end_date'),
+            $contactId,
+            $accountId,
+            $journalId,
+        ));
+    }
+
+    /**
      * Laporan Perubahan Ekuitas (Statement of Changes in Equity).
      *
      * @response array{data: array{report_name: string, period_start: string, period_end: string, opening_equity: array{items: list<array{account_id: int, code: string, name: string, subtype: string, balance: int}>, total: int}, changes: array{capital_additions: int, capital_withdrawals: int, net_income: int, dividends: int, other_adjustments: int, total_changes: int}, closing_equity: array{items: list<array{account_id: int, code: string, name: string, subtype: string, balance: int}>, total: int}}}

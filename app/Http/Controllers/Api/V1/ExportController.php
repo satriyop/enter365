@@ -60,6 +60,24 @@ class ExportController extends Controller
         );
     }
 
+    public function partnerLedger(Request $request): Response|JsonResponse
+    {
+        Gate::authorize('reports.export');
+
+        $contactId = $request->integer('contact_id') ?: null;
+        $accountId = $request->integer('account_id') ?: null;
+        $journalId = $request->integer('journal_id') ?: null;
+
+        return $this->exportService->partnerLedger(
+            $request->input('start_date'),
+            $request->input('end_date'),
+            $contactId,
+            $accountId,
+            $journalId,
+            $request->input('format', 'csv')
+        );
+    }
+
     public function receivableAging(Request $request): Response|JsonResponse
     {
         Gate::authorize('reports.export');
