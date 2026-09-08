@@ -24,6 +24,8 @@ class JournalResource extends JsonResource
             'suspense_account_id' => $this->suspense_account_id,
             'outstanding_receipts_account_id' => $this->outstanding_receipts_account_id,
             'outstanding_payments_account_id' => $this->outstanding_payments_account_id,
+            'profit_account_id' => $this->profit_account_id,
+            'loss_account_id' => $this->loss_account_id,
             'bank_account_number' => $this->bank_account_number,
             'dedicated_payment_sequence' => $this->dedicated_payment_sequence,
             'currency' => $this->currency,
@@ -32,6 +34,8 @@ class JournalResource extends JsonResource
             'suspense_account' => new AccountResource($this->whenLoaded('suspenseAccount')),
             'outstanding_receipts_account' => new AccountResource($this->whenLoaded('outstandingReceiptsAccount')),
             'outstanding_payments_account' => new AccountResource($this->whenLoaded('outstandingPaymentsAccount')),
+            'profit_account' => new AccountResource($this->whenLoaded('profitAccount')),
+            'loss_account' => new AccountResource($this->whenLoaded('lossAccount')),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

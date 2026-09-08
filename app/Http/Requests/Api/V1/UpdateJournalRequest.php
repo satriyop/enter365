@@ -43,6 +43,8 @@ class UpdateJournalRequest extends FormRequest
             'suspense_account_id' => ['nullable', 'integer', 'exists:accounts,id'],
             'outstanding_receipts_account_id' => ['nullable', 'integer', 'exists:accounts,id'],
             'outstanding_payments_account_id' => ['nullable', 'integer', 'exists:accounts,id'],
+            'profit_account_id' => ['nullable', 'integer', 'exists:accounts,id'],
+            'loss_account_id' => ['nullable', 'integer', 'exists:accounts,id'],
             'bank_account_number' => ['nullable', 'string', 'max:255'],
             'dedicated_payment_sequence' => ['boolean'],
             'currency' => [
@@ -67,6 +69,8 @@ class UpdateJournalRequest extends FormRequest
             'suspense_account_id.exists' => 'Akun suspense tidak ditemukan.',
             'outstanding_receipts_account_id.exists' => 'Akun outstanding receipts tidak ditemukan.',
             'outstanding_payments_account_id.exists' => 'Akun outstanding payments tidak ditemukan.',
+            'profit_account_id.exists' => 'Akun laba tidak ditemukan.',
+            'loss_account_id.exists' => 'Akun rugi tidak ditemukan.',
         ];
     }
 }
