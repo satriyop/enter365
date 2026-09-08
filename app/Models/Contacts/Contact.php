@@ -12,6 +12,7 @@ use App\Models\Shared\SubcontractorInvoice;
 use App\Traits\Filterable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
@@ -31,16 +32,28 @@ class Contact extends Model
 
     public const TYPE_BOTH = 'both';
 
+    /**
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'is_company' => true,
+    ];
+
     protected $fillable = [
         'code',
         'name',
         'type',
+        'is_company',
+        'parent_id',
+        'job_position',
         'email',
         'phone',
         'address',
+        'address_line_2',
         'city',
         'province',
         'postal_code',
+        'country',
         'npwp',
         'is_pkp',
         'nik',
@@ -75,6 +88,7 @@ class Contact extends Model
             'early_discount_percent' => 'decimal:2',
             'early_discount_days' => 'integer',
             'is_active' => 'boolean',
+            'is_company' => 'boolean',
             'is_pkp' => 'boolean',
             'last_transaction_date' => 'date',
             // Subcontractor fields
@@ -88,6 +102,22 @@ class Contact extends Model
             'pph_rate' => 'decimal:2',
             'is_foreign_entity' => 'boolean',
         ];
+    }
+
+    /**
+     * @return BelongsTo<Contact, $this>
+     */
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'parent_id');
+    }
+
+    /**
+     * @return HasMany<Contact, $this>
+     */
+    public function children(): HasMany
+    {
+        return $this->hasMany(self::class, 'parent_id');
     }
 
     /**
