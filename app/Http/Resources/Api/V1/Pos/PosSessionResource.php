@@ -29,6 +29,7 @@ class PosSessionResource extends JsonResource
             'service_rate' => (float) $this->service_rate,
             'tax_add_rate' => (float) $this->tax_add_rate,
             'tax_add_name' => $this->tax_add_name,
+            'cash_rounding_unit' => (int) config('pos.cash_rounding_unit', 100),
             'opening_cash_amount' => $this->opening_cash_amount,
             'expected_cash_amount' => $this->expected_cash_amount,
             'counted_cash_amount' => $this->counted_cash_amount,

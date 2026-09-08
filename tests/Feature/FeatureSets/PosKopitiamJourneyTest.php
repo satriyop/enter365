@@ -61,7 +61,7 @@ function kopitiamCheckout(int $sessionId, array $payload, string $key): TestResp
     ]);
 }
 
-function kopitiamSellHakau(int $sessionId, string $key, int $cashReceived = 25_410): TestResponse
+function kopitiamSellHakau(int $sessionId, string $key, int $cashReceived = 25_400): TestResponse
 {
     return kopitiamCheckout($sessionId, [
         'way' => 'cash',
@@ -269,7 +269,8 @@ describe('Kasir Siti — happy path', function () {
         $sale = kopitiamSellHakau($sessionId, 'siti-hakau-change', 100_000);
         kopitiamAssertHakauBill($sale);
         $sale->assertJsonPath('data.cash_received_amount', 100_000)
-            ->assertJsonPath('data.change_amount', 74_590)
+            ->assertJsonPath('data.change_amount', 74_600)
+            ->assertJsonPath('data.rounding_amount', -10)
             ->assertJsonPath('data.status', 'completed');
 
         $posted = PosSale::query()->findOrFail((int) $sale->json('data.id'));
@@ -339,10 +340,10 @@ describe('Kasir Siti — happy path', function () {
         kopitiamSellHakau($sessionId, 'siti-hakau-close');
 
         $this->postJson("/api/v1/pos/sessions/{$sessionId}/close", [
-            'counted_cash_amount' => 225_410,
+            'counted_cash_amount' => 225_400,
         ])->assertOk()
             ->assertJsonPath('data.status', 'closed')
-            ->assertJsonPath('data.expected_cash_amount', 225_410);
+            ->assertJsonPath('data.expected_cash_amount', 225_400);
 
         $this->getJson('/api/v1/pos/sessions/current')->assertNotFound();
         kopitiamAssertJournalsBalanced();
@@ -461,7 +462,7 @@ describe('Kasir Siti — edges', function () {
         $sessionId = kopitiamOpenTill();
         $sale = kopitiamSellHakau($sessionId, 'siti-void-after-close');
         $this->postJson("/api/v1/pos/sessions/{$sessionId}/close", [
-            'counted_cash_amount' => 225_410,
+            'counted_cash_amount' => 225_400,
         ])->assertOk();
 
         $this->postJson("/api/v1/pos/sessions/{$sessionId}/sales/{$sale->json('data.id')}/void", [

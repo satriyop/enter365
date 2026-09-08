@@ -54875,6 +54875,12 @@
                     "payable_amount": {
                         "type": "integer"
                     },
+                    "rounding_amount": {
+                        "type": "integer"
+                    },
+                    "cash_due_amount": {
+                        "type": "integer"
+                    },
                     "cash_received_amount": {
                         "type": "integer"
                     },
@@ -54959,6 +54965,8 @@
                     "service_amount",
                     "tax_amount",
                     "payable_amount",
+                    "rounding_amount",
+                    "cash_due_amount",
                     "cash_received_amount",
                     "change_amount",
                     "sold_at",
@@ -55060,6 +55068,9 @@
                     "tax_add_name": {
                         "type": "string"
                     },
+                    "cash_rounding_unit": {
+                        "type": "integer"
+                    },
                     "opening_cash_amount": {
                         "type": "integer"
                     },
@@ -55133,6 +55144,7 @@
                     "service_rate",
                     "tax_add_rate",
                     "tax_add_name",
+                    "cash_rounding_unit",
                     "opening_cash_amount",
                     "expected_cash_amount",
                     "counted_cash_amount",
