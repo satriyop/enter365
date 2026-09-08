@@ -23,11 +23,11 @@ class ReportExportService
         private CashFlowReportService $cashFlowService
     ) {}
 
-    public function trialBalance(?string $date = null, string $format = 'csv'): Response|JsonResponse|BinaryFileResponse
+    public function trialBalance(?string $date = null, string $format = 'csv', ?int $journalId = null, bool $postedOnly = true): Response|JsonResponse|BinaryFileResponse
     {
         $date = $date ?? now()->toDateString();
 
-        $data = $this->balanceService->getTrialBalance($date);
+        $data = $this->balanceService->getTrialBalance($date, $journalId, $postedOnly);
 
         $rows = $data->map(fn ($item) => [
             'code' => $item['code'],
@@ -46,11 +46,11 @@ class ReportExportService
         ]);
     }
 
-    public function balanceSheet(?string $date = null, string $format = 'csv'): Response|JsonResponse|BinaryFileResponse
+    public function balanceSheet(?string $date = null, string $format = 'csv', ?int $journalId = null, bool $postedOnly = true): Response|JsonResponse|BinaryFileResponse
     {
         $date = $date ?? now()->toDateString();
 
-        $data = $this->reportService->getBalanceSheet($date);
+        $data = $this->reportService->getBalanceSheet($date, false, $journalId, $postedOnly);
 
         $rows = $this->flattenBalanceSheet($data);
 
@@ -62,12 +62,12 @@ class ReportExportService
         ]);
     }
 
-    public function incomeStatement(?string $startDate = null, ?string $endDate = null, string $format = 'csv'): Response|JsonResponse|BinaryFileResponse
+    public function incomeStatement(?string $startDate = null, ?string $endDate = null, string $format = 'csv', ?int $journalId = null, bool $postedOnly = true): Response|JsonResponse|BinaryFileResponse
     {
         $startDate = $startDate ?? now()->startOfMonth()->toDateString();
         $endDate = $endDate ?? now()->toDateString();
 
-        $data = $this->reportService->getIncomeStatement($startDate, $endDate);
+        $data = $this->reportService->getIncomeStatement($startDate, $endDate, false, $journalId, $postedOnly);
 
         $rows = $this->flattenIncomeStatement($data);
 
@@ -85,7 +85,8 @@ class ReportExportService
         ?string $endDate = null,
         string $format = 'csv',
         ?int $journalId = null,
-        ?int $analyticAccountId = null
+        ?int $analyticAccountId = null,
+        bool $postedOnly = true
     ): Response|JsonResponse|BinaryFileResponse {
         $startDate = $startDate ?? now()->startOfMonth()->toDateString();
         $endDate = $endDate ?? now()->toDateString();
@@ -95,7 +96,7 @@ class ReportExportService
         }
 
         $account = Account::findOrFail($accountId);
-        $ledger = $this->balanceService->getLedger($account, $startDate, $endDate, $journalId, $analyticAccountId);
+        $ledger = $this->balanceService->getLedger($account, $startDate, $endDate, $journalId, $analyticAccountId, $postedOnly);
 
         $rows = $ledger->map(fn (array $entry) => [
             'date' => $entry['date'],
@@ -369,12 +370,12 @@ class ReportExportService
         ]);
     }
 
-    public function cashFlow(?string $startDate = null, ?string $endDate = null, string $format = 'csv'): Response|JsonResponse|BinaryFileResponse
+    public function cashFlow(?string $startDate = null, ?string $endDate = null, string $format = 'csv', ?int $journalId = null): Response|JsonResponse|BinaryFileResponse
     {
         $startDate = $startDate ?? now()->startOfMonth()->toDateString();
         $endDate = $endDate ?? now()->toDateString();
 
-        $data = $this->cashFlowService->generateCashFlow($startDate, $endDate);
+        $data = $this->cashFlowService->generateCashFlow($startDate, $endDate, $journalId);
 
         $rows = [];
         $sections = [

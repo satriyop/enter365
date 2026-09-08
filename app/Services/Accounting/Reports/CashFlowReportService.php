@@ -126,22 +126,14 @@ class CashFlowReportService
         $items = collect();
 
         // Cash received from customers
-        $customerReceipts = Payment::query()
-            ->where('type', Payment::TYPE_RECEIVE)
-            ->where('is_voided', false)
-            ->whereBetween('payment_date', [$startDate, $endDate.' 23:59:59'])
-            ->sum('amount');
+        $customerReceipts = $this->paymentSum(Payment::TYPE_RECEIVE, $startDate, $endDate, $journalId);
         $items->push([
             'description' => 'Penerimaan dari pelanggan',
             'amount' => (int) $customerReceipts,
         ]);
 
         // Cash paid to suppliers
-        $supplierPayments = Payment::query()
-            ->where('type', Payment::TYPE_SEND)
-            ->where('is_voided', false)
-            ->whereBetween('payment_date', [$startDate, $endDate.' 23:59:59'])
-            ->sum('amount');
+        $supplierPayments = $this->paymentSum(Payment::TYPE_SEND, $startDate, $endDate, $journalId);
         $items->push([
             'description' => 'Pembayaran ke pemasok',
             'amount' => -(int) $supplierPayments,
@@ -286,6 +278,22 @@ class CashFlowReportService
         }
 
         return $flows;
+    }
+
+    private function paymentSum(string $type, string $startDate, string $endDate, ?int $journalId): int
+    {
+        $query = Payment::query()
+            ->where('type', $type)
+            ->where('is_voided', false)
+            ->whereBetween('payment_date', [$startDate, $endDate.' 23:59:59']);
+
+        if ($journalId) {
+            $query->whereHas('journalEntry', function ($journalEntry) use ($journalId) {
+                $journalEntry->where('journal_id', $journalId)->where('is_posted', true);
+            });
+        }
+
+        return (int) $query->sum('amount');
     }
 
     /**

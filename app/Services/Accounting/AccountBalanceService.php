@@ -47,24 +47,28 @@ class AccountBalanceService
      *     balance: int
      * }>
      */
-    public function getLedger(Account $account, ?string $startDate = null, ?string $endDate = null, ?int $journalId = null, ?int $analyticAccountId = null): Collection
+    public function getLedger(Account $account, ?string $startDate = null, ?string $endDate = null, ?int $journalId = null, ?int $analyticAccountId = null, bool $postedOnly = true): Collection
     {
         $query = DB::table('journal_entry_lines as jel')
             ->join('journal_entries as je', 'je.id', '=', 'jel.journal_entry_id')
             ->where('jel.account_id', $account->id)
-            ->where('je.is_posted', true)
-            ->whereNull('je.deleted_at')
-            ->select([
-                'jel.id',
-                'je.id as journal_entry_id',
-                'je.entry_date as date',
-                'je.entry_number',
-                'je.description as entry_description',
-                'je.reference',
-                'jel.description as line_description',
-                'jel.debit',
-                'jel.credit',
-            ])
+            ->whereNull('je.deleted_at');
+
+        if ($postedOnly) {
+            $query->where('je.is_posted', true);
+        }
+
+        $query->select([
+            'jel.id',
+            'je.id as journal_entry_id',
+            'je.entry_date as date',
+            'je.entry_number',
+            'je.description as entry_description',
+            'je.reference',
+            'jel.description as line_description',
+            'jel.debit',
+            'jel.credit',
+        ])
             ->orderBy('je.entry_date')
             ->orderBy('je.id');
 
@@ -81,7 +85,7 @@ class AccountBalanceService
         $entries = $query->get();
 
         $runningBalance = $startDate
-            ? $this->postedNetBefore($account, $startDate, $journalId, $analyticAccountId)
+            ? $this->postedNetBefore($account, $startDate, $journalId, $analyticAccountId, $postedOnly)
             : 0;
 
         return $entries->map(function (\stdClass $entry) use ($account, &$runningBalance) {
@@ -153,7 +157,7 @@ class AccountBalanceService
         $openingBalances = [];
         foreach ($accounts as $account) {
             $openingBalances[$account->id] = $startDate
-                ? $this->postedNetBefore($account, $startDate, $journalId, $analyticAccountId)
+                ? $this->postedNetBefore($account, $startDate, $journalId, $analyticAccountId, $postedOnly)
                 : 0;
         }
 
@@ -251,15 +255,18 @@ class AccountBalanceService
     /**
      * Posted net movement (in the account's normal direction) before a date.
      */
-    public function postedNetBefore(Account $account, string $beforeDate, ?int $journalId = null, ?int $analyticAccountId = null): int
+    public function postedNetBefore(Account $account, string $beforeDate, ?int $journalId = null, ?int $analyticAccountId = null, bool $postedOnly = true): int
     {
         $priorQuery = DB::table('journal_entry_lines as jel')
             ->join('journal_entries as je', 'je.id', '=', 'jel.journal_entry_id')
             ->where('jel.account_id', $account->id)
-            ->where('je.is_posted', true)
             ->where('je.entry_date', '<', $beforeDate)
             ->whereNull('je.deleted_at')
             ->selectRaw('COALESCE(SUM(jel.debit), 0) as total_debit, COALESCE(SUM(jel.credit), 0) as total_credit');
+
+        if ($postedOnly) {
+            $priorQuery->where('je.is_posted', true);
+        }
 
         $this->constrainJournalAndAnalytic($priorQuery, $journalId, $analyticAccountId);
 

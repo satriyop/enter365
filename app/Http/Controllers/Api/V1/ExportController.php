@@ -22,7 +22,9 @@ class ExportController extends Controller
 
         return $this->exportService->trialBalance(
             $request->input('date', now()->toDateString()),
-            $request->input('format', 'csv')
+            $request->input('format', 'csv'),
+            $request->integer('journal_id') ?: null,
+            $request->boolean('posted_only', true)
         );
     }
 
@@ -32,7 +34,9 @@ class ExportController extends Controller
 
         return $this->exportService->balanceSheet(
             $request->input('date', now()->toDateString()),
-            $request->input('format', 'csv')
+            $request->input('format', 'csv'),
+            $request->integer('journal_id') ?: null,
+            $request->boolean('posted_only', true)
         );
     }
 
@@ -43,7 +47,9 @@ class ExportController extends Controller
         return $this->exportService->incomeStatement(
             $request->input('start_date', now()->startOfMonth()->toDateString()),
             $request->input('end_date', now()->toDateString()),
-            $request->input('format', 'csv')
+            $request->input('format', 'csv'),
+            $request->integer('journal_id') ?: null,
+            $request->boolean('posted_only', true)
         );
     }
 
@@ -59,7 +65,8 @@ class ExportController extends Controller
             $request->input('end_date', now()->toDateString()),
             $request->input('format', 'csv'),
             $request->integer('journal_id') ?: null,
-            $request->integer('analytic_account_id') ?: null
+            $request->integer('analytic_account_id') ?: null,
+            $request->boolean('posted_only', true)
         );
     }
 
@@ -70,7 +77,8 @@ class ExportController extends Controller
         return $this->exportService->cashFlow(
             $request->input('start_date', now()->startOfMonth()->toDateString()),
             $request->input('end_date', now()->toDateString()),
-            $request->input('format', 'csv')
+            $request->input('format', 'csv'),
+            $request->integer('journal_id') ?: null
         );
     }
 
