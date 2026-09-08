@@ -51308,6 +51308,9 @@
                             "null"
                         ]
                     },
+                    "is_pkp": {
+                        "type": "boolean"
+                    },
                     "nik": {
                         "type": [
                             "string",
@@ -51418,6 +51421,7 @@
                     "province",
                     "postal_code",
                     "npwp",
+                    "is_pkp",
                     "nik",
                     "credit_limit",
                     "currency",
@@ -62249,6 +62253,9 @@
                         ],
                         "maxLength": 30
                     },
+                    "is_pkp": {
+                        "type": "boolean"
+                    },
                     "nik": {
                         "type": [
                             "string",
@@ -67629,6 +67636,9 @@
                             "null"
                         ],
                         "maxLength": 30
+                    },
+                    "is_pkp": {
+                        "type": "boolean"
                     },
                     "nik": {
                         "type": [
