@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Casts\AnalyticDistributionCast;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -33,7 +34,7 @@ class JournalEntryLineResource extends JsonResource
             'journal_entry_id' => $this->journal_entry_id,
             'account_id' => $this->account_id,
             'partner_id' => $this->partner_id,
-            'analytic_distribution' => $this->analytic_distribution,
+            'analytic_distribution' => AnalyticDistributionCast::forApi($this->analytic_distribution),
             'tax_tag_ids' => $this->tax_tag_ids,
             'description' => $this->description,
             'debit' => $this->debit,

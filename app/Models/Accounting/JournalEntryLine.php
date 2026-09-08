@@ -2,6 +2,7 @@
 
 namespace App\Models\Accounting;
 
+use App\Casts\AnalyticDistributionCast;
 use App\Exceptions\Domain\BusinessRuleException;
 use App\Models\Contacts\Contact;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -51,7 +52,7 @@ class JournalEntryLine extends Model
             'credit' => 'integer',
             'amount_currency' => 'integer',
             'exchange_rate' => 'decimal:4',
-            'analytic_distribution' => 'array',
+            'analytic_distribution' => AnalyticDistributionCast::class,
             'tax_tag_ids' => 'array',
         ];
     }
