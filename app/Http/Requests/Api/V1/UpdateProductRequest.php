@@ -24,7 +24,8 @@ class UpdateProductRequest extends FormRequest
             ],
             'name' => ['sometimes', 'string', 'max:200'],
             'description' => ['nullable', 'string'],
-            'type' => ['sometimes', Rule::in([Product::TYPE_PRODUCT, Product::TYPE_SERVICE])],
+            'type' => ['sometimes', Rule::in([Product::TYPE_PRODUCT, Product::TYPE_SERVICE, Product::TYPE_COMBO])],
+            'procurement_type' => ['nullable', Rule::in([Product::PROCUREMENT_BUY, Product::PROCUREMENT_MAKE, Product::PROCUREMENT_SUBCONTRACT])],
             'category_id' => ['nullable', 'exists:product_categories,id'],
             'unit' => ['sometimes', 'string', 'max:20'],
             'purchase_price' => ['sometimes', 'integer', 'min:0'],
@@ -54,7 +55,7 @@ class UpdateProductRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'type.in' => 'Tipe produk harus product atau service.',
+            'type.in' => 'Tipe produk harus product, service, atau combo.',
             'sku.unique' => 'SKU sudah digunakan.',
             'barcode.unique' => 'Barcode sudah digunakan.',
             'category_id.exists' => 'Kategori tidak ditemukan.',

@@ -30,6 +30,8 @@ class Product extends Model
 
     public const TYPE_SERVICE = 'service';
 
+    public const TYPE_COMBO = 'combo';
+
     // Procurement types for MRP
     public const PROCUREMENT_BUY = 'buy';
 
