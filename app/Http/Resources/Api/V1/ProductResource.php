@@ -11,7 +11,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class ProductResource extends JsonResource
 {
     /**
-     * @param  \Illuminate\Http\Request  $request
      * @return array{
      *   id: int,
      *   sku: string,
@@ -28,6 +27,8 @@ class ProductResource extends JsonResource
      *   selling_tax_amount: int,
      *   tax_rate: float,
      *   is_taxable: bool,
+     *   sales_taxes: list<array{id: int, code: string, name: string, rate: float, applicability: string}>,
+     *   purchase_taxes: list<array{id: int, code: string, name: string, rate: float, applicability: string}>,
      *   profit_margin: float,
      *   markup: float,
      *   track_inventory: bool,
@@ -73,6 +74,20 @@ class ProductResource extends JsonResource
             'selling_tax_amount' => $this->selling_tax_amount,
             'tax_rate' => (float) $this->tax_rate,
             'is_taxable' => $this->is_taxable,
+            'sales_taxes' => $this->whenLoaded('salesTaxes', fn () => $this->salesTaxes->map(fn ($tax) => [
+                'id' => $tax->id,
+                'code' => $tax->code,
+                'name' => $tax->name,
+                'rate' => (float) $tax->rate,
+                'applicability' => $tax->applicability,
+            ])->values()->all(), []),
+            'purchase_taxes' => $this->whenLoaded('purchaseTaxes', fn () => $this->purchaseTaxes->map(fn ($tax) => [
+                'id' => $tax->id,
+                'code' => $tax->code,
+                'name' => $tax->name,
+                'rate' => (float) $tax->rate,
+                'applicability' => $tax->applicability,
+            ])->values()->all(), []),
             'profit_margin' => $this->profit_margin,
             'markup' => $this->markup,
 

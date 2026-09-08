@@ -56,6 +56,7 @@ use App\Http\Controllers\Api\V1\SubcontractorInvoiceController;
 use App\Http\Controllers\Api\V1\SubcontractorWorkOrderController;
 use App\Http\Controllers\Api\V1\TaskController;
 use App\Http\Controllers\Api\V1\TaxTagController;
+use App\Http\Controllers\Api\V1\TaxRecordController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\WarehouseController;
 use App\Http\Controllers\Api\V1\WorkOrderController;
@@ -172,6 +173,8 @@ Route::prefix('v1')->group(function () {
         Route::get('products-low-stock', [ProductController::class, 'lowStock']);
         Route::get('products-price-list', [ProductController::class, 'priceList']);
         Route::get('products-lookup', [ProductController::class, 'lookup']);
+        Route::get('tax-records', [TaxRecordController::class, 'index']);
+        Route::post('tax-records', [TaxRecordController::class, 'store']);
 
         // Warehouses (Gudang)
         Route::middleware('feature:warehouses')->group(function () {

@@ -11,11 +11,13 @@ use App\Models\Manufacturing\WorkOrder;
 use App\Models\Purchasing\BillItem;
 use App\Models\Purchasing\PurchaseOrderItem;
 use App\Models\Sales\InvoiceItem;
+use App\Models\Tax\TaxRecord;
 use App\Traits\Filterable;
 use App\Traits\HasActiveStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -112,6 +114,54 @@ class Product extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(ProductCategory::class, 'category_id');
+    }
+
+    /**
+     * @return BelongsToMany<TaxRecord, $this>
+     */
+    public function salesTaxes(): BelongsToMany
+    {
+        return $this->belongsToMany(TaxRecord::class, 'product_tax_records')
+            ->withPivot('kind')
+            ->wherePivot('kind', 'sales')
+            ->withTimestamps();
+    }
+
+    /**
+     * @return BelongsToMany<TaxRecord, $this>
+     */
+    public function purchaseTaxes(): BelongsToMany
+    {
+        return $this->belongsToMany(TaxRecord::class, 'product_tax_records')
+            ->withPivot('kind')
+            ->wherePivot('kind', 'purchase')
+            ->withTimestamps();
+    }
+
+    public function salesTaxRate(): float
+    {
+        $attached = $this->relationLoaded('salesTaxes')
+            ? $this->salesTaxes->first()
+            : $this->salesTaxes()->first();
+
+        if ($attached) {
+            return (float) $attached->rate;
+        }
+
+        return (float) $this->tax_rate;
+    }
+
+    public function purchaseTaxRate(): float
+    {
+        $attached = $this->relationLoaded('purchaseTaxes')
+            ? $this->purchaseTaxes->first()
+            : $this->purchaseTaxes()->first();
+
+        if ($attached) {
+            return (float) $attached->rate;
+        }
+
+        return (float) $this->tax_rate;
     }
 
     /**

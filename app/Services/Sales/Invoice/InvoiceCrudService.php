@@ -9,6 +9,7 @@ use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Domain\Sales\Invoices\InvoiceDomainFactory;
 use App\Enums\DocumentStatus;
 use App\Exceptions\Domain\DocumentLockedException;
+use App\Models\Inventory\Product;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\InvoiceItem;
 use App\Services\Base\Traits\WithDocuments;
@@ -130,7 +131,7 @@ class InvoiceCrudService
                 'unit_price' => $item['unit_price'],
                 'discount_percent' => $item['discount_percent'] ?? 0,
                 'discount_amount' => $item['discount_amount'] ?? 0,
-                'tax_rate' => $item['tax_rate'] ?? 0,
+                'tax_rate' => $item['tax_rate'] ?? $this->salesTaxRateForProduct($item['product_id'] ?? null),
                 'tax_amount' => $item['tax_amount'] ?? 0,
                 'sort_order' => $item['sort_order'] ?? $index,
                 'notes' => $item['notes'] ?? null,
@@ -139,6 +140,17 @@ class InvoiceCrudService
             $invoiceItem->calculateLineTotal();
             $invoiceItem->save();
         }
+    }
+
+    private function salesTaxRateForProduct(mixed $productId): float
+    {
+        if (! $productId) {
+            return 0;
+        }
+
+        $product = Product::query()->with('salesTaxes')->find((int) $productId);
+
+        return $product?->salesTaxRate() ?? 0;
     }
 
     protected function loadRelations(Model $document): Model
