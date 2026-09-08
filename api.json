@@ -9605,6 +9605,22 @@
                 "tags": [
                     "CashFlowReport"
                 ],
+                "parameters": [
+                    {
+                        "name": "previous_start_date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "previous_end_date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "",
@@ -18862,6 +18878,603 @@
                 }
             }
         },
+        "/export/cash-flow": {
+            "get": {
+                "operationId": "export.cashFlow",
+                "tags": [
+                    "Export"
+                ],
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "format",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "default": "csv"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "text/csv; charset=UTF-8": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            },
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "category": {
+                                                                "type": "string"
+                                                            },
+                                                            "description": {
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "string"
+                                                                    },
+                                                                    {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            ""
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            },
+                                                            "amount": {
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "string"
+                                                                    },
+                                                                    {
+                                                                        "type": "integer",
+                                                                        "enum": [
+                                                                            0
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "category",
+                                                            "description",
+                                                            "amount"
+                                                        ]
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "category": {
+                                                                "type": "string"
+                                                            },
+                                                            "description": {
+                                                                "type": "string",
+                                                                "const": "Total"
+                                                            },
+                                                            "amount": {
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "string"
+                                                                    },
+                                                                    {
+                                                                        "type": "integer",
+                                                                        "enum": [
+                                                                            0
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "category",
+                                                            "description",
+                                                            "amount"
+                                                        ]
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "category": {
+                                                                "type": "string",
+                                                                "const": "Ringkasan"
+                                                            },
+                                                            "description": {
+                                                                "type": "string",
+                                                                "const": "Saldo Awal"
+                                                            },
+                                                            "amount": {
+                                                                "type": "integer"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "category",
+                                                            "description",
+                                                            "amount"
+                                                        ]
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "category": {
+                                                                "type": "string",
+                                                                "const": "Ringkasan"
+                                                            },
+                                                            "description": {
+                                                                "type": "string",
+                                                                "const": "Perubahan Kas Bersih"
+                                                            },
+                                                            "amount": {
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "string"
+                                                                    },
+                                                                    {
+                                                                        "type": "integer",
+                                                                        "enum": [
+                                                                            0
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "category",
+                                                            "description",
+                                                            "amount"
+                                                        ]
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "category": {
+                                                                "type": "string",
+                                                                "const": "Ringkasan"
+                                                            },
+                                                            "description": {
+                                                                "type": "string",
+                                                                "const": "Saldo Akhir"
+                                                            },
+                                                            "amount": {
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "string"
+                                                                    },
+                                                                    {
+                                                                        "type": "integer",
+                                                                        "enum": [
+                                                                            0
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "category",
+                                                            "description",
+                                                            "amount"
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        "headers": {
+                                            "type": "object",
+                                            "properties": {
+                                                "category": {
+                                                    "type": "string",
+                                                    "const": "Kategori"
+                                                },
+                                                "description": {
+                                                    "type": "string",
+                                                    "const": "Uraian"
+                                                },
+                                                "amount": {
+                                                    "type": "string",
+                                                    "const": "Jumlah"
+                                                }
+                                            },
+                                            "required": [
+                                                "category",
+                                                "description",
+                                                "amount"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "headers"
+                                    ]
+                                }
+                            }
+                        },
+                        "headers": {
+                            "Content-Disposition": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/export/changes-in-equity": {
+            "get": {
+                "operationId": "export.changesInEquity",
+                "tags": [
+                    "Export"
+                ],
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "format",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "default": "csv"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "text/csv; charset=UTF-8": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            },
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "section": {
+                                                                "type": "string",
+                                                                "const": "Saldo Awal"
+                                                            },
+                                                            "code": {
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "string"
+                                                                    },
+                                                                    {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            ""
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            },
+                                                            "name": {
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "string"
+                                                                    },
+                                                                    {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            ""
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            },
+                                                            "amount": {
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "string"
+                                                                    },
+                                                                    {
+                                                                        "type": "integer",
+                                                                        "enum": [
+                                                                            0
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "section",
+                                                            "code",
+                                                            "name",
+                                                            "amount"
+                                                        ]
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "section": {
+                                                                "type": "string",
+                                                                "const": "Perubahan"
+                                                            },
+                                                            "code": {
+                                                                "type": "string"
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            },
+                                                            "amount": {
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "string"
+                                                                    },
+                                                                    {
+                                                                        "type": "integer",
+                                                                        "enum": [
+                                                                            0
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "section",
+                                                            "code",
+                                                            "name",
+                                                            "amount"
+                                                        ]
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "section": {
+                                                                "type": "string",
+                                                                "const": "Saldo Akhir"
+                                                            },
+                                                            "code": {
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "string"
+                                                                    },
+                                                                    {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            ""
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            },
+                                                            "name": {
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "string"
+                                                                    },
+                                                                    {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            ""
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            },
+                                                            "amount": {
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "string"
+                                                                    },
+                                                                    {
+                                                                        "type": "integer",
+                                                                        "enum": [
+                                                                            0
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "section",
+                                                            "code",
+                                                            "name",
+                                                            "amount"
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        "headers": {
+                                            "type": "object",
+                                            "properties": {
+                                                "section": {
+                                                    "type": "string",
+                                                    "const": "Bagian"
+                                                },
+                                                "code": {
+                                                    "type": "string",
+                                                    "const": "Kode"
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "const": "Uraian"
+                                                },
+                                                "amount": {
+                                                    "type": "string",
+                                                    "const": "Jumlah"
+                                                }
+                                            },
+                                            "required": [
+                                                "section",
+                                                "code",
+                                                "name",
+                                                "amount"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "headers"
+                                    ]
+                                }
+                            }
+                        },
+                        "headers": {
+                            "Content-Disposition": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/export/daily-cash-movement": {
+            "get": {
+                "operationId": "export.dailyCashMovement",
+                "tags": [
+                    "Export"
+                ],
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "format",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "default": "csv"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "text/csv; charset=UTF-8": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            },
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": {}
+                                        },
+                                        "headers": {
+                                            "type": "object",
+                                            "properties": {
+                                                "date": {
+                                                    "type": "string",
+                                                    "const": "Tanggal"
+                                                },
+                                                "receipts": {
+                                                    "type": "string",
+                                                    "const": "Penerimaan"
+                                                },
+                                                "payments": {
+                                                    "type": "string",
+                                                    "const": "Pengeluaran"
+                                                },
+                                                "net": {
+                                                    "type": "string",
+                                                    "const": "Neto"
+                                                },
+                                                "running_balance": {
+                                                    "type": "string",
+                                                    "const": "Saldo Berjalan"
+                                                }
+                                            },
+                                            "required": [
+                                                "date",
+                                                "receipts",
+                                                "payments",
+                                                "net",
+                                                "running_balance"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "headers"
+                                    ]
+                                }
+                            }
+                        },
+                        "headers": {
+                            "Content-Disposition": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/features": {
             "get": {
                 "operationId": "features.index",
@@ -18972,6 +19585,12 @@
                                                     "const": "Neraca Saldo"
                                                 },
                                                 "as_of_date": {},
+                                                "journal_id": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ]
+                                                },
                                                 "accounts": {
                                                     "type": "string"
                                                 },
@@ -18988,6 +19607,7 @@
                                             "required": [
                                                 "report_name",
                                                 "as_of_date",
+                                                "journal_id",
                                                 "accounts",
                                                 "total_debit",
                                                 "total_credit",
@@ -29272,7 +29892,8 @@
                                                         "required": [
                                                             "category",
                                                             "sales_taxes",
-                                                            "purchase_taxes"
+                                                            "purchase_taxes",
+                                                            "vendor_pricelists"
                                                         ]
                                                     }
                                                 ]
@@ -29499,7 +30120,8 @@
                                                         "inventory_account",
                                                         "cogs_account",
                                                         "sales_account",
-                                                        "purchase_account"
+                                                        "purchase_account",
+                                                        "vendor_pricelists"
                                                     ]
                                                 }
                                             ]
@@ -57237,6 +57859,41 @@
                     "is_sellable": {
                         "type": "boolean"
                     },
+                    "purchase_control_policy": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "string",
+                                "enum": [
+                                    "received"
+                                ]
+                            }
+                        ]
+                    },
+                    "purchase_description": {
+                        "type": "string"
+                    },
+                    "vendor_pricelists": {
+                        "anyOf": [
+                            {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/ProductVendorPricelistResource"
+                                }
+                            },
+                            {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "minItems": 0,
+                                "maxItems": 0,
+                                "additionalItems": false
+                            }
+                        ]
+                    },
                     "barcode": {
                         "type": [
                             "string",
@@ -57301,6 +57958,9 @@
                     "is_active",
                     "is_purchasable",
                     "is_sellable",
+                    "purchase_control_policy",
+                    "purchase_description",
+                    "vendor_pricelists",
                     "barcode",
                     "brand",
                     "custom_fields",
@@ -57360,6 +58020,65 @@
                     "updated_at"
                 ],
                 "title": "ProductStockResource"
+            },
+            "ProductVendorPricelistResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "contact_id": {
+                        "type": "string"
+                    },
+                    "contact": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "code": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "name",
+                            "code"
+                        ]
+                    },
+                    "min_qty": {
+                        "type": "number"
+                    },
+                    "unit": {
+                        "type": "string"
+                    },
+                    "price": {
+                        "type": "string"
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
+                    "lead_time_days": {
+                        "type": "string"
+                    },
+                    "vendor_product_code": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "contact_id",
+                    "min_qty",
+                    "unit",
+                    "price",
+                    "currency",
+                    "lead_time_days",
+                    "vendor_product_code"
+                ],
+                "title": "ProductVendorPricelistResource"
             },
             "ProjectCostResource": {
                 "type": "object",
@@ -64240,6 +64959,75 @@
                     "is_sellable": {
                         "type": "boolean"
                     },
+                    "purchase_control_policy": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "ordered",
+                            "received",
+                            null
+                        ]
+                    },
+                    "purchase_description": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "vendor_pricelists": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "contact_id": {
+                                    "type": "integer"
+                                },
+                                "min_qty": {
+                                    "type": "number",
+                                    "minimum": 0
+                                },
+                                "unit": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "maxLength": 20
+                                },
+                                "price": {
+                                    "type": "integer",
+                                    "minimum": 0
+                                },
+                                "currency": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "minLength": 3,
+                                    "maxLength": 3
+                                },
+                                "lead_time_days": {
+                                    "type": "integer",
+                                    "minimum": 0
+                                },
+                                "vendor_product_code": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "maxLength": 100
+                                }
+                            },
+                            "required": [
+                                "contact_id",
+                                "price"
+                            ]
+                        }
+                    },
                     "barcode": {
                         "type": [
                             "string",
@@ -69367,6 +70155,75 @@
                     },
                     "is_sellable": {
                         "type": "boolean"
+                    },
+                    "purchase_control_policy": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "ordered",
+                            "received",
+                            null
+                        ]
+                    },
+                    "purchase_description": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "vendor_pricelists": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "contact_id": {
+                                    "type": "integer"
+                                },
+                                "min_qty": {
+                                    "type": "number",
+                                    "minimum": 0
+                                },
+                                "unit": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "maxLength": 20
+                                },
+                                "price": {
+                                    "type": "integer",
+                                    "minimum": 0
+                                },
+                                "currency": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "minLength": 3,
+                                    "maxLength": 3
+                                },
+                                "lead_time_days": {
+                                    "type": "integer",
+                                    "minimum": 0
+                                },
+                                "vendor_product_code": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "maxLength": 100
+                                }
+                            },
+                            "required": [
+                                "contact_id",
+                                "price"
+                            ]
+                        }
                     },
                     "barcode": {
                         "type": [
