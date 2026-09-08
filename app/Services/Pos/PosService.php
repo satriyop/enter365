@@ -579,10 +579,15 @@ class PosService extends BaseService implements PosServiceInterface
         }
 
         $amount = abs($rounding->roundingAmount);
+        $isGain = $rounding->roundingAmount > 0;
+        $accountCode = $isGain
+            ? config('accounting.default_accounts.cash_rounding_profit')
+            : config('accounting.default_accounts.cash_rounding_loss', config('accounting.default_accounts.cash_rounding'));
+
         $lines[] = [
-            'account_code' => config('accounting.default_accounts.cash_rounding'),
-            'debit' => $rounding->roundingAmount < 0 ? $amount : 0,
-            'credit' => $rounding->roundingAmount > 0 ? $amount : 0,
+            'account_code' => $accountCode,
+            'debit' => $isGain ? 0 : $amount,
+            'credit' => $isGain ? $amount : 0,
             'description' => 'Pembulatan '.$number,
         ];
 

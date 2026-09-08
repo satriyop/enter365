@@ -107,6 +107,7 @@ class ChartOfAccountsSeeder extends Seeder
             ['code' => '4-2003', 'name' => 'Keuntungan Penjualan Aset', 'type' => Account::TYPE_REVENUE, 'subtype' => Account::SUBTYPE_OTHER_REVENUE, 'is_system' => false, 'parent' => '4-2000'],
             ['code' => '4-2004', 'name' => 'Keuntungan Selisih Kurs', 'type' => Account::TYPE_REVENUE, 'subtype' => Account::SUBTYPE_OTHER_REVENUE, 'is_system' => true, 'parent' => '4-2000'],
             ['code' => '4-2005', 'name' => 'Keuntungan Selisih Kurs Belum Direalisasi', 'type' => Account::TYPE_REVENUE, 'subtype' => Account::SUBTYPE_OTHER_REVENUE, 'is_system' => true, 'parent' => '4-2000'],
+            ['code' => '4-2006', 'name' => 'Pembulatan Kas (Laba)', 'type' => Account::TYPE_REVENUE, 'subtype' => Account::SUBTYPE_OTHER_REVENUE, 'is_system' => true, 'parent' => '4-2000'],
 
             // ============================================
             // 5. BEBAN (EXPENSES)
@@ -138,7 +139,7 @@ class ChartOfAccountsSeeder extends Seeder
             ['code' => '5-2800', 'name' => 'Beban Iklan & Promosi', 'type' => Account::TYPE_EXPENSE, 'subtype' => Account::SUBTYPE_OPERATING_EXPENSE, 'is_system' => false, 'parent' => '5-2000'],
             ['code' => '5-2900', 'name' => 'Beban Operasional Lainnya', 'type' => Account::TYPE_EXPENSE, 'subtype' => Account::SUBTYPE_OPERATING_EXPENSE, 'is_system' => false, 'parent' => '5-2000'],
             ['code' => '5-2910', 'name' => 'Selisih Kas', 'type' => Account::TYPE_EXPENSE, 'subtype' => Account::SUBTYPE_OPERATING_EXPENSE, 'is_system' => true, 'parent' => '5-2000'],
-            ['code' => '5-2911', 'name' => 'Pembulatan Kas', 'type' => Account::TYPE_EXPENSE, 'subtype' => Account::SUBTYPE_OPERATING_EXPENSE, 'is_system' => true, 'parent' => '5-2000'],
+            ['code' => '5-2911', 'name' => 'Pembulatan Kas (Rugi)', 'type' => Account::TYPE_EXPENSE, 'subtype' => Account::SUBTYPE_OPERATING_EXPENSE, 'is_system' => true, 'parent' => '5-2000'],
 
             // 5.3 Beban Lain-lain
             ['code' => '5-3000', 'name' => 'Beban Lain-lain', 'type' => Account::TYPE_EXPENSE, 'subtype' => Account::SUBTYPE_OTHER_EXPENSE, 'is_system' => true, 'parent' => '5-0000'],

@@ -151,6 +151,45 @@ it('rounds Air Mineral cash to 9200 and keeps QRIS at the bill', function () {
     expect(test()->pos->expectedCash($session->fresh()))->toBe(200_000 + 9_200);
 });
 
+it('posts cash rounding gain to the profit account and loss to the loss account', function () {
+    config([
+        'pos.service_rate' => 0,
+        'pos.tax_rate' => 0,
+    ]);
+
+    $gainSku = Product::factory()->create([
+        'name' => 'Round Up',
+        'selling_price' => 9_250,
+        'is_taxable' => false,
+        'track_inventory' => false,
+        'is_sellable' => true,
+        'is_active' => true,
+    ]);
+    $session = test()->pos->openSession([
+        'warehouse_id' => test()->warehouse->id,
+        'opening_cash_amount' => 200_000,
+    ]);
+
+    $gain = test()->pos->checkout($session, [
+        'way' => PosTenderType::Cash->value,
+        'cash_received_amount' => 9_300,
+        'lines' => [
+            ['product_id' => $gainSku->id, 'quantity' => 1],
+        ],
+    ], 'round-up');
+
+    expect($gain->payable_amount)->toBe(9_250)
+        ->and($gain->rounding_amount)->toBe(50);
+
+    $gainLines = JournalEntryLine::query()
+        ->where('journal_entry_id', $gain->journal_entry_id)
+        ->with('account')
+        ->get();
+    $gainCredits = $gainLines->mapWithKeys(fn (JournalEntryLine $line) => [$line->account->code => (int) $line->credit]);
+    expect($gainCredits['4-2006'] ?? 0)->toBe(50)
+        ->and($gainCredits['5-2911'] ?? 0)->toBe(0);
+});
+
 it('adds service and PBJT on the cart header, not per SKU', function () {
     $session = test()->pos->openSession([
         'warehouse_id' => test()->warehouse->id,
