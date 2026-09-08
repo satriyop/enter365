@@ -66520,7 +66520,10 @@
                                     "maxLength": 20
                                 },
                                 "unit_price": {
-                                    "type": "integer",
+                                    "type": [
+                                        "integer",
+                                        "null"
+                                    ],
                                     "minimum": 0,
                                     "maximum": 2000000000
                                 },
@@ -66557,8 +66560,7 @@
                             },
                             "required": [
                                 "description",
-                                "quantity",
-                                "unit_price"
+                                "quantity"
                             ]
                         },
                         "minItems": 1
@@ -71940,7 +71942,10 @@
                                     "maxLength": 20
                                 },
                                 "unit_price": {
-                                    "type": "integer",
+                                    "type": [
+                                        "integer",
+                                        "null"
+                                    ],
                                     "minimum": 0,
                                     "maximum": 2000000000
                                 },

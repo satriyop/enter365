@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Purchasing;
 
+use App\Models\Inventory\Product;
 use App\Models\Purchasing\PurchaseOrder;
 use App\Models\Purchasing\PurchaseOrderItem;
 
@@ -13,7 +14,9 @@ class PurchaseOrderItemCreator
     {
         foreach ($items as $index => $itemData) {
             $quantity = $itemData['quantity'] ?? 1;
-            $unitPrice = $itemData['unit_price'] ?? 0;
+            $unitPrice = array_key_exists('unit_price', $itemData) && $itemData['unit_price'] !== null
+                ? (int) $itemData['unit_price']
+                : self::unitPriceForVendor($purchaseOrder, $itemData);
             $discountPercent = $itemData['discount_percent'] ?? 0;
             $taxRate = $itemData['tax_rate'] ?? $purchaseOrder->tax_rate;
 
@@ -41,6 +44,24 @@ class PurchaseOrderItemCreator
                 'notes' => $itemData['notes'] ?? null,
             ]);
         }
+    }
+
+    /**
+     * @param  array<string, mixed>  $itemData
+     */
+    public static function unitPriceForVendor(PurchaseOrder $purchaseOrder, array $itemData): int
+    {
+        $productId = $itemData['product_id'] ?? null;
+        if (! $productId) {
+            return 0;
+        }
+
+        $product = Product::query()->with('vendorPricelists')->find((int) $productId);
+
+        return $product?->priceForVendor(
+            $purchaseOrder->contact_id,
+            (float) ($itemData['quantity'] ?? 1)
+        ) ?? 0;
     }
 
     public function copyFromPurchaseOrder(PurchaseOrder $source, PurchaseOrder $target): void

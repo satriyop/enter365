@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\Api\V1;
 
+use App\Http\Requests\ValidationRules;
+
 class StorePurchaseOrderRequest extends BaseTransactionalRequest
 {
     /**
@@ -26,7 +28,8 @@ class StorePurchaseOrderRequest extends BaseTransactionalRequest
                 'po_date' => ['required', 'date'],
                 'expected_date' => ['nullable', 'date', 'after_or_equal:po_date'],
                 'shipping_address' => ['nullable', 'string', 'max:500'],
-                'items.*.unit' => ['nullable', 'string', 'max:20'], // Override to make nullable
+                'items.*.unit' => ['nullable', 'string', 'max:20'],
+                'items.*.unit_price' => ValidationRules::UNIT_PRICE_OPTIONAL,
             ]
         );
     }
