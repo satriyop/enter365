@@ -82,4 +82,22 @@ interface BillServiceInterface
      * Automatically determines the correct status based on payment state.
      */
     public function updatePaymentStatus(Bill $bill): Bill;
+
+    /**
+     * Match bill lines to purchase-order lines (same vendor). Header PO id is kept as a convenience link.
+     *
+     * @param  list<array{bill_item_id: int, purchase_order_item_id: int}>  $lines
+     */
+    public function matchPurchaseOrder(Bill $bill, int $purchaseOrderId, array $lines): Bill;
+
+    /**
+     * Line-level billed vs purchased worksheet for Purchase Matching.
+     *
+     * @return array{
+     *     purchase_order_id: int|null,
+     *     bill_lines: list<array{id: int, product_id: int|null, description: string, quantity: float, unit: string, unit_price: int, line_total: int, purchase_order_item_id: int|null}>,
+     *     purchase_lines: list<array{id: int, product_id: int|null, description: string, quantity: float, quantity_received: float, unit: string, unit_price: int, billed_quantity: float, billed_amount: int, qty_to_invoice: float}>
+     * }
+     */
+    public function purchaseMatching(Bill $bill, ?int $purchaseOrderId = null): array;
 }

@@ -50,6 +50,7 @@ class BillItemResource extends JsonResource
             'notes' => $this->notes,
             'expense_account_id' => $this->expense_account_id,
             'account_id' => $this->expense_account_id,
+            'purchase_order_item_id' => $this->purchase_order_item_id,
             'expense_account' => new AccountResource($this->whenLoaded('expenseAccount')),
             'analytic_distribution' => AnalyticDistributionCast::forApi($this->analytic_distribution),
             'tax_tag_ids' => $this->tax_tag_ids,

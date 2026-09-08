@@ -30,6 +30,7 @@ class BillItem extends Model
         'expense_account_id',
         'analytic_distribution',
         'tax_tag_ids',
+        'purchase_order_item_id',
     ];
 
     protected function casts(): array
@@ -62,6 +63,14 @@ class BillItem extends Model
     public function expenseAccount(): BelongsTo
     {
         return $this->belongsTo(Account::class, 'expense_account_id');
+    }
+
+    /**
+     * @return BelongsTo<PurchaseOrderItem, $this>
+     */
+    public function purchaseOrderItem(): BelongsTo
+    {
+        return $this->belongsTo(PurchaseOrderItem::class);
     }
 
     /**

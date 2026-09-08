@@ -19,11 +19,14 @@ use App\Models\Accounting\JournalEntry;
 use App\Models\Core\AuditLog;
 use App\Models\Purchasing\Bill;
 use App\Models\Purchasing\BillItem;
+use App\Models\Purchasing\PurchaseOrder;
+use App\Models\Purchasing\PurchaseOrderItem;
 use App\Services\Base\Traits\WithDocuments;
 use App\Services\Base\Traits\WithEventDispatching;
 use App\Services\Base\Traits\WithOperationContext;
 use App\Services\Base\Traits\WithTransaction;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class BillService implements BillServiceInterface
 {
@@ -388,5 +391,107 @@ class BillService implements BillServiceInterface
 
             return $reversal;
         }, ['bill_id' => $bill->id, 'reason' => $reason]);
+    }
+
+    /**
+     * @param  list<array{bill_item_id: int, purchase_order_item_id: int}>  $lines
+     */
+    public function matchPurchaseOrder(Bill $bill, int $purchaseOrderId, array $lines): Bill
+    {
+        return $this->executeInTransaction('match_purchase_order', function () use ($bill, $purchaseOrderId, $lines) {
+            $locked = Bill::query()->lockForUpdate()->findOrFail($bill->id);
+            $purchaseOrder = PurchaseOrder::query()->findOrFail($purchaseOrderId);
+
+            if ($purchaseOrder->contact_id !== $locked->contact_id) {
+                throw BusinessRuleException::operationNotAllowed(
+                    'purchase matching',
+                    'Purchase order harus dari vendor yang sama.'
+                );
+            }
+
+            $billItemIds = $locked->items()->pluck('id')->all();
+            $poItemIds = $purchaseOrder->items()->pluck('id')->all();
+
+            foreach ($lines as $line) {
+                $billItemId = (int) $line['bill_item_id'];
+                $poItemId = (int) $line['purchase_order_item_id'];
+
+                if (! in_array($billItemId, $billItemIds, true)) {
+                    throw BusinessRuleException::operationNotAllowed(
+                        'purchase matching',
+                        'Baris tagihan tidak termasuk dalam tagihan ini.'
+                    );
+                }
+
+                if (! in_array($poItemId, $poItemIds, true)) {
+                    throw BusinessRuleException::operationNotAllowed(
+                        'purchase matching',
+                        'Baris purchase order tidak termasuk dalam PO ini.'
+                    );
+                }
+
+                BillItem::query()->whereKey($billItemId)->update([
+                    'purchase_order_item_id' => $poItemId,
+                ]);
+            }
+
+            $locked->update(['purchase_order_id' => $purchaseOrder->id]);
+
+            return $locked->fresh(['contact', 'items.expenseAccount', 'journalEntry.lines.account', 'payments', 'purchaseOrder']);
+        }, ['bill_id' => $bill->id, 'purchase_order_id' => $purchaseOrderId]);
+    }
+
+    public function purchaseMatching(Bill $bill, ?int $purchaseOrderId = null): array
+    {
+        $purchaseOrderId ??= $bill->purchase_order_id;
+        $purchaseOrder = $purchaseOrderId
+            ? PurchaseOrder::query()->with('items')->find($purchaseOrderId)
+            : null;
+
+        $bill->loadMissing('items');
+
+        $poItemIds = $purchaseOrder?->items->pluck('id')->all() ?? [];
+        $billedByPoItem = $poItemIds === []
+            ? collect()
+            : DB::table('bill_items')
+                ->whereIn('purchase_order_item_id', $poItemIds)
+                ->select('purchase_order_item_id')
+                ->selectRaw('SUM(quantity) as billed_quantity')
+                ->selectRaw('SUM(line_total) as billed_amount')
+                ->groupBy('purchase_order_item_id')
+                ->get()
+                ->keyBy('purchase_order_item_id');
+
+        return [
+            'purchase_order_id' => $purchaseOrder?->id,
+            'bill_lines' => $bill->items->map(fn (BillItem $item): array => [
+                'id' => $item->id,
+                'product_id' => $item->product_id,
+                'description' => (string) $item->description,
+                'quantity' => (float) $item->quantity,
+                'unit' => (string) $item->unit,
+                'unit_price' => (int) $item->unit_price,
+                'line_total' => (int) $item->line_total,
+                'purchase_order_item_id' => $item->purchase_order_item_id,
+            ])->values()->all(),
+            'purchase_lines' => ($purchaseOrder?->items ?? collect())->map(function (PurchaseOrderItem $item) use ($billedByPoItem): array {
+                $billed = $billedByPoItem->get($item->id);
+                $billedQty = (float) ($billed->billed_quantity ?? 0);
+                $purchasedQty = (float) $item->quantity;
+
+                return [
+                    'id' => $item->id,
+                    'product_id' => $item->product_id,
+                    'description' => (string) $item->description,
+                    'quantity' => $purchasedQty,
+                    'quantity_received' => (float) $item->quantity_received,
+                    'unit' => (string) $item->unit,
+                    'unit_price' => (int) $item->unit_price,
+                    'billed_quantity' => $billedQty,
+                    'billed_amount' => (int) ($billed->billed_amount ?? 0),
+                    'qty_to_invoice' => max(0, $purchasedQty - $billedQty),
+                ];
+            })->values()->all(),
+        ];
     }
 }

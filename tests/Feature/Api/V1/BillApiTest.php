@@ -7,9 +7,11 @@ use App\Models\Accounting\JournalEntry;
 use App\Models\Accounting\JournalEntryLine;
 use App\Models\Accounting\TaxTag;
 use App\Models\Contacts\Contact;
+use App\Models\Inventory\Product;
 use App\Models\Purchasing\Bill;
 use App\Models\Purchasing\BillItem;
 use App\Models\Purchasing\PurchaseOrder;
+use App\Models\Purchasing\PurchaseOrderItem;
 use App\Models\Shared\Payment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
@@ -479,30 +481,66 @@ describe('Bill API', function () {
 
     it('matches a posted bill to a purchase order from the same vendor', function () {
         $supplier = Contact::factory()->supplier()->create();
+        $product = Product::factory()->create();
         $bill = Bill::factory()->received()->forContact($supplier)->create();
+        $billItem = BillItem::factory()->forBill($bill)->create([
+            'product_id' => $product->id,
+            'quantity' => 2,
+            'unit_price' => 100000,
+            'line_total' => 200000,
+        ]);
         $purchaseOrder = PurchaseOrder::factory()->create(['contact_id' => $supplier->id]);
+        $poItem = PurchaseOrderItem::factory()->create([
+            'purchase_order_id' => $purchaseOrder->id,
+            'product_id' => $product->id,
+            'quantity' => 5,
+            'unit_price' => 100000,
+            'line_total' => 500000,
+        ]);
+
+        $worksheet = $this->getJson("/api/v1/bills/{$bill->id}/purchase-matching?purchase_order_id={$purchaseOrder->id}");
+        $worksheet->assertOk()
+            ->assertJsonPath('data.purchase_lines.0.quantity', 5)
+            ->assertJsonPath('data.purchase_lines.0.billed_quantity', 0)
+            ->assertJsonPath('data.purchase_lines.0.qty_to_invoice', 5);
 
         $response = $this->postJson("/api/v1/bills/{$bill->id}/match-purchase-order", [
             'purchase_order_id' => $purchaseOrder->id,
+            'lines' => [
+                [
+                    'bill_item_id' => $billItem->id,
+                    'purchase_order_item_id' => $poItem->id,
+                ],
+            ],
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.purchase_order_id', $purchaseOrder->id);
+            ->assertJsonPath('data.purchase_order_id', $purchaseOrder->id)
+            ->assertJsonPath('data.items.0.purchase_order_item_id', $poItem->id);
 
-        $this->assertDatabaseHas('bills', [
-            'id' => $bill->id,
-            'purchase_order_id' => $purchaseOrder->id,
-        ]);
+        $matched = $this->getJson("/api/v1/bills/{$bill->id}/purchase-matching?purchase_order_id={$purchaseOrder->id}");
+        $matched->assertOk()
+            ->assertJsonPath('data.purchase_lines.0.billed_quantity', 2)
+            ->assertJsonPath('data.purchase_lines.0.billed_amount', 200000)
+            ->assertJsonPath('data.purchase_lines.0.qty_to_invoice', 3);
     });
 
     it('rejects purchase matching when the PO belongs to another vendor', function () {
         $supplier = Contact::factory()->supplier()->create();
         $other = Contact::factory()->supplier()->create();
         $bill = Bill::factory()->received()->forContact($supplier)->create();
+        $billItem = BillItem::factory()->forBill($bill)->create();
         $purchaseOrder = PurchaseOrder::factory()->create(['contact_id' => $other->id]);
+        $poItem = PurchaseOrderItem::factory()->create(['purchase_order_id' => $purchaseOrder->id]);
 
         $this->postJson("/api/v1/bills/{$bill->id}/match-purchase-order", [
             'purchase_order_id' => $purchaseOrder->id,
+            'lines' => [
+                [
+                    'bill_item_id' => $billItem->id,
+                    'purchase_order_item_id' => $poItem->id,
+                ],
+            ],
         ])->assertUnprocessable();
     });
 });

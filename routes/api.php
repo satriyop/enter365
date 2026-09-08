@@ -327,6 +327,8 @@ Route::prefix('v1')->group(function () {
         Route::post('bills/{bill}/void', [BillController::class, 'void']);
         Route::post('bills/{bill}/make-recurring', [BillController::class, 'makeRecurring']);
         Route::post('bills/{bill}/credit-note', [BillController::class, 'creditNote']);
+        Route::get('bills/{bill}/purchase-matching', [BillController::class, 'purchaseMatching'])
+            ->middleware('feature:purchase_orders');
         Route::post('bills/{bill}/match-purchase-order', [BillController::class, 'matchPurchaseOrder'])
             ->middleware('feature:purchase_orders');
 
