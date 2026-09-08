@@ -47,6 +47,7 @@ class StoreJournalEntryRequest extends FormRequest
             'lines.*.account_id.exists' => 'Akun tidak ditemukan.',
             'lines.*.partner_id.exists' => 'Partner/kontak tidak ditemukan.',
             'lines.*.analytic_distribution.array' => 'Distribusi analitik tidak valid.',
+            'lines.*.analytic_distribution' => 'Persentase distribusi analitik harus berjumlah 100%.',
             'lines.*.tax_tag_ids.*.exists' => 'Tag pajak tidak ditemukan.',
         ];
     }
@@ -93,13 +94,30 @@ class StoreJournalEntryRequest extends FormRequest
                     continue;
                 }
 
-                foreach (array_keys($line['analytic_distribution']) as $id) {
+                $distribution = $line['analytic_distribution'];
+                if ($distribution === []) {
+                    continue;
+                }
+
+                foreach (array_keys($distribution) as $id) {
                     if (! is_numeric($id) || ! isset($existingSet[(int) $id])) {
                         $validator->errors()->add(
                             "lines.{$index}.analytic_distribution",
                             'Akun analitik tidak ditemukan.'
                         );
                     }
+                }
+
+                $percentTotal = 0.0;
+                foreach ($distribution as $percent) {
+                    $percentTotal += (float) $percent;
+                }
+
+                if (abs($percentTotal - 100.0) > 0.01) {
+                    $validator->errors()->add(
+                        "lines.{$index}.analytic_distribution",
+                        'Persentase distribusi analitik harus berjumlah 100%.'
+                    );
                 }
             }
         });
