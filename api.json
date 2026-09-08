@@ -51568,7 +51568,28 @@
                         ]
                     },
                     "tax_tag_ids": {
-                        "type": "string"
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "integer"
+                        }
+                    },
+                    "tax_record_ids": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "integer"
+                        }
+                    },
+                    "product_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
                     },
                     "created_at": {
                         "type": [
@@ -51602,6 +51623,8 @@
                     "purchase_order_item_id",
                     "analytic_distribution",
                     "tax_tag_ids",
+                    "tax_record_ids",
+                    "product_id",
                     "created_at",
                     "updated_at"
                 ],
@@ -63627,6 +63650,16 @@
                                         "type": "integer",
                                         "minimum": 1
                                     }
+                                },
+                                "tax_record_ids": {
+                                    "type": [
+                                        "array",
+                                        "null"
+                                    ],
+                                    "items": {
+                                        "type": "integer",
+                                        "minimum": 1
+                                    }
                                 }
                             },
                             "required": [
@@ -69584,6 +69617,16 @@
                                     }
                                 },
                                 "tax_tag_ids": {
+                                    "type": [
+                                        "array",
+                                        "null"
+                                    ],
+                                    "items": {
+                                        "type": "integer",
+                                        "minimum": 1
+                                    }
+                                },
+                                "tax_record_ids": {
                                     "type": [
                                         "array",
                                         "null"

@@ -42,11 +42,27 @@ class BillDomainFactory
      */
     public function applyTotals(Bill $bill): Bill
     {
-        $totals = $this->calculateTotals($bill);
+        $hasLineTax = $bill->items->contains(
+            fn ($item): bool => (float) $item->tax_rate > 0
+                || (int) $item->tax_amount > 0
+                || is_array($item->tax_record_ids)
+        );
 
-        $bill->subtotal = $totals->subtotal;
-        $bill->tax_amount = $totals->taxAmount;
-        $bill->total_amount = $totals->totalAmount;
+        if ($hasLineTax) {
+            $subtotal = (int) $bill->items->sum(fn ($item): int => (int) $item->line_total);
+            $taxAmount = (int) $bill->items->sum(fn ($item): int => (int) $item->tax_amount);
+            $discount = (int) ($bill->discount_amount ?? 0);
+
+            $bill->subtotal = $subtotal;
+            $bill->tax_amount = $taxAmount;
+            $bill->total_amount = max(0, $subtotal + $taxAmount - $discount);
+        } else {
+            $totals = $this->calculateTotals($bill);
+
+            $bill->subtotal = $totals->subtotal;
+            $bill->tax_amount = $totals->taxAmount;
+            $bill->total_amount = $totals->totalAmount;
+        }
 
         $exchangeRate = (float) ($bill->exchange_rate ?? 1);
         if (($bill->currency ?? 'IDR') !== 'IDR' && $exchangeRate > 0) {

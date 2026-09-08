@@ -23,6 +23,8 @@ trait ValidatesOdooLineDimensions
             'items.*.analytic_distribution.*' => ['numeric', 'min:0', 'max:100'],
             'items.*.tax_tag_ids' => ['nullable', 'array'],
             'items.*.tax_tag_ids.*' => ['integer', 'min:1', 'exists:tax_tags,id'],
+            'items.*.tax_record_ids' => ['nullable', 'array'],
+            'items.*.tax_record_ids.*' => ['integer', 'min:1', 'exists:tax_records,id'],
         ];
     }
 
