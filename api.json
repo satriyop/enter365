@@ -51270,6 +51270,15 @@
                     "type": {
                         "type": "string"
                     },
+                    "is_company": {
+                        "type": "boolean"
+                    },
+                    "parent_id": {
+                        "type": "string"
+                    },
+                    "job_position": {
+                        "type": "string"
+                    },
                     "email": {
                         "type": [
                             "string",
@@ -51288,6 +51297,9 @@
                             "null"
                         ]
                     },
+                    "address_line_2": {
+                        "type": "string"
+                    },
                     "city": {
                         "type": [
                             "string",
@@ -51305,6 +51317,9 @@
                             "string",
                             "null"
                         ]
+                    },
+                    "country": {
+                        "type": "string"
                     },
                     "npwp": {
                         "type": [
@@ -51418,12 +51433,17 @@
                     "code",
                     "name",
                     "type",
+                    "is_company",
+                    "parent_id",
+                    "job_position",
                     "email",
                     "phone",
                     "address",
+                    "address_line_2",
                     "city",
                     "province",
                     "postal_code",
+                    "country",
                     "npwp",
                     "is_pkp",
                     "nik",
@@ -62222,6 +62242,22 @@
                             "both"
                         ]
                     },
+                    "is_company": {
+                        "type": "boolean"
+                    },
+                    "parent_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "job_position": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 100
+                    },
                     "email": {
                         "type": [
                             "string",
@@ -62243,6 +62279,13 @@
                             "null"
                         ]
                     },
+                    "address_line_2": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
                     "city": {
                         "type": [
                             "string",
@@ -62263,6 +62306,14 @@
                             "null"
                         ],
                         "maxLength": 10
+                    },
+                    "country": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "minLength": 2,
+                        "maxLength": 2
                     },
                     "npwp": {
                         "type": [
@@ -67618,6 +67669,22 @@
                             "both"
                         ]
                     },
+                    "is_company": {
+                        "type": "boolean"
+                    },
+                    "parent_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "job_position": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 100
+                    },
                     "email": {
                         "type": [
                             "string",
@@ -67639,6 +67706,13 @@
                             "null"
                         ]
                     },
+                    "address_line_2": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
                     "city": {
                         "type": [
                             "string",
@@ -67659,6 +67733,14 @@
                             "null"
                         ],
                         "maxLength": 10
+                    },
+                    "country": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "minLength": 2,
+                        "maxLength": 2
                     },
                     "npwp": {
                         "type": [
