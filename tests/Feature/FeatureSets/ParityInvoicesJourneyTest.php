@@ -32,12 +32,12 @@ describe('parity feature set (POS till + customer invoices)', function () {
             ->assertJsonPath('data.modules.invoices', true)
             ->assertJsonPath('data.modules.payments', true)
             ->assertJsonPath('data.modules.quotations', true)
-            ->assertJsonPath('data.modules.purchase_orders', false);
+            ->assertJsonPath('data.modules.purchase_orders', true);
 
         $this->getJson('/api/v1/invoices')->assertOk();
         $this->getJson('/api/v1/payments')->assertOk();
         $this->getJson('/api/v1/quotations')->assertOk();
-        $this->getJson('/api/v1/purchase-orders')->assertNotFound();
+        $this->getJson('/api/v1/purchase-orders')->assertOk();
     });
 
     it('lets accountant Rina list, create, post, and pay a customer invoice', function () {

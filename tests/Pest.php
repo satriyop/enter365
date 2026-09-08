@@ -326,7 +326,7 @@ function applyFeaturePreset(string $preset): void
             'delivery_orders' => false,
             'sales_returns' => false,
             'down_payments' => false,
-            'purchase_orders' => false,
+            'purchase_orders' => true,
             'goods_receipt_notes' => false,
             'purchase_returns' => false,
             'budgeting' => false,
