@@ -4,10 +4,10 @@ namespace App\Models\Accounting;
 
 use App\Traits\Filterable;
 use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Journal extends Model
@@ -37,6 +37,8 @@ class Journal extends Model
         'suspense_account_id',
         'outstanding_receipts_account_id',
         'outstanding_payments_account_id',
+        'profit_account_id',
+        'loss_account_id',
         'bank_account_number',
         'dedicated_payment_sequence',
         'currency',
@@ -136,6 +138,22 @@ class Journal extends Model
     public function outstandingPaymentsAccount(): BelongsTo
     {
         return $this->belongsTo(Account::class, 'outstanding_payments_account_id');
+    }
+
+    /**
+     * @return BelongsTo<Account, $this>
+     */
+    public function profitAccount(): BelongsTo
+    {
+        return $this->belongsTo(Account::class, 'profit_account_id');
+    }
+
+    /**
+     * @return BelongsTo<Account, $this>
+     */
+    public function lossAccount(): BelongsTo
+    {
+        return $this->belongsTo(Account::class, 'loss_account_id');
     }
 
     /**

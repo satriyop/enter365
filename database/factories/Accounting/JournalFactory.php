@@ -24,6 +24,8 @@ class JournalFactory extends Factory
             'suspense_account_id' => null,
             'outstanding_receipts_account_id' => null,
             'outstanding_payments_account_id' => null,
+            'profit_account_id' => null,
+            'loss_account_id' => null,
             'bank_account_number' => null,
             'dedicated_payment_sequence' => false,
             'currency' => null,

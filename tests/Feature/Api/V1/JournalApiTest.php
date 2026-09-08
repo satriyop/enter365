@@ -28,6 +28,8 @@ describe('Journal Master API', function () {
                         'sequence_prefix',
                         'default_account_id',
                         'suspense_account_id',
+                        'profit_account_id',
+                        'loss_account_id',
                         'outstanding_receipts_account_id',
                         'outstanding_payments_account_id',
                         'bank_account_number',
@@ -110,16 +112,47 @@ describe('Journal Master API', function () {
         ]);
     });
 
+    it('can create a bank journal with profit and loss accounts', function () {
+        $bank = Account::where('code', '1-1001')->firstOrFail();
+        $profit = Account::factory()->create(['name' => 'Bank Difference Gain']);
+        $loss = Account::factory()->create(['name' => 'Bank Difference Loss']);
+
+        $response = $this->postJson('/api/v1/journals', [
+            'name' => 'Bank BNI',
+            'type' => Journal::TYPE_BANK,
+            'sequence_prefix' => 'BNI-',
+            'default_account_id' => $bank->id,
+            'profit_account_id' => $profit->id,
+            'loss_account_id' => $loss->id,
+            'currency' => 'IDR',
+            'is_active' => true,
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.profit_account_id', $profit->id)
+            ->assertJsonPath('data.loss_account_id', $loss->id);
+
+        $this->assertDatabaseHas('journals', [
+            'sequence_prefix' => 'BNI-',
+            'profit_account_id' => $profit->id,
+            'loss_account_id' => $loss->id,
+        ]);
+    });
+
     it('can update bank payment plumbing fields on a cash journal', function () {
         $journal = Journal::query()->where('type', Journal::TYPE_CASH)->firstOrFail();
         $suspense = Account::factory()->create(['name' => 'Cash Suspense']);
         $receipts = Account::factory()->create(['name' => 'Cash Outstanding Receipts']);
         $payments = Account::factory()->create(['name' => 'Cash Outstanding Payments']);
+        $profit = Account::factory()->create(['name' => 'Cash Difference Gain']);
+        $loss = Account::factory()->create(['name' => 'Cash Difference Loss']);
 
         $response = $this->putJson("/api/v1/journals/{$journal->id}", [
             'suspense_account_id' => $suspense->id,
             'outstanding_receipts_account_id' => $receipts->id,
             'outstanding_payments_account_id' => $payments->id,
+            'profit_account_id' => $profit->id,
+            'loss_account_id' => $loss->id,
             'bank_account_number' => null,
             'dedicated_payment_sequence' => false,
         ]);
@@ -128,6 +161,8 @@ describe('Journal Master API', function () {
             ->assertJsonPath('data.suspense_account_id', $suspense->id)
             ->assertJsonPath('data.outstanding_receipts_account_id', $receipts->id)
             ->assertJsonPath('data.outstanding_payments_account_id', $payments->id)
+            ->assertJsonPath('data.profit_account_id', $profit->id)
+            ->assertJsonPath('data.loss_account_id', $loss->id)
             ->assertJsonPath('data.dedicated_payment_sequence', false);
 
         $this->assertDatabaseHas('journals', [
@@ -135,6 +170,8 @@ describe('Journal Master API', function () {
             'suspense_account_id' => $suspense->id,
             'outstanding_receipts_account_id' => $receipts->id,
             'outstanding_payments_account_id' => $payments->id,
+            'profit_account_id' => $profit->id,
+            'loss_account_id' => $loss->id,
         ]);
     });
 
