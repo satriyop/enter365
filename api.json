@@ -19685,6 +19685,64 @@
                         "$ref": "#/components/responses/AuthenticationException"
                     }
                 }
+            },
+            "put": {
+                "operationId": "fiscal-periods.update",
+                "tags": [
+                    "FiscalPeriod"
+                ],
+                "parameters": [
+                    {
+                        "name": "fiscalPeriod",
+                        "in": "path",
+                        "required": true,
+                        "description": "The fiscal period ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateFiscalPeriodRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`FiscalPeriodResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/FiscalPeriodResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
             }
         },
         "/fiscal-periods/{fiscalPeriod}/lock": {
@@ -52306,6 +52364,36 @@
                     "is_open": {
                         "type": "boolean"
                     },
+                    "lock_sales_until": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "lock_purchases_until": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "lock_tax_until": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "lock_everything_until": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "hard_lock_until": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
                     "closed_at": {
                         "type": [
                             "string",
@@ -52367,6 +52455,11 @@
                     "is_closed",
                     "is_locked",
                     "is_open",
+                    "lock_sales_until",
+                    "lock_purchases_until",
+                    "lock_tax_until",
+                    "lock_everything_until",
+                    "hard_lock_until",
                     "closed_at",
                     "closed_by",
                     "closing_entry_id",
@@ -68017,6 +68110,51 @@
                     }
                 },
                 "title": "UpdateDownPaymentRequest"
+            },
+            "UpdateFiscalPeriodRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 100
+                    },
+                    "lock_sales_until": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "lock_purchases_until": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "lock_tax_until": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "lock_everything_until": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "hard_lock_until": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "title": "UpdateFiscalPeriodRequest"
             },
             "UpdateGoodsReceiptNoteRequest": {
                 "type": "object",

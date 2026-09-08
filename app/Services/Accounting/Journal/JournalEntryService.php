@@ -43,7 +43,10 @@ class JournalEntryService extends BaseService
     {
         return $this->executeInTransaction('create_entry', function () use ($data, $autoPost) {
             $entryDate = Carbon::parse($data['entry_date']);
-            $fiscalPeriod = FiscalPeriod::assertOpenForPosting($entryDate);
+            $fiscalPeriod = FiscalPeriod::assertOpenForPosting(
+                $entryDate,
+                $data['source_type'] ?? null,
+            );
 
             $journal = isset($data['journal_id'])
                 ? Journal::query()->findOrFail($data['journal_id'])
@@ -128,7 +131,7 @@ class JournalEntryService extends BaseService
         $entryDate = $entry->entry_date instanceof \DateTimeInterface
             ? $entry->entry_date
             : Carbon::parse((string) $entry->entry_date);
-        FiscalPeriod::assertOpenForPosting($entryDate);
+        FiscalPeriod::assertOpenForPosting($entryDate, $entry->source_type);
 
         $entry->update(['is_posted' => true]);
 

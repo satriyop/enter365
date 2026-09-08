@@ -2,6 +2,7 @@
 
 namespace App\Models\Accounting;
 
+use App\Domain\Accounting\FiscalPeriods\Enums\FiscalPeriodLockScope;
 use App\Domain\Accounting\FiscalPeriods\Enums\FiscalPeriodStatus;
 use App\Domain\Accounting\FiscalPeriods\FiscalPeriodStateMachine;
 use App\Enums\DocumentStatus;
@@ -24,6 +25,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property FiscalPeriodStatus|null $status
  * @property bool $is_closed
  * @property bool $is_locked
+ * @property Carbon|null $lock_sales_until
+ * @property Carbon|null $lock_purchases_until
+ * @property Carbon|null $lock_tax_until
+ * @property Carbon|null $lock_everything_until
+ * @property Carbon|null $hard_lock_until
  * @property Carbon|null $closed_at
  * @property int|null $closed_by
  * @property int|null $closing_entry_id
@@ -44,6 +50,11 @@ class FiscalPeriod extends Model
         'status',
         'is_closed',
         'is_locked',
+        'lock_sales_until',
+        'lock_purchases_until',
+        'lock_tax_until',
+        'lock_everything_until',
+        'hard_lock_until',
         'closed_at',
         'closed_by',
         'closing_entry_id',
@@ -59,6 +70,11 @@ class FiscalPeriod extends Model
             'status' => FiscalPeriodStatus::class,
             'is_closed' => 'boolean',
             'is_locked' => 'boolean',
+            'lock_sales_until' => 'date',
+            'lock_purchases_until' => 'date',
+            'lock_tax_until' => 'date',
+            'lock_everything_until' => 'date',
+            'hard_lock_until' => 'date',
             'closed_at' => 'datetime',
             'retained_earnings_amount' => 'integer',
         ];
@@ -200,8 +216,11 @@ class FiscalPeriod extends Model
      * Missing / closed / locked periods are errors. POS tills and journal
      * create/post must share this guard so entries cannot land with
      * fiscal_period_id = null.
+     *
+     * Optional $sourceType applies Odoo-style inclusive lock dates
+     * (sales / purchases / tax / everything / hard).
      */
-    public static function assertOpenForPosting(\DateTimeInterface $date): self
+    public static function assertOpenForPosting(\DateTimeInterface $date, ?string $sourceType = null): self
     {
         $period = static::forDate($date);
 
@@ -223,7 +242,90 @@ class FiscalPeriod extends Model
             );
         }
 
+        $period->assertLockDatesAllow($date, $sourceType);
+
         return $period;
+    }
+
+    /**
+     * Map a journal source type (or POS class name) to a lock-date scope.
+     */
+    public static function lockScopeForSource(?string $sourceType): FiscalPeriodLockScope
+    {
+        $source = strtolower((string) $sourceType);
+
+        return match (true) {
+            str_contains($source, 'invoice') && ! str_contains($source, 'subcontractor'),
+            str_contains($source, 'sales_return'),
+            str_contains($source, 'possale'),
+            str_contains($source, 'possession') => FiscalPeriodLockScope::Sales,
+            str_contains($source, 'bill'),
+            str_contains($source, 'purchase_return'),
+            str_contains($source, 'goodsreceipt') => FiscalPeriodLockScope::Purchases,
+            str_contains($source, 'tax') => FiscalPeriodLockScope::Tax,
+            default => FiscalPeriodLockScope::Everything,
+        };
+    }
+
+    /**
+     * Inclusive lock dates: posting on lock_until is blocked.
+     * Hard lock blocks everything (including closing). Soft "everything"
+     * still allows year-end closing entries.
+     */
+    public function assertLockDatesAllow(\DateTimeInterface $date, ?string $sourceType = null): void
+    {
+        $dateStr = $date->format('Y-m-d');
+
+        if ($this->isInclusiveLockActive($this->hard_lock_until, $dateStr)) {
+            throw BusinessRuleException::operationNotAllowed(
+                'periode fiskal',
+                "Hard lock aktif sampai {$this->hard_lock_until->toDateString()} pada periode '{$this->name}'."
+            );
+        }
+
+        $isClosing = $sourceType === JournalEntry::SOURCE_CLOSING;
+
+        if (! $isClosing && $this->isInclusiveLockActive($this->lock_everything_until, $dateStr)) {
+            throw BusinessRuleException::operationNotAllowed(
+                'periode fiskal',
+                "Semua jurnal dikunci sampai {$this->lock_everything_until->toDateString()} pada periode '{$this->name}'."
+            );
+        }
+
+        $scope = self::lockScopeForSource($sourceType);
+        $until = match ($scope) {
+            FiscalPeriodLockScope::Sales => $this->lock_sales_until,
+            FiscalPeriodLockScope::Purchases => $this->lock_purchases_until,
+            FiscalPeriodLockScope::Tax => $this->lock_tax_until,
+            default => null,
+        };
+
+        if ($until !== null && $this->isInclusiveLockActive($until, $dateStr)) {
+            $label = match ($scope) {
+                FiscalPeriodLockScope::Sales => 'Penjualan',
+                FiscalPeriodLockScope::Purchases => 'Pembelian',
+                FiscalPeriodLockScope::Tax => 'Pajak',
+                default => 'Jurnal',
+            };
+
+            throw BusinessRuleException::operationNotAllowed(
+                'periode fiskal',
+                "Kunci {$label} aktif sampai {$until->toDateString()} pada periode '{$this->name}'."
+            );
+        }
+    }
+
+    private function isInclusiveLockActive(mixed $until, string $dateStr): bool
+    {
+        if ($until === null) {
+            return false;
+        }
+
+        $untilStr = $until instanceof \DateTimeInterface
+            ? $until->format('Y-m-d')
+            : (string) $until;
+
+        return $untilStr !== '' && $dateStr <= $untilStr;
     }
 
     /**

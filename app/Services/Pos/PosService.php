@@ -500,7 +500,7 @@ class PosService extends BaseService implements PosServiceInterface
 
     private function assertPeriodAllowsTill(\DateTimeInterface $date): void
     {
-        FiscalPeriod::assertOpenForPosting($date);
+        FiscalPeriod::assertOpenForPosting($date, PosSale::class);
     }
 
     /**

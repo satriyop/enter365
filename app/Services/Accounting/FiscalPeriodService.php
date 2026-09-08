@@ -44,6 +44,27 @@ class FiscalPeriodService extends BaseService implements FiscalPeriodServiceInte
     }
 
     /**
+     * Update lock dates (Odoo Lock Dates) without changing period status.
+     *
+     * @param  array{
+     *     name?: string,
+     *     lock_sales_until?: string|null,
+     *     lock_purchases_until?: string|null,
+     *     lock_tax_until?: string|null,
+     *     lock_everything_until?: string|null,
+     *     hard_lock_until?: string|null
+     * }  $data
+     */
+    public function updateLockDates(FiscalPeriod $period, array $data): FiscalPeriod
+    {
+        return $this->executeInTransaction('update_lock_dates', function () use ($period, $data) {
+            $period->update($data);
+
+            return $period->fresh();
+        }, ['period_id' => $period->id]);
+    }
+
+    /**
      * Close a fiscal period with closing journal entry.
      *
      * Delegates to YearEndCloseService for the full closing process.
