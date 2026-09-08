@@ -502,6 +502,38 @@ describe('Journal Entry API', function () {
             ->assertJsonPath('data.lines.1.tax_tag_ids', null);
     });
 
+    it('rejects analytic_distribution maps that do not sum to 100 percent', function () {
+        $cashAccount = Account::where('code', '1-1001')->first();
+        $revenueAccount = Account::where('code', '4-1001')->first();
+        $analyticA = AnalyticAccount::factory()->create();
+        $analyticB = AnalyticAccount::factory()->create();
+
+        $response = $this->postJson('/api/v1/journal-entries', [
+            'journal_id' => $this->miscJournal->id,
+            'entry_date' => now()->toDateString(),
+            'description' => 'Analytic split not 100',
+            'lines' => [
+                [
+                    'account_id' => $cashAccount->id,
+                    'analytic_distribution' => [
+                        (string) $analyticA->id => 60,
+                        (string) $analyticB->id => 30,
+                    ],
+                    'debit' => 1000,
+                    'credit' => 0,
+                ],
+                [
+                    'account_id' => $revenueAccount->id,
+                    'debit' => 0,
+                    'credit' => 1000,
+                ],
+            ],
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['lines.0.analytic_distribution']);
+    });
+
     it('rejects invalid analytic_distribution and tax_tag_ids on lines', function () {
         $cashAccount = Account::where('code', '1-1001')->first();
         $revenueAccount = Account::where('code', '4-1001')->first();
