@@ -3,6 +3,10 @@
 declare(strict_types=1);
 
 use App\Enums\DocumentStatus;
+use App\Models\Accounting\Account;
+use App\Models\Accounting\JournalEntry;
+use App\Models\Accounting\JournalEntryLine;
+use App\Models\Accounting\TaxTag;
 use App\Models\Contacts\Contact;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
@@ -155,6 +159,48 @@ describe('getPpnSummary', function () {
             ->and($result['output_tax']['tax'])->toEqual(110000)
             ->and($result['input_tax']['count'])->toBe(1)
             ->and($result['input_tax']['tax'])->toEqual(55000);
+    });
+
+    it('adds posted journal tax-tag grids into output and input tax', function () {
+        $outputTag = TaxTag::factory()->tax()->create(['code' => 'PPN-OUT']);
+        $inputTag = TaxTag::factory()->tax()->create(['code' => 'PPN-IN']);
+        $account = Account::factory()->create();
+
+        $outputEntry = JournalEntry::factory()->posted()->create([
+            'entry_date' => '2024-01-12',
+            'source_type' => JournalEntry::SOURCE_MANUAL,
+        ]);
+        JournalEntryLine::factory()->forEntry($outputEntry)->forAccount($account)->credit(11_000)->create([
+            'tax_tag_ids' => [$outputTag->id],
+            'description' => 'Misc output VAT',
+        ]);
+
+        $inputEntry = JournalEntry::factory()->posted()->create([
+            'entry_date' => '2024-01-18',
+            'source_type' => JournalEntry::SOURCE_MANUAL,
+        ]);
+        JournalEntryLine::factory()->forEntry($inputEntry)->forAccount($account)->debit(4_000)->create([
+            'tax_tag_ids' => [$inputTag->id],
+            'description' => 'Misc input VAT',
+        ]);
+
+        $invoiceTagged = JournalEntry::factory()->posted()->create([
+            'entry_date' => '2024-01-20',
+            'source_type' => JournalEntry::SOURCE_INVOICE,
+        ]);
+        JournalEntryLine::factory()->forEntry($invoiceTagged)->forAccount($account)->credit(99_000)->create([
+            'tax_tag_ids' => [$outputTag->id],
+        ]);
+
+        $result = $this->service->getPpnSummary('2024-01-01', '2024-01-31');
+
+        expect($result['output_tax']['tax'])->toBe(11_000)
+            ->and($result['input_tax']['tax'])->toBe(4_000)
+            ->and($result['net_tax'])->toBe(7_000)
+            ->and($result['details']['journal_grids'])->toHaveCount(3)
+            ->and(collect($result['details']['journal_grids'])->pluck('tag_code')->all())
+            ->toContain('PPN-OUT')
+            ->toContain('PPN-IN');
     });
 
     it('handles empty results when no invoices or bills exist', function () {
