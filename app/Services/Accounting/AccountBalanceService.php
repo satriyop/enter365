@@ -47,7 +47,7 @@ class AccountBalanceService
      *     balance: int
      * }>
      */
-    public function getLedger(Account $account, ?string $startDate = null, ?string $endDate = null): Collection
+    public function getLedger(Account $account, ?string $startDate = null, ?string $endDate = null, ?int $journalId = null, ?int $analyticAccountId = null): Collection
     {
         $query = DB::table('journal_entry_lines as jel')
             ->join('journal_entries as je', 'je.id', '=', 'jel.journal_entry_id')
@@ -76,10 +76,12 @@ class AccountBalanceService
             $query->where('je.entry_date', '<=', $endDate);
         }
 
+        $this->constrainJournalAndAnalytic($query, $journalId, $analyticAccountId);
+
         $entries = $query->get();
 
         $runningBalance = $startDate
-            ? $this->postedNetBefore($account, $startDate)
+            ? $this->postedNetBefore($account, $startDate, $journalId, $analyticAccountId)
             : 0;
 
         return $entries->map(function (\stdClass $entry) use ($account, &$runningBalance) {
@@ -108,7 +110,7 @@ class AccountBalanceService
      *
      * @param  Collection<int, Account>  $accounts
      */
-    public function getLedgers(Collection $accounts, ?string $startDate = null, ?string $endDate = null): Collection
+    public function getLedgers(Collection $accounts, ?string $startDate = null, ?string $endDate = null, ?int $journalId = null, ?int $analyticAccountId = null): Collection
     {
         $accountIds = $accounts->pluck('id')->toArray();
 
@@ -140,12 +142,14 @@ class AccountBalanceService
             $query->where('je.entry_date', '<=', $endDate);
         }
 
+        $this->constrainJournalAndAnalytic($query, $journalId, $analyticAccountId);
+
         $allEntries = $query->get()->groupBy('account_id');
 
         $openingBalances = [];
         foreach ($accounts as $account) {
             $openingBalances[$account->id] = $startDate
-                ? $this->postedNetBefore($account, $startDate)
+                ? $this->postedNetBefore($account, $startDate, $journalId, $analyticAccountId)
                 : 0;
         }
 
@@ -193,17 +197,21 @@ class AccountBalanceService
      *
      * @return Collection<int, mixed>
      */
-    public function getTrialBalance(?string $asOfDate = null): Collection
+    public function getTrialBalance(?string $asOfDate = null, ?int $journalId = null): Collection
     {
         $asOfDate = $asOfDate ?? now()->toDateString();
 
-        $balances = DB::table('journal_entry_lines as jel')
+        $balancesQuery = DB::table('journal_entry_lines as jel')
             ->join('journal_entries as je', 'je.id', '=', 'jel.journal_entry_id')
             ->where('je.is_posted', true)
             ->where('je.entry_date', '<=', $asOfDate.' 23:59:59')
             ->whereNull('je.deleted_at')
             ->selectRaw('jel.account_id, SUM(jel.debit) as total_debit, SUM(jel.credit) as total_credit')
-            ->groupBy('jel.account_id')
+            ->groupBy('jel.account_id');
+
+        $this->constrainJournalAndAnalytic($balancesQuery, $journalId);
+
+        $balances = $balancesQuery
             ->get()
             ->keyBy('account_id');
 
@@ -236,16 +244,19 @@ class AccountBalanceService
     /**
      * Posted net movement (in the account's normal direction) before a date.
      */
-    public function postedNetBefore(Account $account, string $beforeDate): int
+    public function postedNetBefore(Account $account, string $beforeDate, ?int $journalId = null, ?int $analyticAccountId = null): int
     {
-        $priorMovements = DB::table('journal_entry_lines as jel')
+        $priorQuery = DB::table('journal_entry_lines as jel')
             ->join('journal_entries as je', 'je.id', '=', 'jel.journal_entry_id')
             ->where('jel.account_id', $account->id)
             ->where('je.is_posted', true)
             ->where('je.entry_date', '<', $beforeDate)
             ->whereNull('je.deleted_at')
-            ->selectRaw('COALESCE(SUM(jel.debit), 0) as total_debit, COALESCE(SUM(jel.credit), 0) as total_credit')
-            ->first();
+            ->selectRaw('COALESCE(SUM(jel.debit), 0) as total_debit, COALESCE(SUM(jel.credit), 0) as total_credit');
+
+        $this->constrainJournalAndAnalytic($priorQuery, $journalId, $analyticAccountId);
+
+        $priorMovements = $priorQuery->first();
 
         $totalDebit = (int) ($priorMovements->total_debit ?? 0);
         $totalCredit = (int) ($priorMovements->total_credit ?? 0);
@@ -253,5 +264,28 @@ class AccountBalanceService
         return $account->isDebitNormal()
             ? $totalDebit - $totalCredit
             : $totalCredit - $totalDebit;
+    }
+
+    /**
+     * @param  \Illuminate\Database\Query\Builder  $query
+     */
+    private function constrainJournalAndAnalytic($query, ?int $journalId = null, ?int $analyticAccountId = null): void
+    {
+        if ($journalId) {
+            $query->where('je.journal_id', $journalId);
+        }
+
+        if ($analyticAccountId) {
+            $key = (string) $analyticAccountId;
+            $driver = DB::connection()->getDriverName();
+
+            if ($driver === 'pgsql') {
+                $query->whereRaw("jsonb_exists(COALESCE(jel.analytic_distribution::jsonb, '{}'::jsonb), ?)", [$key]);
+
+                return;
+            }
+
+            $query->whereRaw('json_extract(jel.analytic_distribution, ?) IS NOT NULL', ['$."'.$key.'"']);
+        }
     }
 }

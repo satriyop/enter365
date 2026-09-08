@@ -59,6 +59,40 @@ class CashFlowReportService
     }
 
     /**
+     * @return array{
+     *     report_name: string,
+     *     current_period: array,
+     *     previous_period: array,
+     *     variance: array{net_cash_change: int, opening_balance_change: int, closing_balance_change: int}
+     * }
+     */
+    public function generateComparativeCashFlow(
+        ?string $startDate = null,
+        ?string $endDate = null,
+        ?string $previousStartDate = null,
+        ?string $previousEndDate = null
+    ): array {
+        $startDate = $startDate ?? now()->startOfMonth()->toDateString();
+        $endDate = $endDate ?? now()->endOfMonth()->toDateString();
+        $previousStartDate = $previousStartDate ?? Carbon::parse($startDate)->subYear()->toDateString();
+        $previousEndDate = $previousEndDate ?? Carbon::parse($endDate)->subYear()->toDateString();
+
+        $current = $this->generateCashFlow($startDate, $endDate);
+        $previous = $this->generateCashFlow($previousStartDate, $previousEndDate);
+
+        return [
+            'report_name' => 'Laporan Arus Kas Komparatif',
+            'current_period' => $current,
+            'previous_period' => $previous,
+            'variance' => [
+                'net_cash_change' => $current['net_cash_change'] - $previous['net_cash_change'],
+                'opening_balance_change' => $current['opening_balance'] - $previous['opening_balance'],
+                'closing_balance_change' => $current['closing_balance'] - $previous['closing_balance'],
+            ],
+        ];
+    }
+
+    /**
      * Get cash balance as of a specific date.
      */
     public function getCashBalance(\DateTimeInterface $asOfDate): int
@@ -253,7 +287,7 @@ class CashFlowReportService
     /**
      * Get daily cash movement for a period.
      *
-     * @return Collection<int, array{date: string, receipts: int, payments: int, net: int, balance: int}>
+     * @return Collection<int, array{date: string, receipts: int, payments: int, net: int, balance: int, running_balance: int}>
      */
     public function getDailyCashMovement(?string $startDate = null, ?string $endDate = null): Collection
     {
@@ -289,6 +323,7 @@ class CashFlowReportService
                 'payments' => (int) $payments,
                 'net' => $net,
                 'balance' => $runningBalance,
+                'running_balance' => $runningBalance,
             ]);
 
             $current->addDay();

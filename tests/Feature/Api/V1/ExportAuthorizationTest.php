@@ -28,6 +28,9 @@ describe('Export authorization - forbidden without permission', function () {
             '/api/v1/export/invoices',
             '/api/v1/export/bills',
             '/api/v1/export/tax-report',
+            '/api/v1/export/cash-flow',
+            '/api/v1/export/changes-in-equity',
+            '/api/v1/export/daily-cash-movement',
         ];
 
         foreach ($endpoints as $endpoint) {

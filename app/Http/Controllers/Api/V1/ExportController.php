@@ -56,6 +56,41 @@ class ExportController extends Controller
             $accountId !== null ? (int) $accountId : null,
             $request->input('start_date', now()->startOfMonth()->toDateString()),
             $request->input('end_date', now()->toDateString()),
+            $request->input('format', 'csv'),
+            $request->integer('journal_id') ?: null,
+            $request->integer('analytic_account_id') ?: null
+        );
+    }
+
+    public function cashFlow(Request $request): Response|JsonResponse
+    {
+        Gate::authorize('reports.export');
+
+        return $this->exportService->cashFlow(
+            $request->input('start_date', now()->startOfMonth()->toDateString()),
+            $request->input('end_date', now()->toDateString()),
+            $request->input('format', 'csv')
+        );
+    }
+
+    public function changesInEquity(Request $request): Response|JsonResponse
+    {
+        Gate::authorize('reports.export');
+
+        return $this->exportService->changesInEquity(
+            $request->input('start_date', now()->startOfMonth()->toDateString()),
+            $request->input('end_date', now()->toDateString()),
+            $request->input('format', 'csv')
+        );
+    }
+
+    public function dailyCashMovement(Request $request): Response|JsonResponse
+    {
+        Gate::authorize('reports.export');
+
+        return $this->exportService->dailyCashMovement(
+            $request->input('start_date', now()->startOfMonth()->toDateString()),
+            $request->input('end_date', now()->toDateString()),
             $request->input('format', 'csv')
         );
     }
