@@ -42,12 +42,18 @@ class StockOpnameItemResource extends JsonResource
             ]),
             'system_quantity' => (float) $this->system_quantity,
             // Preserve null so SPA can show "Not counted" (PHP (float) null === 0.0)
+            'counted_quantity' => $this->counted_quantity === null
+                ? null
+                : (float) $this->counted_quantity,
             'actual_quantity' => $this->counted_quantity === null
                 ? null
                 : (float) $this->counted_quantity,
             'difference_quantity' => $this->counted_quantity === null
                 ? null
                 : (float) ($this->counted_quantity - $this->system_quantity),
+            'variance_quantity' => $this->counted_quantity === null
+                ? null
+                : (int) $this->variance_quantity,
             'unit_cost' => $this->system_cost,
             'difference_value' => $this->counted_quantity === null
                 ? null

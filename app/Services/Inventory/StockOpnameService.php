@@ -34,6 +34,9 @@ class StockOpnameService extends BaseService implements StockOpnameServiceInterf
     public function create(array $data): StockOpname
     {
         return $this->executeInTransaction('create', function () use ($data) {
+            $lines = $data['items'] ?? [];
+            unset($data['items']);
+
             $opname = StockOpname::create([
                 'warehouse_id' => $data['warehouse_id'],
                 'opname_date' => $data['opname_date'] ?? now()->toDateString(),
@@ -43,7 +46,14 @@ class StockOpnameService extends BaseService implements StockOpnameServiceInterf
                 'created_by' => $data['created_by'] ?? $this->getUserId(),
             ]);
 
-            return $opname;
+            foreach ($lines as $line) {
+                $item = $this->addItem($opname, $line);
+                if (array_key_exists('counted_quantity', $line) && $line['counted_quantity'] !== null) {
+                    $item->recordCount((int) $line['counted_quantity'], $line['notes'] ?? null);
+                }
+            }
+
+            return $opname->fresh(['items.product', 'warehouse']);
         }, ['warehouse_id' => $data['warehouse_id']]);
     }
 

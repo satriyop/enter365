@@ -44,6 +44,31 @@ describe('StockOpnameService create and manage', function () {
         expect($opname->warehouse_id)->toBe($this->warehouse->id);
     });
 
+    it('creates stock opname with counted lines', function () {
+        $product = Product::factory()->create(['track_inventory' => true]);
+        ProductStock::factory()->create([
+            'product_id' => $product->id,
+            'warehouse_id' => $this->warehouse->id,
+            'quantity' => 40,
+            'average_cost' => 5000,
+        ]);
+
+        $opname = $this->service->create([
+            'warehouse_id' => $this->warehouse->id,
+            'items' => [
+                [
+                    'product_id' => $product->id,
+                    'counted_quantity' => 38,
+                ],
+            ],
+        ]);
+
+        expect($opname->items)->toHaveCount(1)
+            ->and($opname->items->first()->system_quantity)->toBe(40)
+            ->and($opname->items->first()->counted_quantity)->toBe(38)
+            ->and($opname->items->first()->variance_quantity)->toBe(-2);
+    });
+
     it('generates items from warehouse stock', function () {
         $product1 = Product::factory()->create(['track_inventory' => true]);
         $product2 = Product::factory()->create(['track_inventory' => true]);

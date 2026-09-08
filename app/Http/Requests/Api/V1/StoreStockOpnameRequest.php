@@ -26,6 +26,10 @@ class StoreStockOpnameRequest extends FormRequest
             'opname_date' => ['sometimes', 'date'],
             'name' => ['sometimes', 'nullable', 'string', 'max:255'],
             'notes' => ['sometimes', 'nullable', 'string', 'max:1000'],
+            'items' => ['nullable', 'array'],
+            'items.*.product_id' => ['required', 'integer', 'exists:products,id', 'distinct'],
+            'items.*.counted_quantity' => ['nullable', 'integer', 'min:0'],
+            'items.*.notes' => ['nullable', 'string', 'max:255'],
         ];
     }
 
@@ -42,6 +46,10 @@ class StoreStockOpnameRequest extends FormRequest
             'opname_date.date' => 'Format tanggal tidak valid.',
             'name.max' => 'Nama maksimal 255 karakter.',
             'notes.max' => 'Catatan maksimal 1000 karakter.',
+            'items.*.product_id.required' => 'Produk pada baris opname wajib dipilih.',
+            'items.*.product_id.exists' => 'Produk tidak ditemukan.',
+            'items.*.product_id.distinct' => 'Produk tidak boleh diulang pada opname yang sama.',
+            'items.*.counted_quantity.integer' => 'Qty hitung harus berupa angka.',
         ];
     }
 }
