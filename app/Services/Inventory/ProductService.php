@@ -43,7 +43,7 @@ class ProductService extends BaseService implements ProductServiceInterface
             $data = $this->applyDefaults($data);
 
             // Override defaults for services
-            if ($data['type'] === Product::TYPE_SERVICE) {
+            if (in_array($data['type'], [Product::TYPE_SERVICE, Product::TYPE_COMBO], true)) {
                 $data['track_inventory'] = false;
                 $data['min_stock'] = 0;
                 $data['current_stock'] = 0;

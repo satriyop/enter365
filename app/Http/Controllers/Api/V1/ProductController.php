@@ -9,6 +9,7 @@ use App\Http\Requests\Api\V1\UpdateProductRequest;
 use App\Http\Resources\Api\V1\ProductResource;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\Warehouse;
+use App\Services\Inventory\ProductForecastService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -16,7 +17,8 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 class ProductController extends Controller
 {
     public function __construct(
-        private ProductServiceInterface $productService
+        private ProductServiceInterface $productService,
+        private ProductForecastService $forecastService
     ) {}
 
     /**
@@ -30,6 +32,8 @@ class ProductController extends Controller
             ->with(['category', 'salesTaxes', 'purchaseTaxes', 'vendorPricelists.contact'])
             ->filter($filter)
             ->paginate($filter->getRequest()->input('per_page', 25));
+
+        $this->forecastService->applyTo($products->getCollection());
 
         return ProductResource::collection($products);
     }
@@ -67,6 +71,8 @@ class ProductController extends Controller
             'salesAccount',
             'purchaseAccount',
         ]);
+
+        $this->forecastService->applyTo([$product]);
 
         return new ProductResource($product);
     }

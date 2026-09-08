@@ -66,7 +66,11 @@ class ProductResource extends JsonResource
             'name' => $this->name,
             'description' => $this->description,
             'type' => $this->type,
-            'type_label' => $this->type === 'product' ? 'Produk' : 'Jasa',
+            'type_label' => match ($this->type) {
+                Product::TYPE_SERVICE => 'Jasa',
+                Product::TYPE_COMBO => 'Combo',
+                default => 'Produk',
+            },
             'category_id' => $this->category_id,
             'category' => new ProductCategoryResource($this->whenLoaded('category')),
             'unit' => $this->unit,
@@ -99,8 +103,12 @@ class ProductResource extends JsonResource
             'track_inventory' => $this->track_inventory,
             'min_stock' => $this->min_stock,
             'current_stock' => $this->current_stock,
+            'incoming_qty' => (int) ($this->incoming_qty ?? 0),
+            'outgoing_qty' => (int) ($this->outgoing_qty ?? 0),
+            'forecasted_qty' => (int) ($this->forecasted_qty ?? $this->current_stock),
             'is_low_stock' => $this->isLowStock(),
             'is_out_of_stock' => $this->isOutOfStock(),
+            'procurement_type' => $this->procurement_type,
 
             // Accounting links
             'inventory_account_id' => $this->inventory_account_id,
