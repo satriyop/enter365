@@ -55,6 +55,7 @@ use App\Http\Controllers\Api\V1\StockOpnameController;
 use App\Http\Controllers\Api\V1\SubcontractorInvoiceController;
 use App\Http\Controllers\Api\V1\SubcontractorWorkOrderController;
 use App\Http\Controllers\Api\V1\TaskController;
+use App\Http\Controllers\Api\V1\TaxTagController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\WarehouseController;
 use App\Http\Controllers\Api\V1\WorkOrderController;
@@ -215,6 +216,7 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('journals', JournalController::class);
 
         Route::apiResource('analytic-accounts', AnalyticAccountController::class)->except(['destroy']);
+        Route::apiResource('tax-tags', TaxTagController::class)->except(['destroy']);
 
         // Journal Entries (Jurnal Umum)
         Route::get('journal-entries', [JournalEntryController::class, 'index'])->name('journal-entries.index');

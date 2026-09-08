@@ -11,6 +11,12 @@ use Illuminate\Support\Collection;
 class TaxReportService
 {
     /**
+     * VAT / Tax Summary stay document-level (invoice and bill tax_amount).
+     * Journal-entry line tax_tag_ids classify misc/adjustment grids and are
+     * not rolled into this report.
+     */
+
+    /**
      * Get PPN (VAT) summary report.
      *
      * @return array{

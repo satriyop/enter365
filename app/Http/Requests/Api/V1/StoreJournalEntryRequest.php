@@ -26,7 +26,7 @@ class StoreJournalEntryRequest extends FormRequest
             'lines.*.analytic_distribution' => ['nullable', 'array'],
             'lines.*.analytic_distribution.*' => ['numeric', 'min:0', 'max:100'],
             'lines.*.tax_tag_ids' => ['nullable', 'array'],
-            'lines.*.tax_tag_ids.*' => ['integer', 'min:1'],
+            'lines.*.tax_tag_ids.*' => ['integer', 'min:1', 'exists:tax_tags,id'],
             'lines.*.description' => ['nullable', 'string', 'max:500'],
             'lines.*.debit' => ['required_without:lines.*.credit', 'integer', 'min:0'],
             'lines.*.credit' => ['required_without:lines.*.debit', 'integer', 'min:0'],
@@ -47,6 +47,7 @@ class StoreJournalEntryRequest extends FormRequest
             'lines.*.account_id.exists' => 'Akun tidak ditemukan.',
             'lines.*.partner_id.exists' => 'Partner/kontak tidak ditemukan.',
             'lines.*.analytic_distribution.array' => 'Distribusi analitik tidak valid.',
+            'lines.*.tax_tag_ids.*.exists' => 'Tag pajak tidak ditemukan.',
         ];
     }
 
