@@ -51568,10 +51568,22 @@
                         ]
                     },
                     "tax_tag_ids": {
-                        "type": "string"
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "integer"
+                        }
                     },
                     "tax_record_ids": {
-                        "type": "string"
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "integer"
+                        }
                     },
                     "product_id": {
                         "type": [

@@ -173,7 +173,15 @@ class BillService implements BillServiceInterface
             ? array_values(array_filter(array_map('intval', $item['tax_record_ids'])))
             : [];
 
-        if ($recordIds === [] && ! array_key_exists('tax_rate', $item) && ! empty($item['product_id'])) {
+        if (array_key_exists('tax_record_ids', $item) && $recordIds === []) {
+            return [
+                'tax_rate' => (float) ($item['tax_rate'] ?? 0),
+                'tax_record_ids' => [],
+                'tax_tag_ids' => $explicitTags,
+            ];
+        }
+
+        if ($recordIds === [] && ! isset($item['tax_rate']) && ! empty($item['product_id'])) {
             $product = Product::query()->with('purchaseTaxes')->find((int) $item['product_id']);
             if ($product === null) {
                 return [
@@ -192,7 +200,7 @@ class BillService implements BillServiceInterface
             if ($recordIds === []) {
                 return [
                     'tax_rate' => $product->purchaseTaxRate(),
-                    'tax_record_ids' => null,
+                    'tax_record_ids' => [],
                     'tax_tag_ids' => $explicitTags,
                 ];
             }

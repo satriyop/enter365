@@ -150,6 +150,96 @@ describe('Bill line tax records', function () {
         ])->assertUnprocessable()
             ->assertJsonValidationErrors(['items.0.tax_record_ids.0']);
     });
+
+    it('inherits product purchase taxes when tax_rate is null', function () {
+        $purchase = TaxRecord::factory()->create([
+            'code' => 'PPN-NULL',
+            'rate' => 12,
+            'applicability' => TaxRecord::APPLICABILITY_PURCHASE,
+        ]);
+        $product = Product::factory()->create(['tax_rate' => 0, 'is_taxable' => false]);
+        $product->purchaseTaxes()->sync([$purchase->id => ['kind' => 'purchase']]);
+        $supplier = Contact::factory()->supplier()->create();
+        $expense = billExpenseAccount();
+
+        $this->postJson('/api/v1/bills', [
+            'contact_id' => $supplier->id,
+            'bill_date' => now()->toDateString(),
+            'due_date' => now()->addDays(14)->toDateString(),
+            'items' => [
+                [
+                    'product_id' => $product->id,
+                    'description' => $product->name,
+                    'quantity' => 1,
+                    'unit' => 'pcs',
+                    'unit_price' => 100_000,
+                    'expense_account_id' => $expense->id,
+                    'tax_rate' => null,
+                ],
+            ],
+        ])->assertCreated()
+            ->assertJsonPath('data.items.0.tax_rate', 12)
+            ->assertJsonPath('data.tax_amount', 12_000);
+    });
+
+    it('keeps zero inherited purchase tax instead of the header default', function () {
+        $product = Product::factory()->create(['tax_rate' => 0, 'is_taxable' => false]);
+        $supplier = Contact::factory()->supplier()->create();
+        $expense = billExpenseAccount();
+
+        $this->postJson('/api/v1/bills', [
+            'contact_id' => $supplier->id,
+            'bill_date' => now()->toDateString(),
+            'due_date' => now()->addDays(14)->toDateString(),
+            'items' => [
+                [
+                    'product_id' => $product->id,
+                    'description' => $product->name,
+                    'quantity' => 1,
+                    'unit' => 'pcs',
+                    'unit_price' => 100_000,
+                    'expense_account_id' => $expense->id,
+                ],
+            ],
+        ])->assertCreated()
+            ->assertJsonPath('data.tax_amount', 0)
+            ->assertJsonPath('data.total_amount', 100_000);
+    });
+
+    it('posts bill input tax to the tax record refund account', function () {
+        $ppnIn = Account::query()->where('code', '1-1300')->firstOrFail();
+        $purchase = TaxRecord::factory()->create([
+            'code' => 'PPN-REF',
+            'rate' => 11,
+            'applicability' => TaxRecord::APPLICABILITY_PURCHASE,
+            'refund_account_id' => $ppnIn->id,
+        ]);
+        $supplier = Contact::factory()->supplier()->create();
+        $expense = billExpenseAccount();
+
+        $created = $this->postJson('/api/v1/bills', [
+            'contact_id' => $supplier->id,
+            'bill_date' => now()->toDateString(),
+            'due_date' => now()->addDays(14)->toDateString(),
+            'items' => [
+                [
+                    'description' => 'Taxed',
+                    'quantity' => 1,
+                    'unit' => 'pcs',
+                    'unit_price' => 100_000,
+                    'expense_account_id' => $expense->id,
+                    'tax_record_ids' => [$purchase->id],
+                ],
+            ],
+        ]);
+        $created->assertCreated();
+        $id = (int) $created->json('data.id');
+
+        $this->postJson("/api/v1/bills/{$id}/post")->assertOk();
+
+        $posted = \App\Models\Purchasing\Bill::query()->with('journalEntry.lines')->findOrFail($id);
+        expect($posted->journalEntry?->lines->pluck('account_id')->all())->toContain($ppnIn->id);
+    });
 });
 
 it('stacks multiple product purchase tax rates', function () {

@@ -43,7 +43,9 @@ class BillDomainFactory
     public function applyTotals(Bill $bill): Bill
     {
         $hasLineTax = $bill->items->contains(
-            fn ($item): bool => (float) $item->tax_rate > 0 || (int) $item->tax_amount > 0
+            fn ($item): bool => (float) $item->tax_rate > 0
+                || (int) $item->tax_amount > 0
+                || is_array($item->tax_record_ids)
         );
 
         if ($hasLineTax) {
