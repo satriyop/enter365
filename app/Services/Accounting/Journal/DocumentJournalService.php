@@ -223,32 +223,35 @@ class DocumentJournalService extends BaseService
         $totalDebits = 0;
         $totalCredits = 0;
 
-        // Debit: Expense or GRNI accounts (per item)
-        $debitByAccount = [];
+        // Debit: one expense/GRNI line per bill item so analytic + tax grids survive.
         foreach ($bill->items as $item) {
             $isInventoryItem = $usesGrni
                 && $item->product_id
                 && $item->product
                 && $item->product->track_inventory;
 
-            // Inventory items clear GRNI; non-inventory items go to Expense
             $accountId = $isInventoryItem
                 ? $grniAccount->id
                 : ($item->expense_account_id ?? $defaultExpenseAccount->id);
 
-            if (! isset($debitByAccount[$accountId])) {
-                $debitByAccount[$accountId] = 0;
-            }
-            $debitByAccount[$accountId] += $item->line_total;
-        }
-
-        foreach ($debitByAccount as $accountId => $amount) {
+            $amount = (int) $item->line_total;
             $amountBase = $this->toBaseCurrency($amount, $currency, $exchangeRate);
+            $label = filled($item->description)
+                ? (string) $item->description
+                : 'Pembelian '.$bill->bill_number;
+
+            $analytic = $item->analytic_distribution;
+            if (is_object($analytic)) {
+                $analytic = get_object_vars($analytic);
+            }
+
             $lines[] = [
                 'account_id' => $accountId,
-                'description' => 'Pembelian '.$bill->bill_number,
+                'description' => $label,
                 'debit' => $amountBase,
                 'credit' => 0,
+                'analytic_distribution' => is_array($analytic) && $analytic !== [] ? $analytic : null,
+                'tax_tag_ids' => is_array($item->tax_tag_ids) && $item->tax_tag_ids !== [] ? $item->tax_tag_ids : null,
                 ...$this->currencyMeta($currency, $amount, $exchangeRate),
             ];
             $totalDebits += $amountBase;
