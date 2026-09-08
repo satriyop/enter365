@@ -16,6 +16,7 @@
  *   solar | nex   — solar EPC add-on (+ projects, light BOM)
  *   vahana        — manufacturing + electrical_panel add-on
  *   pos           — kasir-first acquisition (POS pack; document sales hidden)
+ *   parity        — Kopitiam / Odoo-parity demo (POS till + customer invoices + payments)
  *   full          — everything (demo / tests)
  *
  * Explicit FEATURE_* env always overrides preset defaults when set.
@@ -32,7 +33,8 @@ $preset = match ($preset) {
     default => $preset,
 };
 
-$posAcquisition = $preset === 'pos';
+$posAcquisition = in_array($preset, ['pos', 'parity'], true);
+$parityInvoices = $preset === 'parity';
 
 /** @var array<string, bool> $core Always-on SME ERP modules */
 $core = [
@@ -41,8 +43,8 @@ $core = [
     'delivery_orders' => env('FEATURE_DELIVERY_ORDERS', ! $posAcquisition),
     'sales_returns' => env('FEATURE_SALES_RETURNS', ! $posAcquisition),
     'down_payments' => env('FEATURE_DOWN_PAYMENTS', ! $posAcquisition),
-    'invoices' => env('FEATURE_INVOICES', ! $posAcquisition),
-    'payments' => env('FEATURE_PAYMENTS', ! $posAcquisition),
+    'invoices' => env('FEATURE_INVOICES', $parityInvoices || ! $posAcquisition),
+    'payments' => env('FEATURE_PAYMENTS', $parityInvoices || ! $posAcquisition),
     'purchase_orders' => env('FEATURE_PURCHASE_ORDERS', ! $posAcquisition),
     'goods_receipt_notes' => env('FEATURE_GRN', ! $posAcquisition),
     'purchase_returns' => env('FEATURE_PURCHASE_RETURNS', ! $posAcquisition),
@@ -151,7 +153,7 @@ $packDefaults = match ($preset) {
         'electrical_panel' => false,
         'pos' => false,
     ],
-    'pos' => [
+    'pos', 'parity' => [
         'manufacturing' => false,
         'bom' => false,
         'work_orders' => false,

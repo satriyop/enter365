@@ -40,7 +40,8 @@ describe('DemoSeeder profile mapping', function () {
             ->and(DemoSeeder::profileFromFeaturePreset('solar'))->toBe(DemoSeeder::DEMO_NEX)
             ->and(DemoSeeder::profileFromFeaturePreset('nex'))->toBe(DemoSeeder::DEMO_NEX)
             ->and(DemoSeeder::profileFromFeaturePreset('full'))->toBe(DemoSeeder::DEMO_ALL)
-            ->and(DemoSeeder::profileFromFeaturePreset('pos'))->toBe(DemoSeeder::DEMO_POS);
+            ->and(DemoSeeder::profileFromFeaturePreset('pos'))->toBe(DemoSeeder::DEMO_POS)
+            ->and(DemoSeeder::profileFromFeaturePreset('parity'))->toBe(DemoSeeder::DEMO_POS);
     });
 });
 
