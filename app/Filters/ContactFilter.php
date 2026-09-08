@@ -43,6 +43,8 @@ class ContactFilter extends QueryFilter
             'purchaseOrders',
             'payments',
             'downPayments',
+            'children',
+            'parent',
         ];
     }
 
@@ -52,6 +54,20 @@ class ContactFilter extends QueryFilter
     public function type(string $value): void
     {
         $this->builder->where('type', $value);
+    }
+
+    public function isCompany(mixed $value): void
+    {
+        $this->builder->where('is_company', filter_var($value, FILTER_VALIDATE_BOOLEAN));
+    }
+
+    public function kind(string $value): void
+    {
+        match ($value) {
+            'persons' => $this->builder->where('is_company', false),
+            'companies' => $this->builder->where('is_company', true),
+            default => null,
+        };
     }
 
     /**

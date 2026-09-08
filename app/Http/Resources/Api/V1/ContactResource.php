@@ -54,6 +54,7 @@ class ContactResource extends JsonResource
             'type' => $this->type,
             'is_company' => (bool) $this->is_company,
             'parent_id' => $this->parent_id,
+            'address_role' => $this->address_role?->value,
             'job_position' => $this->job_position,
             'email' => $this->email,
             'phone' => $this->phone,
@@ -87,6 +88,8 @@ class ContactResource extends JsonResource
 
             'notes' => $this->notes,
             'is_active' => $this->is_active,
+            'parent' => new self($this->whenLoaded('parent')),
+            'children' => self::collection($this->whenLoaded('children')),
             'receivable_balance' => $this->whenAppended('receivable_balance'),
             'payable_balance' => $this->whenAppended('payable_balance'),
             'created_at' => $this->created_at?->toIso8601String(),

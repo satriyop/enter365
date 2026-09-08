@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Api\V1;
 
+use App\Enums\ContactAddressRole;
 use App\Models\Contacts\Contact;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -20,7 +21,8 @@ class StoreContactRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'type' => ['required', 'string', Rule::in([Contact::TYPE_CUSTOMER, Contact::TYPE_SUPPLIER, Contact::TYPE_BOTH])],
             'is_company' => ['boolean'],
-            'parent_id' => ['nullable', 'integer', 'exists:contacts,id'],
+            'parent_id' => ['nullable', 'integer', Rule::exists('contacts', 'id')->where('is_company', true)],
+            'address_role' => ['nullable', 'string', Rule::enum(ContactAddressRole::class)],
             'job_position' => ['nullable', 'string', 'max:100'],
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:30'],
@@ -66,6 +68,7 @@ class StoreContactRequest extends FormRequest
             'name.required' => 'Nama kontak wajib diisi.',
             'type.required' => 'Tipe kontak wajib diisi.',
             'type.in' => 'Tipe kontak tidak valid. Pilih: customer, supplier, atau both.',
+            'address_role.enum' => 'Peran alamat tidak valid. Pilih: invoice, delivery, atau contact.',
             'currency.size' => 'Kode mata uang harus 3 karakter (contoh: IDR, USD).',
             'early_discount_percent.max' => 'Diskon pembayaran awal maksimal 100%.',
             'early_discount_days.max' => 'Hari diskon maksimal 365 hari.',

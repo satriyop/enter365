@@ -2,6 +2,7 @@
 
 namespace App\Models\Contacts;
 
+use App\Enums\ContactAddressRole;
 use App\Enums\DocumentStatus;
 use App\Enums\PphCategory;
 use App\Models\Manufacturing\SubcontractorWorkOrder;
@@ -45,6 +46,7 @@ class Contact extends Model
         'type',
         'is_company',
         'parent_id',
+        'address_role',
         'job_position',
         'email',
         'phone',
@@ -89,6 +91,7 @@ class Contact extends Model
             'early_discount_days' => 'integer',
             'is_active' => 'boolean',
             'is_company' => 'boolean',
+            'address_role' => ContactAddressRole::class,
             'is_pkp' => 'boolean',
             'last_transaction_date' => 'date',
             // Subcontractor fields
