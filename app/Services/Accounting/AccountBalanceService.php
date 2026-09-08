@@ -110,27 +110,31 @@ class AccountBalanceService
      *
      * @param  Collection<int, Account>  $accounts
      */
-    public function getLedgers(Collection $accounts, ?string $startDate = null, ?string $endDate = null, ?int $journalId = null, ?int $analyticAccountId = null): Collection
+    public function getLedgers(Collection $accounts, ?string $startDate = null, ?string $endDate = null, ?int $journalId = null, ?int $analyticAccountId = null, bool $postedOnly = true): Collection
     {
         $accountIds = $accounts->pluck('id')->toArray();
 
         $query = DB::table('journal_entry_lines as jel')
             ->join('journal_entries as je', 'je.id', '=', 'jel.journal_entry_id')
             ->whereIn('jel.account_id', $accountIds)
-            ->where('je.is_posted', true)
-            ->whereNull('je.deleted_at')
-            ->select([
-                'jel.id',
-                'jel.account_id',
-                'je.id as journal_entry_id',
-                'je.entry_date as date',
-                'je.entry_number',
-                'je.description as entry_description',
-                'je.reference',
-                'jel.description as line_description',
-                'jel.debit',
-                'jel.credit',
-            ])
+            ->whereNull('je.deleted_at');
+
+        if ($postedOnly) {
+            $query->where('je.is_posted', true);
+        }
+
+        $query->select([
+            'jel.id',
+            'jel.account_id',
+            'je.id as journal_entry_id',
+            'je.entry_date as date',
+            'je.entry_number',
+            'je.description as entry_description',
+            'je.reference',
+            'jel.description as line_description',
+            'jel.debit',
+            'jel.credit',
+        ])
             ->orderBy('je.entry_date')
             ->orderBy('je.id');
 
@@ -197,17 +201,20 @@ class AccountBalanceService
      *
      * @return Collection<int, mixed>
      */
-    public function getTrialBalance(?string $asOfDate = null, ?int $journalId = null): Collection
+    public function getTrialBalance(?string $asOfDate = null, ?int $journalId = null, bool $postedOnly = true): Collection
     {
         $asOfDate = $asOfDate ?? now()->toDateString();
 
         $balancesQuery = DB::table('journal_entry_lines as jel')
             ->join('journal_entries as je', 'je.id', '=', 'jel.journal_entry_id')
-            ->where('je.is_posted', true)
             ->where('je.entry_date', '<=', $asOfDate.' 23:59:59')
             ->whereNull('je.deleted_at')
             ->selectRaw('jel.account_id, SUM(jel.debit) as total_debit, SUM(jel.credit) as total_credit')
             ->groupBy('jel.account_id');
+
+        if ($postedOnly) {
+            $balancesQuery->where('je.is_posted', true);
+        }
 
         $this->constrainJournalAndAnalytic($balancesQuery, $journalId);
 

@@ -15,13 +15,13 @@ class GeneralLedgerReportService
     /**
      * Get General Ledger (Buku Besar).
      */
-    public function getGeneralLedger(?string $startDate = null, ?string $endDate = null, ?int $journalId = null, ?int $analyticAccountId = null): Collection
+    public function getGeneralLedger(?string $startDate = null, ?string $endDate = null, ?int $journalId = null, ?int $analyticAccountId = null, bool $postedOnly = true): Collection
     {
         $accounts = Account::query()
             ->orderBy('code')
             ->get();
 
-        return $this->balanceService->getLedgers($accounts, $startDate, $endDate, $journalId, $analyticAccountId)
+        return $this->balanceService->getLedgers($accounts, $startDate, $endDate, $journalId, $analyticAccountId, $postedOnly)
             ->filter(fn ($item) => ! empty($item->entries));
     }
 }

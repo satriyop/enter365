@@ -27,7 +27,7 @@ class BalanceSheetReportService
      *     is_balanced: bool
      * }
      */
-    public function getBalanceSheet(?string $asOfDate = null, bool $hierarchical = false): array
+    public function getBalanceSheet(?string $asOfDate = null, bool $hierarchical = false, ?int $journalId = null, bool $postedOnly = true): array
     {
         $asOfDate = $asOfDate ?? now()->toDateString();
 
@@ -37,13 +37,21 @@ class BalanceSheetReportService
             ->get();
 
         // Bulk get balances
-        $movements = DB::table('journal_entry_lines as jel')
+        $movementsQuery = DB::table('journal_entry_lines as jel')
             ->join('journal_entries as je', 'je.id', '=', 'jel.journal_entry_id')
-            ->where('je.is_posted', true)
             ->where('je.entry_date', '<=', $asOfDate.' 23:59:59')
             ->whereNull('je.deleted_at')
             ->selectRaw('jel.account_id, SUM(jel.debit) as total_debit, SUM(jel.credit) as total_credit')
-            ->groupBy('jel.account_id')
+            ->groupBy('jel.account_id');
+
+        if ($postedOnly) {
+            $movementsQuery->where('je.is_posted', true);
+        }
+        if ($journalId) {
+            $movementsQuery->where('je.journal_id', $journalId);
+        }
+
+        $movements = $movementsQuery
             ->get()
             ->keyBy('account_id');
 

@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ExportController extends Controller
 {
@@ -15,7 +16,7 @@ class ExportController extends Controller
         private ReportExportService $exportService
     ) {}
 
-    public function trialBalance(Request $request): Response|JsonResponse
+    public function trialBalance(Request $request): Response|JsonResponse|BinaryFileResponse
     {
         Gate::authorize('reports.export');
 
@@ -25,7 +26,7 @@ class ExportController extends Controller
         );
     }
 
-    public function balanceSheet(Request $request): Response|JsonResponse
+    public function balanceSheet(Request $request): Response|JsonResponse|BinaryFileResponse
     {
         Gate::authorize('reports.export');
 
@@ -35,7 +36,7 @@ class ExportController extends Controller
         );
     }
 
-    public function incomeStatement(Request $request): Response|JsonResponse
+    public function incomeStatement(Request $request): Response|JsonResponse|BinaryFileResponse
     {
         Gate::authorize('reports.export');
 
@@ -46,7 +47,7 @@ class ExportController extends Controller
         );
     }
 
-    public function generalLedger(Request $request): Response|JsonResponse
+    public function generalLedger(Request $request): Response|JsonResponse|BinaryFileResponse
     {
         Gate::authorize('reports.export');
 
@@ -62,7 +63,7 @@ class ExportController extends Controller
         );
     }
 
-    public function cashFlow(Request $request): Response|JsonResponse
+    public function cashFlow(Request $request): Response|JsonResponse|BinaryFileResponse
     {
         Gate::authorize('reports.export');
 
@@ -73,7 +74,7 @@ class ExportController extends Controller
         );
     }
 
-    public function changesInEquity(Request $request): Response|JsonResponse
+    public function changesInEquity(Request $request): Response|JsonResponse|BinaryFileResponse
     {
         Gate::authorize('reports.export');
 
@@ -84,7 +85,7 @@ class ExportController extends Controller
         );
     }
 
-    public function dailyCashMovement(Request $request): Response|JsonResponse
+    public function dailyCashMovement(Request $request): Response|JsonResponse|BinaryFileResponse
     {
         Gate::authorize('reports.export');
 
@@ -95,7 +96,7 @@ class ExportController extends Controller
         );
     }
 
-    public function partnerLedger(Request $request): Response|JsonResponse
+    public function partnerLedger(Request $request): Response|JsonResponse|BinaryFileResponse
     {
         Gate::authorize('reports.export');
 
@@ -113,7 +114,7 @@ class ExportController extends Controller
         );
     }
 
-    public function receivableAging(Request $request): Response|JsonResponse
+    public function receivableAging(Request $request): Response|JsonResponse|BinaryFileResponse
     {
         Gate::authorize('reports.export');
 
@@ -122,7 +123,7 @@ class ExportController extends Controller
         );
     }
 
-    public function payableAging(Request $request): Response|JsonResponse
+    public function payableAging(Request $request): Response|JsonResponse|BinaryFileResponse
     {
         Gate::authorize('reports.export');
 
@@ -131,7 +132,7 @@ class ExportController extends Controller
         );
     }
 
-    public function invoices(Request $request): Response|JsonResponse
+    public function invoices(Request $request): Response|JsonResponse|BinaryFileResponse
     {
         Gate::authorize('reports.export');
 
@@ -143,7 +144,7 @@ class ExportController extends Controller
         );
     }
 
-    public function bills(Request $request): Response|JsonResponse
+    public function bills(Request $request): Response|JsonResponse|BinaryFileResponse
     {
         Gate::authorize('reports.export');
 
@@ -155,7 +156,7 @@ class ExportController extends Controller
         );
     }
 
-    public function taxReport(Request $request): Response|JsonResponse
+    public function taxReport(Request $request): Response|JsonResponse|BinaryFileResponse
     {
         Gate::authorize('reports.export');
 

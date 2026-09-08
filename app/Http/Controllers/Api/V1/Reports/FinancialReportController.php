@@ -22,7 +22,8 @@ class FinancialReportController extends Controller
 
         $asOfDate = $request->input('as_of_date');
         $journalId = $request->integer('journal_id') ?: null;
-        $trialBalance = $this->reports->balance()->getTrialBalance($asOfDate, $journalId);
+        $postedOnly = $request->boolean('posted_only', true);
+        $trialBalance = $this->reports->balance()->getTrialBalance($asOfDate, $journalId, $postedOnly);
 
         $totalDebit = $trialBalance->sum('debit_balance');
         $totalCredit = $trialBalance->sum('credit_balance');
@@ -31,6 +32,7 @@ class FinancialReportController extends Controller
             'report_name' => 'Neraca Saldo',
             'as_of_date' => $asOfDate ?? now()->toDateString(),
             'journal_id' => $journalId,
+            'posted_only' => $postedOnly,
             'accounts' => $trialBalance->values(),
             'total_debit' => $totalDebit,
             'total_credit' => $totalCredit,
@@ -47,6 +49,8 @@ class FinancialReportController extends Controller
 
         $asOfDate = $request->input('as_of_date');
         $compareTo = $request->input('compare_to');
+        $journalId = $request->integer('journal_id') ?: null;
+        $postedOnly = $request->boolean('posted_only', true);
 
         if ($compareTo) {
             $comparative = $this->reports->financial()->getComparativeBalanceSheet($asOfDate, $compareTo);
@@ -54,10 +58,12 @@ class FinancialReportController extends Controller
             return $this->success($comparative);
         }
 
-        $balanceSheet = $this->reports->financial()->getBalanceSheet($asOfDate);
+        $balanceSheet = $this->reports->financial()->getBalanceSheet($asOfDate, false, $journalId, $postedOnly);
 
         return $this->success([
             'report_name' => 'Laporan Posisi Keuangan',
+            'journal_id' => $journalId,
+            'posted_only' => $postedOnly,
             ...$balanceSheet,
         ]);
     }
@@ -72,6 +78,8 @@ class FinancialReportController extends Controller
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
         $comparePreviousPeriod = $request->boolean('compare_previous_period', false);
+        $journalId = $request->integer('journal_id') ?: null;
+        $postedOnly = $request->boolean('posted_only', true);
 
         if ($comparePreviousPeriod) {
             $comparative = $this->reports->financial()->getComparativeIncomeStatement(
@@ -84,10 +92,12 @@ class FinancialReportController extends Controller
             return $this->success($comparative);
         }
 
-        $incomeStatement = $this->reports->financial()->getIncomeStatement($startDate, $endDate);
+        $incomeStatement = $this->reports->financial()->getIncomeStatement($startDate, $endDate, false, $journalId, $postedOnly);
 
         return $this->success([
             'report_name' => 'Laporan Laba Rugi',
+            'journal_id' => $journalId,
+            'posted_only' => $postedOnly,
             ...$incomeStatement,
         ]);
     }
@@ -105,7 +115,8 @@ class FinancialReportController extends Controller
         $endDate = $request->input('end_date');
         $journalId = $request->integer('journal_id') ?: null;
         $analyticAccountId = $request->integer('analytic_account_id') ?: null;
-        $generalLedger = $this->reports->financial()->getGeneralLedger($startDate, $endDate, $journalId, $analyticAccountId);
+        $postedOnly = $request->boolean('posted_only', true);
+        $generalLedger = $this->reports->financial()->getGeneralLedger($startDate, $endDate, $journalId, $analyticAccountId, $postedOnly);
 
         return $this->success([
             'report_name' => 'Buku Besar',
@@ -113,6 +124,7 @@ class FinancialReportController extends Controller
             'end_date' => $endDate,
             'journal_id' => $journalId,
             'analytic_account_id' => $analyticAccountId,
+            'posted_only' => $postedOnly,
             'accounts' => $generalLedger->values(),
         ]);
     }

@@ -54,6 +54,17 @@ describe('Report export parity', function () {
         $response->assertOk()
             ->assertJsonStructure(['data', 'headers']);
     });
+
+    it('can export cash flow as xlsx and pdf', function () {
+        $xlsx = $this->get('/api/v1/export/cash-flow?format=xlsx');
+        $xlsx->assertOk();
+        expect($xlsx->headers->get('Content-Disposition'))->toContain('.xlsx');
+
+        $pdf = $this->get('/api/v1/export/balance-sheet?format=pdf');
+        $pdf->assertOk();
+        expect($pdf->headers->get('Content-Disposition'))->toContain('.pdf')
+            ->and($pdf->headers->get('Content-Type'))->toContain('pdf');
+    });
 });
 
 describe('General ledger journal and analytic filters', function () {
@@ -156,6 +167,56 @@ describe('General ledger journal and analytic filters', function () {
         $cashRow = collect($filtered->json('data.accounts'))->firstWhere('code', '1-1001');
 
         expect($cashRow['debit_balance'])->toBe(400_000);
+    });
+
+    it('filters balance sheet and income statement by journal_id', function () {
+        $cash = Account::query()->where('code', '1-1001')->firstOrFail();
+        $revenue = Account::query()->where('code', '4-1001')->firstOrFail();
+        $sales = Journal::query()->where('type', Journal::TYPE_SALES)->firstOrFail();
+
+        $entry = JournalEntry::factory()->posted()->create([
+            'journal_id' => $sales->id,
+            'entry_date' => now()->toDateString(),
+        ]);
+        JournalEntryLine::factory()->forEntry($entry)->forAccount($cash)->debit(250_000)->create();
+        JournalEntryLine::factory()->forEntry($entry)->forAccount($revenue)->credit(250_000)->create();
+
+        $this->getJson('/api/v1/reports/balance-sheet?journal_id='.$sales->id)
+            ->assertOk()
+            ->assertJsonPath('data.journal_id', $sales->id);
+
+        $this->getJson('/api/v1/reports/income-statement?journal_id='.$sales->id)
+            ->assertOk()
+            ->assertJsonPath('data.journal_id', $sales->id);
+
+        $this->getJson('/api/v1/reports/cash-flow?journal_id='.$sales->id)
+            ->assertOk()
+            ->assertJsonPath('data.journal_id', $sales->id);
+    });
+
+    it('includes unposted general ledger lines when posted_only is false', function () {
+        $cash = Account::query()->where('code', '1-1001')->firstOrFail();
+        $revenue = Account::query()->where('code', '4-1001')->firstOrFail();
+
+        $draft = JournalEntry::factory()->create([
+            'is_posted' => false,
+            'entry_date' => now()->toDateString(),
+            'description' => 'Unposted cash',
+        ]);
+        JournalEntryLine::factory()->forEntry($draft)->forAccount($cash)->debit(80_000)->create();
+        JournalEntryLine::factory()->forEntry($draft)->forAccount($revenue)->credit(80_000)->create();
+
+        $postedOnly = $this->getJson('/api/v1/reports/general-ledger?posted_only=1');
+        $postedOnly->assertOk()->assertJsonPath('data.posted_only', true);
+        $postedCash = collect($postedOnly->json('data.accounts'))->firstWhere('code', '1-1001');
+        $postedCount = is_array($postedCash) ? count($postedCash['entries']) : 0;
+
+        $all = $this->getJson('/api/v1/reports/general-ledger?posted_only=0');
+        $all->assertOk()->assertJsonPath('data.posted_only', false);
+        $allCash = collect($all->json('data.accounts'))->firstWhere('code', '1-1001');
+
+        expect($allCash)->not->toBeNull()
+            ->and(count($allCash['entries']))->toBeGreaterThan($postedCount);
     });
 });
 

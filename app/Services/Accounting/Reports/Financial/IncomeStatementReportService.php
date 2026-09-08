@@ -26,7 +26,7 @@ class IncomeStatementReportService
      *     net_income: int
      * }
      */
-    public function getIncomeStatement(?string $startDate = null, ?string $endDate = null, bool $hierarchical = false): array
+    public function getIncomeStatement(?string $startDate = null, ?string $endDate = null, bool $hierarchical = false, ?int $journalId = null, bool $postedOnly = true): array
     {
         $endDate = $endDate ?? now()->toDateString();
         $startDate = $startDate ?? now()->startOfYear()->toDateString();
@@ -37,13 +37,21 @@ class IncomeStatementReportService
             ->get();
 
         // Bulk get movements for period
-        $movements = DB::table('journal_entry_lines as jel')
+        $movementsQuery = DB::table('journal_entry_lines as jel')
             ->join('journal_entries as je', 'je.id', '=', 'jel.journal_entry_id')
-            ->where('je.is_posted', true)
             ->whereBetween('je.entry_date', [$startDate, $endDate.' 23:59:59'])
             ->whereNull('je.deleted_at')
             ->selectRaw('jel.account_id, SUM(jel.debit) as total_debit, SUM(jel.credit) as total_credit')
-            ->groupBy('jel.account_id')
+            ->groupBy('jel.account_id');
+
+        if ($postedOnly) {
+            $movementsQuery->where('je.is_posted', true);
+        }
+        if ($journalId) {
+            $movementsQuery->where('je.journal_id', $journalId);
+        }
+
+        $movements = $movementsQuery
             ->get()
             ->keyBy('account_id');
 
