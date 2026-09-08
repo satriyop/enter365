@@ -149,7 +149,7 @@ class PurchaseOrderService implements PurchaseOrderServiceInterface
         assert($document instanceof PurchaseOrder);
         foreach ($items as $index => $itemData) {
             $quantity = $itemData['quantity'] ?? 1;
-            $unitPrice = array_key_exists('unit_price', $itemData)
+            $unitPrice = array_key_exists('unit_price', $itemData) && $itemData['unit_price'] !== null
                 ? (int) $itemData['unit_price']
                 : $this->unitPriceForVendor($document, $itemData);
             $discountPercent = $itemData['discount_percent'] ?? 0;

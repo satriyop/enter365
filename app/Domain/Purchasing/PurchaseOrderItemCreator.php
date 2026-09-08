@@ -14,7 +14,7 @@ class PurchaseOrderItemCreator
     {
         foreach ($items as $index => $itemData) {
             $quantity = $itemData['quantity'] ?? 1;
-            $unitPrice = array_key_exists('unit_price', $itemData)
+            $unitPrice = array_key_exists('unit_price', $itemData) && $itemData['unit_price'] !== null
                 ? (int) $itemData['unit_price']
                 : self::unitPriceForVendor($purchaseOrder, $itemData);
             $discountPercent = $itemData['discount_percent'] ?? 0;

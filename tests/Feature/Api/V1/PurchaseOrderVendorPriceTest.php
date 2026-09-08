@@ -83,4 +83,30 @@ describe('PO line vendor pricelist', function () {
         ])->assertCreated()
             ->assertJsonPath('data.items.0.unit_price', 90_000);
     });
+
+    it('treats null unit_price as omitted and uses the vendor price', function () {
+        $vendor = Contact::factory()->vendor()->create();
+        $product = Product::factory()->create(['purchase_price' => 80_000]);
+        ProductVendorPricelist::factory()->create([
+            'product_id' => $product->id,
+            'contact_id' => $vendor->id,
+            'min_qty' => 1,
+            'price' => 75_000,
+        ]);
+
+        $this->postJson('/api/v1/purchase-orders', [
+            'contact_id' => $vendor->id,
+            'po_date' => now()->toDateString(),
+            'items' => [
+                [
+                    'product_id' => $product->id,
+                    'description' => $product->name,
+                    'quantity' => 10,
+                    'unit' => 'kg',
+                    'unit_price' => null,
+                ],
+            ],
+        ])->assertCreated()
+            ->assertJsonPath('data.items.0.unit_price', 75_000);
+    });
 });
