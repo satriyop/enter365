@@ -12,6 +12,7 @@ use App\Exceptions\Domain\DocumentLockedException;
 use App\Exceptions\Domain\ValidationException;
 use App\Models\Inventory\Product;
 use App\Models\Inventory\Warehouse;
+use App\Models\Tax\TaxRecord;
 use App\Services\Base\BaseService;
 
 class ProductService extends BaseService implements ProductServiceInterface
@@ -48,9 +49,14 @@ class ProductService extends BaseService implements ProductServiceInterface
                 $data['current_stock'] = 0;
             }
 
-            $product = Product::create($data);
+            $salesTaxIds = $data['sales_tax_ids'] ?? null;
+            $purchaseTaxIds = $data['purchase_tax_ids'] ?? null;
+            unset($data['sales_tax_ids'], $data['purchase_tax_ids']);
 
-            return $product->load('category');
+            $product = Product::create($data);
+            $this->syncProductTaxes($product, $salesTaxIds, $purchaseTaxIds);
+
+            return $product->load(['category', 'salesTaxes', 'purchaseTaxes']);
         }, ['type' => $data['type'] ?? Product::TYPE_PRODUCT]);
     }
 
@@ -68,9 +74,18 @@ class ProductService extends BaseService implements ProductServiceInterface
             $this->validateTypeChange($product);
         }
 
-        $product->update($data);
+        $salesTaxIds = array_key_exists('sales_tax_ids', $data) ? $data['sales_tax_ids'] : false;
+        $purchaseTaxIds = array_key_exists('purchase_tax_ids', $data) ? $data['purchase_tax_ids'] : false;
+        unset($data['sales_tax_ids'], $data['purchase_tax_ids']);
 
-        return $product->fresh('category');
+        $product->update($data);
+        $this->syncProductTaxes(
+            $product,
+            $salesTaxIds === false ? null : $salesTaxIds,
+            $purchaseTaxIds === false ? null : $purchaseTaxIds,
+        );
+
+        return $product->fresh(['category', 'salesTaxes', 'purchaseTaxes']);
     }
 
     /**
@@ -185,6 +200,39 @@ class ProductService extends BaseService implements ProductServiceInterface
             'movement_id' => $movement->id,
             'movement_number' => $movement->movement_number,
         ];
+    }
+
+    /**
+     * Apply default values to product data.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    /**
+     * @param  list<int>|null  $salesTaxIds
+     * @param  list<int>|null  $purchaseTaxIds
+     */
+    private function syncProductTaxes(Product $product, ?array $salesTaxIds, ?array $purchaseTaxIds): void
+    {
+        if (is_array($salesTaxIds)) {
+            $product->salesTaxes()->sync(
+                collect($salesTaxIds)->mapWithKeys(fn ($id) => [(int) $id => ['kind' => 'sales']])->all()
+            );
+
+            $first = TaxRecord::query()->find($salesTaxIds[0] ?? null);
+            if ($first) {
+                $product->forceFill([
+                    'tax_rate' => $first->rate,
+                    'is_taxable' => (float) $first->rate > 0,
+                ])->save();
+            }
+        }
+
+        if (is_array($purchaseTaxIds)) {
+            $product->purchaseTaxes()->sync(
+                collect($purchaseTaxIds)->mapWithKeys(fn ($id) => [(int) $id => ['kind' => 'purchase']])->all()
+            );
+        }
     }
 
     /**

@@ -27,7 +27,7 @@ class ProductController extends Controller
         $this->authorize('viewAny', Product::class);
 
         $products = Product::query()
-            ->with(['category']) // Default eager loads
+            ->with(['category', 'salesTaxes', 'purchaseTaxes'])
             ->filter($filter)
             ->paginate($filter->getRequest()->input('per_page', 25));
 
@@ -59,6 +59,8 @@ class ProductController extends Controller
 
         $product->loadMissing([
             'category',
+            'salesTaxes',
+            'purchaseTaxes',
             'inventoryAccount',
             'cogsAccount',
             'salesAccount',
