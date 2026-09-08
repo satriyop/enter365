@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Accounting\Account;
 use App\Models\Contacts\Contact;
 use App\Models\Inventory\Product;
 use App\Models\Tax\TaxRecord;
@@ -28,6 +29,35 @@ describe('Tax records master', function () {
 
         $this->getJson('/api/v1/tax-records')->assertOk()
             ->assertJsonPath('data.0.code', 'PPN-SALES');
+    });
+
+    it('can update and delete a tax record', function () {
+        $vat = Account::query()->where('code', '2-1200')->firstOrFail();
+
+        $create = $this->postJson('/api/v1/tax-records', [
+            'code' => 'PPN-UPD',
+            'name' => 'PPN 11%',
+            'rate' => 11,
+            'applicability' => 'sales',
+            'computation' => 'percentage',
+            'invoice_account_id' => $vat->id,
+        ]);
+        $create->assertCreated()
+            ->assertJsonPath('data.computation', 'percentage')
+            ->assertJsonPath('data.invoice_account_id', $vat->id);
+
+        $id = (int) $create->json('data.id');
+
+        $this->putJson("/api/v1/tax-records/{$id}", [
+            'name' => 'PPN Keluaran 12%',
+            'rate' => 12,
+        ])->assertOk()
+            ->assertJsonPath('data.name', 'PPN Keluaran 12%')
+            ->assertJsonPath('data.rate', 12);
+
+        $this->deleteJson("/api/v1/tax-records/{$id}")->assertOk();
+        $this->getJson('/api/v1/tax-records')->assertOk()
+            ->assertJsonMissing(['code' => 'PPN-UPD']);
     });
 });
 
@@ -88,5 +118,25 @@ describe('Product sales and purchase taxes', function () {
 
         $invoice->assertCreated()
             ->assertJsonPath('data.items.0.tax_rate', 12);
+    });
+
+    it('stacks multiple product sales tax rates', function () {
+        $ppn = TaxRecord::factory()->create([
+            'code' => 'PPN-11',
+            'rate' => 11,
+            'applicability' => TaxRecord::APPLICABILITY_SALES,
+        ]);
+        $luxury = TaxRecord::factory()->create([
+            'code' => 'PPnBM-1',
+            'rate' => 1,
+            'applicability' => TaxRecord::APPLICABILITY_SALES,
+        ]);
+        $product = Product::factory()->create(['tax_rate' => 0, 'is_taxable' => false]);
+        $product->salesTaxes()->sync([
+            $ppn->id => ['kind' => 'sales'],
+            $luxury->id => ['kind' => 'sales'],
+        ]);
+
+        expect($product->fresh()->salesTaxRate())->toBe(12.0);
     });
 });
