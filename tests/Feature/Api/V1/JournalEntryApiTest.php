@@ -353,4 +353,121 @@ describe('Journal Entry API', function () {
             ->assertJsonPath('data.0.id', $withPartner->id);
     });
 
+    it('can create journal entry lines with optional analytic_distribution and tax_tag_ids', function () {
+        $cashAccount = Account::where('code', '1-1001')->first();
+        $expenseAccount = Account::where('code', '5-1001')->first()
+            ?? Account::where('code', '6-1001')->first()
+            ?? $cashAccount;
+        $payableAccount = Account::where('code', '2-1001')->first()
+            ?? Account::where('code', '2-1101')->first()
+            ?? $cashAccount;
+
+        $distribution = ['10' => 60, '20' => 40];
+        $taxTags = [101, 202];
+
+        $response = $this->postJson('/api/v1/journal-entries', [
+            'journal_id' => $this->miscJournal->id,
+            'entry_date' => now()->toDateString(),
+            'description' => 'JE with analytic + tax grids on line',
+            'lines' => [
+                [
+                    'account_id' => $expenseAccount->id,
+                    'analytic_distribution' => $distribution,
+                    'tax_tag_ids' => $taxTags,
+                    'description' => 'Expense with dimensions',
+                    'debit' => 100000,
+                    'credit' => 0,
+                ],
+                [
+                    'account_id' => $payableAccount->id,
+                    'description' => 'Payable',
+                    'debit' => 0,
+                    'credit' => 100000,
+                ],
+            ],
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.lines.0.analytic_distribution.10', 60)
+            ->assertJsonPath('data.lines.0.analytic_distribution.20', 40)
+            ->assertJsonPath('data.lines.0.tax_tag_ids.0', 101)
+            ->assertJsonPath('data.lines.0.tax_tag_ids.1', 202)
+            ->assertJsonPath('data.lines.1.analytic_distribution', null)
+            ->assertJsonPath('data.lines.1.tax_tag_ids', null);
+
+        $line = JournalEntryLine::query()
+            ->where('journal_entry_id', $response->json('data.id'))
+            ->where('debit', 100000)
+            ->first();
+
+        expect($line)->not->toBeNull();
+        expect($line->analytic_distribution)->toMatchArray($distribution);
+        expect($line->tax_tag_ids)->toEqual($taxTags);
+    });
+
+    it('shows analytic_distribution and tax_tag_ids on journal entry lines', function () {
+        $entry = JournalEntry::factory()->create();
+        $account1 = Account::factory()->create();
+        $account2 = Account::factory()->create();
+        JournalEntryLine::factory()->forEntry($entry)->forAccount($account1)->debit(75000)->create([
+            'analytic_distribution' => ['5' => 100],
+            'tax_tag_ids' => [7, 8],
+        ]);
+        JournalEntryLine::factory()->forEntry($entry)->forAccount($account2)->credit(75000)->create();
+
+        $response = $this->getJson("/api/v1/journal-entries/{$entry->id}");
+
+        $response->assertOk()
+            ->assertJsonPath('data.lines.0.analytic_distribution.5', 100)
+            ->assertJsonPath('data.lines.0.tax_tag_ids.0', 7)
+            ->assertJsonPath('data.lines.0.tax_tag_ids.1', 8)
+            ->assertJsonPath('data.lines.1.analytic_distribution', null)
+            ->assertJsonPath('data.lines.1.tax_tag_ids', null);
+    });
+
+    it('rejects invalid analytic_distribution and tax_tag_ids on lines', function () {
+        $cashAccount = Account::where('code', '1-1001')->first();
+        $revenueAccount = Account::where('code', '4-1001')->first();
+
+        $badAnalytic = $this->postJson('/api/v1/journal-entries', [
+            'journal_id' => $this->miscJournal->id,
+            'entry_date' => now()->toDateString(),
+            'description' => 'Bad analytic',
+            'lines' => [
+                [
+                    'account_id' => $cashAccount->id,
+                    'analytic_distribution' => ['1' => 150],
+                    'debit' => 1000,
+                    'credit' => 0,
+                ],
+                [
+                    'account_id' => $revenueAccount->id,
+                    'debit' => 0,
+                    'credit' => 1000,
+                ],
+            ],
+        ]);
+        $badAnalytic->assertStatus(422)->assertJsonValidationErrors(['lines.0.analytic_distribution.1']);
+
+        $badTags = $this->postJson('/api/v1/journal-entries', [
+            'journal_id' => $this->miscJournal->id,
+            'entry_date' => now()->toDateString(),
+            'description' => 'Bad tax tags',
+            'lines' => [
+                [
+                    'account_id' => $cashAccount->id,
+                    'tax_tag_ids' => ['not-an-id'],
+                    'debit' => 1000,
+                    'credit' => 0,
+                ],
+                [
+                    'account_id' => $revenueAccount->id,
+                    'debit' => 0,
+                    'credit' => 1000,
+                ],
+            ],
+        ]);
+        $badTags->assertStatus(422)->assertJsonValidationErrors(['lines.0.tax_tag_ids.0']);
+    });
+
 });

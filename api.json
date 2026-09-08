@@ -52810,6 +52810,26 @@
                             "null"
                         ]
                     },
+                    "analytic_distribution": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "additionalProperties": {
+                            "type": "number"
+                        },
+                        "description": "Odoo-shaped analytic distribution map {analytic_account_id: percentage}. No analytic master yet — stored for round-trip / future analytics."
+                    },
+                    "tax_tag_ids": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "integer"
+                        },
+                        "description": "Odoo Tax Grids / account.tag ids on the line. No tax-tag master yet; VAT reports remain document-level."
+                    },
                     "description": {
                         "type": "string"
                     },
@@ -52850,6 +52870,8 @@
                     "journal_entry_id",
                     "account_id",
                     "partner_id",
+                    "analytic_distribution",
+                    "tax_tag_ids",
                     "description",
                     "debit",
                     "credit",
@@ -61902,6 +61924,27 @@
                                         "integer",
                                         "null"
                                     ]
+                                },
+                                "analytic_distribution": {
+                                    "type": [
+                                        "object",
+                                        "null"
+                                    ],
+                                    "additionalProperties": {
+                                        "type": "number",
+                                        "minimum": 0,
+                                        "maximum": 100
+                                    }
+                                },
+                                "tax_tag_ids": {
+                                    "type": [
+                                        "array",
+                                        "null"
+                                    ],
+                                    "items": {
+                                        "type": "integer",
+                                        "minimum": 1
+                                    }
                                 },
                                 "description": {
                                     "type": [
