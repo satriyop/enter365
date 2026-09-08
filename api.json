@@ -5119,7 +5119,7 @@
         "/bills/{bill}/credit-note": {
             "post": {
                 "operationId": "bill.creditNote",
-                "summary": "Create a vendor credit note (purchase return) from a posted bill",
+                "summary": "Reverse the posted bill journal (AP vendor credit). Stock return is a separate action",
                 "tags": [
                     "Bill"
                 ],
@@ -5135,6 +5135,7 @@
                     }
                 ],
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
@@ -18076,6 +18077,45 @@
                                                     "description": {
                                                         "type": "string"
                                                     },
+                                                    "invoice_date": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "string"
+                                                            },
+                                                            {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    ""
+                                                                ]
+                                                            }
+                                                        ]
+                                                    },
+                                                    "due_date": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "string"
+                                                            },
+                                                            {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    ""
+                                                                ]
+                                                            }
+                                                        ]
+                                                    },
+                                                    "matching": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "string"
+                                                            },
+                                                            {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    ""
+                                                                ]
+                                                            }
+                                                        ]
+                                                    },
                                                     "debit": {
                                                         "type": "string"
                                                     },
@@ -18093,6 +18133,9 @@
                                                     "journal",
                                                     "account",
                                                     "description",
+                                                    "invoice_date",
+                                                    "due_date",
+                                                    "matching",
                                                     "debit",
                                                     "credit",
                                                     "balance"
@@ -18126,6 +18169,18 @@
                                                     "type": "string",
                                                     "const": "Uraian"
                                                 },
+                                                "invoice_date": {
+                                                    "type": "string",
+                                                    "const": "Tgl Faktur"
+                                                },
+                                                "due_date": {
+                                                    "type": "string",
+                                                    "const": "Jatuh Tempo"
+                                                },
+                                                "matching": {
+                                                    "type": "string",
+                                                    "const": "Matching"
+                                                },
                                                 "debit": {
                                                     "type": "string",
                                                     "const": "Debit"
@@ -18146,6 +18201,9 @@
                                                 "journal",
                                                 "account",
                                                 "description",
+                                                "invoice_date",
+                                                "due_date",
+                                                "matching",
                                                 "debit",
                                                 "credit",
                                                 "balance"
@@ -63147,22 +63205,9 @@
             "StoreBillCreditNoteRequest": {
                 "type": "object",
                 "properties": {
-                    "return_date": {
-                        "type": "string",
-                        "format": "date-time"
-                    },
-                    "warehouse_id": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
-                    },
                     "reason": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "maxLength": 50
+                        "type": "string",
+                        "maxLength": 1000
                     },
                     "notes": {
                         "type": [
@@ -63172,6 +63217,9 @@
                         "maxLength": 1000
                     }
                 },
+                "required": [
+                    "reason"
+                ],
                 "title": "StoreBillCreditNoteRequest"
             },
             "StoreBillRequest": {
