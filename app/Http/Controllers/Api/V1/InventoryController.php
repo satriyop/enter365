@@ -17,6 +17,7 @@ use App\Models\Inventory\ProductStock;
 use App\Models\Inventory\Warehouse;
 use App\Services\Inventory\InventoryService;
 use App\Services\Inventory\ManualStockInUnitCost;
+use App\Services\Inventory\ProductForecastService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -24,7 +25,8 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 class InventoryController extends Controller
 {
     public function __construct(
-        protected InventoryService $inventoryService
+        protected InventoryService $inventoryService,
+        protected ProductForecastService $forecastService,
     ) {}
 
     /**
@@ -365,6 +367,18 @@ class InventoryController extends Controller
             ->filter($filter)
             ->orderBy('product_id')
             ->paginate($filter->getRequest()->input('per_page', 25));
+
+        $forecasts = $this->forecastService->forProductIds(
+            $stocks->getCollection()->pluck('product_id')->map(fn ($id) => (int) $id)->all()
+        );
+
+        foreach ($stocks->getCollection() as $stock) {
+            $row = $forecasts[$stock->product_id] ?? ['incoming' => 0, 'outgoing' => 0];
+            $reserved = (int) ($stock->reserved_quantity ?? 0);
+            $stock->setAttribute('incoming_qty', $row['incoming']);
+            $stock->setAttribute('outgoing_qty', $row['outgoing']);
+            $stock->setAttribute('free_to_use', max(0, (int) $stock->quantity - $reserved));
+        }
 
         return ProductStockResource::collection($stocks);
     }

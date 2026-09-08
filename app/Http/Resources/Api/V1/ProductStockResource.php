@@ -11,7 +11,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class ProductStockResource extends JsonResource
 {
     /**
-     * @param  \Illuminate\Http\Request  $request
      * @return array{
      *   id: int,
      *   product_id: int,
@@ -34,6 +33,10 @@ class ProductStockResource extends JsonResource
             'warehouse_id' => $this->warehouse_id,
             'warehouse' => new WarehouseResource($this->whenLoaded('warehouse')),
             'quantity' => $this->quantity,
+            'reserved_quantity' => (int) ($this->reserved_quantity ?? 0),
+            'free_to_use' => (int) ($this->free_to_use ?? max(0, (int) $this->quantity - (int) ($this->reserved_quantity ?? 0))),
+            'incoming_qty' => (int) ($this->incoming_qty ?? 0),
+            'outgoing_qty' => (int) ($this->outgoing_qty ?? 0),
             'average_cost' => $this->average_cost,
             'total_value' => $this->total_value,
 
