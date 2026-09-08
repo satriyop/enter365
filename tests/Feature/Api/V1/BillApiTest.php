@@ -3,6 +3,7 @@
 use App\Enums\DocumentStatus;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\AnalyticAccount;
+use App\Models\Accounting\JournalEntry;
 use App\Models\Accounting\JournalEntryLine;
 use App\Models\Accounting\TaxTag;
 use App\Models\Contacts\Contact;
@@ -386,17 +387,41 @@ describe('Bill API', function () {
 
     it('creates a vendor credit note from a posted bill', function () {
         $supplier = Contact::factory()->supplier()->create();
-        $bill = Bill::factory()->received()->forContact($supplier)->create();
-        BillItem::factory()->forBill($bill)->create();
+        $bill = Bill::factory()->draft()->forContact($supplier)->create([
+            'subtotal' => 1000000,
+            'tax_amount' => 0,
+            'total_amount' => 1000000,
+        ]);
+        BillItem::factory()->forBill($bill)->create(['line_total' => 1000000]);
+
+        $this->postJson("/api/v1/bills/{$bill->id}/post")->assertOk();
+        $bill->refresh();
 
         $response = $this->postJson("/api/v1/bills/{$bill->id}/credit-note", [
-            'reason' => 'vendor_request',
-            'notes' => 'Credit note from bill',
+            'reason' => 'Kesalahan harga vendor',
         ]);
 
         $response->assertCreated()
-            ->assertJsonPath('data.bill_id', $bill->id)
-            ->assertJsonPath('data.contact_id', $supplier->id);
+            ->assertJsonPath('data.source_type', JournalEntry::SOURCE_REVERSAL)
+            ->assertJsonPath('data.reversal_of.id', $bill->journal_entry_id)
+            ->assertJsonPath('data.is_posted', true);
+
+        $apAccount = Account::where('code', '2-1100')->first();
+        $originalAp = JournalEntryLine::query()
+            ->where('journal_entry_id', $bill->journal_entry_id)
+            ->where('account_id', $apAccount->id)
+            ->first();
+        $reversalAp = JournalEntryLine::query()
+            ->where('journal_entry_id', $response->json('data.id'))
+            ->where('account_id', $apAccount->id)
+            ->first();
+
+        expect($originalAp)->not->toBeNull()
+            ->and($reversalAp)->not->toBeNull()
+            ->and($reversalAp->debit)->toBe($originalAp->credit)
+            ->and($bill->fresh()->status)->not->toBe(DocumentStatus::Cancelled);
+
+        $this->assertDatabaseMissing('purchase_returns', ['bill_id' => $bill->id]);
     });
 
     it('cannot create a credit note from a draft bill', function () {

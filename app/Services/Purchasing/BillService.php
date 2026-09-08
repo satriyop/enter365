@@ -13,7 +13,9 @@ use App\Domain\Purchasing\Bills\Events\BillFullyPaid;
 use App\Domain\Purchasing\Bills\Events\BillOverdue;
 use App\Domain\Purchasing\Bills\Events\BillPartiallyPaid;
 use App\Enums\DocumentStatus;
+use App\Exceptions\Domain\BusinessRuleException;
 use App\Exceptions\Domain\StateTransitionException;
+use App\Models\Accounting\JournalEntry;
 use App\Models\Core\AuditLog;
 use App\Models\Purchasing\Bill;
 use App\Models\Purchasing\BillItem;
@@ -361,6 +363,30 @@ class BillService implements BillServiceInterface
             ]);
 
             return $bill->fresh(['contact', 'items', 'journalEntry']);
+        }, ['bill_id' => $bill->id, 'reason' => $reason]);
+    }
+
+    public function createCreditNote(Bill $bill, string $reason): JournalEntry
+    {
+        return $this->executeInTransaction('create_credit_note', function () use ($bill, $reason) {
+            $locked = Bill::query()->lockForUpdate()->findOrFail($bill->id);
+            $entry = $locked->journalEntry;
+
+            if ($entry === null) {
+                throw BusinessRuleException::operationNotAllowed(
+                    'nota kredit vendor',
+                    'Tagihan belum memiliki jurnal yang bisa dibalik.'
+                );
+            }
+
+            $reversal = $this->journalService->reverseEntry($entry, $reason);
+
+            AuditLog::log(AuditLog::ACTION_REVERSED, $locked, null, [
+                'credit_note_journal_entry_id' => $reversal->id,
+                'reason' => $reason,
+            ]);
+
+            return $reversal;
         }, ['bill_id' => $bill->id, 'reason' => $reason]);
     }
 }

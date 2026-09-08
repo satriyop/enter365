@@ -17,9 +17,7 @@ class StoreBillCreditNoteRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'return_date' => ['sometimes', 'date'],
-            'warehouse_id' => ['nullable', 'integer', 'exists:warehouses,id'],
-            'reason' => ['nullable', 'string', 'max:50'],
+            'reason' => ['required', 'string', 'max:1000'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ];
     }

@@ -56,6 +56,11 @@ interface BillServiceInterface
     public function void(Bill $bill, string $reason): Bill;
 
     /**
+     * Reverse the posted bill journal (AP vendor credit note). Inventory return stays a separate action.
+     */
+    public function createCreditNote(Bill $bill, string $reason): \App\Models\Accounting\JournalEntry;
+
+    /**
      * Mark bill as partially paid.
      *
      *
