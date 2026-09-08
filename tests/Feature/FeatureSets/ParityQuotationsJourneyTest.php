@@ -21,17 +21,17 @@ beforeEach(function () {
 });
 
 describe('parity feature set (quotations)', function () {
-    it('exposes quotations while keeping purchase orders off', function () {
+    it('exposes quotations on the parity preset', function () {
         Sanctum::actingAs($this->owner);
 
         $this->getJson('/api/v1/features')->assertOk()
             ->assertJsonPath('data.preset', 'parity')
             ->assertJsonPath('data.modules.quotations', true)
             ->assertJsonPath('data.modules.invoices', true)
-            ->assertJsonPath('data.modules.purchase_orders', false);
+            ->assertJsonPath('data.modules.purchase_orders', true);
 
         $this->getJson('/api/v1/quotations')->assertOk();
-        $this->getJson('/api/v1/purchase-orders')->assertNotFound();
+        $this->getJson('/api/v1/purchase-orders')->assertOk();
     });
 
     it('lets the owner create, submit, approve, and convert a quotation to an invoice', function () {
@@ -94,6 +94,5 @@ describe('parity feature set (quotations)', function () {
             ->assertJsonPath('data.modules.quotations', true);
 
         $this->getJson('/api/v1/quotations')->assertOk();
-        $this->getJson('/api/v1/purchase-orders')->assertNotFound();
     });
 });

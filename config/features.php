@@ -16,7 +16,7 @@
  *   solar | nex   — solar EPC add-on (+ projects, light BOM)
  *   vahana        — manufacturing + electrical_panel add-on
  *   pos           — kasir-first acquisition (POS pack; document sales hidden)
- *   parity        — Kopitiam / Odoo-parity demo (POS till + invoices + payments + quotations)
+ *   parity        — Kopitiam / Odoo-parity demo (POS till + invoices + payments + quotations + POs)
  *   full          — everything (demo / tests)
  *
  * Explicit FEATURE_* env always overrides preset defaults when set.
@@ -45,7 +45,7 @@ $core = [
     'down_payments' => env('FEATURE_DOWN_PAYMENTS', ! $posAcquisition),
     'invoices' => env('FEATURE_INVOICES', $parityDemo || ! $posAcquisition),
     'payments' => env('FEATURE_PAYMENTS', $parityDemo || ! $posAcquisition),
-    'purchase_orders' => env('FEATURE_PURCHASE_ORDERS', ! $posAcquisition),
+    'purchase_orders' => env('FEATURE_PURCHASE_ORDERS', $parityDemo || ! $posAcquisition),
     'goods_receipt_notes' => env('FEATURE_GRN', ! $posAcquisition),
     'purchase_returns' => env('FEATURE_PURCHASE_RETURNS', ! $posAcquisition),
     'inventory' => env('FEATURE_INVENTORY', true),
