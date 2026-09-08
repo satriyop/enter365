@@ -320,7 +320,7 @@ function applyFeaturePreset(string $preset): void
             'solar_proposals' => false,
             'electrical_panel' => false,
             'pos' => true,
-            'quotations' => false,
+            'quotations' => true,
             'invoices' => true,
             'payments' => true,
             'delivery_orders' => false,

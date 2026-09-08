@@ -338,18 +338,18 @@ describe('EnsureFeatureEnabled Middleware', function () {
         $this->getJson('/api/v1/bom-templates')->assertOk();
     });
 
-    it('parity preset enables invoices and payments without quotations', function () {
+    it('parity preset enables invoices, payments, and quotations', function () {
         applyFeaturePreset('parity');
 
         expect(config('features.preset'))->toBe('parity')
             ->and(config('features.modules.invoices'))->toBeTrue()
             ->and(config('features.modules.payments'))->toBeTrue()
             ->and(config('features.modules.pos'))->toBeTrue()
-            ->and(config('features.modules.quotations'))->toBeFalse();
+            ->and(config('features.modules.quotations'))->toBeTrue();
 
         $this->getJson('/api/v1/invoices')->assertOk();
         $this->getJson('/api/v1/payments')->assertOk();
-        $this->getJson('/api/v1/quotations')->assertNotFound();
+        $this->getJson('/api/v1/quotations')->assertOk();
     });
 
     it('pos preset keeps invoices off until FEATURE_INVOICES is set', function () {
