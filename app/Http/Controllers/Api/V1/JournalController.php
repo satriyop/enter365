@@ -23,7 +23,7 @@ class JournalController extends Controller
         $this->authorize('viewAny', Journal::class);
 
         $journals = Journal::query()
-            ->with(['defaultAccount'])
+            ->with(['defaultAccount', 'suspenseAccount', 'outstandingReceiptsAccount', 'outstandingPaymentsAccount'])
             ->filter($filter)
             ->orderBy('name')
             ->paginate($filter->getRequest()->input('per_page', 50));
@@ -37,7 +37,7 @@ class JournalController extends Controller
 
         $journal = $this->journalMasterService->create($request->validated());
 
-        return (new JournalResource($journal->load('defaultAccount')))
+        return (new JournalResource($journal->load(['defaultAccount', 'suspenseAccount', 'outstandingReceiptsAccount', 'outstandingPaymentsAccount'])))
             ->response()
             ->setStatusCode(201);
     }
@@ -48,7 +48,7 @@ class JournalController extends Controller
 
         $filter->apply($journal->newQuery());
 
-        $journal->loadMissing(['defaultAccount']);
+        $journal->loadMissing(['defaultAccount', 'suspenseAccount', 'outstandingReceiptsAccount', 'outstandingPaymentsAccount']);
 
         return new JournalResource($journal);
     }

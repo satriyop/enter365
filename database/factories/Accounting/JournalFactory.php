@@ -21,6 +21,11 @@ class JournalFactory extends Factory
             'type' => $type,
             'sequence_prefix' => strtoupper(fake()->unique()->lexify('???-')),
             'default_account_id' => null,
+            'suspense_account_id' => null,
+            'outstanding_receipts_account_id' => null,
+            'outstanding_payments_account_id' => null,
+            'bank_account_number' => null,
+            'dedicated_payment_sequence' => false,
             'currency' => null,
             'is_active' => true,
         ];

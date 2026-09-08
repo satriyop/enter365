@@ -18,6 +18,10 @@ class StoreJournalRequest extends FormRequest
         if ($this->has('currency') && $this->input('currency') === '') {
             $this->merge(['currency' => null]);
         }
+
+        if ($this->has('bank_account_number') && $this->input('bank_account_number') === '') {
+            $this->merge(['bank_account_number' => null]);
+        }
     }
 
     public function rules(): array
@@ -27,6 +31,11 @@ class StoreJournalRequest extends FormRequest
             'type' => ['required', 'string', Rule::in(Journal::getTypes())],
             'sequence_prefix' => ['required', 'string', 'max:32', 'unique:journals,sequence_prefix'],
             'default_account_id' => ['nullable', 'integer', 'exists:accounts,id'],
+            'suspense_account_id' => ['nullable', 'integer', 'exists:accounts,id'],
+            'outstanding_receipts_account_id' => ['nullable', 'integer', 'exists:accounts,id'],
+            'outstanding_payments_account_id' => ['nullable', 'integer', 'exists:accounts,id'],
+            'bank_account_number' => ['nullable', 'string', 'max:255'],
+            'dedicated_payment_sequence' => ['boolean'],
             'currency' => [
                 'nullable',
                 'string',
@@ -46,6 +55,9 @@ class StoreJournalRequest extends FormRequest
             'sequence_prefix.required' => 'Prefix nomor urut wajib diisi.',
             'sequence_prefix.unique' => 'Prefix nomor urut sudah digunakan.',
             'default_account_id.exists' => 'Akun default tidak ditemukan.',
+            'suspense_account_id.exists' => 'Akun suspense tidak ditemukan.',
+            'outstanding_receipts_account_id.exists' => 'Akun outstanding receipts tidak ditemukan.',
+            'outstanding_payments_account_id.exists' => 'Akun outstanding payments tidak ditemukan.',
         ];
     }
 }

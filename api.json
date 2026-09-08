@@ -53012,6 +53012,21 @@
                     "default_account_id": {
                         "type": "string"
                     },
+                    "suspense_account_id": {
+                        "type": "string"
+                    },
+                    "outstanding_receipts_account_id": {
+                        "type": "string"
+                    },
+                    "outstanding_payments_account_id": {
+                        "type": "string"
+                    },
+                    "bank_account_number": {
+                        "type": "string"
+                    },
+                    "dedicated_payment_sequence": {
+                        "type": "string"
+                    },
                     "currency": {
                         "type": "string"
                     },
@@ -53019,6 +53034,15 @@
                         "type": "string"
                     },
                     "default_account": {
+                        "$ref": "#/components/schemas/AccountResource"
+                    },
+                    "suspense_account": {
+                        "$ref": "#/components/schemas/AccountResource"
+                    },
+                    "outstanding_receipts_account": {
+                        "$ref": "#/components/schemas/AccountResource"
+                    },
+                    "outstanding_payments_account": {
                         "$ref": "#/components/schemas/AccountResource"
                     },
                     "created_at": {
@@ -53040,6 +53064,11 @@
                     "type",
                     "sequence_prefix",
                     "default_account_id",
+                    "suspense_account_id",
+                    "outstanding_receipts_account_id",
+                    "outstanding_payments_account_id",
+                    "bank_account_number",
+                    "dedicated_payment_sequence",
                     "currency",
                     "is_active",
                     "created_at",
@@ -61935,6 +61964,34 @@
                             "null"
                         ]
                     },
+                    "suspense_account_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "outstanding_receipts_account_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "outstanding_payments_account_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "bank_account_number": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "dedicated_payment_sequence": {
+                        "type": "boolean"
+                    },
                     "currency": {
                         "type": [
                             "string",
@@ -66977,6 +67034,34 @@
                             "integer",
                             "null"
                         ]
+                    },
+                    "suspense_account_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "outstanding_receipts_account_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "outstanding_payments_account_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "bank_account_number": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "dedicated_payment_sequence": {
+                        "type": "boolean"
                     },
                     "currency": {
                         "type": [
