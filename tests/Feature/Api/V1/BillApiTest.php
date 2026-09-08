@@ -309,6 +309,52 @@ describe('Bill API', function () {
         expect($apLine->credit)->toBe(1060000);
     });
 
+    it('copies per-line analytic distribution and tax tags onto the bill journal entry', function () {
+        $supplier = Contact::factory()->supplier()->create();
+        $expenseAccount = Account::where('code', '5-1002')->first()
+            ?? Account::where('code', '5-1001')->first();
+        $analyticA = AnalyticAccount::factory()->create();
+        $analyticB = AnalyticAccount::factory()->create();
+        $tagA = TaxTag::factory()->tax()->create();
+        $tagB = TaxTag::factory()->tax()->create();
+
+        $bill = Bill::factory()->draft()->forContact($supplier)->create([
+            'subtotal' => 300000,
+            'tax_amount' => 0,
+            'total_amount' => 300000,
+        ]);
+        BillItem::factory()->forBill($bill)->create([
+            'description' => 'Line A',
+            'expense_account_id' => $expenseAccount->id,
+            'line_total' => 100000,
+            'analytic_distribution' => [(string) $analyticA->id => 100],
+            'tax_tag_ids' => [$tagA->id],
+        ]);
+        BillItem::factory()->forBill($bill)->create([
+            'description' => 'Line B',
+            'expense_account_id' => $expenseAccount->id,
+            'line_total' => 200000,
+            'analytic_distribution' => [(string) $analyticB->id => 100],
+            'tax_tag_ids' => [$tagB->id],
+        ]);
+
+        $response = $this->postJson("/api/v1/bills/{$bill->id}/post");
+
+        $response->assertOk();
+
+        $jeLines = collect($response->json('data.journal_entry.lines'))
+            ->filter(fn (array $line) => (int) $line['debit'] > 0 && ($line['analytic_distribution'] ?? null))
+            ->values();
+
+        expect($jeLines)->toHaveCount(2)
+            ->and($jeLines[0]['description'])->toBe('Line A')
+            ->and($jeLines[0]['analytic_distribution'])->toMatchArray([(string) $analyticA->id => 100])
+            ->and($jeLines[0]['tax_tag_ids'])->toEqual([$tagA->id])
+            ->and($jeLines[1]['description'])->toBe('Line B')
+            ->and($jeLines[1]['analytic_distribution'])->toMatchArray([(string) $analyticB->id => 100])
+            ->and($jeLines[1]['tax_tag_ids'])->toEqual([$tagB->id]);
+    });
+
     it('cannot post already posted bill', function () {
         $bill = Bill::factory()->received()->create();
 
