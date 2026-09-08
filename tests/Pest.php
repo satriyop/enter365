@@ -332,7 +332,7 @@ function applyFeaturePreset(string $preset): void
             'budgeting' => false,
             'recurring' => false,
             'multi_currency' => false,
-            'bank_reconciliation' => false,
+            'bank_reconciliation' => true,
         ],
         'solar' => [
             'manufacturing' => false,

@@ -55,7 +55,7 @@ $core = [
     'budgeting' => env('FEATURE_BUDGETING', ! $posAcquisition),
     'recurring' => env('FEATURE_RECURRING', ! $posAcquisition),
     'multi_currency' => env('FEATURE_MULTI_CURRENCY', ! $posAcquisition),
-    'bank_reconciliation' => env('FEATURE_BANK_RECONCILIATION', ! $posAcquisition),
+    'bank_reconciliation' => env('FEATURE_BANK_RECONCILIATION', $parityDemo || ! $posAcquisition),
     // Tax pack-ID (opt-in)
     'pph_withholding' => env('FEATURE_PPH_WITHHOLDING', false),
 ];
