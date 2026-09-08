@@ -49460,6 +49460,12 @@
                             "null"
                         ]
                     },
+                    "account_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
                     "expense_account": {
                         "anyOf": [
                             {
@@ -49469,6 +49475,22 @@
                                 "type": "null"
                             }
                         ]
+                    },
+                    "analytic_distribution": {
+                        "anyOf": [
+                            {
+                                "type": "object"
+                            },
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "tax_tag_ids": {
+                        "type": "string"
                     },
                     "created_at": {
                         "type": [
@@ -49498,6 +49520,9 @@
                     "sort_order",
                     "notes",
                     "expense_account_id",
+                    "account_id",
+                    "analytic_distribution",
+                    "tax_tag_ids",
                     "created_at",
                     "updated_at"
                 ],
@@ -60939,16 +60964,41 @@
                                     "minimum": 0
                                 },
                                 "expense_account_id": {
+                                    "type": "integer"
+                                },
+                                "account_id": {
                                     "type": [
                                         "integer",
                                         "null"
                                     ]
+                                },
+                                "analytic_distribution": {
+                                    "type": [
+                                        "array",
+                                        "null"
+                                    ],
+                                    "items": {
+                                        "type": "number",
+                                        "minimum": 0,
+                                        "maximum": 100
+                                    }
+                                },
+                                "tax_tag_ids": {
+                                    "type": [
+                                        "array",
+                                        "null"
+                                    ],
+                                    "items": {
+                                        "type": "integer",
+                                        "minimum": 1
+                                    }
                                 }
                             },
                             "required": [
                                 "description",
                                 "quantity",
-                                "unit_price"
+                                "unit_price",
+                                "expense_account_id"
                             ]
                         },
                         "minItems": 1
@@ -66479,6 +66529,33 @@
                                         "integer",
                                         "null"
                                     ]
+                                },
+                                "account_id": {
+                                    "type": [
+                                        "integer",
+                                        "null"
+                                    ]
+                                },
+                                "analytic_distribution": {
+                                    "type": [
+                                        "array",
+                                        "null"
+                                    ],
+                                    "items": {
+                                        "type": "number",
+                                        "minimum": 0,
+                                        "maximum": 100
+                                    }
+                                },
+                                "tax_tag_ids": {
+                                    "type": [
+                                        "array",
+                                        "null"
+                                    ],
+                                    "items": {
+                                        "type": "integer",
+                                        "minimum": 1
+                                    }
                                 }
                             }
                         },

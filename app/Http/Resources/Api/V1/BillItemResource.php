@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Casts\AnalyticDistributionCast;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -11,7 +12,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class BillItemResource extends JsonResource
 {
     /**
-     * @param  \Illuminate\Http\Request  $request
      * @return array{
      *   id: int,
      *   bill_id: int,
@@ -49,7 +49,10 @@ class BillItemResource extends JsonResource
             'sort_order' => $this->sort_order,
             'notes' => $this->notes,
             'expense_account_id' => $this->expense_account_id,
+            'account_id' => $this->expense_account_id,
             'expense_account' => new AccountResource($this->whenLoaded('expenseAccount')),
+            'analytic_distribution' => AnalyticDistributionCast::forApi($this->analytic_distribution),
+            'tax_tag_ids' => $this->tax_tag_ids,
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

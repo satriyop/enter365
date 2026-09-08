@@ -2,13 +2,21 @@
 
 namespace App\Http\Requests\Api\V1;
 
+use App\Http\Requests\Api\V1\Concerns\ValidatesOdooLineDimensions;
 use App\Http\Requests\ValidationRules;
 
 class UpdateBillRequest extends BaseTransactionalRequest
 {
+    use ValidatesOdooLineDimensions;
+
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->mergeAccountIdAlias();
     }
 
     public function rules(): array
@@ -46,8 +54,24 @@ class UpdateBillRequest extends BaseTransactionalRequest
                 'discount_amount' => ['nullable', 'integer', 'min:0'],
                 'payable_account_id' => ['nullable', 'integer', 'exists:accounts,id'],
                 'items.*.id' => ['nullable', 'integer', 'exists:bill_items,id'],
-                'items.*.expense_account_id' => ['nullable', 'integer', 'exists:accounts,id'],
-            ]
+            ],
+            $this->lineDimensionRules(accountRequired: false),
         );
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(fn ($inner) => $this->validateAnalyticDistributionKeys($inner));
+    }
+
+    public function validated($key = null, $default = null): mixed
+    {
+        $validated = parent::validated($key, $default);
+
+        if ($key !== null || ! is_array($validated)) {
+            return $validated;
+        }
+
+        return $this->restoreAnalyticDistributionKeys($validated);
     }
 }
