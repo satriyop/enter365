@@ -240,6 +240,56 @@ describe('Bill line tax records', function () {
         $posted = \App\Models\Purchasing\Bill::query()->with('journalEntry.lines')->findOrFail($id);
         expect($posted->journalEntry?->lines->pluck('account_id')->all())->toContain($ppnIn->id);
     });
+
+    it('posts one bill journal tax line per stacked purchase tax', function () {
+        $ppnIn = Account::query()->where('code', '1-1300')->firstOrFail();
+        $ppn = TaxRecord::factory()->create([
+            'code' => 'PPN-BILL-11',
+            'name' => 'PPN Masukan 11%',
+            'rate' => 11,
+            'applicability' => TaxRecord::APPLICABILITY_PURCHASE,
+            'refund_account_id' => $ppnIn->id,
+        ]);
+        $luxury = TaxRecord::factory()->create([
+            'code' => 'PPnBM-BILL-1',
+            'name' => 'PPnBM Masukan 1%',
+            'rate' => 1,
+            'applicability' => TaxRecord::APPLICABILITY_PURCHASE,
+            'refund_account_id' => $ppnIn->id,
+        ]);
+        $supplier = Contact::factory()->supplier()->create();
+        $expense = billExpenseAccount();
+
+        $created = $this->postJson('/api/v1/bills', [
+            'contact_id' => $supplier->id,
+            'bill_date' => now()->toDateString(),
+            'due_date' => now()->addDays(14)->toDateString(),
+            'items' => [
+                [
+                    'description' => 'Stacked',
+                    'quantity' => 1,
+                    'unit' => 'pcs',
+                    'unit_price' => 100_000,
+                    'expense_account_id' => $expense->id,
+                    'tax_record_ids' => [$ppn->id, $luxury->id],
+                ],
+            ],
+        ]);
+        $created->assertCreated();
+        $id = (int) $created->json('data.id');
+        $this->postJson("/api/v1/bills/{$id}/post")->assertOk();
+
+        $posted = \App\Models\Purchasing\Bill::query()->with('journalEntry.lines')->findOrFail($id);
+        $taxDebits = $posted->journalEntry->lines
+            ->where('account_id', $ppnIn->id)
+            ->where('debit', '>', 0)
+            ->pluck('debit')
+            ->sort()
+            ->values()
+            ->all();
+
+        expect($taxDebits)->toEqual([1_000, 11_000]);
+    });
 });
 
 it('stacks multiple product purchase tax rates', function () {

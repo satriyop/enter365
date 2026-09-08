@@ -196,4 +196,57 @@ describe('Product sales and purchase taxes', function () {
         $posted = \App\Models\Sales\Invoice::query()->with('journalEntry.lines')->findOrFail($id);
         expect($posted->journalEntry?->lines->pluck('account_id')->all())->toContain($vat->id);
     });
+
+    it('posts one invoice journal tax line per stacked sales tax', function () {
+        $vat = Account::query()->where('code', '2-1200')->firstOrFail();
+        $ppn = TaxRecord::factory()->create([
+            'code' => 'PPN-STACK-11',
+            'name' => 'PPN 11%',
+            'rate' => 11,
+            'applicability' => TaxRecord::APPLICABILITY_SALES,
+            'invoice_account_id' => $vat->id,
+        ]);
+        $luxury = TaxRecord::factory()->create([
+            'code' => 'PPnBM-STACK-1',
+            'name' => 'PPnBM 1%',
+            'rate' => 1,
+            'applicability' => TaxRecord::APPLICABILITY_SALES,
+            'invoice_account_id' => $vat->id,
+        ]);
+        $product = Product::factory()->create(['tax_rate' => 0, 'is_taxable' => false]);
+        $product->salesTaxes()->sync([
+            $ppn->id => ['kind' => 'sales'],
+            $luxury->id => ['kind' => 'sales'],
+        ]);
+        $customer = Contact::factory()->customer()->create();
+
+        $created = $this->postJson('/api/v1/invoices', [
+            'contact_id' => $customer->id,
+            'invoice_date' => now()->toDateString(),
+            'due_date' => now()->addDays(7)->toDateString(),
+            'items' => [
+                [
+                    'product_id' => $product->id,
+                    'description' => $product->name,
+                    'quantity' => 1,
+                    'unit' => 'pcs',
+                    'unit_price' => 100_000,
+                ],
+            ],
+        ]);
+        $created->assertCreated();
+        $id = (int) $created->json('data.id');
+        $this->postJson("/api/v1/invoices/{$id}/post")->assertOk();
+
+        $posted = \App\Models\Sales\Invoice::query()->with('journalEntry.lines')->findOrFail($id);
+        $taxCredits = $posted->journalEntry->lines
+            ->where('account_id', $vat->id)
+            ->where('credit', '>', 0)
+            ->pluck('credit')
+            ->sort()
+            ->values()
+            ->all();
+
+        expect($taxCredits)->toEqual([1_000, 11_000]);
+    });
 });
