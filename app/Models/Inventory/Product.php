@@ -162,11 +162,11 @@ class Product extends Model
     public function purchaseTaxRate(): float
     {
         $attached = $this->relationLoaded('purchaseTaxes')
-            ? $this->purchaseTaxes->first()
-            : $this->purchaseTaxes()->first();
+            ? $this->purchaseTaxes
+            : $this->purchaseTaxes()->get();
 
-        if ($attached) {
-            return (float) $attached->rate;
+        if ($attached->isNotEmpty()) {
+            return (float) $attached->sum(fn ($tax) => (float) $tax->rate);
         }
 
         return (float) $this->tax_rate;

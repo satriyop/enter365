@@ -64,6 +64,7 @@ class StoreBillRequest extends BaseTransactionalRequest
             'items.*.expense_account_id.required' => 'Akun biaya wajib dipilih untuk setiap baris.',
             'items.*.expense_account_id.exists' => 'Akun biaya tidak ditemukan.',
             'items.*.tax_tag_ids.*.exists' => 'Tag pajak tidak ditemukan.',
+            'items.*.tax_record_ids.*.exists' => 'Pajak tidak ditemukan.',
         ];
     }
 }

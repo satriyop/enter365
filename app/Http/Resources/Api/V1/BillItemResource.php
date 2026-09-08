@@ -28,12 +28,16 @@ class BillItemResource extends JsonResource
      *   notes: string|null,
      *   expense_account_id: int|null,
      *   expense_account?: AccountResource,
+     *   product_id: int|null,
+     *   tax_record_ids: list<int>|null,
      *   created_at: string|null,
      *   updated_at: string|null
      * }
      */
     public function toArray(Request $request): array
     {
+        $taxRecordIds = $this->taxRecordIds();
+
         return [
             'id' => $this->id,
             'bill_id' => $this->bill_id,
@@ -54,6 +58,8 @@ class BillItemResource extends JsonResource
             'expense_account' => new AccountResource($this->whenLoaded('expenseAccount')),
             'analytic_distribution' => AnalyticDistributionCast::forApi($this->analytic_distribution),
             'tax_tag_ids' => $this->tax_tag_ids,
+            'tax_record_ids' => $taxRecordIds === [] ? null : $taxRecordIds,
+            'product_id' => $this->product_id,
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

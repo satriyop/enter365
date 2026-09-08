@@ -17,10 +17,12 @@ use App\Exceptions\Domain\BusinessRuleException;
 use App\Exceptions\Domain\StateTransitionException;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Core\AuditLog;
+use App\Models\Inventory\Product;
 use App\Models\Purchasing\Bill;
 use App\Models\Purchasing\BillItem;
 use App\Models\Purchasing\PurchaseOrder;
 use App\Models\Purchasing\PurchaseOrderItem;
+use App\Models\Tax\TaxRecord;
 use App\Services\Base\Traits\WithDocuments;
 use App\Services\Base\Traits\WithEventDispatching;
 use App\Services\Base\Traits\WithOperationContext;
@@ -138,21 +140,88 @@ class BillService implements BillServiceInterface
         assert($document instanceof Bill);
         foreach ($items as $item) {
             $amount = (int) round($item['quantity'] * $item['unit_price']);
+            $taxes = $this->resolveLineTaxes($item);
+            $taxAmount = (int) round($amount * ($taxes['tax_rate'] / 100));
 
             BillItem::create([
                 'bill_id' => $document->getKey(),
+                'product_id' => $item['product_id'] ?? null,
                 'description' => $item['description'],
                 'quantity' => $item['quantity'],
                 'unit' => $item['unit'] ?? 'unit',
                 'unit_price' => $item['unit_price'],
                 'discount_percent' => $item['discount_percent'] ?? 0,
-                'tax_rate' => $item['tax_rate'] ?? 0,
+                'tax_rate' => $taxes['tax_rate'],
+                'tax_amount' => $taxAmount,
                 'line_total' => $amount,
                 'expense_account_id' => $item['expense_account_id'] ?? $item['account_id'] ?? null,
                 'analytic_distribution' => $item['analytic_distribution'] ?? null,
-                'tax_tag_ids' => $item['tax_tag_ids'] ?? null,
+                'tax_tag_ids' => $taxes['tax_tag_ids'],
+                'tax_record_ids' => $taxes['tax_record_ids'],
             ]);
         }
+    }
+
+    /**
+     * @param  array<string, mixed>  $item
+     * @return array{tax_rate: float, tax_record_ids: list<int>|null, tax_tag_ids: list<int>|null}
+     */
+    private function resolveLineTaxes(array $item): array
+    {
+        $explicitTags = is_array($item['tax_tag_ids'] ?? null) ? array_values(array_map('intval', $item['tax_tag_ids'])) : null;
+        $recordIds = is_array($item['tax_record_ids'] ?? null)
+            ? array_values(array_filter(array_map('intval', $item['tax_record_ids'])))
+            : [];
+
+        if ($recordIds === [] && ! array_key_exists('tax_rate', $item) && ! empty($item['product_id'])) {
+            $product = Product::query()->with('purchaseTaxes')->find((int) $item['product_id']);
+            if ($product === null) {
+                return [
+                    'tax_rate' => 0.0,
+                    'tax_record_ids' => null,
+                    'tax_tag_ids' => $explicitTags,
+                ];
+            }
+
+            $recordIds = $product->purchaseTaxes
+                ->pluck('id')
+                ->map(fn ($id): int => (int) $id)
+                ->values()
+                ->all();
+
+            if ($recordIds === []) {
+                return [
+                    'tax_rate' => $product->purchaseTaxRate(),
+                    'tax_record_ids' => null,
+                    'tax_tag_ids' => $explicitTags,
+                ];
+            }
+        }
+
+        if ($recordIds !== []) {
+            $records = TaxRecord::query()->whereIn('id', $recordIds)->get();
+            $fromRecords = $records
+                ->pluck('tax_tag_id')
+                ->filter()
+                ->map(fn ($id): int => (int) $id)
+                ->unique()
+                ->values()
+                ->all();
+
+            return [
+                'tax_rate' => (float) $records->sum(fn (TaxRecord $tax): float => (float) $tax->rate),
+                'tax_record_ids' => $recordIds,
+                'tax_tag_ids' => ($explicitTags !== null && $explicitTags !== [])
+                    ? $explicitTags
+                    : ($fromRecords !== [] ? $fromRecords : null),
+            ];
+        }
+
+        return [
+            'tax_rate' => (float) ($item['tax_rate'] ?? 0),
+            'tax_record_ids' => null,
+            'tax_tag_ids' => $explicitTags,
+        ];
     }
 
     /**

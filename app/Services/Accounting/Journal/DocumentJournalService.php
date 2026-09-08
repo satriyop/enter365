@@ -7,10 +7,12 @@ namespace App\Services\Accounting\Journal;
 use App\Contracts\Accounting\AccountLookupServiceInterface;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
+use App\Models\Accounting\Account;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
 use App\Models\Shared\Payment;
+use App\Models\Tax\TaxRecord;
 use App\Services\Accounting\AccountingPolicyManager;
 use App\Services\Base\BaseService;
 use App\Support\OperationContext;
@@ -199,7 +201,7 @@ class DocumentJournalService extends BaseService
             );
         }
 
-        $bill->loadMissing(['items.product']);
+        $bill->loadMissing(['items.product.purchaseTaxes.refundAccount']);
 
         // Only perpetual mode creates GRN→GRNI journal entries that need clearing
         $inventoryStrategy = $this->policyManager->inventory()->getIdentifier();
@@ -216,7 +218,7 @@ class DocumentJournalService extends BaseService
         $accounts = $this->accountLookup->findByCodesOrFail($requiredCodes, 'posting bill');
 
         $payableAccount = $bill->payableAccount ?? $accounts->get('2-1100');
-        $taxReceivableAccount = $accounts->get('1-1300'); // PPN Masukan
+        $taxReceivableAccount = $this->billTaxAccount($bill) ?? $accounts->get('1-1300'); // PPN Masukan
         $defaultExpenseAccount = $accounts->get('5-1002'); // Pembelian
         $grniAccount = $usesGrni ? $accounts->get('2-1300') : null; // GRNI
 
@@ -264,11 +266,13 @@ class DocumentJournalService extends BaseService
         // Debit: Tax Receivable (if tax exists)
         if ($bill->tax_amount > 0 && $taxReceivableAccount) {
             $taxBase = $this->toBaseCurrency($bill->tax_amount, $currency, $exchangeRate);
+            $distributionTax = $this->billPurchaseTaxRecord($bill);
             $lines[] = [
                 'account_id' => $taxReceivableAccount->id,
                 'description' => 'PPN Masukan '.$bill->bill_number,
                 'debit' => $taxBase,
                 'credit' => 0,
+                'tax_tag_ids' => $distributionTax?->tax_tag_id ? [$distributionTax->tax_tag_id] : null,
                 ...$this->currencyMeta($currency, $bill->tax_amount, $exchangeRate),
             ];
             $totalDebits += $taxBase;
@@ -546,19 +550,48 @@ class DocumentJournalService extends BaseService
         ], autoPost: true);
     }
 
-    private function invoiceTaxAccount(\App\Models\Sales\Invoice $invoice): ?\App\Models\Accounting\Account
+    private function invoiceTaxAccount(Invoice $invoice): ?Account
     {
         $record = $this->invoiceSalesTaxRecord($invoice);
 
         return $record?->invoiceAccount;
     }
 
-    private function invoiceSalesTaxRecord(\App\Models\Sales\Invoice $invoice): ?\App\Models\Tax\TaxRecord
+    private function invoiceSalesTaxRecord(Invoice $invoice): ?TaxRecord
     {
         foreach ($invoice->items as $item) {
-            $taxes = $item->product?->salesTaxes ?? collect();
-            $withAccount = $taxes->first(fn ($tax) => $tax->invoice_account_id);
-            if ($withAccount) {
+            $taxes = $item->product !== null ? $item->product->salesTaxes : collect();
+            $withAccount = $taxes->first(fn (TaxRecord $tax): bool => $tax->invoice_account_id !== null);
+            if ($withAccount instanceof TaxRecord) {
+                return $withAccount;
+            }
+        }
+
+        return null;
+    }
+
+    private function billTaxAccount(Bill $bill): ?Account
+    {
+        $record = $this->billPurchaseTaxRecord($bill);
+
+        return $record?->refundAccount;
+    }
+
+    private function billPurchaseTaxRecord(Bill $bill): ?TaxRecord
+    {
+        foreach ($bill->items as $item) {
+            $ids = $item->taxRecordIds();
+            if ($ids !== []) {
+                $records = TaxRecord::query()->whereIn('id', $ids)->get();
+                $withAccount = $records->first(fn (TaxRecord $tax): bool => $tax->refund_account_id !== null);
+                if ($withAccount instanceof TaxRecord) {
+                    return $withAccount;
+                }
+            }
+
+            $taxes = $item->product !== null ? $item->product->purchaseTaxes : collect();
+            $withAccount = $taxes->first(fn (TaxRecord $tax): bool => $tax->refund_account_id !== null);
+            if ($withAccount instanceof TaxRecord) {
                 return $withAccount;
             }
         }

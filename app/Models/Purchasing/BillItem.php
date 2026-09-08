@@ -9,6 +9,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property list<int>|null $tax_record_ids
+ * @property list<int>|null $tax_tag_ids
+ */
 class BillItem extends Model
 {
     use HasFactory;
@@ -30,6 +34,7 @@ class BillItem extends Model
         'expense_account_id',
         'analytic_distribution',
         'tax_tag_ids',
+        'tax_record_ids',
         'purchase_order_item_id',
     ];
 
@@ -46,6 +51,7 @@ class BillItem extends Model
             'sort_order' => 'integer',
             'analytic_distribution' => AnalyticDistributionCast::class,
             'tax_tag_ids' => 'array',
+            'tax_record_ids' => 'array',
         ];
     }
 
@@ -105,6 +111,21 @@ class BillItem extends Model
         }
 
         return (int) round($this->inventoryTotalCost() / $quantity);
+    }
+
+    /**
+     * @return list<int>
+     */
+    public function taxRecordIds(): array
+    {
+        if (! is_array($this->tax_record_ids)) {
+            return [];
+        }
+
+        /** @var list<int> $ids */
+        $ids = array_values(array_filter(array_map('intval', $this->tax_record_ids)));
+
+        return $ids;
     }
 
     /**
