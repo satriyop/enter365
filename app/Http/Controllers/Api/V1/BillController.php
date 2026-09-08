@@ -16,7 +16,6 @@ use App\Http\Resources\Api\V1\BillResource;
 use App\Http\Resources\Api\V1\JournalEntryResource;
 use App\Http\Resources\Api\V1\RecurringTemplateResource;
 use App\Models\Purchasing\Bill;
-use App\Models\Purchasing\PurchaseOrder;
 use App\Services\Sales\RecurringService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -162,7 +161,19 @@ class BillController extends Controller
     }
 
     /**
-     * Match a posted bill to a purchase order (same vendor).
+     * Line-level billed vs purchased worksheet.
+     */
+    public function purchaseMatching(Bill $bill): JsonResponse
+    {
+        $this->authorize('view', $bill);
+
+        $purchaseOrderId = request()->integer('purchase_order_id') ?: null;
+
+        return $this->success($this->billService->purchaseMatching($bill, $purchaseOrderId));
+    }
+
+    /**
+     * Match bill lines to purchase-order lines (same vendor).
      */
     public function matchPurchaseOrder(MatchBillPurchaseOrderRequest $request, Bill $bill): BillResource|JsonResponse
     {
@@ -172,17 +183,17 @@ class BillController extends Controller
             return $blocked;
         }
 
-        $purchaseOrder = PurchaseOrder::query()->findOrFail($request->integer('purchase_order_id'));
+        try {
+            $bill = $this->billService->matchPurchaseOrder(
+                $bill,
+                $request->integer('purchase_order_id'),
+                $request->validated('lines'),
+            );
 
-        if ($purchaseOrder->contact_id !== $bill->contact_id) {
-            return $this->error('Purchase order harus dari vendor yang sama.', 422);
+            return new BillResource($bill);
+        } catch (BusinessRuleException $e) {
+            return $this->error($e->getMessage(), 422);
         }
-
-        $bill->update(['purchase_order_id' => $purchaseOrder->id]);
-
-        return new BillResource(
-            $bill->fresh(['contact', 'items.expenseAccount', 'journalEntry.lines.account', 'payments', 'purchaseOrder'])
-        );
     }
 
     private function postedBillOrError(Bill $bill): ?JsonResponse

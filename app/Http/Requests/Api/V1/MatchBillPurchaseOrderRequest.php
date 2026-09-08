@@ -18,6 +18,9 @@ class MatchBillPurchaseOrderRequest extends FormRequest
     {
         return [
             'purchase_order_id' => ['required', 'integer', 'exists:purchase_orders,id'],
+            'lines' => ['required', 'array', 'min:1'],
+            'lines.*.bill_item_id' => ['required', 'integer', 'exists:bill_items,id'],
+            'lines.*.purchase_order_item_id' => ['required', 'integer', 'exists:purchase_order_items,id'],
         ];
     }
 
@@ -29,6 +32,10 @@ class MatchBillPurchaseOrderRequest extends FormRequest
         return [
             'purchase_order_id.required' => 'Purchase order wajib dipilih.',
             'purchase_order_id.exists' => 'Purchase order tidak ditemukan.',
+            'lines.required' => 'Baris matching wajib diisi.',
+            'lines.min' => 'Minimal satu baris matching.',
+            'lines.*.bill_item_id.required' => 'Baris tagihan wajib dipilih.',
+            'lines.*.purchase_order_item_id.required' => 'Baris purchase order wajib dipilih.',
         ];
     }
 }
