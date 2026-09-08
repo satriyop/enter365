@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Domain\Accounting\FiscalPeriods\Enums\FiscalPeriodStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreFiscalPeriodRequest;
+use App\Http\Requests\Api\V1\UpdateFiscalPeriodRequest;
 use App\Http\Resources\Api\V1\FiscalPeriodResource;
 use App\Models\Accounting\FiscalPeriod;
 use App\Services\Accounting\FiscalPeriodService;
@@ -58,6 +59,15 @@ class FiscalPeriodController extends Controller
         $this->authorize('view', $fiscalPeriod);
 
         return new FiscalPeriodResource($fiscalPeriod->load('closingEntry'));
+    }
+
+    public function update(UpdateFiscalPeriodRequest $request, FiscalPeriod $fiscalPeriod): FiscalPeriodResource
+    {
+        $this->authorize('update', $fiscalPeriod);
+
+        $updated = $this->fiscalPeriodService->updateLockDates($fiscalPeriod, $request->validated());
+
+        return new FiscalPeriodResource($updated);
     }
 
     public function lock(FiscalPeriod $fiscalPeriod): JsonResponse

@@ -19,6 +19,11 @@ interface FiscalPeriodServiceInterface
     public function create(array $data): FiscalPeriod;
 
     /**
+     * @param  array<string, mixed>  $data
+     */
+    public function updateLockDates(FiscalPeriod $period, array $data): FiscalPeriod;
+
+    /**
      * Close a fiscal period.
      *
      * @return array<string, mixed>

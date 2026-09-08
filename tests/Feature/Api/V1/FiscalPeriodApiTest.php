@@ -77,6 +77,19 @@ describe('Fiscal Period API', function () {
             ->assertJsonPath('data.id', $period->id);
     });
 
+    it('can update lock dates without locking the whole period', function () {
+        $period = FiscalPeriod::factory()->create(['is_locked' => false]);
+
+        $response = $this->putJson("/api/v1/fiscal-periods/{$period->id}", [
+            'lock_sales_until' => $period->start_date->toDateString(),
+            'lock_everything_until' => null,
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.lock_sales_until', $period->start_date->toDateString())
+            ->assertJsonPath('data.is_locked', false);
+    });
+
     it('can lock a fiscal period', function () {
         $period = FiscalPeriod::factory()->create(['is_locked' => false]);
 

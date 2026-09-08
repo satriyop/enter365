@@ -501,7 +501,7 @@ Route::prefix('v1')->group(function () {
         });
 
         // Fiscal Periods (Periode Fiskal)
-        Route::apiResource('fiscal-periods', FiscalPeriodController::class)->only(['index', 'show', 'store']);
+        Route::apiResource('fiscal-periods', FiscalPeriodController::class)->only(['index', 'show', 'store', 'update']);
         Route::post('fiscal-periods/{fiscal_period}/lock', [FiscalPeriodController::class, 'lock'])->name('fiscal-periods.lock');
         Route::post('fiscal-periods/{fiscal_period}/unlock', [FiscalPeriodController::class, 'unlock'])->name('fiscal-periods.unlock');
         Route::post('fiscal-periods/{fiscal_period}/close', [FiscalPeriodController::class, 'close'])->name('fiscal-periods.close');
