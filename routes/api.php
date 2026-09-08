@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\PublicCompanyProfileController;
 use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\AccountingPolicyController;
+use App\Http\Controllers\Api\V1\AnalyticAccountController;
 use App\Http\Controllers\Api\V1\AttachmentController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BankReconciliationController;
@@ -212,6 +213,8 @@ Route::prefix('v1')->group(function () {
 
         // Journals master (Konfigurasi Jurnal)
         Route::apiResource('journals', JournalController::class);
+
+        Route::apiResource('analytic-accounts', AnalyticAccountController::class)->except(['destroy']);
 
         // Journal Entries (Jurnal Umum)
         Route::get('journal-entries', [JournalEntryController::class, 'index'])->name('journal-entries.index');

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Api\V1;
 
 use App\Casts\AnalyticDistributionCast;
+use App\Models\Accounting\AnalyticAccount;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreJournalEntryRequest extends FormRequest
@@ -22,7 +23,6 @@ class StoreJournalEntryRequest extends FormRequest
             'lines' => ['required', 'array', 'min:2'],
             'lines.*.account_id' => ['required', 'integer', 'exists:accounts,id'],
             'lines.*.partner_id' => ['nullable', 'integer', 'exists:contacts,id'],
-            // Odoo-shaped JSON; no analytic/tax-tag masters yet — round-trip only.
             'lines.*.analytic_distribution' => ['nullable', 'array'],
             'lines.*.analytic_distribution.*' => ['numeric', 'min:0', 'max:100'],
             'lines.*.tax_tag_ids' => ['nullable', 'array'],
@@ -46,6 +46,7 @@ class StoreJournalEntryRequest extends FormRequest
             'lines.*.account_id.required' => 'Akun wajib diisi untuk setiap baris.',
             'lines.*.account_id.exists' => 'Akun tidak ditemukan.',
             'lines.*.partner_id.exists' => 'Partner/kontak tidak ditemukan.',
+            'lines.*.analytic_distribution.array' => 'Distribusi analitik tidak valid.',
         ];
     }
 
@@ -63,6 +64,42 @@ class StoreJournalEntryRequest extends FormRequest
 
             if ($totalDebit !== $totalCredit) {
                 $validator->errors()->add('lines', 'Total debit harus sama dengan total kredit. Debit: '.$totalDebit.', Kredit: '.$totalCredit);
+            }
+
+            $analyticIds = [];
+            foreach ($lines as $line) {
+                if (! is_array($line) || ! is_array($line['analytic_distribution'] ?? null)) {
+                    continue;
+                }
+                foreach (array_keys($line['analytic_distribution']) as $id) {
+                    if (is_numeric($id)) {
+                        $analyticIds[] = (int) $id;
+                    }
+                }
+            }
+
+            $existingIds = $analyticIds === []
+                ? []
+                : AnalyticAccount::query()
+                    ->whereIn('id', array_values(array_unique($analyticIds)))
+                    ->pluck('id')
+                    ->map(fn ($id): int => (int) $id)
+                    ->all();
+            $existingSet = array_flip($existingIds);
+
+            foreach ($lines as $index => $line) {
+                if (! is_array($line) || ! is_array($line['analytic_distribution'] ?? null)) {
+                    continue;
+                }
+
+                foreach (array_keys($line['analytic_distribution']) as $id) {
+                    if (! is_numeric($id) || ! isset($existingSet[(int) $id])) {
+                        $validator->errors()->add(
+                            "lines.{$index}.analytic_distribution",
+                            'Akun analitik tidak ditemukan.'
+                        );
+                    }
+                }
             }
         });
     }
