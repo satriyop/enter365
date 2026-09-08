@@ -12,6 +12,7 @@ use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Contracts\Pos\PosServiceInterface;
 use App\Domain\Accounting\Tax\TaxInclusiveStrategy;
 use App\Domain\Pos\PosAddOnBill;
+use App\Domain\Pos\PosCashRounding;
 use App\Domain\Shared\DocumentNumbers;
 use App\Domain\Shared\ValueObjects\Money;
 use App\Enums\Pos\PosPricingMode;
@@ -176,15 +177,18 @@ class PosService extends BaseService implements PosServiceInterface
             $cashReceived = 0;
             $change = 0;
             $tenderType = PosTenderType::Cash;
+            $roundingUnit = (int) config('pos.cash_rounding_unit', 100);
+            $rounding = PosCashRounding::none($payable);
 
             if ($way === PosTenderType::Qris->value) {
                 $tenderType = PosTenderType::Qris;
             } elseif ($way === PosTenderType::Cash->value) {
+                $rounding = PosCashRounding::nearest($payable, $roundingUnit);
                 $cashReceived = (int) ($data['cash_received_amount'] ?? 0);
-                if ($cashReceived < $payable) {
+                if ($cashReceived < $rounding->cashDue) {
                     throw BusinessRuleException::operationNotAllowed('checkout', 'Uang tunai kurang.');
                 }
-                $change = $cashReceived - $payable;
+                $change = $cashReceived - $rounding->cashDue;
             } else {
                 throw BusinessRuleException::operationNotAllowed('checkout', 'Cara bayar harus tunai atau QRIS.');
             }
@@ -199,6 +203,7 @@ class PosService extends BaseService implements PosServiceInterface
                 'dpp_amount' => $dpp,
                 'ppn_amount' => $ppn,
                 'payable_amount' => $payable,
+                'rounding_amount' => $rounding->roundingAmount,
                 'cash_received_amount' => $cashReceived,
                 'change_amount' => $change,
                 'sold_at' => now(),
@@ -239,7 +244,7 @@ class PosService extends BaseService implements PosServiceInterface
 
             $sale->tenders()->create([
                 'type' => $tenderType,
-                'amount' => $payable,
+                'amount' => $rounding->cashDue,
             ]);
 
             $cashAccountId = $tenderType === PosTenderType::Cash
@@ -249,7 +254,7 @@ class PosService extends BaseService implements PosServiceInterface
             $revenueLines = $this->revenueJournalLines(
                 $sale,
                 $cashAccountId,
-                $payable,
+                $rounding,
                 $dpp,
                 $ppn,
                 $serviceAmount,
@@ -504,7 +509,7 @@ class PosService extends BaseService implements PosServiceInterface
     private function revenueJournalLines(
         PosSale $sale,
         int $cashAccountId,
-        int $payable,
+        PosCashRounding $rounding,
         int $dpp,
         int $ppn,
         int $serviceAmount,
@@ -512,10 +517,11 @@ class PosService extends BaseService implements PosServiceInterface
         PosSession $session,
     ): array {
         $number = $sale->sale_number;
+        $payable = $rounding->payable;
         $lines = [
             [
                 'account_id' => $cashAccountId,
-                'debit' => $payable,
+                'debit' => $rounding->cashDue,
                 'credit' => 0,
                 'description' => 'POS '.$number,
             ],
@@ -545,7 +551,7 @@ class PosService extends BaseService implements PosServiceInterface
                 ];
             }
 
-            return $lines;
+            return $this->withCashRoundingLine($lines, $rounding, $number);
         }
 
         if ($ppn > 0) {
@@ -558,6 +564,27 @@ class PosService extends BaseService implements PosServiceInterface
         } else {
             $lines[1]['credit'] = $payable;
         }
+
+        return $this->withCashRoundingLine($lines, $rounding, $number);
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $lines
+     * @return list<array<string, mixed>>
+     */
+    private function withCashRoundingLine(array $lines, PosCashRounding $rounding, string $number): array
+    {
+        if ($rounding->roundingAmount === 0) {
+            return $lines;
+        }
+
+        $amount = abs($rounding->roundingAmount);
+        $lines[] = [
+            'account_code' => config('accounting.default_accounts.cash_rounding'),
+            'debit' => $rounding->roundingAmount < 0 ? $amount : 0,
+            'credit' => $rounding->roundingAmount > 0 ? $amount : 0,
+            'description' => 'Pembulatan '.$number,
+        ];
 
         return $lines;
     }

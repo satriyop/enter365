@@ -74,7 +74,7 @@ it('charges Hakau 22000 as 25410 and splits the journal', function () {
 
     $sale = test()->pos->checkout($session, [
         'way' => PosTenderType::Cash->value,
-        'cash_received_amount' => 25_410,
+        'cash_received_amount' => 25_400,
         'lines' => [
             ['product_id' => test()->hakau->id, 'quantity' => 1],
         ],
@@ -85,22 +85,70 @@ it('charges Hakau 22000 as 25410 and splits the journal', function () {
         ->and($sale->tax_amount)->toBe(2_310)
         ->and($sale->ppn_amount)->toBe(0)
         ->and($sale->payable_amount)->toBe(25_410)
-        ->and($sale->tenders->first()->amount)->toBe(25_410);
+        ->and($sale->rounding_amount)->toBe(-10)
+        ->and($sale->tenders->first()->amount)->toBe(25_400);
 
-    $credits = JournalEntryLine::query()
+    $lines = JournalEntryLine::query()
         ->where('journal_entry_id', $sale->journal_entry_id)
         ->with('account')
-        ->get()
-        ->mapWithKeys(fn (JournalEntryLine $line) => [$line->account->code => (int) $line->credit]);
+        ->get();
+
+    $credits = $lines->mapWithKeys(fn (JournalEntryLine $line) => [$line->account->code => (int) $line->credit]);
+    $debitsByCode = $lines->mapWithKeys(fn (JournalEntryLine $line) => [$line->account->code => (int) $line->debit]);
 
     expect($credits['4-1001'])->toBe(22_000)
         ->and($credits['4-1005'])->toBe(1_100)
         ->and($credits['2-1210'])->toBe(2_310)
-        ->and($credits['2-1200'] ?? 0)->toBe(0);
+        ->and($credits['2-1200'] ?? 0)->toBe(0)
+        ->and($debitsByCode['5-2911'])->toBe(10);
 
-    $debits = (int) JournalEntryLine::query()->where('journal_entry_id', $sale->journal_entry_id)->sum('debit');
-    $creditSum = (int) JournalEntryLine::query()->where('journal_entry_id', $sale->journal_entry_id)->sum('credit');
+    $kasDebit = (int) $lines->first(fn (JournalEntryLine $line) => (int) $line->debit > 0 && $line->account?->code !== '5-2911')->debit;
+    expect($kasDebit)->toBe(25_400);
+
+    $debits = (int) $lines->sum('debit');
+    $creditSum = (int) $lines->sum('credit');
     expect($debits)->toBe($creditSum)->toBe(25_410);
+});
+
+it('rounds Air Mineral cash to 9200 and keeps QRIS at the bill', function () {
+    $air = Product::factory()->create([
+        'name' => 'Air Mineral',
+        'selling_price' => 8_000,
+        'is_taxable' => false,
+        'track_inventory' => false,
+        'is_sellable' => true,
+        'is_active' => true,
+    ]);
+    $session = test()->pos->openSession([
+        'warehouse_id' => test()->warehouse->id,
+        'opening_cash_amount' => 200_000,
+    ]);
+
+    $cash = test()->pos->checkout($session, [
+        'way' => PosTenderType::Cash->value,
+        'cash_received_amount' => 9_200,
+        'lines' => [
+            ['product_id' => $air->id, 'quantity' => 1],
+        ],
+    ], 'air-cash');
+
+    expect($cash->payable_amount)->toBe(9_240)
+        ->and($cash->rounding_amount)->toBe(-40)
+        ->and($cash->tenders->first()->amount)->toBe(9_200)
+        ->and($cash->change_amount)->toBe(0);
+
+    $qris = test()->pos->checkout($session, [
+        'way' => PosTenderType::Qris->value,
+        'lines' => [
+            ['product_id' => test()->hakau->id, 'quantity' => 1],
+        ],
+    ], 'hakau-qris');
+
+    expect($qris->payable_amount)->toBe(25_410)
+        ->and($qris->rounding_amount)->toBe(0)
+        ->and($qris->tenders->first()->amount)->toBe(25_410);
+
+    expect(test()->pos->expectedCash($session->fresh()))->toBe(200_000 + 9_200);
 });
 
 it('adds service and PBJT on the cart header, not per SKU', function () {

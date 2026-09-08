@@ -32,6 +32,7 @@ class PosSaleFactory extends Factory
             'dpp_amount' => 100_00,
             'ppn_amount' => 11_00,
             'payable_amount' => $payable,
+            'rounding_amount' => 0,
             'cash_received_amount' => $payable,
             'change_amount' => 0,
             'sold_at' => now(),

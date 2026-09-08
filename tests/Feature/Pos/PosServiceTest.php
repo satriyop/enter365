@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Contracts\Inventory\InventoryServiceInterface;
 use App\Contracts\Pos\PosServiceInterface;
 use App\Domain\Accounting\FiscalPeriods\Enums\FiscalPeriodStatus;
+use App\Domain\Pos\PosCashRounding;
 use App\Enums\Pos\PosSaleStatus;
 use App\Enums\Pos\PosSessionStatus;
 use App\Enums\Pos\PosTenderType;
@@ -361,10 +362,11 @@ describe('PosService checkout', function () {
         ]);
         $session = openTill();
         $button = (int) $product->selling_price_with_tax;
+        $cashDue = PosCashRounding::nearest($button)->cashDue;
 
         $sale = test()->pos->checkout($session, [
             'way' => PosTenderType::Cash->value,
-            'cash_received_amount' => $button,
+            'cash_received_amount' => $cashDue,
             'lines' => [
                 ['product_id' => $product->id, 'quantity' => 1],
             ],

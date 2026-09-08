@@ -26,6 +26,8 @@ class PosSaleResource extends JsonResource
             'service_amount' => $this->service_amount,
             'tax_amount' => $this->tax_amount,
             'payable_amount' => $this->payable_amount,
+            'rounding_amount' => (int) $this->rounding_amount,
+            'cash_due_amount' => $this->cashDueAmount(),
             'cash_received_amount' => $this->cash_received_amount,
             'change_amount' => $this->change_amount,
             'sold_at' => $this->sold_at instanceof \DateTimeInterface ? $this->sold_at->toIso8601String() : $this->sold_at,

@@ -19,4 +19,9 @@ return [
     'service_rate' => (float) env('POS_SERVICE_RATE', $cafeAddOn ? 5 : 0),
     'tax_rate' => (float) env('POS_TAX_RATE', $cafeAddOn ? 10 : 0),
     'tax_name' => env('POS_TAX_NAME', 'PBJT'),
+
+    /*
+    | Cash tenders round to this unit (Rp). QRIS stays exact. 0 disables.
+    */
+    'cash_rounding_unit' => (int) env('POS_CASH_ROUNDING_UNIT', 100),
 ];

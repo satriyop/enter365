@@ -27,6 +27,7 @@ class PosSale extends Model
         'dpp_amount',
         'ppn_amount',
         'payable_amount',
+        'rounding_amount',
         'cash_received_amount',
         'change_amount',
         'journal_entry_id',
@@ -48,6 +49,7 @@ class PosSale extends Model
             'dpp_amount' => 'integer',
             'ppn_amount' => 'integer',
             'payable_amount' => 'integer',
+            'rounding_amount' => 'integer',
             'cash_received_amount' => 'integer',
             'change_amount' => 'integer',
             'sold_at' => 'datetime',
@@ -106,5 +108,10 @@ class PosSale extends Model
     public function isCompleted(): bool
     {
         return $this->status === PosSaleStatus::Completed;
+    }
+
+    public function cashDueAmount(): int
+    {
+        return (int) $this->payable_amount + (int) $this->rounding_amount;
     }
 }
