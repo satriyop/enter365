@@ -114,6 +114,7 @@ class Bill extends Model
         'last_reminder_at',
         'journal_entry_id',
         'payable_account_id',
+        'purchase_order_id',
         'project_id',
         'recurring_template_id',
         'created_by',
@@ -175,6 +176,14 @@ class Bill extends Model
     public function payableAccount(): BelongsTo
     {
         return $this->belongsTo(Account::class, 'payable_account_id');
+    }
+
+    /**
+     * @return BelongsTo<PurchaseOrder, $this>
+     */
+    public function purchaseOrder(): BelongsTo
+    {
+        return $this->belongsTo(PurchaseOrder::class);
     }
 
     /**

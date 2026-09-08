@@ -1,9 +1,11 @@
 <?php
 
 use App\Models\Accounting\Account;
+use App\Models\Accounting\AnalyticAccount;
 use App\Models\Accounting\Journal;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Accounting\JournalEntryLine;
+use App\Models\Accounting\TaxTag;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -362,8 +364,15 @@ describe('Journal Entry API', function () {
             ?? Account::where('code', '2-1101')->first()
             ?? $cashAccount;
 
-        $distribution = ['10' => 60, '20' => 40];
-        $taxTags = [101, 202];
+        $analyticA = AnalyticAccount::factory()->create();
+        $analyticB = AnalyticAccount::factory()->create();
+        $distribution = [
+            (string) $analyticA->id => 60,
+            (string) $analyticB->id => 40,
+        ];
+        $tagA = TaxTag::factory()->create();
+        $tagB = TaxTag::factory()->create();
+        $taxTags = [$tagA->id, $tagB->id];
 
         $response = $this->postJson('/api/v1/journal-entries', [
             'journal_id' => $this->miscJournal->id,
@@ -388,10 +397,10 @@ describe('Journal Entry API', function () {
         ]);
 
         $response->assertCreated()
-            ->assertJsonPath('data.lines.0.analytic_distribution.10', 60)
-            ->assertJsonPath('data.lines.0.analytic_distribution.20', 40)
-            ->assertJsonPath('data.lines.0.tax_tag_ids.0', 101)
-            ->assertJsonPath('data.lines.0.tax_tag_ids.1', 202)
+            ->assertJsonPath('data.lines.0.analytic_distribution.'.$analyticA->id, 60)
+            ->assertJsonPath('data.lines.0.analytic_distribution.'.$analyticB->id, 40)
+            ->assertJsonPath('data.lines.0.tax_tag_ids.0', $tagA->id)
+            ->assertJsonPath('data.lines.0.tax_tag_ids.1', $tagB->id)
             ->assertJsonPath('data.lines.1.analytic_distribution', null)
             ->assertJsonPath('data.lines.1.tax_tag_ids', null);
 
@@ -413,6 +422,15 @@ describe('Journal Entry API', function () {
             ?? Account::where('code', '2-1101')->first()
             ?? Account::where('code', '1-1001')->first();
 
+        $analyticA = AnalyticAccount::factory()->create();
+        $analyticB = AnalyticAccount::factory()->create();
+        $distribution = [
+            (string) $analyticA->id => 60,
+            (string) $analyticB->id => 40,
+        ];
+
+        $taxTag = TaxTag::factory()->create();
+
         $created = $this->postJson('/api/v1/journal-entries', [
             'journal_id' => $this->miscJournal->id,
             'entry_date' => now()->toDateString(),
@@ -420,8 +438,8 @@ describe('Journal Entry API', function () {
             'lines' => [
                 [
                     'account_id' => $expenseAccount->id,
-                    'analytic_distribution' => ['10' => 60, '20' => 40],
-                    'tax_tag_ids' => [101],
+                    'analytic_distribution' => $distribution,
+                    'tax_tag_ids' => [$taxTag->id],
                     'description' => 'Expense with analytic map',
                     'debit' => 100000,
                     'credit' => 0,
@@ -437,23 +455,23 @@ describe('Journal Entry API', function () {
 
         $created->assertCreated();
         $createdBody = json_decode($created->getContent());
-        $createdLine = collect($createdBody->data->lines)->first(fn ($row) => isset($row->tax_tag_ids) && $row->tax_tag_ids == [101]);
+        $createdLine = collect($createdBody->data->lines)->first(fn ($row) => isset($row->tax_tag_ids) && $row->tax_tag_ids == [$taxTag->id]);
         expect($createdLine->analytic_distribution)->toBeObject();
-        expect(get_object_vars($createdLine->analytic_distribution))->toBe(['10' => 60, '20' => 40]);
-        expect($createdLine->tax_tag_ids)->toBe([101]);
+        expect(get_object_vars($createdLine->analytic_distribution))->toBe($distribution);
+        expect($createdLine->tax_tag_ids)->toBe([$taxTag->id]);
         $entryId = $created->json('data.id');
 
         $show = $this->getJson("/api/v1/journal-entries/{$entryId}");
         $show->assertOk();
 
         $body = json_decode($show->getContent());
-        $line = collect($body->data->lines)->first(fn ($row) => isset($row->tax_tag_ids) && $row->tax_tag_ids == [101]);
+        $line = collect($body->data->lines)->first(fn ($row) => isset($row->tax_tag_ids) && $row->tax_tag_ids == [$taxTag->id]);
 
         expect($line)->not->toBeNull();
         expect($line->analytic_distribution)->toBeObject();
-        expect(get_object_vars($line->analytic_distribution))->toBe(['10' => 60, '20' => 40]);
+        expect(get_object_vars($line->analytic_distribution))->toBe($distribution);
         expect($line->tax_tag_ids)->toBeArray();
-        expect($line->tax_tag_ids)->toBe([101]);
+        expect($line->tax_tag_ids)->toBe([$taxTag->id]);
 
         $stored = JournalEntryLine::query()
             ->where('journal_entry_id', $entryId)
@@ -461,7 +479,7 @@ describe('Journal Entry API', function () {
             ->first();
         $raw = $stored?->getRawOriginal('analytic_distribution');
         expect(is_string($raw) ? ltrim($raw) : json_encode($raw))->toStartWith('{');
-        expect($stored->analytic_distribution)->toMatchArray(['10' => 60, '20' => 40]);
+        expect($stored->analytic_distribution)->toMatchArray($distribution);
     });
 
     it('shows analytic_distribution and tax_tag_ids on journal entry lines', function () {

@@ -2,6 +2,7 @@
 
 namespace App\Models\Purchasing;
 
+use App\Casts\AnalyticDistributionCast;
 use App\Models\Accounting\Account;
 use App\Models\Inventory\Product;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -27,6 +28,8 @@ class BillItem extends Model
         'sort_order',
         'notes',
         'expense_account_id',
+        'analytic_distribution',
+        'tax_tag_ids',
     ];
 
     protected function casts(): array
@@ -40,6 +43,8 @@ class BillItem extends Model
             'tax_amount' => 'integer',
             'line_total' => 'integer',
             'sort_order' => 'integer',
+            'analytic_distribution' => AnalyticDistributionCast::class,
+            'tax_tag_ids' => 'array',
         ];
     }
 

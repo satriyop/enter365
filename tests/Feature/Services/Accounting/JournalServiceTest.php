@@ -116,7 +116,7 @@ describe('JournalService - createEntry', function () {
 
         $entry = $this->service->createEntry($data);
 
-        expect($entry->entry_number)->toContain('JE-');
+        expect($entry->entry_number)->toStartWith('MISC-');
     });
 
     it('associates entry with current fiscal period', function () {

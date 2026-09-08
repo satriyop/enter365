@@ -140,8 +140,12 @@ class BillService implements BillServiceInterface
                 'quantity' => $item['quantity'],
                 'unit' => $item['unit'] ?? 'unit',
                 'unit_price' => $item['unit_price'],
+                'discount_percent' => $item['discount_percent'] ?? 0,
+                'tax_rate' => $item['tax_rate'] ?? 0,
                 'line_total' => $amount,
-                'expense_account_id' => $item['expense_account_id'] ?? null,
+                'expense_account_id' => $item['expense_account_id'] ?? $item['account_id'] ?? null,
+                'analytic_distribution' => $item['analytic_distribution'] ?? null,
+                'tax_tag_ids' => $item['tax_tag_ids'] ?? null,
             ]);
         }
     }

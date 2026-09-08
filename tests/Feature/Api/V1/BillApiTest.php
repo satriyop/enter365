@@ -2,10 +2,13 @@
 
 use App\Enums\DocumentStatus;
 use App\Models\Accounting\Account;
+use App\Models\Accounting\AnalyticAccount;
 use App\Models\Accounting\JournalEntryLine;
+use App\Models\Accounting\TaxTag;
 use App\Models\Contacts\Contact;
 use App\Models\Purchasing\Bill;
 use App\Models\Purchasing\BillItem;
+use App\Models\Purchasing\PurchaseOrder;
 use App\Models\Shared\Payment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
@@ -64,6 +67,8 @@ describe('Bill API', function () {
 
     it('can create a bill with items', function () {
         $supplier = Contact::factory()->supplier()->create();
+        $expenseAccount = Account::where('code', '5-1001')->first()
+            ?? Account::where('code', '6-1001')->first();
 
         $response = $this->postJson('/api/v1/bills', [
             'contact_id' => $supplier->id,
@@ -78,12 +83,14 @@ describe('Bill API', function () {
                     'quantity' => 100,
                     'unit' => 'pcs',
                     'unit_price' => 25000,
+                    'expense_account_id' => $expenseAccount->id,
                 ],
                 [
                     'description' => 'Barang B',
                     'quantity' => 50,
                     'unit' => 'pcs',
                     'unit_price' => 15000,
+                    'expense_account_id' => $expenseAccount->id,
                 ],
             ],
         ]);
@@ -99,6 +106,84 @@ describe('Bill API', function () {
         $response->assertJsonPath('data.subtotal', 3250000)
             ->assertJsonPath('data.tax_amount', 357500)
             ->assertJsonPath('data.total_amount', 3607500);
+
+        expect($response->json('data.items.0.account_id'))->toBe($expenseAccount->id);
+        expect($response->json('data.items.0.expense_account_id'))->toBe($expenseAccount->id);
+    });
+
+    it('requires an expense account on bill lines', function () {
+        $supplier = Contact::factory()->supplier()->create();
+
+        $this->postJson('/api/v1/bills', [
+            'contact_id' => $supplier->id,
+            'bill_date' => '2024-12-25',
+            'due_date' => '2025-01-25',
+            'items' => [
+                [
+                    'description' => 'No account',
+                    'quantity' => 1,
+                    'unit_price' => 1000,
+                ],
+            ],
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors(['items.0.expense_account_id']);
+    });
+
+    it('accepts account_id alias, analytic distribution, and tax tags on bill lines', function () {
+        $supplier = Contact::factory()->supplier()->create();
+        $expenseAccount = Account::where('code', '5-1001')->first()
+            ?? Account::where('code', '6-1001')->first();
+        $analytic = AnalyticAccount::factory()->create();
+        $tag = TaxTag::factory()->tax()->create();
+
+        $response = $this->postJson('/api/v1/bills', [
+            'contact_id' => $supplier->id,
+            'bill_date' => now()->toDateString(),
+            'due_date' => now()->addDays(14)->toDateString(),
+            'items' => [
+                [
+                    'description' => 'Office supplies',
+                    'quantity' => 1,
+                    'unit' => 'pcs',
+                    'unit_price' => 100000,
+                    'account_id' => $expenseAccount->id,
+                    'analytic_distribution' => [(string) $analytic->id => 100],
+                    'tax_tag_ids' => [$tag->id],
+                ],
+            ],
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.items.0.account_id', $expenseAccount->id)
+            ->assertJsonPath('data.items.0.analytic_distribution.'.$analytic->id, 100)
+            ->assertJsonPath('data.items.0.tax_tag_ids.0', $tag->id);
+
+        $item = BillItem::query()->where('bill_id', $response->json('data.id'))->first();
+        expect($item->expense_account_id)->toBe($expenseAccount->id);
+        expect($item->analytic_distribution)->toMatchArray([(string) $analytic->id => 100]);
+        expect($item->tax_tag_ids)->toEqual([$tag->id]);
+    });
+
+    it('rejects unknown analytic ids on bill lines', function () {
+        $supplier = Contact::factory()->supplier()->create();
+        $expenseAccount = Account::where('code', '5-1001')->first()
+            ?? Account::where('code', '6-1001')->first();
+
+        $this->postJson('/api/v1/bills', [
+            'contact_id' => $supplier->id,
+            'bill_date' => now()->toDateString(),
+            'due_date' => now()->addDays(14)->toDateString(),
+            'items' => [
+                [
+                    'description' => 'Bad analytic',
+                    'quantity' => 1,
+                    'unit_price' => 1000,
+                    'expense_account_id' => $expenseAccount->id,
+                    'analytic_distribution' => ['99999' => 100],
+                ],
+            ],
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors(['items.0.analytic_distribution']);
     });
 
     it('validates required fields when creating bill', function () {
@@ -174,9 +259,15 @@ describe('Bill API', function () {
 
         $response->assertOk()
             ->assertJsonPath('data.status.value', 'received')
-            ->assertJsonStructure(['data' => ['journal_entry']]);
+            ->assertJsonStructure(['data' => ['journal_entry' => ['lines']]]);
 
         $this->assertNotNull($response->json('data.journal_entry_id'));
+        expect($response->json('data.journal_entry.lines'))->toBeArray()->not->toBeEmpty();
+
+        $show = $this->getJson("/api/v1/bills/{$bill->id}");
+        $show->assertOk()
+            ->assertJsonPath('data.journal_entry.id', $response->json('data.journal_entry_id'));
+        expect($show->json('data.journal_entry.lines'))->toBeArray()->not->toBeEmpty();
     });
 
     it('posts bill with discount creating discount contra JE line', function () {
@@ -291,5 +382,56 @@ describe('Bill API', function () {
 
         $bill->refresh();
         expect($bill->status)->toBe(DocumentStatus::Paid);
+    });
+
+    it('creates a vendor credit note from a posted bill', function () {
+        $supplier = Contact::factory()->supplier()->create();
+        $bill = Bill::factory()->received()->forContact($supplier)->create();
+        BillItem::factory()->forBill($bill)->create();
+
+        $response = $this->postJson("/api/v1/bills/{$bill->id}/credit-note", [
+            'reason' => 'vendor_request',
+            'notes' => 'Credit note from bill',
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.bill_id', $bill->id)
+            ->assertJsonPath('data.contact_id', $supplier->id);
+    });
+
+    it('cannot create a credit note from a draft bill', function () {
+        $bill = Bill::factory()->draft()->create();
+
+        $this->postJson("/api/v1/bills/{$bill->id}/credit-note")
+            ->assertUnprocessable();
+    });
+
+    it('matches a posted bill to a purchase order from the same vendor', function () {
+        $supplier = Contact::factory()->supplier()->create();
+        $bill = Bill::factory()->received()->forContact($supplier)->create();
+        $purchaseOrder = PurchaseOrder::factory()->create(['contact_id' => $supplier->id]);
+
+        $response = $this->postJson("/api/v1/bills/{$bill->id}/match-purchase-order", [
+            'purchase_order_id' => $purchaseOrder->id,
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.purchase_order_id', $purchaseOrder->id);
+
+        $this->assertDatabaseHas('bills', [
+            'id' => $bill->id,
+            'purchase_order_id' => $purchaseOrder->id,
+        ]);
+    });
+
+    it('rejects purchase matching when the PO belongs to another vendor', function () {
+        $supplier = Contact::factory()->supplier()->create();
+        $other = Contact::factory()->supplier()->create();
+        $bill = Bill::factory()->received()->forContact($supplier)->create();
+        $purchaseOrder = PurchaseOrder::factory()->create(['contact_id' => $other->id]);
+
+        $this->postJson("/api/v1/bills/{$bill->id}/match-purchase-order", [
+            'purchase_order_id' => $purchaseOrder->id,
+        ])->assertUnprocessable();
     });
 });

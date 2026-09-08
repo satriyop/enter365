@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\PublicCompanyProfileController;
 use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\AccountingPolicyController;
+use App\Http\Controllers\Api\V1\AnalyticAccountController;
 use App\Http\Controllers\Api\V1\AttachmentController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BankReconciliationController;
@@ -54,6 +55,7 @@ use App\Http\Controllers\Api\V1\StockOpnameController;
 use App\Http\Controllers\Api\V1\SubcontractorInvoiceController;
 use App\Http\Controllers\Api\V1\SubcontractorWorkOrderController;
 use App\Http\Controllers\Api\V1\TaskController;
+use App\Http\Controllers\Api\V1\TaxTagController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\WarehouseController;
 use App\Http\Controllers\Api\V1\WorkOrderController;
@@ -213,6 +215,9 @@ Route::prefix('v1')->group(function () {
         // Journals master (Konfigurasi Jurnal)
         Route::apiResource('journals', JournalController::class);
 
+        Route::apiResource('analytic-accounts', AnalyticAccountController::class)->except(['destroy']);
+        Route::apiResource('tax-tags', TaxTagController::class)->except(['destroy']);
+
         // Journal Entries (Jurnal Umum)
         Route::get('journal-entries', [JournalEntryController::class, 'index'])->name('journal-entries.index');
         Route::post('journal-entries', [JournalEntryController::class, 'store'])->name('journal-entries.store');
@@ -306,6 +311,10 @@ Route::prefix('v1')->group(function () {
         Route::post('bills/{bill}/post', [BillController::class, 'post']);
         Route::post('bills/{bill}/void', [BillController::class, 'void']);
         Route::post('bills/{bill}/make-recurring', [BillController::class, 'makeRecurring']);
+        Route::post('bills/{bill}/credit-note', [BillController::class, 'creditNote'])
+            ->middleware('feature:purchase_returns');
+        Route::post('bills/{bill}/match-purchase-order', [BillController::class, 'matchPurchaseOrder'])
+            ->middleware('feature:purchase_orders');
 
         // Down Payments (Uang Muka)
         Route::middleware('feature:down_payments')->group(function () {
