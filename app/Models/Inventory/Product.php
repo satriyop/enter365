@@ -39,6 +39,10 @@ class Product extends Model
 
     public const PROCUREMENT_SUBCONTRACT = 'subcontract';
 
+    public const CONTROL_POLICY_ORDERED = 'ordered';
+
+    public const CONTROL_POLICY_RECEIVED = 'received';
+
     // ABC Classification
     public const ABC_CLASS_A = 'A';
 
@@ -67,6 +71,8 @@ class Product extends Model
         'is_active',
         'is_purchasable',
         'is_sellable',
+        'purchase_control_policy',
+        'purchase_description',
         'barcode',
         'brand',
         'custom_fields',
@@ -252,6 +258,35 @@ class Product extends Model
     public function defaultSupplier(): BelongsTo
     {
         return $this->belongsTo(Contact::class, 'default_supplier_id');
+    }
+
+    /**
+     * @return HasMany<ProductVendorPricelist, $this>
+     */
+    public function vendorPricelists(): HasMany
+    {
+        return $this->hasMany(ProductVendorPricelist::class)->orderBy('min_qty');
+    }
+
+    /**
+     * Vendor-specific purchase price, falling back to the product default.
+     */
+    public function priceForVendor(?int $contactId, float $qty = 1): int
+    {
+        if (! $contactId) {
+            return (int) $this->purchase_price;
+        }
+
+        $lines = $this->relationLoaded('vendorPricelists')
+            ? $this->vendorPricelists
+            : $this->vendorPricelists()->get();
+
+        $match = $lines
+            ->filter(fn (ProductVendorPricelist $line) => $line->contact_id === $contactId && (float) $line->min_qty <= $qty)
+            ->sortByDesc(fn (ProductVendorPricelist $line) => (float) $line->min_qty)
+            ->first();
+
+        return $match?->price ?? (int) $this->purchase_price;
     }
 
     /**
