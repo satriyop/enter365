@@ -6,6 +6,9 @@ use App\Models\Accounting\Account;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Accounting\JournalEntryLine;
 use App\Models\Contacts\Contact;
+use App\Models\Sales\Invoice;
+use App\Models\Shared\Payment;
+use App\Models\Shared\PaymentAllocation;
 use App\Services\Accounting\Reports\Financial\PartnerLedgerReportService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -66,6 +69,60 @@ it('filters by contact and applies opening balance before the start date', funct
         ->and($report['partners'][0]['debit'])->toBe(0)
         ->and($report['partners'][0]['credit'])->toBe(20_000)
         ->and($report['partners'][0]['closing_balance'])->toBe(30_000);
+});
+
+it('includes invoice date, due date, and payment matching on invoice-sourced lines', function () {
+    $customer = Contact::factory()->customer()->create(['name' => 'Matching Partner']);
+    $ar = Account::factory()->create();
+    $invoice = Invoice::factory()->create([
+        'contact_id' => $customer->id,
+        'invoice_date' => '2026-03-10',
+        'due_date' => '2026-04-09',
+    ]);
+    $entry = JournalEntry::factory()->posted()->create([
+        'entry_date' => '2026-03-10',
+        'source_type' => JournalEntry::SOURCE_INVOICE,
+        'source_id' => $invoice->id,
+    ]);
+    JournalEntryLine::factory()->forEntry($entry)->forAccount($ar)->debit(110_000)->create([
+        'partner_id' => $customer->id,
+    ]);
+    $payment = Payment::factory()->create([
+        'contact_id' => $customer->id,
+        'payment_number' => 'RCV-202603-0007',
+        'is_voided' => false,
+    ]);
+    PaymentAllocation::factory()->create([
+        'payment_id' => $payment->id,
+        'allocatable_type' => 'invoice',
+        'allocatable_id' => $invoice->id,
+        'amount' => 110_000,
+    ]);
+
+    $report = $this->service->getPartnerLedger('2026-03-01', '2026-03-31');
+
+    expect($report['partners'][0]['entries'][0]['invoice_date'])->toBe('2026-03-10')
+        ->and($report['partners'][0]['entries'][0]['due_date'])->toBe('2026-04-09')
+        ->and($report['partners'][0]['entries'][0]['matching'])->toBe('RCV-202603-0007');
+});
+
+it('leaves invoice date, due date, and matching empty on miscellaneous partner lines', function () {
+    $customer = Contact::factory()->customer()->create();
+    $ar = Account::factory()->create();
+    $entry = JournalEntry::factory()->posted()->create([
+        'entry_date' => '2026-03-15',
+        'source_type' => JournalEntry::SOURCE_MANUAL,
+        'source_id' => null,
+    ]);
+    JournalEntryLine::factory()->forEntry($entry)->forAccount($ar)->debit(5_000)->create([
+        'partner_id' => $customer->id,
+    ]);
+
+    $report = $this->service->getPartnerLedger('2026-03-01', '2026-03-31');
+
+    expect($report['partners'][0]['entries'][0]['invoice_date'])->toBeNull()
+        ->and($report['partners'][0]['entries'][0]['due_date'])->toBeNull()
+        ->and($report['partners'][0]['entries'][0]['matching'])->toBeNull();
 });
 
 it('skips unposted journal entries', function () {
