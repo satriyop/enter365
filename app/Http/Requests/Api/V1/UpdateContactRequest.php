@@ -29,6 +29,7 @@ class UpdateContactRequest extends FormRequest
             'province' => ['nullable', 'string', 'max:100'],
             'postal_code' => ['nullable', 'string', 'max:10'],
             'npwp' => ['nullable', 'string', 'max:30'],
+            'is_pkp' => ['boolean'],
             'nik' => ['nullable', 'string', 'max:20'],
 
             // Payment terms

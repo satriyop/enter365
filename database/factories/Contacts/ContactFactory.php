@@ -26,6 +26,7 @@ class ContactFactory extends Factory
             'province' => $this->faker->randomElement(['DKI Jakarta', 'Jawa Barat', 'Jawa Tengah', 'Jawa Timur', 'Banten']),
             'postal_code' => $this->faker->postcode(),
             'npwp' => $this->faker->optional(0.7)->numerify('##.###.###.#-###.###'),
+            'is_pkp' => false,
             'nik' => null,
             'credit_limit' => $this->faker->randomElement([0, 5000000, 10000000, 25000000, 50000000]),
             'payment_term_days' => $this->faker->randomElement([7, 14, 30, 45, 60]),

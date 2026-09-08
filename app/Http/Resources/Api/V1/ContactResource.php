@@ -23,6 +23,7 @@ class ContactResource extends JsonResource
      *   province: string|null,
      *   postal_code: string|null,
      *   npwp: string|null,
+     *   is_pkp: bool,
      *   nik: string|null,
      *   credit_limit: int,
      *   currency: string,
@@ -58,6 +59,7 @@ class ContactResource extends JsonResource
             'province' => $this->province,
             'postal_code' => $this->postal_code,
             'npwp' => $this->npwp,
+            'is_pkp' => (bool) $this->is_pkp,
             'nik' => $this->nik,
 
             // Payment terms
