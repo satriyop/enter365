@@ -12,6 +12,7 @@ use App\Domain\Purchasing\PurchaseOrders\PurchaseOrderDomainFactory;
 use App\Domain\Purchasing\PurchaseOrderStatistics;
 use App\Enums\DocumentStatus;
 use App\Exceptions\Domain\DocumentLockedException;
+use App\Models\Inventory\Product;
 use App\Models\Purchasing\PurchaseOrder;
 use App\Models\Purchasing\PurchaseOrderItem;
 use App\Services\Base\Traits\WithDocuments;
@@ -148,7 +149,9 @@ class PurchaseOrderService implements PurchaseOrderServiceInterface
         assert($document instanceof PurchaseOrder);
         foreach ($items as $index => $itemData) {
             $quantity = $itemData['quantity'] ?? 1;
-            $unitPrice = $itemData['unit_price'] ?? 0;
+            $unitPrice = array_key_exists('unit_price', $itemData)
+                ? (int) $itemData['unit_price']
+                : $this->unitPriceForVendor($document, $itemData);
             $discountPercent = $itemData['discount_percent'] ?? 0;
             $taxRate = $itemData['tax_rate'] ?? $document->getAttribute('tax_rate');
 
@@ -176,6 +179,24 @@ class PurchaseOrderService implements PurchaseOrderServiceInterface
                 'notes' => $itemData['notes'] ?? null,
             ]);
         }
+    }
+
+    /**
+     * @param  array<string, mixed>  $itemData
+     */
+    private function unitPriceForVendor(PurchaseOrder $purchaseOrder, array $itemData): int
+    {
+        $productId = $itemData['product_id'] ?? null;
+        if (! $productId) {
+            return 0;
+        }
+
+        $product = Product::query()->with('vendorPricelists')->find((int) $productId);
+
+        return $product?->priceForVendor(
+            $purchaseOrder->contact_id,
+            (float) ($itemData['quantity'] ?? 1)
+        ) ?? 0;
     }
 
     public function submit(PurchaseOrder $purchaseOrder, ?int $userId = null): PurchaseOrder
