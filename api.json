@@ -17522,6 +17522,14 @@
                             "type": "string",
                             "default": "csv"
                         }
+                    },
+                    {
+                        "name": "posted_only",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
                     }
                 ],
                 "responses": {
@@ -17618,6 +17626,14 @@
                         "schema": {
                             "type": "string",
                             "default": "csv"
+                        }
+                    },
+                    {
+                        "name": "posted_only",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
                         }
                     }
                 ],
@@ -17739,6 +17755,14 @@
                         "schema": {
                             "type": "string",
                             "default": "csv"
+                        }
+                    },
+                    {
+                        "name": "posted_only",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
                         }
                     }
                 ],
@@ -17930,6 +17954,14 @@
                         "schema": {
                             "type": "string",
                             "default": "csv"
+                        }
+                    },
+                    {
+                        "name": "posted_only",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
                         }
                     }
                 ],
@@ -19801,6 +19833,14 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "name": "posted_only",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
                     }
                 ],
                 "responses": {
@@ -19832,6 +19872,9 @@
                                                         "null"
                                                     ]
                                                 },
+                                                "posted_only": {
+                                                    "type": "boolean"
+                                                },
                                                 "accounts": {
                                                     "type": "string"
                                                 },
@@ -19849,6 +19892,7 @@
                                                 "report_name",
                                                 "as_of_date",
                                                 "journal_id",
+                                                "posted_only",
                                                 "accounts",
                                                 "total_debit",
                                                 "total_credit",
@@ -19895,6 +19939,14 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "name": "posted_only",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
                     }
                 ],
                 "responses": {
@@ -19921,12 +19973,23 @@
                                                             "type": "string",
                                                             "const": "Laporan Posisi Keuangan"
                                                         },
+                                                        "journal_id": {
+                                                            "type": [
+                                                                "integer",
+                                                                "null"
+                                                            ]
+                                                        },
+                                                        "posted_only": {
+                                                            "type": "boolean"
+                                                        },
                                                         "": {
                                                             "type": "string"
                                                         }
                                                     },
                                                     "required": [
                                                         "report_name",
+                                                        "journal_id",
+                                                        "posted_only",
                                                         null
                                                     ]
                                                 }
@@ -20002,6 +20065,14 @@
                         }
                     },
                     {
+                        "name": "posted_only",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    },
+                    {
                         "name": "previous_start_date",
                         "in": "query",
                         "schema": {
@@ -20040,12 +20111,23 @@
                                                             "type": "string",
                                                             "const": "Laporan Laba Rugi"
                                                         },
+                                                        "journal_id": {
+                                                            "type": [
+                                                                "integer",
+                                                                "null"
+                                                            ]
+                                                        },
+                                                        "posted_only": {
+                                                            "type": "boolean"
+                                                        },
                                                         "": {
                                                             "type": "string"
                                                         }
                                                     },
                                                     "required": [
                                                         "report_name",
+                                                        "journal_id",
+                                                        "posted_only",
                                                         null
                                                     ]
                                                 }
@@ -20110,6 +20192,14 @@
                         "in": "query",
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    {
+                        "name": "posted_only",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
                         }
                     }
                 ],
@@ -47129,6 +47219,117 @@
                 }
             }
         },
+        "/tax-records/{taxRecord}": {
+            "put": {
+                "operationId": "taxRecord.update",
+                "tags": [
+                    "TaxRecord"
+                ],
+                "parameters": [
+                    {
+                        "name": "taxRecord",
+                        "in": "path",
+                        "required": true,
+                        "description": "The tax record ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateTaxRecordRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`TaxRecordResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/TaxRecordResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "taxRecord.destroy",
+                "tags": [
+                    "TaxRecord"
+                ],
+                "parameters": [
+                    {
+                        "name": "taxRecord",
+                        "in": "path",
+                        "required": true,
+                        "description": "The tax record ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Pajak berhasil dihapus."
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/reports/ppn-summary": {
             "get": {
                 "operationId": "reports.ppn-summary",
@@ -67879,6 +68080,16 @@
                         "minimum": 0,
                         "maximum": 100
                     },
+                    "computation": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "percentage",
+                            null
+                        ]
+                    },
                     "applicability": {
                         "type": "string",
                         "enum": [
@@ -67889,6 +68100,24 @@
                     },
                     "is_active": {
                         "type": "boolean"
+                    },
+                    "invoice_account_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "refund_account_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "tax_tag_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
                     }
                 },
                 "required": [
@@ -68970,10 +69199,32 @@
                     "rate": {
                         "type": "number"
                     },
+                    "computation": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "string",
+                                "enum": [
+                                    "percentage"
+                                ]
+                            }
+                        ]
+                    },
                     "applicability": {
                         "type": "string"
                     },
                     "is_active": {
+                        "type": "string"
+                    },
+                    "invoice_account_id": {
+                        "type": "string"
+                    },
+                    "refund_account_id": {
+                        "type": "string"
+                    },
+                    "tax_tag_id": {
                         "type": "string"
                     }
                 },
@@ -68982,8 +69233,12 @@
                     "code",
                     "name",
                     "rate",
+                    "computation",
                     "applicability",
-                    "is_active"
+                    "is_active",
+                    "invoice_account_id",
+                    "refund_account_id",
+                    "tax_tag_id"
                 ],
                 "title": "TaxRecordResource"
             },
@@ -72801,6 +73056,64 @@
                     }
                 },
                 "title": "UpdateTaskRequest"
+            },
+            "UpdateTaxRecordRequest": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "maxLength": 30
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 200
+                    },
+                    "rate": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 100
+                    },
+                    "computation": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "percentage",
+                            null
+                        ]
+                    },
+                    "applicability": {
+                        "type": "string",
+                        "enum": [
+                            "sales",
+                            "purchase",
+                            "both"
+                        ]
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "invoice_account_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "refund_account_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "tax_tag_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    }
+                },
+                "title": "UpdateTaxRecordRequest"
             },
             "UpdateTaxTagRequest": {
                 "type": "object",

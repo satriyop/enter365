@@ -19,8 +19,12 @@ class StoreTaxRecordRequest extends FormRequest
             'code' => ['required', 'string', 'max:30', 'unique:tax_records,code'],
             'name' => ['required', 'string', 'max:200'],
             'rate' => ['required', 'numeric', 'min:0', 'max:100'],
+            'computation' => ['nullable', 'string', Rule::in([TaxRecord::COMPUTATION_PERCENTAGE])],
             'applicability' => ['required', Rule::in(TaxRecord::applicabilities())],
             'is_active' => ['boolean'],
+            'invoice_account_id' => ['nullable', 'integer', 'exists:accounts,id'],
+            'refund_account_id' => ['nullable', 'integer', 'exists:accounts,id'],
+            'tax_tag_id' => ['nullable', 'integer', 'exists:tax_tags,id'],
         ];
     }
 

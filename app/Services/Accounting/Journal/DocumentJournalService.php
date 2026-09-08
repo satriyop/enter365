@@ -78,6 +78,8 @@ class DocumentJournalService extends BaseService
      */
     public function postInvoice(Invoice $invoice): JournalEntry
     {
+        $invoice->loadMissing(['items.product.salesTaxes.invoiceAccount']);
+
         if ($invoice->journal_entry_id) {
             throw \App\Exceptions\Domain\BusinessRuleException::operationNotAllowed(
                 'posting invoice',
@@ -93,7 +95,7 @@ class DocumentJournalService extends BaseService
         $accounts = $this->accountLookup->findByCodesOrFail($requiredCodes, 'posting invoice');
 
         $receivableAccount = $invoice->receivableAccount ?? $accounts->get('1-1100');
-        $taxPayableAccount = $accounts->get('2-1200'); // PPN Keluaran
+        $taxPayableAccount = $this->invoiceTaxAccount($invoice) ?? $accounts->get('2-1200'); // PPN Keluaran
         $defaultRevenueAccount = $accounts->get('4-1001'); // Pendapatan Penjualan
 
         $currency = $invoice->currency ?? 'IDR';
@@ -141,11 +143,13 @@ class DocumentJournalService extends BaseService
         // Credit: Tax Payable (if tax exists)
         if ($invoice->tax_amount > 0 && $taxPayableAccount) {
             $taxBase = $this->toBaseCurrency($invoice->tax_amount, $currency, $exchangeRate);
+            $distributionTax = $this->invoiceSalesTaxRecord($invoice);
             $lines[] = [
                 'account_id' => $taxPayableAccount->id,
                 'description' => 'PPN Keluaran '.$invoice->invoice_number,
                 'debit' => 0,
                 'credit' => $taxBase,
+                'tax_tag_ids' => $distributionTax?->tax_tag_id ? [$distributionTax->tax_tag_id] : null,
                 ...$this->currencyMeta($currency, $invoice->tax_amount, $exchangeRate),
             ];
             $totalCredits += $taxBase;
@@ -540,5 +544,25 @@ class DocumentJournalService extends BaseService
             'source_id' => $payment->id,
             'lines' => $lines,
         ], autoPost: true);
+    }
+
+    private function invoiceTaxAccount(\App\Models\Sales\Invoice $invoice): ?\App\Models\Accounting\Account
+    {
+        $record = $this->invoiceSalesTaxRecord($invoice);
+
+        return $record?->invoiceAccount;
+    }
+
+    private function invoiceSalesTaxRecord(\App\Models\Sales\Invoice $invoice): ?\App\Models\Tax\TaxRecord
+    {
+        foreach ($invoice->items as $item) {
+            $taxes = $item->product?->salesTaxes ?? collect();
+            $withAccount = $taxes->first(fn ($tax) => $tax->invoice_account_id);
+            if ($withAccount) {
+                return $withAccount;
+            }
+        }
+
+        return null;
     }
 }

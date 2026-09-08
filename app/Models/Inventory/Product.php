@@ -149,11 +149,11 @@ class Product extends Model
     public function salesTaxRate(): float
     {
         $attached = $this->relationLoaded('salesTaxes')
-            ? $this->salesTaxes->first()
-            : $this->salesTaxes()->first();
+            ? $this->salesTaxes
+            : $this->salesTaxes()->get();
 
-        if ($attached) {
-            return (float) $attached->rate;
+        if ($attached->isNotEmpty()) {
+            return (float) $attached->sum(fn ($tax) => (float) $tax->rate);
         }
 
         return (float) $this->tax_rate;

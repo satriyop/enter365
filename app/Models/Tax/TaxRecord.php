@@ -2,9 +2,12 @@
 
 namespace App\Models\Tax;
 
+use App\Models\Accounting\Account;
+use App\Models\Accounting\TaxTag;
 use App\Models\Inventory\Product;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class TaxRecord extends Model
@@ -18,12 +21,25 @@ class TaxRecord extends Model
 
     public const APPLICABILITY_BOTH = 'both';
 
+    public const COMPUTATION_PERCENTAGE = 'percentage';
+
+    /**
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'computation' => self::COMPUTATION_PERCENTAGE,
+    ];
+
     protected $fillable = [
         'code',
         'name',
         'rate',
+        'computation',
         'applicability',
         'is_active',
+        'invoice_account_id',
+        'refund_account_id',
+        'tax_tag_id',
     ];
 
     protected function casts(): array
@@ -64,5 +80,29 @@ class TaxRecord extends Model
         return $this->belongsToMany(Product::class, 'product_tax_records')
             ->withPivot('kind')
             ->withTimestamps();
+    }
+
+    /**
+     * @return BelongsTo<Account, $this>
+     */
+    public function invoiceAccount(): BelongsTo
+    {
+        return $this->belongsTo(Account::class, 'invoice_account_id');
+    }
+
+    /**
+     * @return BelongsTo<Account, $this>
+     */
+    public function refundAccount(): BelongsTo
+    {
+        return $this->belongsTo(Account::class, 'refund_account_id');
+    }
+
+    /**
+     * @return BelongsTo<TaxTag, $this>
+     */
+    public function taxTag(): BelongsTo
+    {
+        return $this->belongsTo(TaxTag::class);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Requests\Api\V1\StoreTaxRecordRequest;
+use App\Http\Requests\Api\V1\UpdateTaxRecordRequest;
 use App\Http\Resources\Api\V1\TaxRecordResource;
 use App\Models\Inventory\Product;
 use App\Models\Tax\TaxRecord;
@@ -44,5 +45,23 @@ class TaxRecordController extends Controller
         return (new TaxRecordResource($tax))
             ->response()
             ->setStatusCode(201);
+    }
+
+    public function update(UpdateTaxRecordRequest $request, TaxRecord $taxRecord): TaxRecordResource
+    {
+        $this->authorize('create', Product::class);
+
+        $taxRecord->update($request->validated());
+
+        return new TaxRecordResource($taxRecord->fresh());
+    }
+
+    public function destroy(TaxRecord $taxRecord): JsonResponse
+    {
+        $this->authorize('create', Product::class);
+
+        $taxRecord->delete();
+
+        return $this->deleted('Pajak berhasil dihapus.');
     }
 }

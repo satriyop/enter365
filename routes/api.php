@@ -176,6 +176,8 @@ Route::prefix('v1')->group(function () {
         Route::get('products-lookup', [ProductController::class, 'lookup']);
         Route::get('tax-records', [TaxRecordController::class, 'index']);
         Route::post('tax-records', [TaxRecordController::class, 'store']);
+        Route::put('tax-records/{tax_record}', [TaxRecordController::class, 'update']);
+        Route::delete('tax-records/{tax_record}', [TaxRecordController::class, 'destroy']);
 
         // Warehouses (Gudang)
         Route::middleware('feature:warehouses')->group(function () {
