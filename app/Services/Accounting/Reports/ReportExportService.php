@@ -15,7 +15,8 @@ class ReportExportService
         private FinancialReportService $reportService,
         private AccountBalanceService $balanceService,
         private AgingReportService $agingService,
-        private TaxReportService $taxService
+        private TaxReportService $taxService,
+        private CashFlowReportService $cashFlowService
     ) {}
 
     public function trialBalance(?string $date = null, string $format = 'csv'): Response|JsonResponse
@@ -78,7 +79,9 @@ class ReportExportService
         ?int $accountId = null,
         ?string $startDate = null,
         ?string $endDate = null,
-        string $format = 'csv'
+        string $format = 'csv',
+        ?int $journalId = null,
+        ?int $analyticAccountId = null
     ): Response|JsonResponse {
         $startDate = $startDate ?? now()->startOfMonth()->toDateString();
         $endDate = $endDate ?? now()->toDateString();
@@ -88,7 +91,7 @@ class ReportExportService
         }
 
         $account = Account::findOrFail($accountId);
-        $ledger = $this->balanceService->getLedger($account, $startDate, $endDate);
+        $ledger = $this->balanceService->getLedger($account, $startDate, $endDate, $journalId, $analyticAccountId);
 
         $rows = $ledger->map(fn (array $entry) => [
             'date' => $entry['date'],
@@ -307,6 +310,135 @@ class ReportExportService
             'npwp' => 'NPWP',
             'dpp' => 'DPP',
             'ppn' => 'PPN',
+        ]);
+    }
+
+    public function cashFlow(?string $startDate = null, ?string $endDate = null, string $format = 'csv'): Response|JsonResponse
+    {
+        $startDate = $startDate ?? now()->startOfMonth()->toDateString();
+        $endDate = $endDate ?? now()->toDateString();
+
+        $data = $this->cashFlowService->generateCashFlow($startDate, $endDate);
+
+        $rows = [];
+        $sections = [
+            'operating_activities' => 'Operasi',
+            'investing_activities' => 'Investasi',
+            'financing_activities' => 'Pendanaan',
+        ];
+
+        foreach ($sections as $key => $category) {
+            foreach ($data[$key]['items'] ?? [] as $item) {
+                $item = (array) $item;
+                $rows[] = [
+                    'category' => $category,
+                    'description' => $item['description'] ?? '',
+                    'amount' => $item['amount'] ?? 0,
+                ];
+            }
+
+            $rows[] = [
+                'category' => $category,
+                'description' => 'Total',
+                'amount' => $data[$key]['total'] ?? 0,
+            ];
+        }
+
+        $rows[] = [
+            'category' => 'Ringkasan',
+            'description' => 'Saldo Awal',
+            'amount' => $data['opening_balance'] ?? 0,
+        ];
+        $rows[] = [
+            'category' => 'Ringkasan',
+            'description' => 'Perubahan Kas Bersih',
+            'amount' => $data['net_cash_change'] ?? 0,
+        ];
+        $rows[] = [
+            'category' => 'Ringkasan',
+            'description' => 'Saldo Akhir',
+            'amount' => $data['closing_balance'] ?? 0,
+        ];
+
+        return $this->exportReport($rows, 'cash-flow', $format, [
+            'category' => 'Kategori',
+            'description' => 'Uraian',
+            'amount' => 'Jumlah',
+        ]);
+    }
+
+    public function changesInEquity(?string $startDate = null, ?string $endDate = null, string $format = 'csv'): Response|JsonResponse
+    {
+        $data = $this->reportService->getStatementOfChangesInEquityForApi($startDate, $endDate);
+
+        $rows = [];
+
+        foreach ($data['opening_equity'] ?? [] as $item) {
+            $item = (array) $item;
+            $rows[] = [
+                'section' => 'Saldo Awal',
+                'code' => $item['code'] ?? '',
+                'name' => $item['name'] ?? '',
+                'amount' => $item['opening_balance'] ?? 0,
+            ];
+        }
+
+        $changes = $data['changes'] ?? [];
+        foreach ([
+            'capital_additions' => 'Penambahan Modal',
+            'capital_withdrawals' => 'Penarikan Modal',
+            'net_income' => 'Laba/Rugi Bersih',
+            'dividends' => 'Dividen',
+            'adjustments' => 'Penyesuaian',
+            'total_changes' => 'Total Perubahan',
+        ] as $key => $label) {
+            $rows[] = [
+                'section' => 'Perubahan',
+                'code' => '',
+                'name' => $label,
+                'amount' => $changes[$key] ?? 0,
+            ];
+        }
+
+        foreach ($data['closing_equity'] ?? [] as $item) {
+            $item = (array) $item;
+            $rows[] = [
+                'section' => 'Saldo Akhir',
+                'code' => $item['code'] ?? '',
+                'name' => $item['name'] ?? '',
+                'amount' => $item['closing_balance'] ?? 0,
+            ];
+        }
+
+        return $this->exportReport($rows, 'changes-in-equity', $format, [
+            'section' => 'Bagian',
+            'code' => 'Kode',
+            'name' => 'Uraian',
+            'amount' => 'Jumlah',
+        ]);
+    }
+
+    public function dailyCashMovement(?string $startDate = null, ?string $endDate = null, string $format = 'csv'): Response|JsonResponse
+    {
+        $startDate = $startDate ?? now()->startOfMonth()->toDateString();
+        $endDate = $endDate ?? now()->toDateString();
+
+        $movements = $this->cashFlowService->getDailyCashMovement($startDate, $endDate);
+
+        $rows = $movements->map(fn (array $movement) => [
+            'date' => $movement['date'],
+            'receipts' => $movement['receipts'],
+            'payments' => $movement['payments'],
+            'net' => $movement['net'],
+            'running_balance' => $movement['running_balance'] ?? $movement['balance'] ?? 0,
+        ])->toArray();
+
+        return $this->exportReport($rows, 'daily-cash-movement', $format, [
+            'date' => 'Tanggal',
+            'receipts' => 'Penerimaan',
+            'payments' => 'Pengeluaran',
+            'net' => 'Neto',
+            'running_balance' => 'Saldo Berjalan',
         ]);
     }
 

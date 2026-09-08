@@ -25,6 +25,15 @@ class CashFlowReportController extends Controller
         $startDate = $request->input('start_date') ?? now()->startOfMonth()->toDateString();
         $endDate = $request->input('end_date') ?? now()->endOfMonth()->toDateString();
 
+        if ($request->boolean('compare_previous_period')) {
+            return $this->success($this->reports->cashFlow()->generateComparativeCashFlow(
+                $startDate,
+                $endDate,
+                $request->input('previous_start_date'),
+                $request->input('previous_end_date')
+            ));
+        }
+
         $report = $this->reports->cashFlow()->generateCashFlow($startDate, $endDate);
 
         return $this->success([

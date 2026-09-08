@@ -21,7 +21,8 @@ class FinancialReportController extends Controller
         $this->authorize('reports.financial');
 
         $asOfDate = $request->input('as_of_date');
-        $trialBalance = $this->reports->balance()->getTrialBalance($asOfDate);
+        $journalId = $request->integer('journal_id') ?: null;
+        $trialBalance = $this->reports->balance()->getTrialBalance($asOfDate, $journalId);
 
         $totalDebit = $trialBalance->sum('debit_balance');
         $totalCredit = $trialBalance->sum('credit_balance');
@@ -29,6 +30,7 @@ class FinancialReportController extends Controller
         return $this->success([
             'report_name' => 'Neraca Saldo',
             'as_of_date' => $asOfDate ?? now()->toDateString(),
+            'journal_id' => $journalId,
             'accounts' => $trialBalance->values(),
             'total_debit' => $totalDebit,
             'total_credit' => $totalCredit,
@@ -101,12 +103,16 @@ class FinancialReportController extends Controller
 
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
-        $generalLedger = $this->reports->financial()->getGeneralLedger($startDate, $endDate);
+        $journalId = $request->integer('journal_id') ?: null;
+        $analyticAccountId = $request->integer('analytic_account_id') ?: null;
+        $generalLedger = $this->reports->financial()->getGeneralLedger($startDate, $endDate, $journalId, $analyticAccountId);
 
         return $this->success([
             'report_name' => 'Buku Besar',
             'start_date' => $startDate,
             'end_date' => $endDate,
+            'journal_id' => $journalId,
+            'analytic_account_id' => $analyticAccountId,
             'accounts' => $generalLedger->values(),
         ]);
     }

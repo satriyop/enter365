@@ -632,6 +632,9 @@ Route::prefix('v1')->group(function () {
             Route::get('invoices', [ExportController::class, 'invoices']);
             Route::get('bills', [ExportController::class, 'bills']);
             Route::get('tax-report', [ExportController::class, 'taxReport']);
+            Route::get('cash-flow', [ExportController::class, 'cashFlow']);
+            Route::get('changes-in-equity', [ExportController::class, 'changesInEquity']);
+            Route::get('daily-cash-movement', [ExportController::class, 'dailyCashMovement']);
         });
 
         // Roles & Permissions (Peran & Hak Akses)

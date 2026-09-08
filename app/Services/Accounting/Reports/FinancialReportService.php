@@ -62,9 +62,9 @@ class FinancialReportService
     /**
      * Get General Ledger (Buku Besar).
      */
-    public function getGeneralLedger(?string $startDate = null, ?string $endDate = null): Collection
+    public function getGeneralLedger(?string $startDate = null, ?string $endDate = null, ?int $journalId = null, ?int $analyticAccountId = null): Collection
     {
-        return $this->generalLedgerService->getGeneralLedger($startDate, $endDate);
+        return $this->generalLedgerService->getGeneralLedger($startDate, $endDate, $journalId, $analyticAccountId);
     }
 
     /**
