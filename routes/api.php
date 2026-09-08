@@ -56,8 +56,8 @@ use App\Http\Controllers\Api\V1\StockTransferController;
 use App\Http\Controllers\Api\V1\SubcontractorInvoiceController;
 use App\Http\Controllers\Api\V1\SubcontractorWorkOrderController;
 use App\Http\Controllers\Api\V1\TaskController;
-use App\Http\Controllers\Api\V1\TaxTagController;
 use App\Http\Controllers\Api\V1\TaxRecordController;
+use App\Http\Controllers\Api\V1\TaxTagController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\WarehouseController;
 use App\Http\Controllers\Api\V1\WorkOrderController;
@@ -326,8 +326,7 @@ Route::prefix('v1')->group(function () {
         Route::post('bills/{bill}/post', [BillController::class, 'post']);
         Route::post('bills/{bill}/void', [BillController::class, 'void']);
         Route::post('bills/{bill}/make-recurring', [BillController::class, 'makeRecurring']);
-        Route::post('bills/{bill}/credit-note', [BillController::class, 'creditNote'])
-            ->middleware('feature:purchase_returns');
+        Route::post('bills/{bill}/credit-note', [BillController::class, 'creditNote']);
         Route::post('bills/{bill}/match-purchase-order', [BillController::class, 'matchPurchaseOrder'])
             ->middleware('feature:purchase_orders');
 
