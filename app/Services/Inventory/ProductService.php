@@ -51,12 +51,14 @@ class ProductService extends BaseService implements ProductServiceInterface
 
             $salesTaxIds = $data['sales_tax_ids'] ?? null;
             $purchaseTaxIds = $data['purchase_tax_ids'] ?? null;
-            unset($data['sales_tax_ids'], $data['purchase_tax_ids']);
+            $vendorPricelists = $data['vendor_pricelists'] ?? null;
+            unset($data['sales_tax_ids'], $data['purchase_tax_ids'], $data['vendor_pricelists']);
 
             $product = Product::create($data);
             $this->syncProductTaxes($product, $salesTaxIds, $purchaseTaxIds);
+            $this->syncVendorPricelists($product, $vendorPricelists);
 
-            return $product->load(['category', 'salesTaxes', 'purchaseTaxes']);
+            return $product->load(['category', 'salesTaxes', 'purchaseTaxes', 'vendorPricelists.contact']);
         }, ['type' => $data['type'] ?? Product::TYPE_PRODUCT]);
     }
 
@@ -76,7 +78,8 @@ class ProductService extends BaseService implements ProductServiceInterface
 
         $salesTaxIds = array_key_exists('sales_tax_ids', $data) ? $data['sales_tax_ids'] : false;
         $purchaseTaxIds = array_key_exists('purchase_tax_ids', $data) ? $data['purchase_tax_ids'] : false;
-        unset($data['sales_tax_ids'], $data['purchase_tax_ids']);
+        $vendorPricelists = array_key_exists('vendor_pricelists', $data) ? $data['vendor_pricelists'] : false;
+        unset($data['sales_tax_ids'], $data['purchase_tax_ids'], $data['vendor_pricelists']);
 
         $product->update($data);
         $this->syncProductTaxes(
@@ -85,7 +88,11 @@ class ProductService extends BaseService implements ProductServiceInterface
             $purchaseTaxIds === false ? null : $purchaseTaxIds,
         );
 
-        return $product->fresh(['category', 'salesTaxes', 'purchaseTaxes']);
+        if ($vendorPricelists !== false) {
+            $this->syncVendorPricelists($product, $vendorPricelists);
+        }
+
+        return $product->fresh(['category', 'salesTaxes', 'purchaseTaxes', 'vendorPricelists.contact']);
     }
 
     /**
@@ -203,6 +210,35 @@ class ProductService extends BaseService implements ProductServiceInterface
     }
 
     /**
+     * @param  list<array<string, mixed>>|null  $lines
+     */
+    private function syncVendorPricelists(Product $product, ?array $lines): void
+    {
+        if ($lines === null) {
+            return;
+        }
+
+        $product->vendorPricelists()->delete();
+
+        foreach ($lines as $line) {
+            $product->vendorPricelists()->create([
+                'contact_id' => $line['contact_id'],
+                'min_qty' => $line['min_qty'] ?? 1,
+                'unit' => $line['unit'] ?? $product->unit,
+                'price' => $line['price'],
+                'currency' => $line['currency'] ?? 'IDR',
+                'lead_time_days' => $line['lead_time_days'] ?? 0,
+                'vendor_product_code' => $line['vendor_product_code'] ?? null,
+            ]);
+        }
+
+        $first = $product->vendorPricelists()->orderBy('id')->first();
+        if ($first && ! $product->default_supplier_id) {
+            $product->forceFill(['default_supplier_id' => $first->contact_id])->save();
+        }
+    }
+
+    /**
      * Apply default values to product data.
      *
      * @param  array<string, mixed>  $data
@@ -248,6 +284,7 @@ class ProductService extends BaseService implements ProductServiceInterface
             'is_active' => true,
             'is_sellable' => true,
             'is_purchasable' => true,
+            'purchase_control_policy' => Product::CONTROL_POLICY_RECEIVED,
             'is_taxable' => true,
             'tax_rate' => config('accounting.tax.default_rate', 11.00),
             'track_inventory' => false,

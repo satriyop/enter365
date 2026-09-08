@@ -27,7 +27,7 @@ class ProductController extends Controller
         $this->authorize('viewAny', Product::class);
 
         $products = Product::query()
-            ->with(['category', 'salesTaxes', 'purchaseTaxes'])
+            ->with(['category', 'salesTaxes', 'purchaseTaxes', 'vendorPricelists.contact'])
             ->filter($filter)
             ->paginate($filter->getRequest()->input('per_page', 25));
 
@@ -61,6 +61,7 @@ class ProductController extends Controller
             'category',
             'salesTaxes',
             'purchaseTaxes',
+            'vendorPricelists.contact',
             'inventoryAccount',
             'cogsAccount',
             'salesAccount',

@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Models\Inventory\Product;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -47,6 +48,9 @@ class ProductResource extends JsonResource
      *   is_active: bool,
      *   is_purchasable: bool,
      *   is_sellable: bool,
+     *   purchase_control_policy: string,
+     *   purchase_description: string|null,
+     *   vendor_pricelists: list<array{id: int, contact_id: int, min_qty: float, unit: string, price: int, currency: string, lead_time_days: int, vendor_product_code: string|null}>,
      *   barcode: string|null,
      *   brand: string|null,
      *   custom_fields: array<string, mixed>|null,
@@ -112,6 +116,13 @@ class ProductResource extends JsonResource
             'is_active' => $this->is_active,
             'is_purchasable' => $this->is_purchasable,
             'is_sellable' => $this->is_sellable,
+            'purchase_control_policy' => $this->purchase_control_policy ?? Product::CONTROL_POLICY_RECEIVED,
+            'purchase_description' => $this->purchase_description,
+            'vendor_pricelists' => $this->whenLoaded(
+                'vendorPricelists',
+                fn () => ProductVendorPricelistResource::collection($this->vendorPricelists),
+                []
+            ),
 
             // Additional info
             'barcode' => $this->barcode,
