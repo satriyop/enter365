@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $journal_entry_id
  * @property int $account_id
  * @property int|null $partner_id
+ * @property array<string, float|int>|null $analytic_distribution
+ * @property list<int>|null $tax_tag_ids
  * @property string $description
  * @property int $debit
  * @property int $credit
@@ -32,6 +34,8 @@ class JournalEntryLine extends Model
         'journal_entry_id',
         'account_id',
         'partner_id',
+        'analytic_distribution',
+        'tax_tag_ids',
         'description',
         'debit',
         'credit',
@@ -47,6 +51,8 @@ class JournalEntryLine extends Model
             'credit' => 'integer',
             'amount_currency' => 'integer',
             'exchange_rate' => 'decimal:4',
+            'analytic_distribution' => 'array',
+            'tax_tag_ids' => 'array',
         ];
     }
 

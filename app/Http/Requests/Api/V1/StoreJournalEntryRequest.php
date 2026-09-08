@@ -21,6 +21,11 @@ class StoreJournalEntryRequest extends FormRequest
             'lines' => ['required', 'array', 'min:2'],
             'lines.*.account_id' => ['required', 'integer', 'exists:accounts,id'],
             'lines.*.partner_id' => ['nullable', 'integer', 'exists:contacts,id'],
+            // Odoo-shaped JSON; no analytic/tax-tag masters yet — round-trip only.
+            'lines.*.analytic_distribution' => ['nullable', 'array'],
+            'lines.*.analytic_distribution.*' => ['numeric', 'min:0', 'max:100'],
+            'lines.*.tax_tag_ids' => ['nullable', 'array'],
+            'lines.*.tax_tag_ids.*' => ['integer', 'min:1'],
             'lines.*.description' => ['nullable', 'string', 'max:500'],
             'lines.*.debit' => ['required_without:lines.*.credit', 'integer', 'min:0'],
             'lines.*.credit' => ['required_without:lines.*.debit', 'integer', 'min:0'],

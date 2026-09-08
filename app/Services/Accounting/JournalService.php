@@ -62,7 +62,7 @@ class JournalService extends BaseService implements JournalServiceInterface
      *     reference?: string,
      *     source_type?: string,
      *     source_id?: int,
-     *     lines: array<array{account_id: int, partner_id?: int|null, debit?: int, credit?: int, description?: string, currency_code?: string|null, amount_currency?: int|null, exchange_rate?: float|null}>
+     *     lines: array<array{account_id: int, partner_id?: int|null, analytic_distribution?: array<string, float|int>|null, tax_tag_ids?: list<int>|null, debit?: int, credit?: int, description?: string, currency_code?: string|null, amount_currency?: int|null, exchange_rate?: float|null}>
      * } $data
      */
     public function createEntry(array $data, bool $autoPost = false): JournalEntry
