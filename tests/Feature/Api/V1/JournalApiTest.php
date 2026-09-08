@@ -21,7 +21,20 @@ describe('Journal Master API', function () {
         $response->assertOk()
             ->assertJsonStructure([
                 'data' => [
-                    '*' => ['id', 'name', 'type', 'sequence_prefix', 'default_account_id', 'currency', 'is_active'],
+                    '*' => [
+                        'id',
+                        'name',
+                        'type',
+                        'sequence_prefix',
+                        'default_account_id',
+                        'suspense_account_id',
+                        'outstanding_receipts_account_id',
+                        'outstanding_payments_account_id',
+                        'bank_account_number',
+                        'dedicated_payment_sequence',
+                        'currency',
+                        'is_active',
+                    ],
                 ],
             ]);
 
@@ -57,6 +70,72 @@ describe('Journal Master API', function () {
             ->assertJsonPath('data.currency', 'IDR');
 
         $this->assertDatabaseHas('journals', ['sequence_prefix' => 'BCA-']);
+    });
+
+    it('can create a bank journal with payment plumbing accounts', function () {
+        $bank = Account::where('code', '1-1001')->firstOrFail();
+        $suspense = Account::factory()->create(['name' => 'Bank Suspense']);
+        $receipts = Account::factory()->create(['name' => 'Outstanding Receipts']);
+        $payments = Account::factory()->create(['name' => 'Outstanding Payments']);
+
+        $response = $this->postJson('/api/v1/journals', [
+            'name' => 'Bank Mandiri',
+            'type' => Journal::TYPE_BANK,
+            'sequence_prefix' => 'MDR-',
+            'default_account_id' => $bank->id,
+            'suspense_account_id' => $suspense->id,
+            'outstanding_receipts_account_id' => $receipts->id,
+            'outstanding_payments_account_id' => $payments->id,
+            'bank_account_number' => '1234567890',
+            'dedicated_payment_sequence' => true,
+            'currency' => 'IDR',
+            'is_active' => true,
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.name', 'Bank Mandiri')
+            ->assertJsonPath('data.suspense_account_id', $suspense->id)
+            ->assertJsonPath('data.outstanding_receipts_account_id', $receipts->id)
+            ->assertJsonPath('data.outstanding_payments_account_id', $payments->id)
+            ->assertJsonPath('data.bank_account_number', '1234567890')
+            ->assertJsonPath('data.dedicated_payment_sequence', true);
+
+        $this->assertDatabaseHas('journals', [
+            'sequence_prefix' => 'MDR-',
+            'suspense_account_id' => $suspense->id,
+            'outstanding_receipts_account_id' => $receipts->id,
+            'outstanding_payments_account_id' => $payments->id,
+            'bank_account_number' => '1234567890',
+            'dedicated_payment_sequence' => true,
+        ]);
+    });
+
+    it('can update bank payment plumbing fields on a cash journal', function () {
+        $journal = Journal::query()->where('type', Journal::TYPE_CASH)->firstOrFail();
+        $suspense = Account::factory()->create(['name' => 'Cash Suspense']);
+        $receipts = Account::factory()->create(['name' => 'Cash Outstanding Receipts']);
+        $payments = Account::factory()->create(['name' => 'Cash Outstanding Payments']);
+
+        $response = $this->putJson("/api/v1/journals/{$journal->id}", [
+            'suspense_account_id' => $suspense->id,
+            'outstanding_receipts_account_id' => $receipts->id,
+            'outstanding_payments_account_id' => $payments->id,
+            'bank_account_number' => null,
+            'dedicated_payment_sequence' => false,
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.suspense_account_id', $suspense->id)
+            ->assertJsonPath('data.outstanding_receipts_account_id', $receipts->id)
+            ->assertJsonPath('data.outstanding_payments_account_id', $payments->id)
+            ->assertJsonPath('data.dedicated_payment_sequence', false);
+
+        $this->assertDatabaseHas('journals', [
+            'id' => $journal->id,
+            'suspense_account_id' => $suspense->id,
+            'outstanding_receipts_account_id' => $receipts->id,
+            'outstanding_payments_account_id' => $payments->id,
+        ]);
     });
 
     it('validates required fields when creating journal', function () {

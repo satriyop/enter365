@@ -34,6 +34,11 @@ class Journal extends Model
         'type',
         'sequence_prefix',
         'default_account_id',
+        'suspense_account_id',
+        'outstanding_receipts_account_id',
+        'outstanding_payments_account_id',
+        'bank_account_number',
+        'dedicated_payment_sequence',
         'currency',
         'is_active',
     ];
@@ -42,6 +47,7 @@ class Journal extends Model
     {
         return [
             'is_active' => 'boolean',
+            'dedicated_payment_sequence' => 'boolean',
         ];
     }
 
@@ -106,6 +112,30 @@ class Journal extends Model
     public function defaultAccount(): BelongsTo
     {
         return $this->belongsTo(Account::class, 'default_account_id');
+    }
+
+    /**
+     * @return BelongsTo<Account, $this>
+     */
+    public function suspenseAccount(): BelongsTo
+    {
+        return $this->belongsTo(Account::class, 'suspense_account_id');
+    }
+
+    /**
+     * @return BelongsTo<Account, $this>
+     */
+    public function outstandingReceiptsAccount(): BelongsTo
+    {
+        return $this->belongsTo(Account::class, 'outstanding_receipts_account_id');
+    }
+
+    /**
+     * @return BelongsTo<Account, $this>
+     */
+    public function outstandingPaymentsAccount(): BelongsTo
+    {
+        return $this->belongsTo(Account::class, 'outstanding_payments_account_id');
     }
 
     /**

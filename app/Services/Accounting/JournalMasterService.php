@@ -19,7 +19,7 @@ class JournalMasterService extends BaseService
     }
 
     /**
-     * @param  array{name: string, type: string, sequence_prefix: string, default_account_id?: int|null, currency?: string|null, is_active?: bool}  $data
+     * @param  array{name: string, type: string, sequence_prefix: string, default_account_id?: int|null, suspense_account_id?: int|null, outstanding_receipts_account_id?: int|null, outstanding_payments_account_id?: int|null, bank_account_number?: string|null, dedicated_payment_sequence?: bool, currency?: string|null, is_active?: bool}  $data
      */
     public function create(array $data): Journal
     {
@@ -29,14 +29,19 @@ class JournalMasterService extends BaseService
     }
 
     /**
-     * @param  array{name?: string, type?: string, sequence_prefix?: string, default_account_id?: int|null, currency?: string|null, is_active?: bool}  $data
+     * @param  array{name?: string, type?: string, sequence_prefix?: string, default_account_id?: int|null, suspense_account_id?: int|null, outstanding_receipts_account_id?: int|null, outstanding_payments_account_id?: int|null, bank_account_number?: string|null, dedicated_payment_sequence?: bool, currency?: string|null, is_active?: bool}  $data
      */
     public function update(Journal $journal, array $data): Journal
     {
         return $this->executeInTransaction('update_journal', function () use ($journal, $data) {
             $journal->update($data);
 
-            return $journal->fresh(['defaultAccount']);
+            return $journal->fresh([
+                'defaultAccount',
+                'suspenseAccount',
+                'outstandingReceiptsAccount',
+                'outstandingPaymentsAccount',
+            ]);
         }, ['journal_id' => $journal->id]);
     }
 
