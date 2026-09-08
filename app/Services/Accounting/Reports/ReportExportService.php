@@ -2,12 +2,16 @@
 
 namespace App\Services\Accounting\Reports;
 
+use App\Exports\ReportRowsExport;
 use App\Models\Accounting\Account;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
 use App\Services\Accounting\AccountBalanceService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ReportExportService
 {
@@ -19,11 +23,11 @@ class ReportExportService
         private CashFlowReportService $cashFlowService
     ) {}
 
-    public function trialBalance(?string $date = null, string $format = 'csv'): Response|JsonResponse
+    public function trialBalance(?string $date = null, string $format = 'csv', ?int $journalId = null, bool $postedOnly = true): Response|JsonResponse|BinaryFileResponse
     {
         $date = $date ?? now()->toDateString();
 
-        $data = $this->balanceService->getTrialBalance($date);
+        $data = $this->balanceService->getTrialBalance($date, $journalId, $postedOnly);
 
         $rows = $data->map(fn ($item) => [
             'code' => $item['code'],
@@ -42,11 +46,11 @@ class ReportExportService
         ]);
     }
 
-    public function balanceSheet(?string $date = null, string $format = 'csv'): Response|JsonResponse
+    public function balanceSheet(?string $date = null, string $format = 'csv', ?int $journalId = null, bool $postedOnly = true): Response|JsonResponse|BinaryFileResponse
     {
         $date = $date ?? now()->toDateString();
 
-        $data = $this->reportService->getBalanceSheet($date);
+        $data = $this->reportService->getBalanceSheet($date, false, $journalId, $postedOnly);
 
         $rows = $this->flattenBalanceSheet($data);
 
@@ -58,12 +62,12 @@ class ReportExportService
         ]);
     }
 
-    public function incomeStatement(?string $startDate = null, ?string $endDate = null, string $format = 'csv'): Response|JsonResponse
+    public function incomeStatement(?string $startDate = null, ?string $endDate = null, string $format = 'csv', ?int $journalId = null, bool $postedOnly = true): Response|JsonResponse|BinaryFileResponse
     {
         $startDate = $startDate ?? now()->startOfMonth()->toDateString();
         $endDate = $endDate ?? now()->toDateString();
 
-        $data = $this->reportService->getIncomeStatement($startDate, $endDate);
+        $data = $this->reportService->getIncomeStatement($startDate, $endDate, false, $journalId, $postedOnly);
 
         $rows = $this->flattenIncomeStatement($data);
 
@@ -81,8 +85,9 @@ class ReportExportService
         ?string $endDate = null,
         string $format = 'csv',
         ?int $journalId = null,
-        ?int $analyticAccountId = null
-    ): Response|JsonResponse {
+        ?int $analyticAccountId = null,
+        bool $postedOnly = true
+    ): Response|JsonResponse|BinaryFileResponse {
         $startDate = $startDate ?? now()->startOfMonth()->toDateString();
         $endDate = $endDate ?? now()->toDateString();
 
@@ -91,7 +96,7 @@ class ReportExportService
         }
 
         $account = Account::findOrFail($accountId);
-        $ledger = $this->balanceService->getLedger($account, $startDate, $endDate, $journalId, $analyticAccountId);
+        $ledger = $this->balanceService->getLedger($account, $startDate, $endDate, $journalId, $analyticAccountId, $postedOnly);
 
         $rows = $ledger->map(fn (array $entry) => [
             'date' => $entry['date'],
@@ -119,7 +124,7 @@ class ReportExportService
         ?int $accountId = null,
         ?int $journalId = null,
         string $format = 'csv',
-    ): Response|JsonResponse {
+    ): Response|JsonResponse|BinaryFileResponse {
         $report = $this->reportService->getPartnerLedger(
             $startDate,
             $endDate,
@@ -164,7 +169,7 @@ class ReportExportService
         ]);
     }
 
-    public function receivableAging(string $format = 'csv'): Response|JsonResponse
+    public function receivableAging(string $format = 'csv'): Response|JsonResponse|BinaryFileResponse
     {
         $data = $this->agingService->getReceivableAging();
 
@@ -192,7 +197,7 @@ class ReportExportService
         ]);
     }
 
-    public function payableAging(string $format = 'csv'): Response|JsonResponse
+    public function payableAging(string $format = 'csv'): Response|JsonResponse|BinaryFileResponse
     {
         $data = $this->agingService->getPayableAging();
 
@@ -225,7 +230,7 @@ class ReportExportService
         ?string $endDate = null,
         ?string $status = null,
         string $format = 'csv'
-    ): Response|JsonResponse {
+    ): Response|JsonResponse|BinaryFileResponse {
         $query = Invoice::with('contact');
 
         if ($startDate) {
@@ -272,7 +277,7 @@ class ReportExportService
         ?string $endDate = null,
         ?string $status = null,
         string $format = 'csv'
-    ): Response|JsonResponse {
+    ): Response|JsonResponse|BinaryFileResponse {
         $query = Bill::with('contact');
 
         if ($startDate) {
@@ -320,7 +325,7 @@ class ReportExportService
         int|string|null $month = null,
         int|string|null $year = null,
         string $format = 'csv'
-    ): Response|JsonResponse {
+    ): Response|JsonResponse|BinaryFileResponse {
         $month = $month ?? now()->month;
         $year = $year ?? now()->year;
 
@@ -365,12 +370,12 @@ class ReportExportService
         ]);
     }
 
-    public function cashFlow(?string $startDate = null, ?string $endDate = null, string $format = 'csv'): Response|JsonResponse
+    public function cashFlow(?string $startDate = null, ?string $endDate = null, string $format = 'csv', ?int $journalId = null): Response|JsonResponse|BinaryFileResponse
     {
         $startDate = $startDate ?? now()->startOfMonth()->toDateString();
         $endDate = $endDate ?? now()->toDateString();
 
-        $data = $this->cashFlowService->generateCashFlow($startDate, $endDate);
+        $data = $this->cashFlowService->generateCashFlow($startDate, $endDate, $journalId);
 
         $rows = [];
         $sections = [
@@ -419,7 +424,7 @@ class ReportExportService
         ]);
     }
 
-    public function changesInEquity(?string $startDate = null, ?string $endDate = null, string $format = 'csv'): Response|JsonResponse
+    public function changesInEquity(?string $startDate = null, ?string $endDate = null, string $format = 'csv'): Response|JsonResponse|BinaryFileResponse
     {
         $data = $this->reportService->getStatementOfChangesInEquityForApi($startDate, $endDate);
 
@@ -470,7 +475,7 @@ class ReportExportService
         ]);
     }
 
-    public function dailyCashMovement(?string $startDate = null, ?string $endDate = null, string $format = 'csv'): Response|JsonResponse
+    public function dailyCashMovement(?string $startDate = null, ?string $endDate = null, string $format = 'csv'): Response|JsonResponse|BinaryFileResponse
     {
         $startDate = $startDate ?? now()->startOfMonth()->toDateString();
         $endDate = $endDate ?? now()->toDateString();
@@ -494,7 +499,7 @@ class ReportExportService
         ]);
     }
 
-    protected function exportReport(array $data, string $filename, string $format, array $headers): Response|JsonResponse
+    protected function exportReport(array $data, string $filename, string $format, array $headers): Response|JsonResponse|BinaryFileResponse
     {
         if ($format === 'json') {
             return response()->json([
@@ -503,13 +508,56 @@ class ReportExportService
             ]);
         }
 
-        // Default to CSV
+        $stamp = now()->format('Y-m-d');
+
+        if (in_array($format, ['xlsx', 'excel'], true)) {
+            return Excel::download(
+                new ReportRowsExport($data, $headers),
+                "{$filename}-{$stamp}.xlsx",
+                \Maatwebsite\Excel\Excel::XLSX
+            );
+        }
+
+        if ($format === 'pdf') {
+            $pdf = Pdf::loadHTML($this->arrayToHtmlTable($data, $headers, $filename));
+
+            return $pdf->download("{$filename}-{$stamp}.pdf");
+        }
+
         $csv = $this->arrayToCsv($data, $headers);
 
         return response($csv, 200, [
             'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => "attachment; filename=\"{$filename}-".now()->format('Y-m-d').'.csv"',
+            'Content-Disposition' => "attachment; filename=\"{$filename}-{$stamp}.csv\"",
         ]);
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $data
+     * @param  array<string, string>  $headers
+     */
+    protected function arrayToHtmlTable(array $data, array $headers, string $title): string
+    {
+        $headingCells = '';
+        foreach (array_values($headers) as $label) {
+            $headingCells .= '<th>'.e((string) $label).'</th>';
+        }
+
+        $body = '';
+        foreach ($data as $row) {
+            $body .= '<tr>';
+            foreach (array_keys($headers) as $key) {
+                $value = $row[$key] ?? '';
+                if ($value instanceof \BackedEnum) {
+                    $value = $value->value;
+                }
+                $body .= '<td>'.e((string) $value).'</td>';
+            }
+            $body .= '</tr>';
+        }
+
+        return '<html><body><h1>'.e($title).'</h1><table border="1" cellpadding="4" cellspacing="0"><thead><tr>'
+            .$headingCells.'</tr></thead><tbody>'.$body.'</tbody></table></body></html>';
     }
 
     protected function arrayToCsv(array $data, array $headers): string

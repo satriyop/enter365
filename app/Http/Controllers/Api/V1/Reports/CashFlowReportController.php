@@ -34,10 +34,12 @@ class CashFlowReportController extends Controller
             ));
         }
 
-        $report = $this->reports->cashFlow()->generateCashFlow($startDate, $endDate);
+        $journalId = $request->integer('journal_id') ?: null;
+        $report = $this->reports->cashFlow()->generateCashFlow($startDate, $endDate, $journalId);
 
         return $this->success([
             'report_name' => 'Laporan Arus Kas',
+            'journal_id' => $journalId,
             ...$report,
         ]);
     }

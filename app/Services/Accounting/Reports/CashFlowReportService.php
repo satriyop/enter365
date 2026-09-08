@@ -24,22 +24,22 @@ class CashFlowReportService
      *     closing_balance: int
      * }
      */
-    public function generateCashFlow(?string $startDate = null, ?string $endDate = null): array
+    public function generateCashFlow(?string $startDate = null, ?string $endDate = null, ?int $journalId = null): array
     {
         $startDate = $startDate ?? now()->startOfMonth()->toDateString();
         $endDate = $endDate ?? now()->endOfMonth()->toDateString();
 
         // Get beginning cash balance
-        $beginningCash = $this->getCashBalance(Carbon::parse($startDate)->subDay());
+        $beginningCash = $this->getCashBalance(Carbon::parse($startDate)->subDay(), $journalId);
 
         // Operating activities
-        $operating = $this->getOperatingActivities($startDate, $endDate);
+        $operating = $this->getOperatingActivities($startDate, $endDate, $journalId);
 
         // Investing activities
-        $investing = $this->getInvestingActivities($startDate, $endDate);
+        $investing = $this->getInvestingActivities($startDate, $endDate, $journalId);
 
         // Financing activities
-        $financing = $this->getFinancingActivities($startDate, $endDate);
+        $financing = $this->getFinancingActivities($startDate, $endDate, $journalId);
 
         $netCashChange = $operating['total'] + $investing['total'] + $financing['total'];
         $closingBalance = $beginningCash + $netCashChange;
@@ -95,7 +95,7 @@ class CashFlowReportService
     /**
      * Get cash balance as of a specific date.
      */
-    public function getCashBalance(\DateTimeInterface $asOfDate): int
+    public function getCashBalance(\DateTimeInterface $asOfDate, ?int $journalId = null): int
     {
         $cashAccounts = Account::query()
             ->whereIn('code', ['1-1001', '1-1002', '1-1003', '1-1004', '1-1005'])
@@ -103,9 +103,12 @@ class CashFlowReportService
 
         $balance = JournalEntryLine::query()
             ->whereIn('account_id', $cashAccounts)
-            ->whereHas('journalEntry', function ($q) use ($asOfDate) {
+            ->whereHas('journalEntry', function ($q) use ($asOfDate, $journalId) {
                 $q->where('is_posted', true)
                     ->whereDate('entry_date', '<=', $asOfDate);
+                if ($journalId) {
+                    $q->where('journal_id', $journalId);
+                }
             })
             ->selectRaw('SUM(debit) - SUM(credit) as balance')
             ->value('balance');
@@ -118,34 +121,26 @@ class CashFlowReportService
      *
      * @return array{items: Collection, total: int}
      */
-    protected function getOperatingActivities(string $startDate, string $endDate): array
+    protected function getOperatingActivities(string $startDate, string $endDate, ?int $journalId = null): array
     {
         $items = collect();
 
         // Cash received from customers
-        $customerReceipts = Payment::query()
-            ->where('type', Payment::TYPE_RECEIVE)
-            ->where('is_voided', false)
-            ->whereBetween('payment_date', [$startDate, $endDate.' 23:59:59'])
-            ->sum('amount');
+        $customerReceipts = $this->paymentSum(Payment::TYPE_RECEIVE, $startDate, $endDate, $journalId);
         $items->push([
             'description' => 'Penerimaan dari pelanggan',
             'amount' => (int) $customerReceipts,
         ]);
 
         // Cash paid to suppliers
-        $supplierPayments = Payment::query()
-            ->where('type', Payment::TYPE_SEND)
-            ->where('is_voided', false)
-            ->whereBetween('payment_date', [$startDate, $endDate.' 23:59:59'])
-            ->sum('amount');
+        $supplierPayments = $this->paymentSum(Payment::TYPE_SEND, $startDate, $endDate, $journalId);
         $items->push([
             'description' => 'Pembayaran ke pemasok',
             'amount' => -(int) $supplierPayments,
         ]);
 
         // Other operating cash flows from journal entries
-        $operatingJournals = $this->getJournalCashFlows($startDate, $endDate, 'operating');
+        $operatingJournals = $this->getJournalCashFlows($startDate, $endDate, 'operating', $journalId);
         foreach ($operatingJournals as $journal) {
             $items->push($journal);
         }
@@ -163,12 +158,12 @@ class CashFlowReportService
      *
      * @return array{items: Collection, total: int}
      */
-    protected function getInvestingActivities(string $startDate, string $endDate): array
+    protected function getInvestingActivities(string $startDate, string $endDate, ?int $journalId = null): array
     {
         $items = collect();
 
         // Get journal entries for fixed assets
-        $investingJournals = $this->getJournalCashFlows($startDate, $endDate, 'investing');
+        $investingJournals = $this->getJournalCashFlows($startDate, $endDate, 'investing', $journalId);
         foreach ($investingJournals as $journal) {
             $items->push($journal);
         }
@@ -193,12 +188,12 @@ class CashFlowReportService
      *
      * @return array{items: Collection, total: int}
      */
-    protected function getFinancingActivities(string $startDate, string $endDate): array
+    protected function getFinancingActivities(string $startDate, string $endDate, ?int $journalId = null): array
     {
         $items = collect();
 
         // Get journal entries for equity and long-term liabilities
-        $financingJournals = $this->getJournalCashFlows($startDate, $endDate, 'financing');
+        $financingJournals = $this->getJournalCashFlows($startDate, $endDate, 'financing', $journalId);
         foreach ($financingJournals as $journal) {
             $items->push($journal);
         }
@@ -223,7 +218,7 @@ class CashFlowReportService
      *
      * @return Collection<int, array{description: string, amount: int}>
      */
-    protected function getJournalCashFlows(string $startDate, string $endDate, string $category): Collection
+    protected function getJournalCashFlows(string $startDate, string $endDate, string $category, ?int $journalId = null): Collection
     {
         $cashAccounts = Account::query()
             ->whereIn('code', ['1-1001', '1-1002', '1-1003', '1-1004', '1-1005'])
@@ -246,6 +241,7 @@ class CashFlowReportService
             ->where('is_posted', true)
             ->where('source_type', JournalEntry::SOURCE_MANUAL) // Only manual entries
             ->whereBetween('entry_date', [$startDate, $endDate.' 23:59:59'])
+            ->when($journalId, fn ($q) => $q->where('journal_id', $journalId))
             ->whereHas('lines', function ($q) use ($cashAccounts) {
                 $q->whereIn('account_id', $cashAccounts);
             })
@@ -282,6 +278,22 @@ class CashFlowReportService
         }
 
         return $flows;
+    }
+
+    private function paymentSum(string $type, string $startDate, string $endDate, ?int $journalId): int
+    {
+        $query = Payment::query()
+            ->where('type', $type)
+            ->where('is_voided', false)
+            ->whereBetween('payment_date', [$startDate, $endDate.' 23:59:59']);
+
+        if ($journalId) {
+            $query->whereHas('journalEntry', function ($journalEntry) use ($journalId) {
+                $journalEntry->where('journal_id', $journalId)->where('is_posted', true);
+            });
+        }
+
+        return (int) $query->sum('amount');
     }
 
     /**

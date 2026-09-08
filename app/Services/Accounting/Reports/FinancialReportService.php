@@ -36,9 +36,9 @@ class FinancialReportService
      *     is_balanced: bool
      * }
      */
-    public function getBalanceSheet(?string $asOfDate = null, bool $hierarchical = false): array
+    public function getBalanceSheet(?string $asOfDate = null, bool $hierarchical = false, ?int $journalId = null, bool $postedOnly = true): array
     {
-        return $this->balanceSheetService->getBalanceSheet($asOfDate, $hierarchical);
+        return $this->balanceSheetService->getBalanceSheet($asOfDate, $hierarchical, $journalId, $postedOnly);
     }
 
     /**
@@ -56,17 +56,17 @@ class FinancialReportService
      *     net_income: int
      * }
      */
-    public function getIncomeStatement(?string $startDate = null, ?string $endDate = null, bool $hierarchical = false): array
+    public function getIncomeStatement(?string $startDate = null, ?string $endDate = null, bool $hierarchical = false, ?int $journalId = null, bool $postedOnly = true): array
     {
-        return $this->incomeStatementService->getIncomeStatement($startDate, $endDate, $hierarchical);
+        return $this->incomeStatementService->getIncomeStatement($startDate, $endDate, $hierarchical, $journalId, $postedOnly);
     }
 
     /**
      * Get General Ledger (Buku Besar).
      */
-    public function getGeneralLedger(?string $startDate = null, ?string $endDate = null, ?int $journalId = null, ?int $analyticAccountId = null): Collection
+    public function getGeneralLedger(?string $startDate = null, ?string $endDate = null, ?int $journalId = null, ?int $analyticAccountId = null, bool $postedOnly = true): Collection
     {
-        return $this->generalLedgerService->getGeneralLedger($startDate, $endDate, $journalId, $analyticAccountId);
+        return $this->generalLedgerService->getGeneralLedger($startDate, $endDate, $journalId, $analyticAccountId, $postedOnly);
     }
 
     /**
