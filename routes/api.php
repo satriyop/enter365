@@ -52,6 +52,7 @@ use App\Http\Controllers\Api\V1\Reports\TaxReportController;
 use App\Http\Controllers\Api\V1\RoleController;
 use App\Http\Controllers\Api\V1\SalesReturnController;
 use App\Http\Controllers\Api\V1\StockOpnameController;
+use App\Http\Controllers\Api\V1\StockTransferController;
 use App\Http\Controllers\Api\V1\SubcontractorInvoiceController;
 use App\Http\Controllers\Api\V1\SubcontractorWorkOrderController;
 use App\Http\Controllers\Api\V1\TaskController;
@@ -212,6 +213,17 @@ Route::prefix('v1')->group(function () {
             Route::post('adjust', [InventoryController::class, 'adjust'])
                 ->middleware('permission:inventory.adjust');
             Route::post('transfer', [InventoryController::class, 'transfer'])
+                ->middleware('permission:inventory.transfer');
+        });
+
+        Route::middleware(['feature:inventory', 'permission:inventory.view'])->group(function () {
+            Route::get('stock-transfers', [StockTransferController::class, 'index']);
+            Route::get('stock-transfers/{stockTransfer}', [StockTransferController::class, 'show']);
+            Route::post('stock-transfers', [StockTransferController::class, 'store'])
+                ->middleware('permission:inventory.transfer');
+            Route::post('stock-transfers/{stockTransfer}/confirm', [StockTransferController::class, 'confirm'])
+                ->middleware('permission:inventory.transfer');
+            Route::post('stock-transfers/{stockTransfer}/cancel', [StockTransferController::class, 'cancel'])
                 ->middleware('permission:inventory.transfer');
         });
 
