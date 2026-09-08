@@ -338,6 +338,8 @@ return [
         'inventory_adjustment' => '5-2900', // Penyesuaian Persediaan (Beban Operasional Lainnya)
         'cash_over_short' => env('ACCOUNTING_CASH_OVER_SHORT_ACCOUNT', '5-2910'),
         'cash_rounding' => env('ACCOUNTING_CASH_ROUNDING_ACCOUNT', '5-2911'),
+        'cash_rounding_loss' => env('ACCOUNTING_CASH_ROUNDING_LOSS_ACCOUNT', env('ACCOUNTING_CASH_ROUNDING_ACCOUNT', '5-2911')),
+        'cash_rounding_profit' => env('ACCOUNTING_CASH_ROUNDING_PROFIT_ACCOUNT', '4-2006'),
         'sales_returns' => '4-1004', // Retur Penjualan
         'purchase_returns' => '5-1004', // Retur Pembelian
         'dp_receivable' => '2-1700', // Uang Muka Penjualan (current liability)
