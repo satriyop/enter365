@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Contracts\Purchasing\BillServiceInterface;
-use App\Contracts\Purchasing\PurchaseReturnServiceInterface;
 use App\Enums\DocumentStatus;
+use App\Exceptions\Domain\BusinessRuleException;
 use App\Filters\BillFilter;
 use App\Http\Requests\Api\V1\MakeRecurringRequest;
 use App\Http\Requests\Api\V1\MatchBillPurchaseOrderRequest;
@@ -13,7 +13,7 @@ use App\Http\Requests\Api\V1\StoreBillRequest;
 use App\Http\Requests\Api\V1\UpdateBillRequest;
 use App\Http\Requests\Api\V1\VoidBillRequest;
 use App\Http\Resources\Api\V1\BillResource;
-use App\Http\Resources\Api\V1\PurchaseReturnResource;
+use App\Http\Resources\Api\V1\JournalEntryResource;
 use App\Http\Resources\Api\V1\RecurringTemplateResource;
 use App\Models\Purchasing\Bill;
 use App\Models\Purchasing\PurchaseOrder;
@@ -27,7 +27,6 @@ class BillController extends Controller
     public function __construct(
         private BillServiceInterface $billService,
         private RecurringService $recurringService,
-        private PurchaseReturnServiceInterface $purchaseReturnService
     ) {}
 
     /**
@@ -137,7 +136,7 @@ class BillController extends Controller
     }
 
     /**
-     * Create a vendor credit note (purchase return) from a posted bill.
+     * Reverse the posted bill journal (AP vendor credit). Stock return is a separate action.
      */
     public function creditNote(StoreBillCreditNoteRequest $request, Bill $bill): JsonResponse
     {
@@ -147,15 +146,19 @@ class BillController extends Controller
             return $blocked;
         }
 
-        $data = $request->validated();
-        $data['created_by'] = $request->user()?->id;
+        try {
+            $reversal = $this->billService->createCreditNote(
+                $bill,
+                (string) $request->validated('reason'),
+            );
 
-        $creditNote = $this->purchaseReturnService->createFromBill($bill, $data);
-
-        return $this->created(
-            new PurchaseReturnResource($creditNote->load(['items', 'contact', 'bill'])),
-            'Nota kredit vendor berhasil dibuat.'
-        );
+            return $this->created(
+                new JournalEntryResource($reversal->load(['lines.account', 'journal', 'reversalOf'])),
+                'Nota kredit vendor berhasil dibuat.'
+            );
+        } catch (BusinessRuleException $e) {
+            return $this->error($e->getMessage(), 422);
+        }
     }
 
     /**
