@@ -117,7 +117,9 @@ describe('Product sales and purchase taxes', function () {
         ]);
 
         $invoice->assertCreated()
-            ->assertJsonPath('data.items.0.tax_rate', 12);
+            ->assertJsonPath('data.items.0.tax_rate', 12)
+            ->assertJsonPath('data.tax_amount', 12_000)
+            ->assertJsonPath('data.total_amount', 112_000);
     });
 
     it('stacks multiple product sales tax rates', function () {
@@ -137,6 +139,61 @@ describe('Product sales and purchase taxes', function () {
             $luxury->id => ['kind' => 'sales'],
         ]);
 
+        $customer = Contact::factory()->customer()->create();
+        $invoice = $this->postJson('/api/v1/invoices', [
+            'contact_id' => $customer->id,
+            'invoice_date' => now()->toDateString(),
+            'due_date' => now()->addDays(7)->toDateString(),
+            'items' => [
+                [
+                    'product_id' => $product->id,
+                    'description' => $product->name,
+                    'quantity' => 1,
+                    'unit' => 'pcs',
+                    'unit_price' => 100_000,
+                ],
+            ],
+        ]);
+
         expect($product->fresh()->salesTaxRate())->toBe(12.0);
+        $invoice->assertCreated()
+            ->assertJsonPath('data.items.0.tax_rate', 12)
+            ->assertJsonPath('data.tax_amount', 12_000)
+            ->assertJsonPath('data.total_amount', 112_000);
+    });
+
+    it('posts invoice tax to the tax record invoice account', function () {
+        $vat = Account::query()->where('code', '2-1200')->firstOrFail();
+        $sales = TaxRecord::factory()->create([
+            'code' => 'PPN-ACC',
+            'rate' => 11,
+            'applicability' => TaxRecord::APPLICABILITY_SALES,
+            'invoice_account_id' => $vat->id,
+        ]);
+        $product = Product::factory()->create(['tax_rate' => 0, 'is_taxable' => false]);
+        $product->salesTaxes()->sync([$sales->id => ['kind' => 'sales']]);
+        $customer = Contact::factory()->customer()->create();
+
+        $created = $this->postJson('/api/v1/invoices', [
+            'contact_id' => $customer->id,
+            'invoice_date' => now()->toDateString(),
+            'due_date' => now()->addDays(7)->toDateString(),
+            'items' => [
+                [
+                    'product_id' => $product->id,
+                    'description' => $product->name,
+                    'quantity' => 1,
+                    'unit' => 'pcs',
+                    'unit_price' => 100_000,
+                ],
+            ],
+        ]);
+        $created->assertCreated();
+        $id = (int) $created->json('data.id');
+
+        $this->postJson("/api/v1/invoices/{$id}/post")->assertOk();
+
+        $posted = \App\Models\Sales\Invoice::query()->with('journalEntry.lines')->findOrFail($id);
+        expect($posted->journalEntry?->lines->pluck('account_id')->all())->toContain($vat->id);
     });
 });

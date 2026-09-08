@@ -70,11 +70,25 @@ class InvoiceDomainFactory
      */
     public function applyTotals(Invoice $invoice): Invoice
     {
-        $totals = $this->calculateTotals($invoice);
+        $hasLineTax = $invoice->items->contains(
+            fn ($item): bool => (float) $item->tax_rate > 0 || (int) $item->tax_amount > 0
+        );
 
-        $invoice->subtotal = $totals->subtotal;
-        $invoice->tax_amount = $totals->taxAmount;
-        $invoice->total_amount = $totals->totalAmount;
+        if ($hasLineTax) {
+            $subtotal = (int) $invoice->items->sum(fn ($item): int => (int) $item->line_total);
+            $taxAmount = (int) $invoice->items->sum(fn ($item): int => (int) $item->tax_amount);
+            $discount = (int) ($invoice->discount_amount ?? 0);
+
+            $invoice->subtotal = $subtotal;
+            $invoice->tax_amount = $taxAmount;
+            $invoice->total_amount = max(0, $subtotal + $taxAmount - $discount);
+        } else {
+            $totals = $this->calculateTotals($invoice);
+
+            $invoice->subtotal = $totals->subtotal;
+            $invoice->tax_amount = $totals->taxAmount;
+            $invoice->total_amount = $totals->totalAmount;
+        }
 
         // Calculate base currency total if multi-currency
         if ($invoice->currency !== 'IDR' && (float) $invoice->exchange_rate > 0) {

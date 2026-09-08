@@ -17522,6 +17522,14 @@
                             "type": "string",
                             "default": "csv"
                         }
+                    },
+                    {
+                        "name": "posted_only",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
                     }
                 ],
                 "responses": {
@@ -17618,6 +17626,14 @@
                         "schema": {
                             "type": "string",
                             "default": "csv"
+                        }
+                    },
+                    {
+                        "name": "posted_only",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
                         }
                     }
                 ],
@@ -17739,6 +17755,14 @@
                         "schema": {
                             "type": "string",
                             "default": "csv"
+                        }
+                    },
+                    {
+                        "name": "posted_only",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
                         }
                     }
                 ],
@@ -17930,6 +17954,14 @@
                         "schema": {
                             "type": "string",
                             "default": "csv"
+                        }
+                    },
+                    {
+                        "name": "posted_only",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
                         }
                     }
                 ],
@@ -19801,6 +19833,14 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "name": "posted_only",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
                     }
                 ],
                 "responses": {
@@ -19832,6 +19872,9 @@
                                                         "null"
                                                     ]
                                                 },
+                                                "posted_only": {
+                                                    "type": "boolean"
+                                                },
                                                 "accounts": {
                                                     "type": "string"
                                                 },
@@ -19849,6 +19892,7 @@
                                                 "report_name",
                                                 "as_of_date",
                                                 "journal_id",
+                                                "posted_only",
                                                 "accounts",
                                                 "total_debit",
                                                 "total_credit",
@@ -19895,6 +19939,14 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "name": "posted_only",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
                     }
                 ],
                 "responses": {
@@ -19921,12 +19973,23 @@
                                                             "type": "string",
                                                             "const": "Laporan Posisi Keuangan"
                                                         },
+                                                        "journal_id": {
+                                                            "type": [
+                                                                "integer",
+                                                                "null"
+                                                            ]
+                                                        },
+                                                        "posted_only": {
+                                                            "type": "boolean"
+                                                        },
                                                         "": {
                                                             "type": "string"
                                                         }
                                                     },
                                                     "required": [
                                                         "report_name",
+                                                        "journal_id",
+                                                        "posted_only",
                                                         null
                                                     ]
                                                 }
@@ -20002,6 +20065,14 @@
                         }
                     },
                     {
+                        "name": "posted_only",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    },
+                    {
                         "name": "previous_start_date",
                         "in": "query",
                         "schema": {
@@ -20040,12 +20111,23 @@
                                                             "type": "string",
                                                             "const": "Laporan Laba Rugi"
                                                         },
+                                                        "journal_id": {
+                                                            "type": [
+                                                                "integer",
+                                                                "null"
+                                                            ]
+                                                        },
+                                                        "posted_only": {
+                                                            "type": "boolean"
+                                                        },
                                                         "": {
                                                             "type": "string"
                                                         }
                                                     },
                                                     "required": [
                                                         "report_name",
+                                                        "journal_id",
+                                                        "posted_only",
                                                         null
                                                     ]
                                                 }
@@ -20110,6 +20192,14 @@
                         "in": "query",
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    {
+                        "name": "posted_only",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
                         }
                     }
                 ],
