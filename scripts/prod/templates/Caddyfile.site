@@ -41,7 +41,7 @@ __DOMAIN__ {
 		@hashed path /assets/*
 		header @hashed Cache-Control "public, max-age=31536000, immutable"
 		# index.html + sw.js must revalidate or a waiting PWA keeps the previous SPA forever
-		@spaShell path / /index.html /sw.js /sw-v2.js /manifest.webmanifest /manifest.json /registerSW.js
+		@spaShell path / /index.html /sw.js /sw-v2.js /sw-v3.js /manifest.webmanifest /manifest.json /registerSW.js
 		header @spaShell Cache-Control "no-cache, no-store, must-revalidate"
 	}
 }
