@@ -61,10 +61,11 @@ describe('Export API', function () {
             ->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
     });
 
-    it('requires account_id for general ledger export', function () {
+    it('exports general ledger without requiring account_id', function () {
         $response = $this->get('/api/v1/export/general-ledger?format=csv');
 
-        $response->assertUnprocessable();
+        $response->assertOk()
+            ->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
     });
 
     it('can export receivable aging', function () {
