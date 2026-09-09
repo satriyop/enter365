@@ -30863,8 +30863,41 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "integer",
-                                    "const": 200
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "price": {
+                                                    "type": "integer"
+                                                },
+                                                "source": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "pricelist",
+                                                        "purchase_price",
+                                                        "selling_price",
+                                                        "none"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "price",
+                                                "source"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data"
+                                    ]
                                 }
                             }
                         }

@@ -50,6 +50,38 @@ describe('GET /products/{product}/price-for-vendor', function () {
             ->assertJsonPath('data.price', 80_000)
             ->assertJsonPath('data.source', 'purchase_price');
     });
+
+    it('falls back to selling_price when purchase_price is zero', function () {
+        $vendor = Contact::factory()->vendor()->create();
+        $product = Product::factory()->create([
+            'purchase_price' => 0,
+            'selling_price' => 100_000,
+        ]);
+
+        $this->getJson("/api/v1/products/{$product->id}/price-for-vendor?contact_id={$vendor->id}&quantity=1")
+            ->assertOk()
+            ->assertJsonPath('data.price', 100_000)
+            ->assertJsonPath('data.source', 'selling_price');
+    });
+
+    it('defaults quantity to 1 and omits vendor when contact_id is missing', function () {
+        $product = Product::factory()->create(['purchase_price' => 80_000]);
+
+        $this->getJson("/api/v1/products/{$product->id}/price-for-vendor")
+            ->assertOk()
+            ->assertJsonPath('data.price', 80_000)
+            ->assertJsonPath('data.source', 'purchase_price');
+    });
+
+    it('rejects an unknown contact_id and a negative quantity', function (string $query) {
+        $product = Product::factory()->create();
+
+        $this->getJson("/api/v1/products/{$product->id}/price-for-vendor?{$query}")
+            ->assertUnprocessable();
+    })->with([
+        'unknown vendor' => 'contact_id=999999',
+        'negative qty' => 'quantity=-1',
+    ]);
 });
 
 describe('VendorPricelistDemoSeeder', function () {

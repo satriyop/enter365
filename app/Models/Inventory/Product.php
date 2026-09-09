@@ -294,12 +294,18 @@ class Product extends Model
      */
     public function priceForVendor(?int $contactId, float $qty = 1): int
     {
-        return (int) ($this->vendorPricelistMatch($contactId, $qty)?->price ?? $this->purchase_price);
+        $match = $this->vendorPricelistMatch($contactId, $qty);
+        if ($match) {
+            return (int) $match->price;
+        }
+        if ((int) $this->purchase_price > 0) {
+            return (int) $this->purchase_price;
+        }
+
+        return (int) $this->selling_price;
     }
 
     /**
-     * Why priceForVendor chose this amount.
-     *
      * @return 'pricelist'|'purchase_price'|'selling_price'|'none'
      */
     public function vendorPriceSource(?int $contactId, float $qty = 1): string

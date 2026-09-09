@@ -218,11 +218,7 @@ class ProductController extends Controller
      * @queryParam contact_id int Vendor contact id. Example: 7
      * @queryParam quantity number Line quantity. Example: 10
      *
-     * @response 200 {
-     *   "success": true,
-     *   "message": "Operasi berhasil.",
-     *   "data": {"price": 75000, "source": "pricelist"}
-     * }
+     * @response array{success: bool, message: string, data: array{price: int, source: 'pricelist'|'purchase_price'|'selling_price'|'none'}}
      */
     public function priceForVendor(ProductPriceForVendorRequest $request, Product $product): JsonResponse
     {
