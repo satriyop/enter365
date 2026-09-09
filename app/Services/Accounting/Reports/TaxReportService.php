@@ -219,7 +219,8 @@ class TaxReportService
      * @return array{
      *     period: array{month: int, year: int},
      *     output_tax: array{invoices: Collection},
-     *     input_tax: array{bills: Collection}
+     *     input_tax: array{bills: Collection},
+     *     journal_grids: list<array{date: string, entry_number: string, source_type: string|null, description: string, tag_code: string, applicability: string, side: string, amount: int}>
      * }
      */
     public function getMonthlyPpn(int $month, int $year): array
@@ -271,6 +272,8 @@ class TaxReportService
                 'tax_amount' => $bill->tax_amount,
             ]);
 
+        $grids = $this->journalTaxGrids($startDate->toDateString(), $endDate->toDateString());
+
         return [
             'period' => [
                 'month' => $month,
@@ -282,6 +285,7 @@ class TaxReportService
             'input_tax' => [
                 'bills' => $bills,
             ],
+            'journal_grids' => $grids['rows'],
         ];
     }
 
@@ -314,6 +318,18 @@ class TaxReportService
             ? collect()
             : TaxTag::query()->whereIn('id', $tagIds)->get()->keyBy('id');
 
+        $reversalOriginalIds = $lines
+            ->map(fn (JournalEntryLine $line) => $line->journalEntry)
+            ->filter(fn (?JournalEntry $entry): bool => $entry !== null && $entry->source_type === JournalEntry::SOURCE_REVERSAL)
+            ->map(fn (JournalEntry $entry): int => (int) $entry->source_id)
+            ->filter(fn (int $id): bool => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+        $originals = $reversalOriginalIds === []
+            ? collect()
+            : JournalEntry::query()->whereIn('id', $reversalOriginalIds)->get()->keyBy('id');
+
         $outputBase = 0;
         $outputTax = 0;
         $outputCount = 0;
@@ -326,8 +342,13 @@ class TaxReportService
             $entry = $line->journalEntry;
             $sourceType = $entry?->source_type;
             $isDocumentSource = in_array($sourceType, [JournalEntry::SOURCE_INVOICE, JournalEntry::SOURCE_BILL], true);
-            $side = (int) $line->credit > 0 ? 'output' : 'input';
-            $amount = $side === 'output' ? (int) $line->credit : (int) $line->debit;
+            [$side, $amount] = $this->classifyTaxGridLine(
+                $line,
+                $entry,
+                $entry !== null && $entry->source_type === JournalEntry::SOURCE_REVERSAL
+                    ? $originals->get((int) $entry->source_id)
+                    : null
+            );
 
             foreach ($line->tax_tag_ids ?? [] as $tagId) {
                 $tag = $tags->get((int) $tagId);
@@ -379,5 +400,33 @@ class TaxReportService
             'input_count' => $inputCount,
             'rows' => $rows,
         ];
+    }
+
+    /**
+     * Credit-note reverseEntry flips debit/credit. Classify the reversal on the
+     * original document side with a negative amount so a vendor credit reduces
+     * input tax instead of adding phantom output.
+     *
+     * @return array{0: string, 1: int}
+     */
+    private function classifyTaxGridLine(JournalEntryLine $line, ?JournalEntry $entry, ?JournalEntry $original): array
+    {
+        $debit = (int) $line->debit;
+        $credit = (int) $line->credit;
+        $magnitude = max($debit, $credit);
+
+        if ($entry?->source_type === JournalEntry::SOURCE_REVERSAL && $original !== null) {
+            if ($original->source_type === JournalEntry::SOURCE_BILL) {
+                return ['input', -$magnitude];
+            }
+            if ($original->source_type === JournalEntry::SOURCE_INVOICE) {
+                return ['output', -$magnitude];
+            }
+        }
+
+        $side = $credit > 0 ? 'output' : 'input';
+        $amount = $side === 'output' ? $credit : $debit;
+
+        return [$side, $amount];
     }
 }

@@ -388,6 +388,18 @@ class ReportExportService
             ];
         }
 
+        foreach ($data['journal_grids'] ?? [] as $grid) {
+            $rows[] = [
+                'type' => 'Penyesuaian Grid',
+                'number' => $grid['entry_number'],
+                'date' => $grid['date'],
+                'contact' => $grid['tag_code'],
+                'npwp' => $grid['side'],
+                'dpp' => 0,
+                'ppn' => $grid['amount'],
+            ];
+        }
+
         return $this->exportReport($rows, "tax-report-{$year}-{$month}", $format, [
             'type' => 'Jenis',
             'number' => 'Nomor',
