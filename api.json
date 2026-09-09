@@ -17980,11 +17980,57 @@
                                     "properties": {
                                         "data": {
                                             "type": "array",
-                                            "items": {}
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "code": {
+                                                        "type": "string"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    },
+                                                    "date": {
+                                                        "type": "string"
+                                                    },
+                                                    "entry_number": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": {
+                                                        "type": "string"
+                                                    },
+                                                    "debit": {
+                                                        "type": "string"
+                                                    },
+                                                    "credit": {
+                                                        "type": "string"
+                                                    },
+                                                    "balance": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "code",
+                                                    "name",
+                                                    "date",
+                                                    "entry_number",
+                                                    "description",
+                                                    "debit",
+                                                    "credit",
+                                                    "balance"
+                                                ]
+                                            }
                                         },
                                         "headers": {
                                             "type": "object",
                                             "properties": {
+                                                "code": {
+                                                    "type": "string",
+                                                    "const": "Kode"
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "const": "Nama Akun"
+                                                },
                                                 "date": {
                                                     "type": "string",
                                                     "const": "Tanggal"
@@ -18011,6 +18057,8 @@
                                                 }
                                             },
                                             "required": [
+                                                "code",
+                                                "name",
                                                 "date",
                                                 "entry_number",
                                                 "description",
