@@ -9,7 +9,9 @@ use App\Models\Manufacturing\WorkOrder;
 use App\Models\Projects\Project;
 use App\Models\Solar\IndonesiaSolarData;
 use App\Models\Solar\SolarProposal;
+use App\Models\User;
 use Database\Seeders\ChartOfAccountsSeeder;
+use Database\Seeders\Demo\DemoPassword;
 use Database\Seeders\Demo\DemoSeeder;
 use Database\Seeders\Demo\EnterpriseManufacturingDemoSeeder;
 use Database\Seeders\Demo\GeneralTradingDemoSeeder;
@@ -21,6 +23,7 @@ use Database\Seeders\IndonesiaSolarDataSeeder;
 use Database\Seeders\PlnTariffSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 
 uses(RefreshDatabase::class);
 
@@ -53,6 +56,47 @@ describe('DemoSeeder profile mapping', function () {
 
         expect(app('demo.choice'))->toBe(DemoSeeder::DEMO_POS)
             ->and(Product::where('sku', 'KT57-KOPI-O')->exists())->toBeTrue();
+    });
+});
+
+describe('shared demo password', function () {
+    it('seeds trading users with the same strong password as Kopitiam admin', function () {
+        $this->seed(MasterDataSeeder::class);
+
+        foreach ([
+            'admin@demo.com',
+            'sales@demo.com',
+            'purchasing@demo.com',
+            'produksi@demo.com',
+            'finance@demo.com',
+            'gudang@demo.com',
+        ] as $email) {
+            $user = User::query()->where('email', $email)->firstOrFail();
+            expect(Hash::check(DemoPassword::VALUE, $user->password))->toBeTrue()
+                ->and(Hash::check('password', $user->password))->toBeFalse();
+        }
+
+        $this->postJson('/api/v1/auth/login', [
+            'email' => 'admin@demo.com',
+            'password' => 'password',
+        ])->assertUnprocessable();
+
+        $this->postJson('/api/v1/auth/login', [
+            'email' => 'admin@demo.com',
+            'password' => DemoPassword::VALUE,
+        ])->assertOk()->assertJsonPath('user.email', 'admin@demo.com');
+    });
+
+    it('rotates every existing demo email via artisan', function () {
+        $this->seed(MasterDataSeeder::class);
+        $user = User::query()->where('email', 'admin@demo.com')->firstOrFail();
+        $user->password = 'temporary-old';
+        $user->save();
+
+        $this->artisan('demo:rotate-passwords')->assertSuccessful();
+
+        expect(Hash::check(DemoPassword::VALUE, $user->fresh()->password))->toBeTrue()
+            ->and(Hash::check('temporary-old', $user->fresh()->password))->toBeFalse();
     });
 });
 

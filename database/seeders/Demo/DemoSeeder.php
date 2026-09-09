@@ -332,20 +332,22 @@ class DemoSeeder extends Seeder
         $this->command->info('║                      Demo Data Complete!                           ║');
         $this->command->info('╠═══════════════════════════════════════════════════════════════════╣');
         $this->command->info('║  Demo Users:                                                       ║');
+        $pad = static fn (string $text): string => '║'.str_pad($text, 67, ' ').'║';
+        $this->command->info($pad('  Shared password: '.DemoPassword::VALUE));
         if ($demoChoice === self::DEMO_POS) {
-            $pad = static fn (string $text): string => '║'.str_pad($text, 67, ' ').'║';
-            $this->command->info($pad('  Shared password: '.PosKopitiamDemoSeeder::DEMO_PASSWORD));
             $this->command->info($pad('    admin@example.com  Owner'));
             $this->command->info($pad('    siti@kopitiam57.test  Kasir'));
             $this->command->info($pad('    rina@kopitiam57.test  Akuntan'));
             $this->command->info($pad('    dewi@kopitiam57.test  Gudang'));
         } else {
-            $this->command->info('║    admin@demo.com      (password: password)                        ║');
-            $this->command->info('║    sales@demo.com      (password: password)                        ║');
-            $this->command->info('║    purchasing@demo.com (password: password)                        ║');
-            $this->command->info('║    produksi@demo.com   (password: password)                        ║');
-            $this->command->info('║    finance@demo.com    (password: password)                        ║');
-            $this->command->info('║    gudang@demo.com     (password: password)                        ║');
+            $this->command->info($pad('    admin@demo.com / admin@example.com  Owner'));
+            $this->command->info($pad('    sales@demo.com  Sales'));
+            $this->command->info($pad('    purchasing@demo.com  Purchasing'));
+            $this->command->info($pad('    produksi@demo.com / gudang@demo.com  Inventory'));
+            $this->command->info($pad('    finance@demo.com  Accountant'));
+            if ($demoChoice === self::DEMO_ALL) {
+                $this->command->info($pad('    siti@ / rina@ / dewi@kopitiam57.test  till roles'));
+            }
         }
         $this->command->info('╠═══════════════════════════════════════════════════════════════════╣');
         $this->command->info('║  Data Seeded:                                                      ║');

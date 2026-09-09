@@ -14,7 +14,6 @@ use App\Models\Tax\NsfpRange;
 use App\Models\User;
 use App\Support\Features;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 
 class MasterDataSeeder extends Seeder
 {
@@ -169,42 +168,42 @@ class MasterDataSeeder extends Seeder
             [
                 'name' => 'Admin Demo',
                 'email' => 'admin@demo.com',
-                'password' => Hash::make('password'),
+                'password' => DemoPassword::hash(),
                 'is_active' => true,
                 'role' => Role::ADMIN,
             ],
             [
                 'name' => 'Sales Manager',
                 'email' => 'sales@demo.com',
-                'password' => Hash::make('password'),
+                'password' => DemoPassword::hash(),
                 'is_active' => true,
                 'role' => Role::SALES,
             ],
             [
                 'name' => 'Purchasing Staff',
                 'email' => 'purchasing@demo.com',
-                'password' => Hash::make('password'),
+                'password' => DemoPassword::hash(),
                 'is_active' => true,
                 'role' => Role::PURCHASING,
             ],
             [
                 'name' => 'Production Manager',
                 'email' => 'produksi@demo.com',
-                'password' => Hash::make('password'),
+                'password' => DemoPassword::hash(),
                 'is_active' => true,
                 'role' => Role::INVENTORY,
             ],
             [
                 'name' => 'Finance Staff',
                 'email' => 'finance@demo.com',
-                'password' => Hash::make('password'),
+                'password' => DemoPassword::hash(),
                 'is_active' => true,
                 'role' => Role::ACCOUNTANT,
             ],
             [
                 'name' => 'Warehouse Staff',
                 'email' => 'gudang@demo.com',
-                'password' => Hash::make('password'),
+                'password' => DemoPassword::hash(),
                 'is_active' => true,
                 'role' => Role::INVENTORY,
             ],

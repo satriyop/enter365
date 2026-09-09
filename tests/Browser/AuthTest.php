@@ -13,7 +13,7 @@ it('can login with valid credentials', function () {
     $page = visit(spaUrl('/login'));
 
     $page->fill('[data-testid="login-email"]', 'admin@example.com')
-        ->fill('[data-testid="login-password"]', 'password')
+        ->fill('[data-testid="login-password"]', kopitiamDemoPassword())
         ->click('[data-testid="login-submit"]')
         ->assertPathIs('/')
         ->assertSee('Dashboard');
@@ -39,7 +39,7 @@ it('can logout and token is cleared', function () {
     $page = visit(spaUrl('/login'));
 
     $page->fill('[data-testid="login-email"]', 'admin@example.com')
-        ->fill('[data-testid="login-password"]', 'password')
+        ->fill('[data-testid="login-password"]', kopitiamDemoPassword())
         ->click('[data-testid="login-submit"]')
         ->assertPathIs('/')
         ->assertSee('Dashboard');

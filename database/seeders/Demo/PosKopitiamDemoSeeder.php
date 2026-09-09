@@ -18,7 +18,6 @@ use App\Support\Features;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Hash;
 
 /**
  * Kopitiam 57 till catalog.
@@ -34,7 +33,7 @@ class PosKopitiamDemoSeeder extends Seeder
      * treat it as a Have I Been Pwned breach of "password". Not a per-user
      * secret — still change it before handing a real till to Siti.
      */
-    public const DEMO_PASSWORD = 'WRGKvh-WU#pL5ii#mufZXxpW';
+    public const DEMO_PASSWORD = DemoPassword::VALUE;
 
     /** @var list<string> */
     public const DEMO_EMAILS = [
@@ -88,25 +87,12 @@ class PosKopitiamDemoSeeder extends Seeder
      */
     public static function rotatePasswords(): int
     {
-        $updated = 0;
-
-        foreach (self::DEMO_EMAILS as $email) {
-            $user = User::query()->where('email', $email)->first();
-            if ($user === null) {
-                continue;
-            }
-
-            $user->password = Hash::make(self::DEMO_PASSWORD);
-            $user->save();
-            $updated++;
-        }
-
-        return $updated;
+        return DemoPassword::rotate();
     }
 
     private function hashedDemoPassword(): string
     {
-        return Hash::make(self::DEMO_PASSWORD);
+        return DemoPassword::hash();
     }
 
     private function ensureOwner(): User
