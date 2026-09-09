@@ -19128,6 +19128,42 @@
                                                             "dpp",
                                                             "ppn"
                                                         ]
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "type": {
+                                                                "type": "string",
+                                                                "const": "Penyesuaian Grid"
+                                                            },
+                                                            "number": {
+                                                                "type": "string"
+                                                            },
+                                                            "date": {
+                                                                "type": "string"
+                                                            },
+                                                            "contact": {
+                                                                "type": "string"
+                                                            },
+                                                            "npwp": {
+                                                                "type": "string"
+                                                            },
+                                                            "dpp": {
+                                                                "type": "integer"
+                                                            },
+                                                            "ppn": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "type",
+                                                            "number",
+                                                            "date",
+                                                            "contact",
+                                                            "npwp",
+                                                            "dpp",
+                                                            "ppn"
+                                                        ]
                                                     }
                                                 ]
                                             }
@@ -33993,14 +34029,14 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "`CompanyProfileResource`",
+                        "description": "`PublicCompanyProfileResource`",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/components/schemas/CompanyProfileResource"
+                                            "$ref": "#/components/schemas/PublicCompanyProfileResource"
                                         }
                                     },
                                     "required": [
@@ -59554,6 +59590,125 @@
                     "updated_at"
                 ],
                 "title": "ProjectRevenueResource"
+            },
+            "PublicCompanyProfileResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "slug": {
+                        "type": "string"
+                    },
+                    "tagline": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "description": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "founded_year": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "employees_count": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "logo_url": {
+                        "type": "string"
+                    },
+                    "cover_image_url": {
+                        "type": "string"
+                    },
+                    "primary_color": {
+                        "type": "string"
+                    },
+                    "secondary_color": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "services": {
+                        "type": "array",
+                        "items": {}
+                    },
+                    "portfolio": {
+                        "type": "array",
+                        "items": {}
+                    },
+                    "certifications": {
+                        "type": "array",
+                        "items": {}
+                    },
+                    "social_links": {
+                        "type": "array",
+                        "items": {}
+                    },
+                    "email": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "phone": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "address": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "website": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "public_url": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "slug",
+                    "tagline",
+                    "description",
+                    "founded_year",
+                    "employees_count",
+                    "logo_url",
+                    "cover_image_url",
+                    "primary_color",
+                    "secondary_color",
+                    "services",
+                    "portfolio",
+                    "certifications",
+                    "social_links",
+                    "email",
+                    "phone",
+                    "address",
+                    "website",
+                    "public_url"
+                ],
+                "title": "PublicCompanyProfileResource"
             },
             "PurchaseOrderItemResource": {
                 "type": "object",
