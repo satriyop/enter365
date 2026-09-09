@@ -609,7 +609,7 @@ $pages->assertNoJavascriptErrors()->assertNoConsoleLogs();
 | Plane | Preset | Role |
 |-------|--------|------|
 | Pest (`phpunit.xml`) | `full` | All packs; API/JE assertions |
-| aidev mockup | **`parity` while verifying Odoo-parity** (till + invoices + payments + quotations + POs). `pos` is kasir-only and hides those journeys. | Shared demo/lab |
+| aidev mockup | **`full`** (matches Pest; till stays because `pos` pack is on). `pos` preset is kasir-only and hides trading journeys. | Shared demo/lab |
 | `pos` preset | kasir-only | Product *contract* (`PosKopitiamJourneyTest`). Not a reason to keep the mockup kasir-only. |
 
 Still do not `migrate:fresh` / `db:wipe` on aidev — Kopitiam demo data is useful. Otherwise breaking API/schema changes are fine.

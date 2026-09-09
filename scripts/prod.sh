@@ -14,8 +14,8 @@ case "${cmd}" in
     help|-h|--help)
         cat <<'EOF'
 Enter365 → aidev mockup (enter365.pamungkas.org)
-Not customer production. Use FEATURE_PRESET=parity to click invoices/PO/VAT;
-pos hides those packs (kasir-only contract).
+Not customer production. Mockup FEATURE_PRESET=full (matches Pest).
+pos hides trading packs (kasir-only contract).
 
 First time
   ./scripts/prod.sh ssh-config   add Host aidev to ~/.ssh/config
