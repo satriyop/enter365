@@ -19128,6 +19128,42 @@
                                                             "dpp",
                                                             "ppn"
                                                         ]
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "type": {
+                                                                "type": "string",
+                                                                "const": "Penyesuaian Grid"
+                                                            },
+                                                            "number": {
+                                                                "type": "string"
+                                                            },
+                                                            "date": {
+                                                                "type": "string"
+                                                            },
+                                                            "contact": {
+                                                                "type": "string"
+                                                            },
+                                                            "npwp": {
+                                                                "type": "string"
+                                                            },
+                                                            "dpp": {
+                                                                "type": "integer"
+                                                            },
+                                                            "ppn": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "type",
+                                                            "number",
+                                                            "date",
+                                                            "contact",
+                                                            "npwp",
+                                                            "dpp",
+                                                            "ppn"
+                                                        ]
                                                     }
                                                 ]
                                             }
@@ -34049,45 +34085,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "monthly_bill": {
-                                        "type": "number",
-                                        "minimum": 5000000
-                                    },
-                                    "pln_power_va": {
-                                        "type": [
-                                            "integer",
-                                            "null"
-                                        ],
-                                        "description": "Min Rp 5 juta for B2B",
-                                        "minimum": 5500
-                                    },
-                                    "pln_category": {
-                                        "type": [
-                                            "string",
-                                            "null"
-                                        ],
-                                        "description": "Min 5.5 kVA for B2B"
-                                    },
-                                    "target_savings": {
-                                        "type": [
-                                            "number",
-                                            "null"
-                                        ],
-                                        "minimum": 0
-                                    },
-                                    "price_per_kwp": {
-                                        "type": [
-                                            "number",
-                                            "null"
-                                        ],
-                                        "minimum": 1000000
-                                    }
-                                },
-                                "required": [
-                                    "monthly_bill"
-                                ]
+                                "$ref": "#/components/schemas/CalculatePublicSolarRequest"
                             }
                         }
                     }
@@ -52801,6 +52799,51 @@
                     "mappings"
                 ],
                 "title": "BulkAcceptSuggestionsRequest"
+            },
+            "CalculatePublicSolarRequest": {
+                "type": "object",
+                "properties": {
+                    "monthly_bill": {
+                        "type": "number",
+                        "minimum": 5000000,
+                        "maximum": 2000000000
+                    },
+                    "pln_power_va": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 5500,
+                        "maximum": 10000000
+                    },
+                    "pln_category": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 50
+                    },
+                    "target_savings": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 0,
+                        "maximum": 2000000000
+                    },
+                    "price_per_kwp": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 8000000,
+                        "maximum": 25000000
+                    }
+                },
+                "required": [
+                    "monthly_bill"
+                ],
+                "title": "CalculatePublicSolarRequest"
             },
             "CancelQuotationRequest": {
                 "type": "object",

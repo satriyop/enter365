@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Api\Solar;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Solar\CalculatePublicSolarRequest;
 use App\Models\Solar\PlnTariff;
 use App\Services\Solar\SolarCalculationService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class PublicSolarCalculatorController extends Controller
 {
@@ -35,15 +35,9 @@ class PublicSolarCalculatorController extends Controller
      *
      * @operationId publicSolarCalculate
      */
-    public function calculate(Request $request): JsonResponse
+    public function calculate(CalculatePublicSolarRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'monthly_bill' => ['required', 'numeric', 'min:5000000'], // Min Rp 5 juta for B2B
-            'pln_power_va' => ['nullable', 'integer', 'min:5500'], // Min 5.5 kVA for B2B
-            'pln_category' => ['nullable', 'string'],
-            'target_savings' => ['nullable', 'numeric', 'min:0'],
-            'price_per_kwp' => ['nullable', 'numeric', 'min:1000000'],
-        ]);
+        $validated = $request->validated();
 
         // Get PLN tariff
         $tariff = $this->resolveTariff($validated);
@@ -79,6 +73,12 @@ class PublicSolarCalculatorController extends Controller
 
         // Round up to nearest 0.5 kWp
         $recommendedCapacityKwp = ceil($requiredCapacityKwp * 2) / 2;
+
+        if (! empty($validated['pln_power_va'])) {
+            $maxKwp = 0.8 * ((int) $validated['pln_power_va']) / 1000;
+            $recommendedCapacityKwp = min($recommendedCapacityKwp, $maxKwp);
+            $recommendedCapacityKwp = ceil($recommendedCapacityKwp * 2) / 2;
+        }
 
         // Calculate actual production with recommended capacity
         $annualProductionKwh = $this->calculationService->calculateAnnualProduction(
