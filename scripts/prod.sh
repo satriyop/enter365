@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Enter365 production CLI — run from this laptop against aidev.
+# Enter365 aidev CLI — team mockup at enter365.pamungkas.org (not customer production).
 #
 #   ./scripts/prod.sh help
 set -euo pipefail
@@ -13,7 +13,9 @@ shift || true
 case "${cmd}" in
     help|-h|--help)
         cat <<'EOF'
-Enter365 → aidev (enter365.pamungkas.org)
+Enter365 → aidev mockup (enter365.pamungkas.org)
+Not customer production. Mockup FEATURE_PRESET=full (matches Pest).
+pos hides trading packs (kasir-only contract).
 
 First time
   ./scripts/prod.sh ssh-config   add Host aidev to ~/.ssh/config

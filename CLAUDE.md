@@ -602,13 +602,23 @@ $pages->assertNoJavascriptErrors()->assertNoConsoleLogs();
 
 ## ⚠️ Application Status: PRE-PRODUCTION
 
-**This application is NOT in production yet.** This has important implications:
+**This application is NOT in production yet.** There is no customer tenant.
+
+**aidev (`enter365.pamungkas.org`) is a development mockup**, not live production used by a customer. `./scripts/prod.sh deploy` rsyncs this laptop’s trees there so we can click the SPA. Do not treat pack-gates on that host as “the customer cannot see this.”
+
+| Plane | Preset | Role |
+|-------|--------|------|
+| Pest (`phpunit.xml`) | `full` | All packs; API/JE assertions |
+| aidev mockup | **`full`** (matches Pest; till stays because `pos` pack is on). `pos` preset is kasir-only and hides trading journeys. | Shared demo/lab |
+| `pos` preset | kasir-only | Product *contract* (`PosKopitiamJourneyTest`). Not a reason to keep the mockup kasir-only. |
+
+Still do not `migrate:fresh` / `db:wipe` on aidev — Kopitiam demo data is useful. Otherwise breaking API/schema changes are fine.
 
 | Aspect | Implication |
 |--------|-------------|
 | **Backward Compatibility** | Not required - breaking changes are acceptable |
 | **Deprecation Strategy** | Not needed - can remove/replace code directly |
-| **Data Migration** | No production data to worry about |
+| **Data Migration** | No customer production data; still backup aidev before deploy |
 | **Refactoring** | Can be aggressive - prioritize clean architecture over compatibility |
 | **API Versioning** | Can make breaking changes to existing endpoints |
 
