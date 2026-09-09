@@ -37,8 +37,8 @@ class TaxRecord extends Model
         'computation',
         'applicability',
         'is_active',
-        'invoice_account_id',
-        'refund_account_id',
+        'invoice_account_id', // Distribution for Invoices (sales invoices and vendor bills)
+        'refund_account_id', // Distribution for Refunds (credit notes); reverseEntry copies original bill lines
         'tax_tag_id',
     ];
 

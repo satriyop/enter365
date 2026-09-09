@@ -206,13 +206,13 @@ describe('Bill line tax records', function () {
             ->assertJsonPath('data.total_amount', 100_000);
     });
 
-    it('posts bill input tax to the tax record refund account', function () {
+    it('posts bill input tax to the tax record invoice distribution account', function () {
         $ppnIn = Account::query()->where('code', '1-1300')->firstOrFail();
         $purchase = TaxRecord::factory()->create([
-            'code' => 'PPN-REF',
+            'code' => 'PPN-INV-DIST',
             'rate' => 11,
             'applicability' => TaxRecord::APPLICABILITY_PURCHASE,
-            'refund_account_id' => $ppnIn->id,
+            'invoice_account_id' => $ppnIn->id,
         ]);
         $supplier = Contact::factory()->supplier()->create();
         $expense = billExpenseAccount();
@@ -241,6 +241,44 @@ describe('Bill line tax records', function () {
         expect($posted->journalEntry?->lines->pluck('account_id')->all())->toContain($ppnIn->id);
     });
 
+    it('does not post bill tax to refund_account_id when invoice distribution is set', function () {
+        $invoiceDist = Account::query()->where('code', '1-1300')->firstOrFail();
+        $refundDist = Account::query()->where('code', '2-1200')->firstOrFail();
+        $purchase = TaxRecord::factory()->create([
+            'code' => 'PPN-BOTH-DIST',
+            'rate' => 11,
+            'applicability' => TaxRecord::APPLICABILITY_PURCHASE,
+            'invoice_account_id' => $invoiceDist->id,
+            'refund_account_id' => $refundDist->id,
+        ]);
+        $supplier = Contact::factory()->supplier()->create();
+        $expense = billExpenseAccount();
+
+        $created = $this->postJson('/api/v1/bills', [
+            'contact_id' => $supplier->id,
+            'bill_date' => now()->toDateString(),
+            'due_date' => now()->addDays(14)->toDateString(),
+            'items' => [
+                [
+                    'description' => 'Taxed',
+                    'quantity' => 1,
+                    'unit' => 'pcs',
+                    'unit_price' => 100_000,
+                    'expense_account_id' => $expense->id,
+                    'tax_record_ids' => [$purchase->id],
+                ],
+            ],
+        ]);
+        $created->assertCreated();
+        $id = (int) $created->json('data.id');
+        $this->postJson("/api/v1/bills/{$id}/post")->assertOk();
+
+        $posted = \App\Models\Purchasing\Bill::query()->with('journalEntry.lines')->findOrFail($id);
+        $accountIds = $posted->journalEntry?->lines->pluck('account_id')->all() ?? [];
+        expect($accountIds)->toContain($invoiceDist->id)
+            ->and($accountIds)->not->toContain($refundDist->id);
+    });
+
     it('posts one bill journal tax line per stacked purchase tax', function () {
         $ppnIn = Account::query()->where('code', '1-1300')->firstOrFail();
         $ppn = TaxRecord::factory()->create([
@@ -248,14 +286,14 @@ describe('Bill line tax records', function () {
             'name' => 'PPN Masukan 11%',
             'rate' => 11,
             'applicability' => TaxRecord::APPLICABILITY_PURCHASE,
-            'refund_account_id' => $ppnIn->id,
+            'invoice_account_id' => $ppnIn->id,
         ]);
         $luxury = TaxRecord::factory()->create([
             'code' => 'PPnBM-BILL-1',
             'name' => 'PPnBM Masukan 1%',
             'rate' => 1,
             'applicability' => TaxRecord::APPLICABILITY_PURCHASE,
-            'refund_account_id' => $ppnIn->id,
+            'invoice_account_id' => $ppnIn->id,
         ]);
         $supplier = Contact::factory()->supplier()->create();
         $expense = billExpenseAccount();
