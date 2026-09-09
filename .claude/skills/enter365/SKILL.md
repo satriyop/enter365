@@ -1288,11 +1288,16 @@ Do not add `tests/Pgsql` to the default `phpunit.xml` suite.
 
 ### 51. `FEATURE_PRESET=pos` Hides the Trading Documents
 
-**Context:** Live Valet API (`enter365.test`) is what Pest browser tests hit via `skipUnlessLiveFeature()` / `liveApiModules()`. `phpunit.xml` `FEATURE_PRESET=full` only affects the in-process SQLite suite.
+**Context:** Three planes, not one “prod”:
+- Pest `phpunit.xml` is `FEATURE_PRESET=full` (in-process SQLite).
+- Local Valet (`enter365.test`) is what Pest browser tests hit via `skipUnlessLiveFeature()` / `liveApiModules()`.
+- **aidev (`enter365.pamungkas.org`) is a team mockup**, not a customer store. `./scripts/prod.sh` deploys laptop trees there for click-through. There is no customer production tenant.
 
-**Problem:** Preset `pos` sets `$posAcquisition`, which defaults invoices, payments, quotations, PO, DO, GRN, and returns **off**. Browser tests then skip (`Live API feature 'invoices' is off`). Bill create still works (bills are core) but `/payments/new` is gated and the SPA dumps the session back to `/login` — a fail, not a skip. That is not a broken invoice form.
+**Problem:** Preset `pos` sets `$posAcquisition`, which defaults invoices, payments, quotations, PO, DO, GRN, and returns **off**. Browser tests then skip (`Live API feature 'invoices' is off`). Bill create still works (bills are core) but `/payments/new` is gated and the SPA dumps the session back to `/login` — a fail, not a skip. That is not a broken invoice form. Leaving aidev on `pos` also makes Odoo-parity tickets look “unshipped” (pack redirect) after the code is on `main`.
 
-**Solution:** A trading pilot uses `FEATURE_PRESET=general` (core documents on). Keep `FEATURE_POS=true` if the Kopitiam till must stay. `pos` is kasir-only acquisition, not “POS plus ERP”. After changing `.env`, `php artisan optimize:clear` so PHP-FPM sees it.
+**Solution:** For the **aidev mockup** while we verify trading + till, use `FEATURE_PRESET=parity` (Kopitiam till + invoices + payments + quotations + POs). Do not use `full` on the mockup unless we want manufacturing/solar/panel chrome. `pos` remains the kasir-only *preset contract* in `PosKopitiamJourneyTest` — that test is not a reason to keep the mockup kasir-only.
+
+A local trading pilot uses `FEATURE_PRESET=general` (core documents on). Keep `FEATURE_POS=true` if the Kopitiam till must stay. After changing `.env`, `php artisan optimize:clear` so PHP-FPM sees it.
 
 Ship the audit migrations onto the **live** Valet DB (`akuntansi`), not only sqlite tests. `visibleToPos()` filters `is_test = false`; if the column is missing the outlets endpoint 500s and the till opens with an empty gudang list. Backfill E2E codes (`WH-E2E-%`, `WH-OP-%`) to `is_test`.
 

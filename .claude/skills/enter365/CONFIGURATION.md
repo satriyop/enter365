@@ -10,6 +10,8 @@ Quick reference for Enter365 configuration values.
 
 Toggle modules on/off via environment variables.
 
+**aidev (`enter365.pamungkas.org`) is a development mockup, not a customer tenant.** Pest is `FEATURE_PRESET=full`. For click-through of Odoo-parity (till + invoices + payments + quotations + POs) set the mockup to `parity`. Preset `pos` is kasir-only and hides those packs.
+
 ```php
 // Access in code
 if (config('features.modules.mrp')) {
