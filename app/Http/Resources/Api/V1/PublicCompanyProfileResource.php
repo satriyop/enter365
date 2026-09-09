@@ -6,9 +6,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
+ * Marketing-only public company profile. Do not reuse {@see CompanyProfileResource}.
+ *
  * @mixin \App\Models\CompanyProfile
  */
-class CompanyProfileResource extends JsonResource
+class PublicCompanyProfileResource extends JsonResource
 {
     /**
      * @return array{
@@ -18,27 +20,20 @@ class CompanyProfileResource extends JsonResource
      *   tagline: string|null,
      *   description: string|null,
      *   founded_year: int|null,
-     *   employees_count: string|null,
-     *   logo_path: string|null,
+     *   employees_count: string|int|null,
      *   logo_url: string|null,
-     *   cover_image_path: string|null,
      *   cover_image_url: string|null,
      *   primary_color: string|null,
      *   secondary_color: string|null,
      *   services: array<mixed>,
      *   portfolio: array<mixed>,
-     *   team: array<mixed>,
      *   certifications: array<mixed>,
      *   social_links: array<mixed>,
      *   email: string|null,
      *   phone: string|null,
      *   address: string|null,
      *   website: string|null,
-     *   custom_domain: string|null,
-     *   public_url: string|null,
-     *   is_active: bool,
-     *   created_at: string|null,
-     *   updated_at: string|null
+     *   public_url: string|null
      * }
      */
     public function toArray(Request $request): array
@@ -51,38 +46,19 @@ class CompanyProfileResource extends JsonResource
             'description' => $this->description,
             'founded_year' => $this->founded_year,
             'employees_count' => $this->employees_count,
-
-            // Branding
-            'logo_path' => $this->logo_path,
             'logo_url' => $this->logo_url,
-            'cover_image_path' => $this->cover_image_path,
             'cover_image_url' => $this->cover_image_url,
             'primary_color' => $this->primary_color,
             'secondary_color' => $this->secondary_color,
-
-            // Content arrays
             'services' => $this->services ?? [],
             'portfolio' => $this->portfolio ?? [],
-            'team' => $this->team ?? [],
             'certifications' => $this->certifications ?? [],
             'social_links' => $this->social_links ?? [],
-
-            // Contact
             'email' => $this->email,
             'phone' => $this->phone,
             'address' => $this->address,
             'website' => $this->website,
-
-            // Custom domain
-            'custom_domain' => $this->custom_domain,
             'public_url' => $this->public_url,
-
-            // Status
-            'is_active' => $this->is_active,
-
-            // Timestamps
-            'created_at' => $this->created_at?->toIso8601String(),
-            'updated_at' => $this->updated_at?->toIso8601String(),
         ];
     }
 }

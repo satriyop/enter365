@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\Api\V1\CompanyProfileResource;
+use App\Http\Resources\Api\V1\PublicCompanyProfileResource;
 use App\Models\CompanyProfile;
 use Illuminate\Http\JsonResponse;
 
@@ -14,7 +14,7 @@ class PublicCompanyProfileController extends Controller
      *
      * @operationId publicCompanyProfileShow
      */
-    public function show(string $identifier): CompanyProfileResource|JsonResponse
+    public function show(string $identifier): PublicCompanyProfileResource|JsonResponse
     {
         $profile = CompanyProfile::findBySlugOrDomain($identifier);
 
@@ -25,7 +25,7 @@ class PublicCompanyProfileController extends Controller
             ], 404);
         }
 
-        return new CompanyProfileResource($profile);
+        return new PublicCompanyProfileResource($profile);
     }
 
     /**
