@@ -112,6 +112,7 @@ class DemoSeeder extends Seeder
         if ($demoChoice === self::DEMO_POS) {
             $this->command->info('☕ Seeding Kopitiam 57 POS-first tenant...');
             $this->call(PosKopitiamDemoSeeder::class);
+            $this->call(VendorPricelistDemoSeeder::class);
             $this->command->info('');
             $this->showCompletionMessage($demoChoice);
 
@@ -206,6 +207,10 @@ class DemoSeeder extends Seeder
         } else {
             $this->command->warn('  ⏭  Skipping Alternate Paths (edge demos for enterprise/mfg/verticals)');
         }
+
+        $this->command->info('🏷️  Seeding vendor pricelists for PO lines...');
+        $this->call(VendorPricelistDemoSeeder::class);
+        $this->command->info('');
 
         $this->showCompletionMessage($demoChoice);
     }

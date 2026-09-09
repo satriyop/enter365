@@ -171,6 +171,7 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('products', ProductController::class);
         Route::post('products/{product}/adjust-stock', [ProductController::class, 'adjustStock']);
         Route::post('products/{product}/duplicate', [ProductController::class, 'duplicate']);
+        Route::get('products/{product}/price-for-vendor', [ProductController::class, 'priceForVendor']);
         Route::get('products-low-stock', [ProductController::class, 'lowStock']);
         Route::get('products-price-list', [ProductController::class, 'priceList']);
         Route::get('products-lookup', [ProductController::class, 'lookup']);

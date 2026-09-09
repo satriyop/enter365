@@ -271,24 +271,56 @@ class Product extends Model
     }
 
     /**
-     * Vendor-specific purchase price, falling back to the product default.
+     * Matching vendor pricelist line for this partner and qty, if any.
      */
-    public function priceForVendor(?int $contactId, float $qty = 1): int
+    public function vendorPricelistMatch(?int $contactId, float $qty = 1): ?ProductVendorPricelist
     {
         if (! $contactId) {
-            return (int) $this->purchase_price;
+            return null;
         }
 
         $lines = $this->relationLoaded('vendorPricelists')
             ? $this->vendorPricelists
             : $this->vendorPricelists()->get();
 
-        $match = $lines
-            ->filter(fn (ProductVendorPricelist $line) => $line->contact_id === $contactId && (float) $line->min_qty <= $qty)
+        return $lines
+            ->filter(fn (ProductVendorPricelist $line) => (int) $line->contact_id === $contactId && (float) $line->min_qty <= $qty)
             ->sortByDesc(fn (ProductVendorPricelist $line) => (float) $line->min_qty)
             ->first();
+    }
 
-        return $match?->price ?? (int) $this->purchase_price;
+    /**
+     * Vendor-specific purchase price, falling back to the product default.
+     */
+    public function priceForVendor(?int $contactId, float $qty = 1): int
+    {
+        $match = $this->vendorPricelistMatch($contactId, $qty);
+        if ($match) {
+            return (int) $match->price;
+        }
+        if ((int) $this->purchase_price > 0) {
+            return (int) $this->purchase_price;
+        }
+
+        return (int) $this->selling_price;
+    }
+
+    /**
+     * @return 'pricelist'|'purchase_price'|'selling_price'|'none'
+     */
+    public function vendorPriceSource(?int $contactId, float $qty = 1): string
+    {
+        if ($this->vendorPricelistMatch($contactId, $qty)) {
+            return 'pricelist';
+        }
+        if ((int) $this->purchase_price > 0) {
+            return 'purchase_price';
+        }
+        if ((int) $this->selling_price > 0) {
+            return 'selling_price';
+        }
+
+        return 'none';
     }
 
     /**

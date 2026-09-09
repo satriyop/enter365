@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Contracts\Inventory\ProductServiceInterface;
 use App\Filters\ProductFilter;
+use App\Http\Requests\Api\V1\ProductPriceForVendorRequest;
 use App\Http\Requests\Api\V1\StoreProductRequest;
 use App\Http\Requests\Api\V1\UpdateProductRequest;
 use App\Http\Resources\Api\V1\ProductResource;
@@ -209,6 +210,29 @@ class ProductController extends Controller
         }
 
         return $this->success(new ProductResource($product->load('category')));
+    }
+
+    /**
+     * Unit price for a vendor and quantity (pricelist, else purchase price).
+     *
+     * @queryParam contact_id int Vendor contact id. Example: 7
+     * @queryParam quantity number Line quantity. Example: 10
+     *
+     * @response array{success: bool, message: string, data: array{price: int, source: 'pricelist'|'purchase_price'|'selling_price'|'none'}}
+     */
+    public function priceForVendor(ProductPriceForVendorRequest $request, Product $product): JsonResponse
+    {
+        $this->authorize('view', $product);
+
+        $contactId = $request->filled('contact_id') ? (int) $request->integer('contact_id') : null;
+        $quantity = $request->filled('quantity') ? (float) $request->input('quantity') : 1.0;
+
+        $product->loadMissing('vendorPricelists');
+
+        return $this->success([
+            'price' => $product->priceForVendor($contactId, $quantity),
+            'source' => $product->vendorPriceSource($contactId, $quantity),
+        ]);
     }
 
     /**
