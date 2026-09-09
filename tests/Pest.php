@@ -426,20 +426,13 @@ function liveApiModules(): array
     $base = rtrim((string) env('API_URL', 'https://enter365.test'), '/');
 
     try {
-        $login = null;
-        foreach ([kopitiamDemoPassword(), 'password'] as $password) {
-            $attempt = \Illuminate\Support\Facades\Http::withOptions(['verify' => false])
-                ->acceptJson()
-                ->post($base.'/api/v1/auth/login', [
-                    'email' => 'admin@example.com',
-                    'password' => $password,
-                ]);
-            if ($attempt->successful()) {
-                $login = $attempt;
-                break;
-            }
-        }
-        if ($login === null || ! $login->successful()) {
+        $login = \Illuminate\Support\Facades\Http::withOptions(['verify' => false])
+            ->acceptJson()
+            ->post($base.'/api/v1/auth/login', [
+                'email' => 'admin@example.com',
+                'password' => kopitiamDemoPassword(),
+            ]);
+        if (! $login->successful()) {
             $modules = [];
 
             return $modules;
@@ -498,7 +491,7 @@ function loginAndVisit(string $path = '/')
     $page = visit(spaUrl('/login'));
 
     $page->fill('[data-testid="login-email"]', 'admin@example.com')
-        ->fill('[data-testid="login-password"]', 'password')
+        ->fill('[data-testid="login-password"]', kopitiamDemoPassword())
         ->click('[data-testid="login-submit"]')
         ->assertPathIs('/');
 

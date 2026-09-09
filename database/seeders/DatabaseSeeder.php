@@ -4,10 +4,10 @@ namespace Database\Seeders;
 
 use App\Models\Core\Role;
 use App\Models\User;
+use Database\Seeders\Demo\DemoPassword;
 use Database\Seeders\Demo\DemoSeeder;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -34,7 +34,7 @@ class DatabaseSeeder extends Seeder
     {
         if (app()->isProduction()) {
             throw new \RuntimeException(
-                'DatabaseSeeder is blocked in production (demo admin@example.com / password). Use ./scripts/prod.sh seed-pos for the Kopitiam catalog, or seed named classes explicitly.'
+                'DatabaseSeeder is blocked in production. Use ./scripts/prod.sh seed-demo (FEATURE_PRESET map) or seed-pos for Kopitiam only.'
             );
         }
 
@@ -44,7 +44,7 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'Admin User',
                 'email' => 'admin@example.com',
-                'password' => Hash::make('password'),
+                'password' => DemoPassword::hash(),
                 'is_active' => true,
             ]
         );
