@@ -7,6 +7,7 @@ use App\Models\Solar\PlnTariff;
 use App\Services\Solar\SolarCalculationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class PublicSolarCalculatorController extends Controller
 {
@@ -38,11 +39,21 @@ class PublicSolarCalculatorController extends Controller
     public function calculate(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'monthly_bill' => ['required', 'numeric', 'min:5000000'], // Min Rp 5 juta for B2B
-            'pln_power_va' => ['nullable', 'integer', 'min:5500'], // Min 5.5 kVA for B2B
-            'pln_category' => ['nullable', 'string'],
-            'target_savings' => ['nullable', 'numeric', 'min:0'],
-            'price_per_kwp' => ['nullable', 'numeric', 'min:1000000'],
+            'monthly_bill' => ['required', 'numeric', 'min:5000000', 'max:2000000000'],
+            'pln_power_va' => ['nullable', 'integer', 'min:5500'],
+            'pln_category' => [
+                'nullable',
+                'string',
+                Rule::exists('pln_tariffs', 'category_code')->where(function ($query): void {
+                    $query->where('is_active', true)
+                        ->whereIn('customer_type', [
+                            PlnTariff::TYPE_BUSINESS,
+                            PlnTariff::TYPE_INDUSTRIAL,
+                        ]);
+                }),
+            ],
+            'target_savings' => ['nullable', 'numeric', 'min:0', 'max:2000000000'],
+            'price_per_kwp' => ['nullable', 'numeric', 'min:8000000', 'max:25000000'],
         ]);
 
         // Get PLN tariff
@@ -79,6 +90,11 @@ class PublicSolarCalculatorController extends Controller
 
         // Round up to nearest 0.5 kWp
         $recommendedCapacityKwp = ceil($requiredCapacityKwp * 2) / 2;
+
+        if (! empty($validated['pln_power_va'])) {
+            $maxKwpFromConnection = ($validated['pln_power_va'] / 1000) * 0.8;
+            $recommendedCapacityKwp = min($recommendedCapacityKwp, $maxKwpFromConnection);
+        }
 
         // Calculate actual production with recommended capacity
         $annualProductionKwh = $this->calculationService->calculateAnnualProduction(

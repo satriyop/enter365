@@ -383,6 +383,10 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('exports', function (Request $request) {
             return Limit::perMinute(5)->by($request->user()?->id ?: $request->ip());
         });
+
+        RateLimiter::for('public-solar-calculate', function (Request $request) {
+            return Limit::perMinute(10)->by($request->ip());
+        });
     }
 
     /**

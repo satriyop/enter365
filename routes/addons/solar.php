@@ -25,7 +25,8 @@ if ($context === 'public') {
     })->where(['token' => '[0-9a-f\-]{32,36}']);
 
     Route::middleware('feature:solar_proposals')->prefix('public/solar-calculator')->group(function () {
-        Route::post('calculate', [PublicSolarCalculatorController::class, 'calculate']);
+        Route::post('calculate', [PublicSolarCalculatorController::class, 'calculate'])
+            ->middleware('throttle:public-solar-calculate');
         Route::get('tariffs', [PublicSolarCalculatorController::class, 'tariffs']);
     });
 

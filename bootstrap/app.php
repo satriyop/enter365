@@ -25,6 +25,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => \App\Http\Middleware\EnsurePermission::class,
         ]);
 
+        $middleware->throttleApi();
+
         // Bind OperationContext to container for all HTTP requests (Laravel way)
         // Services automatically resolve context - no manual calls needed in controllers
         $middleware->append(\App\Http\Middleware\BindOperationContext::class);
