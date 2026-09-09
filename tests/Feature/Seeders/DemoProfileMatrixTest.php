@@ -43,6 +43,17 @@ describe('DemoSeeder profile mapping', function () {
             ->and(DemoSeeder::profileFromFeaturePreset('pos'))->toBe(DemoSeeder::DEMO_POS)
             ->and(DemoSeeder::profileFromFeaturePreset('parity'))->toBe(DemoSeeder::DEMO_POS);
     });
+
+    it('seed:demo without --demo uses the FEATURE_PRESET mapped profile', function () {
+        applyFeaturePreset('pos');
+
+        $this->artisan('seed:demo', ['--no-interaction' => true])
+            ->expectsOutputToContain('from FEATURE_PRESET=pos')
+            ->assertSuccessful();
+
+        expect(app('demo.choice'))->toBe(DemoSeeder::DEMO_POS)
+            ->and(Product::where('sku', 'KT57-KOPI-O')->exists())->toBeTrue();
+    });
 });
 
 describe('general profile seed', function () {

@@ -118,6 +118,12 @@ class DemoSeeder extends Seeder
             return;
         }
 
+        if ($demoChoice === self::DEMO_ALL && Features::enabled('pos')) {
+            $this->command->info('☕ Seeding Kopitiam 57 till (pos pack is on under full)...');
+            $this->call(PosKopitiamDemoSeeder::class);
+            $this->command->info('');
+        }
+
         // Component library = Vahana electrical_panel only
         $seedPanelLibrary = Features::enabled('electrical_panel')
             && in_array($demoChoice, [self::DEMO_VAHANA, self::DEMO_ALL], true);
@@ -230,7 +236,7 @@ class DemoSeeder extends Seeder
     }
 
     /**
-     * Get the demo choice from app instance, command option, or interactive prompt.
+     * Demo profile from seed:demo --demo, else FEATURE_PRESET mapping.
      */
     protected function getDemoChoice(): string
     {
@@ -241,30 +247,7 @@ class DemoSeeder extends Seeder
             }
         }
 
-        try {
-            $this->command->info('');
-            $this->command->info('Which demo data would you like to seed?');
-            $this->command->info('  (Product packs: FEATURE_PRESET='.config('features.preset', 'general').')');
-            $this->command->info('  Recommended default for this preset: '.self::profileFromFeaturePreset());
-            $this->command->info('');
-
-            return $this->command->choice(
-                'Select demo data',
-                [
-                    self::DEMO_GENERAL => '🏢 General - SME trading/jasa',
-                    self::DEMO_SERVICES => '🏗️  Services - trading + projects',
-                    self::DEMO_MANUFACTURING => '⚙️  Manufacturing - generic shop floor (no vertical)',
-                    self::DEMO_ENTERPRISE => '🏭 Enterprise - Odoo-like packs, no industry masters',
-                    self::DEMO_VAHANA => '⚡ Vahana - Electrical Panel (electrical_panel)',
-                    self::DEMO_NEX => '☀️  NEX - Solar EPC (solar_proposals)',
-                    self::DEMO_ALL => '🔄 Full - Vahana + NEX + packs',
-                    self::DEMO_POS => '☕ POS - Kopitiam 57 stand-in till',
-                ],
-                self::profileFromFeaturePreset()
-            );
-        } catch (\Throwable) {
-            return self::profileFromFeaturePreset();
-        }
+        return self::profileFromFeaturePreset();
     }
 
     protected function warnIfPackMismatch(string $demoChoice): void
@@ -324,6 +307,9 @@ class DemoSeeder extends Seeder
         $this->command->info('║     https://energimasadepan.com                                    ║');
         $this->command->info('╚═══════════════════════════════════════════════════════════════════╝');
         $this->command->info('');
+
+        $this->call(\Database\Seeders\IndonesiaSolarDataSeeder::class);
+        $this->call(\Database\Seeders\PlnTariffSeeder::class);
 
         $this->command->info('  → Contacts (Industrial, Commercial, Agricultural customers)');
         $this->call(NexContactSeeder::class);
