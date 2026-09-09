@@ -203,6 +203,90 @@ describe('getPpnSummary', function () {
             ->toContain('PPN-IN');
     });
 
+    it('classifies a bill SOURCE_REVERSAL as negative input tax, not output', function () {
+        $vendor = Contact::factory()->vendor()->create();
+        $bill = Bill::factory()->create([
+            'contact_id' => $vendor->id,
+            'status' => DocumentStatus::Received,
+            'bill_date' => '2024-01-20',
+            'tax_amount' => 11_000,
+            'subtotal' => 100_000,
+            'total_amount' => 111_000,
+            'tax_rate' => 11,
+        ]);
+
+        $inputTag = TaxTag::factory()->tax()->create(['code' => 'PPN-IN']);
+        $account = Account::factory()->create();
+
+        $original = JournalEntry::factory()->posted()->create([
+            'entry_date' => '2024-01-20',
+            'source_type' => JournalEntry::SOURCE_BILL,
+            'source_id' => $bill->id,
+        ]);
+        JournalEntryLine::factory()->forEntry($original)->forAccount($account)->debit(11_000)->create([
+            'tax_tag_ids' => [$inputTag->id],
+            'description' => 'PPN Masukan',
+        ]);
+
+        $reversal = JournalEntry::factory()->posted()->create([
+            'entry_date' => '2024-01-21',
+            'source_type' => JournalEntry::SOURCE_REVERSAL,
+            'source_id' => $original->id,
+        ]);
+        JournalEntryLine::factory()->forEntry($reversal)->forAccount($account)->credit(11_000)->create([
+            'tax_tag_ids' => [$inputTag->id],
+            'description' => 'Reversal PPN Masukan',
+        ]);
+
+        $result = $this->service->getPpnSummary('2024-01-01', '2024-01-31');
+
+        expect($result['input_tax']['tax'])->toBe(0)
+            ->and($result['output_tax']['tax'])->toBe(0)
+            ->and(collect($result['details']['journal_grids'])->firstWhere('source_type', JournalEntry::SOURCE_REVERSAL))
+            ->toMatchArray(['side' => 'input', 'amount' => -11_000, 'tag_code' => 'PPN-IN']);
+    });
+
+    it('classifies an invoice SOURCE_REVERSAL as negative output tax', function () {
+        $customer = Contact::factory()->customer()->create();
+        $invoice = Invoice::factory()->create([
+            'contact_id' => $customer->id,
+            'status' => DocumentStatus::Sent,
+            'invoice_date' => '2024-01-15',
+            'tax_amount' => 11_000,
+            'subtotal' => 100_000,
+            'total_amount' => 111_000,
+            'tax_rate' => 11,
+        ]);
+
+        $outputTag = TaxTag::factory()->tax()->create(['code' => 'PPN-OUT']);
+        $account = Account::factory()->create();
+
+        $original = JournalEntry::factory()->posted()->create([
+            'entry_date' => '2024-01-15',
+            'source_type' => JournalEntry::SOURCE_INVOICE,
+            'source_id' => $invoice->id,
+        ]);
+        JournalEntryLine::factory()->forEntry($original)->forAccount($account)->credit(11_000)->create([
+            'tax_tag_ids' => [$outputTag->id],
+        ]);
+
+        $reversal = JournalEntry::factory()->posted()->create([
+            'entry_date' => '2024-01-16',
+            'source_type' => JournalEntry::SOURCE_REVERSAL,
+            'source_id' => $original->id,
+        ]);
+        JournalEntryLine::factory()->forEntry($reversal)->forAccount($account)->debit(11_000)->create([
+            'tax_tag_ids' => [$outputTag->id],
+        ]);
+
+        $result = $this->service->getPpnSummary('2024-01-01', '2024-01-31');
+
+        expect($result['output_tax']['tax'])->toBe(0)
+            ->and($result['input_tax']['tax'])->toBe(0)
+            ->and(collect($result['details']['journal_grids'])->firstWhere('source_type', JournalEntry::SOURCE_REVERSAL))
+            ->toMatchArray(['side' => 'output', 'amount' => -11_000, 'tag_code' => 'PPN-OUT']);
+    });
+
     it('handles empty results when no invoices or bills exist', function () {
         $result = $this->service->getPpnSummary('2024-01-01', '2024-01-31');
 
@@ -735,5 +819,26 @@ describe('getMonthlyPpn', function () {
 
         expect($result['output_tax']['invoices'])->toHaveCount(1)
             ->and($result['input_tax']['bills'])->toHaveCount(1);
+    });
+
+    it('includes journal tax grids for monthly export', function () {
+        $tag = TaxTag::factory()->tax()->create(['code' => 'PPN-MISC']);
+        $account = Account::factory()->create();
+        $entry = JournalEntry::factory()->posted()->create([
+            'entry_date' => '2024-04-12',
+            'source_type' => JournalEntry::SOURCE_MANUAL,
+        ]);
+        JournalEntryLine::factory()->forEntry($entry)->forAccount($account)->credit(7_000)->create([
+            'tax_tag_ids' => [$tag->id],
+            'description' => 'Misc output VAT',
+        ]);
+
+        $result = $this->service->getMonthlyPpn(4, 2024);
+
+        expect($result)->toHaveKey('journal_grids')
+            ->and($result['journal_grids'])->toHaveCount(1)
+            ->and($result['journal_grids'][0]['tag_code'])->toBe('PPN-MISC')
+            ->and($result['journal_grids'][0]['amount'])->toBe(7_000)
+            ->and($result['journal_grids'][0]['side'])->toBe('output');
     });
 });

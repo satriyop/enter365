@@ -1,6 +1,9 @@
 <?php
 
 use App\Models\Accounting\Account;
+use App\Models\Accounting\JournalEntry;
+use App\Models\Accounting\JournalEntryLine;
+use App\Models\Accounting\TaxTag;
 use App\Models\Contacts\Contact;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
@@ -135,6 +138,25 @@ describe('Export API', function () {
 
         $response->assertOk()
             ->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
+    });
+
+    it('exports journal tax grids on the monthly tax report', function () {
+        $tag = TaxTag::factory()->tax()->create(['code' => 'PPN-GRID']);
+        $account = Account::query()->where('code', '2-1200')->firstOrFail();
+        $entry = JournalEntry::factory()->posted()->create([
+            'entry_date' => now()->toDateString(),
+            'source_type' => JournalEntry::SOURCE_MANUAL,
+        ]);
+        JournalEntryLine::factory()->forEntry($entry)->forAccount($account)->credit(9_000)->create([
+            'tax_tag_ids' => [$tag->id],
+            'description' => 'Misc grid VAT',
+        ]);
+
+        $response = $this->get('/api/v1/export/tax-report?month='.now()->month.'&year='.now()->year.'&format=csv');
+
+        $response->assertOk();
+        expect($response->getContent())->toContain('Penyesuaian Grid')
+            ->and($response->getContent())->toContain('PPN-GRID');
     });
 
     it('includes correct headers in CSV export', function () {
