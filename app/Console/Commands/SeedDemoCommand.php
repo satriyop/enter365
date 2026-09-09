@@ -13,7 +13,8 @@ class SeedDemoCommand extends Command
      * @var string
      */
     protected $signature = 'seed:demo
-                            {--demo= : Which demo (general, services, manufacturing, enterprise, vahana, nex, pos, all). Default: from FEATURE_PRESET}
+                            {--demo= : Which demo (general, services, manufacturing, enterprise, vahana, nex, pos, all). Default: FEATURE_PRESET map}
+                            {--choose : Prompt for a demo profile instead of using FEATURE_PRESET}
                             {--fresh : Run migrate:fresh before seeding}';
 
     /**
@@ -50,7 +51,6 @@ class SeedDemoCommand extends Command
         $valid = DemoSeeder::profiles();
         $recommended = DemoSeeder::profileFromFeaturePreset();
 
-        // Validate demo option if provided
         if ($demo && ! in_array($demo, $valid, true)) {
             $this->error("Invalid demo option: {$demo}");
             $this->info('Valid options: '.implode(', ', $valid));
@@ -58,14 +58,9 @@ class SeedDemoCommand extends Command
             return self::FAILURE;
         }
 
-        // If no demo option provided, show interactive prompt (default = FEATURE_PRESET map)
-        if (! $demo) {
-            $this->info('');
-            $this->info('Which demo data would you like to seed?');
+        if (! $demo && $this->option('choose')) {
             $this->info('  FEATURE_PRESET='.config('features.preset', 'general'));
-            $this->info("  Recommended: {$recommended}");
-            $this->info('');
-
+            $this->info("  Mapped profile: {$recommended}");
             $demo = $this->choice(
                 'Select demo data',
                 [
@@ -75,11 +70,16 @@ class SeedDemoCommand extends Command
                     DemoSeeder::DEMO_ENTERPRISE => '🏭 Enterprise - Odoo-like packs, no industry masters',
                     DemoSeeder::DEMO_VAHANA => '⚡ Vahana - Electrical Panel (electrical_panel)',
                     DemoSeeder::DEMO_NEX => '☀️  NEX - Solar EPC (solar_proposals)',
-                    DemoSeeder::DEMO_ALL => '🔄 Full - Vahana + NEX + packs',
+                    DemoSeeder::DEMO_ALL => '🔄 Full - Vahana + NEX + packs + Kopitiam till',
                     DemoSeeder::DEMO_POS => '☕ POS - Kopitiam 57 stand-in till',
                 ],
                 $recommended
             );
+        }
+
+        if (! $demo) {
+            $demo = $recommended;
+            $this->info('Seeding demo profile ['.$demo.'] from FEATURE_PRESET='.config('features.preset', 'general'));
         }
 
         // Store the demo choice in a way the seeder can access

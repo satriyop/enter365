@@ -95,7 +95,10 @@ it('runs DemoSeeder for feature set and asserts defining seed outcomes', functio
         DemoSeeder::DEMO_ALL => expect($componentStandards)->toBeGreaterThan(0)
             ->and($solarProposals)->toBeGreaterThan(0)
             ->and($genericBom)->toBeTrue()
-            ->and($irradiance)->toBeGreaterThan(0),
+            ->and($irradiance)->toBeGreaterThan(0)
+            ->and(Product::where('sku', 'KT57-KOPI-O')->exists())->toBeTrue()
+            ->and(User::where('email', 'siti@kopitiam57.test')->exists())->toBeTrue()
+            ->and(User::where('email', 'admin@demo.com')->exists())->toBeTrue(),
 
         DemoSeeder::DEMO_POS => expect($componentStandards)->toBe(0)
             ->and($solarProposals)->toBe(0)

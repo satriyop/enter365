@@ -21,7 +21,8 @@ First time
   ./scripts/prod.sh provision    PHP pool, Postgres DB, Caddy site (additive)
   ./scripts/prod.sh env-init     APP_KEY
   ./scripts/prod.sh deploy       rsync this laptop + composer + migrate --force
-  ./scripts/prod.sh seed-pos     Kopitiam catalog (once). Demo password is PosKopitiamDemoSeeder::DEMO_PASSWORD.
+  ./scripts/prod.sh seed-demo    Demo data for current FEATURE_PRESET (full → all + Kopitiam till)
+  ./scripts/prod.sh seed-pos     Kopitiam catalog only (ignores preset). Prefer seed-demo.
   ./scripts/prod.sh health
 
 Every release
@@ -54,6 +55,7 @@ EOF
     provision) exec bash "${BIN}/provision.sh" "$@" ;;
     env-init) exec bash "${BIN}/env-init.sh" "$@" ;;
     deploy) exec bash "${BIN}/deploy.sh" "$@" ;;
+    seed-demo) exec bash "${BIN}/seed-demo.sh" "$@" ;;
     seed-pos) exec bash "${BIN}/seed-pos.sh" "$@" ;;
     health|status) exec bash "${BIN}/health.sh" "$@" ;;
     logs) exec bash "${BIN}/logs.sh" "$@" ;;

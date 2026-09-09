@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-# First-time Kopitiam catalog on a fresh production DB. Idempotent-ish
-# (PosKopitiamDemoSeeder uses updateOrCreate). Resets the four demo
-# passwords to PosKopitiamDemoSeeder::DEMO_PASSWORD. Do not re-run on a
-# live till — that updateOrCreates catalog rows. Rotate hashes only with:
+# Kopitiam catalog ONLY — ignores FEATURE_PRESET. Prefer ./scripts/prod.sh seed-demo
+# so data matches the mockup preset (full → all + till). Idempotent-ish
+# (PosKopitiamDemoSeeder uses updateOrCreate). Rotate hashes only with:
 #   PosKopitiamDemoSeeder::rotatePasswords()
 set -euo pipefail
 
