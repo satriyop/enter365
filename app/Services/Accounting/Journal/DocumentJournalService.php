@@ -142,11 +142,12 @@ class DocumentJournalService extends BaseService
             $totalCredits += $revenueBase;
         }
 
-        // Credit: Tax Payable (if tax exists)
-        if ($invoice->tax_amount > 0 && $taxPayableAccount) {
+        // Credit: one tax line per sales TaxRecord (stacked taxes stay unblended).
+        $taxLines = $this->invoiceTaxCreditLines($invoice, $taxPayableAccount, $currency, $exchangeRate);
+        if ($taxLines === [] && $invoice->tax_amount > 0 && $taxPayableAccount) {
             $taxBase = $this->toBaseCurrency($invoice->tax_amount, $currency, $exchangeRate);
             $distributionTax = $this->invoiceSalesTaxRecord($invoice);
-            $lines[] = [
+            $taxLines[] = [
                 'account_id' => $taxPayableAccount->id,
                 'description' => 'PPN Keluaran '.$invoice->invoice_number,
                 'debit' => 0,
@@ -154,7 +155,10 @@ class DocumentJournalService extends BaseService
                 'tax_tag_ids' => $distributionTax?->tax_tag_id ? [$distributionTax->tax_tag_id] : null,
                 ...$this->currencyMeta($currency, $invoice->tax_amount, $exchangeRate),
             ];
-            $totalCredits += $taxBase;
+        }
+        foreach ($taxLines as $taxLine) {
+            $lines[] = $taxLine;
+            $totalCredits += (int) $taxLine['credit'];
         }
 
         // Debit: AR as balancing figure (guarantees DR == CR despite rounding)
@@ -263,11 +267,12 @@ class DocumentJournalService extends BaseService
             $totalDebits += $amountBase;
         }
 
-        // Debit: Tax Receivable (if tax exists)
-        if ($bill->tax_amount > 0 && $taxReceivableAccount) {
+        // Debit: one tax line per purchase TaxRecord (stacked taxes stay unblended).
+        $taxLines = $this->billTaxDebitLines($bill, $taxReceivableAccount, $currency, $exchangeRate);
+        if ($taxLines === [] && $bill->tax_amount > 0 && $taxReceivableAccount) {
             $taxBase = $this->toBaseCurrency($bill->tax_amount, $currency, $exchangeRate);
             $distributionTax = $this->billPurchaseTaxRecord($bill);
-            $lines[] = [
+            $taxLines[] = [
                 'account_id' => $taxReceivableAccount->id,
                 'description' => 'PPN Masukan '.$bill->bill_number,
                 'debit' => $taxBase,
@@ -275,7 +280,10 @@ class DocumentJournalService extends BaseService
                 'tax_tag_ids' => $distributionTax?->tax_tag_id ? [$distributionTax->tax_tag_id] : null,
                 ...$this->currencyMeta($currency, $bill->tax_amount, $exchangeRate),
             ];
-            $totalDebits += $taxBase;
+        }
+        foreach ($taxLines as $taxLine) {
+            $lines[] = $taxLine;
+            $totalDebits += (int) $taxLine['debit'];
         }
 
         // Credit: Purchase Discount contra-expense (if discount exists)
@@ -548,6 +556,108 @@ class DocumentJournalService extends BaseService
             'source_id' => $payment->id,
             'lines' => $lines,
         ], autoPost: true);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function invoiceTaxCreditLines(Invoice $invoice, Account $defaultTaxAccount, string $currency, float $exchangeRate): array
+    {
+        $buckets = [];
+        foreach ($invoice->items as $item) {
+            $net = (int) $item->line_total;
+            $taxes = $item->product?->salesTaxes ?? collect();
+            if ($taxes->isEmpty()) {
+                $amount = (int) round($net * ((float) ($item->tax_rate ?? 0)) / 100);
+                if ($amount <= 0) {
+                    continue;
+                }
+                $buckets['fallback']['amount'] = ($buckets['fallback']['amount'] ?? 0) + $amount;
+                $buckets['fallback']['account_id'] = $defaultTaxAccount->id;
+                $buckets['fallback']['tax_tag_ids'] = null;
+                $buckets['fallback']['description'] = 'PPN Keluaran '.$invoice->invoice_number;
+
+                continue;
+            }
+
+            foreach ($taxes as $tax) {
+                $amount = (int) round($net * ((float) $tax->rate) / 100);
+                if ($amount <= 0) {
+                    continue;
+                }
+                $key = 'tax-'.$tax->id;
+                $buckets[$key]['amount'] = ($buckets[$key]['amount'] ?? 0) + $amount;
+                $buckets[$key]['account_id'] = $tax->invoice_account_id ?: $defaultTaxAccount->id;
+                $buckets[$key]['tax_tag_ids'] = $tax->tax_tag_id ? [$tax->tax_tag_id] : null;
+                $buckets[$key]['description'] = $tax->name.' '.$invoice->invoice_number;
+            }
+        }
+
+        return $this->taxBucketLines($buckets, $currency, $exchangeRate, credit: true);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function billTaxDebitLines(Bill $bill, Account $defaultTaxAccount, string $currency, float $exchangeRate): array
+    {
+        $buckets = [];
+        foreach ($bill->items as $item) {
+            $net = (int) $item->line_total;
+            $ids = $item->taxRecordIds();
+            $taxes = $ids !== []
+                ? TaxRecord::query()->whereIn('id', $ids)->get()
+                : ($item->product?->purchaseTaxes ?? collect());
+
+            if ($taxes->isEmpty()) {
+                $amount = (int) round($net * ((float) ($item->tax_rate ?? 0)) / 100);
+                if ($amount <= 0) {
+                    continue;
+                }
+                $buckets['fallback']['amount'] = ($buckets['fallback']['amount'] ?? 0) + $amount;
+                $buckets['fallback']['account_id'] = $defaultTaxAccount->id;
+                $buckets['fallback']['tax_tag_ids'] = is_array($item->tax_tag_ids) ? $item->tax_tag_ids : null;
+                $buckets['fallback']['description'] = 'PPN Masukan '.$bill->bill_number;
+
+                continue;
+            }
+
+            foreach ($taxes as $tax) {
+                $amount = (int) round($net * ((float) $tax->rate) / 100);
+                if ($amount <= 0) {
+                    continue;
+                }
+                $key = 'tax-'.$tax->id;
+                $buckets[$key]['amount'] = ($buckets[$key]['amount'] ?? 0) + $amount;
+                $buckets[$key]['account_id'] = $tax->refund_account_id ?: $defaultTaxAccount->id;
+                $buckets[$key]['tax_tag_ids'] = $tax->tax_tag_id ? [$tax->tax_tag_id] : (is_array($item->tax_tag_ids) ? $item->tax_tag_ids : null);
+                $buckets[$key]['description'] = $tax->name.' '.$bill->bill_number;
+            }
+        }
+
+        return $this->taxBucketLines($buckets, $currency, $exchangeRate, credit: false);
+    }
+
+    /**
+     * @param  array<string, array{amount: int, account_id: int, tax_tag_ids: list<int>|null, description: string}>  $buckets
+     * @return list<array<string, mixed>>
+     */
+    private function taxBucketLines(array $buckets, string $currency, float $exchangeRate, bool $credit): array
+    {
+        $lines = [];
+        foreach ($buckets as $bucket) {
+            $base = $this->toBaseCurrency((int) $bucket['amount'], $currency, $exchangeRate);
+            $lines[] = [
+                'account_id' => $bucket['account_id'],
+                'description' => $bucket['description'],
+                'debit' => $credit ? 0 : $base,
+                'credit' => $credit ? $base : 0,
+                'tax_tag_ids' => $bucket['tax_tag_ids'],
+                ...$this->currencyMeta($currency, (int) $bucket['amount'], $exchangeRate),
+            ];
+        }
+
+        return $lines;
     }
 
     private function invoiceTaxAccount(Invoice $invoice): ?Account
