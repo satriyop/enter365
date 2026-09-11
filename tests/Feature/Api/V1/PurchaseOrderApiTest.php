@@ -157,11 +157,16 @@ describe('Purchase Order CRUD', function () {
         $this->getJson("/api/v1/purchase-orders/{$id}")
             ->assertOk()
             ->assertJsonPath('data.total_amount', $expectedTotal)
-            ->assertJsonPath('data.subtotal', 2432);
+            ->assertJsonPath('data.total', $expectedTotal)
+            ->assertJsonPath('data.subtotal', 2432)
+            ->assertJsonPath('data.items.0.subtotal', 2432)
+            ->assertJsonPath('data.items.0.line_total', $expectedTotal)
+            ->assertJsonPath('data.items.0.total_amount', $expectedTotal);
 
         $this->getJson('/api/v1/purchase-orders?search='.$create->json('data.po_number'))
             ->assertOk()
-            ->assertJsonPath('data.0.total_amount', $expectedTotal);
+            ->assertJsonPath('data.0.total_amount', $expectedTotal)
+            ->assertJsonPath('data.0.total', $expectedTotal);
 
         $this->assertDatabaseHas('purchase_orders', [
             'id' => $id,

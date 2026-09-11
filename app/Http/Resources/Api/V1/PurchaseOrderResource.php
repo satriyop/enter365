@@ -44,6 +44,7 @@ class PurchaseOrderResource extends JsonResource
             'tax_rate' => (float) $this->tax_rate,
             'tax_amount' => $this->tax_amount,
             'total_amount' => $this->total_amount,
+            'total' => $this->total_amount,
             'base_currency_total' => $this->base_currency_total,
 
             'notes' => $this->notes,

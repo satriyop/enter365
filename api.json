@@ -59869,6 +59869,9 @@
                     "subtotal": {
                         "type": "integer"
                     },
+                    "line_total": {
+                        "type": "string"
+                    },
                     "tax_rate": {
                         "type": "number"
                     },
@@ -59910,6 +59913,7 @@
                     "unit",
                     "unit_price",
                     "subtotal",
+                    "line_total",
                     "tax_rate",
                     "tax_amount",
                     "total_amount",
@@ -59997,6 +60001,9 @@
                         "type": "integer"
                     },
                     "total_amount": {
+                        "type": "integer"
+                    },
+                    "total": {
                         "type": "integer"
                     },
                     "base_currency_total": {
@@ -60203,6 +60210,7 @@
                     "tax_rate",
                     "tax_amount",
                     "total_amount",
+                    "total",
                     "base_currency_total",
                     "notes",
                     "terms_conditions",
