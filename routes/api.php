@@ -18,6 +18,8 @@ use App\Http\Controllers\Api\V1\BudgetController;
 use App\Http\Controllers\Api\V1\CompanyProfileController;
 use App\Http\Controllers\Api\V1\ContactController;
 use App\Http\Controllers\Api\V1\DashboardController;
+use App\Http\Controllers\Api\V1\DeferredExpenseController;
+use App\Http\Controllers\Api\V1\DeferredRevenueController;
 use App\Http\Controllers\Api\V1\DeliveryOrderController;
 use App\Http\Controllers\Api\V1\DepreciationScheduleController;
 use App\Http\Controllers\Api\V1\DownPaymentController;
@@ -195,6 +197,14 @@ Route::prefix('v1')->group(function () {
         Route::post('loans/{loan}/confirm', [LoanController::class, 'confirm']);
         Route::post('loans/{loan}/post-installment', [LoanController::class, 'postInstallment']);
         Route::get('loans-analysis', [LoanAnalysisController::class, 'show']);
+        Route::apiResource('deferred-expenses', DeferredExpenseController::class)
+            ->parameters(['deferred-expenses' => 'deferredEntry']);
+        Route::post('deferred-expenses/{deferredEntry}/confirm', [DeferredExpenseController::class, 'confirm']);
+        Route::post('deferred-expenses/{deferredEntry}/post-recognition', [DeferredExpenseController::class, 'postRecognition']);
+        Route::apiResource('deferred-revenues', DeferredRevenueController::class)
+            ->parameters(['deferred-revenues' => 'deferredEntry']);
+        Route::post('deferred-revenues/{deferredEntry}/confirm', [DeferredRevenueController::class, 'confirm']);
+        Route::post('deferred-revenues/{deferredEntry}/post-recognition', [DeferredRevenueController::class, 'postRecognition']);
 
         // Warehouses (Gudang)
         Route::middleware('feature:warehouses')->group(function () {
