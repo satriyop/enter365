@@ -3,6 +3,7 @@
 use App\Models\Accounting\Account;
 use App\Models\Accounting\JournalEntryLine;
 use App\Models\Contacts\Contact;
+use App\Models\Inventory\Product;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\InvoiceItem;
 use App\Models\User;
@@ -107,6 +108,84 @@ describe('Invoice API', function () {
         $response->assertJsonPath('data.subtotal', 5250000)
             ->assertJsonPath('data.tax_amount', 577500)
             ->assertJsonPath('data.total_amount', 5827500);
+    });
+
+    it('creates an invoice with a product line and lists it afterwards', function () {
+        $customer = Contact::factory()->customer()->create();
+        $product = Product::factory()->create([
+            'name' => 'KT57-AIR - Air Mineral',
+            'selling_price' => 10000,
+        ]);
+
+        $response = $this->postJson('/api/v1/invoices', [
+            'contact_id' => $customer->id,
+            'invoice_date' => '2024-12-25',
+            'due_date' => '2025-01-25',
+            'items' => [
+                [
+                    'product_id' => $product->id,
+                    'description' => $product->name,
+                    'quantity' => 1,
+                    'unit' => 'pcs',
+                    'unit_price' => 10000,
+                    'tax_rate' => 11,
+                ],
+            ],
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.status.value', 'draft')
+            ->assertJsonPath('data.items.0.product_id', $product->id)
+            ->assertJsonPath('data.total_amount', 11100);
+
+        $invoiceNumber = $response->json('data.invoice_number');
+        expect($invoiceNumber)->not->toBeEmpty();
+
+        $this->getJson('/api/v1/invoices?search='.$invoiceNumber)
+            ->assertOk()
+            ->assertJsonFragment(['invoice_number' => $invoiceNumber]);
+
+        expect(Invoice::query()->where('invoice_number', $invoiceNumber)->exists())->toBeTrue();
+    });
+
+    it('creates a draft invoice from a description-only line', function () {
+        $customer = Contact::factory()->customer()->create();
+
+        $response = $this->postJson('/api/v1/invoices', [
+            'contact_id' => $customer->id,
+            'invoice_date' => '2024-12-25',
+            'due_date' => '2025-01-25',
+            'items' => [
+                [
+                    'description' => 'PARITY-E2E-0909',
+                    'quantity' => 1,
+                    'unit' => 'pcs',
+                    'unit_price' => 10000,
+                    'tax_rate' => 11,
+                ],
+            ],
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.status.value', 'draft')
+            ->assertJsonPath('data.items.0.description', 'PARITY-E2E-0909')
+            ->assertJsonPath('data.items.0.product_id', null);
+    });
+
+    it('returns validation errors instead of creating when items are missing', function () {
+        $customer = Contact::factory()->customer()->create();
+
+        $response = $this->postJson('/api/v1/invoices', [
+            'contact_id' => $customer->id,
+            'invoice_date' => '2024-12-25',
+            'due_date' => '2025-01-25',
+            'items' => [],
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['items']);
+
+        expect(Invoice::query()->count())->toBe(0);
     });
 
     it('validates required fields when creating invoice', function () {
