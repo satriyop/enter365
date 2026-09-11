@@ -124,6 +124,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(\App\Contracts\Accounting\BudgetServiceInterface::class, \App\Services\Accounting\BudgetService::class);
         $this->app->bind(\App\Contracts\Accounting\FiscalPeriodServiceInterface::class, \App\Services\Accounting\FiscalPeriodService::class);
         $this->app->bind(\App\Contracts\Accounting\FiscalPositionServiceInterface::class, \App\Services\Accounting\FiscalPositionService::class);
+        $this->app->bind(\App\Contracts\Accounting\FixedAssetServiceInterface::class, \App\Services\Accounting\FixedAssetService::class);
         $this->app->bind(\App\Contracts\Accounting\BankReconciliationServiceInterface::class, \App\Services\Accounting\BankReconciliationService::class);
         $this->app->bind(\App\Contracts\Accounting\YearEndCloseServiceInterface::class, \App\Services\Accounting\YearEndCloseService::class);
         $this->app->bind(\App\Contracts\Accounting\FxRevaluationServiceInterface::class, \App\Services\Accounting\FxRevaluationService::class);
@@ -329,6 +330,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(\App\Models\Inventory\StockOpname::class, \App\Policies\StockOpnamePolicy::class);
         Gate::policy(\App\Models\Accounting\FiscalPeriod::class, \App\Policies\FiscalPeriodPolicy::class);
         Gate::policy(\App\Models\Accounting\FiscalPosition::class, \App\Policies\FiscalPositionPolicy::class);
+        Gate::policy(\App\Models\Accounting\AssetModel::class, \App\Policies\AssetModelPolicy::class);
+        Gate::policy(\App\Models\Accounting\FixedAsset::class, \App\Policies\FixedAssetPolicy::class);
         Gate::policy(\App\Models\Inventory\Warehouse::class, \App\Policies\WarehousePolicy::class);
         Gate::policy(\App\Models\Manufacturing\BomVariantGroup::class, \App\Policies\BomVariantGroupPolicy::class);
         Gate::policy(\App\Models\Manufacturing\MrpRun::class, \App\Policies\MrpRunPolicy::class);
@@ -442,6 +445,9 @@ class AppServiceProvider extends ServiceProvider
             // Accounting Domain
             'journal_entry' => \App\Models\Accounting\JournalEntry::class,
             'account' => \App\Models\Accounting\Account::class,
+            'asset_model' => \App\Models\Accounting\AssetModel::class,
+            'fixed_asset' => \App\Models\Accounting\FixedAsset::class,
+            'asset_depreciation_line' => \App\Models\Accounting\AssetDepreciationLine::class,
 
             // Projects Domain
             'project' => \App\Models\Projects\Project::class,

@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\PublicCompanyProfileController;
 use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\AccountingPolicyController;
 use App\Http\Controllers\Api\V1\AnalyticAccountController;
+use App\Http\Controllers\Api\V1\AssetModelController;
 use App\Http\Controllers\Api\V1\AttachmentController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BankReconciliationController;
@@ -18,11 +19,13 @@ use App\Http\Controllers\Api\V1\CompanyProfileController;
 use App\Http\Controllers\Api\V1\ContactController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\DeliveryOrderController;
+use App\Http\Controllers\Api\V1\DepreciationScheduleController;
 use App\Http\Controllers\Api\V1\DownPaymentController;
 use App\Http\Controllers\Api\V1\ExportController;
 use App\Http\Controllers\Api\V1\FeatureController;
 use App\Http\Controllers\Api\V1\FiscalPeriodController;
 use App\Http\Controllers\Api\V1\FiscalPositionController;
+use App\Http\Controllers\Api\V1\FixedAssetController;
 use App\Http\Controllers\Api\V1\GoodsReceiptNoteController;
 use App\Http\Controllers\Api\V1\InventoryController;
 use App\Http\Controllers\Api\V1\InvoiceController;
@@ -181,6 +184,11 @@ Route::prefix('v1')->group(function () {
         Route::put('tax-records/{tax_record}', [TaxRecordController::class, 'update']);
         Route::delete('tax-records/{tax_record}', [TaxRecordController::class, 'destroy']);
         Route::apiResource('fiscal-positions', FiscalPositionController::class);
+        Route::apiResource('asset-models', AssetModelController::class);
+        Route::apiResource('assets', FixedAssetController::class)->parameters(['assets' => 'fixed_asset']);
+        Route::post('assets/{fixed_asset}/confirm', [FixedAssetController::class, 'confirm']);
+        Route::post('assets/{fixed_asset}/post-depreciation', [FixedAssetController::class, 'postDepreciation']);
+        Route::get('depreciation-schedule', [DepreciationScheduleController::class, 'index']);
 
         // Warehouses (Gudang)
         Route::middleware('feature:warehouses')->group(function () {
