@@ -11,7 +11,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class PurchaseOrderItemResource extends JsonResource
 {
     /**
-     * @param  \Illuminate\Http\Request  $request
      * @return array{
      *   id: int,
      *   purchase_order_id: int,
@@ -52,6 +51,7 @@ class PurchaseOrderItemResource extends JsonResource
             'unit' => $this->unit,
             'unit_price' => $this->unit_price,
             'subtotal' => $this->line_total,
+            'line_total' => $this->line_total + $this->tax_amount,
             'tax_rate' => (float) $this->tax_rate,
             'tax_amount' => $this->tax_amount,
             'total_amount' => $this->line_total + $this->tax_amount,
