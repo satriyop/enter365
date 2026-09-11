@@ -58,6 +58,7 @@ use App\Http\Controllers\Api\V1\PurchaseReturnController;
 use App\Http\Controllers\Api\V1\QuotationController;
 use App\Http\Controllers\Api\V1\QuotationFollowUpController;
 use App\Http\Controllers\Api\V1\RecurringTemplateController;
+use App\Http\Controllers\Api\V1\Reports\AccountingAnalysisController;
 use App\Http\Controllers\Api\V1\Reports\AccountingReviewController;
 use App\Http\Controllers\Api\V1\Reports\AgingReportController;
 use App\Http\Controllers\Api\V1\Reports\BankReconciliationReportController;
@@ -684,6 +685,13 @@ Route::prefix('v1')->group(function () {
             Route::get('cutover/billed-not-received', [CutoverReviewController::class, 'billedNotReceived'])->name('reports.cutover.billed-not-received');
             Route::get('cutover/invoices-to-be-issued', [CutoverReviewController::class, 'invoicesToBeIssued'])->name('reports.cutover.invoices-to-be-issued');
             Route::get('cutover/invoiced-not-delivered', [CutoverReviewController::class, 'invoicedNotDelivered'])->name('reports.cutover.invoiced-not-delivered');
+
+            Route::get('tax-returns', [AccountingAnalysisController::class, 'taxReturns'])->name('reports.tax-returns');
+            Route::get('review/unrealized-currencies', [AccountingAnalysisController::class, 'unrealizedCurrencies'])->name('reports.review.unrealized-currencies');
+            Route::get('invoice-analysis', [AccountingAnalysisController::class, 'invoiceAnalysis'])->name('reports.invoice-analysis');
+            Route::get('analytic-report', [AccountingAnalysisController::class, 'analyticReport'])->name('reports.analytic-report');
+            Route::get('executive-summary', [AccountingAnalysisController::class, 'executiveSummary'])->name('reports.executive-summary');
+            Route::get('budget-report', [AccountingAnalysisController::class, 'budgetReport'])->name('reports.budget-report');
 
             // Bank Reconciliation Reports (pack: bank_reconciliation)
             Route::middleware('feature:bank_reconciliation')->group(function () {
