@@ -31,6 +31,8 @@ use App\Http\Controllers\Api\V1\InventoryController;
 use App\Http\Controllers\Api\V1\InvoiceController;
 use App\Http\Controllers\Api\V1\JournalController;
 use App\Http\Controllers\Api\V1\JournalEntryController;
+use App\Http\Controllers\Api\V1\LoanAnalysisController;
+use App\Http\Controllers\Api\V1\LoanController;
 use App\Http\Controllers\Api\V1\MaterialRequisitionController;
 use App\Http\Controllers\Api\V1\MrpController;
 use App\Http\Controllers\Api\V1\PaymentController;
@@ -189,6 +191,10 @@ Route::prefix('v1')->group(function () {
         Route::post('assets/{fixed_asset}/confirm', [FixedAssetController::class, 'confirm']);
         Route::post('assets/{fixed_asset}/post-depreciation', [FixedAssetController::class, 'postDepreciation']);
         Route::get('depreciation-schedule', [DepreciationScheduleController::class, 'index']);
+        Route::apiResource('loans', LoanController::class);
+        Route::post('loans/{loan}/confirm', [LoanController::class, 'confirm']);
+        Route::post('loans/{loan}/post-installment', [LoanController::class, 'postInstallment']);
+        Route::get('loans-analysis', [LoanAnalysisController::class, 'show']);
 
         // Warehouses (Gudang)
         Route::middleware('feature:warehouses')->group(function () {
