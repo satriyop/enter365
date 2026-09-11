@@ -57,6 +57,7 @@ class StoreContactRequest extends FormRequest
 
             'notes' => ['nullable', 'string'],
             'is_active' => ['boolean'],
+            'fiscal_position_id' => ['nullable', 'integer', 'exists:fiscal_positions,id'],
         ];
     }
 

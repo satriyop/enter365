@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Services\Sales\Invoice;
 
+use App\Contracts\Accounting\FiscalPositionServiceInterface;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
 use App\Domain\Sales\Invoices\InvoiceDomainFactory;
 use App\Enums\DocumentStatus;
 use App\Exceptions\Domain\DocumentLockedException;
+use App\Models\Accounting\FiscalPosition;
 use App\Models\Inventory\Product;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\InvoiceItem;
@@ -40,6 +42,7 @@ class InvoiceCrudService
         EventDispatcherInterface $eventDispatcher,
         ContextualLoggerInterface $logger,
         private InvoiceDomainFactory $domainFactory,
+        private FiscalPositionServiceInterface $fiscalPositions,
     ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->logger = $logger;
@@ -121,7 +124,9 @@ class InvoiceCrudService
     protected function createItems(Model $document, array $items): void
     {
         assert($document instanceof Invoice);
+        $position = $this->fiscalPositions->forContactId($document->contact_id);
         foreach ($items as $index => $item) {
+            $revenueAccountId = $item['revenue_account_id'] ?? null;
             $invoiceItem = new InvoiceItem([
                 'invoice_id' => $document->getKey(),
                 'product_id' => $item['product_id'] ?? null,
@@ -131,26 +136,51 @@ class InvoiceCrudService
                 'unit_price' => $item['unit_price'],
                 'discount_percent' => $item['discount_percent'] ?? 0,
                 'discount_amount' => $item['discount_amount'] ?? 0,
-                'tax_rate' => $item['tax_rate'] ?? $this->salesTaxRateForProduct($item['product_id'] ?? null),
+                'tax_rate' => $item['tax_rate'] ?? $this->salesTaxRateForProduct($item['product_id'] ?? null, $position),
                 'tax_amount' => $item['tax_amount'] ?? 0,
                 'sort_order' => $item['sort_order'] ?? $index,
                 'notes' => $item['notes'] ?? null,
-                'revenue_account_id' => $item['revenue_account_id'] ?? null,
+                'revenue_account_id' => $this->fiscalPositions->mapAccountId(
+                    $position,
+                    $revenueAccountId !== null ? (int) $revenueAccountId : null,
+                ),
             ]);
             $invoiceItem->calculateLineTotal();
             $invoiceItem->save();
         }
     }
 
-    private function salesTaxRateForProduct(mixed $productId): float
+    private function salesTaxRateForProduct(mixed $productId, ?FiscalPosition $position = null): float
     {
         if (! $productId) {
             return 0;
         }
 
         $product = Product::query()->with('salesTaxes')->find((int) $productId);
+        if ($product === null) {
+            return 0;
+        }
 
-        return $product?->salesTaxRate() ?? 0;
+        $taxIds = $product->salesTaxes
+            ->pluck('id')
+            ->map(fn ($id): int => (int) $id)
+            ->values()
+            ->all();
+
+        if ($taxIds === []) {
+            return $product->salesTaxRate();
+        }
+
+        $mappedIds = $this->fiscalPositions->mapTaxRecordIds($position, $taxIds);
+        if ($mappedIds === []) {
+            return 0.0;
+        }
+
+        if ($position === null || $mappedIds === $taxIds) {
+            return $product->salesTaxRate();
+        }
+
+        return $position->mappedTaxRate($taxIds);
     }
 
     protected function loadRelations(Model $document): Model

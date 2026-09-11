@@ -39,6 +39,7 @@ class ContactResource extends JsonResource
      *   daily_rate: int|null,
      *   notes: string|null,
      *   is_active: bool,
+     *   fiscal_position_id: int|null,
      *   receivable_balance?: int,
      *   payable_balance?: int,
      *   created_at: string|null,
@@ -88,6 +89,12 @@ class ContactResource extends JsonResource
 
             'notes' => $this->notes,
             'is_active' => $this->is_active,
+            'fiscal_position_id' => $this->fiscal_position_id,
+            'fiscal_position' => $this->whenLoaded('fiscalPosition', fn () => $this->fiscalPosition === null ? null : [
+                'id' => $this->fiscalPosition->id,
+                'code' => $this->fiscalPosition->code,
+                'name' => $this->fiscalPosition->name,
+            ]),
             'parent' => new self($this->whenLoaded('parent')),
             'children' => self::collection($this->whenLoaded('children')),
             'receivable_balance' => $this->whenAppended('receivable_balance'),
