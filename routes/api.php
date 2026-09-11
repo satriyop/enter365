@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\PublicCompanyProfileController;
 use App\Http\Controllers\Api\V1\AccountController;
+use App\Http\Controllers\Api\V1\AccountingLedgerController;
 use App\Http\Controllers\Api\V1\AccountingPolicyController;
 use App\Http\Controllers\Api\V1\AccountingTransferController;
 use App\Http\Controllers\Api\V1\AccountReconcileController;
@@ -21,8 +22,10 @@ use App\Http\Controllers\Api\V1\BomController;
 use App\Http\Controllers\Api\V1\BomTemplateController;
 use App\Http\Controllers\Api\V1\BomVariantGroupController;
 use App\Http\Controllers\Api\V1\BudgetController;
+use App\Http\Controllers\Api\V1\CashRoundingController;
 use App\Http\Controllers\Api\V1\CompanyProfileController;
 use App\Http\Controllers\Api\V1\ContactController;
+use App\Http\Controllers\Api\V1\CurrencyController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\DeferredExpenseController;
 use App\Http\Controllers\Api\V1\DeferredRevenueController;
@@ -266,6 +269,9 @@ Route::prefix('v1')->group(function () {
 
         // Journals master (Konfigurasi Jurnal)
         Route::apiResource('journals', JournalController::class);
+        Route::apiResource('currencies', CurrencyController::class);
+        Route::apiResource('cash-roundings', CashRoundingController::class);
+        Route::apiResource('accounting-ledgers', AccountingLedgerController::class);
         Route::apiResource('payment-terms', \App\Http\Controllers\Api\V1\PaymentTermController::class)->except(['destroy']);
         Route::apiResource('payment-methods', \App\Http\Controllers\Api\V1\PaymentMethodController::class)->except(['destroy']);
         Route::apiResource('payment-providers', \App\Http\Controllers\Api\V1\PaymentProviderController::class)->except(['destroy']);
