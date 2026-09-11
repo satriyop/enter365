@@ -40,6 +40,8 @@ class JournalEntry extends Model
 
     public const SOURCE_LOAN = 'loan';
 
+    public const SOURCE_DEFERRED_ENTRY = 'deferred_entry';
+
     protected $fillable = [
         'entry_number',
         'journal_id',

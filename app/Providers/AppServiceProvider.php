@@ -126,6 +126,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(\App\Contracts\Accounting\FiscalPositionServiceInterface::class, \App\Services\Accounting\FiscalPositionService::class);
         $this->app->bind(\App\Contracts\Accounting\FixedAssetServiceInterface::class, \App\Services\Accounting\FixedAssetService::class);
         $this->app->bind(\App\Contracts\Accounting\LoanServiceInterface::class, \App\Services\Accounting\LoanService::class);
+        $this->app->bind(\App\Contracts\Accounting\DeferredEntryServiceInterface::class, \App\Services\Accounting\DeferredEntryService::class);
         $this->app->bind(\App\Contracts\Accounting\BankReconciliationServiceInterface::class, \App\Services\Accounting\BankReconciliationService::class);
         $this->app->bind(\App\Contracts\Accounting\YearEndCloseServiceInterface::class, \App\Services\Accounting\YearEndCloseService::class);
         $this->app->bind(\App\Contracts\Accounting\FxRevaluationServiceInterface::class, \App\Services\Accounting\FxRevaluationService::class);
@@ -452,6 +453,8 @@ class AppServiceProvider extends ServiceProvider
             'asset_depreciation_line' => \App\Models\Accounting\AssetDepreciationLine::class,
             'loan' => \App\Models\Accounting\Loan::class,
             'loan_line' => \App\Models\Accounting\LoanLine::class,
+            'deferred_entry' => \App\Models\Accounting\DeferredEntry::class,
+            'deferred_entry_line' => \App\Models\Accounting\DeferredEntryLine::class,
 
             // Projects Domain
             'project' => \App\Models\Projects\Project::class,
