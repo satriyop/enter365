@@ -31,6 +31,7 @@ class UpdateAnalyticAccountRequest extends FormRequest
                 Rule::unique('analytic_accounts', 'code')->ignore($ignoreId),
             ],
             'name' => ['sometimes', 'required', 'string', 'max:200'],
+            'analytic_plan_id' => ['nullable', 'integer', 'exists:analytic_plans,id'],
             'is_active' => ['boolean'],
         ];
     }

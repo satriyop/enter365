@@ -5,6 +5,7 @@ namespace App\Models\Accounting;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AnalyticAccount extends Model
 {
@@ -14,6 +15,7 @@ class AnalyticAccount extends Model
     protected $fillable = [
         'code',
         'name',
+        'analytic_plan_id',
         'is_active',
     ];
 
@@ -38,5 +40,13 @@ class AnalyticAccount extends Model
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
+    }
+
+    /**
+     * @return BelongsTo<AnalyticPlan, $this>
+     */
+    public function plan(): BelongsTo
+    {
+        return $this->belongsTo(AnalyticPlan::class, 'analytic_plan_id');
     }
 }
