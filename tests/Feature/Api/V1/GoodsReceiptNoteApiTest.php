@@ -221,6 +221,42 @@ describe('Create GRN from Purchase Order', function () {
         ]);
     });
 
+    it('completing a GRN created from a PO updates receiving progress', function () {
+        $warehouse = Warehouse::factory()->create();
+        $po = PurchaseOrder::factory()->approved()->create();
+        $product = Product::factory()->create(['track_inventory' => true]);
+        PurchaseOrderItem::factory()->for($po)->create([
+            'product_id' => $product->id,
+            'quantity' => 10,
+            'quantity_received' => 0,
+        ]);
+
+        $create = $this->postJson("/api/v1/purchase-orders/{$po->id}/create-grn", [
+            'warehouse_id' => $warehouse->id,
+        ]);
+        $create->assertCreated()
+            ->assertJsonPath('data.purchase_order_id', $po->id);
+
+        $grnId = $create->json('data.id');
+        $itemId = $create->json('data.items.0.id')
+            ?? GoodsReceiptNoteItem::query()->where('goods_receipt_note_id', $grnId)->value('id');
+
+        $this->postJson("/api/v1/goods-receipt-notes/{$grnId}/start-receiving")->assertOk();
+        $this->putJson("/api/v1/goods-receipt-notes/{$grnId}/items/{$itemId}", [
+            'quantity_received' => 10,
+        ])->assertOk();
+        $this->postJson("/api/v1/goods-receipt-notes/{$grnId}/complete")->assertOk();
+
+        $this->getJson("/api/v1/purchase-orders/{$po->id}")
+            ->assertOk()
+            ->assertJsonPath('data.receiving_progress', 100);
+
+        $this->assertDatabaseHas('purchase_order_items', [
+            'purchase_order_id' => $po->id,
+            'quantity_received' => 10,
+        ]);
+    });
+
     it('can get grns for a purchase order', function () {
         $po = PurchaseOrder::factory()->approved()->create();
         GoodsReceiptNote::factory()->forPurchaseOrder($po)->count(2)->create();
