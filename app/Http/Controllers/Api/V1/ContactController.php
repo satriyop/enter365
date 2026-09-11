@@ -44,7 +44,7 @@ class ContactController extends Controller
 
         $filter->apply($contact->newQuery());
 
-        $contact->load(['children', 'parent']);
+        $contact->load(['children', 'parent', 'fiscalPosition']);
 
         return new ContactResource($contact);
     }

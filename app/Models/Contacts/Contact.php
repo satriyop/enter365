@@ -5,6 +5,7 @@ namespace App\Models\Contacts;
 use App\Enums\ContactAddressRole;
 use App\Enums\DocumentStatus;
 use App\Enums\PphCategory;
+use App\Models\Accounting\FiscalPosition;
 use App\Models\Manufacturing\SubcontractorWorkOrder;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
@@ -80,6 +81,7 @@ class Contact extends Model
         'pph_category',
         'pph_rate',
         'is_foreign_entity',
+        'fiscal_position_id',
     ];
 
     protected function casts(): array
@@ -105,6 +107,14 @@ class Contact extends Model
             'pph_rate' => 'decimal:2',
             'is_foreign_entity' => 'boolean',
         ];
+    }
+
+    /**
+     * @return BelongsTo<FiscalPosition, $this>
+     */
+    public function fiscalPosition(): BelongsTo
+    {
+        return $this->belongsTo(FiscalPosition::class);
     }
 
     /**

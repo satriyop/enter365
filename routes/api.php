@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\V1\DownPaymentController;
 use App\Http\Controllers\Api\V1\ExportController;
 use App\Http\Controllers\Api\V1\FeatureController;
 use App\Http\Controllers\Api\V1\FiscalPeriodController;
+use App\Http\Controllers\Api\V1\FiscalPositionController;
 use App\Http\Controllers\Api\V1\GoodsReceiptNoteController;
 use App\Http\Controllers\Api\V1\InventoryController;
 use App\Http\Controllers\Api\V1\InvoiceController;
@@ -179,6 +180,7 @@ Route::prefix('v1')->group(function () {
         Route::post('tax-records', [TaxRecordController::class, 'store']);
         Route::put('tax-records/{tax_record}', [TaxRecordController::class, 'update']);
         Route::delete('tax-records/{tax_record}', [TaxRecordController::class, 'destroy']);
+        Route::apiResource('fiscal-positions', FiscalPositionController::class);
 
         // Warehouses (Gudang)
         Route::middleware('feature:warehouses')->group(function () {

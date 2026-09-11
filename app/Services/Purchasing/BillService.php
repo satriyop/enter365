@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Purchasing;
 
+use App\Contracts\Accounting\FiscalPositionServiceInterface;
 use App\Contracts\Accounting\JournalServiceInterface;
 use App\Contracts\Events\EventDispatcherInterface;
 use App\Contracts\Logging\ContextualLoggerInterface;
@@ -15,6 +16,7 @@ use App\Domain\Purchasing\Bills\Events\BillPartiallyPaid;
 use App\Enums\DocumentStatus;
 use App\Exceptions\Domain\BusinessRuleException;
 use App\Exceptions\Domain\StateTransitionException;
+use App\Models\Accounting\FiscalPosition;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Core\AuditLog;
 use App\Models\Inventory\Product;
@@ -48,6 +50,7 @@ class BillService implements BillServiceInterface
         ContextualLoggerInterface $logger,
         JournalServiceInterface $journalService,
         private BillDomainFactory $domainFactory,
+        private FiscalPositionServiceInterface $fiscalPositions,
     ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->logger = $logger;
@@ -138,10 +141,12 @@ class BillService implements BillServiceInterface
     protected function createItems(Model $document, array $items): void
     {
         assert($document instanceof Bill);
+        $position = $this->fiscalPositions->forContactId($document->contact_id);
         foreach ($items as $item) {
             $amount = (int) round($item['quantity'] * $item['unit_price']);
-            $taxes = $this->resolveLineTaxes($item);
+            $taxes = $this->resolveLineTaxes($item, $position);
             $taxAmount = (int) round($amount * ($taxes['tax_rate'] / 100));
+            $expenseAccountId = $item['expense_account_id'] ?? $item['account_id'] ?? null;
 
             BillItem::create([
                 'bill_id' => $document->getKey(),
@@ -154,7 +159,10 @@ class BillService implements BillServiceInterface
                 'tax_rate' => $taxes['tax_rate'],
                 'tax_amount' => $taxAmount,
                 'line_total' => $amount,
-                'expense_account_id' => $item['expense_account_id'] ?? $item['account_id'] ?? null,
+                'expense_account_id' => $this->fiscalPositions->mapAccountId(
+                    $position,
+                    $expenseAccountId !== null ? (int) $expenseAccountId : null,
+                ),
                 'analytic_distribution' => $item['analytic_distribution'] ?? null,
                 'tax_tag_ids' => $taxes['tax_tag_ids'],
                 'tax_record_ids' => $taxes['tax_record_ids'],
@@ -166,7 +174,7 @@ class BillService implements BillServiceInterface
      * @param  array<string, mixed>  $item
      * @return array{tax_rate: float, tax_record_ids: list<int>|null, tax_tag_ids: list<int>|null}
      */
-    private function resolveLineTaxes(array $item): array
+    private function resolveLineTaxes(array $item, ?FiscalPosition $position = null): array
     {
         $explicitTags = is_array($item['tax_tag_ids'] ?? null) ? array_values(array_map('intval', $item['tax_tag_ids'])) : null;
         $recordIds = is_array($item['tax_record_ids'] ?? null)
@@ -207,6 +215,15 @@ class BillService implements BillServiceInterface
         }
 
         if ($recordIds !== []) {
+            $recordIds = $this->fiscalPositions->mapTaxRecordIds($position, $recordIds);
+            if ($recordIds === []) {
+                return [
+                    'tax_rate' => 0.0,
+                    'tax_record_ids' => [],
+                    'tax_tag_ids' => $explicitTags,
+                ];
+            }
+
             $records = TaxRecord::query()->whereIn('id', $recordIds)->get();
             $fromRecords = $records
                 ->pluck('tax_tag_id')
