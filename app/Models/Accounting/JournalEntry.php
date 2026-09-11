@@ -36,6 +36,8 @@ class JournalEntry extends Model
 
     public const SOURCE_FX_REVALUATION = 'fx_revaluation';
 
+    public const SOURCE_FIXED_ASSET = 'fixed_asset';
+
     protected $fillable = [
         'entry_number',
         'journal_id',
@@ -116,7 +118,6 @@ class JournalEntry extends Model
     {
         return $this->belongsTo(Journal::class);
     }
-
 
     /**
      * @return BelongsTo<User, $this>
