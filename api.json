@@ -17527,6 +17527,1038 @@
                 }
             }
         },
+        "/reports/cutover/bill-to-receive": {
+            "get": {
+                "operationId": "reports.cutover.bill-to-receive",
+                "summary": "Period-end review: goods received, vendor bill not posted (Odoo Review \u203a Bill to Receive)",
+                "tags": [
+                    "CutoverReview"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operasi berhasil."
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "report_name": {
+                                                    "type": "string"
+                                                },
+                                                "kind": {
+                                                    "type": "string",
+                                                    "const": "bill-to-receive"
+                                                },
+                                                "as_of_date": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "rows": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "document_type": {
+                                                                        "type": "string",
+                                                                        "const": "grn"
+                                                                    },
+                                                                    "number": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "date": {
+                                                                        "type": [
+                                                                            "string",
+                                                                            "null"
+                                                                        ]
+                                                                    },
+                                                                    "partner": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "reference": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "amount": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "status": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "id",
+                                                                    "document_type",
+                                                                    "number",
+                                                                    "date",
+                                                                    "partner",
+                                                                    "reference",
+                                                                    "amount",
+                                                                    "status"
+                                                                ]
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "document_type": {
+                                                                        "type": "string",
+                                                                        "const": "bill"
+                                                                    },
+                                                                    "number": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "date": {
+                                                                        "type": [
+                                                                            "string",
+                                                                            "null"
+                                                                        ]
+                                                                    },
+                                                                    "partner": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "reference": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "amount": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "status": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "id",
+                                                                    "document_type",
+                                                                    "number",
+                                                                    "date",
+                                                                    "partner",
+                                                                    "reference",
+                                                                    "amount",
+                                                                    "status"
+                                                                ]
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "document_type": {
+                                                                        "type": "string",
+                                                                        "const": "delivery_order"
+                                                                    },
+                                                                    "number": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "date": {
+                                                                        "type": [
+                                                                            "string",
+                                                                            "null"
+                                                                        ]
+                                                                    },
+                                                                    "partner": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "reference": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "amount": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "status": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "id",
+                                                                    "document_type",
+                                                                    "number",
+                                                                    "date",
+                                                                    "partner",
+                                                                    "reference",
+                                                                    "amount",
+                                                                    "status"
+                                                                ]
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "document_type": {
+                                                                        "type": "string",
+                                                                        "const": "invoice"
+                                                                    },
+                                                                    "number": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "date": {
+                                                                        "type": [
+                                                                            "string",
+                                                                            "null"
+                                                                        ]
+                                                                    },
+                                                                    "partner": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "reference": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "amount": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "status": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "id",
+                                                                    "document_type",
+                                                                    "number",
+                                                                    "date",
+                                                                    "partner",
+                                                                    "reference",
+                                                                    "amount",
+                                                                    "status"
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                },
+                                                "totals": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "count": {
+                                                            "type": "integer",
+                                                            "minimum": 0
+                                                        },
+                                                        "amount": {
+                                                            "type": "integer"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "count",
+                                                        "amount"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "report_name",
+                                                "kind",
+                                                "as_of_date",
+                                                "rows",
+                                                "totals"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/reports/cutover/billed-not-received": {
+            "get": {
+                "operationId": "reports.cutover.billed-not-received",
+                "summary": "Period-end review: vendor bill posted, goods not received (Odoo Review \u203a Billed Not Received)",
+                "tags": [
+                    "CutoverReview"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operasi berhasil."
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "report_name": {
+                                                    "type": "string"
+                                                },
+                                                "kind": {
+                                                    "type": "string",
+                                                    "const": "billed-not-received"
+                                                },
+                                                "as_of_date": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "rows": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "document_type": {
+                                                                        "type": "string",
+                                                                        "const": "grn"
+                                                                    },
+                                                                    "number": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "date": {
+                                                                        "type": [
+                                                                            "string",
+                                                                            "null"
+                                                                        ]
+                                                                    },
+                                                                    "partner": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "reference": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "amount": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "status": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "id",
+                                                                    "document_type",
+                                                                    "number",
+                                                                    "date",
+                                                                    "partner",
+                                                                    "reference",
+                                                                    "amount",
+                                                                    "status"
+                                                                ]
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "document_type": {
+                                                                        "type": "string",
+                                                                        "const": "bill"
+                                                                    },
+                                                                    "number": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "date": {
+                                                                        "type": [
+                                                                            "string",
+                                                                            "null"
+                                                                        ]
+                                                                    },
+                                                                    "partner": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "reference": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "amount": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "status": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "id",
+                                                                    "document_type",
+                                                                    "number",
+                                                                    "date",
+                                                                    "partner",
+                                                                    "reference",
+                                                                    "amount",
+                                                                    "status"
+                                                                ]
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "document_type": {
+                                                                        "type": "string",
+                                                                        "const": "delivery_order"
+                                                                    },
+                                                                    "number": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "date": {
+                                                                        "type": [
+                                                                            "string",
+                                                                            "null"
+                                                                        ]
+                                                                    },
+                                                                    "partner": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "reference": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "amount": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "status": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "id",
+                                                                    "document_type",
+                                                                    "number",
+                                                                    "date",
+                                                                    "partner",
+                                                                    "reference",
+                                                                    "amount",
+                                                                    "status"
+                                                                ]
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "document_type": {
+                                                                        "type": "string",
+                                                                        "const": "invoice"
+                                                                    },
+                                                                    "number": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "date": {
+                                                                        "type": [
+                                                                            "string",
+                                                                            "null"
+                                                                        ]
+                                                                    },
+                                                                    "partner": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "reference": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "amount": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "status": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "id",
+                                                                    "document_type",
+                                                                    "number",
+                                                                    "date",
+                                                                    "partner",
+                                                                    "reference",
+                                                                    "amount",
+                                                                    "status"
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                },
+                                                "totals": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "count": {
+                                                            "type": "integer",
+                                                            "minimum": 0
+                                                        },
+                                                        "amount": {
+                                                            "type": "integer"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "count",
+                                                        "amount"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "report_name",
+                                                "kind",
+                                                "as_of_date",
+                                                "rows",
+                                                "totals"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/reports/cutover/invoices-to-be-issued": {
+            "get": {
+                "operationId": "reports.cutover.invoices-to-be-issued",
+                "summary": "Period-end review: goods delivered, customer invoice not posted (Odoo Review \u203a Invoices to Be Issued)",
+                "tags": [
+                    "CutoverReview"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operasi berhasil."
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "report_name": {
+                                                    "type": "string"
+                                                },
+                                                "kind": {
+                                                    "type": "string",
+                                                    "const": "invoices-to-be-issued"
+                                                },
+                                                "as_of_date": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "rows": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "document_type": {
+                                                                        "type": "string",
+                                                                        "const": "grn"
+                                                                    },
+                                                                    "number": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "date": {
+                                                                        "type": [
+                                                                            "string",
+                                                                            "null"
+                                                                        ]
+                                                                    },
+                                                                    "partner": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "reference": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "amount": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "status": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "id",
+                                                                    "document_type",
+                                                                    "number",
+                                                                    "date",
+                                                                    "partner",
+                                                                    "reference",
+                                                                    "amount",
+                                                                    "status"
+                                                                ]
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "document_type": {
+                                                                        "type": "string",
+                                                                        "const": "bill"
+                                                                    },
+                                                                    "number": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "date": {
+                                                                        "type": [
+                                                                            "string",
+                                                                            "null"
+                                                                        ]
+                                                                    },
+                                                                    "partner": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "reference": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "amount": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "status": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "id",
+                                                                    "document_type",
+                                                                    "number",
+                                                                    "date",
+                                                                    "partner",
+                                                                    "reference",
+                                                                    "amount",
+                                                                    "status"
+                                                                ]
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "document_type": {
+                                                                        "type": "string",
+                                                                        "const": "delivery_order"
+                                                                    },
+                                                                    "number": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "date": {
+                                                                        "type": [
+                                                                            "string",
+                                                                            "null"
+                                                                        ]
+                                                                    },
+                                                                    "partner": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "reference": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "amount": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "status": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "id",
+                                                                    "document_type",
+                                                                    "number",
+                                                                    "date",
+                                                                    "partner",
+                                                                    "reference",
+                                                                    "amount",
+                                                                    "status"
+                                                                ]
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "document_type": {
+                                                                        "type": "string",
+                                                                        "const": "invoice"
+                                                                    },
+                                                                    "number": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "date": {
+                                                                        "type": [
+                                                                            "string",
+                                                                            "null"
+                                                                        ]
+                                                                    },
+                                                                    "partner": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "reference": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "amount": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "status": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "id",
+                                                                    "document_type",
+                                                                    "number",
+                                                                    "date",
+                                                                    "partner",
+                                                                    "reference",
+                                                                    "amount",
+                                                                    "status"
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                },
+                                                "totals": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "count": {
+                                                            "type": "integer",
+                                                            "minimum": 0
+                                                        },
+                                                        "amount": {
+                                                            "type": "integer"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "count",
+                                                        "amount"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "report_name",
+                                                "kind",
+                                                "as_of_date",
+                                                "rows",
+                                                "totals"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/reports/cutover/invoiced-not-delivered": {
+            "get": {
+                "operationId": "reports.cutover.invoiced-not-delivered",
+                "summary": "Period-end review: customer invoice posted, goods not delivered (Odoo Review \u203a Invoiced Not Delivered)",
+                "tags": [
+                    "CutoverReview"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operasi berhasil."
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "report_name": {
+                                                    "type": "string"
+                                                },
+                                                "kind": {
+                                                    "type": "string",
+                                                    "const": "invoiced-not-delivered"
+                                                },
+                                                "as_of_date": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "rows": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "document_type": {
+                                                                        "type": "string",
+                                                                        "const": "grn"
+                                                                    },
+                                                                    "number": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "date": {
+                                                                        "type": [
+                                                                            "string",
+                                                                            "null"
+                                                                        ]
+                                                                    },
+                                                                    "partner": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "reference": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "amount": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "status": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "id",
+                                                                    "document_type",
+                                                                    "number",
+                                                                    "date",
+                                                                    "partner",
+                                                                    "reference",
+                                                                    "amount",
+                                                                    "status"
+                                                                ]
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "document_type": {
+                                                                        "type": "string",
+                                                                        "const": "bill"
+                                                                    },
+                                                                    "number": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "date": {
+                                                                        "type": [
+                                                                            "string",
+                                                                            "null"
+                                                                        ]
+                                                                    },
+                                                                    "partner": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "reference": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "amount": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "status": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "id",
+                                                                    "document_type",
+                                                                    "number",
+                                                                    "date",
+                                                                    "partner",
+                                                                    "reference",
+                                                                    "amount",
+                                                                    "status"
+                                                                ]
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "document_type": {
+                                                                        "type": "string",
+                                                                        "const": "delivery_order"
+                                                                    },
+                                                                    "number": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "date": {
+                                                                        "type": [
+                                                                            "string",
+                                                                            "null"
+                                                                        ]
+                                                                    },
+                                                                    "partner": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "reference": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "amount": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "status": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "id",
+                                                                    "document_type",
+                                                                    "number",
+                                                                    "date",
+                                                                    "partner",
+                                                                    "reference",
+                                                                    "amount",
+                                                                    "status"
+                                                                ]
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "document_type": {
+                                                                        "type": "string",
+                                                                        "const": "invoice"
+                                                                    },
+                                                                    "number": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "date": {
+                                                                        "type": [
+                                                                            "string",
+                                                                            "null"
+                                                                        ]
+                                                                    },
+                                                                    "partner": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "reference": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "amount": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "status": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "id",
+                                                                    "document_type",
+                                                                    "number",
+                                                                    "date",
+                                                                    "partner",
+                                                                    "reference",
+                                                                    "amount",
+                                                                    "status"
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                },
+                                                "totals": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "count": {
+                                                            "type": "integer",
+                                                            "minimum": 0
+                                                        },
+                                                        "amount": {
+                                                            "type": "integer"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "count",
+                                                        "amount"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "report_name",
+                                                "kind",
+                                                "as_of_date",
+                                                "rows",
+                                                "totals"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/dashboard/summary": {
             "get": {
                 "operationId": "dashboard.summary",

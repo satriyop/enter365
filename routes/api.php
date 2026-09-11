@@ -59,6 +59,7 @@ use App\Http\Controllers\Api\V1\Reports\AgingReportController;
 use App\Http\Controllers\Api\V1\Reports\BankReconciliationReportController;
 use App\Http\Controllers\Api\V1\Reports\CashFlowReportController;
 use App\Http\Controllers\Api\V1\Reports\CogsReportController;
+use App\Http\Controllers\Api\V1\Reports\CutoverReviewController;
 use App\Http\Controllers\Api\V1\Reports\FinancialReportController;
 use App\Http\Controllers\Api\V1\Reports\ManufacturingReportController;
 use App\Http\Controllers\Api\V1\Reports\ProjectReportController;
@@ -666,6 +667,11 @@ Route::prefix('v1')->group(function () {
 
             // Equity Reports
             Route::get('changes-in-equity', [FinancialReportController::class, 'changesInEquity'])->name('reports.changes-in-equity');
+
+            Route::get('cutover/bill-to-receive', [CutoverReviewController::class, 'billToReceive'])->name('reports.cutover.bill-to-receive');
+            Route::get('cutover/billed-not-received', [CutoverReviewController::class, 'billedNotReceived'])->name('reports.cutover.billed-not-received');
+            Route::get('cutover/invoices-to-be-issued', [CutoverReviewController::class, 'invoicesToBeIssued'])->name('reports.cutover.invoices-to-be-issued');
+            Route::get('cutover/invoiced-not-delivered', [CutoverReviewController::class, 'invoicedNotDelivered'])->name('reports.cutover.invoiced-not-delivered');
 
             // Bank Reconciliation Reports (pack: bank_reconciliation)
             Route::middleware('feature:bank_reconciliation')->group(function () {
