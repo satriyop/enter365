@@ -19,6 +19,12 @@ class AnalyticAccountResource extends JsonResource
             'id' => $this->id,
             'code' => $this->code,
             'name' => $this->name,
+            'analytic_plan_id' => $this->analytic_plan_id,
+            'plan' => $this->whenLoaded('plan', fn () => $this->plan === null ? null : [
+                'id' => $this->plan->id,
+                'code' => $this->plan->code,
+                'name' => $this->plan->name,
+            ]),
             'is_active' => $this->is_active,
         ];
     }

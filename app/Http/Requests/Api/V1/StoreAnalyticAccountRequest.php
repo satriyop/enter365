@@ -26,6 +26,7 @@ class StoreAnalyticAccountRequest extends FormRequest
         return [
             'code' => ['required', 'string', 'max:30', 'unique:analytic_accounts,code'],
             'name' => ['required', 'string', 'max:200'],
+            'analytic_plan_id' => ['nullable', 'integer', 'exists:analytic_plans,id'],
             'is_active' => ['boolean'],
         ];
     }

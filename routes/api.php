@@ -5,6 +5,10 @@ use App\Http\Controllers\Api\PublicCompanyProfileController;
 use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\AccountingPolicyController;
 use App\Http\Controllers\Api\V1\AnalyticAccountController;
+use App\Http\Controllers\Api\V1\AnalyticBudgetController;
+use App\Http\Controllers\Api\V1\AnalyticDistributionModelController;
+use App\Http\Controllers\Api\V1\AnalyticItemController;
+use App\Http\Controllers\Api\V1\AnalyticPlanController;
 use App\Http\Controllers\Api\V1\AssetModelController;
 use App\Http\Controllers\Api\V1\AttachmentController;
 use App\Http\Controllers\Api\V1\AuthController;
@@ -265,6 +269,11 @@ Route::prefix('v1')->group(function () {
         Route::post('payment-terms/{payment_term}/preview', [\App\Http\Controllers\Api\V1\PaymentTermController::class, 'preview']);
 
         Route::apiResource('analytic-accounts', AnalyticAccountController::class)->except(['destroy']);
+        Route::apiResource('analytic-plans', AnalyticPlanController::class);
+        Route::get('analytic-distribution-models/match', [AnalyticDistributionModelController::class, 'match']);
+        Route::apiResource('analytic-distribution-models', AnalyticDistributionModelController::class);
+        Route::get('analytic-items', [AnalyticItemController::class, 'index']);
+        Route::apiResource('analytic-budgets', AnalyticBudgetController::class);
         Route::apiResource('tax-tags', TaxTagController::class)->except(['destroy']);
 
         // Journal Entries (Jurnal Umum)
