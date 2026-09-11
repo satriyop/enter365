@@ -130,6 +130,45 @@ describe('Purchase Order CRUD', function () {
             ->assertJsonPath('data.total_amount', 2775000);
     });
 
+    it('persists priced-line totals so list and detail amount are not zero', function () {
+        $vendor = Contact::factory()->vendor()->create();
+
+        $create = $this->postJson('/api/v1/purchase-orders', [
+            'contact_id' => $vendor->id,
+            'po_date' => '2026-09-09',
+            'items' => [
+                [
+                    'description' => 'KT57-AIR - Air Mineral',
+                    'quantity' => 1,
+                    'unit' => 'pcs',
+                    'unit_price' => 2432,
+                    'tax_rate' => 11,
+                ],
+            ],
+        ]);
+
+        $create->assertCreated()
+            ->assertJsonPath('data.total_amount', 2700);
+
+        $id = $create->json('data.id');
+        $expectedTotal = (int) $create->json('data.total_amount');
+        expect($expectedTotal)->toBeGreaterThan(0);
+
+        $this->getJson("/api/v1/purchase-orders/{$id}")
+            ->assertOk()
+            ->assertJsonPath('data.total_amount', $expectedTotal)
+            ->assertJsonPath('data.subtotal', 2432);
+
+        $this->getJson('/api/v1/purchase-orders?search='.$create->json('data.po_number'))
+            ->assertOk()
+            ->assertJsonPath('data.0.total_amount', $expectedTotal);
+
+        $this->assertDatabaseHas('purchase_orders', [
+            'id' => $id,
+            'total_amount' => $expectedTotal,
+        ]);
+    });
+
     it('validates required fields when creating purchase order', function () {
         $response = $this->postJson('/api/v1/purchase-orders', []);
 
