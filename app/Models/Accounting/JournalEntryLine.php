@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $description
  * @property int $debit
  * @property int $credit
+ * @property int $reconciled_amount
  * @property int|null $balance
  * @property string|null $currency_code
  * @property int|null $amount_currency
@@ -31,6 +32,13 @@ class JournalEntryLine extends Model
 {
     use HasFactory;
 
+    /**
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'reconciled_amount' => 0,
+    ];
+
     protected $fillable = [
         'journal_entry_id',
         'account_id',
@@ -40,6 +48,7 @@ class JournalEntryLine extends Model
         'description',
         'debit',
         'credit',
+        'reconciled_amount',
         'currency_code',
         'amount_currency',
         'exchange_rate',
@@ -50,6 +59,7 @@ class JournalEntryLine extends Model
         return [
             'debit' => 'integer',
             'credit' => 'integer',
+            'reconciled_amount' => 'integer',
             'amount_currency' => 'integer',
             'exchange_rate' => 'decimal:4',
             'analytic_distribution' => AnalyticDistributionCast::class,
@@ -96,5 +106,15 @@ class JournalEntryLine extends Model
     public function partner(): BelongsTo
     {
         return $this->belongsTo(Contact::class, 'partner_id');
+    }
+
+    public function isDebit(): bool
+    {
+        return (int) $this->debit > 0;
+    }
+
+    public function residualAmount(): int
+    {
+        return max(0, ((int) $this->debit + (int) $this->credit) - (int) $this->reconciled_amount);
     }
 }

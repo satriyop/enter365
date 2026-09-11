@@ -4,6 +4,8 @@ use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\PublicCompanyProfileController;
 use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\AccountingPolicyController;
+use App\Http\Controllers\Api\V1\AccountingTransferController;
+use App\Http\Controllers\Api\V1\AccountReconcileController;
 use App\Http\Controllers\Api\V1\AnalyticAccountController;
 use App\Http\Controllers\Api\V1\AnalyticBudgetController;
 use App\Http\Controllers\Api\V1\AnalyticDistributionModelController;
@@ -267,6 +269,16 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('payment-providers', \App\Http\Controllers\Api\V1\PaymentProviderController::class)->except(['destroy']);
         Route::apiResource('checks', \App\Http\Controllers\Api\V1\CheckSettingController::class)->except(['destroy']);
         Route::post('payment-terms/{payment_term}/preview', [\App\Http\Controllers\Api\V1\PaymentTermController::class, 'preview']);
+
+        Route::apiResource('accounting-transfers', AccountingTransferController::class);
+        Route::post('accounting-transfers/{accountingTransfer}/post', [AccountingTransferController::class, 'post']);
+        Route::post('accounting-transfers/{accountingTransfer}/cancel', [AccountingTransferController::class, 'cancel']);
+        Route::get('reconcile/accounts', [AccountReconcileController::class, 'accounts']);
+        Route::get('reconcile/lines', [AccountReconcileController::class, 'lines']);
+        Route::post('reconcile/{accountReconciliation}/unreconcile', [AccountReconcileController::class, 'unreconcile']);
+        Route::apiResource('reconcile', AccountReconcileController::class)
+            ->parameters(['reconcile' => 'accountReconciliation'])
+            ->except(['update', 'destroy']);
 
         Route::apiResource('analytic-accounts', AnalyticAccountController::class)->except(['destroy']);
         Route::apiResource('analytic-plans', AnalyticPlanController::class);

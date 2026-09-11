@@ -42,6 +42,8 @@ class JournalEntry extends Model
 
     public const SOURCE_DEFERRED_ENTRY = 'deferred_entry';
 
+    public const SOURCE_ACCOUNTING_TRANSFER = 'accounting_transfer';
+
     protected $fillable = [
         'entry_number',
         'journal_id',
