@@ -1,0 +1,173 @@
+# JourneyCatalog — ordered PagePairs for Odoo ↔ enter365 UI/UX/behavior parity.
+# Odoo is read-only always. Paths are from live walks on enterkode.odoo.com
+# (Odoo 18+ readable /odoo URLs) and enter365 SPA routes in this repo.
+#
+# Path templates: {id} is substituted from PARITY_<PAIR_ID>_ODOO_ID /
+# PARITY_<PAIR_ID>_ENTER365_ID (or PARITY_<PAIR_ID>_ID). Leave unresolved
+# to still navigate; the runner records a gap.
+#
+# Live evidence: app switcher, CoA, invoices, quotation S00016, purchase RFQ,
+# vendor bills, stock, accounting reporting menu.
+
+pairs:
+  - id: post-login
+    journey: home
+    title: Post-login apps home
+    odoo.path: /odoo
+    enter365.path: /
+    compare:
+      - chrome
+      - labels
+      - actions
+    role: accountant
+
+  - id: chart-of-accounts
+    journey: accounting
+    title: Chart of Accounts list
+    odoo.path: /odoo/accounting/account.account
+    enter365.path: /accounting/accounts
+    compare:
+      - chrome
+      - filters
+      - columns
+      - badges
+      - actions
+      - labels
+    role: accountant
+
+  - id: customer-invoices
+    journey: accounting
+    title: Customer invoices list
+    odoo.path: /odoo/accounting/account.move
+    enter365.path: /invoices
+    compare:
+      - chrome
+      - filters
+      - columns
+      - badges
+      - actions
+      - status_workflow
+      - labels
+    role: accountant
+
+  - id: quotation-detail
+    journey: sales
+    title: Quotation / sales order detail
+    odoo.path: /odoo/sales/{id}
+    enter365.path: /quotations/{id}
+    compare:
+      - chrome
+      - columns
+      - badges
+      - actions
+      - status_workflow
+      - labels
+    role: sales
+
+  - id: purchase-rfq
+    journey: purchasing
+    title: Purchase RFQ / PO list
+    odoo.path: /odoo/purchase
+    enter365.path: /purchasing/purchase-orders
+    compare:
+      - chrome
+      - filters
+      - columns
+      - badges
+      - actions
+      - status_workflow
+      - labels
+    role: purchase
+
+  - id: vendor-bills
+    journey: accounting
+    title: Vendor bills list
+    odoo.path: "/web#action=account.action_move_in_invoice_type&model=account.move&view_type=list"
+    enter365.path: /bills
+    compare:
+      - chrome
+      - filters
+      - columns
+      - badges
+      - actions
+      - status_workflow
+      - labels
+    role: accountant
+
+  - id: stock-report
+    journey: inventory
+    title: Stock / inventory report
+    odoo.path: /odoo/inventory/stock.quant
+    enter365.path: /reports/stock-summary
+    compare:
+      - chrome
+      - filters
+      - columns
+      - actions
+      - labels
+    role: warehouse
+
+  - id: accounting-reports
+    journey: accounting
+    title: Accounting reporting menu
+    odoo.path: /odoo/accounting
+    enter365.path: /reports
+    compare:
+      - chrome
+      - actions
+      - labels
+    role: accountant
+
+  - id: contacts
+    journey: contacts
+    title: Contacts list
+    odoo.path: /odoo/contacts
+    enter365.path: /contacts
+    compare:
+      - chrome
+      - filters
+      - columns
+      - actions
+      - labels
+
+  - id: products
+    journey: products
+    title: Products list
+    odoo.path: /odoo/inventory/product.template
+    enter365.path: /products
+    compare:
+      - chrome
+      - filters
+      - columns
+      - badges
+      - actions
+      - labels
+
+  - id: delivery-orders
+    journey: sales
+    title: Delivery orders list
+    odoo.path: /odoo/inventory/stock.picking
+    enter365.path: /sales/delivery-orders
+    compare:
+      - chrome
+      - filters
+      - columns
+      - badges
+      - actions
+      - status_workflow
+      - labels
+
+  - id: payments
+    journey: accounting
+    title: Payments list
+    odoo.path: /odoo/accounting/account.payment
+    enter365.path: /payments
+    compare:
+      - chrome
+      - filters
+      - columns
+      - badges
+      - actions
+      - status_workflow
+      - labels
+    role: accountant

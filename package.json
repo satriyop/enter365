@@ -4,7 +4,9 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "parity": "node scripts/parity/compare.mjs",
+        "parity:dry-run": "node scripts/parity/compare.mjs --dry-run"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",
