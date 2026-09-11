@@ -131,6 +131,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(\App\Contracts\Accounting\AccountingTransferServiceInterface::class, \App\Services\Accounting\AccountingTransferService::class);
         $this->app->bind(\App\Contracts\Accounting\AccountReconcileServiceInterface::class, \App\Services\Accounting\AccountReconcileService::class);
         $this->app->bind(\App\Contracts\Accounting\AccountingConfigServiceInterface::class, \App\Services\Accounting\AccountingConfigService::class);
+        $this->app->bind(\App\Contracts\Accounting\EmployeeExpenseServiceInterface::class, \App\Services\Accounting\EmployeeExpenseService::class);
         $this->app->bind(\App\Contracts\Accounting\BankReconciliationServiceInterface::class, \App\Services\Accounting\BankReconciliationService::class);
         $this->app->bind(\App\Contracts\Accounting\YearEndCloseServiceInterface::class, \App\Services\Accounting\YearEndCloseService::class);
         $this->app->bind(\App\Contracts\Accounting\FxRevaluationServiceInterface::class, \App\Services\Accounting\FxRevaluationService::class);
@@ -469,6 +470,8 @@ class AppServiceProvider extends ServiceProvider
             'currency' => \App\Models\Accounting\Currency::class,
             'cash_rounding' => \App\Models\Accounting\CashRounding::class,
             'accounting_ledger' => \App\Models\Accounting\AccountingLedger::class,
+            'follow_up_level' => \App\Models\Accounting\FollowUpLevel::class,
+            'employee_expense' => \App\Models\Accounting\EmployeeExpense::class,
 
             // Projects Domain
             'project' => \App\Models\Projects\Project::class,

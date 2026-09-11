@@ -44,6 +44,8 @@ class JournalEntry extends Model
 
     public const SOURCE_ACCOUNTING_TRANSFER = 'accounting_transfer';
 
+    public const SOURCE_EMPLOYEE_EXPENSE = 'employee_expense';
+
     protected $fillable = [
         'entry_number',
         'journal_id',

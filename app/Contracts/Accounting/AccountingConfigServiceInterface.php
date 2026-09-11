@@ -5,6 +5,7 @@ namespace App\Contracts\Accounting;
 use App\Models\Accounting\AccountingLedger;
 use App\Models\Accounting\CashRounding;
 use App\Models\Accounting\Currency;
+use App\Models\Accounting\FollowUpLevel;
 
 interface AccountingConfigServiceInterface
 {
@@ -43,4 +44,16 @@ interface AccountingConfigServiceInterface
     public function updateLedger(AccountingLedger $ledger, array $data): AccountingLedger;
 
     public function deleteLedger(AccountingLedger $ledger): void;
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function createFollowUpLevel(array $data): FollowUpLevel;
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function updateFollowUpLevel(FollowUpLevel $level, array $data): FollowUpLevel;
+
+    public function deleteFollowUpLevel(FollowUpLevel $level): void;
 }
