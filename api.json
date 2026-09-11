@@ -1017,6 +1017,943 @@
                 }
             }
         },
+        "/reports/tax-returns": {
+            "get": {
+                "operationId": "reports.tax-returns",
+                "summary": "Monthly VAT filing workspace (Odoo Accounting \u203a Tax Returns)",
+                "tags": [
+                    "AccountingAnalysis"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operasi berhasil."
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "report_name": {
+                                                    "type": "string",
+                                                    "const": "Tax Returns"
+                                                },
+                                                "year": {
+                                                    "type": "integer"
+                                                },
+                                                "rows": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "period": {
+                                                                "type": "string"
+                                                            },
+                                                            "month": {
+                                                                "type": "integer",
+                                                                "const": 1
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            },
+                                                            "output_count": {
+                                                                "type": "string"
+                                                            },
+                                                            "output_base": {
+                                                                "type": "string"
+                                                            },
+                                                            "output_tax": {
+                                                                "type": "string"
+                                                            },
+                                                            "input_count": {
+                                                                "type": "string"
+                                                            },
+                                                            "input_base": {
+                                                                "type": "string"
+                                                            },
+                                                            "input_tax": {
+                                                                "type": "string"
+                                                            },
+                                                            "net_tax": {
+                                                                "type": "string"
+                                                            },
+                                                            "status": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "balanced",
+                                                                    "to_file",
+                                                                    "nil"
+                                                                ]
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "period",
+                                                            "month",
+                                                            "name",
+                                                            "output_count",
+                                                            "output_base",
+                                                            "output_tax",
+                                                            "input_count",
+                                                            "input_base",
+                                                            "input_tax",
+                                                            "net_tax",
+                                                            "status"
+                                                        ]
+                                                    }
+                                                },
+                                                "totals": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "output_tax": {
+                                                            "type": "integer"
+                                                        },
+                                                        "input_tax": {
+                                                            "type": "integer"
+                                                        },
+                                                        "net_tax": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "output_tax",
+                                                        "input_tax",
+                                                        "net_tax"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "report_name",
+                                                "year",
+                                                "rows",
+                                                "totals"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/reports/review/unrealized-currencies": {
+            "get": {
+                "operationId": "reports.review.unrealized-currencies",
+                "summary": "Open foreign-currency AR/AP vs closing rate (Odoo Review \u203a Unrealized Currencies)",
+                "tags": [
+                    "AccountingAnalysis"
+                ],
+                "parameters": [
+                    {
+                        "name": "rates",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operasi berhasil."
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "report_name": {
+                                                    "type": "string",
+                                                    "const": "Unrealized Currencies"
+                                                },
+                                                "as_of_date": {
+                                                    "type": "string"
+                                                },
+                                                "closing_rates": {
+                                                    "type": "string"
+                                                },
+                                                "rows": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "type": {
+                                                                        "type": "string",
+                                                                        "const": "invoice"
+                                                                    },
+                                                                    "reference": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "currency": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "outstanding": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "booked_rate": {
+                                                                        "type": "number"
+                                                                    },
+                                                                    "closing_rate": {
+                                                                        "type": "number"
+                                                                    },
+                                                                    "booked_base": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "revalued_base": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "unrealized_fx": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "type",
+                                                                    "reference",
+                                                                    "currency",
+                                                                    "outstanding",
+                                                                    "booked_rate",
+                                                                    "closing_rate",
+                                                                    "booked_base",
+                                                                    "revalued_base",
+                                                                    "unrealized_fx"
+                                                                ]
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "type": {
+                                                                        "type": "string",
+                                                                        "const": "bill"
+                                                                    },
+                                                                    "reference": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "currency": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "outstanding": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "booked_rate": {
+                                                                        "type": "number"
+                                                                    },
+                                                                    "closing_rate": {
+                                                                        "type": "number"
+                                                                    },
+                                                                    "booked_base": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "revalued_base": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "unrealized_fx": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "type",
+                                                                    "reference",
+                                                                    "currency",
+                                                                    "outstanding",
+                                                                    "booked_rate",
+                                                                    "closing_rate",
+                                                                    "booked_base",
+                                                                    "revalued_base",
+                                                                    "unrealized_fx"
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                },
+                                                "totals": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "count": {
+                                                            "type": "integer"
+                                                        },
+                                                        "total_gain": {
+                                                            "type": "integer"
+                                                        },
+                                                        "total_loss": {
+                                                            "type": "integer"
+                                                        },
+                                                        "net": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "count",
+                                                        "total_gain",
+                                                        "total_loss",
+                                                        "net"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "report_name",
+                                                "as_of_date",
+                                                "closing_rates",
+                                                "rows",
+                                                "totals"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/reports/invoice-analysis": {
+            "get": {
+                "operationId": "reports.invoice-analysis",
+                "summary": "Posted invoice analysis (Odoo Reporting \u203a Invoice Analysis)",
+                "tags": [
+                    "AccountingAnalysis"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operasi berhasil."
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "report_name": {
+                                                    "type": "string",
+                                                    "const": "Invoice Analysis"
+                                                },
+                                                "group_by": {
+                                                    "type": "string"
+                                                },
+                                                "from": {
+                                                    "type": "string"
+                                                },
+                                                "to": {
+                                                    "type": "string"
+                                                },
+                                                "rows": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                },
+                                                "totals": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "count": {
+                                                            "type": "integer"
+                                                        },
+                                                        "subtotal": {
+                                                            "type": "integer"
+                                                        },
+                                                        "tax_amount": {
+                                                            "type": "integer"
+                                                        },
+                                                        "total_amount": {
+                                                            "type": "integer"
+                                                        },
+                                                        "paid_amount": {
+                                                            "type": "integer"
+                                                        },
+                                                        "outstanding": {
+                                                            "type": "integer"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "count",
+                                                        "subtotal",
+                                                        "tax_amount",
+                                                        "total_amount",
+                                                        "paid_amount",
+                                                        "outstanding"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "report_name",
+                                                "group_by",
+                                                "from",
+                                                "to",
+                                                "rows",
+                                                "totals"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/reports/analytic-report": {
+            "get": {
+                "operationId": "reports.analytic-report",
+                "summary": "Analytic profitability from posted journal distributions (Odoo Reporting \u203a Analytic Report)",
+                "tags": [
+                    "AccountingAnalysis"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operasi berhasil."
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "report_name": {
+                                                    "type": "string",
+                                                    "const": "Analytic Report"
+                                                },
+                                                "from": {
+                                                    "type": "string"
+                                                },
+                                                "to": {
+                                                    "type": "string"
+                                                },
+                                                "rows": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "analytic_account_id": {
+                                                                "type": "string"
+                                                            },
+                                                            "code": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "name": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "income": {
+                                                                "type": "string"
+                                                            },
+                                                            "expense": {
+                                                                "type": "string"
+                                                            },
+                                                            "amount": {
+                                                                "type": "string"
+                                                            },
+                                                            "debit": {
+                                                                "type": "string"
+                                                            },
+                                                            "credit": {
+                                                                "type": "string"
+                                                            },
+                                                            "balance": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "analytic_account_id",
+                                                            "code",
+                                                            "name",
+                                                            "income",
+                                                            "expense",
+                                                            "amount",
+                                                            "debit",
+                                                            "credit",
+                                                            "balance"
+                                                        ]
+                                                    }
+                                                },
+                                                "totals": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "debit": {
+                                                            "type": "integer"
+                                                        },
+                                                        "credit": {
+                                                            "type": "integer"
+                                                        },
+                                                        "amount": {
+                                                            "type": "integer"
+                                                        },
+                                                        "income": {
+                                                            "type": "integer"
+                                                        },
+                                                        "expense": {
+                                                            "type": "integer"
+                                                        },
+                                                        "balance": {
+                                                            "type": "integer"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "debit",
+                                                        "credit",
+                                                        "amount",
+                                                        "income",
+                                                        "expense",
+                                                        "balance"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "report_name",
+                                                "from",
+                                                "to",
+                                                "rows",
+                                                "totals"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/reports/executive-summary": {
+            "get": {
+                "operationId": "reports.executive-summary",
+                "summary": "Period KPI pack (Odoo Reporting \u203a Executive Summary)",
+                "tags": [
+                    "AccountingAnalysis"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operasi berhasil."
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "report_name": {
+                                                    "type": "string",
+                                                    "const": "Executive Summary"
+                                                },
+                                                "from": {
+                                                    "type": "string"
+                                                },
+                                                "to": {
+                                                    "type": "string"
+                                                },
+                                                "kpis": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "sales_total": {
+                                                            "type": "integer"
+                                                        },
+                                                        "sales_count": {
+                                                            "type": "integer"
+                                                        },
+                                                        "sales_tax": {
+                                                            "type": "integer"
+                                                        },
+                                                        "purchase_total": {
+                                                            "type": "integer"
+                                                        },
+                                                        "purchase_count": {
+                                                            "type": "integer"
+                                                        },
+                                                        "purchase_tax": {
+                                                            "type": "integer"
+                                                        },
+                                                        "net_operating": {
+                                                            "type": "string"
+                                                        },
+                                                        "receivable_outstanding": {
+                                                            "type": "integer"
+                                                        },
+                                                        "payable_outstanding": {
+                                                            "type": "integer"
+                                                        },
+                                                        "cash_balance": {
+                                                            "type": "integer"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "sales_total",
+                                                        "sales_count",
+                                                        "sales_tax",
+                                                        "purchase_total",
+                                                        "purchase_count",
+                                                        "purchase_tax",
+                                                        "net_operating",
+                                                        "receivable_outstanding",
+                                                        "payable_outstanding",
+                                                        "cash_balance"
+                                                    ]
+                                                },
+                                                "rows": {
+                                                    "type": "array",
+                                                    "prefixItems": [
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "label": {
+                                                                    "type": "string",
+                                                                    "const": "Sales"
+                                                                },
+                                                                "amount": {
+                                                                    "type": "integer"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "label",
+                                                                "amount"
+                                                            ]
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "label": {
+                                                                    "type": "string",
+                                                                    "const": "Purchases"
+                                                                },
+                                                                "amount": {
+                                                                    "type": "integer"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "label",
+                                                                "amount"
+                                                            ]
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "label": {
+                                                                    "type": "string",
+                                                                    "const": "Net operating"
+                                                                },
+                                                                "amount": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "label",
+                                                                "amount"
+                                                            ]
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "label": {
+                                                                    "type": "string",
+                                                                    "const": "Receivables"
+                                                                },
+                                                                "amount": {
+                                                                    "type": "integer"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "label",
+                                                                "amount"
+                                                            ]
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "label": {
+                                                                    "type": "string",
+                                                                    "const": "Payables"
+                                                                },
+                                                                "amount": {
+                                                                    "type": "integer"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "label",
+                                                                "amount"
+                                                            ]
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "label": {
+                                                                    "type": "string",
+                                                                    "const": "Cash"
+                                                                },
+                                                                "amount": {
+                                                                    "type": "integer"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "label",
+                                                                "amount"
+                                                            ]
+                                                        }
+                                                    ],
+                                                    "minItems": 6,
+                                                    "maxItems": 6,
+                                                    "additionalItems": false
+                                                }
+                                            },
+                                            "required": [
+                                                "report_name",
+                                                "from",
+                                                "to",
+                                                "kpis",
+                                                "rows"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/reports/budget-report": {
+            "get": {
+                "operationId": "reports.budget-report",
+                "summary": "Company budgets vs posted actuals (Odoo Reporting \u203a Budget Report)",
+                "tags": [
+                    "AccountingAnalysis"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operasi berhasil."
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "report_name": {
+                                                    "type": "string",
+                                                    "const": "Budget Report"
+                                                },
+                                                "as_of_date": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "rows": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer"
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            },
+                                                            "type": {
+                                                                "type": "string"
+                                                            },
+                                                            "status": {
+                                                                "type": "string"
+                                                            },
+                                                            "period_name": {
+                                                                "type": "string"
+                                                            },
+                                                            "budgeted_revenue": {
+                                                                "type": "integer"
+                                                            },
+                                                            "actual_revenue": {
+                                                                "type": "integer"
+                                                            },
+                                                            "revenue_variance": {
+                                                                "type": "string"
+                                                            },
+                                                            "budgeted_expense": {
+                                                                "type": "integer"
+                                                            },
+                                                            "actual_expense": {
+                                                                "type": "integer"
+                                                            },
+                                                            "expense_variance": {
+                                                                "type": "string"
+                                                            },
+                                                            "net_budget": {
+                                                                "type": "integer"
+                                                            },
+                                                            "net_actual": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "id",
+                                                            "name",
+                                                            "type",
+                                                            "status",
+                                                            "period_name",
+                                                            "budgeted_revenue",
+                                                            "actual_revenue",
+                                                            "revenue_variance",
+                                                            "budgeted_expense",
+                                                            "actual_expense",
+                                                            "expense_variance",
+                                                            "net_budget",
+                                                            "net_actual"
+                                                        ]
+                                                    }
+                                                },
+                                                "totals": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "budgeted_revenue": {
+                                                            "type": "integer"
+                                                        },
+                                                        "actual_revenue": {
+                                                            "type": "integer"
+                                                        },
+                                                        "budgeted_expense": {
+                                                            "type": "integer"
+                                                        },
+                                                        "actual_expense": {
+                                                            "type": "integer"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "budgeted_revenue",
+                                                        "actual_revenue",
+                                                        "budgeted_expense",
+                                                        "actual_expense"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "report_name",
+                                                "as_of_date",
+                                                "rows",
+                                                "totals"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/accounting-ledgers": {
             "get": {
                 "operationId": "accounting-ledgers.index",

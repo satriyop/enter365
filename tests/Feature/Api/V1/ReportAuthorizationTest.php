@@ -25,6 +25,11 @@ describe('Report authorization - forbidden without permission', function () {
             '/api/v1/reports/general-ledger',
             '/api/v1/reports/partner-ledger',
             '/api/v1/reports/changes-in-equity',
+            '/api/v1/reports/invoice-analysis',
+            '/api/v1/reports/analytic-report',
+            '/api/v1/reports/executive-summary',
+            '/api/v1/reports/budget-report',
+            '/api/v1/reports/review/unrealized-currencies',
         ];
 
         foreach ($financialEndpoints as $endpoint) {
@@ -41,6 +46,7 @@ describe('Report authorization - forbidden without permission', function () {
             '/api/v1/reports/ppn-monthly',
             '/api/v1/reports/tax-invoice-list',
             '/api/v1/reports/input-tax-list',
+            '/api/v1/reports/tax-returns',
         ];
 
         foreach ($taxEndpoints as $endpoint) {
