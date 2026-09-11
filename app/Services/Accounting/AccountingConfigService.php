@@ -11,6 +11,7 @@ use App\Exceptions\Domain\BusinessRuleException;
 use App\Models\Accounting\AccountingLedger;
 use App\Models\Accounting\CashRounding;
 use App\Models\Accounting\Currency;
+use App\Models\Accounting\FollowUpLevel;
 use App\Services\Base\BaseService;
 use Illuminate\Support\Arr;
 
@@ -137,6 +138,35 @@ class AccountingConfigService extends BaseService implements AccountingConfigSer
 
     /**
      * @param  array<string, mixed>  $data
+     */
+    public function createFollowUpLevel(array $data): FollowUpLevel
+    {
+        return $this->executeInTransaction('create_follow_up_level', function () use ($data) {
+            return FollowUpLevel::query()->create($this->followUpPayload($data));
+        }, ['name' => $data['name'] ?? null]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function updateFollowUpLevel(FollowUpLevel $level, array $data): FollowUpLevel
+    {
+        return $this->executeInTransaction('update_follow_up_level', function () use ($level, $data) {
+            $level->update($this->followUpPayload($data));
+
+            return $level->fresh() ?? $level;
+        }, ['follow_up_level_id' => $level->id]);
+    }
+
+    public function deleteFollowUpLevel(FollowUpLevel $level): void
+    {
+        $this->executeInTransaction('delete_follow_up_level', function () use ($level) {
+            $level->delete();
+        }, ['follow_up_level_id' => $level->id]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
     private function currencyPayload(array $data, ?Currency $existing = null): array
@@ -199,6 +229,24 @@ class AccountingConfigService extends BaseService implements AccountingConfigSer
     {
         AccountingLedger::query()->where('id', '!=', $ledger->id)->where('is_default', true)->update([
             'is_default' => false,
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function followUpPayload(array $data): array
+    {
+        return Arr::only($data, [
+            'name',
+            'delay_days',
+            'sequence',
+            'send_email',
+            'join_invoices',
+            'message',
+            'is_active',
+            'notes',
         ]);
     }
 }

@@ -5,6 +5,7 @@ namespace App\Services\Sales;
 use App\Contracts\Shared\ReminderServiceInterface;
 use App\Enums\DocumentStatus;
 use App\Exceptions\Domain\BusinessRuleException;
+use App\Models\Accounting\FollowUpLevel;
 use App\Models\Purchasing\Bill;
 use App\Models\Sales\Invoice;
 use App\Models\Shared\PaymentReminder;
@@ -31,34 +32,29 @@ class ReminderService implements ReminderServiceInterface
         }
 
         $reminders = collect();
-        $intervals = config('accounting.overdue.reminder_intervals', [1, 7, 14, 30]);
 
-        // Create upcoming reminder (before due date)
-        $upcomingDate = $invoice->due_date->copy()->subDays(3);
-        if ($upcomingDate->isFuture()) {
+        foreach ($this->followUpOffsets() as $days) {
+            $scheduled = $invoice->due_date->copy()->addDays($days);
+            if ($days < 0 && ! $scheduled->isFuture()) {
+                continue;
+            }
+
+            $channel = PaymentReminder::CHANNEL_EMAIL;
+            $level = FollowUpLevel::query()->where('is_active', true)->where('delay_days', $days)->first();
+            if ($level !== null && ! $level->send_email) {
+                $channel = PaymentReminder::CHANNEL_DATABASE;
+            }
+
             $reminders->push(PaymentReminder::create([
                 'remindable_type' => Invoice::class,
                 'remindable_id' => $invoice->id,
                 'contact_id' => $invoice->contact_id,
-                'type' => PaymentReminder::TYPE_UPCOMING,
-                'days_offset' => -3,
-                'scheduled_date' => $upcomingDate,
-                'status' => PaymentReminder::STATUS_PENDING,
-                'channel' => PaymentReminder::CHANNEL_EMAIL,
-            ]));
-        }
-
-        // Create overdue reminders
-        foreach ($intervals as $days) {
-            $reminders->push(PaymentReminder::create([
-                'remindable_type' => Invoice::class,
-                'remindable_id' => $invoice->id,
-                'contact_id' => $invoice->contact_id,
-                'type' => $days >= 30 ? PaymentReminder::TYPE_FINAL_NOTICE : PaymentReminder::TYPE_OVERDUE,
+                'type' => $this->reminderTypeForDelay($days),
                 'days_offset' => $days,
-                'scheduled_date' => $invoice->due_date->copy()->addDays($days),
+                'scheduled_date' => $scheduled,
                 'status' => PaymentReminder::STATUS_PENDING,
-                'channel' => PaymentReminder::CHANNEL_EMAIL,
+                'channel' => $channel,
+                'message' => $level?->message,
             ]));
         }
 
@@ -247,5 +243,35 @@ class ReminderService implements ReminderServiceInterface
         $this->sendReminder($reminder);
 
         return $reminder->fresh(['remindable', 'contact']) ?? $reminder;
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function followUpOffsets(): array
+    {
+        $levels = FollowUpLevel::query()
+            ->where('is_active', true)
+            ->orderBy('delay_days')
+            ->pluck('delay_days')
+            ->map(fn ($days): int => (int) $days)
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($levels !== []) {
+            return $levels;
+        }
+
+        return array_merge([-3], config('accounting.overdue.reminder_intervals', [1, 7, 14, 30]));
+    }
+
+    private function reminderTypeForDelay(int $days): string
+    {
+        if ($days < 0) {
+            return PaymentReminder::TYPE_UPCOMING;
+        }
+
+        return $days >= 30 ? PaymentReminder::TYPE_FINAL_NOTICE : PaymentReminder::TYPE_OVERDUE;
     }
 }
