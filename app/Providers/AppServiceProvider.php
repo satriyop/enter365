@@ -128,6 +128,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(\App\Contracts\Accounting\LoanServiceInterface::class, \App\Services\Accounting\LoanService::class);
         $this->app->bind(\App\Contracts\Accounting\DeferredEntryServiceInterface::class, \App\Services\Accounting\DeferredEntryService::class);
         $this->app->bind(\App\Contracts\Accounting\AnalyticDimensionServiceInterface::class, \App\Services\Accounting\AnalyticDimensionService::class);
+        $this->app->bind(\App\Contracts\Accounting\AccountingTransferServiceInterface::class, \App\Services\Accounting\AccountingTransferService::class);
+        $this->app->bind(\App\Contracts\Accounting\AccountReconcileServiceInterface::class, \App\Services\Accounting\AccountReconcileService::class);
         $this->app->bind(\App\Contracts\Accounting\BankReconciliationServiceInterface::class, \App\Services\Accounting\BankReconciliationService::class);
         $this->app->bind(\App\Contracts\Accounting\YearEndCloseServiceInterface::class, \App\Services\Accounting\YearEndCloseService::class);
         $this->app->bind(\App\Contracts\Accounting\FxRevaluationServiceInterface::class, \App\Services\Accounting\FxRevaluationService::class);
@@ -460,6 +462,9 @@ class AppServiceProvider extends ServiceProvider
             'analytic_distribution_model' => \App\Models\Accounting\AnalyticDistributionModel::class,
             'analytic_budget' => \App\Models\Accounting\AnalyticBudget::class,
             'analytic_budget_line' => \App\Models\Accounting\AnalyticBudgetLine::class,
+            'accounting_transfer' => \App\Models\Accounting\AccountingTransfer::class,
+            'account_reconciliation' => \App\Models\Accounting\AccountReconciliation::class,
+            'account_reconciliation_item' => \App\Models\Accounting\AccountReconciliationItem::class,
 
             // Projects Domain
             'project' => \App\Models\Projects\Project::class,
