@@ -1275,6 +1275,595 @@
                 }
             }
         },
+        "/reports/review/journal-items": {
+            "get": {
+                "operationId": "reports.review.journal-items",
+                "summary": "Line-level journal items (Odoo Review \u203a Journal Items)",
+                "tags": [
+                    "AccountingReview"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operasi berhasil."
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "report_name": {
+                                                    "type": "string",
+                                                    "const": "Journal Items"
+                                                },
+                                                "rows": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer"
+                                                            },
+                                                            "journal_entry_id": {
+                                                                "type": "integer"
+                                                            },
+                                                            "entry_number": {},
+                                                            "entry_date": {
+                                                                "type": "string"
+                                                            },
+                                                            "journal_id": {
+                                                                "type": [
+                                                                    "integer",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "journal_name": {},
+                                                            "journal_type": {},
+                                                            "account_id": {
+                                                                "type": "integer"
+                                                            },
+                                                            "account_code": {},
+                                                            "account_name": {},
+                                                            "partner_id": {
+                                                                "type": [
+                                                                    "integer",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "partner_name": {},
+                                                            "description": {},
+                                                            "debit": {
+                                                                "type": "integer"
+                                                            },
+                                                            "credit": {
+                                                                "type": "integer"
+                                                            },
+                                                            "reconciled_amount": {
+                                                                "type": "integer"
+                                                            },
+                                                            "residual": {
+                                                                "type": "integer"
+                                                            },
+                                                            "is_posted": {
+                                                                "type": "boolean"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "id",
+                                                            "journal_entry_id",
+                                                            "entry_number",
+                                                            "entry_date",
+                                                            "journal_id",
+                                                            "journal_name",
+                                                            "journal_type",
+                                                            "account_id",
+                                                            "account_code",
+                                                            "account_name",
+                                                            "partner_id",
+                                                            "partner_name",
+                                                            "description",
+                                                            "debit",
+                                                            "credit",
+                                                            "reconciled_amount",
+                                                            "residual",
+                                                            "is_posted"
+                                                        ]
+                                                    }
+                                                },
+                                                "meta": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "current_page": {
+                                                            "type": "integer"
+                                                        },
+                                                        "last_page": {
+                                                            "type": "integer"
+                                                        },
+                                                        "per_page": {
+                                                            "type": "integer"
+                                                        },
+                                                        "total": {
+                                                            "type": "integer"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "current_page",
+                                                        "last_page",
+                                                        "per_page",
+                                                        "total"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "report_name",
+                                                "rows",
+                                                "meta"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/reports/review/journal-audit": {
+            "get": {
+                "operationId": "reports.review.journal-audit",
+                "summary": "Posted journal register by journal (Odoo Review \u203a Journal Audit)",
+                "tags": [
+                    "AccountingReview"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operasi berhasil."
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "report_name": {
+                                                    "type": "string",
+                                                    "const": "Journal Audit"
+                                                },
+                                                "from": {},
+                                                "to": {},
+                                                "journals": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "journal_id": {
+                                                                "type": [
+                                                                    "integer",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "journal_name": {
+                                                                "type": "string"
+                                                            },
+                                                            "journal_type": {
+                                                                "type": "string"
+                                                            },
+                                                            "entry_count": {
+                                                                "type": "integer"
+                                                            },
+                                                            "debit": {
+                                                                "type": "integer"
+                                                            },
+                                                            "credit": {
+                                                                "type": "integer"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "journal_id",
+                                                            "journal_name",
+                                                            "journal_type",
+                                                            "entry_count",
+                                                            "debit",
+                                                            "credit"
+                                                        ]
+                                                    }
+                                                },
+                                                "totals": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "entry_count": {
+                                                            "type": "integer"
+                                                        },
+                                                        "debit": {
+                                                            "type": "integer"
+                                                        },
+                                                        "credit": {
+                                                            "type": "integer"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "entry_count",
+                                                        "debit",
+                                                        "credit"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "report_name",
+                                                "from",
+                                                "to",
+                                                "journals",
+                                                "totals"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/reports/review/working-files": {
+            "get": {
+                "operationId": "reports.review.working-files",
+                "summary": "Unposted journals and draft invoices/bills (Odoo Review \u203a Working Files)",
+                "tags": [
+                    "AccountingReview"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Operasi berhasil."
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "report_name": {
+                                                    "type": "string",
+                                                    "const": "Working Files"
+                                                },
+                                                "unposted_journal_entries": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer"
+                                                            },
+                                                            "number": {
+                                                                "type": "string"
+                                                            },
+                                                            "date": {
+                                                                "type": "string"
+                                                            },
+                                                            "description": {
+                                                                "type": "string"
+                                                            },
+                                                            "journal_name": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "id",
+                                                            "number",
+                                                            "date",
+                                                            "description",
+                                                            "journal_name"
+                                                        ]
+                                                    }
+                                                },
+                                                "draft_invoices": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer"
+                                                            },
+                                                            "number": {
+                                                                "type": "string"
+                                                            },
+                                                            "date": {
+                                                                "type": "string"
+                                                            },
+                                                            "amount": {
+                                                                "type": "integer"
+                                                            },
+                                                            "partner": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "id",
+                                                            "number",
+                                                            "date",
+                                                            "amount",
+                                                            "partner"
+                                                        ]
+                                                    }
+                                                },
+                                                "draft_bills": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer"
+                                                            },
+                                                            "number": {
+                                                                "type": "string"
+                                                            },
+                                                            "date": {
+                                                                "type": "string"
+                                                            },
+                                                            "amount": {
+                                                                "type": "integer"
+                                                            },
+                                                            "partner": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "id",
+                                                            "number",
+                                                            "date",
+                                                            "amount",
+                                                            "partner"
+                                                        ]
+                                                    }
+                                                },
+                                                "totals": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "unposted_journal_entries": {
+                                                            "type": "integer"
+                                                        },
+                                                        "draft_invoices": {
+                                                            "type": "integer"
+                                                        },
+                                                        "draft_bills": {
+                                                            "type": "integer"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "unposted_journal_entries",
+                                                        "draft_invoices",
+                                                        "draft_bills"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "report_name",
+                                                "unposted_journal_entries",
+                                                "draft_invoices",
+                                                "draft_bills",
+                                                "totals"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/reports/review/audit-trail": {
+            "get": {
+                "operationId": "reports.review.audit-trail",
+                "summary": "Accounting document change log (Odoo Review \u203a Audit Trail)",
+                "tags": [
+                    "AccountingReview"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated set of `AuditLogResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/AuditLogResource"
+                                            }
+                                        },
+                                        "links": {
+                                            "type": "object",
+                                            "properties": {
+                                                "first": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "last": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "prev": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "next": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "first",
+                                                "last",
+                                                "prev",
+                                                "next"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "minimum": 1
+                                                },
+                                                "from": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "minimum": 1
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "minimum": 1
+                                                },
+                                                "links": {
+                                                    "type": "array",
+                                                    "description": "Generated paginator links.",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "url": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "label": {
+                                                                "type": "string"
+                                                            },
+                                                            "active": {
+                                                                "type": "boolean"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "url",
+                                                            "label",
+                                                            "active"
+                                                        ]
+                                                    }
+                                                },
+                                                "path": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "description": "Base path for paginator generated URLs."
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "description": "Number of items shown per page.",
+                                                    "minimum": 0
+                                                },
+                                                "to": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "description": "Number of the last item in the slice.",
+                                                    "minimum": 1
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "description": "Total number of items being paginated.",
+                                                    "minimum": 0
+                                                }
+                                            },
+                                            "required": [
+                                                "current_page",
+                                                "from",
+                                                "last_page",
+                                                "links",
+                                                "path",
+                                                "per_page",
+                                                "to",
+                                                "total"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "links",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/accounting-transfers": {
             "get": {
                 "operationId": "accounting-transfers.index",
@@ -59908,6 +60497,81 @@
                     "updated_at"
                 ],
                 "title": "AttachmentResource"
+            },
+            "AuditLogResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "user_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "user_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "action": {
+                        "type": "string"
+                    },
+                    "auditable_type": {
+                        "type": "string"
+                    },
+                    "auditable_id": {
+                        "type": "integer"
+                    },
+                    "auditable_label": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "old_values": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {}
+                    },
+                    "new_values": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {}
+                    },
+                    "notes": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "user_id",
+                    "user_name",
+                    "action",
+                    "auditable_type",
+                    "auditable_id",
+                    "auditable_label",
+                    "old_values",
+                    "new_values",
+                    "notes",
+                    "created_at"
+                ],
+                "title": "AuditLogResource"
             },
             "BankTransaction": {
                 "type": "object",

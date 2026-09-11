@@ -55,6 +55,7 @@ use App\Http\Controllers\Api\V1\PurchaseReturnController;
 use App\Http\Controllers\Api\V1\QuotationController;
 use App\Http\Controllers\Api\V1\QuotationFollowUpController;
 use App\Http\Controllers\Api\V1\RecurringTemplateController;
+use App\Http\Controllers\Api\V1\Reports\AccountingReviewController;
 use App\Http\Controllers\Api\V1\Reports\AgingReportController;
 use App\Http\Controllers\Api\V1\Reports\BankReconciliationReportController;
 use App\Http\Controllers\Api\V1\Reports\CashFlowReportController;
@@ -667,6 +668,11 @@ Route::prefix('v1')->group(function () {
 
             // Equity Reports
             Route::get('changes-in-equity', [FinancialReportController::class, 'changesInEquity'])->name('reports.changes-in-equity');
+
+            Route::get('review/journal-items', [AccountingReviewController::class, 'journalItems'])->name('reports.review.journal-items');
+            Route::get('review/journal-audit', [AccountingReviewController::class, 'journalAudit'])->name('reports.review.journal-audit');
+            Route::get('review/working-files', [AccountingReviewController::class, 'workingFiles'])->name('reports.review.working-files');
+            Route::get('review/audit-trail', [AccountingReviewController::class, 'auditTrail'])->name('reports.review.audit-trail');
 
             Route::get('cutover/bill-to-receive', [CutoverReviewController::class, 'billToReceive'])->name('reports.cutover.bill-to-receive');
             Route::get('cutover/billed-not-received', [CutoverReviewController::class, 'billedNotReceived'])->name('reports.cutover.billed-not-received');
