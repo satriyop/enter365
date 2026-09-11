@@ -38,6 +38,8 @@ class JournalEntry extends Model
 
     public const SOURCE_FIXED_ASSET = 'fixed_asset';
 
+    public const SOURCE_LOAN = 'loan';
+
     protected $fillable = [
         'entry_number',
         'journal_id',
