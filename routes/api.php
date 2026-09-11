@@ -234,6 +234,11 @@ Route::prefix('v1')->group(function () {
 
         // Journals master (Konfigurasi Jurnal)
         Route::apiResource('journals', JournalController::class);
+        Route::apiResource('payment-terms', \App\Http\Controllers\Api\V1\PaymentTermController::class)->except(['destroy']);
+        Route::apiResource('payment-methods', \App\Http\Controllers\Api\V1\PaymentMethodController::class)->except(['destroy']);
+        Route::apiResource('payment-providers', \App\Http\Controllers\Api\V1\PaymentProviderController::class)->except(['destroy']);
+        Route::apiResource('checks', \App\Http\Controllers\Api\V1\CheckSettingController::class)->except(['destroy']);
+        Route::post('payment-terms/{payment_term}/preview', [\App\Http\Controllers\Api\V1\PaymentTermController::class, 'preview']);
 
         Route::apiResource('analytic-accounts', AnalyticAccountController::class)->except(['destroy']);
         Route::apiResource('tax-tags', TaxTagController::class)->except(['destroy']);
