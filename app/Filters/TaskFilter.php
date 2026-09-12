@@ -15,6 +15,7 @@ use App\Filters\Traits\HasStatusFilter;
  * - status: Task status (todo, in_progress, done, cancelled)
  * - priority: Priority level
  * - assigned_to: Filter by assignee
+ * - project_id: Filter by project (workspace lists)
  * - parent_id: Filter by parent task
  * - overdue_only: Only overdue tasks
  * - search: Search by task_number, title
@@ -79,6 +80,14 @@ class TaskFilter extends QueryFilter
     public function assignedTo(int|string $value): void
     {
         $this->builder->where('assigned_to', $value);
+    }
+
+    /**
+     * Filter by project (My/All Tasks workspace).
+     */
+    public function projectId(int|string $value): void
+    {
+        $this->builder->where('project_id', $value);
     }
 
     /**

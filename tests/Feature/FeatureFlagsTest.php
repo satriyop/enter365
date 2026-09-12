@@ -290,6 +290,9 @@ describe('EnsureFeatureEnabled Middleware', function () {
         withoutFeatures(['projects', 'work_orders', 'subcontracting']);
 
         $this->getJson('/api/v1/reports/project-profitability')->assertNotFound();
+        $this->getJson('/api/v1/reports/tasks-analysis')->assertNotFound();
+        $this->getJson('/api/v1/tasks')->assertNotFound();
+        $this->getJson('/api/v1/customer-ratings')->assertNotFound();
         $this->getJson('/api/v1/reports/work-order-costs')->assertNotFound();
         $this->getJson('/api/v1/reports/subcontractor-summary')->assertNotFound();
         $this->getJson('/api/v1/reports/cost-variance')->assertNotFound();

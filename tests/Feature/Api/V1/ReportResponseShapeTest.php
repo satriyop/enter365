@@ -298,6 +298,36 @@ it('project-profitability-detail has correct response shape', function () {
         ]);
 });
 
+it('tasks-analysis has correct response shape', function () {
+    $this->getJson('/api/v1/reports/tasks-analysis')
+        ->assertOk()
+        ->assertJsonStructure([
+            'success',
+            'data' => [
+                'report_name',
+                'totals',
+                'by_status',
+                'by_priority',
+                'by_project',
+                'by_assignee',
+            ],
+        ]);
+});
+
+it('customer-ratings report has correct response shape', function () {
+    $this->getJson('/api/v1/reports/customer-ratings')
+        ->assertOk()
+        ->assertJsonStructure([
+            'success',
+            'data' => [
+                'report_name',
+                'totals' => ['count', 'average'],
+                'by_rating',
+                'rows',
+            ],
+        ]);
+});
+
 it('project-cost-analysis has correct response shape', function () {
     $this->getJson('/api/v1/reports/project-cost-analysis')
         ->assertOk()
