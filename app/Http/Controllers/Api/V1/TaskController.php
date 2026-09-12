@@ -20,6 +20,52 @@ class TaskController extends Controller
     ) {}
 
     /**
+     * List tasks across all projects (Odoo Project › All Tasks).
+     *
+     * @queryParam project_id int Filter by project. Example: 1
+     * @queryParam status string todo, in_progress, done, cancelled. Example: todo
+     * @queryParam priority string low, normal, high, urgent. Example: high
+     * @queryParam assigned_to int Filter by assignee. Example: 2
+     * @queryParam overdue_only bool Only overdue open tasks. Example: 1
+     * @queryParam search string Search number or title. Example: TSK
+     * @queryParam per_page int Default 25. Example: 50
+     */
+    public function all(TaskFilter $filter): AnonymousResourceCollection
+    {
+        $this->authorize('viewAny', Task::class);
+
+        $tasks = Task::query()
+            ->with(['assignee', 'creator', 'project'])
+            ->filter($filter)
+            ->paginate($filter->getRequest()->input('per_page', 25));
+
+        return TaskResource::collection($tasks);
+    }
+
+    /**
+     * List tasks assigned to the current user (Odoo Project › My Tasks).
+     *
+     * @queryParam project_id int Filter by project. Example: 1
+     * @queryParam status string todo, in_progress, done, cancelled. Example: todo
+     * @queryParam priority string low, normal, high, urgent. Example: high
+     * @queryParam overdue_only bool Only overdue open tasks. Example: 1
+     * @queryParam search string Search number or title. Example: TSK
+     * @queryParam per_page int Default 25. Example: 50
+     */
+    public function mine(TaskFilter $filter): AnonymousResourceCollection
+    {
+        $this->authorize('viewAny', Task::class);
+
+        $tasks = Task::query()
+            ->where('assigned_to', $filter->getRequest()->user()?->id)
+            ->with(['assignee', 'creator', 'project'])
+            ->filter($filter)
+            ->paginate($filter->getRequest()->input('per_page', 25));
+
+        return TaskResource::collection($tasks);
+    }
+
+    /**
      * List tasks for a project.
      */
     public function index(Project $project, TaskFilter $filter): AnonymousResourceCollection

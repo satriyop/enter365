@@ -256,6 +256,7 @@ class AppServiceProvider extends ServiceProvider
         // Projects Domain (2 services)
         $this->app->bind(ProjectServiceInterface::class, ProjectService::class);
         $this->app->bind(\App\Contracts\Projects\TaskServiceInterface::class, \App\Services\Projects\TaskService::class);
+        $this->app->bind(\App\Contracts\Projects\CustomerRatingServiceInterface::class, \App\Services\Projects\CustomerRatingService::class);
 
         // Tax Domain
         $this->app->bind(\App\Contracts\Tax\NsfpServiceInterface::class, \App\Services\Tax\NsfpService::class);
@@ -328,6 +329,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(\App\Models\Manufacturing\Bom::class, \App\Policies\BomPolicy::class);
         Gate::policy(\App\Models\Projects\Project::class, \App\Policies\ProjectPolicy::class);
         Gate::policy(\App\Models\Projects\Task::class, \App\Policies\TaskPolicy::class);
+        Gate::policy(\App\Models\Projects\CustomerRating::class, \App\Policies\CustomerRatingPolicy::class);
         Gate::policy(\App\Models\User::class, \App\Policies\UserPolicy::class);
         Gate::policy(\App\Models\Sales\SalesReturn::class, \App\Policies\SalesReturnPolicy::class);
         Gate::policy(\App\Models\Purchasing\GoodsReceiptNote::class, \App\Policies\GoodsReceiptNotePolicy::class);
@@ -476,6 +478,7 @@ class AppServiceProvider extends ServiceProvider
             // Projects Domain
             'project' => \App\Models\Projects\Project::class,
             'task' => \App\Models\Projects\Task::class,
+            'customer_rating' => \App\Models\Projects\CustomerRating::class,
 
             // Contacts Domain
             'contact' => \App\Models\Contacts\Contact::class,

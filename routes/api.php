@@ -26,6 +26,7 @@ use App\Http\Controllers\Api\V1\CashRoundingController;
 use App\Http\Controllers\Api\V1\CompanyProfileController;
 use App\Http\Controllers\Api\V1\ContactController;
 use App\Http\Controllers\Api\V1\CurrencyController;
+use App\Http\Controllers\Api\V1\CustomerRatingController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\DeferredExpenseController;
 use App\Http\Controllers\Api\V1\DeferredRevenueController;
@@ -70,6 +71,7 @@ use App\Http\Controllers\Api\V1\Reports\CutoverReviewController;
 use App\Http\Controllers\Api\V1\Reports\FinancialReportController;
 use App\Http\Controllers\Api\V1\Reports\ManufacturingReportController;
 use App\Http\Controllers\Api\V1\Reports\ProjectReportController;
+use App\Http\Controllers\Api\V1\Reports\TaskAnalysisController;
 use App\Http\Controllers\Api\V1\Reports\TaxReportController;
 use App\Http\Controllers\Api\V1\RoleController;
 use App\Http\Controllers\Api\V1\SalesReturnController;
@@ -541,6 +543,10 @@ Route::prefix('v1')->group(function () {
             Route::delete('projects/{project}/tasks/{task}/dependencies/{dependency}', [TaskController::class, 'removeDependency']);
             Route::post('projects/{project}/tasks/reorder', [TaskController::class, 'reorder']);
             Route::get('projects/{project}/tasks-statistics', [TaskController::class, 'statistics']);
+
+            Route::get('tasks/my', [TaskController::class, 'mine']);
+            Route::get('tasks', [TaskController::class, 'all']);
+            Route::apiResource('customer-ratings', CustomerRatingController::class);
         });
 
         // Work Orders (Perintah Kerja)
@@ -720,6 +726,8 @@ Route::prefix('v1')->group(function () {
                 Route::get('project-profitability', [ProjectReportController::class, 'projectProfitability'])->name('reports.project-profitability');
                 Route::get('projects/{project}/profitability', [ProjectReportController::class, 'projectProfitabilityDetail'])->name('reports.project-profitability-detail');
                 Route::get('project-cost-analysis', [ProjectReportController::class, 'projectCostAnalysis'])->name('reports.project-cost-analysis');
+                Route::get('tasks-analysis', [TaskAnalysisController::class, 'tasksAnalysis'])->name('reports.tasks-analysis');
+                Route::get('customer-ratings', [TaskAnalysisController::class, 'customerRatings'])->name('reports.customer-ratings');
             });
 
             // Work Order / production cost reports (pack: work_orders)

@@ -89,6 +89,8 @@ describe('Report authorization - forbidden without permission', function () {
         $projectEndpoints = [
             '/api/v1/reports/project-profitability',
             '/api/v1/reports/project-cost-analysis',
+            '/api/v1/reports/tasks-analysis',
+            '/api/v1/reports/customer-ratings',
         ];
 
         foreach ($projectEndpoints as $endpoint) {
