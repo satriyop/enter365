@@ -1291,7 +1291,7 @@ Do not add `tests/Pgsql` to the default `phpunit.xml` suite.
 **Context:** Three planes, not one “prod”:
 - Pest `phpunit.xml` is `FEATURE_PRESET=full` (in-process SQLite).
 - Local Valet (`enter365.test`) is what Pest browser tests hit via `skipUnlessLiveFeature()` / `liveApiModules()`.
-- **aidev (`enter365.pamungkas.org`) is a team mockup**, not a customer store. `./scripts/prod.sh` deploys laptop trees there for click-through. There is no customer production tenant.
+- **aidev (remote development server) is a team mockup**, not a customer store. `./scripts/prod.sh` deploys laptop trees there for click-through. There is no customer production tenant.
 
 **Problem:** Preset `pos` sets `$posAcquisition`, which defaults invoices, payments, quotations, PO, DO, GRN, and returns **off**. Browser tests then skip (`Live API feature 'invoices' is off`). Bill create still works (bills are core) but `/payments/new` is gated and the SPA dumps the session back to `/login` — a fail, not a skip. That is not a broken invoice form. Leaving aidev on `pos` also makes Odoo-parity tickets look “unshipped” (pack redirect) after the code is on `main`.
 

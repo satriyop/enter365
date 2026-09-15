@@ -71,8 +71,8 @@ it('fails a live run when credentials are missing without echoing secrets', func
         'ODOO_PASSWORD' => '',
         'ENTER365_EMAIL' => '',
         'ENTER365_PASSWORD' => '',
-        'ODOO_BASE_URL' => 'https://enterkode.odoo.com',
-        'ENTER365_BASE_URL' => 'https://enter365.pamungkas.org',
+        'ODOO_BASE_URL' => 'https://odoo.example.com',
+        'ENTER365_BASE_URL' => 'https://enter365.example.com',
     ]);
 
     expect($result->successful())->toBeFalse()
@@ -91,27 +91,27 @@ import { isOdooWriteRequest } from './scripts/parity/lib/capture.mjs';
 
 const write = isOdooWriteRequest({
     method: 'POST',
-    url: 'https://enterkode.odoo.com/web/dataset/call_kw/sale.order/write',
+    url: 'https://odoo.example.com/web/dataset/call_kw/sale.order/write',
     postData: JSON.stringify({ params: { method: 'write' } }),
 });
 const save = isOdooWriteRequest({
     method: 'POST',
-    url: 'https://enterkode.odoo.com/web/dataset/call_kw/account.move/web_save',
+    url: 'https://odoo.example.com/web/dataset/call_kw/account.move/web_save',
     postData: JSON.stringify({ params: { method: 'web_save' } }),
 });
 const read = isOdooWriteRequest({
     method: 'POST',
-    url: 'https://enterkode.odoo.com/web/dataset/call_kw/sale.order/web_search_read',
+    url: 'https://odoo.example.com/web/dataset/call_kw/sale.order/web_search_read',
     postData: JSON.stringify({ params: { method: 'web_search_read' } }),
 });
 const login = isOdooWriteRequest({
     method: 'POST',
-    url: 'https://enterkode.odoo.com/web/login',
+    url: 'https://odoo.example.com/web/login',
     postData: 'login=demo@example.com&password=super-secret-value',
 });
 const get = isOdooWriteRequest({
     method: 'GET',
-    url: 'https://enterkode.odoo.com/odoo',
+    url: 'https://odoo.example.com/odoo',
 });
 
 if (write && save && !read && !login && !get) {

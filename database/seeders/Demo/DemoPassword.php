@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Hash;
  */
 final class DemoPassword
 {
-    public const VALUE = 'WRGKvh-WU#pL5ii#mufZXxpW';
+    public const VALUE = 'Enter365Demo123!';
 
     /**
      * @var list<string>

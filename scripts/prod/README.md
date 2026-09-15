@@ -1,15 +1,54 @@
-# Production ops (aidev)
+# Production & Remote Ops
 
-Laptop → `root@aidev` (`146.190.87.122`). Public URL: `https://enter365.pamungkas.org`.
+CLI tools to provision, deploy, and operate Enter365 on an Ubuntu server with Caddy and PostgreSQL.
 
-Same origin: Caddy serves the Vue SPA and proxies `/api`, `/up`, `/storage`, `/pos/kopitiam` to Laravel. The till talks to `/api/v1` (Bearer Sanctum).
+## Configuration
+
+Before running remote commands, configure your deployment target in `.env.deploy` (gitignored):
+
+```bash
+cp scripts/prod/templates/env.deploy.example .env.deploy
+```
+
+Fill in your server configuration:
+```bash
+AIDEV_IP=your-server-ip
+AIDEV_HOST=root@aidev
+DOMAIN=enter365.example.com
+SSH_KEY_FILE=~/.ssh/id_ed25519
+```
+
+## Architecture
+
+Same origin deployment:
+- **Caddy** serves the compiled SPA frontend and proxies `/api`, `/up`, `/storage`, `/pos/kopitiam` to Laravel PHP-FPM pool.
+- **PostgreSQL** runs on the server (or managed database).
+- **Supervisor** manages Laravel queue workers and background tasks.
+
+## Usage
 
 ```bash
 ./scripts/prod.sh help
 ```
 
-Aidev already runs Caddy + Sipamungkas + OpenClaw. `provision` is additive (new PHP pool, new Postgres DB, Caddy site import). It does not replace the existing Caddyfile.
-
-SSH on this droplet bans bursty connections. The scripts reuse one ControlMaster. If port 22 refuses, wait a few minutes.
-
-TLS sits behind Cloudflare. If Caddy cannot mint a cert, grey-cloud the A record for two minutes, reload Caddy, then orange-cloud again. Cloudflare SSL mode: **Full (strict)**.
+### Initial Provisioning
+1. Setup SSH configuration:
+   ```bash
+   ./scripts/prod.sh ssh-config
+   ```
+2. Provision system packages, PHP-FPM pool, and Postgres DB (additive):
+   ```bash
+   ./scripts/prod.sh provision
+   ```
+3. Initialize environment and generate application key:
+   ```bash
+   ./scripts/prod.sh env-init
+   ```
+4. Deploy code and run migrations:
+   ```bash
+   ./scripts/prod.sh deploy
+   ```
+5. Check deployment status:
+   ```bash
+   ./scripts/prod.sh health
+   ```

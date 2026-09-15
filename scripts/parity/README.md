@@ -1,6 +1,6 @@
 # Odoo ↔ enter365 parity runner
 
-Walks live Odoo (`enterkode.odoo.com`) and enter365 (`enter365.pamungkas.org`)
+Walks Odoo (`https://odoo.example.com`) and enter365 (`https://enter365.example.com`)
 page-by-page from a **JourneyCatalog** of ordered **PagePair**s. Each pair is
 captured in two Playwright contexts (dual-site). Output is paired screenshots
 plus structured **DiffFinding** JSON — not a pixel diff.
@@ -29,14 +29,14 @@ enter365 is a lab tenant and may be written.
 ## Environment
 
 Never commit credentials. Pass them via the environment (or a local unsaved
-shell). Defaults are the live walk hosts.
+shell). Defaults are placeholder walk hosts.
 
 | Variable | Required for live run | Default |
 |---|---|---|
-| `ODOO_BASE_URL` | no | `https://enterkode.odoo.com` |
+| `ODOO_BASE_URL` | no | `https://odoo.example.com` |
 | `ODOO_EMAIL` | **yes** | — |
 | `ODOO_PASSWORD` | **yes** | — |
-| `ENTER365_BASE_URL` | no | `https://enter365.pamungkas.org` |
+| `ENTER365_BASE_URL` | no | `https://enter365.example.com` |
 | `ENTER365_EMAIL` | **yes** | — |
 | `ENTER365_PASSWORD` | **yes** | — |
 
