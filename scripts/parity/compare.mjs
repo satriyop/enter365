@@ -33,8 +33,8 @@ const DEFAULT_CATALOG = path.join(HERE, 'catalog.yaml');
 const RUNS_ROOT = path.join(ROOT, 'storage', 'parity-runs');
 
 const DEFAULTS = {
-    ODOO_BASE_URL: 'https://enterkode.odoo.com',
-    ENTER365_BASE_URL: 'https://enter365.pamungkas.org',
+    ODOO_BASE_URL: 'https://odoo.example.com',
+    ENTER365_BASE_URL: 'https://enter365.example.com',
 };
 
 export function parseArgs(argv) {

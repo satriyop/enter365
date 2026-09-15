@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Enter365 aidev CLI — team mockup at enter365.pamungkas.org (not customer production).
+# Enter365 remote CLI — manage staging/production server.
 #
 #   ./scripts/prod.sh help
 set -euo pipefail
@@ -13,17 +13,18 @@ shift || true
 case "${cmd}" in
     help|-h|--help)
         cat <<'EOF'
-Enter365 → aidev mockup (enter365.pamungkas.org)
-Not customer production. Mockup FEATURE_PRESET=full (matches Pest).
-pos hides trading packs (kasir-only contract).
+Enter365 remote operations CLI
+
+Configure your remote host in .env.deploy (or export AIDEV_IP, DOMAIN, AIDEV_HOST):
+  cp scripts/prod/templates/env.deploy.example .env.deploy
 
 First time
   ./scripts/prod.sh ssh-config   add Host aidev to ~/.ssh/config
-  ./scripts/prod.sh inspect      what is already on the droplet
+  ./scripts/prod.sh inspect      what is already on the server
   ./scripts/prod.sh provision    PHP pool, Postgres DB, Caddy site (additive)
   ./scripts/prod.sh env-init     APP_KEY
-  ./scripts/prod.sh deploy       rsync this laptop + composer + migrate --force
-  ./scripts/prod.sh seed-demo    Demo data for current FEATURE_PRESET (full → all + Kopitiam till)
+  ./scripts/prod.sh deploy       rsync this repository + composer + migrate --force
+  ./scripts/prod.sh seed-demo    Demo data for current FEATURE_PRESET
   ./scripts/prod.sh seed-pos     Kopitiam catalog only (ignores preset). Prefer seed-demo.
   ./scripts/prod.sh health
 
@@ -36,14 +37,14 @@ Day-2
   ./scripts/prod.sh logs [laravel|queue|scheduler|php|caddy|follow]
   ./scripts/prod.sh artisan migrate --force
   ./scripts/prod.sh artisan queue:restart
-  ./scripts/prod.sh backup          pg_dump to storage/backups/aidev/
+  ./scripts/prod.sh backup          pg_dump to storage/backups/
   ./scripts/prod.sh status          alias for health
 
 Never
   migrate:fresh / db:wipe / DatabaseSeeder on production.
 
-Env
-  AIDEV_HOST=root@aidev DOMAIN=enter365.pamungkas.org
+Env (.env.deploy or shell)
+  AIDEV_IP=... AIDEV_HOST=root@aidev DOMAIN=...
   FRONTEND_DIR=../front-end-enter365  PROD_YES=1
 EOF
         ;;

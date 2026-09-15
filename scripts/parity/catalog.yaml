@@ -1,6 +1,6 @@
 # JourneyCatalog — ordered PagePairs for Odoo ↔ enter365 UI/UX/behavior parity.
-# Odoo is read-only always. Paths are from live walks on enterkode.odoo.com
-# (Odoo 18+ readable /odoo URLs) and enter365 SPA routes in this repo.
+# Odoo is read-only always. Paths are from live walks on Odoo 18+
+# (readable /odoo URLs) and enter365 SPA routes in this repo.
 #
 # Path templates: {id} is substituted from PARITY_<PAIR_ID>_ODOO_ID /
 # PARITY_<PAIR_ID>_ENTER365_ID (or PARITY_<PAIR_ID>_ID). Leave unresolved

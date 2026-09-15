@@ -604,7 +604,7 @@ $pages->assertNoJavascriptErrors()->assertNoConsoleLogs();
 
 **This application is NOT in production yet.** There is no customer tenant.
 
-**aidev (`enter365.pamungkas.org`) is a development mockup**, not live production used by a customer. `./scripts/prod.sh deploy` rsyncs this laptop’s trees there so we can click the SPA. Do not treat pack-gates on that host as “the customer cannot see this.”
+**aidev (remote development mockup)**, not live production used by a customer. `./scripts/prod.sh deploy` rsyncs this laptop’s trees there so we can click the SPA. Do not treat pack-gates on that host as “the customer cannot see this.”
 
 | Plane | Preset | Role |
 |-------|--------|------|

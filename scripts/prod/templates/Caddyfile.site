@@ -1,5 +1,5 @@
 # Enter365 — same origin SPA + Laravel API
-# Installed as /etc/caddy/sites/enter365.pamungkas.org.caddy
+# Installed as /etc/caddy/sites/__DOMAIN__.caddy
 # Imported from /etc/caddy/Caddyfile
 
 __DOMAIN__ {

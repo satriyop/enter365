@@ -8,15 +8,25 @@ PROD_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PROD_SCRIPTS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FRONTEND_DIR="${FRONTEND_DIR:-$(cd "${PROD_ROOT}/../front-end-enter365" 2>/dev/null && pwd || true)}"
 
-DOMAIN="${DOMAIN:-enter365.pamungkas.org}"
+# Load optional local deploy environment overrides (gitignored)
+if [[ -f "${PROD_ROOT}/.env.deploy" ]]; then
+    # shellcheck source=/dev/null
+    source "${PROD_ROOT}/.env.deploy"
+elif [[ -f "${PROD_SCRIPTS}/.env.deploy" ]]; then
+    # shellcheck source=/dev/null
+    source "${PROD_SCRIPTS}/.env.deploy"
+fi
+
+DOMAIN="${DOMAIN:-}"
 AIDEV_HOST="${AIDEV_HOST:-root@aidev}"
-AIDEV_IP="${AIDEV_IP:-146.190.87.122}"
+AIDEV_IP="${AIDEV_IP:-}"
 APP_DIR="${APP_DIR:-/var/www/enter365}"
 SPA_DIR="${SPA_DIR:-/var/www/enter365-spa}"
 APP_USER="${APP_USER:-www-data}"
 DB_NAME="${DB_NAME:-enter365}"
 DB_USER="${DB_USER:-enter365}"
 PHP_VERSION="${PHP_VERSION:-}"
+SSH_KEY_FILE="${SSH_KEY_FILE:-}"
 
 CTRL_PATH="${CTRL_PATH:-/tmp/enter365-aidev.sock}"
 
@@ -34,7 +44,18 @@ require_cmd() {
     command -v "$1" >/dev/null 2>&1 || die "missing command: $1"
 }
 
+require_prod_env() {
+    local missing=()
+    [[ -z "${AIDEV_IP:-}" ]] && missing+=("AIDEV_IP")
+    [[ -z "${DOMAIN:-}" ]] && missing+=("DOMAIN")
+    [[ -z "${AIDEV_HOST:-}" ]] && missing+=("AIDEV_HOST")
+    if [[ ${#missing[@]} -gt 0 ]]; then
+        die "Missing required deploy environment variable(s): ${missing[*]}. Define them in .env.deploy or your shell."
+    fi
+}
+
 ensure_ssh_alias() {
+    require_prod_env
     local cfg="${HOME}/.ssh/config"
     mkdir -p "${HOME}/.ssh"
     chmod 700 "${HOME}/.ssh"
@@ -50,7 +71,9 @@ ensure_ssh_alias() {
         echo "    User root"
         echo "    IdentityFile ~/.ssh/id_ed25519"
         echo "    IdentityFile ~/.ssh/id_rsa"
-        echo "    IdentityFile ~/.ssh/enteraksi_do"
+        if [[ -n "${SSH_KEY_FILE:-}" ]]; then
+            echo "    IdentityFile ${SSH_KEY_FILE}"
+        fi
         echo "    AddKeysToAgent yes"
         echo "    UseKeychain yes"
         echo "    ServerAliveInterval 60"

@@ -10,7 +10,7 @@ Quick reference for Enter365 configuration values.
 
 Toggle modules on/off via environment variables.
 
-**aidev (`enter365.pamungkas.org`) is a development mockup, not a customer tenant.** Pest and the mockup both use `FEATURE_PRESET=full`. Preset `pos` is kasir-only and hides trading packs.
+**aidev (remote development mockup) is not a customer tenant.** Pest and the mockup both use `FEATURE_PRESET=full`. Preset `pos` is kasir-only and hides trading packs.
 
 ```php
 // Access in code
